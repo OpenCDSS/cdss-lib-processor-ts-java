@@ -246,13 +246,15 @@ private TSEnsemble getDiscoveryEnsemble()
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of TSEnsemble objects.
+Classes that can be requested:  TSEnsemble
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-    List<TSEnsemble> v = null;
+    List<T> v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector<TSEnsemble>();
-        v.add ( tsensemble );
+        v = new Vector<T>();
+        v.add ( (T)tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
     return v;
@@ -369,13 +371,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // FIXME SAM 2009-10-10 Always make false until technical issues can be resolved
     CopyTimeSeries_boolean = false;
 
-    boolean createData = true;
+    //boolean createData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Get the discovery time series list from all time series above this command
         // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
         tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
-        createData = false;
+        //createData = false;
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
     	// Get the time series to process...

@@ -519,7 +519,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List<TS>)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> dataList = (List<TS>)o_TSList;
+        tslist = dataList;
         nts = tslist.size();
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
@@ -634,7 +636,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        add_tslist = (List<TS>)o_TSList2;
+        @SuppressWarnings("unchecked")
+		List<TS> dataList = (List<TS>)o_TSList2;
+        add_tslist = dataList;
         n_add_ts = add_tslist.size();
         if ( n_add_ts == 0 ) {
             message = "No time series to add are available from processor GetTimeSeriesToProcess (TSList=\"" + AddTSList +

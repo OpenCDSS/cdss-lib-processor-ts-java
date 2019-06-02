@@ -204,26 +204,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String ConstantValue = "";
 		String AnalysisStart = "";
 		String AnalysisEnd = "";
 		if ( (v != null) && (v.size() >= 3) ) {
 			// Second field is identifier...
-			TSID = ((String)v.get(1)).trim();
+			TSID = v.get(1).trim();
 			// Third field has constant value...
-            ConstantValue = ((String)v.get(2)).trim();
+            ConstantValue = v.get(2).trim();
 			// Fourth and fifth fields optionally have analysis period...
 			if ( v.size() >= 4 ) {
-				AnalysisStart = ((String)v.get(3)).trim();
+				AnalysisStart = v.get(3).trim();
 				if ( AnalysisStart.equals("*") ) {
 					// Change to new default...
 					AnalysisStart = "";
 				}
 			}
 			if ( v.size() >= 5 ) {
-				AnalysisEnd = ((String)v.get(4)).trim();
+				AnalysisEnd = v.get(4).trim();
 				if ( AnalysisEnd.equals("*") ) {
 					// Change to new default...
 					AnalysisEnd = "";
@@ -382,7 +382,7 @@ CommandWarningException, CommandException
     }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -395,7 +395,9 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> dataList = (List<TS>)o_TSList;
+        tslist = dataList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

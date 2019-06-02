@@ -331,12 +331,13 @@ private DataTable getDiscoveryTable()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
-    List<DataTable> v = null;
+    List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<DataTable>();
-        v.add ( table );
+        v = new Vector<T>();
+        v.add ( (T)table );
     }
     // TODO sam 2017-04-01 need to evaluate whether to return Prop with processor property name
     return v;
@@ -824,7 +825,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 // Add a blank record.
                                 rec = table.addRecord(table.emptyRecord().setFieldValue(tableTSIDColumnNumber, tsid));
                             }
-                            Class c = tsu.getStatisticDataClass();
+                            Class<?> c = tsu.getStatisticDataClass();
                             for ( int iStat = 0; iStat < statisticColumnNum.length; iStat++ ) {
                                 if ( statisticColumnNum[iStat] < 0 ) {
                                     // Have not previously checked for or added the column for the statistic

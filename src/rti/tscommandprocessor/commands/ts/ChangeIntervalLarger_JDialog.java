@@ -243,6 +243,9 @@ private void checkGUIState ()
     TimeInterval newIntervalObj = null;
     try {
         newIntervalObj = TimeInterval.parseInterval(newInterval);
+        if ( newIntervalObj == null ) {
+        	// TODO add so compiler doesn't complain about unused
+        }
     }
     catch ( Exception e ) {
         // Should not happen because choices are valid

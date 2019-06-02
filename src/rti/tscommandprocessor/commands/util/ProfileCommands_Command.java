@@ -135,16 +135,18 @@ private DataTable getDiscoverySummaryTable()
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+The following classes can be requested: DataTable
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable summaryTable = getDiscoverySummaryTable();
     DataTable detailTable = getDiscoveryDetailTable();
-    List<Object> v = new ArrayList<Object>();
+    List<T> v = new ArrayList<T>();
     if ( (summaryTable != null) && (c == summaryTable.getClass()) ) {
-        v.add ( summaryTable );
+        v.add ( (T)summaryTable );
     }
     if ( (detailTable != null) && (c == detailTable.getClass()) ) {
-        v.add ( detailTable );
+        v.add ( (T)detailTable );
     }
     return v;
 }

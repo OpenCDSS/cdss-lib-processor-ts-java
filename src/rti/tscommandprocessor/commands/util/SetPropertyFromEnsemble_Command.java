@@ -146,8 +146,10 @@ private Prop getDiscoveryProp ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  Prop
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
@@ -156,8 +158,8 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List<Prop> v = new ArrayList<Prop>(1);
-        v.add ( discovery_Prop );
+        List<T> v = new ArrayList<T>(1);
+        v.add ( (T)discovery_Prop );
         return v;
     }
     else {

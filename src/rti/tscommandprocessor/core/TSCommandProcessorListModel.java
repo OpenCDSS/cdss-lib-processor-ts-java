@@ -35,7 +35,7 @@ display time series commands that are managed in a TSCommandProcessor.  It allow
 to be the data model for the UI components.  Therefore, there is a single data model for UI and processing.
 */
 @SuppressWarnings("serial")
-public class TSCommandProcessorListModel extends AbstractListModel
+public class TSCommandProcessorListModel extends AbstractListModel<Object>
 implements CommandListListener
 {
 

@@ -261,8 +261,8 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
-@SuppressWarnings("rawtypes")
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
@@ -272,7 +272,7 @@ public List getObjectList ( Class c )
     // Use the most generic for the base class...
     // Check for TS request or class that matches the data...
     if ( (datats != null) && (c == TS.class) || (c == datats.getClass()) ) {
-        return discoveryTSList;
+        return (List<T>)discoveryTSList;
     }
     else {
         return null;

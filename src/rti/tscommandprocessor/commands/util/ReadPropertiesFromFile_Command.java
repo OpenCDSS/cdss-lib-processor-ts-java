@@ -210,8 +210,10 @@ protected List<PropertyFileFormatType> getFileFormatChoices ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  Prop
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     List<Prop> discoveryProps = getDiscoveryProps ();
     if ( discoveryProps == null ) {
@@ -220,7 +222,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for Prop request...
     if ( c == prop.getClass() ) {
-        return discoveryProps;
+        return (List<T>)discoveryProps;
     }
     else {
         return null;

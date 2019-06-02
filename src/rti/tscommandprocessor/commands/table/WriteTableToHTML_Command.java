@@ -358,7 +358,9 @@ throws IOException
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (List<String>)o;
+            @SuppressWarnings("unchecked")
+			List<String> outputCommentsList = (List<String>)o;
+            OutputComments_Vector = outputCommentsList;
         }
     }
     catch ( Exception e ) {

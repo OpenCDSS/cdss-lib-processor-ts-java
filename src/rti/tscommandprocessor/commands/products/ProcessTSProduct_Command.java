@@ -30,7 +30,6 @@ import java.awt.event.WindowListener;
 
 import javax.swing.JFrame;
 
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.GRTS.TSProcessor;
 import RTi.GRTS.TSProduct;

@@ -321,8 +321,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
@@ -332,7 +334,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -361,7 +363,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
         String Alias = null;
-    	int warning_count = 0;
+    	//int warning_count = 0;
         if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
             // There is an alias specified.  Extract the alias from the full command.
             String str = commandString.substring(3); // Alias = command()
@@ -372,7 +374,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                 Alias = "Invalid_Alias";
                 message = "No alias was specified, although the command started with \"TS ...\"";
                 Message.printWarning(warning_level, routine, message);
-                    ++warning_count;
+                    //++warning_count;
                 throw new InvalidCommandSyntaxException(message);
             }
     

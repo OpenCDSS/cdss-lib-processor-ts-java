@@ -52,7 +52,7 @@ import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import RTi.DMI.DMI;
+//import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -80,8 +80,8 @@ private boolean __ok = false;
 
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
-private DatabaseDataStore __dataStore = null; // selected data store
-private DMI __dmi = null; // DMI to do queries.
+//private DatabaseDataStore __dataStore = null; // selected data store
+//private DMI __dmi = null; // DMI to do queries.
 
 /**
 Command dialog constructor.
@@ -124,8 +124,8 @@ private void actionPerformedDataStoreSelected ( )
         // Startup initialization
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    //__dataStore = getSelectedDataStore();
+    //__dmi = ((DatabaseDataStore)__dataStore).getDMI();
 }
 
 /**
@@ -138,8 +138,8 @@ private void checkInput ()
     String DataStore = __DataStore_JComboBox.getSelected();
     if ( (DataStore != null) && DataStore.length() > 0 ) {
         props.set ( "DataStore", DataStore );
-        __dataStore = getSelectedDataStore();
-        __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        //__dataStore = getSelectedDataStore();
+        //__dmi = ((DatabaseDataStore)__dataStore).getDMI();
     }
     else {
         props.set ( "DataStore", "" );
@@ -175,6 +175,7 @@ private void commitEdits ()
 /**
 Get the selected data store.
 */
+/*
 private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
@@ -189,6 +190,7 @@ private DatabaseDataStore getSelectedDataStore ()
     }
     return dataStore;
 }
+*/
 
 /**
 Instantiates the GUI components.

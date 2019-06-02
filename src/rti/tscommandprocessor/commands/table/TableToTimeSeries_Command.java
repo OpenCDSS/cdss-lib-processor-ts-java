@@ -131,12 +131,12 @@ private TimeInterval __interval = null;
 /**
 Location column for each time series being processed, expanded for runtime.
 */
-private String __locationColumnRuntime = null;
+//private String __locationColumnRuntime = null;
 
 /**
 Location Type for each time series being processed, expanded for runtime.
 */
-private List<String> __locationTypeRuntime = new ArrayList<String>();
+//private List<String> __locationTypeRuntime = new ArrayList<String>();
 
 /**
 Location type for each time series being processed.
@@ -329,7 +329,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_TC, 0) >= 0 ) {
             // Original string used slice notation for column name
             try {
-                List<String> dateTimeColumnName = new Vector();
+                List<String> dateTimeColumnName = new Vector<String>();
                 dateTimeColumnName.add ( DateTimeColumn ); // Only one
                 //dateTimeColumnName = readColumnNamesFromFile(InputFile_full, dateTimeColumnName,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -366,7 +366,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(DateColumn,_TC, 0) >= 0 ) {
             // Original string used slice notation for column
             try {
-                List<String> dateColumnName = new Vector();
+                List<String> dateColumnName = new Vector<String>();
                 dateColumnName.add ( DateColumn ); // Only one
                 //dateColumnName = readColumnNamesFromFile(InputFile_full, dateColumnName,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -403,7 +403,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(TimeColumn,_TC, 0) >= 0 ) {
             // Original string used slice notation for column name
             try {
-                List<String> timeColumnName = new Vector();
+                List<String> timeColumnName = new Vector<String>();
                 timeColumnName.add ( TimeColumn ); // Only one
                 //timeColumnName = readColumnNamesFromFile(InputFile_full, timeColumnName,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -524,7 +524,7 @@ throws InvalidCommandParameterException
         }
         setFlagColumnsRuntime ( flagColumnsRuntime );
         // Now check for valid column names...
-        for ( String flagColumnRuntime : flagColumnsRuntime ) {
+        //for ( String flagColumnRuntime : flagColumnsRuntime ) {
             /* TODO SAM 2012-11-12 Need to enable something
             if ( getColumnNumberFromName(flagColumnRuntime, getFlagColumnsRuntime()) < 0 ) {
                 message = "The FlagColumn (" + flagColumnRuntime + ") is not a recognized column name.";
@@ -534,7 +534,7 @@ throws InvalidCommandParameterException
                         message, "Specify flag column(s) matching ColumnNames, separated by commas." ) );
             }
             */
-        }
+        //}
     }
     if ( (valueColumnsRuntime.size() > 0) && (flagColumnsRuntime.size() > 0) &&
         (valueColumnsRuntime.size() != flagColumnsRuntime.size()) ) {
@@ -843,7 +843,7 @@ throws InvalidCommandParameterException
         setSequenceID ( tokens );
     }
     
-    List<String> units = new Vector();
+    List<String> units = new Vector<String>();
     setUnits ( units );
     if ( (Units != null) && !Units.equals("") ) {
         // Can have one value that is re-used, or units for each time series
@@ -883,7 +883,7 @@ throws InvalidCommandParameterException
     setUnits ( units );
     */
     
-    setMissingValue ( new Vector() );
+    setMissingValue ( new Vector<String>() );
     if ( (MissingValue != null) && !MissingValue.equals("") ) {
         // Can have one or more values that should be interpreted as missing
         List<String>tokens = StringUtil.breakStringList(MissingValue, ",", 0);
@@ -1173,7 +1173,7 @@ Get the column names by handling the TC[] notation.
 */
 private List<String> getColumnNamesFromNotation ( DataTable table, String columnName0 )
 {   String routine = getClass().getName() + ".getColumnNamesFromNotation";
-    List<String> columnNames = new Vector();
+    List<String> columnNames = new Vector<String>();
     List<String> columnHeadingList = Arrays.asList(table.getFieldNames());
     int nColumnHeadings = columnHeadingList.size();
     // Much of the following matches code in the ReadDelimitedFile() command, but here we are processing a table
@@ -1212,6 +1212,7 @@ private List<String> getColumnNamesFromNotation ( DataTable table, String column
 /**
 Return the runtime column names list.
 */
+@SuppressWarnings("unused")
 private List<String> getColumnNamesRuntime()
 {
     return __columnNamesRuntime;
@@ -1445,7 +1446,8 @@ private List<String> getMissingValue()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
@@ -1455,7 +1457,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_List.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_List;
+        return (List<T>)discovery_TS_List;
     }
     else {
         return null;
@@ -1562,7 +1564,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
     int dataTypePos = -1;
     int scenarioPos = -1;
     int sequenceIDPos = -1;
-    int unitsPos = -1;
+    //int unitsPos = -1;
     int valuePos = -1;
     // Determine column positions for metadata columns
     if ( (locationTypeColumn != null) && !locationTypeColumn.equals("") ) {
@@ -1627,7 +1629,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
     }
     if ( (unitsColumn != null) && !unitsColumn.equals("") ) {
         try {
-            unitsPos = table.getFieldIndex(unitsColumn);
+            //unitsPos = table.getFieldIndex(unitsColumn);
         }
         catch ( Exception e ) {
             if ( commandPhase == CommandPhaseType.RUN ) {
@@ -2828,7 +2830,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType commandPh
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
-    int log_level = 3;
+    //int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
@@ -2856,7 +2858,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
     	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
-	String LocationType = parameters.getValue("LocationType");
+	//String LocationType = parameters.getValue("LocationType");
 	String LocationID = parameters.getValue("LocationID");
 	if ( (LocationID != null) && (LocationID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
@@ -3267,6 +3269,7 @@ private void setSequenceID ( List<String> sequenceID )
 /**
 Set the rows to skip (integer ranges).
 */
+@SuppressWarnings("unused")
 private void setSkipRows ( int[][] skipRows )
 {
     __skipRows = skipRows;

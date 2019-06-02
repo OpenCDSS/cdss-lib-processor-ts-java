@@ -147,9 +147,9 @@ throws InvalidCommandParameterException
 	String DefaultDownstreamNodeID = parameters.getValue ( "DefaultDownstreamNodeID" );
 	String TableID = parameters.getValue ( "TableID" );
     String NodeIDColumn = parameters.getValue ( "NodeIDColumn" );
-    String NodeTypeColumn = parameters.getValue ( "NodeTypeColumn" );
+    //String NodeTypeColumn = parameters.getValue ( "NodeTypeColumn" );
     String DownstreamNodeIDColumn = parameters.getValue ( "DownstreamNodeIDColumn" );
-    String NodeDistanceColumn = parameters.getValue ( "NodeDistanceColumn" );
+    //String NodeDistanceColumn = parameters.getValue ( "NodeDistanceColumn" );
 	String warning = "";
     String message;
     
@@ -349,12 +349,13 @@ private NodeNetwork getDiscoveryNetwork()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   NodeNetwork network = getDiscoveryNetwork();
     if ( (network != null) && (c == network.getClass()) ) {
         // Network request
-        List<NodeNetwork> v = new ArrayList<NodeNetwork>();
-        v.add ( network );
+        List<T> v = new ArrayList<T>();
+        v.add ( (T)network );
         return v;
     }
 	return null;
@@ -707,9 +708,9 @@ CommandWarningException, CommandException
             if ( (NodeDistanceColumn != null) && !NodeDistanceColumn.equals("") ) {
                 nodeDistanceColumnNum = table.getFieldIndex(NodeDistanceColumn);
             }
-            int nodeWeightColumnNum = -1;
+            //int nodeWeightColumnNum = -1;
             if ( (NodeWeightColumn != null) && !NodeWeightColumn.equals("") ) {
-                nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
+                //nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
             }
             int downstreamNodeIdColumnNum = table.getFieldIndex(DownstreamNodeIDColumn);
             // Initialize the network from table information using column numbers for primary data

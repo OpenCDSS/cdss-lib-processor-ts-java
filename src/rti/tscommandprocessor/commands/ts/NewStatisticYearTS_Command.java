@@ -428,8 +428,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects created by this object in discovery mode.
+Classes that can be requested:  TS, TSEnsemble
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
@@ -446,12 +448,12 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            return discoveryTSList;
+            return (List<T>)discoveryTSList;
         }
     }
     else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        List<TSEnsemble> v = new ArrayList<TSEnsemble>();
-        v.add ( tsensemble );
+        List<T> v = new ArrayList<T>();
+        v.add ( (T)tsensemble );
         return v;
     }
     else {

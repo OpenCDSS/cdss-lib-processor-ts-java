@@ -865,8 +865,10 @@ private List<String> getLocationIDRuntime(String LocationID, String inputFileFul
 
 /**
 Return the list of data objects read by this object in discovery mode.
+Classes that can be requested: TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
@@ -876,7 +878,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_List.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_List;
+        return (List<T>)discovery_TS_List;
     }
     else {
         return null;

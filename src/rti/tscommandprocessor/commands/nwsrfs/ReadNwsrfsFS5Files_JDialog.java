@@ -67,6 +67,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the the ReadNwsrfsFS5Files().
 */
+@SuppressWarnings("serial")
 public class ReadNwsrfsFS5Files_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

@@ -201,6 +201,7 @@ throws InvalidCommandParameterException
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
+// TODO smalers 2019-06-01 evaluate whether neeeded
 /**
 Check the datastore for a property.  Use a hashtable to look up information about the datastore.
 This minimizes heavy processing on database metadata.
@@ -208,6 +209,7 @@ This minimizes heavy processing on database metadata.
 @param tableName name to check for existence
 @param columnNmae column to check for existence
 */
+@SuppressWarnings("unused")
 private String checkDataStoreProperty(DatabaseMetaData dbMeta, String tableName, String columnName, String propertyName,
     String tableNote, String columnNote, List<String> problems )
 {
@@ -998,7 +1000,7 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
         }
         sqlString = ds.toString();
         try {
-            int rowCount = dmi.dmiDelete(ds);
+            //int rowCount = dmi.dmiDelete(ds);
             //Message.printStatus(2, routine, "Deleted " + rowCount + " rows with statement \"" + dmi.getLastQueryString() + "\".");
         }
         catch ( Exception e ) {
@@ -1156,7 +1158,7 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
             // Write the data using the statement that was built
             sqlString = ws.toString();
             try {
-                int rowCount = dmi.dmiWrite(ws, writeMode.getCode());
+                //int rowCount = dmi.dmiWrite(ws, writeMode.getCode());
                 //Message.printStatus(2, routine, "Wrote " + rowCount + " rows with statement \"" + dmi.getLastQueryString() + "\".");
             }
             catch ( Exception e ) {

@@ -955,11 +955,11 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
 		        }
 		        // Process the data array
 		        TSData tsdata;
-		        String valueFormat = "%.4f";
+		        //String valueFormat = "%.4f";
 		        if ( precision != null ) {
-		            valueFormat = "%." + precision + "f";
+		            //valueFormat = "%." + precision + "f";
 		        }
-		        StringBuffer b = new StringBuffer();
+		        //StringBuffer b = new StringBuffer();
 		        int count = 0;
 		        int nonMissingCount = 0;
 		        while ( (tsdata = tsi.next()) != null ) {

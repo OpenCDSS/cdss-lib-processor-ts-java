@@ -437,19 +437,21 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return a list of objects of the requested type.
+Classes that can be requested:  TS, TSEnsenble
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   TSEnsemble tsensemble = getDiscoveryTSEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-    	List<TSEnsemble> v = new Vector<TSEnsemble>();
-        v.add ( tsensemble );
+    	List<T> v = new Vector<T>();
+        v.add ( (T)tsensemble );
     }
     else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {
         // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
         TS datats = discoveryTSList.get(0);
         if ((c == TS.class) || (c == datats.getClass()) ) {
-            return discoveryTSList;
+            return (List<T>)discoveryTSList;
         }
     }
     return null;

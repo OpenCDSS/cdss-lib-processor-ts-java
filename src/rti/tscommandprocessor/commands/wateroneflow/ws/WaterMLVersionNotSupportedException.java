@@ -28,6 +28,7 @@ import java.security.InvalidParameterException;
 /**
 This exception should be thrown when a method does not support a certain WaterML version.
 */
+@SuppressWarnings("serial")
 public class WaterMLVersionNotSupportedException extends InvalidParameterException
 {
 

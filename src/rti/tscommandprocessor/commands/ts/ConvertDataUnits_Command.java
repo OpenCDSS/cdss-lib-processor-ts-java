@@ -155,14 +155,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),",0 );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),",0 );
 		String TSID = "";
 		String NewUnits = "";
 		if ( (v != null) && (v.size() == 3) ) {
 			// Second field is identifier...
-			TSID = ((String)v.get(1)).trim();
+			TSID = v.get(1).trim();
 			// Third field has new units...
-			NewUnits = ((String)v.get(2)).trim();
+			NewUnits = v.get(2).trim();
 		}
 
 		// Set parameters and new defaults...
@@ -259,7 +259,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -271,7 +271,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message,
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
-	else {	tslist = (List)o_TSList;
+	else {
+		@SuppressWarnings("unchecked")
+		List<TS> dataList = (List<TS>)o_TSList;
+		tslist = dataList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

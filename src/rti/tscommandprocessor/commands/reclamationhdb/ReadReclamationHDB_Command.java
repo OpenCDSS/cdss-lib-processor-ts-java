@@ -35,7 +35,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -300,8 +299,10 @@ public int getNumFilterGroups ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS, TSEnsemble
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
@@ -311,7 +312,7 @@ public List getObjectList ( Class c )
     TS datats = discoveryTSList.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discoveryTSList;
+        return (List<T>)discoveryTSList;
     }
     else if ( c == TSEnsemble.class ) {
         TSEnsemble ensemble = getDiscoveryEnsemble();
@@ -319,8 +320,8 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            List<TSEnsemble> v = new ArrayList<TSEnsemble>();
-            v.add ( ensemble );
+            List<T> v = new ArrayList<T>();
+            v.add ( (T)ensemble );
             return v;
         }
     }

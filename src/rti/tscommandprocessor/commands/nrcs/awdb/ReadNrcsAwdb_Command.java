@@ -344,17 +344,19 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  DataTable, TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     DataTable table = getDiscoveryTable();
     if ( (table != null) && (c == table.getClass()) ) {
         // Asking for tables
-        List<DataTable> list = null;
+        List<T> list = null;
         if ( table != null ) {
-            list = new ArrayList<DataTable>();
-            list.add ( table );
+            list = new ArrayList<T>();
+            list.add ( (T)table );
         }
         return list;
     }
@@ -365,7 +367,7 @@ public List getObjectList ( Class c )
     TS datats = discoveryTSList.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discoveryTSList;
+        return (List<T>)discoveryTSList;
     }
     else {
         return null;

@@ -315,6 +315,7 @@ private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int 
 /**
 Convert a TimeInterval interval to a ReclamationHDB interval for use with read code.
 */
+@SuppressWarnings("unused")
 private String convertTimeIntervalToReclamationHDBInterval(String interval)
 {
     if ( interval.equalsIgnoreCase("year") ) {

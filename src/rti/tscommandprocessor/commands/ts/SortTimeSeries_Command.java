@@ -194,7 +194,7 @@ throws CommandWarningException, CommandException
 	}
     else {
         try {
-            TSUtil_SortTimeSeries tsu = new TSUtil_SortTimeSeries(tslist, TSIDFormat, Property, PropertyFormat, sortOrder );
+            TSUtil_SortTimeSeries<TS> tsu = new TSUtil_SortTimeSeries(tslist, TSIDFormat, Property, PropertyFormat, sortOrder );
             List<TS> tslistSorted = tsu.sortTimeSeries();
             // TODO SAM 2014-07-14 Might be dangerous to do the following so replace the existing list
             //processor.setPropContents ( "TSResultsList", tslistSorted );

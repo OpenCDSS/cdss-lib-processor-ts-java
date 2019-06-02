@@ -89,7 +89,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private SimpleJList __Method_SimpleJList = null;
+private SimpleJList<String> __Method_SimpleJList = null;
 private JTextField __Percentile_JTextField = null;
 private JTextField __PatternID_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
@@ -403,7 +403,7 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	List<String> av = new ArrayList<String>();
 	av.add( __command._ANALYSIS_PERCENTILE  );
-	__Method_SimpleJList = new SimpleJList (av);
+	__Method_SimpleJList = new SimpleJList<String>(av);
 	av = null;
 	__Method_SimpleJList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
 	__Method_SimpleJList.setVisibleRowCount       ( 1 );

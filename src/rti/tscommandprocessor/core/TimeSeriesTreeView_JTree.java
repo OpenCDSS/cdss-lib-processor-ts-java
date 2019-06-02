@@ -101,18 +101,14 @@ public void actionPerformed(ActionEvent event)
     String routine = getClass().getName() + ".actionPerformed";
 
     //Object data = __popup_Node.getData();
-    List selectedNodes = getSelectedNodes();
+    List<SimpleJTree_Node> selectedNodes = getSelectedNodes();
     
     if ( action.equals(__MENU_Graph_Line)) {
         List<TS> tslist = new Vector<TS>();
-        for ( Object o : selectedNodes ) {
-            // TODO SAM Don't like all the casting but the low-level code deals with generic objects
-            if ( o instanceof SimpleJTree_Node ) {
-                SimpleJTree_Node node = (SimpleJTree_Node)o;
-                Object data = node.getData();
-                if ( data instanceof TS ) {
-                    tslist.add ( (TS)data );
-                }
+        for ( SimpleJTree_Node node : selectedNodes ) {
+            Object data = node.getData();
+            if ( data instanceof TS ) {
+            	tslist.add ( (TS)data );
             }
         }
         PropList graphprops = new PropList ( "GraphProperties");

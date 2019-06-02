@@ -212,7 +212,8 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
@@ -220,7 +221,7 @@ public List getObjectList ( Class c )
     }
     TS datats = discovery_TS_List.get(0);
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_List;
+        return (List<T>)discovery_TS_List;
     }
     else {
         return null;
@@ -241,7 +242,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     CommandProcessor processor = getCommandProcessor();
     String message;
     CommandStatus status = getCommandStatus();
-    int warning_level = 2;
+    //int warning_level = 2;
     int log_level = 3;
     try {
         bean = processor.processRequest( "GetTimeSeries", request_params);

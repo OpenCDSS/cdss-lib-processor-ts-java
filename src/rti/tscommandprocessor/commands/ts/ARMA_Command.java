@@ -413,8 +413,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
     List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
@@ -424,7 +426,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -841,7 +843,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 		}
 		else {
-	        tslist = (List<TS>)o_TSList;
+	        @SuppressWarnings("unchecked")
+			List<TS> dataList = (List<TS>)o_TSList;
+	        tslist = dataList;
 			if ( tslist.size() == 0 ) {
 	            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

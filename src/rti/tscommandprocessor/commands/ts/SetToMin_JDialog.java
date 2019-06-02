@@ -85,8 +85,8 @@ private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
 private JLabel __IndependentSpecifiedTSID_JLabel = null;
-private DefaultListModel __IndependentSpecifiedTSID_JListModel = null;
-private JList __IndependentSpecifiedTSID_JList= null;
+private DefaultListModel<String> __IndependentSpecifiedTSID_JListModel = null;
+private JList<String> __IndependentSpecifiedTSID_JList= null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -332,7 +332,7 @@ private void initialize ( JFrame parent, Command command )
         new JLabel ("Independent specified TSID (for IndependentTSList=" + TSListType.SPECIFIED_TSID.toString() + "):");
     JGUIUtil.addComponent(main_JPanel, __IndependentSpecifiedTSID_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __IndependentSpecifiedTSID_JListModel = new DefaultListModel();
+    __IndependentSpecifiedTSID_JListModel = new DefaultListModel<String>();
     // Get the list again because above list will have "*" which we don't want
     List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -340,7 +340,7 @@ private void initialize ( JFrame parent, Command command )
     for ( int i = 0; i < size; i++ ) {
         __IndependentSpecifiedTSID_JListModel.addElement( tsids2.get(i));
     }
-    __IndependentSpecifiedTSID_JList = new JList ( __IndependentSpecifiedTSID_JListModel );
+    __IndependentSpecifiedTSID_JList = new JList<String> ( __IndependentSpecifiedTSID_JListModel );
     __IndependentSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
     __IndependentSpecifiedTSID_JList.addListSelectionListener ( this );
     __IndependentSpecifiedTSID_JList.addKeyListener ( this );

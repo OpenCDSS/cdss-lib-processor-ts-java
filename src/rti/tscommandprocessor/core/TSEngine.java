@@ -719,8 +719,6 @@ import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
-import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
-import RTi.DMI.RiversideDB_DMI.RiversideDBDataStore;
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
@@ -1027,16 +1025,6 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 			view.addTSProductDMI(hbdmi);
 		}
 	}
-	// Check the RiversideDB_DMI instances...
-	// TODO SAM 2010-08-31 This is ugly - need to abstract if possible
-    for ( DataStore ds : __dataStoreList ) {
-        if ( ds instanceof RiversideDBDataStore ) {
-            RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)ds).getDMI();
-            if ((rdmi != null) && (rdmi instanceof TSProductDMI)){
-                view.addTSProductDMI(rdmi);
-            }
-        }
-    }
 }
 
 /**
@@ -2368,15 +2356,6 @@ protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 	if ( (__smsdmi != null) && (__smsdmi instanceof TSProductAnnotationProvider) ) {
 		apList.add ( __smsdmi );
 	}
-	// Check the RiversideDB_DMI instances...
-    for ( DataStore ds: __dataStoreList ) {
-        if ( ds instanceof RiversideDBDataStore ) {
-            RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)ds).getDMI();
-            if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
-                apList.add ( (TSProductAnnotationProvider)rdmi );
-            }
-        }
-    }
 
 	return apList;
 }
@@ -4673,7 +4652,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// HydroBase, RccAcis, ReclamationHDB, RiversideDB, UsgsNwis).
+	// HydroBase, RccAcis, ReclamationHDB, UsgsNwis).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
@@ -4989,41 +4968,6 @@ throws Exception
 	else if ((inputType != null) && inputType.equalsIgnoreCase("NWSRFS_FS5Files") ) {
 		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( inputNameFull, true );
 		ts = nwsrfs_dmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
-	}
-	else if ((dataStore != null) && (dataStore instanceof RiversideDBDataStore) ) {
-		// New style TSID~input_type~dataStoreName for RiversideDB...
-        RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)dataStore).getDMI();
-        if ( rdmi == null ) {
-            Message.printWarning ( 3, routine, "Unable to get RiversideDB data store \"" + dataStore.getName() +
-                "\" from processor.  Unable to read time series." );
-            ts = null;
-        }
-        else if ( !rdmi.isOpen() ) {
-            Message.printWarning ( 3, routine, "RiversideDB data store \"" + dataStore.getName() +
-                "\" is not open.  Unable to read time series." );
-            ts = null;
-        }
-        else {
-            try {
-                ts = rdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
-            }
-			catch ( Exception te ) {
-				Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-				    "\" from RiversideDB \"" + dataStore.getName() + "\" (" + te + ")." );
-				Message.printWarning ( 3, routine, te );
-				ts = null;
-			}
-		}
-		// Because there are other issues to resolve, for now, if the time series does not have data, set it to null...
-		/* TODO SAM 2008-11-19 commen this out - should be able to handle no data, in particular if readData = false
-		if ( ts != null ) {
-			if ( !ts.hasData() ) {
-				Message.printWarning ( 2, routine,
-				"Time series \"" + tsident_string2 + "\" does not have data.  Treating as null." );
-				ts = null;
-			}
-		}
-		*/
 	}
     else if ((dataStore != null) && (dataStore instanceof PluginDataStore) ) {
         // New style TSID~dataStore

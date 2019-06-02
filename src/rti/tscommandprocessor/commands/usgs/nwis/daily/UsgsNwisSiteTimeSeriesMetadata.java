@@ -45,7 +45,7 @@ public UsgsNwisSiteTimeSeriesMetadata ()
 Data store associated with this record.  Use the interface because this class is used with
 multiple NWIS datastores.
 */
-private WebServiceDataStore __dataStore = null;
+//private WebServiceDataStore __dataStore = null;
 
 /**
 Parameter information.
@@ -218,7 +218,7 @@ Set the data store.
 */
 public void setDataStore ( WebServiceDataStore dataStore )
 {
-    __dataStore = dataStore;
+    //__dataStore = dataStore;
 }
 
 /**

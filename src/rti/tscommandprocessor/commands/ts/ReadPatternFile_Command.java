@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Vector;
 
 import DWR.StateMod.StateMod_TS;
+import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -66,7 +67,7 @@ public class ReadPatternFile_Command extends AbstractCommand implements Command,
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<StringMonthTS> __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -147,7 +148,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2008-09-17 Check the format.
     
 	//  Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>(1);
     valid_Vector.add ( "PatternFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -174,17 +175,19 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
+private List<StringMonthTS> getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
-	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+	List<StringMonthTS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
@@ -192,7 +195,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -332,7 +335,7 @@ CommandWarningException, CommandException
 
 	// Now process the file...
 
-	List tslist = null;
+	List<StringMonthTS> tslist = null;
 	try {
 	    Message.printStatus ( 2, routine, "Using \"" + PatternFile_full + "\" for fill pattern file." );
 	    // Read the fill pattern file.  Since multiple files may be read with multiple commands,
@@ -403,7 +406,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<StringMonthTS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

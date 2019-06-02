@@ -305,7 +305,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>(5);
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputStart" );
@@ -357,8 +357,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
@@ -368,7 +370,7 @@ public List getObjectList ( Class c )
     TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -742,7 +744,7 @@ throws InvalidCommandParameterException,
         }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-    	List tslist = new Vector(1);
+    	List<TS> tslist = new Vector<TS>(1);
         tslist.add ( ts );
         setDiscoveryTSList ( tslist );
     }
@@ -761,7 +763,7 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

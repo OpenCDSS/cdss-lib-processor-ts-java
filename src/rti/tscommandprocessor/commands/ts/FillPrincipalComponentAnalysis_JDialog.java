@@ -46,6 +46,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.BufferedReader;
 import java.util.List;
 import java.util.Vector;
@@ -84,11 +85,10 @@ import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
 import java.awt.Color;
-import java.awt.GridLayout;
-import javax.swing.BoxLayout;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+@SuppressWarnings("serial")
 public class FillPrincipalComponentAnalysis_JDialog extends JDialog
 	implements ActionListener,
 	 	   ItemListener,
@@ -121,7 +121,7 @@ private JScrollPane	__Command_JScrollPane = null; // ScrollPane
 private SimpleJComboBox	__DependentTSList_JComboBox = null;
 						// Indicate how to get time
 						// series list.
-private SimpleJList	 __DependentTSID_SimpleJList= null;
+private SimpleJList<String>	 __DependentTSID_SimpleJList= null;
 private JPopupMenu	 __DependentTS_JPopupMenu   = null;
 						// Fields for the dependent time
 						// series identifiers
@@ -135,7 +135,7 @@ private JLabel      __IndependentTSID_ComboBoxLabel = null;
 private SimpleJComboBox __IndependentTSID_SimpleJComboBox = null;
 private JLabel      __IndependentTSID_ComboBoxNote = null;
 private JLabel      __IndependentTSID_ListLabel = null;
-private SimpleJList	 __IndependentTSID_SimpleJList= null;
+private SimpleJList<String>	 __IndependentTSID_SimpleJList= null;
 private JLabel      __IndependentTSID_ListNote = null;
 private JPopupMenu	 __IndependentTS_JPopupMenu   = null;
 						// Field for independent time
@@ -228,7 +228,7 @@ private SimpleJButton __pathPCA_JButton = null,
 
 // Member initialized by the createFillCommands() method and used by the
 // the update FillCommandsControl() and copyCommandsToTSTool() methods.
-List __fillCommands_Vector = null;
+List<String> __fillCommands_Vector = null;
 
 // Member flag Used to prevent ValueChange method to execute refresh()
 boolean ignoreValueChanged = false;
@@ -290,15 +290,13 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __browse_JButton || o == __browseTS_JButton) {
 
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
 			fc = JFileChooserFactory.createJFileChooser(
 				last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {	fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle( "Select output file");
 		SimpleFileFilter sff;
@@ -346,7 +344,7 @@ public void actionPerformed( ActionEvent event )
 		reportProp.set("Title = " + outputFile);
 
 		// First add the content of the Output file, if any.
-		List strings = new Vector();
+		List<String> strings = new Vector<String>();
 		if ( !outputFile.equals("") ) {
 			strings = readTextFile ( outputFile );
 		}
@@ -696,50 +694,6 @@ private void fillDependents()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	// Dependent time series
-	__DependentTSList_JComboBox	= null;
-	__DependentTSID_SimpleJList	= null;
-	__DependentTS_JPopupMenu = null;
-
-	// Independent time series
-	__IndependentTSList_JComboBox = null;
-	__IndependentTSID_SimpleJList = null;
-	__IndependentTS_JPopupMenu	= null;
-
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-
-	__MaxCombinations_JTextField = null;
-    __RegressionEquationFill_SimpleJComboBox = null;
-
-	__PCAOutputFile_JTextField	 = null;
-	__FilledTSOutputFile_JTextField	 = null;
-
-	// Command Buttons
-	__browse_JButton = null;
-    __browseTS_JButton = null;
-	__cancel_JButton = null;
-	__ok_JButton = null;
-	__analyze_JButton = null;
-	__view_JButton = null;
-	__viewTS_JButton = null;
-	__copyFillCommandsToTSTool_JButton = null;
-	__fillDependents_JButton = null;
-
-	// Member initialized by the createFillCommands() method and used by the
-	// the update FillCommandsControl() and copyCommandsToTSTool() methods.
-	__fillCommands_Vector = null;
-
-	super.finalize ();
-}
-
-/**
 Return a comma-delimited string containing the DependentTSIDs, built from the
 selected items. 
 */
@@ -763,8 +717,7 @@ private String getDependentTSIDFromInterface()
 		DependentTSID = "";
 		if ( JGUIUtil.selectedSize(__DependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			List dependent =
-				__DependentTSID_SimpleJList.getSelectedItems();
+			List<String> dependent = __DependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < dependent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
@@ -797,8 +750,7 @@ private String getIndependentTSIDFromInterface()
 		IndependentTSID = "";
 		if ( JGUIUtil.selectedSize(__IndependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			List independent =
-				__IndependentTSID_SimpleJList.getSelectedItems();
+			List<String> independent = __IndependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < independent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
@@ -815,7 +767,6 @@ private String getIndependentTSIDFromInterface()
 	
 	return IndependentTSID;
 }
-
 
 /**
 Instantiates the GUI components.
@@ -915,16 +866,18 @@ private void initialize ( JFrame parent )
 
 	// Create a list containing the identifiers needed to populate the
 	// dependent and independent time series controls. 
-	List tsids = null;
+	List<String> tsids = null;
 	if ( __command.isCommandMode() ) {
 		
 		tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 				(TSCommandProcessor)__command.getCommandProcessor(), __command );
 		
 	} else {
-		List tsObjects = null;
-		try { Object o = __processor.getPropContents ( "TSResultsList" );
-			tsObjects = (List)o;
+		List<TS> tsObjects = null;
+		try {
+			@SuppressWarnings("unchecked")
+			List<TS> dataList = (List<TS>)__processor.getPropContents ( "TSResultsList" );
+			tsObjects = dataList;
 		}
 		catch ( Exception e ) {
 				String message = "Cannot get time series list to process.";
@@ -933,9 +886,9 @@ private void initialize ( JFrame parent )
 		// Create a vector containing the ts identifiers.
 		if ( tsObjects != null ) {
 			int size = tsObjects.size();
-			tsids = new Vector( size );
+			tsids = new Vector<String>( size );
 			for ( int i = 0; i < size; i++ ) {
-				TS ts = (TS) tsObjects.get(i);
+				TS ts = tsObjects.get(i);
                 String display_name = ts.getAlias();
 				if ( display_name != null && display_name.length()>0 ) {
                     tsids.add ( ts.getAlias() );
@@ -964,7 +917,7 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ("Dependent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DependentTSList_JComboBox = new SimpleJComboBox(false);
-    List DepTSList_Vector = new Vector();
+    List<String> DepTSList_Vector = new Vector<String>();
     DepTSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString());
 	__DependentTSList_JComboBox.setData ( DepTSList_Vector );
 	__DependentTSList_JComboBox.addItemListener (this);
@@ -979,13 +932,13 @@ private void initialize ( JFrame parent )
 		"Dependent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-	List dts = new Vector();
+	List<String> dts = new Vector<String>();
 	for ( int i = 0; i < size; i++ ) {
 		dts.add( (String) tsids.get(i) );
 	}
-	dts.add( (String) "*" );
+	dts.add( "*" );
 
-	__DependentTSID_SimpleJList = new SimpleJList (dts);
+	__DependentTSID_SimpleJList = new SimpleJList<String>(dts);
 	__DependentTSID_SimpleJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__DependentTSID_SimpleJList.setVisibleRowCount( 2 );
 	// Make sure to set the flag ignoreValueChanged to false and
@@ -1013,9 +966,9 @@ private void initialize ( JFrame parent )
     __IndependentTSList_JComboBox.remove(TSListType.ENSEMBLE_ID.toString());
     
 
-	List its = new Vector();
+	List<String> its = new Vector<String>();
 	for ( int i = 0; i < size; i++ ) {
-		its.add( (String) tsids.get(i) );
+		its.add( tsids.get(i) );
 	}
     // "*" is automatically added
     
@@ -1030,7 +983,7 @@ private void initialize ( JFrame parent )
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __IndependentTSID_ListLabel = new JLabel ("Independent time series (for TSList=" + TSListType.SPECIFIED_TSID.toString() + "):");
-	__IndependentTSID_SimpleJList = new SimpleJList(its);
+	__IndependentTSID_SimpleJList = new SimpleJList<String>(its);
 	__IndependentTSID_SimpleJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__IndependentTSID_SimpleJList.setVisibleRowCount( 5 );
 	// Make sure to set the flag ignoreValueChanged to false and
@@ -1129,7 +1082,7 @@ private void initialize ( JFrame parent )
     // regression equation to use for fill
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ("Regression Equation:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List tmp_Vector = new Vector();
+    List<String> tmp_Vector = new Vector<String>();
     tmp_Vector.add ( "XXX");
 	__RegressionEquationFill_SimpleJComboBox = new SimpleJComboBox (false);
 	__RegressionEquationFill_SimpleJComboBox.addItemListener(this);
@@ -1473,16 +1426,15 @@ Read the content of a text file, returning a vector of strings,
 one string per line.
 @param fileName - The file (path and file) to read.
 */
-List readTextFile ( String fileName )
+List<String> readTextFile ( String fileName )
 {
-	List 	_fileContent = new Vector();	// The return vector.
+	List<String> _fileContent = new Vector<String>();	// The return vector.
 	FileReader _fileReader;			// The actual file stream.
-	BufferedReader	_bufferedReader ;	// Used to read the file line by line.
+	BufferedReader	_bufferedReader = null;	// Used to read the file line by line.
 	String line;
 
 	try {
-		String adjusted_path = IOUtil.adjustPath (
-				 __working_dir, fileName);
+		String adjusted_path = IOUtil.adjustPath ( __working_dir, fileName);
 		_fileReader     = new FileReader ( new File( adjusted_path ) );
 		_bufferedReader = new BufferedReader( _fileReader );
 
@@ -1495,6 +1447,15 @@ List readTextFile ( String fileName )
 		Message.printWarning ( 1, "", "Error reading file." );
 		this.requestFocus();
 		return null;
+	}
+	finally {
+		try {
+			if ( _bufferedReader != null ) {
+				_bufferedReader.close();
+			}
+		}
+		catch ( IOException e ) {
+		}
 	}
 
 	return _fileContent;
@@ -1543,7 +1504,7 @@ private void refresh()
 	__error_wait = false;
 
 	PropList props 	= null;
-	List v	= null;
+	List<String> v	= null;
 
 	if ( __first_time ) {
 		__first_time = false;
@@ -1622,10 +1583,10 @@ private void refresh()
 				DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
 			int size = v.size();
 			int pos = 0;
-			List selected = new Vector();
+			List<String> selected = new Vector<String>();
 			String dependent = "";
 			for ( int i = 0; i < size; i++ ) {
-				dependent = (String)v.get(i);
+				dependent = v.get(i);
 				if ( (pos = JGUIUtil.indexOf(
 					__DependentTSID_SimpleJList,
 					dependent, false, true))>= 0 ) {
@@ -1666,7 +1627,7 @@ private void refresh()
                     StringUtil.DELIM_SKIP_BLANKS );
                 int size = v.size();
                 int pos = 0;
-                List selected = new Vector();
+                List<String> selected = new Vector<String>();
                 String independent = "";
                 for ( int i = 0; i < size; i++ ) {
                     independent = (String)v.get(i);
@@ -1695,10 +1656,9 @@ private void refresh()
                     int [] iselected = new int[selected.size()];
                     for ( int is = 0; is < iselected.length; is++ ){
                         iselected[is] = StringUtil.atoi (
-                        (String)selected.get(is));
+                        selected.get(is));
                     }
-                    __IndependentTSID_SimpleJList.setSelectedIndices(
-                        iselected );
+                    __IndependentTSID_SimpleJList.setSelectedIndices( iselected );
                 }
             } else if ( IndependentTSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ||
                     IndependentTSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ||
@@ -1852,7 +1812,7 @@ private void resetTimeSeriesID_JLists()
 {
 	int size;
 
-	List dependent = __DependentTSID_SimpleJList.getSelectedItems();
+	List<String> dependent = __DependentTSID_SimpleJList.getSelectedItems();
 	size = dependent.size();
 	if ( size > 1 ) {
 		for ( int i = 0; i < size; i++ ) {
@@ -1864,7 +1824,7 @@ private void resetTimeSeriesID_JLists()
 		}
 	}
 
-	List independent = __IndependentTSID_SimpleJList.getSelectedItems();
+	List<String> independent = __IndependentTSID_SimpleJList.getSelectedItems();
 	size = independent.size();
 	if ( size > 1 ) {
 		for ( int i = 0; i < size; i++ ) {
@@ -1971,7 +1931,7 @@ private void updateFillCommandsControl ()
 	String s, commandList = "";
 	int nCommands = __fillCommands_Vector.size();
 	for ( int n=0; n<nCommands; n++ ) {
-		s = (String) __fillCommands_Vector.get(n) + "\n";
+		s = __fillCommands_Vector.get(n) + "\n";
 		commandList = commandList + s;
 	}
 	__Command_JTextArea.setText( commandList );

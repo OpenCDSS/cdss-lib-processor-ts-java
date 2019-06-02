@@ -24,7 +24,6 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.awt.Color;
-import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -59,7 +58,6 @@ import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -76,6 +74,7 @@ import RTi.Util.Time.DateTime;
 /**
 Editor for the ReadReclamationHDB() command.
 */
+@SuppressWarnings("serial")
 public class ReadReclamationHDB_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -673,10 +672,12 @@ private String getSelectedEnsembleModelRunID()
 }
 */
 
+// TODO smalers determine whether needed
 /**
 Return the selected model ID corresponding to the selected model name by querying the database.
 @return the selected model ID or -1 if the model ID cannot be determined.
 */
+@SuppressWarnings("unused")
 private int getSelectedModelID()
 {   String modelName = __ModelName_JComboBox.getSelected();
     ReclamationHDB_DMI rdmi = getReclamationHDB_DMI();
@@ -1639,10 +1640,10 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
 TODO SAM 2013-04-06 Need to enable this to refresh based on datastore selection.
 Set the input filters in response to a new datastore being selected.
 */
-private void populateInputFilters ()
-{
-
-}
+//private void populateInputFilters ()
+//{
+//
+//}
 
 /**
 Set the data interval choices in response to a new datastore being selected.
@@ -2102,7 +2103,7 @@ private void refresh ()
     String ModelRunID = "";
     String EnsembleName = "";
     String OutputEnsembleID = "";
-    String EnsembleTraceID = "";
+    //String EnsembleTraceID = "";
     String EnsembleModelName = "";
     String EnsembleModelRunDate = "";
     String EnsembleModelRunID = "";
@@ -2129,7 +2130,7 @@ private void refresh ()
         ModelRunID = props.getValue ( "ModelRunID" );
         EnsembleName = props.getValue ( "EnsembleName" );
         OutputEnsembleID = props.getValue ( "OutputEnsembleID" );
-        EnsembleTraceID = props.getValue ( "EnsembleTraceID" );
+        //EnsembleTraceID = props.getValue ( "EnsembleTraceID" );
         EnsembleModelName = props.getValue ( "EnsembleModelName" );
         EnsembleModelRunDate = props.getValue ( "EnsembleModelRunDate" );
         EnsembleModelRunID = props.getValue ( "EnsembleModelRunID" );
@@ -2691,7 +2692,7 @@ Update the ensemble information text fields.
 */
 private void updateEnsembleIDTextFields ()
 {   // Ensemble information...
-    List<ReclamationHDB_Ensemble> ensembleList = null;
+    //List<ReclamationHDB_Ensemble> ensembleList = null;
     /*
     try {
         ensembleList = __dmi.findEnsemble(__ensembleList, __EnsembleName_JComboBox.getSelected() );

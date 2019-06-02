@@ -174,12 +174,13 @@ private TSEnsemble getDiscoveryEnsemble()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-	List<TSEnsemble> v = null;
+	List<T> v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector<TSEnsemble>();
-        v.add ( tsensemble );
+        v = new Vector<T>();
+        v.add ( (T)tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
     return v;

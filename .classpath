@@ -4,7 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-nwsrfs-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-java"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-riversidedb-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-satmonsys-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-models-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-common-java"/>

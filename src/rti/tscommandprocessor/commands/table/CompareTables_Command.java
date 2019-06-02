@@ -335,12 +335,13 @@ private File getOutputFile ()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List<Object> getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
-    List<Object> v = null;
+    List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList<Object>();
-        v.add ( table );
+        v = new ArrayList<T>();
+        v.add ( (T)table );
     }
     return v;
 }

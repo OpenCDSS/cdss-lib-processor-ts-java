@@ -184,13 +184,15 @@ private TimeSeriesView getDiscoveryView()
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of TimeSeriesView objects.
+Classes that can be requested:  TimeSeriesView
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   TimeSeriesView view = getDiscoveryView();
-    List<TimeSeriesView> v = null;
+    List<T> v = null;
     if ( (view != null) && (c == view.getClass()) ) {
-        v = new Vector<TimeSeriesView>();
-        v.add ( view );
+        v = new Vector<T>();
+        v.add ( (T)view );
     }
     return v;
 }

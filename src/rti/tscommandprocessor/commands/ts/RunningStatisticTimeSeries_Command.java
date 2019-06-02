@@ -483,10 +483,12 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
-    List<TS> matchingDiscoveryTS = new Vector<TS>();
+    List<T> matchingDiscoveryTS = new Vector<T>();
     List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return matchingDiscoveryTS;
@@ -494,7 +496,7 @@ public List getObjectList ( Class c )
     for ( TS datats : discovery_TS_Vector ) {
         // Use the most generic for the base class...
         if ( (c == TS.class) || (c == datats.getClass()) ) {
-            matchingDiscoveryTS.add(datats);
+            matchingDiscoveryTS.add((T)datats);
         }
     }
     return matchingDiscoveryTS;

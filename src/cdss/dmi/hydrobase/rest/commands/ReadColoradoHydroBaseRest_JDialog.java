@@ -811,7 +811,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Col
 
     boolean visibility = true; // Set this so that the layout manager will figure out the size of the dialog at startup
     int x = 0; // Position in layout manager, same for all since overlap
-    int numVisibleChoices = -1; // For the combobox choices, -1 means size to data list size
+    //int numVisibleChoices = -1; // For the combobox choices, -1 means size to data list size
     try {
         // Stations...
         ColoradoHydroBaseRest_Station_InputFilter_JPanel panel = new

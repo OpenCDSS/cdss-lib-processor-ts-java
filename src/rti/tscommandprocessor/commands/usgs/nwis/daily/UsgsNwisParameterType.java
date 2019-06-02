@@ -35,7 +35,7 @@ public class UsgsNwisParameterType
 /**
 American Chemical Society CAS registry number (for water quality parameters).
 */
-private String __casrn;
+//private String __casrn;
 
 /**
 Code for parameter.  Treat as a string even though most are zero-padded numbers, just to make sure
@@ -46,7 +46,7 @@ private String __code;
 /**
 Parameter group name.
 */
-private String __groupName = "";
+//private String __groupName = "";
 
 /**
 Parameter name/description.
@@ -61,7 +61,7 @@ private String __srsName = "";
 /**
 AData units.
 */
-private String __units;
+//private String __units;
    
 /**
 Constructor.
@@ -72,11 +72,11 @@ Constructor.
 public UsgsNwisParameterType ( String code, String groupName, String name, String casrn, String srsName, String units )
 {
     __code = code;
-    __groupName = groupName;
+    //__groupName = groupName;
     __name = name;
-    __casrn = casrn;
+    //__casrn = casrn;
     __srsName = srsName;
-    __units = units;
+    //__units = units;
 }
 
 /**

@@ -83,7 +83,7 @@ throws InvalidCommandParameterException
 
 	// If the input file does not exist, warn the user...
 
-	String working_dir = null;
+    //String working_dir = null;
 	
 	CommandProcessor processor = getCommandProcessor();
 	
@@ -91,7 +91,7 @@ throws InvalidCommandParameterException
 	    Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
-			working_dir = (String)o;
+			// working_dir = (String)o;
 		}
 	}
 	catch ( Exception e ) {

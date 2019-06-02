@@ -578,7 +578,8 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects created by this object in discovery mode.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T>  getObjectList ( Class<T>  c )
 {
     TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
@@ -595,12 +596,12 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            return discoveryTSList;
+            return (List<T>)discoveryTSList;
         }
     }
     else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        List<TSEnsemble> v = new ArrayList<TSEnsemble>();
-        v.add ( tsensemble );
+        List<T> v = new ArrayList<T>();
+        v.add ( (T)tsensemble );
         return v;
     }
     else {
@@ -941,7 +942,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         else {
-            tslist = (List<TS>)o_TSList;
+            @SuppressWarnings("unchecked")
+			List<TS> dataList = (List<TS>)o_TSList;
+            tslist = dataList;
             if ( tslist.size() == 0 ) {
                 message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

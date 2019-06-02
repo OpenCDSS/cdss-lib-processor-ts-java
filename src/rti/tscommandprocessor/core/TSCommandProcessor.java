@@ -842,7 +842,7 @@ Return the data store for the requested name, or null if not found.
 is compatible with intended use - specify as null to not match class
 @return the data store for the requested name, or null if not found.
 */
-public DataStore getDataStoreForName ( String name, Class dataStoreClass )
+public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass )
 {   for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
             if ( dataStoreClass != null ) {
@@ -901,7 +901,7 @@ and status is 0 (Ok).
 @param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class dataStoreClass )
+public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass )
 {
 	return getDataStoresByType ( dataStoreClass, true );
 }
@@ -912,7 +912,7 @@ is guaranteed, but the list may be empty.
 @param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class dataStoreClass, boolean activeOnly )
+public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly )
 {   List<DataStore> dataStoreList = new ArrayList<DataStore>();
     for ( DataStore dataStore : getDataStores() ) {
     	// If only active are requested, then status must be 0
@@ -1773,6 +1773,7 @@ Notify registered CommandListListeners about one or more commands being changed.
 @param index0 The index (0+) of the first command that is added.
 @param index1 The index (0+) of the last command that is added.
 */
+@SuppressWarnings("unused")
 private void notifyCommandListListenersOfChange ( int index0, int index1 )
 {	if ( __CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {

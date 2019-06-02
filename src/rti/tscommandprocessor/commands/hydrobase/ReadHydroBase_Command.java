@@ -369,8 +369,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
@@ -380,7 +382,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_Vector.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -410,7 +412,7 @@ public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String routine = "ReadHydroBase_Command.parseCommand", message;
 	int warning_level = 2;
-	int warning_count = 0;
+	//int warning_count = 0;
 
     if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
         // New style syntax using simple parameter=value notation
@@ -424,7 +426,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     		// Must have at least the command name and something to indicate the read...
     		message = "Syntax error in \"" + commandString + "\".";
     		Message.printWarning ( warning_level, routine, message);
-    		++warning_count;
+    		//++warning_count;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Edit the command in the command editor." ) );
@@ -440,7 +442,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     	catch ( Exception e ) {
     		message = "Syntax error in \"" + commandString + "\".";
     		Message.printWarning ( warning_level, routine, message);
-    		++warning_count;
+    		//++warning_count;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Edit the command in the command editor." ) );
@@ -460,7 +462,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     			// No alias specified -- badly-formed command
     			message = "No alias was specified, although the command started with \"TS ...\"";
     			Message.printWarning(warning_level, routine, message);
-    			++warning_count;
+    			//++warning_count;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Edit the command in the command editor - specify an alias." ) );

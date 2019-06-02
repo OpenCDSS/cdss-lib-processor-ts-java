@@ -120,10 +120,6 @@ import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Comman
 //Reclamation Pisces commands
 import rti.tscommandprocessor.commands.reclamationpisces.ReadReclamationPisces_Command;
 
-// RiversideDB commands
-import rti.tscommandprocessor.commands.riversidedb.ReadRiversideDB_Command;
-import rti.tscommandprocessor.commands.riversidedb.WriteRiversideDB_Command;
-
 // RiverWare commands
 import rti.tscommandprocessor.commands.riverware.ReadRiverWare_Command;
 import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
@@ -876,9 +872,6 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadReclamationPisces") ) {
         return new ReadReclamationPisces_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadRiversideDB") ) {
-        return new ReadRiversideDB_Command ();
-    }
     else if ( commandName.equalsIgnoreCase("ReadRiverWare") ) {
         return new ReadRiverWare_Command ();
     }
@@ -1201,9 +1194,6 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("WriteReclamationHDB") ) {
         return new WriteReclamationHDB_Command ();
-    }
-    else if ( commandName.equalsIgnoreCase("WriteRiversideDB") ) {
-        return new WriteRiversideDB_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("WriteRiverWare") ) {
 		return new WriteRiverWare_Command ();

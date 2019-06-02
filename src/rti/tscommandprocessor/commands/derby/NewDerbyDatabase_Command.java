@@ -180,13 +180,15 @@ private DataStore getDiscoveryDataStore()
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+Classes that can be requested:  DataStore
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataStore ds = getDiscoveryDataStore();
-    List<DataStore> v = null;
+    List<T> v = null;
     if ( (ds != null) && (c == ds.getClass()) ) {
-        v = new ArrayList<DataStore>();
-        v.add ( ds );
+        v = new ArrayList<T>();
+        v.add ( (T)ds );
     }
     return v;
 }

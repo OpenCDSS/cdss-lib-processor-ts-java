@@ -471,8 +471,10 @@ private List<TS> getDiscoveryTSList ()
 
 /**
 Return the list of data objects read by this object in discovery mode.
+The following classes can be requested:  TS, TSEnsemble
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     TS datats = null;
     // Since all time series must be the same interval, check the class for the first one (e.g., HourTS)
@@ -486,7 +488,7 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            return discovery_TS_Vector;
+            return (List<T>)discovery_TS_Vector;
         }
     }
     else if ( c == TSEnsemble.class ) {
@@ -495,8 +497,8 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-        	List<TSEnsemble> v = new Vector<TSEnsemble>();
-            v.add ( ensemble );
+        	List<T> v = new Vector<T>();
+            v.add ( (T)ensemble );
             return v;
         }
     }
@@ -530,7 +532,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String routine = "ReadNwsCard_Command.parseCommand", message;
 	
     String Alias = null;
-	int warning_count = 0;
+	//int warning_count = 0;
     if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
         // There is an alias specified.  Extract the alias from the full command.
         _use_alias = true;
@@ -542,7 +544,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             Alias = "Invalid_Alias";
             message = "No alias was specified, although the command started with \"TS ...\"";
             Message.printWarning(warning_level, routine, message);
-                ++warning_count;
+                //++warning_count;
             throw new InvalidCommandSyntaxException(message);
         }
 

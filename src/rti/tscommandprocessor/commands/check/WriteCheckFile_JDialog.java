@@ -73,7 +73,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private boolean __help_time = true;
+//private boolean __help_time = true;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;    

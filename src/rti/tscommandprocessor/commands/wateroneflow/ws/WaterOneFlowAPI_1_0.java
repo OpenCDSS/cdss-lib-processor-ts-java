@@ -55,7 +55,7 @@ private org.cuahsi.his._1_0.ws.WaterOneFlow __wof = null;
 Cached variable information list.
 This is set in getVariableList().
 */
-private List<VariableInfoType> __variableInfoTypeList = new Vector();
+private List<VariableInfoType> __variableInfoTypeList = new Vector<VariableInfoType>();
 
 /**
 Constructor.

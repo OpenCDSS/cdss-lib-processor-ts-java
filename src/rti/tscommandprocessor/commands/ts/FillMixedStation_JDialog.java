@@ -60,7 +60,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
+import RTi.TS.TS;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSRegression;
 import RTi.TS.TSUtil;
@@ -817,7 +817,9 @@ Instantiates the GUI components.
 	__DependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
 	if ( __commandUI != null ) {
 		try {
-			tsids = TSUtil.getTimeSeriesIdentifiers((List)__processor.getPropContents("TSResultsList"),false);
+			@SuppressWarnings("unchecked")
+			List<TS> dataList = (List<TS>)__processor.getPropContents("TSResultsList");
+			tsids = TSUtil.getTimeSeriesIdentifiers(dataList,false);
 		}
 		catch ( Exception e ) {
 			Message.printStatus(2, routine, "Error getting time series results for Mixed Station Analysis tool (" +

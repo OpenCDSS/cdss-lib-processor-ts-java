@@ -42,7 +42,6 @@ import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -182,9 +181,6 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
         node = HydrologyNodeNetwork.getDownstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
-        if (node == null) {
-            break;
-        }
         nodeID = node.getCommonID();
         nodeType = lookupTableString ( table, nodeIdColumnNum, nodeID, nodeTypeColumnNum );
         //nodeDistance = lookupTableString ( table, nodeIDColumnNum, nodeID, nodeTypeColumnNum );
@@ -1147,12 +1143,13 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     if ( (table != null) && (c == table.getClass()) ) {
         // Table request
-        List<DataTable> v = new Vector<DataTable>();
-        v.add ( table );
+        List<T> v = new Vector<T>();
+        v.add ( (T)table );
         return v;
     }
     // Check for time series
@@ -1164,7 +1161,7 @@ public List getObjectList ( Class c )
     TS datats = discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return (List<T>)discovery_TS_Vector;
     }
     else {
         return null;
@@ -1257,9 +1254,6 @@ private List<TS> initializeNodeTimeSeries ( DataTable table, int nodeIdColumnNum
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
         node = HydrologyNodeNetwork.getDownstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
-        if (node == null) {
-            break;
-        }
         // Get network information that was in the original table
         nodeID = node.getCommonID();
         List<TableRecord> records = findTableRecordsWithValue(table, nodeIdColumnNum, nodeID, false);

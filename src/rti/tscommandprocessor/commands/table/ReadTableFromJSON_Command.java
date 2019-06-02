@@ -95,7 +95,7 @@ throws InvalidCommandParameterException
 
 	// If the input file does not exist, warn the user...
 
-	String working_dir = null;
+	//String working_dir = null;
 	
 	CommandProcessor processor = getCommandProcessor();
 	
@@ -110,7 +110,7 @@ throws InvalidCommandParameterException
 	    Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
-			working_dir = (String)o;
+			//working_dir = (String)o;
 		}
 	}
 	catch ( Exception e ) {
@@ -198,13 +198,15 @@ private DataTable getDiscoveryTable()
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+The following classes can be requested:  DataTable
 */
-public List getObjectList ( Class c )
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
-    List<DataTable> v = null;
+    List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<DataTable>();
-        v.add ( table );
+        v = new Vector<T>();
+        v.add ( (T)table );
     }
     return v;
 }

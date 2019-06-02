@@ -410,7 +410,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-		tslist = (List<TS>)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> dataList = (List<TS>)o_TSList;
+		tslist = dataList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

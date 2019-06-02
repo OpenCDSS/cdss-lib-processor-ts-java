@@ -150,7 +150,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new ArrayList();
+    List<File> list = new ArrayList<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }

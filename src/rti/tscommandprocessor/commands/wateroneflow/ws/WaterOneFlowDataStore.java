@@ -128,7 +128,7 @@ public List<String> getVariableList ( boolean includeName, int nameMax )
     WaterOneFlowAPI wofAPI = getWaterOneFlowAPI();
     List<VariableInfoType> variableInfoTypeList = wofAPI.getVariableInfoTypeList();
     StringBuffer b = new StringBuffer();
-    List<String> variableNameList = new Vector();
+    List<String> variableNameList = new Vector<String>();
     String network;
     String name;
     List<VariableCode> variableCodeList;
@@ -136,7 +136,7 @@ public List<String> getVariableList ( boolean includeName, int nameMax )
     String unitsAbbrev;
     JAXBElement<TimeSupport> timeSupportElement;
     TimeSupport timeSupport;
-    String timeSupportString;
+    //String timeSupportString;
     UnitsType timeSupportUnitsType;
     String intervalString;
     for ( VariableInfoType variableInfoType: variableInfoTypeList ) {
@@ -149,7 +149,7 @@ public List<String> getVariableList ( boolean includeName, int nameMax )
         timeSupport = timeSupportElement.getValue();
         timeSupportUnitsType = timeSupport.getUnit();
         intervalString = timeSupportUnitsType.getUnitAbbreviation();
-        timeSupportString = "" + timeSupport.getTimeInterval();
+        //timeSupportString = "" + timeSupport.getTimeInterval();
         Message.printStatus(2, "", "dataType=" + variableInfoType.getDataType() +
             ", network=" + variableInfoType.getNetwork() +
             ", noDataValue=" + variableInfoType.getNoDataValue() +

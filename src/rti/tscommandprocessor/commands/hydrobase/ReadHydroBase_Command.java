@@ -32,6 +32,7 @@ import javax.swing.JFrame;
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.GR.GRLimits;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -874,6 +875,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Get the HydroBase "meas type" that corresponds to the time series data type
 		    String [] hb_mt = HydroBase_Util.convertToHydroBaseMeasType( DataType, Interval );
 		    String hbMeasType = hb_mt[0];
+		    String hbTimeStep = hb_mt[2];
 
 			if ( HydroBase_Util.isStationTimeSeriesDataType ( hbdmi, hbMeasType ) ){
 				// Stations...
@@ -970,15 +972,117 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// TSTool_JFrame.readHydroBaseHeaders...
 		
 			Message.printStatus ( 2, routine, "Getting the list of time series..." );
-		
-			List tsHeaderList = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi, DataType, Interval, filterPanel );
-			// Make sure that size is set...
+			
+			// Specific lists returned for time series metadata - create empty lists to avoid null issues
+			List<HydroBase_AgriculturalCASSCropStats> cassCropStatsTSCatalogList = new ArrayList<HydroBase_AgriculturalCASSCropStats>();
+			List<HydroBase_AgriculturalCASSLivestockStats> cassLivestockStatsTSCatalogList = new ArrayList<HydroBase_AgriculturalCASSLivestockStats>();
+			List<HydroBase_StationGeolocMeasType> stationTSCatalogList = new ArrayList<HydroBase_StationGeolocMeasType>();
+			List<HydroBase_StructureGeolocStructMeasType> structureTSCatalogList = new ArrayList<HydroBase_StructureGeolocStructMeasType>();
+			List<HydroBase_AgriculturalNASSCropStats> nassCropStatsTSCatalogList = new ArrayList<HydroBase_AgriculturalNASSCropStats>();
+			List<HydroBase_CUPopulation> cupopTSCatalogList = new ArrayList<HydroBase_CUPopulation>();
+			List<HydroBase_StructureIrrigSummaryTS> irrigSummaryTSCatalogList = new ArrayList<HydroBase_StructureIrrigSummaryTS>();
+			List<HydroBase_WISSheetNameWISFormat> wisTSCatalogList = new ArrayList<HydroBase_WISSheetNameWISFormat>();
+			List<HydroBase_GroundWaterWellsView> groundwaterWellsTSCatalogList = new ArrayList<HydroBase_GroundWaterWellsView>();
+
+			// Start code that should closely match TSTool main window...
+			
+			// Set up the data so that code closely matches TSTool main interface
 			int size = 0;
-			if ( tsHeaderList != null ) {
-				size = tsHeaderList.size();
+			InputFilter_JPanel selectedInputFilterJPanel = filterPanel;
+			String selectedDataType = DataType;
+			String selectedTimeStep = Interval;
+			GRLimits grlimits = null; // No spatial query
+			String meas_type = hbMeasType;
+			String hbtime_step = hbTimeStep;
+			if ( HydroBase_Util.isAgriculturalCASSCropStatsTimeSeriesDataType ( hbdmi, selectedDataType ) ) {
+				// Data from agricultural_CASS_crop_statistics
+	    		cassCropStatsTSCatalogList = hbdmi.readAgriculturalCASSCropStatsList (
+					selectedInputFilterJPanel,
+					null,		// county
+					null,		// commodity
+					null,		// practice
+					null,		// date1
+					null,		// date2,
+					true );		// Distinct
+	    		size = cassCropStatsTSCatalogList.size();
 			}
+			else if (HydroBase_Util.isAgriculturalCASSLivestockStatsTimeSeriesDataType ( hbdmi, selectedDataType) ) {
+				// Data from CASS livestock stats...
+		    	cassLivestockStatsTSCatalogList = hbdmi.readAgriculturalCASSLivestockStatsList (
+					selectedInputFilterJPanel,	// From input filter
+					null,		// county
+					null,		// commodity
+					null,		// type
+					null,		// date1
+					null,		// date2,
+					true );		// Distinct
+	    		size = cassLivestockStatsTSCatalogList.size();
+			}
+			else if ( HydroBase_Util.isAgriculturalNASSCropStatsTimeSeriesDataType ( hbdmi, selectedDataType ) ) {
+				// Data from agricultural_NASS_crop_statistics
+				nassCropStatsTSCatalogList = hbdmi.readAgriculturalNASSCropStatsList (
+					selectedInputFilterJPanel,
+					null,		// county
+					null,		// commodity
+					null,		// date1
+					null,		// date2,
+					true );		// Distinct
+	    		size = nassCropStatsTSCatalogList.size();
+			}
+			else if ( HydroBase_Util.isCUPopulationTimeSeriesDataType( hbdmi, selectedDataType) ) {
+		    	cupopTSCatalogList = hbdmi.readCUPopulationList (
+					selectedInputFilterJPanel,	// From input filter
+					null,		// county
+					null,		// commodity
+					null,		// type
+					null,		// date1
+					null,		// date2,
+					true );		// Distinct
+	    		size = cupopTSCatalogList.size();
+			}
+			else if ( HydroBase_Util.isIrrigSummaryTimeSeriesDataType( hbdmi, selectedDataType ) ) {
+				irrigSummaryTSCatalogList = HydroBase_Util.readStructureIrrigSummaryTSCatalogList(
+					hbdmi,
+					selectedInputFilterJPanel,
+					null,	// orderby
+					-999,	// structure_num
+					-999,	// wd
+					-999,	// id
+					null,	// str_name
+					null,	// landuse
+					null,	// start
+					null,	// end
+					true);	// distinct
+	    		size = irrigSummaryTSCatalogList.size();
+			}
+			else if ( HydroBase_Util.isStationTimeSeriesDataType(hbdmi, meas_type) ) {
+				stationTSCatalogList = HydroBase_Util.readStationGeolocMeasTypeCatalogList(
+					hbdmi, selectedInputFilterJPanel, selectedDataType, selectedTimeStep, grlimits );
+	    		size = stationTSCatalogList.size();
+			}
+			else if ( HydroBase_Util.isStructureTimeSeriesDataType(hbdmi, meas_type) ) {
+				structureTSCatalogList = hbdmi.readStructureGeolocStructMeasTypeCatalogList(
+					selectedInputFilterJPanel, selectedDataType, selectedTimeStep);
+	    		size = structureTSCatalogList.size();
+			}
+			else if (selectedDataType.equalsIgnoreCase( "WellLevel") || selectedDataType.equalsIgnoreCase( "WellLevelElev")||
+		    	selectedDataType.equalsIgnoreCase( "WellLevelDepth") ) {
+		    	// Well level data...
+   				if (selectedTimeStep.equalsIgnoreCase("Day")) {
+					groundwaterWellsTSCatalogList =
+						HydroBase_Util.readGroundWaterWellsViewTSCatalogList(hbdmi, selectedInputFilterJPanel, meas_type, hbtime_step);
+	    			size = groundwaterWellsTSCatalogList.size();
+   				}
+			}
+			else if ( HydroBase_Util.isWISTimeSeriesDataType ( hbdmi, selectedDataType ) ) {
+				// WIS TS...
+				wisTSCatalogList = hbdmi.readWISSheetNameWISFormatListDistinct(selectedInputFilterJPanel);
+	    		size = wisTSCatalogList.size();
+			}
+
+			// ...end code that should closely match TSTool main window.
 		
-       		if ( (tsHeaderList == null) || (size == 0) ) {
+       		if ( size == 0 ) {
 				Message.printStatus ( 2, routine,"No HydroBase time series were found." );
 		        // Warn if nothing was retrieved (can be overridden to ignore).
 	            if ( IfMissingWarn ) {
@@ -1046,7 +1150,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				// List in order of likelihood to improve performance...
 				if ( is_Station ) {
 					// Station TS...
-					sta = (HydroBase_StationGeolocMeasType)tsHeaderList.get(i);
+					sta = stationTSCatalogList.get(i);
 					tsident_string = sta.getStation_id()
 						+ "." + sta.getData_source()
 						+ "." + DataType
@@ -1054,7 +1158,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						+ inputName;
 				}
 				else if ( is_Structure ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tsHeaderList.get(i);
+					str = structureTSCatalogList.get(i);
 					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
 						+ "." + str.getData_source()
 						+ "." + DataType
@@ -1062,7 +1166,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						+ inputName;
 				}
 				else if ( is_StructureSFUT ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tsHeaderList.get(i);
+					// The catalog for SFUT uses the same list given that the datatype returned SFUT in the query
+					str = structureTSCatalogList.get(i);
 					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
 						+ "." + str.getData_source()
 						+ "." + DataType + "-" + str.getIdentifier()
@@ -1070,7 +1175,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						+ inputName;
 				}
                 else if ( is_CASSCrops ) {
-                    cassCrops = (HydroBase_AgriculturalCASSCropStats)tsHeaderList.get(i);
+                    cassCrops = cassCropStatsTSCatalogList.get(i);
                     tsident_string = cassCrops.getCounty()
                         + ".CASS" 
                         + "." + DataType + "-" + cassCrops.getCommodity() + "-" + cassCrops.getPractice()
@@ -1078,7 +1183,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         + inputName;
                 }
                 else if ( is_CASSLivestock ) {
-                    cassLivestock = (HydroBase_AgriculturalCASSLivestockStats)tsHeaderList.get(i);
+                    cassLivestock = cassLivestockStatsTSCatalogList.get(i);
                     tsident_string = cassLivestock.getCounty()
                         + ".CASS" 
                         + "." + DataType + "-" + cassLivestock.getCommodity() + "-" + cassLivestock.getType()
@@ -1086,7 +1191,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         + inputName;
                 }
                 else if ( is_cuPop ) {
-                    cuPop = (HydroBase_CUPopulation)tsHeaderList.get(i);
+                    cuPop = cupopTSCatalogList.get(i);
                     tsident_string = cuPop.getArea_type() + "-" + cuPop.getArea_name()
                         + "" // Blank 
                         + "." + DataType + "-" + cuPop.getPop_type()
@@ -1094,7 +1199,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         + inputName;
                 }
                 else if ( is_NASS ) {
-                    nass = (HydroBase_AgriculturalNASSCropStats)tsHeaderList.get(i);
+                    nass = nassCropStatsTSCatalogList.get(i);
                     tsident_string = nass.getCounty()
                         + ".NASS" 
                         + "." + DataType + "-" + nass.getCommodity()
@@ -1103,7 +1208,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
 				else if ( is_StructureIrrigSummaryTS ) {
 					// Irrig summary TS...
-					irrigts = (HydroBase_StructureIrrigSummaryTS)tsHeaderList.get(i);
+					irrigts = irrigSummaryTSCatalogList.get(i);
 					tsident_string =HydroBase_WaterDistrict.formWDID( wdid_length,irrigts.getWD(),irrigts.getID())
 						+ ".CDSSGIS" 
 						+ "." + DataType + "-" + irrigts.getLand_use()
@@ -1112,7 +1217,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
                 else if ( is_Well ) {
                     // Well...
-                    well = (HydroBase_GroundWaterWellsView)tsHeaderList.get(i);
+                    well = groundwaterWellsTSCatalogList.get(i);
                     String id;
                     if ( well.getIdentifier().length() > 0 ) {
                         // Well with a different identifier to display.
@@ -1134,7 +1239,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
 				else if ( is_WIS ) {
 					// WIS TS...
-					wis = (HydroBase_WISSheetNameWISFormat)tsHeaderList.get(i);
+					wis = wisTSCatalogList.get(i);
 					tsident_string = wis.getIdentifier()
 						+ ".DWR" 
 						+ "." + DataType

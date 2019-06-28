@@ -941,7 +941,7 @@ private void populateDataTypeChoices ( ColoradoHydroBaseRestDataStore datastore 
 	if ( datastore == null ) {
 		return;
 	}
-    List<String> dataTypes = datastore.getTimeSeriesDataTypes(true);
+    List<String> dataTypes = datastore.getTimeSeriesDataTypes(true,true);
     __DataType_JComboBox.setData ( dataTypes );
     // Select the default...
     // TODO smalers 2018-06-21 evalute whether need datastore method for default

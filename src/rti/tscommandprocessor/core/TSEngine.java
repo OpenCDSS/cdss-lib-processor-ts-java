@@ -5567,12 +5567,16 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
                 try {
                     if ( ds instanceof DatabaseDataStore ) {
                         DMI dmi = ((DatabaseDataStore)ds).getDMI();
-                        dmi.close();
+                        if ( dmi != null ) {
+                        	// Only close if not null
+                        	// - if there was a configuration error then a datastore may exist without open DMI
+                        	dmi.close();
+                        }
                     }
                 }
                 catch ( Exception e ) {
                     // Probably can ignore.
-                    Message.printWarning (3,routine,"Error closing data store \"" + dataStore.getName() +
+                    Message.printWarning (3,routine,"Error closing datastore \"" + dataStore.getName() +
                         "\" before reopening:");
                     Message.printWarning (3,routine, e);
                 }

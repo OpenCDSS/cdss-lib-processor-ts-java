@@ -132,11 +132,14 @@ public boolean editCommand ( JFrame parent )
  * Determine which columns to delete.
  * Delete columns will not be added if in KeepColumns.
  * Comparisons are case-insensitive.
+ * @param table DataTable to process, used to confirm that requested columns exist in the table.
  * @param KeepColumns a comma-separated list of columns to keep, * allowed.
  * @param DeleteColumns a comma-separated list of columns to delete, * allowed.
- * @param columnNames an array of all column names
+ * @param problems list of problem strings
  */
-private String [] getDeleteColumns(String KeepColumns, String DeleteColumns, String [] columnNames ) {
+private String [] getDeleteColumns(DataTable table, String KeepColumns, String DeleteColumns, List<String> problems ) {
+	// Get column names from the table
+	String [] columnNames = table.getFieldNames();
     // Determine the list of columns to delete by considering the KeepColumns and DeleteColumns parameters
     // The first pass is simply to split the column names, which may contain * wildcard
     String [] keepColumns0 = new String[0];
@@ -152,6 +155,16 @@ private String [] getDeleteColumns(String KeepColumns, String DeleteColumns, Str
     List<String> keepColumns = new ArrayList<>();
     for ( int iField = 0; iField < columnNames.length; iField ++ ) {
     	for ( int iKeepColumn = 0; iKeepColumn < keepColumns0.length; iKeepColumn++ ) {
+			// Make sure that the keep column exists in the table
+    		if ( keepColumns0[iKeepColumn].indexOf("*") < 0 ) {
+    			try {
+    				table.getFieldIndex(keepColumns0[iKeepColumn]);
+    			}
+    			catch ( Exception e ) {
+    				problems.add("KeepColumn \"" + keepColumns0[iKeepColumn] + "\" is not found in the table.");
+    				continue;
+    			}
+    		}
     		if ( columnNames[iField].matches(keepColumns0[iKeepColumn]) ) {
     			// Want to add the column to keep list if not already in the list
     			boolean found = false;
@@ -182,6 +195,16 @@ private String [] getDeleteColumns(String KeepColumns, String DeleteColumns, Str
     List<String> deleteColumns = new ArrayList<>();
     for ( int iField = 0; iField < columnNames.length; iField ++ ) {
     	for ( int iDeleteColumn = 0; iDeleteColumn < deleteColumns0.length; iDeleteColumn++ ) {
+			// Make sure that the specific delete column exists in the table
+    		if ( deleteColumns0[iDeleteColumn].indexOf("*") < 0 ) {
+    			try {
+    				table.getFieldIndex(deleteColumns0[iDeleteColumn]);
+    			}
+    			catch ( Exception e ) {
+    			problems.add("DeleteColumn \"" + deleteColumns0[iDeleteColumn] + "\" is not found in the table.");
+    				continue;
+    			}
+    		}
     		if ( columnNames[iField].matches(deleteColumns0[iDeleteColumn]) ) {
     			// Want to add the column to delete list if not already in the list
     			boolean found = false;
@@ -316,7 +339,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Delete columns...
-		String [] deleteColumns = getDeleteColumns(KeepColumns, DeleteColumns, table.getFieldNames() );
+		List<String> problems = new ArrayList<>();
+		String [] deleteColumns = getDeleteColumns(table, KeepColumns, DeleteColumns, problems );
+	    for ( String p : problems ) {
+	        Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, p );
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, p, "Check input." ) );
+	    }
 		for ( int i = 0; i < deleteColumns.length; i++ ) {
 			// Determine the column to delete, number may change as the columns are deleted
 			int columnNum = -1;

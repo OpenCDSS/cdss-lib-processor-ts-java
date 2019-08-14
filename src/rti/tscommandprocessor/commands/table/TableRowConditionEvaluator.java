@@ -24,7 +24,6 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.table;
 
 import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
@@ -138,6 +137,13 @@ public class TableRowConditionEvaluator {
             op = "CONTAINS";
             pos1 = pos;
             pos2 = pos + 8;
+            compareAsStrings = true; // "contains" is only used on strings
+        }
+        else if ( conditionUpper.indexOf("ISEMPTY") > 0 ) {
+            pos = conditionUpper.indexOf("ISEMPTY");
+            op = "ISEMPTY";
+            pos1 = pos;
+            pos2 = pos + 7;
             compareAsStrings = true; // "contains" is only used on strings
         }
         else if ( condition.indexOf("=") > 0 ) {
@@ -291,6 +297,12 @@ public class TableRowConditionEvaluator {
 				else if ( this.operator.equals("!CONTAINS") ) {
 					String o_upper = o_string.toUpperCase();
 					if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_upper.indexOf(this.valueStringUpper) < 0) ) {
+						return true;
+					}
+				}
+				else if ( this.operator.equals("ISEMPTY") ) {
+					String o_upper = o_string.toUpperCase();
+					if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_string.isEmpty()) ) {
 						return true;
 					}
 				}

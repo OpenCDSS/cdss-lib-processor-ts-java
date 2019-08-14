@@ -231,7 +231,10 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
         "ColumnName can be a column name or ${Property}."),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Operator can be:  <, <=, >, >=, ==, !=, contains, or !contains"),
+        "Operator can be:  <, <=, >, >=, ==, !="),
+        0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "Operator for strings also can be:  contains, !contains, isempty"),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Value should agree with column type, for example don't specify text characters for numeric column type."),

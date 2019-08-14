@@ -93,7 +93,7 @@ public void actionPerformed(ActionEvent event)
 		response ( false );
 	}
 	else if ( o == __help_JButton ) {
-		HelpViewer.getInstance().showHelp("command", "JoinTables");
+		HelpViewer.getInstance().showHelp("command", "RenameTableColumns");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();

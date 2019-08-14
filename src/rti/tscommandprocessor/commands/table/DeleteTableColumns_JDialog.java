@@ -194,7 +194,7 @@ private void initialize ( JFrame parent, DeleteTableColumns_Command command, Lis
         "and then deleting column names from the list."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "If DeleteColumns=*, all columns will be deleted except those specified by IncludeColumns."),
+        "If DeleteColumns=*, all columns will be deleted except those specified by KeepColumns."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "The comparison of column names is independent of uppercase/lowercase."),

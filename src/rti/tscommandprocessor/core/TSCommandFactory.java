@@ -183,6 +183,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromXML_Command;
+import rti.tscommandprocessor.commands.table.RenameTableColumns_Command;
 import rti.tscommandprocessor.commands.table.SetPropertyFromTable_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
@@ -351,6 +352,7 @@ public class TSCommandFactory implements CommandFactory
 /**
  * List of classes for plugin commands.
  */
+@SuppressWarnings("rawtypes")
 List<Class> pluginCommandClassList = null;
  
 /**
@@ -405,7 +407,7 @@ throws UnknownCommandException
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
 
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
-	String commandStringUpper = commandString.toUpperCase();
+	//String commandStringUpper = commandString.toUpperCase();
 
 	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
 		// This allows aliases with spaces...
@@ -960,6 +962,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
         // Automatically change the name
         return new DeleteDataStoreTableRows_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("RenameTableColumns") ) {
+        return new RenameTableColumns_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReplaceValue") ) {
         return new ReplaceValue_Command ();

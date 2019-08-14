@@ -64,6 +64,7 @@ private boolean __error_wait = false; // To track errors
 private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __KeepColumns_JTextField = null;
 private JTextField __DeleteColumns_JTextField = null;
 // TODO SAM 2016-05-25 Evaluate whether to include
 //private JTextField __DeleteCountPropertyProperty_JTextField = null;
@@ -116,12 +117,16 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
+	String KeepColumns = __KeepColumns_JTextField.getText().trim();
 	String DeleteColumns = __DeleteColumns_JTextField.getText().trim();
 	//String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
+    }
+    if ( KeepColumns.length() > 0 ) {
+        props.set ( "KeepColumns", KeepColumns );
     }
     if ( DeleteColumns.length() > 0 ) {
         props.set ( "DeleteColumns", DeleteColumns );
@@ -146,9 +151,11 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
+    String KeepColumns = __KeepColumns_JTextField.getText().trim();
     String DeleteColumns = __DeleteColumns_JTextField.getText().trim();
     //String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "KeepColumns", KeepColumns );
     __command.setCommandParameter ( "DeleteColumns", DeleteColumns );
     //__command.setCommandParameter ( "DeleteCountProperty", DeleteCountProperty );
 }
@@ -180,6 +187,18 @@ private void initialize ( JFrame parent, DeleteTableColumns_Command command, Lis
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command deletes 1+ columns from a table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "The list of column names that will remain in the table is created by first considering the columns to keep (default is all)"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "and then deleting column names from the list."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "If DeleteColumns=*, all columns will be deleted except those specified by IncludeColumns."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "The comparison of column names is independent of uppercase/lowercase."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -199,10 +218,20 @@ private void initialize ( JFrame parent, DeleteTableColumns_Command command, Lis
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Keep columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __KeepColumns_JTextField = new JTextField ( "", 25 );
+    __KeepColumns_JTextField.setToolTipText("Specify column names to keep, separated by commas, can use * wildcard, can use ${Property}");
+    __KeepColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __KeepColumns_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - names of columns to keep (default=don't block delete)." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Delete columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteColumns_JTextField = new JTextField ( "", 25 );
-    __DeleteColumns_JTextField.setToolTipText("Specify column names to delete, separated by commas, can use ${Property}");
+    __DeleteColumns_JTextField.setToolTipText("Specify column names to delete, separated by commas, can use * wildcard, can use ${Property}");
     __DeleteColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DeleteColumns_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -298,12 +327,14 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+    String KeepColumns = "";
     String DeleteColumns = "";
     //String DeleteCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
+        KeepColumns = props.getValue ( "KeepColumns" );
         DeleteColumns = props.getValue ( "DeleteColumns" );
         //DeleteCountProperty = props.getValue ( "DeleteCountProperty" );
         if ( TableID == null ) {
@@ -321,6 +352,9 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( KeepColumns != null ) {
+            __KeepColumns_JTextField.setText ( KeepColumns );
+        }
         if ( DeleteColumns != null ) {
             __DeleteColumns_JTextField.setText ( DeleteColumns );
         }
@@ -330,10 +364,12 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
+    KeepColumns = __KeepColumns_JTextField.getText().trim();
     DeleteColumns = __DeleteColumns_JTextField.getText().trim();
     //DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    props.add ( "KeepColumns=" + KeepColumns );
     props.add ( "DeleteColumns=" + DeleteColumns );
     //props.add ( "DeleteCountProperty=" + DeleteCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );

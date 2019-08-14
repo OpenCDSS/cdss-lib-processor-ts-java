@@ -33,6 +33,7 @@ import java.util.List;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -96,8 +97,9 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+	List<String> validList = new ArrayList<String>(3);
     validList.add ( "TableID" );
+    validList.add ( "KeepColumns" );
     validList.add ( "DeleteColumns" );
     //validList.add ( "DeleteCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -124,6 +126,105 @@ public boolean editCommand ( JFrame parent )
 }
 
 // Use base class parseCommand()
+
+// TODO smalers could put this in a utility class
+/**
+ * Determine which columns to delete.
+ * Delete columns will not be added if in KeepColumns.
+ * Comparisons are case-insensitive.
+ * @param KeepColumns a comma-separated list of columns to keep, * allowed.
+ * @param DeleteColumns a comma-separated list of columns to delete, * allowed.
+ * @param columnNames an array of all column names
+ */
+private String [] getDeleteColumns(String KeepColumns, String DeleteColumns, String [] columnNames ) {
+    // Determine the list of columns to delete by considering the KeepColumns and DeleteColumns parameters
+    // The first pass is simply to split the column names, which may contain * wildcard
+    String [] keepColumns0 = new String[0];
+    if ( (KeepColumns != null) && !KeepColumns.isEmpty() ) {
+    	keepColumns0 = KeepColumns.split(",");
+	    for ( int i = 0; i < keepColumns0.length; i++ ) {
+	    	// Trim and convert to a Java regular expression
+	    	keepColumns0[i] = keepColumns0[i].trim().replace("*",".*");
+	    }
+    }
+    // The second pass is to get a list of columns to keep based on wildcard match
+    // - do not allow duplicates
+    List<String> keepColumns = new ArrayList<>();
+    for ( int iField = 0; iField < columnNames.length; iField ++ ) {
+    	for ( int iKeepColumn = 0; iKeepColumn < keepColumns0.length; iKeepColumn++ ) {
+    		if ( columnNames[iField].matches(keepColumns0[iKeepColumn]) ) {
+    			// Want to add the column to keep list if not already in the list
+    			boolean found = false;
+    			for ( String keepColumn : keepColumns ) {
+    				if ( keepColumn.equalsIgnoreCase(columnNames[iField]) ) {
+    					found = true;
+    					break;
+    				}
+    			}
+    			if ( !found ) {
+    				keepColumns.add(columnNames[iField]);
+    				break;
+    			}
+    		}
+    	}
+    }
+    // The first pass is simply to split the column names, which may contain * wildcard
+    String [] deleteColumns0 = new String[0];
+    if ( (DeleteColumns != null) && !DeleteColumns.isEmpty() ) {
+    	deleteColumns0 = DeleteColumns.split(",");
+	    for ( int i = 0; i < deleteColumns0.length; i++ ) {
+	    	// Trim and convert to a Java regular expression
+	    	deleteColumns0[i] = deleteColumns0[i].trim().replace("*",".*");
+	    }
+    }
+    // The second pass is to get a list of columns to delete based on wildcard match
+    // - do not allow duplicates
+    List<String> deleteColumns = new ArrayList<>();
+    for ( int iField = 0; iField < columnNames.length; iField ++ ) {
+    	for ( int iDeleteColumn = 0; iDeleteColumn < deleteColumns0.length; iDeleteColumn++ ) {
+    		if ( columnNames[iField].matches(deleteColumns0[iDeleteColumn]) ) {
+    			// Want to add the column to delete list if not already in the list
+    			boolean found = false;
+    			for ( String deleteColumn : deleteColumns ) {
+    				if ( deleteColumn.equalsIgnoreCase(columnNames[iField]) ) {
+    					found = true;
+    					break;
+    				}
+    			}
+    			if ( !found ) {
+    				deleteColumns.add(columnNames[iField]);
+    				break;
+    			}
+    		}
+    	}
+    }
+    // Finally, only include in the delete list if not in the keep list
+    List<String> deleteColumns2 = new ArrayList<>();
+    for ( String deleteColumn : deleteColumns ) {
+    	boolean found = false;
+    	for ( String keepColumn : keepColumns ) {
+    		if ( deleteColumn.equalsIgnoreCase(keepColumn) ) {
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( !found ) {
+    		deleteColumns2.add(deleteColumn);
+    	}
+    }
+    /* for debugging...
+   	for ( String keepColumn : keepColumns ) {
+   		Message.printStatus(2,"","Keep column: \"" + keepColumn + "\"" );
+   	}
+   	for ( String deleteColumn : deleteColumns ) {
+   		Message.printStatus(2,"","Delete column: \"" + deleteColumn + "\"" );
+   	}
+   	for ( String deleteColumn : deleteColumns2 ) {
+   		Message.printStatus(2,"","Final delete column: \"" + deleteColumn + "\"" );
+   	}
+   	*/
+    return StringUtil.toArray(deleteColumns2);
+}
 
 /**
 Run the command.
@@ -161,19 +262,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
-    String DeleteColumns = parameters.getValue ( "DeleteColumns" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
-   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    String KeepColumns = parameters.getValue ( "KeepColumns" );
+    if ( (KeepColumns != null) && !KeepColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && KeepColumns.indexOf("${") >= 0 ) {
+    	KeepColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, KeepColumns);
     }
+    String DeleteColumns = parameters.getValue ( "DeleteColumns" );
     if ( (DeleteColumns != null) && !DeleteColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DeleteColumns.indexOf("${") >= 0 ) {
     	DeleteColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DeleteColumns);
-    }
-    String [] deleteColumns = new String[0];
-    if ( (DeleteColumns != null) && !DeleteColumns.isEmpty() ) {
-    	deleteColumns = DeleteColumns.split(",");
-	    for ( int i = 0; i < deleteColumns.length; i++ ) {
-	    	deleteColumns[i] = deleteColumns[i].trim();
-	    }
     }
     //String DeleteCountProperty = parameters.getValue ( "DeleteCountProperty" );
     
@@ -221,6 +316,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Delete columns...
+		String [] deleteColumns = getDeleteColumns(KeepColumns, DeleteColumns, table.getFieldNames() );
 		for ( int i = 0; i < deleteColumns.length; i++ ) {
 			// Determine the column to delete, number may change as the columns are deleted
 			int columnNum = -1;
@@ -273,6 +369,7 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
+    String KeepColumns = props.getValue( "KeepColumns" );
     String DeleteColumns = props.getValue( "DeleteColumns" );
     //String DeleteCountProperty = props.getValue( "DeleteCountProperty" );
 	StringBuffer b = new StringBuffer ();
@@ -281,6 +378,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (KeepColumns != null) && (KeepColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "KeepColumns=\"" + KeepColumns + "\"" );
     }
     if ( (DeleteColumns != null) && (DeleteColumns.length() > 0) ) {
         if ( b.length() > 0 ) {

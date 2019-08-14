@@ -71,6 +71,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
+    String Condition = parameters.getValue ( "Condition" );
     String DeleteRowNumbers = parameters.getValue ( "DeleteRowNumbers" );
     //String DeleteCountProperty = parameters.getValue ( "DeleteCountProperty" );
 	String warning = "";
@@ -86,17 +87,19 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    if ( (DeleteRowNumbers == null) || (DeleteRowNumbers.length() == 0) ) {
-        message = "The row numbers to delete must be specified.";
+    if ( ((DeleteRowNumbers == null) || DeleteRowNumbers.isEmpty()) &&
+    	((Condition == null) || (Condition.isEmpty())) ) {
+        message = "The condition or row numbers to delete must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the row numbers to delete." ) );
+                message, "Specify condition or row numbers to delete." ) );
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+	List<String> validList = new ArrayList<String>(3);
     validList.add ( "TableID" );
+    validList.add ( "Condition" );
     validList.add ( "DeleteRowNumbers" );
     //validList.add ( "DeleteCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -160,6 +163,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
+    String Condition = parameters.getValue ( "Condition" );
+    if ( (Condition != null) && !Condition.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Condition.indexOf("${") >= 0 ) {
+    	Condition = TSCommandProcessorUtil.expandParameterValue(processor, this, Condition);
+    }
     String DeleteRowNumbers = parameters.getValue ( "DeleteRowNumbers" );
     if ( (DeleteRowNumbers != null) && !DeleteRowNumbers.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DeleteRowNumbers.indexOf("${") >= 0 ) {
     	DeleteRowNumbers = TSCommandProcessorUtil.expandParameterValue(processor, this, DeleteRowNumbers);
@@ -216,44 +223,67 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Delete rows...
-		for ( int i = 0; i < deleteRowNumbers.length; i++ ) {
-			// Determine the row(s) to delete, number may change as the rows are deleted so user must be aware
-			int numRowsInTable = table.getNumberOfRecords();
-			String rowToDeleteString = deleteRowNumbers[i];
-			int rowToDelete1 = -1; // 1-index
-			if ( rowToDeleteString.equalsIgnoreCase("last") ) {
-				rowToDelete1 = numRowsInTable;
+		if ( deleteRowNumbers.length > 0 ) {
+    	    // Delete rows...
+		    for ( int i = 0; i < deleteRowNumbers.length; i++ ) {
+			    // Determine the row(s) to delete, number may change as the rows are deleted so user must be aware
+			    int numRowsInTable = table.getNumberOfRecords();
+			    String rowToDeleteString = deleteRowNumbers[i];
+			    int rowToDelete1 = -1; // 1-index
+			    if ( rowToDeleteString.equalsIgnoreCase("last") ) {
+				    rowToDelete1 = numRowsInTable;
+			    }
+			    else {
+				    rowToDelete1 = Integer.parseInt(rowToDeleteString);
+			    }
+			    if ( rowToDelete1 > numRowsInTable ) {
+				    message = "Row to delete (" + rowToDelete1 + ") is > number of rows in table.  Not deleting.";
+				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                message, "Verify that the table contains row " + rowToDelete1 ) );
+				    continue;
+			    }
+			    if ( rowToDelete1 < 1 ) {
+				    message = "Row to delete (" + rowToDelete1 + ") is < 1.  Not deleting.";
+				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                message, "Specify a row > 0" ) );
+				    continue;
+			    }
+			    int rowToDelete0 = rowToDelete1 - 1; // 0-index
+			    try {
+				    table.deleteRecord(rowToDelete0);
+			    }
+			    catch ( Exception e ) {
+				    message = "Exception deleting row \"" + rowToDelete1 + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
+				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                message, "Check the log file for errors." ) );
+			    }
+            }
+ 	    }
+		else if ( (Condition != null) && !Condition.isEmpty() ) {
+			// Delete by matching rows that adhere to condition.
+			// - currently this is simple logic
+			TableRowConditionEvaluator evaluator = new TableRowConditionEvaluator(table, Condition);
+			for ( int row = 0; row < table.getNumberOfRecords(); row++ ) {
+				if ( evaluator.evaluate(table, row) ) {
+					// Condition was met so delete the row.
+					// - decrement the row since same row needs to be reprocessed
+					try {
+						table.deleteRecord(row);
+						--row;
+					}
+					catch ( Exception e ) {
+						message = "Exception deleting row \"" + row + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
+						Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+							status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+								message, "Check the log file for errors." ) );
+					}
+				}
 			}
-			else {
-				rowToDelete1 = Integer.parseInt(rowToDeleteString);
-			}
-			if ( rowToDelete1 > numRowsInTable ) {
-				message = "Row to delete (" + rowToDelete1 + ") is > number of rows in table.  Not deleting.";
-				Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-		        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-		            message, "Verify that the table contains row " + rowToDelete1 ) );
-				continue;
-			}
-			if ( rowToDelete1 < 1 ) {
-				message = "Row to delete (" + rowToDelete1 + ") is < 1.  Not deleting.";
-				Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-		        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-		            message, "Specify a row > 0" ) );
-				continue;
-			}
-			int rowToDelete0 = rowToDelete1 - 1; // 0-index
-			try {
-				table.deleteRecord(rowToDelete0);
-			}
-			catch ( Exception e ) {
-				message = "Exception deleting row \"" + rowToDelete1 + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
-				Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-		        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-		            message, "Check the log file for errors." ) );
-			}
-        }
- 	}
+		}
+	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error deleting table row (" + e + ").";
@@ -281,6 +311,7 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
+    String Condition = props.getValue( "Condition" );
     String DeleteRowNumbers = props.getValue( "DeleteRowNumbers" );
     //String DeleteCountProperty = props.getValue( "DeleteCountProperty" );
 	StringBuffer b = new StringBuffer ();
@@ -289,6 +320,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (Condition != null) && (Condition.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Condition=\"" + Condition + "\"" );
     }
     if ( (DeleteRowNumbers != null) && (DeleteRowNumbers.length() > 0) ) {
         if ( b.length() > 0 ) {

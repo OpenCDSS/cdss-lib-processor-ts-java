@@ -304,6 +304,10 @@ private void initialize ( JFrame parent, Command command )
     __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    if ( tsids.size() == 0 ) {
+    	// Add one item so list manipulation works
+    	tsids.add("");
+    }
     __TSID_JComboBox.setData ( tsids );
     __TSID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,

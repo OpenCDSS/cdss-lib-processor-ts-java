@@ -285,11 +285,15 @@ throws CommandWarningException, CommandException
 			LogFile_full = IOUtil.verifyPathForOS(
 				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 					TSCommandProcessorUtil.expandParameterValue(processor,this,LogFile)));
-			Message.printStatus(2, routine, "Logfile full path is \"" + LogFile_full + "\"");
+			// Write a message to the old log file
+			Message.printStatus(2, routine, "Logfile full path for next log file to open is \"" + LogFile_full + "\"");
 			// Close the old log file...
+			String previousLogFile = Message.getLogFile();
 			Message.closeLogFile();
 			// Open the new log file...
 			Message.openNewLogFile ( LogFile_full );
+			Message.printStatus(2, routine, "Opened log file \"" + LogFile_full + "\"");
+			Message.printStatus(2, routine, "Previous log file was \"" + previousLogFile + "\"");
 			setOutputFile ( new File(LogFile_full));
 		}
 	}

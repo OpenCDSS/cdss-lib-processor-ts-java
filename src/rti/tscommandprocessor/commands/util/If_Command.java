@@ -321,6 +321,19 @@ throws CommandWarningException, CommandException
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Left side after expansion: " + value1 );
     	    	}
+    	    	if ( value1.indexOf("${") >= 0 ) {
+    	    		// Expansion did not match property
+    	    		int p1 = value1.indexOf("${");
+    	    		int p2 = value1.indexOf("}",p1);
+    	    		String missingProp = value1.substring(p1,(p2+1));
+	                message = "Left side of condition contains property " + missingProp + " that could not be matched.";
+	                Message.printWarning(3,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Make sure " + missingProp + " is defined." ) );
+    	    	}
     	    }
     	    else {
     	    	value1 = arg1;
@@ -333,6 +346,19 @@ throws CommandWarningException, CommandException
     	    	value2 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg2 );
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Right side after expansion: " + value2 );
+    	    	}
+    	    	if ( value2.indexOf("${") >= 0 ) {
+    	    		// Expansion did not match property
+    	    		int p1 = value2.indexOf("${");
+    	    		int p2 = value2.indexOf("}",p1);
+    	    		String missingProp = value2.substring(p1,(p2+1));
+	                message = "Right side of condition contains property " + missingProp + " that could not be matched.";
+	                Message.printWarning(3,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Make sure " + missingProp + " is defined." ) );
     	    	}
     	    }
     	    else {

@@ -4675,7 +4675,8 @@ throws Exception
             tsidentString + "," + readStart + "," + readEnd);
         }
         try {
-            ts = ds.readTimeSeries ( tsidentString, readStart, readEnd, readData );
+        	PropList readProps = null;
+            ts = ds.readTimeSeries ( tsidentString, readStart, readEnd, readData, readProps );
             if ( Message.isDebugOn ) {
                 Message.printStatus ( 10, routine, "...done reading time series." );
             }
@@ -4852,7 +4853,8 @@ throws Exception
             else {
                 // Do need to fill daily diversion records with carry forward
                 // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
-                ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, null );
+            	PropList readProps = null;
+                ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, readProps );
             }
             if ( Message.isDebugOn ) {
                 Message.printStatus ( 10, routine, "...done reading time series." );

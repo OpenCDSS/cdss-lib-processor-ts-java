@@ -100,6 +100,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
+    /*
 	if ( (TSID == null) || (TSID.length() == 0) ) {
         message = "A TSID must be specified.";
 		warning += "\n" + message;
@@ -108,6 +109,7 @@ throws InvalidCommandParameterException
                 message, "Specify a time series identifier." ) );
                 
 	}
+	*/
 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
 		try {
 		    DateTime.parse(FillStart);

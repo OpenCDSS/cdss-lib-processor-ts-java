@@ -25,7 +25,6 @@ package cdss.dmi.hydrobase.rest.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -254,28 +253,28 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	/*
-	String FillUsingDivComments = parameters.getValue ( "FillUsingDivComments" );
-	if ((FillUsingDivComments != null) && !FillUsingDivComments.equals("")){
-		if (	!FillUsingDivComments.equalsIgnoreCase(_True) &&
-			!FillUsingDivComments.equalsIgnoreCase(_False) ) {
-            message = "The FillUsingDivComments parameter \"" + FillUsingDivComments +
-            "\" must be True (blank) or False";
+	String FillDivRecordsCarryForward = parameters.getValue ( "FillDivRecordsCarryForward" );
+	if ((FillDivRecordsCarryForward != null) && !FillDivRecordsCarryForward.equals("")){
+		if ( !FillDivRecordsCarryForward.equalsIgnoreCase(_True) &&
+			!FillDivRecordsCarryForward.equalsIgnoreCase(_False) ) {
+            message = "Invalid FillDivRecordsCarryForward parameter \"" + FillDivRecordsCarryForward + "\"";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify False or True, or blank for default of False." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify " + _False + " or " + _True + ", or blank for default of " + _True + "." ) );
 		}
 	}
-	String FillUsingDivCommentsFlag = parameters.getValue ( "FillUsingDivCommentsFlag" );
-	if ( (FillUsingDivCommentsFlag != null) && (FillUsingDivCommentsFlag.length() != 1) ) {
-        message = "The FillUsingDivCommentsFlag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                  new CommandLogRecord(CommandStatusType.FAILURE,
-                          message, "Specify a 1-character flag, or blank to not use flag." ) );
+	String FillUsingDivComments = parameters.getValue ( "FillUsingDivComments" );
+	if ((FillUsingDivComments != null) && !FillUsingDivComments.equals("")){
+		if ( !FillUsingDivComments.equalsIgnoreCase(_True) &&
+			!FillUsingDivComments.equalsIgnoreCase(_False) ) {
+            message = "Invalid FillUsingDivComments parameter \"" + FillUsingDivComments + "\"";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify " + _False + " or " + _True + ", or blank for default of " + _False + "." ) );
+		}
 	}
-	*/
 	String IfMissing = parameters.getValue ( "IfMissing" );
     if ( (IfMissing != null) && !IfMissing.equals("") &&
         !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
@@ -306,6 +305,8 @@ throws InvalidCommandParameterException
     }
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "FillDivRecordsCarryForward" );
+    validList.add ( "FillDivRecordsCarryForwardFlag" );
     validList.add ( "FillUsingDivComments" );
     validList.add ( "FillUsingDivCommentsFlag" );
     validList.add ( "IfMissing" );
@@ -437,9 +438,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
 		InputEnd = "${InputEnd}";
 	}
+	String FillDivRecordsCarryForward = parameters.getValue ("FillDivRecordsCarryForward" );
+	if ( (FillDivRecordsCarryForward == null) || FillDivRecordsCarryForward.isEmpty() ) {
+		FillDivRecordsCarryForward = _False; // Default is to NOT carry forward, different from original ReadHydroBase command
+	}
+	String FillDivRecordsCarryForwardFlag = parameters.getValue ("FillDivRecordsCarryForwardFlag" );
 	String FillUsingDivComments = parameters.getValue ("FillUsingDivComments" );
-	if ( (FillUsingDivComments == null) ||FillUsingDivComments.equals("") ) {
-		FillUsingDivComments = _False;	// Default is NOT to fill
+	if ( (FillUsingDivComments == null) || FillUsingDivComments.isEmpty() ) {
+		FillUsingDivComments = _False;	// Default is to NOT fill, which is consistent with ReadHydroBase command
 	}
 	String FillUsingDivCommentsFlag = parameters.getValue ( "FillUsingDivCommentsFlag" );
 	
@@ -480,22 +486,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Set up properties for the read...
 
-	PropList HydroBase_props = new PropList ( "HydroBase" );
-	/* TODO SAM 2006-04-27 Code cleanup
-	As per Ray Bennett always do this.
-	HydroBase_props.set ( "FillDailyDiv=" + FillDailyDiv );
-	if ( (FillDailyDivFlag != null) && !FillDailyDivFlag.equals("") ) {
-		HydroBase_props.set ( "FillDailyDivFlag=" + FillDailyDivFlag );
+	PropList readProps = new PropList ( "ReadProps" );
+	readProps.set ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
+	if ( (FillDivRecordsCarryForwardFlag != null) && !FillDivRecordsCarryForwardFlag.isEmpty() ) {
+		readProps.set ( "FillDivRecordsCarryForwardFlag=" + FillDivRecordsCarryForwardFlag );
 	}
-	*/
-	HydroBase_props.set ( "FillUsingDivComments=" + FillUsingDivComments );
-	if ( (FillUsingDivCommentsFlag != null) &&!FillUsingDivCommentsFlag.equals("")){
-		HydroBase_props.set ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
+	readProps.set ( "FillUsingDivComments=" + FillUsingDivComments );
+	if ( (FillUsingDivCommentsFlag != null) && !FillUsingDivCommentsFlag.isEmpty() ) {
+		readProps.set ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
 	}
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector<TS>();	// List for time series results.
+	List<TS> tslist = new ArrayList<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -525,7 +528,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				Message.printStatus ( 2, routine,"Reading HydroBase REST web service time series \"" + TSID + "\"" );
 				TS ts = null;
 				try {
-	                ts = dataStore.readTimeSeries ( TSID, InputStart_DateTime, InputEnd_DateTime, readData );
+	                ts = dataStore.readTimeSeries ( TSID, InputStart_DateTime, InputEnd_DateTime, readData, readProps );
 				}
 				catch ( Exception e ) {
 				    ts = null;
@@ -827,7 +830,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					    ts = dataStore.readTimeSeries (
 							tsidentString,
 							InputStart_DateTime,
-							InputEnd_DateTime, readData );
+							InputEnd_DateTime, readData, readProps );
 						// Add the time series to the temporary list.  It will be further processed below...
 		                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
 		                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -1008,6 +1011,20 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
+	}
+	String FillDivRecordsCarryForward = props.getValue("FillDivRecordsCarryForward");
+	if ( (FillDivRecordsCarryForward != null) && (FillDivRecordsCarryForward.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
+	}
+	String FillDivRecordsCarryForwardFlag = props.getValue("FillDivRecordsCarryForwardFlag");
+	if ( (FillDivRecordsCarryForwardFlag != null) && (FillDivRecordsCarryForwardFlag.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FillDivRecordsCarryForwardFlag=" + FillDivRecordsCarryForwardFlag );
 	}
 	String FillUsingDivComments = props.getValue("FillUsingDivComments");
 	if ( (FillUsingDivComments != null) && (FillUsingDivComments.length() > 0) ) {

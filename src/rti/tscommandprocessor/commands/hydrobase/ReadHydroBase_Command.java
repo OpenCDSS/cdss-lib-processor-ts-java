@@ -25,7 +25,6 @@ package rti.tscommandprocessor.commands.hydrobase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -285,20 +284,18 @@ throws InvalidCommandParameterException
 	}
 
 	/* TODOD SAM 2006-04-27 As per Ray Bennett always do this.
-	String FillDailyDiv = parameters.getValue ( "FillDailyDiv" );
-	if ( (FillDailyDiv != null) && !FillDailyDiv.equals("") ) {
-		if (	!FillDailyDiv.equalsIgnoreCase(_True) &&
-			!FillDailyDiv.equalsIgnoreCase(_False) ) {
-			warning +=
-				"The FillDailyDiv parameter must be True " +
-				"(blank) or False";
+	*/
+	String FillDivRecordsCarryForward = parameters.getValue ( "FillDivRecordsCarryForward" );
+	if ((FillDivRecordsCarryForward != null) && !FillDivRecordsCarryForward.equals("")){
+		if ( !FillDivRecordsCarryForward.equalsIgnoreCase(_True) &&
+			!FillDivRecordsCarryForward.equalsIgnoreCase(_False) ) {
+            message = "Invalid FillDivRecordsCarryForward parameter \"" + FillDivRecordsCarryForward + "\"";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify " + _False + " or " + _True + ", or blank for default of " + _True + "." ) );
 		}
 	}
-	String FillDailyDivFlag = parameters.getValue ( "FillDailyDivFlag" );
-	if ( (FillDailyDivFlag != null) && (FillDailyDivFlag.length() != 1) ) {
-		warning += "\nThe FillDailyDivFlag must be 1 character long.";
-	}
-	*/
 	String FillUsingDivComments = parameters.getValue ( "FillUsingDivComments" );
 	if ((FillUsingDivComments != null) && !FillUsingDivComments.equals("")){
 		if (	!FillUsingDivComments.equalsIgnoreCase(_True) &&
@@ -345,6 +342,8 @@ throws InvalidCommandParameterException
     }
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "FillDivRecordsCarryForward" );
+    validList.add ( "FillDivRecordsCarryForwardFlag" );
     validList.add ( "FillUsingDivComments" );
     validList.add ( "FillUsingDivCommentsFlag" );
     validList.add ( "IfMissing" );
@@ -656,13 +655,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	/* TODO SAM 2006-04-27 As per Ray Bennett always do this.
-	String FillDailyDiv = _parameters.getValue ( "FillDailyDiv" );
-	if (	(FillDailyDiv == null) || FillDailyDiv.equals("") ) {
-		FillDailyDiv = _True;		// Default is to fill
-	}
-	String FillDailyDivFlag =
-		_parameters.getValue ( "FillDailyDivFlag" );
 	*/
+	String FillDivRecordsCarryForward = parameters.getValue ("FillDivRecordsCarryForward" );
+	if ( (FillDivRecordsCarryForward == null) || FillDivRecordsCarryForward.isEmpty() ) {
+		FillDivRecordsCarryForward = _True; // Default is to carry forward, based on historical behavior
+	}
+	String FillDivRecordsCarryForwardFlag = parameters.getValue ("FillDivRecordsCarryForwardFlag" );
 	String FillUsingDivComments = parameters.getValue ("FillUsingDivComments" );
 	if ( (FillUsingDivComments == null) ||FillUsingDivComments.equals("") ) {
 		FillUsingDivComments = _False;	// Default is NOT to fill
@@ -688,11 +686,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList HydroBase_props = new PropList ( "HydroBase" );
 	/* TODO SAM 2006-04-27 Code cleanup
 	As per Ray Bennett always do this.
-	HydroBase_props.set ( "FillDailyDiv=" + FillDailyDiv );
-	if ( (FillDailyDivFlag != null) && !FillDailyDivFlag.equals("") ) {
-		HydroBase_props.set ( "FillDailyDivFlag=" + FillDailyDivFlag );
-	}
 	*/
+	HydroBase_props.set ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
+	if ( (FillDivRecordsCarryForwardFlag != null) && !FillDivRecordsCarryForwardFlag.isEmpty() ) {
+		HydroBase_props.set ( "FillDivRecordsCarryForwardFlag=" + FillDivRecordsCarryForwardFlag );
+	}
 	HydroBase_props.set ( "FillUsingDivComments=" + FillUsingDivComments );
 	if ( (FillUsingDivCommentsFlag != null) &&!FillUsingDivCommentsFlag.equals("")){
 		HydroBase_props.set ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
@@ -700,7 +698,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector<TS>();	// List for time series results.
+	List<TS> tslist = new ArrayList<>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -1462,21 +1460,21 @@ public String toString ( PropList props, int majorVersion )
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
 	/* TODO SAM 2006-04-27 Code cleanup. As per Ray Bennett always do this so no optional parameter.
-	String FillDailyDiv = props.getValue("FillDailyDiv");
-	if ( (FillDailyDiv != null) && (FillDailyDiv.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillDailyDiv=" + FillDailyDiv );
-	}
-	String FillDailyDivFlag = props.getValue("FillDailyDivFlag");
-	if ( (FillDailyDivFlag != null) && (FillDailyDivFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillDailyDivFlag=\"" + FillDailyDivFlag + "\"" );
-	}
 	*/
+	String FillDivRecordsCarryForward = props.getValue("FillDivRecordsCarryForward");
+	if ( (FillDivRecordsCarryForward != null) && (FillDivRecordsCarryForward.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
+	}
+	String FillDivRecordsCarryForwardFlag = props.getValue("FillDivRecordsCarryForwardFlag");
+	if ( (FillDivRecordsCarryForwardFlag != null) && (FillDivRecordsCarryForwardFlag.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FillDivRecordsCarryForwardFlag=" + FillDivRecordsCarryForwardFlag );
+	}
 	String FillUsingDivComments = props.getValue("FillUsingDivComments");
 	if ( (FillUsingDivComments != null) && (FillUsingDivComments.length() > 0) ) {
 		if ( b.length() > 0 ) {

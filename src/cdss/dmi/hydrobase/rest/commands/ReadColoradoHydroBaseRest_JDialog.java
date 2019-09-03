@@ -38,7 +38,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -95,14 +94,16 @@ private JTextField __DataSource_JTextField;
 private JTextField __TSID_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;	
-private JTextField __FillUsingDivCommentsFlag_JTextField;
+private SimpleJComboBox __FillDivRecordsCarryForward_JComboBox;
+private JTextField __FillDivRecordsCarryForwardFlag_JTextField;
 private SimpleJComboBox	__FillUsingDivComments_JComboBox;
+private JTextField __FillUsingDivCommentsFlag_JTextField;
 private SimpleJComboBox __IfMissing_JComboBox;
 			
 private JTextArea __command_JTextArea = null;
 // Contains all input filter panels.  Use the ColoradoHydroBaseRestDataStore name/description and data type for each to
 // figure out which panel is active at any time.
-private List<InputFilter_JPanel> __inputFilterJPanelList = new Vector<InputFilter_JPanel>();
+private List<InputFilter_JPanel> __inputFilterJPanelList = new ArrayList<>();
 private ColoradoHydroBaseRestDataStore __dataStore = null; // selected ColoradoHydroBaseRestDataStore
 private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
@@ -247,28 +248,14 @@ private void checkGUIState()
 		if ( DataType.equalsIgnoreCase("DivTotal") ||
 			DataType.equalsIgnoreCase("WaterClass") ||
 			DataType.equalsIgnoreCase("RelTotal") ) {
-			/* TODO SAM 2006-04-28 Review code
-			As per Ray Bennett always do the fill
-			if ( Interval.equalsIgnoreCase("Day") ) {
-				JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, true );
-				JGUIUtil.setEnabled ( __FillDailyDivFlag_JTextField, true );
-			}
-			else {	JGUIUtil.setEnabled (
-				__FillDailyDiv_JComboBox, false );
-				JGUIUtil.setEnabled (
-					__FillDailyDivFlag_JTextField, false );
-			}
-			*/
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, true );
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, true );
 			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
 		}
 		else {
-		    /* TODO SAM 2006-04-28 Review code
-			As per Ray Bennett always do the fill
-			JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, false );
-			JGUIUtil.setEnabled (
-				__FillDailyDivFlag_JTextField, false );
-			*/
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, false );
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, false );
 			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, false );
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
@@ -312,7 +299,8 @@ private void checkInput ()
 	if ( filterPanel != null ) {
     	for ( int i = 1; i <= filterPanel.getNumFilterGroups(); i++ ) {
     	    String where = getWhere ( i - 1 );
-    	    if ( !where.isEmpty() ) {
+    	    // Blank where is something like ";operator;"
+    	    if ( !where.isEmpty() && (where.charAt(0) != ';') && (where.charAt(where.length() - 1) != ';') ) {
     	    	++whereCount;
     	    }
     	    if ( where.length() > 0 ) {
@@ -330,6 +318,14 @@ private void checkInput ()
 		props.set ( "InputEnd", InputEnd );
 	}
 	// Additional parameters used to help provide additional data...
+	String FillDivRecordsCarryForward = __FillDivRecordsCarryForward_JComboBox.getSelected();
+	if ( FillDivRecordsCarryForward.length() > 0 ) {
+		props.set ( "FillDivRecordsCarryForward", FillDivRecordsCarryForward );
+	}
+	String FillDivRecordsCarryForwardFlag = __FillDivRecordsCarryForwardFlag_JTextField.getText();
+	if ( FillDivRecordsCarryForwardFlag.length() > 0 ) {
+		props.set ( "FillDivRecordsCarryForwardFlag", FillDivRecordsCarryForwardFlag );
+	}
 	String FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
 	if ( FillUsingDivComments.length() > 0 ) {
 		props.set ( "FillUsingDivComments", FillUsingDivComments );
@@ -391,6 +387,10 @@ private void commitEdits ()
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputEnd", InputEnd );
+	String FillDivRecordsCarryForward = __FillDivRecordsCarryForward_JComboBox.getSelected();
+	__command.setCommandParameter (	"FillDivRecordsCarryForward", FillDivRecordsCarryForward );
+	String FillDivRecordsCarryForwardFlag = __FillDivRecordsCarryForwardFlag_JTextField.getText();
+	__command.setCommandParameter (	"FillDivRecordsCarryForwardFlag", FillDivRecordsCarryForwardFlag );
 	String FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
 	__command.setCommandParameter (	"FillUsingDivComments", FillUsingDivComments );
 	String FillUsingDivCommentsFlag = __FillUsingDivCommentsFlag_JTextField.getText().trim();
@@ -596,6 +596,9 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
     __tsInfo_JTabbedPane.addTab ( "Match Single Time Series", singleTS_JPanel );
 
     int ySingle = -1;
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel("Single time series must match a simple data type.  Use \"Match 1+ Time Series\" for Structure WaterClass."),
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "Location:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __Location_JTextField = new JTextField ( "", 20 );
@@ -669,47 +672,80 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
     int ydiv = -1;
     divJPanel.setLayout(new GridBagLayout());
     divJPanel.setBorder(BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify how to handle diversion comments (only for diversion records)"));
+        "Specify how to fill missing values in HydroBase diversion records"));
     JGUIUtil.addComponent(main_JPanel, divJPanel,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill using diversion comments:"),
+    JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill daily diversion records using carry forward:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> FillUsingDivComments_Vector = new Vector<String>( 3 );
-	FillUsingDivComments_Vector.add ( "" );
-	FillUsingDivComments_Vector.add ( __command._False );
-	FillUsingDivComments_Vector.add ( __command._True );
+    List<String> FillDivRecordsCarryForward_List = new ArrayList<String>( 3 );
+	FillDivRecordsCarryForward_List.add ( "" );
+	FillDivRecordsCarryForward_List.add ( __command._False );
+	FillDivRecordsCarryForward_List.add ( __command._True );
+	__FillDivRecordsCarryForward_JComboBox = new SimpleJComboBox ( false );
+	__FillDivRecordsCarryForward_JComboBox.setToolTipText("Fill daily diversion record missing values within each irrigation year (Nov-Oct) using carry-forward, zeros at start.");
+	__FillDivRecordsCarryForward_JComboBox.setEnabled(false);
+	__FillDivRecordsCarryForward_JComboBox.setData ( FillDivRecordsCarryForward_List);
+	__FillDivRecordsCarryForward_JComboBox.select ( 0 );
+	__FillDivRecordsCarryForward_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(divJPanel, __FillDivRecordsCarryForward_JComboBox,
+		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(divJPanel, new JLabel (
+		"Optional - fill daily diversion records using carry forward (default=" + __command._False + ")."),
+		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(divJPanel, new JLabel ( "Flag for diversion carry forward filled values:"),
+		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__FillDivRecordsCarryForwardFlag_JTextField = new JTextField ( "", 5 );
+	__FillDivRecordsCarryForwardFlag_JTextField.setToolTipText("Flag for daily values that are filled using carry forward logic, default is \"c\".");
+	__FillDivRecordsCarryForwardFlag_JTextField.setEnabled(false);
+	__FillDivRecordsCarryForwardFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(divJPanel,
+		__FillDivRecordsCarryForwardFlag_JTextField,
+		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(divJPanel, new JLabel (
+		"Optional - flag for filled carry forward values (default=\"c\")."),
+		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill diversion records using comments:"),
+		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> FillUsingDivComments_List = new ArrayList<>( 3 );
+	FillUsingDivComments_List.add ( "" );
+	FillUsingDivComments_List.add ( __command._False );
+	FillUsingDivComments_List.add ( __command._True );
 	__FillUsingDivComments_JComboBox = new SimpleJComboBox ( false );
+	__FillUsingDivComments_JComboBox.setToolTipText("Fill diversion record missing values using irrigation year (Nov-Oct) comments, sets missing to zero.");
 	__FillUsingDivComments_JComboBox.setEnabled(false);
-	__FillUsingDivComments_JComboBox.setData ( FillUsingDivComments_Vector);
+	__FillUsingDivComments_JComboBox.setData ( FillUsingDivComments_List);
 	__FillUsingDivComments_JComboBox.select ( 0 );
 	__FillUsingDivComments_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(divJPanel, __FillUsingDivComments_JComboBox,
 		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(divJPanel, new JLabel (
-		"Optional - whether to use diversion comments to fill more zero values (default=" + __command._True + ")."),
+		"Optional - fill diversion records using annual comments (default=" + __command._False + ")."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill using diversion comments flag:"),
+    JGUIUtil.addComponent(divJPanel, new JLabel ( "Flag for diversion comment filled values:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingDivCommentsFlag_JTextField = new JTextField ( "", 5 );
+	__FillUsingDivCommentsFlag_JTextField.setToolTipText("Flag for values that are filled using diversion comments, use \"Auto\" to use the \"notUsed\" value.");
 	__FillUsingDivCommentsFlag_JTextField.setEnabled(false);
 	__FillUsingDivCommentsFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(divJPanel,
 		__FillUsingDivCommentsFlag_JTextField,
 		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(divJPanel, new JLabel (
-		"Optional - string to flag filled diversion comment values (default=\"not in use\" flag)."),
+		"Optional - flag for filled diversion comment values (default=\"Auto\" to use \"notUsed\" value)."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> IfMissing_Vector = new Vector<String>( 3 );
-    IfMissing_Vector.add ( "" );
-    IfMissing_Vector.add ( __command._Ignore );
-    IfMissing_Vector.add ( __command._Warn );
+    List<String> IfMissing_List = new ArrayList<String>( 3 );
+    IfMissing_List.add ( "" );
+    IfMissing_List.add ( __command._Ignore );
+    IfMissing_List.add ( __command._Warn );
     __IfMissing_JComboBox = new SimpleJComboBox ( false );
-    __IfMissing_JComboBox.setData ( IfMissing_Vector);
+    __IfMissing_JComboBox.setData ( IfMissing_List);
     __IfMissing_JComboBox.select ( 0 );
     __IfMissing_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfMissing_JComboBox,
@@ -865,6 +901,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Col
     }
 
     try {
+    	// Groundwater levels
     	ColoradoHydroBaseRest_Well_InputFilter_JPanel panel =
             new ColoradoHydroBaseRest_Well_InputFilter_JPanel ( dataStore );
         panel.setName(dataStore.getName() + "_Groundwater" );
@@ -996,6 +1033,8 @@ private void refresh ()
 	String filterDelim = ";";
 	String InputStart = "";
 	String InputEnd = "";
+	String FillDivRecordsCarryForward = "";
+	String FillDivRecordsCarryForwardFlag = "";
 	String FillUsingDivComments = "";
 	String FillUsingDivCommentsFlag = "";
 	String IfMissing = "";
@@ -1011,6 +1050,8 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
+		FillDivRecordsCarryForward = props.getValue ( "FillDivRecordsCarryForward" );
+		FillDivRecordsCarryForwardFlag = props.getValue ( "FillDivRecordsCarryForwardFlag" );
 		FillUsingDivComments = props.getValue ( "FillUsingDivComments" );
 		FillUsingDivCommentsFlag = props.getValue ( "FillUsingDivCommentsFlag" );
 		IfMissing = props.getValue ( "IfMissing" );
@@ -1138,6 +1179,25 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
+		if ( FillDivRecordsCarryForward == null ) {
+			// Select default...
+			__FillDivRecordsCarryForward_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __FillDivRecordsCarryForward_JComboBox,
+				FillDivRecordsCarryForward, JGUIUtil.NONE, null, null ) ) {
+				__FillDivRecordsCarryForward_JComboBox.select ( FillDivRecordsCarryForward);
+			}
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid FillDivRecordsCarryForward value \"" +
+				FillDivRecordsCarryForward + "\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
+		if ( FillDivRecordsCarryForwardFlag != null ) {
+			__FillDivRecordsCarryForwardFlag_JTextField.setText(FillDivRecordsCarryForwardFlag);
+		}
 		if ( FillUsingDivComments == null ) {
 			// Select default...
 			__FillUsingDivComments_JComboBox.select ( 0 );
@@ -1234,6 +1294,10 @@ private void refresh ()
 	props.add ( "InputStart=" + InputStart );
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
+	FillDivRecordsCarryForward = __FillDivRecordsCarryForward_JComboBox.getSelected();
+	props.add ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
+	FillDivRecordsCarryForwardFlag = __FillDivRecordsCarryForwardFlag_JTextField.getText();
+	props.add ( "FillDivRecordsCarryForwardFlag=" + FillDivRecordsCarryForwardFlag );
 	FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
 	props.add ( "FillUsingDivComments=" + FillUsingDivComments );
 	FillUsingDivCommentsFlag =__FillUsingDivCommentsFlag_JTextField.getText().trim();

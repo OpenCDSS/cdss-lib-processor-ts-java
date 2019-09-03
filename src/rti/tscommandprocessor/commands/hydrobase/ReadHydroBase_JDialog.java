@@ -295,26 +295,20 @@ private void checkGUIState()
 			DataType.equalsIgnoreCase("RelClass") ) {
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
-			if ( Interval.equalsIgnoreCase("Day") ) {
-				JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, true );
-				JGUIUtil.setEnabled ( __FillDailyDivFlag_JTextField, true );
-			}
-			else {	JGUIUtil.setEnabled (
-				__FillDailyDiv_JComboBox, false );
-				JGUIUtil.setEnabled (
-					__FillDailyDivFlag_JTextField, false );
-			}
+			However, this may change so allow user to change.
 			*/
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, true );
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, true );
 			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
 		}
 		else {
 		    /* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
-			JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, false );
-			JGUIUtil.setEnabled (
-				__FillDailyDivFlag_JTextField, false );
+			However, this may change so allow user to change.
 			*/
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, false );
+			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, false );
 			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, false );
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
@@ -860,7 +854,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillDivRecordsCarryForwardFlag_JTextField = new JTextField ( "", 5 );
 	__FillDivRecordsCarryForwardFlag_JTextField.setToolTipText("Flag for daily values that are filled using carry forward logic, default is \"c\".");
-	__FillDivRecordsCarryForwardFlag_JTextField.setEnabled(false);
+	//__FillDivRecordsCarryForwardFlag_JTextField.setEnabled(false);
 	__FillDivRecordsCarryForwardFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(divJPanel,
 		__FillDivRecordsCarryForwardFlag_JTextField,

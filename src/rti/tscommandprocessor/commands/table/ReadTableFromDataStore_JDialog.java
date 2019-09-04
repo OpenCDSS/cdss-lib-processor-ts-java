@@ -228,7 +228,7 @@ public void actionPerformed(ActionEvent event)
     	    			notesList.add("    Parameter " + (i + 1) + ": name = \"" + procedureData.getParameterName(i) + "\", type=\"" + procedureData.getParameterTypeString(i) + "\"");
         			}
         			notesList.add("The parameter names provided to the command are for information.");
-        			notesList.add("The parameter order and data type when calling the procedure/function are critical.");
+        			notesList.add("The parameter order and data type when calling the procedure are critical.");
         			notesList.add("For example, make sure to provide properly-formatted numbers if type indicates numeric input.");
         			notesList.add("Format date/times using syntax YYYY-MM-DD hh:mm:ss to appropriate precision for date and date/time.");
         		}
@@ -507,7 +507,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "    4) Specify a database procedure/function to run."),
+        "    4) Specify a database procedure or function to run."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The resulting table columns will have data types based on the query results."),
@@ -725,6 +725,25 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         1, yProc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("Optional - property to set to return value."),
         3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for function
+
+    int yFunc = -1;
+    JPanel func_JPanel = new JPanel();
+    func_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "Function", func_JPanel );
+
+    JGUIUtil.addComponent(func_JPanel, new JLabel ("Run a function."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Under development - databases vary in how they define functions and procedures.  They may be equivalent."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Additional features will be added to run functions, as necessary."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Table for results
     

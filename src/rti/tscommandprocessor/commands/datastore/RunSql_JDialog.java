@@ -57,10 +57,9 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.DMI.DMI;
-import RTi.DMI.DMISelectStatement;
+import RTi.DMI.DMIStatement;
 import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
@@ -205,7 +204,8 @@ public void actionPerformed(ActionEvent event)
         	notesList.add("Procedure to run:  " + procedureName );
         	// Get the parameter names and types for the procedure
         	// - Need to declare a procedure
-        	DMISelectStatement q = new DMISelectStatement(__dmi);
+        	// - Use a generic statement that can handle any type of statement
+        	DMIStatement q = new DMIStatement(__dmi);
         	DMIStoredProcedureData procedureData = null;
         	try {
     	    	procedureData = new DMIStoredProcedureData(__dmi,procedureName);
@@ -225,7 +225,7 @@ public void actionPerformed(ActionEvent event)
     	    			notesList.add("    Parameter " + (i + 1) + ": name = \"" + procedureData.getParameterName(i) + "\", type=\"" + procedureData.getParameterTypeString(i) + "\"");
         			}
         			notesList.add("The parameter names provided to the command are for information.");
-        			notesList.add("The parameter order and data type when calling the procedure/function are critical.");
+        			notesList.add("The parameter order and data type when calling the procedure are critical.");
         			notesList.add("For example, make sure to provide properly-formatted numbers if type indicates numeric input.");
         			notesList.add("Format date/times using syntax YYYY-MM-DD hh:mm:ss to appropriate precision for date and date/time.");
         		}
@@ -262,37 +262,6 @@ private void actionPerformedDataStoreSelected ( )
     __dmi = ((DatabaseDataStore)__dataStore).getDMI();
     // Update list of procedures
     populateDataStoreProcedureChoices(getDMI() );
-}
-
-/**
-Display input parameters for the procedure.
-*/
-private void actionPerformedDataStoreProcedureSelected ( )
-{	String routine = "";
-    String procedureName = __DataStoreProcedure_JComboBox.getSelected();
-    if ( procedureName == null ) {
-        // Startup initialization
-    	Message.printStatus(2, routine, "Null procedure at startup.");
-        return;
-    }
-  	Message.printStatus(2, routine, "Selected procedure=\"" + procedureName + "\"");
-    // Get the parameter names and types for the procedure
-    // - Need to declare a procedure
-    DMISelectStatement q = new DMISelectStatement(__dmi);
-    DMIStoredProcedureData procedureData = null;
-    try {
-    	procedureData = new DMIStoredProcedureData(__dmi,procedureName);
-    	q.setStoredProcedureData(procedureData);
-    }
-    catch ( Exception e ) {
-    	Message.printWarning(3, routine, "Unable to created procedure object for \"" + procedureName + "\"" );
-    }
-    // Get the procedure information
-    int nParams = procedureData.getNumParameters();
-  	Message.printStatus(2, routine, "Number of procedure parameters=" + nParams);
-    for ( int i = 1; i <= nParams; i++ ) {
-    	Message.printStatus(2, routine, "Parameter=\"" + procedureData.getParameterName(i) + "\" type=\"" + procedureData.getParameterTypeString(i) + "\"");
-    }
 }
 
 /**
@@ -418,7 +387,7 @@ private void initialize ( JFrame parent, RunSql_Command command )
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command runs an SQL statement or procedure/function on the specified database datastore."),
+        "This command runs an SQL statement, procedure, or function on the specified database datastore."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The SQL statement can be specified in one of three ways - use the tabs below to do so."),
@@ -535,11 +504,12 @@ private void initialize ( JFrame parent, RunSql_Command command )
     proc_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
 
-    JGUIUtil.addComponent(proc_JPanel, new JLabel ("Run a stored procedure."),
+    JGUIUtil.addComponent(proc_JPanel, new JLabel ("Run a stored procedure)."),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel (
-        "Under development - currently only procedures that do not require parameters can be run."),
+        "Under development - use the Edit button to see return value and parameters for procedures."),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(proc_JPanel, new JLabel ( "Datastore procedure:"),
         0, ++yProc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreProcedure_JComboBox = new SimpleJComboBox ( false );
@@ -571,6 +541,22 @@ private void initialize ( JFrame parent, RunSql_Command command )
         1, yProc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("Optional - property to set to return value."),
         3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for function
+
+    int yFunc = -1;
+    JPanel func_JPanel = new JPanel();
+    func_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "Function", func_JPanel );
+
+    JGUIUtil.addComponent(func_JPanel, new JLabel ("Run a function."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Under development - databases vary in how they define functions and procedures.  They may be equivalent."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Additional features will be added to run functions, as necessary."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -618,11 +604,6 @@ public void itemStateChanged (ItemEvent event)
             // User has selected a datastore.
             actionPerformedDataStoreSelected ();
         }
-        else if ( (event.getSource() == __DataStoreProcedure_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
-            // User has selected a procedure.
-        	// TODO smalers 2019-08-26 need to enable
-            //actionPerformedDataStoreProcedureSelected ();
-        }
     }
     refresh();
 }
@@ -663,13 +644,14 @@ Populate the procedure list based on the selected database.
 private void populateDataStoreProcedureChoices ( DMI dmi )
 {   String routine = getClass().getSimpleName() + "populateDataStoreProcedureChoices";
     List<String> procList = null;
-    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system procedures
+    List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system procedures
     if ( dmi == null ) {
-        procList = new Vector<String>();
+        procList = new ArrayList<>();
     }
     else {
         try {
-            procList = DMIUtil.getDatabaseProcedureNames(dmi, true, notIncluded);
+        	boolean returnSpecificName = true; // Needed for overloaded functions
+            procList = DMIUtil.getDatabaseProcedureNames(dmi, true, notIncluded, returnSpecificName );
         }
         catch ( Exception e ) {
             Message.printWarning ( 1, routine, "Error getting procedure list (" + e + ")." );

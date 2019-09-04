@@ -618,7 +618,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	}
                 }
                 if ( errorCount == 0 ) {
-                	rs = q.executeStoredProcedure();
+                	rs = q.executeStoredProcedureQuery();
                 	// Query string is formatted as procedure call:  procedureName(param1,param2,...)
                 	queryString = q.toString();
                 	Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");

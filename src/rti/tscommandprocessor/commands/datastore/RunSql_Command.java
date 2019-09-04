@@ -31,9 +31,11 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -227,16 +229,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String ProcedureParameters = parameters.getValue ( "ProcedureParameters" );
     // Use a LinkedHashMap to retain the parameter order
-    HashMap<String,String> procedureParameters = new LinkedHashMap<String,String>();
-    if ( (ProcedureParameters != null) && (ProcedureParameters.length() > 0) && (ProcedureParameters.indexOf(":") > 0) ) {
-        // First break map pairs by comma
-        List<String>pairs = StringUtil.breakStringList(ProcedureParameters, ",", 0 );
-        // Now break pairs and put in hashtable
-        for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            procedureParameters.put(parts[0].trim(), parts[1].trim() );
-        }
-    }
+    HashMap<String,String> procedureParameters = StringUtil.parseDictionary(ProcedureParameters);
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );
     
     // Find the data store to use...
@@ -377,8 +370,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	else if ( parameterType == java.sql.Types.TIMESTAMP ) {
                 		// Use DateTime to add a layer of parsing and error handling
                 		String s = entry.getValue();
-                		DateTime dt = DateTime.parse(s);
-                		q.setValue(dt,parameterNum);
+                		//DateTime dt = DateTime.parse(s);
+                		// The time must be specified in a string that can be converted to timestamp
+                		OffsetDateTime odt = OffsetDateTime.parse(s);
+                		// Timestamp is GMT able to hold precision to nanoseconds
+                		Timestamp sTimestamp = Timestamp.valueOf(odt.atZoneSameInstant(ZoneId.of("Z")).toLocalDateTime());
+                		q.setValue(sTimestamp,parameterNum);
                 	}
                 	else {
                 		++errorCount;
@@ -389,11 +386,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         		message, "Need to update the software.") );
                 	}
                 }
+               	String queryString = q.toString();
+               	// TODO smalers 2019-09-03 perhaps consolidate to one string for logging
+               	sqlString = queryString;
                 if ( errorCount == 0 ) {
-                	rs = q.executeStoredProcedure();
+                	boolean returnStatus = q.executeStoredProcedure();
                 	// Query string is formatted as procedure call:  procedureName(param1,param2,...)
-                	String queryString = q.toString();
                 	Message.printStatus(2, routine, "Executed SQL \"" + queryString + "\".");
+                	if ( returnStatus == true ) {
+                		Message.printStatus(2, routine, "Procedure return status is " + returnStatus + ".  Can get resultset.");
+                	}
+                	else {
+                		Message.printStatus(2, routine, "Procedure return status is " + returnStatus + " (no resultset available).");
+                	}
                 }
                 // End code from ReadTableToDataStore
         }
@@ -434,7 +439,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                	}
     }
     catch ( Exception e ) {
-        message = "Error querying data store \"" + DataStore + "\" using SQL \"" + sqlString + " (" + e + ").";
+        if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
+        	message = "Error running procedure on datastore \"" + DataStore + "\" using procedure \"" + sqlString + " (" + e + ").";
+        }
+        else {
+        	message = "Error running SQL on datastore \"" + DataStore + "\" using SQL \"" + sqlString + " (" + e + ").";
+        }
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,

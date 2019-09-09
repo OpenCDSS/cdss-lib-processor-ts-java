@@ -329,12 +329,13 @@ throws InvalidCommandParameterException
         }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>();
+    List<String> validList = new ArrayList<>();
     validList.add ( "InputName" );
     validList.add ( "DataStore" );
     validList.add ( "Alias" );
     validList.add ( "TSID" );
     validList.add ( "DataType" );
+    validList.add ( "WaterClass" );
     validList.add ( "Interval" );
     int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
     for ( int i = 1; i <= numFilters; i++ ) { 
@@ -795,6 +796,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Read 1+ time series...
 			// Get the input needed to process the file...
 			String DataType = parameters.getValue ( "DataType" );
+			String WaterClass = parameters.getValue ( "WaterClass" );
 			String Interval = parameters.getValue ( "Interval" );
 			String InputName = parameters.getValue ( "InputName" );
 			if ( InputName == null ) {
@@ -1061,7 +1063,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			else if ( HydroBase_Util.isStructureTimeSeriesDataType(hbdmi, meas_type) ) {
 				structureTSCatalogList = hbdmi.readStructureGeolocStructMeasTypeCatalogList(
 					selectedInputFilterJPanel, selectedDataType, selectedTimeStep);
-	    		size = structureTSCatalogList.size();
+				// This handles diversion records including SFUT
+				// If WaterClass is specified, filter the returned list to the requested WaterClass.
+				// The DiversionWaterClass.getWcIdentifier() will be similar to:
+				//    "0300909 S:2 F:0303732 U:1 T: G: To:"
+				size = structureTSCatalogList.size();
+				if ( (WaterClass != null) && !WaterClass.isEmpty() ) {
+					Message.printStatus(2, routine, "Initial structure meastype query returned " + size + " entries.");
+					boolean found = false;
+					for ( HydroBase_StructureGeolocStructMeasType waterClass : structureTSCatalogList ) {
+						String waterClassId = waterClass.getIdentifier();
+						Message.printStatus(2, routine, "Comparing requested WaterClass \"" + WaterClass + "\" to \"" + waterClassId + "\"" );
+						if ( WaterClass.equalsIgnoreCase(waterClassId) ) {
+							// Matched the single WaterClass
+							// - reset the list to the single object
+							structureTSCatalogList = new ArrayList<>();
+							structureTSCatalogList.add(waterClass);
+							found = true;
+							break;
+						}
+					}
+					if ( !found ) {
+						// Set the catalog to an empty list since the water class was not matched
+						structureTSCatalogList = new ArrayList<>();
+						size = structureTSCatalogList.size();
+						Message.printStatus(2, routine, "After filtering by WaterClass \"" + WaterClass + "\" did not match any entries.");
+					}
+					else {
+						size = structureTSCatalogList.size();
+						Message.printStatus(2, routine, "After filtering by WaterClass \"" + WaterClass + "\" have " + size + " entries.");
+					}
+				}
 			}
 			else if (selectedDataType.equalsIgnoreCase( "WellLevel") || selectedDataType.equalsIgnoreCase( "WellLevelElev")||
 		    	selectedDataType.equalsIgnoreCase( "WellLevelDepth") ) {
@@ -1417,6 +1449,13 @@ public String toString ( PropList props, int majorVersion )
     			b.append ( "," );
     		}
     		b.append ( "DataType=\"" + DataType + "\"" );
+    	}
+        String WaterClass = props.getValue("WaterClass");
+    	if ( (WaterClass != null) && (WaterClass.length() > 0) ) {
+    		if ( b.length() > 0 ) {
+    			b.append ( "," );
+    		}
+    		b.append ( "WaterClass=\"" + WaterClass + "\"" );
     	}
     	String Interval = props.getValue("Interval");
     	if ( (Interval != null) && (Interval.length() > 0) ) {

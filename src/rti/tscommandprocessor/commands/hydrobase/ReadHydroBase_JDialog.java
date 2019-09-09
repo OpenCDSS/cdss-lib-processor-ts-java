@@ -91,6 +91,7 @@ private ReadHydroBase_Command __command = null;
 private SimpleJComboBox __InputName_JComboBox; // Legacy
 private SimpleJComboBox __DataStore_JComboBox = null; // New approach
 private SimpleJComboBox __DataType_JComboBox;
+private JTextField __WaterClass_JTextField;
 private SimpleJComboBox __Interval_JComboBox;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTabbedPane __tsInfo_JTabbedPane = null;
@@ -347,6 +348,10 @@ private void checkInput ()
 	if ( DataType.length() > 0 ) {
 		props.set ( "DataType", DataType );
 	}
+	String WaterClass = __WaterClass_JTextField.getText().trim();
+	if ( WaterClass.length() > 0 ) {
+		props.set ( "WaterClass", WaterClass );
+	}
 	String Interval = __Interval_JComboBox.getSelected();
 	if ( Interval.length() > 0 ) {
 		props.set ( "Interval", Interval );
@@ -418,6 +423,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "TSID", TSID );
 	String DataType = getSelectedDataType();
 	__command.setCommandParameter ( "DataType", DataType );
+	String WaterClass = __WaterClass_JTextField.getText().trim();
+	__command.setCommandParameter ( "WaterClass", WaterClass );
 	String Interval = __Interval_JComboBox.getSelected();
 	__command.setCommandParameter ( "Interval", Interval );
 	String delim = ";";
@@ -731,6 +738,16 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data type for time series"),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Water class:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WaterClass_JTextField = new JTextField ( "", 20 );
+    __WaterClass_JTextField.setToolTipText("Required if a single specific DivClass or RelClass time series is read, provide SFUT string.");
+    __WaterClass_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __WaterClass_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use for specific DivClass & RelClass."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Interval_JComboBox = new SimpleJComboBox ();
@@ -839,7 +856,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 	FillDivRecordsCarryForward_List.add ( __command._False );
 	FillDivRecordsCarryForward_List.add ( __command._True );
 	__FillDivRecordsCarryForward_JComboBox = new SimpleJComboBox ( false );
-	__FillDivRecordsCarryForward_JComboBox.setToolTipText("Fill daily diversion record missing values within each irrigation year (Nov-Oct) using carry-forward, zeros at start.");
+	__FillDivRecordsCarryForward_JComboBox.setToolTipText("Fill daily diversion record missing zero values within each irrigation year (Nov-Oct) using carry-forward, and zeros at start.");
 	__FillDivRecordsCarryForward_JComboBox.setEnabled(false);
 	__FillDivRecordsCarryForward_JComboBox.setData ( FillDivRecordsCarryForward_List);
 	__FillDivRecordsCarryForward_JComboBox.select ( 0 );
@@ -1324,6 +1341,7 @@ private void refresh ()
 	String DataStore = "";
 	String InputName = "";
 	String DataType = "";
+	String WaterClass = "";
 	String Interval = "";
 	String TSID = "";
 	String filterDelim = ";";
@@ -1345,6 +1363,7 @@ private void refresh ()
 	    InputName = props.getValue ( "InputName" );
 	    DataStore = props.getValue ( "DataStore" );
 	    DataType = props.getValue ( "DataType" );
+	    WaterClass = props.getValue ( "WaterClass" );
 	    Interval = props.getValue ( "Interval" );
 		Alias = props.getValue ( "Alias" );
 		TSID = props.getValue ( "TSID" );
@@ -1421,6 +1440,9 @@ private void refresh ()
                   "DataType parameter \"" + DataType + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+	    if ( WaterClass != null ) {
+		    __WaterClass_JTextField.setText ( WaterClass );
+	    }
         // Populate the interval choices based on the selected data type...
         populateIntervalChoices(getDMI() );
         // Now select what the command had previously (if specified)...
@@ -1451,7 +1473,24 @@ private void refresh ()
 				if ( __DataSource_JTextField != null ) {
 					__DataSource_JTextField.setText(tsident.getSource() );
 				}
-				__DataType_JComboBox.setText ( tsident.getType() );
+				String dataType = tsident.getType();
+				if ( dataType.startsWith("WaterClass") || dataType.startsWith("'WaterClass") ) {
+					// DataType choice is only "WaterClass"
+					// - set after processing out the water class
+					// WaterClass is the part after "WaterClass-"
+					int pos = dataType.indexOf("-");
+					if ( pos > 0 ) {
+						// Remove single quotes in the water class that the user sees
+						String waterClass = dataType.substring(pos + 1).replace("'", "");
+						__WaterClass_JTextField.setText ( waterClass );
+					}
+					else {
+						__WaterClass_JTextField.setText ( "" );
+					}
+					// Will set the data type below
+					dataType = "WaterClass";
+				}
+				__DataType_JComboBox.setText ( dataType );
 				__Interval_JComboBox.setText ( tsident.getInterval() );
 				__InputName_JComboBox.select ( tsident.getInputName() );
 			    // Make the single time series tab visible
@@ -1573,13 +1612,29 @@ private void refresh ()
 	String Location = __Location_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
     DataType = getSelectedDataType();
+	WaterClass = __WaterClass_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
+    boolean doQuote = false;
+	if ( (WaterClass != null) && !WaterClass.isEmpty() ) {
+		if ( WaterClass.indexOf(".") > 0 ) {
+			doQuote = true;
+		}
+	}
 	StringBuffer b = new StringBuffer();
 	b.append ( Location );
 	b.append ( "." );
 	b.append ( DataSource );
 	b.append ( "." );
+	if ( doQuote ) {
+		b.append("'");
+	}
 	b.append ( DataType );
+	if ( (WaterClass != null) && !WaterClass.isEmpty() ) {
+		b.append("-" + WaterClass);
+	}
+	if ( doQuote ) {
+		b.append("'");
+	}
 	b.append ( "." );
 	b.append ( Interval );
 	b.append ( "~" + getInputNameForTSID() );
@@ -1597,6 +1652,7 @@ private void refresh ()
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
     props.add ( "DataType=" + DataType );
+	props.add ( "WaterClass=" + WaterClass );
 	props.add ( "Interval=" + Interval );
 	// Set the where clauses...
 	// Since numbers may cause problems, first unset and then set

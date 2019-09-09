@@ -298,6 +298,7 @@ throws InvalidCommandParameterException
     validList.add ( "Alias" );
     validList.add ( "TSID" );
     validList.add ( "DataType" );
+    validList.add ( "WaterClass" );
     validList.add ( "Interval" );
     int numFilters = 25; // Make a big number so all are allowed
     for ( int i = 1; i <= numFilters; i++ ) { 
@@ -440,7 +441,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String FillDivRecordsCarryForward = parameters.getValue ("FillDivRecordsCarryForward" );
 	if ( (FillDivRecordsCarryForward == null) || FillDivRecordsCarryForward.isEmpty() ) {
-		FillDivRecordsCarryForward = _False; // Default is to NOT carry forward, different from original ReadHydroBase command
+		FillDivRecordsCarryForward = _True; // Default is to carry forward, consistent with ReadHydroBase command
 	}
 	String FillDivRecordsCarryForwardFlag = parameters.getValue ("FillDivRecordsCarryForwardFlag" );
 	String FillUsingDivComments = parameters.getValue ("FillUsingDivComments" );
@@ -485,6 +486,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	// Set up properties for the read...
+	// - OK if null values
 
 	PropList readProps = new PropList ( "ReadProps" );
 	readProps.set ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
@@ -568,6 +570,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            // Read 1+ time series using the input filters
 				// Get the input needed to process the file...
 				String DataType = parameters.getValue ( "DataType" );
+				String WaterClass = parameters.getValue ( "WaterClass" );
 				String Interval = parameters.getValue ( "Interval" );
 				String InputName = parameters.getValue ( "InputName" );
 				if ( InputName == null ) {
@@ -689,7 +692,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				if ( isStructure ) {
 					try {
 						structureCatalog = dataStore.getWaterClassesTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Structure_InputFilter_JPanel)filterPanel );
+						// If WaterClass is specified, filter the returned list to the requested WaterClass.
+						// The DiversionWaterClass.getWcIdentifier() will be similar to:
+						//    "0300909 S:2 F:0303732 U:1 T: G: To:"
 						size = structureCatalog.size();
+						if ( (WaterClass != null) && !WaterClass.isEmpty() ) {
+							Message.printStatus(2, routine, "Initial WaterClass query returned " + size + " WaterClass entries.");
+							boolean found = false;
+							for ( DiversionWaterClass waterClass : structureCatalog ) {
+								String waterClassId = waterClass.getWcIdentifier().trim();
+								//int pos = waterClassId.indexOf(" ");
+								//waterClassId = waterClassId.substring(pos).trim();
+								Message.printStatus(2, routine, "Comparing requested WaterClass \"" + WaterClass + "\" to \"" + waterClassId + "\"" );
+								if ( WaterClass.equalsIgnoreCase(waterClassId) ) {
+									// Matched the single WaterClass
+									// - reset the list to the single object
+									structureCatalog = new ArrayList<>();
+									structureCatalog.add(waterClass);
+									found = true;
+									break;
+								}
+							}
+							if ( !found ) {
+								// Set the catalog to an empty list since the water class was not matched
+								structureCatalog = new ArrayList<>();
+								size = structureCatalog.size();
+								Message.printStatus(2, routine, "After filtering by WaterClass \"" + WaterClass + "\" did not match any WaterClass entries.");
+							}
+							else {
+								size = structureCatalog.size();
+								Message.printStatus(2, routine, "After filtering by WaterClass \"" + WaterClass + "\" have " + size + " WaterClass entries.");
+							}
+						}
 					}
 					catch ( Exception e ) {
 						// Probably no data
@@ -777,7 +811,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					}
 					else if ( isStructure ) {
 						// Structure time series, but time series list uses generalized water classes
-						str = (DiversionWaterClass)structureCatalog.get(i);
+						str = structureCatalog.get(i);
 						if ( isWaterClass ) {
 							String wcIdentifier = str.getWcIdentifier();
 							if ( wcIdentifier.indexOf(".") >= 0 ) {
@@ -973,6 +1007,13 @@ public String toString ( PropList props )
     			b.append ( "," );
     		}
     		b.append ( "DataType=\"" + DataType + "\"" );
+    	}
+        String WaterClass = props.getValue("WaterClass");
+    	if ( (WaterClass != null) && (WaterClass.length() > 0) ) {
+    		if ( b.length() > 0 ) {
+    			b.append ( "," );
+    		}
+    		b.append ( "WaterClass=\"" + WaterClass + "\"" );
     	}
     	String Interval = props.getValue("Interval");
     	if ( (Interval != null) && (Interval.length() > 0) ) {

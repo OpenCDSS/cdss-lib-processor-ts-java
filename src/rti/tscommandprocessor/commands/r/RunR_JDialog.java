@@ -260,7 +260,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Run an R script, by calling R program.  The Rscript program will be run by default if not specified." ),
+		"Run an R script, by running an R program.  The Rscript program will be run by default if not specified." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "R scripts are useful for manipulating data outside of TSTool's capabilities or as a cross-check for TSTool calculations."),
@@ -275,20 +275,24 @@ private void initialize ( JFrame parent, Command command )
         "   \\\" - literal quote, needed to surround arguments that include spaces" ), 
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   ${InstallDir} - the TSTool software installation directory" ), 
+        "   ${InstallDirPortable} - the TSTool software installation directory, using all forward slashes" ), 
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   ${WorkingDir} - the working directory (location of command file)" ), 
+        "   ${WorkingDirPortable} - the working directory (location of command file), using all forward slashes" ), 
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "   ${Property} - other global properties" ), 
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel("The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel("The working directory (portable format) is: " +
+        	IOUtil.toPortablePath(__working_dir) ), 
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The working directory for the R script must be specified for the R script to use relative paths for files."),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "See documentation for examples."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

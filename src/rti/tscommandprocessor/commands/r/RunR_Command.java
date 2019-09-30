@@ -178,11 +178,14 @@ public boolean editCommand ( JFrame parent )
 Get the R program to use to execute the interpreter in command-line mode.
 If the Program parameter is not specified, use defaults based on standard installation and assuming
 that the program is in the path.
-@param Program program to run.  If an absolute path use as is.
+@param Program program to run:
+If an absolute path use as is.
 If blank, the R program may be in the PATH, but the R installer does not modify the PATH by default.
 Therefore, search for Rscript.exe on windows and Rscript on Linux in the PATH folders.
 If not found in the PATH, search in standard installation folders.
 Return null if not found.
+@return rProgram the name of the R program to run, either a simple filename if in the PATH,
+or a path to executable (as provided, or found in the installation folder).
 */
 private String getRProgram ( String Program )
 {	String routine = getClass().getSimpleName() + ".getRProgram";
@@ -213,14 +216,21 @@ private String getRProgram ( String Program )
     		// Windows - something like:
     		//    C:\Program Files\R\R-3.6.1\i386\Rscript.exe
     		//    C:\Program Files\R\R-3.6.1\x64\Rscript.exe
-    		// TODO smalers 2010-09-21 need to replace specific version with wildcard
-    		File f2 = new File("C:\\Program Files\\R\\R-3.6.1\\bin\\x64\\" + rProgram);
-    		if ( f2.exists() && f2.canExecute() ) {
-    			return "\"" + f2.getAbsolutePath() + "\"";
+    		// Focus on recent convention for R and can add other options later if necessary
+    		// List the folders in "C:\Program Files\R"
+    		List<File> rFolders = IOUtil.getFilesMatchingPattern("C:\\Program Files\\R", "*", false);
+    		for ( File folder : rFolders ) {
+    			// Try 64-bit version
+    			String folderPath = folder.getAbsolutePath();
+    			File f2 = new File(folderPath + "\\bin\\x64\\" + rProgram);
+    			Message.printStatus(2, routine, "Checking for R executable:  " + f2.getAbsolutePath());
+    			if ( f2.exists() && f2.canExecute() ) {
+    				Message.printStatus(2, routine, "R executable found:  " + f2.getAbsolutePath());
+    				return "\"" + f2.getAbsolutePath() + "\"";
+    			}
     		}
-    		else {
-    			Message.printStatus(2, routine, "Did not find program \"" + rProgram + "\" in typical install locations.");
-    		}
+    		// Could add 32-bit search or other path names that may have been used
+    		Message.printStatus(2, routine, "Did not find program \"" + rProgram + "\" in typical install locations.");
     	}
     }
     return null;
@@ -340,18 +350,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Run the R script by making a system call to R.
-@param rProgram the name of the R program to run, either a simple filename, in which case the PATH
-will be used to find the program, or a full path to the program.
+@param command_tag for logging
+@param warning_count count of warnings, for logging, also returned
+@param rProgram the name of the R program to run, either a simple filename,
+in which case the PATH will be used, or a path to an executable program.
 By default Rscript/Rscript.exe is used.
 @param rOptions command line options for the R program (not the script).
 @param rfile R script to run, full path.
 @param scriptArgs Arguments to pass to the R script (not the R program).
-@param setwdHow indicates how to set the working directory (_IncludedInArguments or _SetwdExpression),
-if null the latter.
+@param setwdHow indicates how to set the working directory (_IncludedInArguments),
+if null the latter.  In the future an environment variable may be added.
+@return warning_count total warning count
 */
 private int runR ( String command_tag, int warning_count, String rProgram, String [] rOptions,
     String rFile, String [] scriptArgs, String setwdHow )
-{   String routine = "RunR_Command.runR", message;
+{   String routine = getClass().getSimpleName() + ".runR", message;
     // Length is +2 because of R program and R script
     int commandLineNum = 1 + rOptions.length + 1 + scriptArgs.length;
     String [] commandLineArray = new String[commandLineNum];
@@ -392,7 +405,7 @@ private int runR ( String command_tag, int warning_count, String rProgram, Strin
    	}
    	*/
    	// R script to run
-    commandLineArray[iArg++] = IOUtil.toPosixPath(rFile); // R script as full path
+    commandLineArray[iArg++] = IOUtil.toPortablePath(rFile); // R script as full path
    	// R script arguments
     for ( int i = 0; i < scriptArgs.length; i++ ) {
         String arg = scriptArgs[i];

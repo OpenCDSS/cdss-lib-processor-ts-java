@@ -1279,6 +1279,9 @@ public Object getPropContents ( String propName ) throws Exception
 	else if ( propName.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
+	else if ( propName.equalsIgnoreCase("WorkingDirPortable") ) {
+		return IOUtil.toPortablePath(getPropContents_WorkingDir());
+	}
 	else if ( propName.equalsIgnoreCase("WorkingDirPosix") ) {
 		return IOUtil.toPosixPath(getPropContents_WorkingDir());
 	}
@@ -1637,6 +1640,7 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
         v.add ( "WarningLevelLogFile" );
         v.add ( "WarningLevelScreen" );
         v.add ( "WorkingDir" );
+        v.add ( "WorkingDirPortable" );
         v.add ( "WorkingDirPosix" );
         set.addAll ( v );
 	}
@@ -3007,9 +3011,10 @@ throws Exception
 	// Return the working directory as a String.
 	// - This can then be used in editors, for example.
 	// - The WorkingDir property will have been set in the temporary processor.
-	// - Also set WorkingDirPosix and phase in POSIX paths.
+	// - Also set WorkingDirPosix and WorkingDirPortable and phase in POSIX paths.
 	PropList results = bean.getResultsPropList();
 	results.set( "WorkingDir", (String)ts_processor.getPropContents ( "WorkingDir") );
+	results.set( "WorkingDirPortable", IOUtil.toPortablePath((String)ts_processor.getPropContents ( "WorkingDir")) );
 	results.set( "WorkingDirPosix", IOUtil.toPosixPath((String)ts_processor.getPropContents ( "WorkingDir")) );
 	return bean;
 }
@@ -4072,6 +4077,7 @@ throws Exception
     	__propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
     }
     __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    __propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases

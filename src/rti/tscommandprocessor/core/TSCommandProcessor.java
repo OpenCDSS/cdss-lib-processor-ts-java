@@ -1279,6 +1279,12 @@ public Object getPropContents ( String propName ) throws Exception
 	else if ( propName.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
+	else if ( propName.equalsIgnoreCase("WorkingDirPortable") ) {
+		return IOUtil.toPortablePath(getPropContents_WorkingDir());
+	}
+	else if ( propName.equalsIgnoreCase("WorkingDirPosix") ) {
+		return IOUtil.toPosixPath(getPropContents_WorkingDir());
+	}
 	else {
 	    // Property is not one of the individual objects that have been historically
 	    // maintained, but it may be a user-supplied property in the hashtable.
@@ -1634,6 +1640,8 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
         v.add ( "WarningLevelLogFile" );
         v.add ( "WarningLevelScreen" );
         v.add ( "WorkingDir" );
+        v.add ( "WorkingDirPortable" );
+        v.add ( "WorkingDirPosix" );
         set.addAll ( v );
 	}
     if ( includeDynamicProperties ) {
@@ -2949,6 +2957,7 @@ throws Exception
 
 /**
 Process the GetWorkingDirForCommand request.
+Do not set any internal "Posix" variations - retrieve those as needed by reformatting the other versions.
 */
 private CommandProcessorRequestResultsBean processRequest_GetWorkingDirForCommand (
 		String request, PropList request_params )
@@ -2980,7 +2989,8 @@ throws Exception
 	setWorkingDir_CommandVector.add ( 0, newInitialSetWorkingDirCommand() );
 	// Create a local command processor
 	TSCommandProcessor ts_processor = new TSCommandProcessor();
-	ts_processor.setPropContents("InitialWorkingDir", getPropContents("InitialWorkingDir"));
+	Object workingDir = getPropContents("InitialWorkingDir");
+	ts_processor.setPropContents("InitialWorkingDir", workingDir);
 	int size = setWorkingDir_CommandVector.size();
 	// Add all the commands (currently no method to add all because this is normally not done).
 	for ( int i = 0; i < size; i++ ) {
@@ -2998,10 +3008,14 @@ throws Exception
 		Message.printWarning(2, routine, "Error getting working directory for command." );
 		Message.printWarning(2, routine, e);
 	}
-	// Return the working directory as a String.  This can then be used in editors, for
-	// example.  The WorkingDir property will have been set in the temporary processor.
+	// Return the working directory as a String.
+	// - This can then be used in editors, for example.
+	// - The WorkingDir property will have been set in the temporary processor.
+	// - Also set WorkingDirPosix and WorkingDirPortable and phase in POSIX paths.
 	PropList results = bean.getResultsPropList();
 	results.set( "WorkingDir", (String)ts_processor.getPropContents ( "WorkingDir") );
+	results.set( "WorkingDirPortable", IOUtil.toPortablePath((String)ts_processor.getPropContents ( "WorkingDir")) );
+	results.set( "WorkingDirPosix", IOUtil.toPosixPath((String)ts_processor.getPropContents ( "WorkingDir")) );
 	return bean;
 }
 
@@ -4063,12 +4077,15 @@ throws Exception
     	__propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
     }
     __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    __propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
+    __propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases
     __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     __propertyHashmap.put ( "UserHomeDir", homeDir );
+    __propertyHashmap.put ( "UserHomeDirPosix", IOUtil.toPosixPath(homeDir) );
     __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
     __propertyHashmap.put ( "UserName", System.getProperty("user.name") );
     // Set the program version as a property, useful for version-dependent command logic

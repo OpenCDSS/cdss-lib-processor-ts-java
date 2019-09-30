@@ -73,7 +73,7 @@ import rti.tscommandprocessor.commands.ensemble.SetEnsembleProperty_Command;
 // GRTS commands (time series products).
 import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
-
+import rti.tscommandprocessor.commands.r.RunR_Command;
 // HEC-DSS commands.
 import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
 import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
@@ -978,17 +978,20 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("RunDSSUTL") ) {
         return new RunDSSUTL_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("RunningAverage") ) {
+        return new RunningAverage_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("RunningStatisticTimeSeries") ) {
+        return new RunningStatisticTimeSeries_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("RunProgram") ) {
         return new RunProgram_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RunPython") ) {
         return new RunPython_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunningAverage") ) {
-        return new RunningAverage_Command ();
-    }
-    else if ( commandName.equalsIgnoreCase("RunningStatisticTimeSeries") ) {
-        return new RunningStatisticTimeSeries_Command ();
+    else if ( commandName.equalsIgnoreCase("RunR") ) {
+        return new RunR_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RunSql") ) {
         return new RunSql_Command ();

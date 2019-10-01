@@ -66,7 +66,8 @@ The column names to create for the table.
 private String [] __columnNames = null;
 
 /**
-The column names to create for the table.
+The column types to create for the table, corresponding to string version of  TableField.DATA_TYPE_*.
+If the type is an array, the string will be [type].
 */
 private String [] __columnTypes = null;
 
@@ -116,7 +117,12 @@ throws InvalidCommandParameterException
                     message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
 		}
 		else {
+			// Get data type choices without note
 		    List<String>dataTypeChoices = TableField.getDataTypeChoices(false);
+		    List<String>dataTypeArrayChoices = new ArrayList<>();
+		    for ( String dataType : dataTypeChoices ) {
+		    	dataTypeArrayChoices.add("[" + dataType + "]");
+		    }
 		    int size = v.size();
 		    if ( (size %2) != 0 ) {
                 message = "Column data are not specified in pairs.";
@@ -134,13 +140,16 @@ throws InvalidCommandParameterException
     				__columnNames[columnCount] = v.get(i).trim();
     				__columnTypes[columnCount] = v.get(++i).trim(); // Increment i to handle pairs
     				// Make sure that the data type is recognized
-    				if ( StringUtil.indexOfIgnoreCase(dataTypeChoices, __columnTypes[columnCount]) < 0 ) {
+    				// - check simple type and [type]
+    				int posType = StringUtil.indexOfIgnoreCase(dataTypeChoices, __columnTypes[columnCount]);
+    				int posArrayType = StringUtil.indexOfIgnoreCase(dataTypeArrayChoices, __columnTypes[columnCount]);
+    				if ( (posType < 0) && (posArrayType < 0) ) {
                         message = "Column \"" + __columnNames[columnCount] + "\" type (" +
                         __columnTypes[columnCount] + ") is invalid";
     					warning += "\n" + message;
                         status.addToLog ( CommandPhaseType.INITIALIZATION,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the column type as date, double, float, int, string." ) );
+                                message, "Specify the column type as boolean, datetime, double, float, integer, long, short, or string, or use [ ] around type to indicate array." ) );
     				}
     			}
 		    }
@@ -148,10 +157,10 @@ throws InvalidCommandParameterException
 	}
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+	List<String> validList = new ArrayList<>(2);
     validList.add ( "TableID" );
     validList.add ( "Columns" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -282,7 +291,23 @@ CommandWarningException, CommandException
             // Create the table with column data that was created in checkCommandParameters()
             if ( __columnNames != null ) {
                 for ( int i = 0; i < __columnNames.length; i++ ) {
-                    if ( (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
+                	if ( __columnTypes[i].charAt(0) == '[' ) {
+                		// Column type is an array, which will be the main type
+                		// - also set the precision based on the type in the array
+                		String arrayType = __columnTypes[i].substring(1,(__columnTypes[i].length() - 1));
+                		if ( (TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_DOUBLE) ||
+                        	(TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_FLOAT) ) {
+                        	// Set the precision to 2 (width to 12), which should be reasonable for many data types
+                			// - since an array, the data type includes a base offset
+                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], 12, 2) );
+                    	}
+                    	else {
+                        	// No precision is necessary and specify the field width as -1 meaning it can grow
+                			// - since an array, the data type includes a base offset
+                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], -1) );
+                    	}
+                	}
+                	else if ( (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
                         (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_FLOAT) ) {
                         // Set the precision to 2 (width to 12), which should be reasonable for many data types
                         columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], 12, 2) );

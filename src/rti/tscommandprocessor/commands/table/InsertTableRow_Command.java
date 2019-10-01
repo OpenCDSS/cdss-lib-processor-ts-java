@@ -56,7 +56,7 @@ This class initializes, checks, and runs the InsertTableRow() command.
 */
 public class InsertTableRow_Command extends AbstractCommand
 {
-    
+ 
 /**
 Constructor.
 */

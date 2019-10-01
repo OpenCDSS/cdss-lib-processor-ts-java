@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -108,7 +109,10 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
+	String Delimiter = parameters.getValue ( "Delimiter" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+	String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
+	String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
 	String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
@@ -126,6 +130,14 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid table identifier." ) );
+    }
+
+    if ( (Delimiter != null) && !Delimiter.isEmpty() && (Delimiter.length() != 1) ) {
+        message = "The delimiter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "The delimiter, if specified, must be a single character." ) );
     }
 	
 	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
@@ -213,7 +225,29 @@ throws InvalidCommandParameterException
                         message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
+
+    if ( (WriteColumnNames != null) && !WriteColumnNames.equals("") ) {
+        if ( !WriteColumnNames.equalsIgnoreCase(_False) && !WriteColumnNames.equalsIgnoreCase(_True) ) {
+            message = "The WriteColumnNames parameter (" + WriteColumnNames + ") must be " + _False +
+            " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
+    }
     
+    if ( (AlwaysQuoteDateTimes != null) && !AlwaysQuoteDateTimes.equals("") ) {
+        if ( !AlwaysQuoteDateTimes.equalsIgnoreCase(_False) && !AlwaysQuoteDateTimes.equalsIgnoreCase(_True) ) {
+            message = "The AlwaysQuoteDateTimes parameter (" + AlwaysQuoteDateTimes + ") must be " + _False +
+            " (default) or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
+    }
+
     if ( (AlwaysQuoteStrings != null) && !AlwaysQuoteStrings.equals("") ) {
         if ( !AlwaysQuoteStrings.equalsIgnoreCase(_False) && !AlwaysQuoteStrings.equalsIgnoreCase(_True) ) {
             message = "The AlwaysQuoteStrings parameter (" + AlwaysQuoteStrings + ") must be " + _False +
@@ -236,10 +270,13 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<>(11);
 	validList.add ( "OutputFile" );
 	validList.add ( "TableID" );
+	validList.add ( "Delimiter" );
 	validList.add ( "WriteHeaderComments" );
+	validList.add ( "WriteColumnNames" );
+	validList.add ( "AlwaysQuoteDateTimes" );
 	validList.add ( "AlwaysQuoteStrings" );
 	validList.add ( "NewlineReplacement" );
 	validList.add ( "NaNValue" );
@@ -356,20 +393,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
-    boolean WriteHeaderComments_boolean = true;
+    boolean WriteHeaderComments_boolean = true; // Default
     if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
         WriteHeaderComments_boolean = false;
     }
+    String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
+    boolean WriteColumnNames_boolean = true; // Default
+    if ( (WriteColumnNames != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
+        WriteColumnNames_boolean = false;
+    }
+    String Delimiter = parameters.getValue ( "Delimiter" );
+    if ( (Delimiter == null) || Delimiter.isEmpty() ) {
+    	Delimiter = ","; // Default
+    }
+    String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
     String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
-    boolean AlwaysQuoteStrings_boolean = false; // Default
-    if ( (AlwaysQuoteStrings != null) && AlwaysQuoteStrings.equalsIgnoreCase(_True) ) {
-        AlwaysQuoteStrings_boolean = true;
-    }
     String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
-    String newlineReplacement = NewlineReplacement;
-    if ( (NewlineReplacement != null) && NewlineReplacement.equals("") ) {
-        newlineReplacement = null; // User must use \s to indicate space
-    }
     String NaNValue = parameters.getValue ( "NaNValue" );
     if ( NaNValue != null ) {
         if ( NaNValue.equals("") ) {
@@ -437,8 +476,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputSchemaFile)) );
 		}
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
-		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
-		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement), NaNValue,
+		HashMap<String,String> writeProps = new HashMap<>();
+		writeProps.put("AlwaysQuoteDateTimes", AlwaysQuoteDateTimes);
+		writeProps.put("AlwaysQuoteStrings", AlwaysQuoteStrings);
+		writeProps.put("NaNValue", NaNValue);
+		writeProps.put("NewlineReplacement", StringUtil.literalToInternal(NewlineReplacement));
+		warning_count = writeTable ( table, OutputFile_full, Delimiter, WriteHeaderComments_boolean,
+			WriteColumnNames_boolean, writeProps,
 		    outputSchemaFile, outputSchemaFormat,
 		    warning_level, command_tag, warning_count );
 		// Save the output file name...
@@ -494,6 +538,9 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+	String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
+	String Delimiter = parameters.getValue ( "Delimiter" );
+	String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
 	String NaNValue = parameters.getValue ( "NaNValue" );
@@ -517,6 +564,24 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
+    if ( (WriteColumnNames != null) && (WriteColumnNames.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteColumnNames=" + WriteColumnNames );
+    }
+    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Delimiter=" + Delimiter );
+    }
+    if ( (AlwaysQuoteDateTimes != null) && (AlwaysQuoteDateTimes.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AlwaysQuoteDateTimes=" + AlwaysQuoteDateTimes );
     }
     if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -642,16 +707,15 @@ private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSche
 Write a table to a delimited file.
 @param table Table to write.
 @param OutputFile name of file to write.
+@param delimiter delimiter character
+@param writeColumnNames indicates whether column names should be written
 @param writeHeaderComments indicates whether header comments should be written (some software like Esri ArcGIS
 do not handle comments)
-@param alwaysQuoteStrings if true, then always surround strings with double quotes; if false strings will only
-be quoted when they include the delimiter
-@param newlineReplacement if non-null, string to replace newlines in strings when writing the file
-@param NaNValue value to write for NaN (null will result in "NaN" being output).
+@param writeProps properties to control the write, passed to library code
 @exception IOException if there is an error writing the file.
 */
-private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
-	boolean alwaysQuoteStrings, String newlineReplacement, String NaNValue,
+private int writeTable ( DataTable table, String OutputFile, String delimiter, boolean writeHeaderComments,
+	boolean writeColumnNames, HashMap<String,String> writeProps,
 	String outputSchemaFile, String outputSchemaFormat,
 	int warning_level, String command_tag, int warning_count )
 throws IOException
@@ -696,8 +760,7 @@ throws IOException
 	
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
-		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings,
-		    newlineReplacement, NaNValue );
+		table.writeDelimitedFile(OutputFile, delimiter, writeColumnNames, outputCommentsList, "#", writeProps );
 		if ( (outputSchemaFile != null) && !outputSchemaFile.isEmpty() ) {
 			if ( outputSchemaFormat.equalsIgnoreCase(_GoogleBigQuery) ) {
 				writeGoogleBigQueryTableSchema ( table, outputSchemaFile );

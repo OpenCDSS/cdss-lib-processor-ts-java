@@ -175,12 +175,13 @@ private void initialize ( JFrame parent, NewTable_Command command )
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Columns should be defined using syntax:   name,type;name,type"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel ("Available types are:"),
+    JGUIUtil.addComponent(paragraph, new JLabel ("Available types are shown below for single values and arrays of values:"),
 	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-	    List<String> types = TableField.getDataTypeChoices(true);
-    int size = types.size();
+    List<String> typesWithNote = TableField.getDataTypeChoices(true);
+    List<String> types = TableField.getDataTypeChoices(false);
+    int size = typesWithNote.size();
     for ( int i = 0; i < size; i++ ) {
-        JGUIUtil.addComponent(paragraph, new JLabel ("    " + types.get(i)),
+        JGUIUtil.addComponent(paragraph, new JLabel ("    " + typesWithNote.get(i) + ", for array use: [" + types.get(i) + "]"),
             0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     }
 

@@ -30,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
@@ -65,6 +66,8 @@ private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextArea __ColumnFilters_JTextArea = null;
 private JTextArea __ColumnValues_JTextArea = null;
+private JTextField __Column_JTextField = null;
+private JTextField __Value_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -143,6 +146,8 @@ private void checkInput ()
 	String TableID = __TableID_JComboBox.getSelected();
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnValues = __ColumnValues_JTextArea.getText().trim().replace("\n"," ");
+	String Column = __Column_JTextField.getText().trim();
+	String Value = __Value_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -153,6 +158,12 @@ private void checkInput ()
     }
     if ( ColumnValues.length() > 0 ) {
         props.set ( "ColumnValues", ColumnValues );
+    }
+    if ( Column.length() > 0 ) {
+        props.set ( "Column", Column );
+    }
+    if ( Value.length() > 0 ) {
+        props.set ( "Value", Value );
     }
 	try {
 	    // This will warn the user...
@@ -173,9 +184,13 @@ private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
     String ColumnValues = __ColumnValues_JTextArea.getText().trim();
+	String Column = __Column_JTextField.getText().trim();
+	String Value = __Value_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "ColumnValues", ColumnValues );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
+	__command.setCommandParameter ( "Column", Column );
+	__command.setCommandParameter ( "Value", Value );
 }
 
 /**
@@ -207,6 +222,15 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "For example, use this command to initialize or reset values after creating or reading a table."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Values can be set using either of the following approaches:"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "1. Column(s) and value(s) can be provided, to modify 1+ columns."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "2. Column and Value can be provided, to modify 1 column, useful when setting complex data such as array."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -254,6 +278,26 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnValues",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Column_JTextField = new JTextField (10);
+    __Column_JTextField.setToolTipText("Specify the column, can use ${Property} notation");
+    __Column_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Column_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column name for data to set."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Value:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Value_JTextField = new JTextField (10);
+    __Value_JTextField.setToolTipText("Specify the value to set, [value1,value2,...] for array, can use ${Property} notation");
+    __Value_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Value_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - value to set."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -332,16 +376,20 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String ColumnFilters = "";
     String ColumnValues = "";
+    String Column = "";
+    String Value = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
         ColumnValues = props.getValue ( "ColumnValues" );
+        Column = props.getValue ( "Column" );
+        Value = props.getValue ( "Value" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -363,15 +411,25 @@ private void refresh ()
         if ( ColumnValues != null ) {
             __ColumnValues_JTextArea.setText ( ColumnValues );
         }
+        if ( Column != null ) {
+            __Column_JTextField.setText ( Column );
+        }
+        if ( Value != null ) {
+            __Value_JTextField.setText ( Value );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
 	ColumnValues = __ColumnValues_JTextArea.getText().trim();
+	Column = __Column_JTextField.getText().trim();
+	Value = __Value_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "ColumnFilters=" + ColumnFilters );
 	props.add ( "ColumnValues=" + ColumnValues );
+	props.add ( "Column=" + Column );
+	props.add ( "Value=" + Value );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

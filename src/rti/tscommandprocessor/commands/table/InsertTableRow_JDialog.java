@@ -111,7 +111,10 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnValues") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnValues = __ColumnValues_JTextArea.getText().trim();
-        String [] notes = { "Specify the column names and corresponding values to set." };
+        String [] notes = { "Specify the column names and corresponding values to set.",
+        	"Array values currently cannot be set."};
+            // TODO smalers 2019-09-30 Need to figure out how to enable array notation
+        	//"For arrays, specify the values using format:  [value1,value2,value3,...]"};
         String columnValues = (new DictionaryJDialog ( __parent, true, ColumnValues, "Edit ColumnValues Parameter",
             notes, "Column", "Value",10)).response();
         if ( columnValues != null ) {
@@ -286,7 +289,9 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     pack();
     JGUIUtil.center(this);
 	refresh();	// Sets the __path_JButton status
-	setResizable (false);
+	// Allow resizing because of dynamic content that can cause issues
+	//setResizable (false);
+	setResizable (true);
     super.setVisible(true);
 }
 

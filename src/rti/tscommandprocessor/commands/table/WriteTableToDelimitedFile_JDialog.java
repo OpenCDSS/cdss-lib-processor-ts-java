@@ -87,6 +87,9 @@ private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
+private SimpleJComboBox __WriteColumnNames_JComboBox = null;
+private JTextField __Delimiter_JTextField = null;
+private SimpleJComboBox __AlwaysQuoteDateTimes_JComboBox = null;
 private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
 private JTextField __NewlineReplacement_JTextField = null;
 private JTextField __NaNValue_JTextField = null;
@@ -253,6 +256,9 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+    String WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
+    String AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
     String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     String NaNValue = __NaNValue_JTextField.getText().trim();
@@ -269,6 +275,15 @@ private void checkInput ()
     }
     if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
         parameters.set ( "WriteHeaderComments", WriteHeaderComments );
+    }
+    if ( (WriteColumnNames != null) && (WriteColumnNames.length() > 0) ) {
+        parameters.set ( "WriteColumnNames", WriteColumnNames );
+    }
+    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+        parameters.set ( "Delimiter", Delimiter );
+    }
+    if ( (AlwaysQuoteDateTimes != null) && (AlwaysQuoteDateTimes.length() > 0) ) {
+        parameters.set ( "AlwaysQuoteDateTimes", AlwaysQuoteDateTimes );
     }
     if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
         parameters.set ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
@@ -304,6 +319,9 @@ private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();   
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+    String WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
+	String AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	String NaNValue = __NaNValue_JTextField.getText().trim();
@@ -312,6 +330,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
+	__command.setCommandParameter ( "WriteColumnNames", WriteColumnNames );
+	__command.setCommandParameter ( "Delimiter", Delimiter );
+	__command.setCommandParameter ( "AlwaysQuoteDateTimes", AlwaysQuoteDateTimes );
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
 	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 	__command.setCommandParameter ( "NaNValue", NaNValue );
@@ -343,11 +364,11 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 		"relative path (relative to the working directory)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The delimiter is a comma, header comment lines start with #, " +
+        "Defaults are delimiter=comma (,), header comment lines start with #, " +
         "and column headings are the first non-comment line."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Double quote characters in data are replaced with \"\" (two double quotes).  Quotes inserted at start and end of line are single."),
+        "Double quote characters in data are replaced with \"\" (two double quotes)."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A schema file can also be written to provide metadata about the delimited file columns, which can be used by other software."),
@@ -405,10 +426,53 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          "Optional - should header comments be written? (default=" + __command._True + ")."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write column names?:"), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __WriteColumnNames_JComboBox = new SimpleJComboBox ( false );
+     List<String> writeColumnNamesList = new ArrayList<>();
+     writeColumnNamesList.add("");
+     writeColumnNamesList.add(__command._False);
+     writeColumnNamesList.add(__command._True);
+     __WriteColumnNames_JComboBox.setData ( writeColumnNamesList );
+     __WriteColumnNames_JComboBox.select(0);
+     __WriteColumnNames_JComboBox.addItemListener (this);
+     JGUIUtil.addComponent(main_JPanel, __WriteColumnNames_JComboBox,
+         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - should column names be written? (default=" + __command._True + ")."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __Delimiter_JTextField = new JTextField (10);
+     __Delimiter_JTextField.addKeyListener (this);
+     JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - delimiter character (default=,)."),
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote date/times?:"), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __AlwaysQuoteDateTimes_JComboBox = new SimpleJComboBox ( false );
+     __AlwaysQuoteDateTimes_JComboBox.setToolTipText("Should date/times always be quotes?  Useful to help Excel date/time handling.");
+     List<String> alwaysQuoteDateTimesList = new ArrayList<>();
+     alwaysQuoteDateTimesList.add("");
+     alwaysQuoteDateTimesList.add(__command._False);
+     alwaysQuoteDateTimesList.add(__command._True);
+     __AlwaysQuoteDateTimes_JComboBox.setData ( alwaysQuoteDateTimesList );
+     __AlwaysQuoteDateTimes_JComboBox.select(0);
+     __AlwaysQuoteDateTimes_JComboBox.addItemListener (this);
+     JGUIUtil.addComponent(main_JPanel, __AlwaysQuoteDateTimes_JComboBox,
+         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - always date/times? (default=" + __command._False + ", only quote if delimiter in string)."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote strings?:"), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __AlwaysQuoteStrings_JComboBox = new SimpleJComboBox ( false );
-     List<String> alwaysQuoteStringsList = new Vector<String>();
+     List<String> alwaysQuoteStringsList = new ArrayList<>();
      alwaysQuoteStringsList.add("");
      alwaysQuoteStringsList.add(__command._False);
      alwaysQuoteStringsList.add(__command._True);
@@ -556,6 +620,9 @@ private void refresh ()
 	String OutputFile = "";
     String TableID = "";
     String WriteHeaderComments = "";
+    String WriteColumnNames = "";
+    String Delimiter = "";
+    String AlwaysQuoteDateTimes = "";
     String AlwaysQuoteStrings = "";
     String NewlineReplacement = "";
     String NaNValue = "";
@@ -570,6 +637,9 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
         TableID = parameters.getValue ( "TableID" );
         WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+        WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
+        Delimiter = parameters.getValue ( "Delimiter" );
+        AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
         AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
         NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
         NaNValue = parameters.getValue ( "NaNValue" );
@@ -611,6 +681,41 @@ private void refresh ()
                   "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteColumnNames_JComboBox, WriteColumnNames, JGUIUtil.NONE, null, null ) ) {
+            __WriteColumnNames_JComboBox.select ( WriteColumnNames );
+        }
+        else {
+            if ( (WriteColumnNames == null) || WriteColumnNames.equals("") ) {
+                // New command...select the default...
+                if ( __WriteColumnNames_JComboBox.getItemCount() > 0 ) {
+                    __WriteColumnNames_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "WriteColumnNames parameter \"" + WriteColumnNames + "\".  Select a different value or Cancel." );
+            }
+        }
+        if (Delimiter != null) {
+            __Delimiter_JTextField.setText(Delimiter);
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__AlwaysQuoteDateTimes_JComboBox, AlwaysQuoteDateTimes, JGUIUtil.NONE, null, null ) ) {
+            __AlwaysQuoteDateTimes_JComboBox.select ( AlwaysQuoteDateTimes );
+        }
+        else {
+            if ( (AlwaysQuoteDateTimes == null) || AlwaysQuoteDateTimes.equals("") ) {
+                // New command...select the default...
+                if ( __AlwaysQuoteDateTimes_JComboBox.getItemCount() > 0 ) {
+                    __AlwaysQuoteDateTimes_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "AlwaysQuoteDateTimes parameter \"" + AlwaysQuoteDateTimes + "\".  Select a different value or Cancel." );
+            }
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem(__AlwaysQuoteStrings_JComboBox, AlwaysQuoteStrings, JGUIUtil.NONE, null, null ) ) {
             __AlwaysQuoteStrings_JComboBox.select ( AlwaysQuoteStrings );
         }
@@ -641,6 +746,9 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+    WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
+    Delimiter = __Delimiter_JTextField.getText().trim();
+    AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     NaNValue = __NaNValue_JTextField.getText().trim();
@@ -653,6 +761,13 @@ private void refresh ()
 	}
     if ( WriteHeaderComments != null ) {
         parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
+    if ( WriteColumnNames != null ) {
+        parameters.add ( "WriteColumnNames=" + WriteColumnNames );
+    }
+    parameters.add("Delimiter=" + Delimiter );
+    if ( AlwaysQuoteDateTimes != null ) {
+        parameters.add ( "AlwaysQuoteDateTimes=" + AlwaysQuoteDateTimes );
     }
     if ( AlwaysQuoteStrings != null ) {
         parameters.add ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );

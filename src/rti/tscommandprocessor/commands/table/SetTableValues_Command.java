@@ -91,10 +91,12 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<>(5);
     validList.add ( "TableID" );
     validList.add ( "ColumnFilters" );
     validList.add ( "ColumnValues" );
+    validList.add ( "Column" );
+    validList.add ( "Value" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -190,6 +192,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             columnValues.put(parts[0].trim(), parts[1].trim() );
         }
     }
+    String Column = parameters.getValue ( "Column" );
+    if ( (Column != null) && !Column.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Column.indexOf("${") >= 0 ) {
+    	Column = TSCommandProcessorUtil.expandParameterValue(processor, this, Column);
+    }
+    String Value = parameters.getValue ( "Value" );
+    if ( (Value != null) && !Value.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Value.indexOf("${") >= 0 ) {
+    	Value = TSCommandProcessorUtil.expandParameterValue(processor, this, Value);
+    }
     
     // Get the table to process.
 
@@ -248,7 +258,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 		};
+		// First set using the hash
 	    table.setTableValues ( columnFilters, columnValues, tableValueGetter, true );
+	    // Next set using the single value
+	    if ( (Column != null) && !Column.isEmpty() ) {
+	    	LinkedHashMap<String,String> columnValues2 = new LinkedHashMap<String,String>();
+	    	columnValues2.put(Column, Value);
+	    	table.setTableValues ( columnFilters, columnValues2, tableValueGetter, true );
+	    }
  	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -279,6 +296,8 @@ public String toString ( PropList props )
     String TableID = props.getValue( "TableID" );
 	String ColumnFilters = props.getValue( "ColumnFilters" );
 	String ColumnValues = props.getValue( "ColumnValues" );
+	String Column = props.getValue( "Column" );
+	String Value = props.getValue( "Value" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -297,6 +316,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ColumnValues=\"" + ColumnValues + "\"" );
+    }
+    if ( (Column != null) && (Column.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Column=\"" + Column + "\"" );
+    }
+    if ( (Value != null) && (Value.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Value=\"" + Value + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

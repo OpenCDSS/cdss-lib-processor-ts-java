@@ -56,6 +56,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the CompareTimeSeries() command.
@@ -75,7 +76,7 @@ The table that is created for discovery mode.
 private DataTable __discoveryTable = null;
 
 /**
- * Output table columns.
+ * Output table columns, listed in order of the table columns.
  */
 private int __tableDateTimeColumnNum = -1;
 private int __tableTSID1ColumnNum = -1;
@@ -335,6 +336,124 @@ throws InvalidCommandParameterException
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+ * Compare time series values for two time series and generate output.
+ * This method is reused depending on how time series are iterated.
+ * @param Precision precision to round values (ignored if precision is < 0)
+ */
+private void compareTimeSeriesValues (
+	String routine,
+	TS ts1, String loc1, TS ts2,
+	String DiffFlag, String Precision, int Precision_int, String value_format, int Tolerance_count, double [] Tolerance_double,
+	DateTime date, double value1_orig, TSData tsdata1, String flag1, double value2_orig, TSData tsdata2, String flag2,
+	int [] diffcount, double [] difftotal, double [] difftotalabs,
+	boolean doCreateDiffTS, TS diffts,
+	boolean doTable, DataTable table,
+	DiffStats diffStats) {
+
+	double value1, value2;
+	if ( Precision != null ) {
+		// Need to round.  For now do with strings, which handles the rounding...
+    	if ( Double.isNaN(value1_orig)) {
+        	value1 = value1_orig;
+    	}
+		else {
+			value1 = Double.parseDouble(StringUtil.formatString(value1_orig,"%."+Precision_int +"f"));
+		}
+		if ( Double.isNaN(value2_orig)) {
+			value2 = value2_orig;
+		}
+		else {
+			value2 = Double.parseDouble(StringUtil.formatString(value2_orig,"%."+Precision_int +"f"));
+		}
+	}
+	else {
+	   	value1 = value1_orig;
+		value2 = value2_orig;
+	}
+	// For troubleshooting...
+	//Message.printStatus(2,routine,"Value1="+ value1_orig + " Value2="+ value2_orig);
+	// Count of data points that are checked...
+	++diffStats.totalcount;
+	boolean is_diff = false; // Initialize
+	if ( ts1.isDataMissing(value1_orig) && !ts2.isDataMissing(value2_orig)) {
+		Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
+			" TS1 = missing " + flag1 +
+			" TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag2 );
+		if ( doTable ) {
+			addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 missing, TS2 not missing" );
+		}
+		// Indicate as missing at all levels...
+		is_diff = true;
+		for ( int it = 0; it < Tolerance_count; it++ ) {
+			++diffcount[it];
+		}
+		if ( doCreateDiffTS ) {
+			// ts2 has value so make that the difference...
+			diffts.setDataValue ( date, value2 );
+		}
+	}
+	else if(!ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig)) {
+		Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
+			" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag1 +
+			" TS2 = missing " + flag2);
+		if ( doTable ) {
+			addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 not missing, TS2 missing" );
+		}
+		// Indicate as missing at all levels...
+		is_diff = true;
+		for ( int it = 0; it < Tolerance_count; it++ ) {
+			++diffcount[it];
+		}
+		if ( doCreateDiffTS ) {
+			// ts1 has value so make that the difference (negative)...
+			diffts.setDataValue ( date, -value2 );
+		}
+	}
+	else if(ts1.isDataMissing(value1_orig)&& ts2.isDataMissing(value2_orig)) {
+		// Both missing so no further processing...
+		return;
+	}
+	else {
+	   	// Analyze differences for each tolerance...
+		double diff = value2 - value1;
+		double diffabs = Math.abs(diff);
+		if ( doCreateDiffTS ) {
+			// Set difference (regardless of tolerance).
+			diffts.setDataValue ( date, diff );
+		}
+		if ( diffabs > diffStats.diffmaxabs ) {
+			diffStats.diffmaxabs = diffabs;
+			diffStats.diffmax = diff;
+			diffStats.diffmax_DateTime = new DateTime ( date );
+		}
+		for ( int it = 0; it < Tolerance_count; it++ ) {
+			if ( diffabs > Tolerance_double[it]){
+    			// Report the difference...
+    			Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
+    				") has difference TS2-TS1 of " + StringUtil.formatString(diff,value_format) +
+    				" on " + date + " TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag1 +
+    				" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag2 );
+    			if ( doTable ) {
+    				addTableRecord ( table, date, ts1, ts2, value1, value2, diff, "Diff > tolerance " + Tolerance_double[it] );
+    			}
+    			difftotal[it] += diff;
+    			difftotalabs[it] += diffabs;
+    			++diffcount[it];
+    			is_diff = true;
+			}
+		}
+	}
+	TSData tsdata = new TSData(); // Data point from time series.
+	if ( is_diff && (DiffFlag != null) ) {
+		// Append to the data flag...
+		tsdata = ts1.getDataPoint (date, tsdata);
+		ts1.setDataValue ( date, value1_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
+		tsdata = ts2.getDataPoint (date, tsdata);
+		ts2.setDataValue ( date, value2_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
+	}
 }
 
 /**
@@ -838,7 +957,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	double [] diffabsavg = null;
 	double [] diffavg = null;
 	boolean is_diff = false; // Indicates whether a differences has been determined.
-	TSData tsdata = new TSData(); // Data point from time series.
 	boolean foundLoc1 = false; // Has the time series already been processed?
 	boolean foundDatatype1 = false;
 	boolean foundMatch = false;
@@ -903,18 +1021,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {
 			size = tslist.size();
 		}
-		double diff; // difference
-		double diffabs; // abs(diff)
-		double value1, value1_orig; // Data values from each time series, rounded and original.
-		double value2, value2_orig;
+		double value1_orig; // Data values from each time series, rounded and original.
+		double value2_orig;
 		TSData tsdata1 = new TSData(), tsdata2 = new TSData(); // Data points for each time series.
 		String flag1, flag2; // Data flags for values in each time series.
-		double diffmax = 0.0, diffmaxabs;
-		DateTime diffmax_DateTime = null; // Date for max diff.
-		DateTime date, date1 = null, date2 = null; // Dates for iteration.
+		DiffStats diffStats = new DiffStats();
+		DateTime date1 = null, date2 = null; // Dates for iteration.
 		int j;
 		int it; // Counter for tolerances.
-		int totalcount = 0; // Total non-missing data values.
 		String loc1, datatype1; // Location and data type for the first time series. 
 		List<String> locList = new ArrayList<String>();	// Location/datatype
 		List<String> datatypeList = new ArrayList<String>(); // pairs that have already been processed.
@@ -1009,7 +1123,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 			if ( foundMatch ) {
-				// Have a match so do the comparison.  Currently only compare the data values, not the header information.
+				// Have a match so do the comparison.
+				// Currently only compare the data values, not the header information or data flags.
 				// Add locations and data types that have been processed so they are not found again
 				locList.add ( loc1 );
 				datatypeList.add ( datatype1 );
@@ -1024,12 +1139,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					diffts = TSUtil.newTimeSeries ( diffid, true );
 					diffts.copyHeader ( ts2 );
 					diffts.setIdentifier ( diffid );
+					if ( diffts.getAlias().isEmpty() ) {
+						diffts.setAlias("Diff");
+					}
+					else {
+						diffts.setAlias("Diff_" + diffts.getAlias());
+					}
 					diffts.allocateDataSpace();
 					difftsList.add ( diffts );
 				}
 				// Initialize for the comparison...
-				totalcount = 0;
-				diffmaxabs = -1.0e10;
+				diffStats.totalcount = 0;
+				diffStats.diffmaxabs = -1.0e10;
 				// Reallocate in order to have unique references to save for the report...
 				diffcount = new int[Tolerance_count];
 				diffabsavg = new double[Tolerance_count];
@@ -1064,118 +1185,61 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					"(Tolerance=" + Tolerance + ", Period="+ date1 + " to " + date2 + "):" );
 				// Increment counter indicating that a test was tried
 				++tsComparisonsTried;
-				// Iterate using the first time series...
-				tsi = ts1.iterator(date1,date2);
-				for ( ; tsi.next() != null; ) {
-					date = tsi.getDate();
-					// This is not overly efficient but currently the iterator does not have
-					// a way to set a data point...
-					tsdata1 = ts1.getDataPoint ( date, tsdata1 );
-					value1_orig = tsdata1.getDataValue ();
-					flag1 = tsdata1.getDataFlag().trim();
-					tsdata2 = ts2.getDataPoint ( date, tsdata2 );
-					value2_orig = tsdata2.getDataValue ();
-					flag2 = tsdata2.getDataFlag().trim();
-					if ( Precision != null ) {
-						// Need to round.  For now do with strings, which handles the rounding...
-					    if ( Double.isNaN(value1_orig)) {
-					        value1 = value1_orig;
-					    }
-					    else {
-					        value1 = Double.parseDouble(StringUtil.formatString(value1_orig,"%."+Precision_int +"f"));
-					    }
-					    if ( Double.isNaN(value2_orig)) {
-					        value2 = value2_orig;
-					    }
-					    else {
-					        value2 = Double.parseDouble(StringUtil.formatString(value2_orig,"%."+Precision_int +"f"));
-					    }
-					}
-					else {
-					    value1 = value1_orig;
-						value2 = value2_orig;
-					}
-					// For troubleshooting...
-					//Message.printStatus(2,routine,"Value1="+ value1_orig + " Value2="+ value2_orig);
-					// Count of data points that are checked...
-					++totalcount;
-					is_diff = false; // Initialize
-					if ( ts1.isDataMissing(value1_orig) && !ts2.isDataMissing(value2_orig)) {
-						Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
-							" TS1 = missing " + flag1 +
-							" TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag2 );
-						if ( doTable ) {
-							addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 missing, TS2 not missing" );
-						}
-						// Indicate as missing at all levels...
-						is_diff = true;
-						for ( it = 0; it < Tolerance_count; it++ ) {
-							++diffcount[it];
-						}
-						if ( doCreateDiffTS ) {
-							// ts2 has value so make that the difference...
-							diffts.setDataValue ( date, value2 );
-						}
-					}
-					else if(!ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig)){
-						Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
-							" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag1 +
-							" TS2 = missing " + flag2);
-						if ( doTable ) {
-							addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 not missing, TS2 missing" );
-						}
-						// Indicate as missing at all levels...
-						is_diff = true;
-						for ( it = 0; it < Tolerance_count; it++ ) {
-							++diffcount[it];
-						}
-						if ( doCreateDiffTS ) {
-							// ts1 has value so make that the difference (negative)...
-							diffts.setDataValue ( date, -value2 );
-						}
-					}
-					else if(ts1.isDataMissing(value1_orig)&& ts2.isDataMissing(value2_orig)){
-						// Both missing so continue...
-						continue;
-					}
-					else {
-					    // Analyze differences for each tolerance...
-						diff = value2 - value1;
-						diffabs = Math.abs(diff);
-						if ( doCreateDiffTS ) {
-							// Set difference (regardless of tolerance).
-							diffts.setDataValue ( date, diff );
-						}
-						if ( diffabs > diffmaxabs ) {
-							diffmaxabs = diffabs;
-							diffmax = diff;
-							diffmax_DateTime = new DateTime ( date );
-						}
-						for ( it = 0; it < Tolerance_count; it++ ) {
-							if ( diffabs > Tolerance_double[it]){
-    							// Report the difference...
-    							Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
-    							") has difference TS2-TS1 of " + StringUtil.formatString(diff,value_format) +
-    							" on " + date + " TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag1 +
-    							" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag2 );
-    							if ( doTable ) {
-    								addTableRecord ( table, date, ts1, ts2, value1, value2, diff, "Diff > tolerance " + Tolerance_double[it] );
-    							}
-    							difftotal[it] += diff;
-    							difftotalabs[it] += diffabs;
-    							++diffcount[it];
-    							is_diff = true;
-							}
-						}
-					}
-					if ( is_diff && (DiffFlag != null) ) {
-						// Append to the data flag...
-						tsdata=ts1.getDataPoint (date, tsdata);
-						ts1.setDataValue ( date, value1_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
-						tsdata=ts2.getDataPoint (date, tsdata);
-						ts2.setDataValue ( date, value2_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
+				if ( !TimeInterval.isRegularInterval(ts1.getDataIntervalBase()) ||
+					!TimeInterval.isRegularInterval(ts2.getDataIntervalBase()) ) {
+					// One or both of the time series are irregular.
+					// It is difficult to iterate because timestamps may not align.
+					// Therefore, retrieve all the date/times from each time series, sort them, and iterate using the overall list of date/times.
+					List<TS> tempList = new ArrayList<>();
+					tempList.add(ts1);
+					tempList.add(ts2);
+					List<DateTime> dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
+					tsi = ts1.iterator(date1,date2);
+					for ( DateTime dt : dateTimeList ) {
+						tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
+						value1_orig = tsdata1.getDataValue ();
+						flag1 = tsdata1.getDataFlag().trim();
+						tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
+						value2_orig = tsdata2.getDataValue ();
+						flag2 = tsdata2.getDataFlag().trim();
+						compareTimeSeriesValues(
+							routine,
+							ts1, loc1, ts2,
+							DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
+							diffcount, difftotal, difftotalabs,
+							doCreateDiffTS, diffts,
+							doTable, table,
+							diffStats  );
 					}
 				}
+				else {
+					// Both time series are regular interval and should align
+					// Iterate using the first time series...
+					tsi = ts1.iterator(date1,date2);
+					DateTime dt = null;
+					for ( ; tsi.next() != null; ) {
+						dt = tsi.getDate();
+						// This is not overly efficient but currently the iterator does not have
+						// a way to set a data point...
+						tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
+						value1_orig = tsdata1.getDataValue ();
+						flag1 = tsdata1.getDataFlag().trim();
+						tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
+						value2_orig = tsdata2.getDataValue ();
+						flag2 = tsdata2.getDataFlag().trim();
+						compareTimeSeriesValues(
+							routine,
+							ts1, loc1, ts2,
+							DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
+							diffcount, difftotal, difftotalabs,
+							doCreateDiffTS, diffts,
+							doTable, table,
+							diffStats );
+					}
+				}
+				// Output status messages for summary of differences
 				is_diff = false;
 				for ( it = 0; it < Tolerance_count; it++ ) {
 					if ( diffcount[it] > 0 ) {
@@ -1183,7 +1247,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						diffabsavg[it] = difftotalabs[it]/diffcount[it];
 						diffavg[it] = difftotal[it]/diffcount[it];
 						Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
-						") has " + diffcount[it] + " differences out of " + totalcount + " values." );
+						") has " + diffcount[it] + " differences out of " + diffStats.totalcount + " values." );
 						Message.printStatus ( 2, routine, loc1 + " Average difference (tolerance=" +
 						Tolerance_double[it] + ")= " + StringUtil.formatString(diffavg[it],"%.6f") );
 						Message.printStatus ( 2, routine, loc1 + " Average absolute difference (tolerance=" +
@@ -1192,7 +1256,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 				if ( is_diff ) {
 					Message.printStatus ( 2, routine, loc1 + " maximum difference = " +
-					StringUtil.formatString(diffmax, value_format) +" earliest on "+ diffmax_DateTime );
+					StringUtil.formatString(diffStats.diffmax, value_format) +" earliest on "+ diffStats.diffmax_DateTime );
 					if ( WarnIfDifferent_boolean ) {
 						message = "Time series for " + ts1.getIdentifier() + " have differences.";
 						Message.printWarning (warning_level,
@@ -1205,13 +1269,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 				// Save information for the report...
 				compare_tslist.add ( ts1 );
-				compare_numvalues.add (	new Integer(totalcount) );
+				compare_numvalues.add (	new Integer(diffStats.totalcount) );
 				compare_diffcount.add ( diffcount );
 				compare_diffabsavg.add ( diffabsavg );
 				compare_diffavg.add ( diffavg );
 				if ( is_diff ) {
-					compare_diffmax.add (new Double(diffmax) );
-					compare_diffmaxdate.add (new DateTime(diffmax_DateTime) );
+					compare_diffmax.add (new Double(diffStats.diffmax) );
+					compare_diffmaxdate.add (new DateTime(diffStats.diffmax_DateTime) );
 				}
 				else {
 				    compare_diffmax.add (new Double(0.0) );
@@ -1231,8 +1295,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		int datatype_length = 9; // Enough for heading
 		TS ts = null;
 		// Figure out the length for some of the string columns...
-		for ( int i = 0; i < size; i++ ) {
-			ts = compare_tslist.get(i);
+		for ( int its = 0; its < size; its++ ) {
+			ts = compare_tslist.get(its);
 			if ( ts.getIdentifier().getLocation().length() > location_length ) {
 				location_length = ts.getIdentifier().getLocation().length();
 			}
@@ -1281,11 +1345,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		int [] diffcount_array;
 		double [] diffabsavg_array;
 		double [] diffavg_array;
-		for ( int i = 0; i < size; i++ ) {
-			ts = compare_tslist.get(i);
+		for ( int its = 0; its < size; its++ ) {
+			ts = compare_tslist.get(its);
 			is_diff = false;
 			// Check for difference here so that difference-only summary report can be completed...
-			diffcount_array = (int[])compare_diffcount.get(i);
+			diffcount_array = (int[])compare_diffcount.get(its);
 			for ( j = 0; j < Tolerance_count; j++ ) {
 				if ( diffcount_array[j] > 0 ) {
 					is_diff = true;
@@ -1302,12 +1366,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					b2.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatype_format) );
 				}
 			}
-			b.append ( "|" + StringUtil.formatString(compare_numvalues.get(i).intValue(),int_format) );
+			b.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),int_format) );
 			if ( is_diff ) {
-				b2.append ( "|" + StringUtil.formatString(compare_numvalues.get(i).intValue(),int_format) );
+				b2.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),int_format) );
 			}
-			diffabsavg_array=(double[])compare_diffabsavg.get(i);
-			diffavg_array=(double[])compare_diffavg.get(i);
+			diffabsavg_array=(double[])compare_diffabsavg.get(its);
+			diffavg_array=(double[])compare_diffavg.get(its);
 			for ( j = 0; j < Tolerance_count; j++ ) {
 				b.append ( "|" + StringUtil.formatString(diffcount_array[j], int_format) );
 				if ( is_diff ) {
@@ -1331,16 +1395,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 			if ( is_diff ) {
-				b.append ( "|" + StringUtil.formatString(compare_diffmax.get(i).doubleValue(), double_format) );
-				b2.append ( "|" + StringUtil.formatString(compare_diffmax.get(i).doubleValue(),double_format) );
-				date = compare_diffmaxdate.get(i);
+				b.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(), double_format) );
+				b2.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(),double_format) );
+				DateTime date = compare_diffmaxdate.get(its);
 				if ( date == null ) {
 					b.append ( "|" + StringUtil.formatString( "", date_format) );
 					b2.append ( "|" + StringUtil.formatString( "", date_format) );
 				}
 				else {
-				    b.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(i).toString(),date_format) );
-					b2.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(i).toString(),date_format) );
+				    b.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),date_format) );
+					b2.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),date_format) );
 				}
 			}
 			else {
@@ -1372,8 +1436,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 			// Add the difference time series...
 			int diffsize = difftsList.size();
-			for ( int i = 0; i < diffsize; i++ ) {
-				tslist.add ( difftsList.get(i) );
+			for ( int its = 0; its < diffsize; its++ ) {
+				tslist.add ( difftsList.get(its) );
 			}
 			try {
 			    processor.setPropContents ( "TSResultsList", tslist );
@@ -1404,8 +1468,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    // Set the property indicating the number of rows in the table
         if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
             int diffCountTotal = 0;
-            for ( int i = 0; i < diffcount.length; i++ ) {
-            	diffCountTotal += diffcount[i];
+            for ( int its = 0; its < diffcount.length; its++ ) {
+            	diffCountTotal += diffcount[its];
             }
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "PropertyName", DiffCountProperty );
@@ -1423,8 +1487,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Report the problem to software support." ) );
             }
         }
+        }
     }
-	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing time series (" + e + ").";
 		Message.printWarning ( warning_level, 
@@ -1501,7 +1565,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it
-		__tableDateTimeColumnNum = table.addField(1, new TableField(TableField.DATA_TYPE_DATETIME, tableDateTimeColumn, -1, -1), "");
+		__tableDateTimeColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DATETIME, tableDateTimeColumn, -1, -1), "");
 	}
 	try {
 		if ( (tableTSID1Column != null) && !tableTSID1Column.isEmpty() ) {
@@ -1510,7 +1574,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it
-		__tableTSID1ColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableTSID1Column, -1, -1), "");
+		__tableTSID1ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_STRING, tableTSID1Column, -1, -1), "");
 	}
 	try {
 		if ( (tableTSID2Column != null) && !tableTSID2Column.isEmpty() ) {
@@ -1519,7 +1583,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it
-		__tableTSID2ColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableTSID2Column, -1, -1), "");
+		__tableTSID2ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_STRING, tableTSID2Column, -1, -1), "");
 	}
 	try {
 		if ( (tableValue1Column != null) && !tableValue1Column.isEmpty() ) {
@@ -1528,7 +1592,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it - use 4 digits of precision for the check output
-		__tableValue1ColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue1Column, -1, 4), "");
+		__tableValue1ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue1Column, -1, 4), "");
 	}
 	try {
 		if ( (tableValue2Column != null) && !tableValue2Column.isEmpty() ) {
@@ -1537,7 +1601,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it - use 4 digits of precision for the check output
-		__tableValue2ColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue2Column, -1, 4), "");
+		__tableValue2ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue2Column, -1, 4), "");
 	}
 	try {
 		if ( (tableDiffColumn != null) && !tableDiffColumn.isEmpty() ) {
@@ -1546,7 +1610,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it - use 4 digits of precision for the check output
-		__tableDiffColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffColumn, -1, 4), "");
+		__tableDiffColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffColumn, -1, 4), "");
 	}
 	try {
 		if ( (tableDiffPercentColumn != null) && !tableDiffPercentColumn.isEmpty() ) {
@@ -1555,7 +1619,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it - use 4 digits of precision for the check output
-		__tableDiffPercentColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffPercentColumn, -1, 4), "");
+		__tableDiffPercentColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffPercentColumn, -1, 4), "");
 	}
 	try {
 		if ( (tableCommentColumn != null) && !tableCommentColumn.isEmpty() ) {
@@ -1564,7 +1628,7 @@ private boolean setupOutputTable ( DataTable table )
 	}
 	catch ( Exception e ) {
 		// Not found so create it
-		__tableCommentColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableCommentColumn, -1, -1), "");
+		__tableCommentColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_STRING, tableCommentColumn, -1, -1), "");
 	}
 	return true;
 }
@@ -1690,6 +1754,16 @@ public String toString ( PropList props )
 		b.append ( "WarnIfSame=" + WarnIfSame );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
+}
+
+/*
+ * Internal class to facilitate passing multiple values to/from compareTimeSeriesValues() function.
+ */
+private class DiffStats {
+	int totalcount = 0;
+	double diffmaxabs = 0.0;
+	double diffmax = 0.0;
+	DateTime diffmax_DateTime = null; // Date for max diff.
 }
 
 }

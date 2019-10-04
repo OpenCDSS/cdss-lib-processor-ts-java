@@ -82,7 +82,9 @@ private int __tableDateTimeColumnNum = -1;
 private int __tableTSID1ColumnNum = -1;
 private int __tableTSID2ColumnNum = -1;
 private int __tableValue1ColumnNum = -1;
+private int __tableFlag1ColumnNum = -1;
 private int __tableValue2ColumnNum = -1;
+private int __tableFlag2ColumnNum = -1;
 private int __tableDiffColumnNum = -1;
 private int __tableDiffPercentColumnNum = -1;
 private int __tableCommentColumnNum = -1;
@@ -99,7 +101,8 @@ public CompareTimeSeries_Command ()
 /**
 Add a table record for output difference.
 */
-private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2, double value1, double value2, double diff, String comment ) {
+private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2,
+	double value1, String flag1, double value2, String flag2, double diff, String comment ) {
 	// Save the results to the table
 	// Add a record to the table
 	TableRecord rec = table.emptyRecord();
@@ -125,8 +128,14 @@ private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2, doub
 		if ( __tableValue1ColumnNum >= 0 ) {
 			rec.setFieldValue(__tableValue1ColumnNum, value1);
 		}
+		if ( __tableFlag1ColumnNum >= 0 ) {
+			rec.setFieldValue(__tableFlag1ColumnNum, flag1);
+		}
 		if ( __tableValue2ColumnNum >= 0 ) {
 			rec.setFieldValue(__tableValue2ColumnNum, value2);
+		}
+		if ( __tableFlag2ColumnNum >= 0 ) {
+			rec.setFieldValue(__tableFlag2ColumnNum, flag2);
 		}
 		if ( __tableDiffColumnNum >= 0 ) {
 			rec.setFieldValue(__tableDiffColumnNum, diff);
@@ -309,7 +318,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(16);
+	List<String> validList = new ArrayList<>(17);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
 	validList.add ( "EnsembleID1" );
@@ -318,6 +327,7 @@ throws InvalidCommandParameterException
 	validList.add ( "MatchDataType" );
 	validList.add ( "Precision" );
 	validList.add ( "Tolerance" );
+	validList.add ( "CompareFlags" );
 	validList.add ( "AnalysisStart" );
 	validList.add ( "AnalysisEnd" );
 	validList.add ( "DiffFlag" );
@@ -346,7 +356,7 @@ throws InvalidCommandParameterException
 private void compareTimeSeriesValues (
 	String routine,
 	TS ts1, String loc1, TS ts2,
-	String DiffFlag, String Precision, int Precision_int, String value_format, int Tolerance_count, double [] Tolerance_double,
+	boolean compareFlags, String DiffFlag, String Precision, int Precision_int, String value_format, int Tolerance_count, double [] Tolerance_double,
 	DateTime date, double value1_orig, TSData tsdata1, String flag1, double value2_orig, TSData tsdata2, String flag2,
 	int [] diffcount, double [] difftotal, double [] difftotalabs,
 	boolean doCreateDiffTS, TS diffts,
@@ -354,6 +364,13 @@ private void compareTimeSeriesValues (
 	DiffStats diffStats) {
 
 	double value1, value2;
+	// Assume flags that are null are equivalent to empty flag
+	if ( flag1 == null ) {
+		flag1 = "";
+	}
+	if ( flag2 == null ) {
+		flag2 = "";
+	}
 	if ( Precision != null ) {
 		// Need to round.  For now do with strings, which handles the rounding...
     	if ( Double.isNaN(value1_orig)) {
@@ -377,13 +394,21 @@ private void compareTimeSeriesValues (
 	//Message.printStatus(2,routine,"Value1="+ value1_orig + " Value2="+ value2_orig);
 	// Count of data points that are checked...
 	++diffStats.totalcount;
-	boolean is_diff = false; // Initialize
+	boolean is_diff = false; // Initialize, set to true below if difference detected
 	if ( ts1.isDataMissing(value1_orig) && !ts2.isDataMissing(value2_orig)) {
+		// ts1 is missing and ts2 is not missing
 		Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
 			" TS1 = missing " + flag1 +
 			" TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag2 );
+		String diffMessage = "TS1 missing, TS2 not missing";
+		if ( compareFlags ) {
+			// Also check flags
+			if ( !flag1.equals(flag2) ) {
+				diffMessage += ", flags differ";
+			}
+		}
 		if ( doTable ) {
-			addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 missing, TS2 not missing" );
+			addTableRecord ( table, date, ts1, ts2, value1_orig, flag1, value2_orig, flag2, Double.NaN, diffMessage );
 		}
 		// Indicate as missing at all levels...
 		is_diff = true;
@@ -399,8 +424,15 @@ private void compareTimeSeriesValues (
 		Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
 			" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag1 +
 			" TS2 = missing " + flag2);
+		String diffMessage = "TS1 not missing, TS2 missing";
+		if ( compareFlags ) {
+			// Also check flags
+			if ( !flag1.equals(flag2) ) {
+				diffMessage += ", flags differ";
+			}
+		}
 		if ( doTable ) {
-			addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 not missing, TS2 missing" );
+			addTableRecord ( table, date, ts1, ts2, value1_orig, flag1, value2_orig, flag2, Double.NaN, diffMessage );
 		}
 		// Indicate as missing at all levels...
 		is_diff = true;
@@ -412,9 +444,19 @@ private void compareTimeSeriesValues (
 			diffts.setDataValue ( date, -value2 );
 		}
 	}
-	else if(ts1.isDataMissing(value1_orig)&& ts2.isDataMissing(value2_orig)) {
-		// Both missing so no further processing...
-		return;
+	else if(ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig)) {
+		// Both missing so consider the values equal.
+		if ( compareFlags ) {
+			// Also check flags
+			if ( !flag1.equals(flag2) ) {
+				String diffMessage = "Both missing but flags differ";
+				if ( doTable ) {
+					addTableRecord ( table, date, ts1, ts2, value1_orig, flag1, value2_orig, flag2, Double.NaN, diffMessage );
+				}
+				is_diff = true;
+				// No need to set value in diff time series since both missing
+			}
+		}
 	}
 	else {
 	   	// Analyze differences for each tolerance...
@@ -429,15 +471,30 @@ private void compareTimeSeriesValues (
 			diffStats.diffmax = diff;
 			diffStats.diffmax_DateTime = new DateTime ( date );
 		}
+		String flagDiffMessage = null;
+		if ( compareFlags ) {
+			// Also check flags
+			if ( !flag1.equals(flag2) ) {
+				flagDiffMessage = "flags differ";
+			}
+		}
+		int diffCount = 0; // Count of differences for tolerance checks
 		for ( int it = 0; it < Tolerance_count; it++ ) {
-			if ( diffabs > Tolerance_double[it]){
+			if ( diffabs > Tolerance_double[it] ) {
+				++diffCount;
     			// Report the difference...
     			Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
     				") has difference TS2-TS1 of " + StringUtil.formatString(diff,value_format) +
     				" on " + date + " TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag1 +
     				" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag2 );
     			if ( doTable ) {
-    				addTableRecord ( table, date, ts1, ts2, value1, value2, diff, "Diff > tolerance " + Tolerance_double[it] );
+    				String diffMessage = "Diff > tolerance " + Tolerance_double[it];
+    				if ( flagDiffMessage == null ) {
+    					addTableRecord ( table, date, ts1, ts2, value1, flag1, value2, flag2, diff, diffMessage );
+    				}
+    				else {
+    					addTableRecord ( table, date, ts1, ts2, value1, flag1, value2, flag2, diff, diffMessage + ", " + flagDiffMessage );
+    				}
     			}
     			difftotal[it] += diff;
     			difftotalabs[it] += diffabs;
@@ -445,10 +502,14 @@ private void compareTimeSeriesValues (
     			is_diff = true;
 			}
 		}
+		if ( (diffCount == 0) && (flagDiffMessage != null) ) {
+			// No numerical value differences were detected but flags are different
+   			addTableRecord ( table, date, ts1, ts2, value1, flag1, value2, flag2, diff, flagDiffMessage );
+		}
 	}
-	TSData tsdata = new TSData(); // Data point from time series.
 	if ( is_diff && (DiffFlag != null) ) {
 		// Append to the data flag...
+		TSData tsdata = new TSData(); // Data point from time series.
 		tsdata = ts1.getDataPoint (date, tsdata);
 		ts1.setDataValue ( date, value1_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
 		tsdata = ts2.getDataPoint (date, tsdata);
@@ -568,6 +629,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
 	String Precision = parameters.getValue ( "Precision" ); // What to round data to before comparing.
 	String Tolerance = parameters.getValue ( "Tolerance" );
+	String CompareFlags = parameters.getValue ( "CompareFlags" );
+	boolean compareFlags = false; // Default
+	if ( (CompareFlags != null) && CompareFlags.equalsIgnoreCase("true") ) {
+		compareFlags = true;
+	}
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String DiffFlag = parameters.getValue ( "DiffFlag" );
@@ -1205,7 +1271,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						compareTimeSeriesValues(
 							routine,
 							ts1, loc1, ts2,
-							DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
 							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
 							diffcount, difftotal, difftotalabs,
 							doCreateDiffTS, diffts,
@@ -1231,7 +1297,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						compareTimeSeriesValues(
 							routine,
 							ts1, loc1, ts2,
-							DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
 							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
 							diffcount, difftotal, difftotalabs,
 							doCreateDiffTS, diffts,
@@ -1539,7 +1605,9 @@ Check that the output table is set up.  The following columns are included
 <li>TSID1</li>
 <li>TSID2</li>
 <li>Value1</li>
+<li>Flag1</li>
 <li>Value2</li>
+<li>Flag2</li>
 <li>Diff</li>
 <li>DiffPercent/</li>
 </ol>
@@ -1554,7 +1622,9 @@ private boolean setupOutputTable ( DataTable table )
 	String tableTSID1Column = "TSID1";
 	String tableTSID2Column = "TSID2";
 	String tableValue1Column = "Value1";
+	String tableFlag1Column = "Flag1";
 	String tableValue2Column = "Value2";
+	String tableFlag2Column = "Flag2";
 	String tableDiffColumn = "Diff";
 	String tableDiffPercentColumn = "DiffPercent";
 	String tableCommentColumn = "Comment";
@@ -1595,6 +1665,15 @@ private boolean setupOutputTable ( DataTable table )
 		__tableValue1ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue1Column, -1, 4), "");
 	}
 	try {
+		if ( (tableFlag1Column != null) && !tableFlag1Column.isEmpty() ) {
+			__tableFlag1ColumnNum = table.getFieldIndex(tableFlag1Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableFlag1ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_STRING, tableFlag1Column, -1, -1), "");
+	}
+	try {
 		if ( (tableValue2Column != null) && !tableValue2Column.isEmpty() ) {
 			__tableValue2ColumnNum = table.getFieldIndex(tableValue2Column);
 		}
@@ -1602,6 +1681,15 @@ private boolean setupOutputTable ( DataTable table )
 	catch ( Exception e ) {
 		// Not found so create it - use 4 digits of precision for the check output
 		__tableValue2ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue2Column, -1, 4), "");
+	}
+	try {
+		if ( (tableFlag2Column != null) && !tableFlag2Column.isEmpty() ) {
+			__tableFlag2ColumnNum = table.getFieldIndex(tableFlag2Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableFlag2ColumnNum = table.addField(-1, new TableField(TableField.DATA_TYPE_STRING, tableFlag2Column, -1, -1), "");
 	}
 	try {
 		if ( (tableDiffColumn != null) && !tableDiffColumn.isEmpty() ) {
@@ -1648,6 +1736,7 @@ public String toString ( PropList props )
 	String MatchDataType = props.getValue("MatchDataType");
 	String Precision = props.getValue("Precision");
 	String Tolerance = props.getValue("Tolerance");
+	String CompareFlags = props.getValue("CompareFlags");
 	String AnalysisStart = props.getValue("AnalysisStart");
 	String AnalysisEnd = props.getValue("AnalysisEnd");
 	String DiffFlag = props.getValue("DiffFlag");
@@ -1704,6 +1793,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Tolerance=\"" + Tolerance + "\"" );
+	}
+	if ( (CompareFlags != null) && (CompareFlags.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "CompareFlags=\"" + CompareFlags + "\"" );
 	}
 	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
 		if ( b.length() > 0 ) {

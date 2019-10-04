@@ -79,6 +79,7 @@ private SimpleJComboBox	__MatchLocation_JComboBox = null;
 private SimpleJComboBox	__MatchDataType_JComboBox = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __Tolerance_JTextField = null;
+private SimpleJComboBox	__CompareFlags_JComboBox = null;
 private JTextField __AnalysisStart_JTextField;
 private JTextField __AnalysisEnd_JTextField;
 private JTextField __DiffFlag_JTextField = null;
@@ -175,6 +176,7 @@ private void checkInput ()
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
 	String Tolerance = __Tolerance_JTextField.getText().trim();
+	String CompareFlags = __CompareFlags_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
@@ -207,6 +209,9 @@ private void checkInput ()
 	}
 	if ( Tolerance.length() > 0 ) {
 		props.set ( "Tolerance", Tolerance );
+	}
+	if ( CompareFlags.length() > 0 ) {
+		props.set ( "CompareFlags", CompareFlags );
 	}
 	if ( AnalysisStart.length() > 0 ) {
 		props.set ( "AnalysisStart", AnalysisStart );
@@ -254,6 +259,7 @@ private void commitEdits ()
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
 	String Tolerance = __Tolerance_JTextField.getText().trim();
+	String CompareFlags = __CompareFlags_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
@@ -270,6 +276,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "MatchDataType", MatchDataType );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "Tolerance", Tolerance );
+	__command.setCommandParameter ( "CompareFlags", CompareFlags );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "DiffFlag", DiffFlag );
@@ -478,6 +485,23 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		"Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."), 
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Compare flags?:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__CompareFlags_JComboBox = new SimpleJComboBox ( false );
+	__CompareFlags_JComboBox.setToolTipText("Should data value flags be compared?  The comparison is case-specific.");
+	List<String> flagChoices = new ArrayList<String>();
+	flagChoices.add ( "" );	// Default
+	flagChoices.add ( __command._False );
+	flagChoices.add ( __command._True );
+	__CompareFlags_JComboBox.setData(flagChoices);
+	__CompareFlags_JComboBox.select ( 0 );
+	__CompareFlags_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __CompareFlags_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+		"Optional - compare flags? (default=" + __command._False + ")."), 
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
@@ -677,6 +701,7 @@ private void refresh ()
 	String MatchDataType = "";
 	String Precision = "";
 	String Tolerance = "";
+	String CompareFlags = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String DiffFlag = "";
@@ -696,6 +721,7 @@ private void refresh ()
 		MatchDataType = props.getValue ( "MatchDataType" );
 		Precision = props.getValue ( "Precision" );
 		Tolerance = props.getValue ( "Tolerance" );
+		CompareFlags = props.getValue ( "CompareFlags" );
 		AnalysisStart = props.getValue("AnalysisStart");
 		AnalysisEnd = props.getValue("AnalysisEnd");
 		DiffFlag = props.getValue ( "DiffFlag" );
@@ -808,6 +834,20 @@ private void refresh ()
 		if ( Tolerance != null ) {
 			__Tolerance_JTextField.setText ( Tolerance );
 		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__CompareFlags_JComboBox, WarnIfSame, JGUIUtil.NONE, null, null ) ) {
+			__CompareFlags_JComboBox.select ( WarnIfSame );
+		}
+		else {
+		    if ( (CompareFlags == null) || CompareFlags.equals("") ) {
+				// New command...select the default...
+				__CompareFlags_JComboBox.select ( 0 );
+			}
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"CompareFlags parameter \"" + CompareFlags + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText ( AnalysisStart );
 		}
@@ -893,6 +933,7 @@ private void refresh ()
 	MatchDataType = __MatchDataType_JComboBox.getSelected();
 	Precision = __Precision_JTextField.getText().trim();
 	Tolerance = __Tolerance_JTextField.getText().trim();
+	CompareFlags = __CompareFlags_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	DiffFlag = __DiffFlag_JTextField.getText().trim();
@@ -910,6 +951,7 @@ private void refresh ()
 	props.add ( "MatchDataType=" + MatchDataType );
 	props.add ( "Precision=" + Precision );
 	props.add ( "Tolerance=" + Tolerance );
+	props.add ( "CompareFlags=" + CompareFlags );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "DiffFlag=" + DiffFlag );

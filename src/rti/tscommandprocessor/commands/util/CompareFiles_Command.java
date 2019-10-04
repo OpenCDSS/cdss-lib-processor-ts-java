@@ -430,12 +430,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
 		BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
 		// Loop through the files, comparing non-comment lines...
-		String iline1, iline2;
+		String iline1 = null, iline2 = null;
+		boolean file1EndReached = false;
+		boolean file2EndReached = false;
 		while ( true ) {
 			// The following will discard comments and only return non-comment lines
 			// Therefore comparisons are made on chunks of non-comment lines.
-			iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
-			iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
+			if ( !file1EndReached ) {
+				iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
+			}
+			if ( !file2EndReached ) {
+				iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
+			}
 			if ( (iline1 == null) && (iline2 == null) ) {
 				// both are done at the same time...
 				break;
@@ -443,38 +449,48 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// TODO SAM 2006-04-20 The following needs to handle comments at the end...
 			if ( (iline1 == null) && (iline2 != null) ) {
 				// First file is done (second is not) so files are different...
+				// - increment the count because a line exists in one file but not the other
+				file1EndReached = true;
 				++diff_count;
-				break;
 			}
 			if ( (iline2 == null) && (iline1 != null) ) {
 				// Second file is done (first is not) so files are different...
+				// - increment the count because a line exists in one file but not the other
+				file2EndReached = true;
 				++diff_count;
-				break;
 			}
 			++lineCountCompared;
-			if ( MatchCase_boolean ) {
-    			if ( !iline1.equals(iline2) ) {
-    				++diff_count;
-    			}
-			}
-			else {
-			    if ( !iline1.equalsIgnoreCase(iline2) ) {
-                    ++diff_count;
-                }
-			}
-			if ( Message.isDebugOn ) {
-				Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
-						diff_count );
+			if ( (iline1 != null) && (iline2 != null) ) {
+				// Have lines from each file to compare
+				if ( MatchCase_boolean ) {
+    				if ( !iline1.equals(iline2) ) {
+    					++diff_count;
+    				}
+				}
+				else {
+			    	if ( !iline1.equalsIgnoreCase(iline2) ) {
+                    	++diff_count;
+                	}
+				}
+				if ( Message.isDebugOn ) {
+					Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
+							diff_count );
+				}
 			}
 		}
 		in1.close();
 		in2.close();
 		if ( lineCountCompared == 0 ) {
-			lineCountCompared = 1; // to avoid divide by zero below.
+			// Likely because both files are empty.
+			double diffPercent = 0.0;
+			Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
+				StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?");
 		}
-		Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
-			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
-			"% (compared " + lineCountCompared + " lines).");
+		else {
+			Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
+				StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
+				"% (compared " + lineCountCompared + " lines).");
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing files (" + e + ").";
@@ -487,11 +503,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
+	if ( lineCountCompared == 0 ) {
+		// Likely because both files are empty.
+		double diffPercent = 0.0;
+		message = "" + diff_count + " lines were different, " +
+			StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?";
+		Message.printStatus ( 2, routine, message );
+	}
 	if ( (diff_count > AllowedDiff_int) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
 		(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+		double diffPercent = 100.0*(double)diff_count/(double)lineCountCompared;
 		message = "" + diff_count + " lines were different, " +
-			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
-			"% (compared " + lineCountCompared + " lines).";
+			StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );

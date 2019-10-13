@@ -31,13 +31,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -48,17 +51,32 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import RTi.Util.GUI.DictionaryJDialog;
+import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 @SuppressWarnings("serial")
 public class RunProgram_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+private final String __AddWorkingDirectoryFileOut = "Abs";
+private final String __AddWorkingDirectoryFileErr = "Abs";
+private final String __RemoveWorkingDirectoryFileOut = "Rel";
+private final String __RemoveWorkingDirectoryFileErr = "Rel";
+
+private SimpleJButton __browseOut_JButton = null;
+private SimpleJButton __pathOut_JButton = null;
+private SimpleJButton __browseErr_JButton = null;
+private SimpleJButton __pathErr_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -70,15 +88,21 @@ private JTextField __Program_JTextField= null;
 private JTextField [] __ProgramArg_JTextField = null;
 private SimpleJComboBox __UseCommandShell_JComboBox = null;
 private JTextField __CommandShell_JTextField= null;
+private JTextArea __EnvVars_JTextArea = null;
 private JTextField __Timeout_JTextField = null;
+private SimpleJComboBox	__IfNonZeroExitCode_JComboBox =null;
 private JTextField __ExitStatusIndicator_JTextField = null;
 private JTextField __ExitCodeProperty_JTextField = null;
+private JTextField __StdoutFile_JTextField = null;
+private JTextField __StderrFile_JTextField = null;
 private SimpleJComboBox __OutputCheckTableID_JComboBox = null;
 private JTextField __OutputCheckWarningCountProperty_JTextField = null;
 private JTextField __OutputCheckFailureCountProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
+private String __working_dir = null;
+private JFrame __parent = null;
 
 /**
 Command editor constructor.
@@ -97,10 +121,94 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
+	String routine = "RunProgram";
 
-	if ( o == __cancel_JButton ) {
+	if ( o == __browseOut_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
+		}
+		fc.setDialogTitle("Select Standard Output File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Standard Output File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__StdoutFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, routine, "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory );
+				refresh();
+			}
+		}
+	}
+	else if ( o == __browseErr_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
+		}
+		fc.setDialogTitle("Select Standard Error File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Standard Error File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__StderrFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, routine, "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory );
+				refresh();
+			}
+		}
+	}
+	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditEnvVars") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String EnvVars = __EnvVars_JTextArea.getText().trim();
+        String [] notes = {
+            "Specify environment variables to set in addition to original environment."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, EnvVars,
+            "Edit EnvVars Parameter", notes, "Environment Variable", "Variable Value",10)).response();
+        if ( dict != null ) {
+            __EnvVars_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "RunProgram");
 	}
@@ -110,6 +218,40 @@ public void actionPerformed( ActionEvent event )
 		if ( !__error_wait ) {
 			response ( true );
 		}
+	}
+	else if ( o == __pathOut_JButton ) {
+		if ( __pathOut_JButton.getText().equals(__AddWorkingDirectoryFileOut) ) {
+			__StdoutFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir,__StdoutFile_JTextField.getText() ) );
+		}
+		else if ( __pathOut_JButton.getText().equals(__RemoveWorkingDirectoryFileOut) ) {
+			try {
+			    __StdoutFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __StdoutFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, routine,
+				"Error converting first file name to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else if ( o == __pathErr_JButton ) {
+		if ( __pathErr_JButton.getText().equals( __AddWorkingDirectoryFileErr) ) {
+			__StderrFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __StderrFile_JTextField.getText() ) );
+		}
+		else if ( __pathErr_JButton.getText().equals(__RemoveWorkingDirectoryFileErr) ) {
+			try {
+			    __StderrFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __StderrFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, routine,
+				"Error converting first file name to relative path." );
+			}
+		}
+		refresh ();
 	}
 }
 
@@ -128,9 +270,13 @@ private void checkInput ()
     }
     String UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     String CommandShell = __CommandShell_JTextField.getText().trim();
+	String EnvVars = __EnvVars_JTextArea.getText().trim().replace("\n"," ");
     String Timeout = __Timeout_JTextField.getText().trim();
+	String IfNonZeroExitCode = __IfNonZeroExitCode_JComboBox.getSelected();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
+    String StdoutFile = __StdoutFile_JTextField.getText().trim();
+    String StderrFile = __StderrFile_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
     String OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText().trim();
@@ -152,14 +298,26 @@ private void checkInput ()
     if ( CommandShell.length() > 0 ) {
         props.set ( "CommandShell", CommandShell );
     }
+    if ( EnvVars.length() > 0 ) {
+        props.set ( "EnvVars", EnvVars );
+    }
     if ( Timeout.length() > 0 ) {
         props.set ( "Timeout", Timeout );
+    }
+    if ( IfNonZeroExitCode.length() > 0 ) {
+        props.set ( "IfNonZeroExitCode", IfNonZeroExitCode );
     }
     if ( ExitStatusIndicator.length() > 0 ) {
         props.set ( "ExitStatusIndicator", ExitStatusIndicator );
     }
     if ( ExitCodeProperty.length() > 0 ) {
         props.set ( "ExitCodeProperty", ExitCodeProperty );
+    }
+    if ( StdoutFile.length() > 0 ) {
+        props.set ( "StdoutFile", StdoutFile );
+    }
+    if ( StderrFile.length() > 0 ) {
+        props.set ( "StderrFile", StderrFile );
     }
     if ( OutputCheckWarningCountProperty.length() > 0 ) {
         props.set ( "OutputCheckWarningCountProperty", OutputCheckWarningCountProperty );
@@ -193,9 +351,13 @@ private void commitEdits ()
     }
     String UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     String CommandShell = __CommandShell_JTextField.getText().trim();
+	String EnvVars = __EnvVars_JTextArea.getText().trim().replace("\n"," ");
     String Timeout = __Timeout_JTextField.getText().trim();
+	String IfNonZeroExitCode = __IfNonZeroExitCode_JComboBox.getSelected();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
+    String StdoutFile = __StdoutFile_JTextField.getText().trim();
+    String StderrFile = __StderrFile_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
     String OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText().trim();
@@ -206,9 +368,13 @@ private void commitEdits ()
     }
     __command.setCommandParameter ( "UseCommandShell", UseCommandShell );
     __command.setCommandParameter ( "CommandShell", CommandShell );
+    __command.setCommandParameter ( "EnvVars", EnvVars );
     __command.setCommandParameter ( "Timeout", Timeout );
+    __command.setCommandParameter ( "IfNonZeroExitCode", IfNonZeroExitCode );
     __command.setCommandParameter ( "ExitStatusIndicator", ExitStatusIndicator );
     __command.setCommandParameter ( "ExitCodeProperty", ExitCodeProperty );
+    __command.setCommandParameter ( "StdoutFile", StdoutFile );
+    __command.setCommandParameter ( "StderrFile", StderrFile );
     __command.setCommandParameter ( "OutputCheckTableID", OutputCheckTableID );
     __command.setCommandParameter ( "OutputCheckWarningCountProperty", OutputCheckWarningCountProperty );
     __command.setCommandParameter ( "OutputCheckFailureCountProperty", OutputCheckFailureCountProperty );
@@ -221,6 +387,9 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, RunProgram_Command command, List<String> tableIDChoices )
 {	__command = command;
+	__parent = parent;
+	CommandProcessor processor = __command.getCommandProcessor();
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 
@@ -246,8 +415,8 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         "     2) Start TSTool anywhere and use ${WorkingDir} in the command line to specify files relative to the working directory (folder)."),
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify the program to run using the command line OR separate arguments - the latter makes it simpler " +
-        "to know how to treat whitespace in command line arguments."),
+        "Specify the program to run using the command line OR separate arguments - the arguments will " +
+        "be concatenated together separated by spaces."),
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -375,6 +544,35 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		1, yShell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(shell_JPanel, new JLabel( "Optional - shell program to run (default=depends on system)."), 
         3, yShell, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for environment
+    int yEnv = -1;
+    JPanel env_JPanel = new JPanel();
+    env_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Environment", env_JPanel );
+
+    JGUIUtil.addComponent(env_JPanel, new JLabel (
+		"The program will run using the environment of the parent process."),
+		0, ++yEnv, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JLabel (
+		"Additional environment variables can be set for use by the program."),
+		0, ++yEnv, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yEnv, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(env_JPanel, new JLabel ("Environment variables:"),
+        0, ++yEnv, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnvVars_JTextArea = new JTextArea (6,35);
+    __EnvVars_JTextArea.setLineWrap ( true );
+    __EnvVars_JTextArea.setWrapStyleWord ( true );
+    __EnvVars_JTextArea.setToolTipText("EnvVar1:Value1,EnvVar2:Value2");
+    __EnvVars_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(env_JPanel, new JScrollPane(__EnvVars_JTextArea),
+        1, yEnv, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JLabel ("Optional - environment variables (default=parent environment)."),
+        3, yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(env_JPanel, new SimpleJButton ("Edit","EditEnvVars",this),
+        3, ++yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for command timeout
     int yTimeout = -1;
@@ -424,6 +622,23 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(exit_JPanel, new JLabel ( "If non-zero exit code?:"),
+		0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfNonZeroExitCode_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfNonZeroExitCode_JComboBox.setData(notFoundChoices);
+	__IfNonZeroExitCode_JComboBox.select ( 0 );
+	__IfNonZeroExitCode_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(exit_JPanel, __IfNonZeroExitCode_JComboBox,
+		1, yExit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(exit_JPanel, new JLabel(
+		"Optional - action if non-zero exit code (default=" + __command._Warn + ")"), 
+		3, yExit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Exit status indicator:" ), 
         0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -444,6 +659,57 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         1, yExit, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Optional - processor property to set as program exit code." ),
         3, yExit, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for stdout/stderr output files
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Files", out_JPanel );
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"Standard output and standard error messages printed to console/terminal can be saved to files."),
+		0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"Specifying these filenames is an alternative to running in a command shell with redirection (< and >)."),
+		0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard output file:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__StdoutFile_JTextField = new JTextField ( 50 );
+	__StdoutFile_JTextField.setToolTipText("Optional - specify the filename for standard output, can use ${Property} notation");
+	__StdoutFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(out_JPanel, __StdoutFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browseOut_JButton = new SimpleJButton ( "...", this );
+	__browseOut_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(out_JPanel, __browseOut_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOut_JButton = new SimpleJButton(__RemoveWorkingDirectoryFileOut,this);
+	    JGUIUtil.addComponent(out_JPanel, __pathOut_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard error file:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__StderrFile_JTextField = new JTextField ( 50 );
+	__StderrFile_JTextField.setToolTipText("Optional - specify the filename for standard error, can use ${Property} notation");
+	__StderrFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(out_JPanel, __StderrFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browseErr_JButton = new SimpleJButton ( "...", this );
+	__browseErr_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(out_JPanel, __browseErr_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathErr_JButton = new SimpleJButton(__RemoveWorkingDirectoryFileErr,this);
+	    JGUIUtil.addComponent(out_JPanel, __pathErr_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     // Panel for output checks
     int yCheck = -1;
@@ -593,9 +859,13 @@ private void refresh ()
     String [] ProgramArg = new String[__ProgramArg_JTextField.length];
     String UseCommandShell = "";
     String CommandShell = "";
+	String EnvVars = "";
 	String Timeout = "";
+	String IfNonZeroExitCode = "";
 	String ExitStatusIndicator = "";
 	String ExitCodeProperty = "";
+	String StdoutFile = "";
+	String StderrFile = "";
 	String OutputCheckTableID = "";
 	String OutputCheckWarningCountProperty = "";
 	String OutputCheckFailureCountProperty = "";
@@ -610,9 +880,13 @@ private void refresh ()
         }
         UseCommandShell = parameters.getValue ( "UseCommandShell" );
         CommandShell = parameters.getValue ( "CommandShell" );
+        EnvVars = parameters.getValue ( "EnvVars" );
         Timeout = parameters.getValue ( "Timeout" );
+        IfNonZeroExitCode = parameters.getValue ( "IfNonZeroExitCode" );
         ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
         ExitCodeProperty = parameters.getValue ( "ExitCodeProperty" );
+        StdoutFile = parameters.getValue ( "StdoutFile" );
+        StderrFile = parameters.getValue ( "StderrFile" );
         OutputCheckTableID = parameters.getValue ( "OutputCheckTableID" );
         OutputCheckWarningCountProperty = parameters.getValue ( "OutputCheckWarningCountProperty" );
         OutputCheckFailureCountProperty = parameters.getValue ( "OutputCheckFailureCountProperty" );
@@ -646,14 +920,39 @@ private void refresh ()
         if ( CommandShell != null ) {
             __CommandShell_JTextField.setText ( CommandShell );
         }
+        if ( EnvVars != null ) {
+            __EnvVars_JTextArea.setText ( EnvVars );
+        }
         if ( Timeout != null ) {
             __Timeout_JTextField.setText ( Timeout );
+        }
+        if ( IfNonZeroExitCode == null ) {
+            // Select default...
+            __IfNonZeroExitCode_JComboBox.select ( 0 );
+        }
+        else {  
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IfNonZeroExitCode_JComboBox,
+                IfNonZeroExitCode, JGUIUtil.NONE, null,null)){
+                __IfNonZeroExitCode_JComboBox.select ( IfNonZeroExitCode );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid IfNonZeroExitCode parameter \""
+                + IfNonZeroExitCode + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
         if ( ExitStatusIndicator != null ) {
             __ExitStatusIndicator_JTextField.setText ( ExitStatusIndicator );
         }
         if ( ExitCodeProperty != null ) {
             __ExitCodeProperty_JTextField.setText ( ExitCodeProperty );
+        }
+        if ( StdoutFile != null ) {
+            __StdoutFile_JTextField.setText ( StdoutFile );
+        }
+        if ( StderrFile != null ) {
+            __StderrFile_JTextField.setText ( StderrFile );
         }
         if ( OutputCheckTableID == null ) {
             // Select default...
@@ -685,9 +984,13 @@ private void refresh ()
     }
     UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     CommandShell = __CommandShell_JTextField.getText();
+	EnvVars = __EnvVars_JTextArea.getText().trim().replace("\n"," ");
     Timeout = __Timeout_JTextField.getText();
+    IfNonZeroExitCode =__IfNonZeroExitCode_JComboBox.getSelected();
     ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText();
     ExitCodeProperty = __ExitCodeProperty_JTextField.getText();
+    StdoutFile =__StdoutFile_JTextField.getText();
+    StderrFile =__StderrFile_JTextField.getText();
     OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText();
     OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText();
@@ -699,13 +1002,42 @@ private void refresh ()
     }
     props.add ( "UseCommandShell=" + UseCommandShell );
     props.add ( "CommandShell=" + CommandShell );
+    props.add ( "EnvVars=" + EnvVars );
     props.add ( "Timeout=" + Timeout );
+    props.add ( "IfNonZeroExitCode=" + IfNonZeroExitCode );
     props.add ( "ExitStatusIndicator=" + ExitStatusIndicator );
     props.add ( "ExitCodeProperty=" + ExitCodeProperty );
+    props.add ( "StdoutFile=" + StdoutFile );
+    props.add ( "StderrFile=" + StderrFile );
     props.add ( "OutputCheckTableID=" + OutputCheckTableID );
     props.add ( "OutputCheckWarningCountProperty=" + OutputCheckWarningCountProperty );
     props.add ( "OutputCheckFailureCountProperty=" + OutputCheckFailureCountProperty );
     __command_JTextArea.setText( __command.toString(props) );
+	// Check the path and determine what the label on the path button should be...
+	if ( __pathOut_JButton != null ) {
+		__pathOut_JButton.setEnabled ( true );
+		File f = new File ( StdoutFile );
+		if ( f.isAbsolute() ) {
+			__pathOut_JButton.setText (__RemoveWorkingDirectoryFileOut);
+			__pathOut_JButton.setToolTipText("Change path to relative to command file");
+		}
+		else {
+		    __pathOut_JButton.setText (__AddWorkingDirectoryFileOut );
+			__pathOut_JButton.setToolTipText("Change path to absolute");
+		}
+	}
+	if ( __pathErr_JButton != null ) {
+		__pathErr_JButton.setEnabled ( true );
+		File f = new File ( StderrFile );
+		if ( f.isAbsolute() ) {
+			__pathErr_JButton.setText (__RemoveWorkingDirectoryFileErr);
+			__pathErr_JButton.setToolTipText("Change path to relative to command file");
+		}
+		else {
+		    __pathErr_JButton.setText (__AddWorkingDirectoryFileErr );
+			__pathErr_JButton.setToolTipText("Change path to absolute");
+		}
+	}
 }
 
 /**

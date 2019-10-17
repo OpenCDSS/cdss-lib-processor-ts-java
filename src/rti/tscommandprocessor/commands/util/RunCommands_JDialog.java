@@ -114,8 +114,12 @@ public void actionPerformed( ActionEvent event )
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle( "Select command file to run");
-	    SimpleFileFilter sff = new SimpleFileFilter("TSTool", "TSTool Command File");
+		List<String> extensionList = new ArrayList<>();
+		extensionList.add("tstool");
+		extensionList.add("TSTool");
+		SimpleFileFilter sff = new SimpleFileFilter(extensionList, "TSTool Command File");
 	    fc.addChoosableFileFilter(sff);
+	    fc.setFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();

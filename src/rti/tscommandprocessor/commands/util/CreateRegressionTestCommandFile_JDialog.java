@@ -457,7 +457,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 		"Test command files should follow documented standards." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A top-level folder is specified and will be searched for command files matching the specified pattern."),
+		"A top-level folder is specified and will be searched for command files matching the specified pattern(s)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"The resulting output command file will include RunCommands() commands for each matched file," +
@@ -554,14 +554,15 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file name pattern:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file name pattern(s):" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FilenamePattern_JTextField = new JTextField ( 30 );
+    __FilenamePattern_JTextField.setToolTipText("File pattern(s) to match, * is wildcard, multiple patterns separated by commas, ignore case.");
     __FilenamePattern_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FilenamePattern_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - file pattern to match (default is \"Test_*.TSTool\")."), 
-            3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - file pattern(s) to match (default is \"Test_*.TSTool\",\"test-*.tstool\")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

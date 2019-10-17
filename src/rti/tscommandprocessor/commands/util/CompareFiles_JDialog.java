@@ -58,6 +58,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 @SuppressWarnings("serial")
@@ -231,8 +232,13 @@ public void actionPerformed( ActionEvent event )
 	else if ( o == __visualDiff_JButton ) {
 		// Run the diff program on the input and output files
 		// (they should have existed because the button will have been disabled if not)
-		String file1Path = IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText() );
-		String file2Path = IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText() );
+		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+		String file1Path = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile1_JTextField.getText()) ) );
+		String file2Path = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile2_JTextField.getText()) ) );
 		String [] programAndArgsList = { __diffProgram, file1Path, file2Path };
 		try {
 			ProcessManager pm = new ProcessManager ( programAndArgsList,
@@ -713,9 +719,14 @@ private void refresh ()
 	// Disable the Visual Diff button if the program file does not exist or
 	// either of the files to compare do not exist
 	if ( __visualDiff_JButton != null ) {
-		if ( IOUtil.fileExists(__diffProgram) &&
-			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText())) &&
-			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText())) ) {
+		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+		String file1Path = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile1_JTextField.getText()) ) );
+		String file2Path = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile2_JTextField.getText()) ) );
+		if ( IOUtil.fileExists(__diffProgram) && IOUtil.fileExists(file1Path) && IOUtil.fileExists(file2Path) ) {
 			__visualDiff_JButton.setEnabled(true);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
 		}
@@ -723,11 +734,11 @@ private void refresh ()
 			__visualDiff_JButton.setEnabled(false);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because diff program not configured.");
 		}
-		else if ( !IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText())) ) {
+		else if ( !IOUtil.fileExists(file1Path) ) {
 			__visualDiff_JButton.setEnabled(false);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because first file does not exist.");
 		}
-		else if ( !IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText())) ) {
+		else if ( !IOUtil.fileExists(file2Path) ) {
 			__visualDiff_JButton.setEnabled(false);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because second file does not exist.");
 		}

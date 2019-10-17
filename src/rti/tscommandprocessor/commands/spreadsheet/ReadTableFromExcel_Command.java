@@ -339,6 +339,7 @@ private DataTable readTableFromExcelFile ( String workbookFile, String sheetName
     int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".readTableFromExcelFile", message;
+    Message.printStatus(2, routine, "Reading Excel file \"" + workbookFile + "\" sheet name \"" + sheetName + "\"." );
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
         // Set to null to simplify logic below
@@ -352,9 +353,11 @@ throws FileNotFoundException, IOException
         // See if an open workbook by the same name exists
         WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
         if ( wbMeta != null ) {
+        	Message.printStatus(2,routine,"Found an open workbook matching \"" + workbookFile + "\"");
         	wb = wbMeta.getWorkbook();
         }
         if ( wb == null ) {
+        	Message.printStatus(2,routine,"Opening workbook.");
             try {
                 inp = new FileInputStream(workbookFile);
             }
@@ -363,7 +366,9 @@ throws FileNotFoundException, IOException
                 return null;
             }
             try {
+            	Message.printStatus(2,routine,"Creating in-memory workbook...");
                 wb = WorkbookFactory.create(inp);
+            	Message.printStatus(2,routine,"done creating in-memory workbook.");
             }
             catch ( InvalidFormatException e ) {
                 problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
@@ -371,6 +376,7 @@ throws FileNotFoundException, IOException
             }
         }
         Sheet sheet = null;
+        Message.printStatus(2,routine,"Getting sheet from workbook...");
         // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges
         // are global in workbook)
         if ( (sheetName == null) || (sheetName.length() == 0) ) {

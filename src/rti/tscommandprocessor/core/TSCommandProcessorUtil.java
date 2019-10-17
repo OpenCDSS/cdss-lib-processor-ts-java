@@ -289,17 +289,17 @@ public static void closeRegressionTestReportFile ()
     if ( __regression_test_fp == null ) {
         return;
     }
-    __regression_test_fp.println ( "#----+-------+-------+------+----------+-----------+------------------" +
-    "---------------------------------------------------------------------------" );
+    __regression_test_fp.println ( "#----+-------+------+----------+-----------+" +
+        "---------------------------------------------------------------------------------------------");
     int totalCount = getRegressionTestFailCount() + getRegressionTestPassCount() + getRegressionTestDisabledCount();
-    __regression_test_fp.println ( "FAIL count     = " + getRegressionTestFailCount() +
-        ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalCount,"%.3f")+ "%");
-    __regression_test_fp.println ( "PASS count     = " + getRegressionTestPassCount() +
-        ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalCount,"%.3f")+ "%");
-    __regression_test_fp.println ( "Disabled count = " + getRegressionTestDisabledCount() +
-    	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalCount,"%.3f")+ "%");
+    __regression_test_fp.println ( "FAIL count     = " + StringUtil.formatString(getRegressionTestFailCount(), "%5d") +
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalCount,"%7.3f")+ "%");
+    __regression_test_fp.println ( "PASS count     = " + StringUtil.formatString(getRegressionTestPassCount(), "%5d") +
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalCount,"%7.3f")+ "%");
+    __regression_test_fp.println ( "Disabled count = " + StringUtil.formatString(getRegressionTestDisabledCount(), "%5d") +
+    	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalCount,"%7.3f")+ "%");
     __regression_test_fp.println ( "#--------------------------------" );
-    __regression_test_fp.println ( "Total          = " + totalCount );
+    __regression_test_fp.println ( "Total          = " + StringUtil.formatString(totalCount, "%5d") );
     
     __regression_test_fp.close();
 }
@@ -2755,7 +2755,7 @@ throws FileNotFoundException
     __regression_test_fp.println ( "#" );
     __regression_test_fp.println ( "# Num: count of the tests" );
     __regression_test_fp.println ( "# Enabled: TRUE if test enabled or FALSE if \"#@enabled false\" in command file" );
-    __regression_test_fp.println ( "# Run Time: run time in milliseconds" );
+    __regression_test_fp.println ( "# Run Time: run time in milliseconds - use table output to see this column" );
     __regression_test_fp.println ( "# Test Pass/Fail:" );
     __regression_test_fp.println ( "#    The test status below may be PASS or FAIL (or blank if disabled)." );
     __regression_test_fp.println ( "#    A test will pass if the command file actual status matches the expected status." );

@@ -77,7 +77,8 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (WaitTime == null) || WaitTime.equals("") || !StringUtil.isDouble(WaitTime)) {
+    if ( (WaitTime == null) || WaitTime.equals("") ||
+    	((WaitTime.indexOf("${") < 0) && !StringUtil.isDouble(WaitTime)) ) {
         message = "The wait time must be specified in seconds.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -85,7 +86,7 @@ throws InvalidCommandParameterException
     }
     
     if ( (ProgressIncrement != null) && !ProgressIncrement.equals("") ) {
-    	if ( !StringUtil.isDouble(ProgressIncrement)) {
+    	if ( (ProgressIncrement.indexOf("${") < 0) && !StringUtil.isDouble(ProgressIncrement)) {
 	        message = "The progress increment (" + ProgressIncrement + ") is invalid.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -94,7 +95,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(1);
+    List<String> validList = new ArrayList<>(2);
 	validList.add ( "WaitTime" );
 	validList.add ( "ProgressIncrement" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -151,8 +152,14 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	PropList parameters = getCommandParameters();
 
 	String WaitTime = parameters.getValue ( "WaitTime" );
+	if ( (WaitTime != null) && (WaitTime.indexOf("${") >= 0) ) {
+		WaitTime = TSCommandProcessorUtil.expandParameterValue(processor, this, WaitTime);
+	}
 	long waitTimeMs = (long)(Double.parseDouble(WaitTime)*1000);
 	String ProgressIncrement = parameters.getValue ( "ProgressIncrement" );
+	if ( (ProgressIncrement != null) && (ProgressIncrement.indexOf("${") >= 0) ) {
+		ProgressIncrement = TSCommandProcessorUtil.expandParameterValue(processor, this, ProgressIncrement);
+	}
 	int progressIncrementMs = 0; 
 	if ( (ProgressIncrement != null) && !ProgressIncrement.equals("") && StringUtil.isDouble(ProgressIncrement) ) {
 		progressIncrementMs = (int)(Double.parseDouble(ProgressIncrement)*1000);

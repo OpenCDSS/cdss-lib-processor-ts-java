@@ -158,6 +158,9 @@ private void initialize ( JFrame parent, Wait_Command command )
         "This command waits for a period of time before completing.  This is useful for testing."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "It can also be used in workflows to allow related tasks to complete."),
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "In the future, additional functionality may be added to wait for file existence, etc."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -166,6 +169,7 @@ private void initialize ( JFrame parent, Wait_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Wait time (seconds):" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WaitTime_JTextField = new JTextField ( 10 );
+    __WaitTime_JTextField.setToolTipText("Seconds to wait before continuing, can use ${Property} syntax.");
     __WaitTime_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __WaitTime_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -175,6 +179,7 @@ private void initialize ( JFrame parent, Wait_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Progress increment (seconds):" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ProgressIncrement_JTextField = new JTextField ( 10 );
+    __ProgressIncrement_JTextField.setToolTipText("Seconds to wait between progress notifications, can use ${Property} syntax.");
     __ProgressIncrement_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ProgressIncrement_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

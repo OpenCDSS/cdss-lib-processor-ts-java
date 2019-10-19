@@ -247,7 +247,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Existing properties can be modified using basic math using the \"Math\" tab." ), 
+		"Existing properties can be modified using basic math.  Set the value using ${Property} (can reference itself) and modify using \"Math\" tab." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -442,6 +442,9 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Use the following parameters to perform basic math operations on the property." ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"The values can be specified using ${Property} notation."),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
 		"The value must be consistent with the property type and math operation, as follows:" ), 
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
@@ -454,7 +457,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"  Integer - can add, subtract, multiply, or divide by an integer" ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
-		"  String - can concatenate (add), remove (subtract), or replicate (append multiple times)" ), 
+		"  String - can concatenate (add), remove (subtract), or replicate (multiply: append inital value multiple times)" ), 
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -462,6 +465,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Add:" ), 
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Add_JTextField = new JTextField ( 20 );
+	__Add_JTextField.setToolTipText("Value to add to the property being set, can use ${Property}.");
 	__Add_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Add_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -471,6 +475,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Subtract:" ), 
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Subtract_JTextField = new JTextField ( 20 );
+	__Subtract_JTextField.setToolTipText("Value to subtract from the property being set, can use ${Property}.");
 	__Subtract_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Subtract_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -480,6 +485,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Multiply:" ), 
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Multiply_JTextField = new JTextField ( 20 );
+	__Multiply_JTextField.setToolTipText("Value to multiply the property by, can use ${Property}.");
 	__Multiply_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Multiply_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -489,6 +495,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Divide:" ), 
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Divide_JTextField = new JTextField ( 20 );
+	__Divide_JTextField.setToolTipText("Value to divide the property by, can use ${Property}.");
 	__Divide_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Divide_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

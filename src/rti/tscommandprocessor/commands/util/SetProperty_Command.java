@@ -226,7 +226,7 @@ throws InvalidCommandParameterException
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
 	
-	if ( (Add != null) && !Add.isEmpty() ) {
+	if ( (Add != null) && !Add.isEmpty() && (Add.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Add) ) {
 			message = "The Add parameter \"" + Add + "\" is invalid for " + _Double + " property type.";
 			warning += "\n" + message;
@@ -243,7 +243,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (Subtract != null) && !Subtract.isEmpty() ) {
+	if ( (Subtract != null) && !Subtract.isEmpty() && (Subtract.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Subtract) ) {
 			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
 			warning += "\n" + message;
@@ -260,7 +260,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (Multiply != null) && !Multiply.isEmpty() ) {
+	if ( (Multiply != null) && !Multiply.isEmpty() && (Multiply.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Multiply) ) {
 			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
 			warning += "\n" + message;
@@ -277,7 +277,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (Divide != null) && !Divide.isEmpty() ) {
+	if ( (Divide != null) && !Divide.isEmpty() && (Divide.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Divide) ) {
 			message = "The Divide parameter \"" + Divide + "\" is invalid for " + _Double + " property type.";
 			warning += "\n" + message;
@@ -295,7 +295,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<>(11);
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
@@ -447,9 +447,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	// Treat as strings until the math operation is executed and type is handled
 	String Add = parameters.getValue ( "Add" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Add != null) && (Add.indexOf("${") >= 0) ) {
+		Add = TSCommandProcessorUtil.expandParameterValue(processor, this, Add);
+	}
 	String Subtract = parameters.getValue ( "Subtract" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Subtract != null) && (Subtract.indexOf("${") >= 0) ) {
+		Subtract = TSCommandProcessorUtil.expandParameterValue(processor, this, Subtract);
+	}
 	String Multiply = parameters.getValue ( "Multiply" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Multiply != null) && (Multiply.indexOf("${") >= 0) ) {
+		Multiply = TSCommandProcessorUtil.expandParameterValue(processor, this, Multiply);
+	}
 	String Divide = parameters.getValue ( "Divide" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Divide != null) && (Divide.indexOf("${") >= 0) ) {
+		Divide = TSCommandProcessorUtil.expandParameterValue(processor, this, Divide);
+	}
 
 	try {
 	    Object Property_Object = null; // Important to initialize to null because may be using setNull

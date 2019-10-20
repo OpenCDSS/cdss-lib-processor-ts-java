@@ -309,6 +309,7 @@ import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
+import rti.tscommandprocessor.commands.util.FormatFile_Command;
 import rti.tscommandprocessor.commands.util.FormatStringProperty_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import rti.tscommandprocessor.commands.util.ListFiles_Command;
@@ -673,6 +674,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("FormatFile") ) {
+        return new FormatFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("FormatStringProperty") ) {
         return new FormatStringProperty_Command ();

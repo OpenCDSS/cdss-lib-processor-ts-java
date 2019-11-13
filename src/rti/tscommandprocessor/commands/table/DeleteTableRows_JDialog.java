@@ -23,7 +23,6 @@ NoticeEnd */
 
 package rti.tscommandprocessor.commands.table;
 
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -35,7 +34,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -262,7 +260,10 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
     __param_JTabbedPane.addTab ( "Row Number", rowNum_JPanel );
 
    	JGUIUtil.addComponent(rowNum_JPanel, new JLabel (
-        "Currently only a single row number can be specified as 1+, or \"last\"."),
+        "Row number can be specified as value 1+, * for all rows, or \"last\"."),
+        0, ++yRowNum, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(rowNum_JPanel, new JLabel (
+        "Separate multiple row values by commas."),
         0, ++yRowNum, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(rowNum_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yRowNum, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -270,7 +271,7 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
     JGUIUtil.addComponent(rowNum_JPanel, new JLabel("Delete row number:"),
         0, ++yRowNum, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteRowNumbers_JTextField = new JTextField ( "", 25 );
-    __DeleteRowNumbers_JTextField.setToolTipText("Specify row number (1+) to delete, separated by commas, can use ${Property}, or use \"last\" to delete the last row.");
+    __DeleteRowNumbers_JTextField.setToolTipText("Specify row number (1+) to delete, separated by commas, can use ${Property}, * to delete all, or use \"last\" to delete the last row.");
     __DeleteRowNumbers_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(rowNum_JPanel, __DeleteRowNumbers_JTextField,
         1, yRowNum, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

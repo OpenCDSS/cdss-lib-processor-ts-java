@@ -244,6 +244,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Input1_JComboBox.setToolTipText("Input column name, can use ${Property} notation");
     List<String> input1Choices = new Vector<String>();
     input1Choices.add("");
     __Input1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -269,6 +270,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 2:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Input2_JComboBox.setToolTipText("Input column name or constant, can use ${Property} notation");
     Vector<String> input2Choices = new Vector<String>();
     input2Choices.add("");
     __Input2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -282,6 +284,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Output_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Output_JComboBox.setToolTipText("Output column name, can use ${Property} notation");
     Vector<String> outputChoices = new Vector<String>();
     outputChoices.add("");
     __Output_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery

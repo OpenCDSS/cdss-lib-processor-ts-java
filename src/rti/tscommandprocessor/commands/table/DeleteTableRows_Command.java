@@ -97,7 +97,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<>(3);
     validList.add ( "TableID" );
     validList.add ( "Condition" );
     validList.add ( "DeleteRowNumbers" );
@@ -172,10 +172,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	DeleteRowNumbers = TSCommandProcessorUtil.expandParameterValue(processor, this, DeleteRowNumbers);
     }
     String [] deleteRowNumbers = new String[0];
+    boolean deleteAllRows = false;
     if ( (DeleteRowNumbers != null) && !DeleteRowNumbers.isEmpty() ) {
     	deleteRowNumbers = DeleteRowNumbers.split(",");
 	    for ( int i = 0; i < deleteRowNumbers.length; i++ ) {
 	    	deleteRowNumbers[i] = deleteRowNumbers[i].trim();
+	    	if ( deleteRowNumbers[i].equals("*") ) {
+	    		deleteAllRows = true;
+	    		break;
+	    	}
 	    }
     }
     //String DeleteCountProperty = parameters.getValue ( "DeleteCountProperty" );
@@ -225,41 +230,55 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 		if ( deleteRowNumbers.length > 0 ) {
     	    // Delete rows...
-		    for ( int i = 0; i < deleteRowNumbers.length; i++ ) {
-			    // Determine the row(s) to delete, number may change as the rows are deleted so user must be aware
-			    int numRowsInTable = table.getNumberOfRecords();
-			    String rowToDeleteString = deleteRowNumbers[i];
-			    int rowToDelete1 = -1; // 1-index
-			    if ( rowToDeleteString.equalsIgnoreCase("last") ) {
-				    rowToDelete1 = numRowsInTable;
-			    }
-			    else {
-				    rowToDelete1 = Integer.parseInt(rowToDeleteString);
-			    }
-			    if ( rowToDelete1 > numRowsInTable ) {
-				    message = "Row to delete (" + rowToDelete1 + ") is > number of rows in table.  Not deleting.";
-				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-		                message, "Verify that the table contains row " + rowToDelete1 ) );
-				    continue;
-			    }
-			    if ( rowToDelete1 < 1 ) {
-				    message = "Row to delete (" + rowToDelete1 + ") is < 1.  Not deleting.";
-				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-		                message, "Specify a row > 0" ) );
-				    continue;
-			    }
-			    int rowToDelete0 = rowToDelete1 - 1; // 0-index
+			if ( deleteAllRows ) {
+				// Special case - delete all the rows.
 			    try {
-				    table.deleteRecord(rowToDelete0);
+				    table.deleteAllRecords();
 			    }
 			    catch ( Exception e ) {
-				    message = "Exception deleting row \"" + rowToDelete1 + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
+				    message = "Exception deleting all rows from table \"" + table.getTableID() + "\" (" + e + ").";
 				    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
 		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
 		                message, "Check the log file for errors." ) );
 			    }
+			}
+			else {
+		        for ( int i = 0; i < deleteRowNumbers.length; i++ ) {
+			        // Determine the row(s) to delete, number may change as the rows are deleted so user must be aware
+			        int numRowsInTable = table.getNumberOfRecords();
+			        String rowToDeleteString = deleteRowNumbers[i];
+			        int rowToDelete1 = -1; // 1-index
+			        if ( rowToDeleteString.equalsIgnoreCase("last") ) {
+				        rowToDelete1 = numRowsInTable;
+			        }
+			        else {
+				        rowToDelete1 = Integer.parseInt(rowToDeleteString);
+			        }
+			        if ( rowToDelete1 > numRowsInTable ) {
+				        message = "Row to delete (" + rowToDelete1 + ") is > number of rows in table.  Not deleting.";
+				        Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                    message, "Verify that the table contains row " + rowToDelete1 ) );
+				        continue;
+			        }
+			        if ( rowToDelete1 < 1 ) {
+				        message = "Row to delete (" + rowToDelete1 + ") is < 1.  Not deleting.";
+				        Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                    message, "Specify a row > 0" ) );
+				        continue;
+			        }
+			        int rowToDelete0 = rowToDelete1 - 1; // 0-index
+			        try {
+				        table.deleteRecord(rowToDelete0);
+			        }
+			        catch ( Exception e ) {
+				        message = "Exception deleting row \"" + rowToDelete1 + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
+				        Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+		                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		                    message, "Check the log file for errors." ) );
+			        }
+		        }
             }
  	    }
 		else if ( (Condition != null) && !Condition.isEmpty() ) {

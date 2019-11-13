@@ -308,10 +308,19 @@ CommandWarningException, CommandException
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String Input1 = parameters.getValue ( "Input1" );
+    if ( (Input1 != null) && !Input1.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Input1.indexOf("${") >= 0 ) {
+   		Input1 = TSCommandProcessorUtil.expandParameterValue(processor, this, Input1);
+    }
     String Operator = parameters.getValue ( "Operator" );
     DataTableMathOperatorType operator = DataTableMathOperatorType.valueOfIgnoreCase(Operator);
     String Input2 = parameters.getValue ( "Input2" );
+    if ( (Input2 != null) && !Input2.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Input2.indexOf("${") >= 0 ) {
+   		Input2 = TSCommandProcessorUtil.expandParameterValue(processor, this, Input2);
+    }
     String Output = parameters.getValue ( "Output" );
+    if ( (Output != null) && !Output.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Output.indexOf("${") >= 0 ) {
+   		Output = TSCommandProcessorUtil.expandParameterValue(processor, this, Output);
+    }
     String NonValue = parameters.getValue ( "NonValue" );
     Double NonValue_Double = null;
     if ( (NonValue != null) && !NonValue.equals("") ) {

@@ -73,6 +73,7 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
 private JTextField	__LogFile_JTextField = null;
+private JTextField __MaxSize_JTextField = null;
 private SimpleJComboBox	__Suffix_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false;
@@ -183,10 +184,14 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String LogFile = __LogFile_JTextField.getText().trim();
+    String MaxSize = __MaxSize_JTextField.getText().trim();
 	String Suffix = __Suffix_JComboBox.getSelected();
 	if ( LogFile.length() > 0 ) {
 		props.set ( "LogFile", LogFile );
 	}
+    if ( MaxSize.length() > 0 ) {
+        props.set ( "MaxSize", MaxSize );
+    }
 	if ( Suffix.length() > 0 ) {
 		props.set ( "Suffix", Suffix );
 	}
@@ -206,25 +211,13 @@ to check its low-level values.
 */
 private void commitEdits ()
 {	String LogFile = __LogFile_JTextField.getText().trim();
+    String MaxSize = __MaxSize_JTextField.getText().trim();
 	String Suffix = __Suffix_JComboBox.getSelected();
 	__command.setCommandParameter ( "LogFile", LogFile );
+	__command.setCommandParameter ( "MaxSize", MaxSize );
 	__command.setCommandParameter ( "Suffix", Suffix );
 }
 
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__browse_JButton = null;
-	__path_JButton = null;
-	__command_JTextArea = null;
-	__LogFile_JTextField = null;
-	__Suffix_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
 /**
 Get the working directory for a command (e.g., for editing).
 @param processor the TSCommandProcessor to use to get data.
@@ -274,7 +267,7 @@ private void initialize ( JFrame parent, StartLog_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"(Re)start the log file.  This is useful when it is desirable "+
-		"to have a log file saved for a commands file." ),
+		"to have a log file saved for a command file." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A blank log file name will restart the current file."),
@@ -314,6 +307,17 @@ private void initialize ( JFrame parent, StartLog_Command command )
 	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
 	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum file size:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MaxSize_JTextField = new JTextField ( 20 );
+    __MaxSize_JTextField.setToolTipText("Maximum log file size in bytes.");
+    __MaxSize_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MaxSize_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - maximum log file size, bytes (default=unlimited)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Suffix:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -397,14 +401,21 @@ startLog(LogFile="X",Suffix="X")
 */
 private void refresh ()
 {	String routine = "startLog_JDialog.refresh";
-	String LogFile = "", Suffix = "";
+	String LogFile = "";
+	String MaxSize = "";
+	String Suffix = "";
 	PropList props = __command.getCommandParameters();
+	__error_wait = false;
 	if ( __first_time ) {
 		__first_time = false;
 		Suffix = props.getValue ( "Suffix" );
+		MaxSize = props.getValue ( "MaxSize" );
 		LogFile = props.getValue ( "LogFile" );
 		if ( LogFile != null ) {
 			__LogFile_JTextField.setText ( LogFile );
+		}
+		if ( MaxSize != null ) {
+		    __MaxSize_JTextField.setText( MaxSize );
 		}
 		if (	JGUIUtil.isSimpleJComboBoxItem(
 			__Suffix_JComboBox, Suffix, JGUIUtil.NONE, null, null)){
@@ -425,9 +436,11 @@ private void refresh ()
 	// Regardless, reset the command from the fields.  This is only visible
 	// information that has not been committed in the command.
 	LogFile = __LogFile_JTextField.getText().trim();
+	MaxSize = __MaxSize_JTextField.getText().trim();
 	Suffix = __Suffix_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "LogFile=" + LogFile );
+	props.add ( "MaxSize=" + MaxSize );
 	props.add ( "Suffix=" + Suffix );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

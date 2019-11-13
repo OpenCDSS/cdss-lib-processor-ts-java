@@ -296,10 +296,12 @@ import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.ReadUsgsNwisInsta
 
 // Utility commands.
 import rti.tscommandprocessor.commands.util.AppendFile_Command;
+import rti.tscommandprocessor.commands.util.Break_Command;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.CompareFiles_Command;
+import rti.tscommandprocessor.commands.util.Continue_Command;
 import rti.tscommandprocessor.commands.util.CopyFile_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.Empty_Command;
@@ -486,6 +488,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("Blend") ) {
         return new Blend_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("Break") ) {
+        return new Break_Command ();
+    }
 
 	// "C" commands...
 
@@ -539,6 +544,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ConfigureLogging") ) {
         return new ConfigureLogging_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("Continue") ) {
+        return new Continue_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ConvertDataUnits") ) {
         return new ConvertDataUnits_Command ();

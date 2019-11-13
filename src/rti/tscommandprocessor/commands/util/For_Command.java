@@ -51,9 +51,16 @@ import RTi.Util.Table.DataTable;
 
 /**
 This class initializes, checks, and runs the For() command.
+See also Continue(), which will be handled in the processor to jump to the end of a loop.
+See also Break(), which will be handled in the processor to interrupt a loop.
 */
 public class For_Command extends AbstractCommand implements Command
 {
+
+/**
+Indicate whether breakFor() has been called, indicating that the iteration is complete.
+*/
+private boolean breakSet = false;
 
 /**
 Current index property value.
@@ -131,6 +138,13 @@ Constructor.
 public For_Command ()
 {	super();
 	setCommandName ( "For" );
+}
+
+/**
+ * Break he For() loop, meaning that any attempt to iterate will indicate it is complete.
+ */
+public void breakFor() {
+	this.breakSet = true;
 }
 
 /**
@@ -301,7 +315,8 @@ public String getName ()
 /**
 Increment the loop counter.
 If called the first time, initialize.  This may be called before runCommands() so have to process properties here.
-If the increment will go past the end, return false.
+@return If the increment will go past the end (for loop is done), return false.
+If the loop advanced, return true.
 */
 public boolean next ()
 {   String routine = getClass().getSimpleName() + ".next", message;
@@ -311,6 +326,7 @@ public boolean next ()
   	if ( !this.forInitialized ) {
     	// Initialize the loop
   		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+  		this.breakSet = false;
     	if ( this.iteratorIsList ) {
     	    // Iterate with the list
 	        setIteratorPropertyValue(null);
@@ -459,8 +475,15 @@ public boolean next ()
 	    }
   	}
     else {
+    	// For loop was previously initialized and is now being run
+    	if ( this.breakSet ) {
+    		// Loop is complete because it was broken out of with Break() command
+    		// - leave iterator as it was before with no further action
+    		// - return false indicating that next() has been advanced to the end
+    		return false;
+    	}
         // Increment the property and optionally set properties from table columns
-    	if ( this.iteratorIsList || this.iteratorIsTable ) {
+    	else if ( this.iteratorIsList || this.iteratorIsTable ) {
 	        if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
 	            // Done iterating
 	        	if ( Message.isDebugOn ) {

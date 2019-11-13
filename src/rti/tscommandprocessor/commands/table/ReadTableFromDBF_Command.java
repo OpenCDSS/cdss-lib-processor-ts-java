@@ -287,11 +287,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
         	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-	if ( !IOUtil.fileExists(InputFile_full) ) {
-		message += "\nThe DBF file \"" + InputFile_full + "\" does not exist.";
-		++warning_count;
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Verify that the DBF file exists." ) );
+	// Only warn during run mode because properties may be used or file may be created dynamically
+	if ( commandPhase == CommandPhaseType.RUN ) {
+	    if ( !IOUtil.fileExists(InputFile_full) ) {
+		    message += "\nThe DBF file \"" + InputFile_full + "\" does not exist.";
+		    ++warning_count;
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the DBF file exists." ) );
+	    }
 	}
 
 	if ( warning_count > 0 ) {

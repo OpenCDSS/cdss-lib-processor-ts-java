@@ -695,7 +695,9 @@ import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisDailyDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.groundwater.UsgsNwisGroundwaterDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.UsgsNwisInstantaneousDataStore;
 import rti.tscommandprocessor.commands.util.Comment_Command;
+import rti.tscommandprocessor.commands.util.Continue_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
+import rti.tscommandprocessor.commands.util.Break_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.EndFor_Command;
 import rti.tscommandprocessor.commands.util.EndIf_Command;
@@ -2497,6 +2499,24 @@ protected DataStore lookupDataStore ( String dataStoreName )
 }
 
 /**
+Lookup the command index for the EndFor() command with requested starting command index.
+@param commandList list of commands to check
+@param forName the name of the "for" name to find
+@return the previous For() command, or null if not found.
+*/
+private EndFor_Command lookupEndForCommand(List<Command> commandList, int iStart)
+{
+    Command c;
+    for ( int i = iStart; i >= 0; i-- ) {
+    	c = commandList.get(i);
+        if ( c instanceof EndFor_Command ) {
+            return (EndFor_Command)c;
+        }
+    }
+    return null;
+}
+
+/**
 Lookup the command index for the EndFor() command with requested name
 @param commandList list of commands to check
 @param forName the name of the "for" name to find
@@ -2515,6 +2535,68 @@ private int lookupEndForCommandIndex(List<Command> commandList, String forName )
         }
     }
     return -1;
+}
+
+/**
+Lookup EndIf commands between Continue statement and its corresponding EndFor,
+used when processing Continue commands.
+@param iContinue index (0+) in command list for Continue command of interest).
+@param iEndFor index (0+) in command list for EnfFor that follows the Continue command.
+@return list of EndIf for If/EndIf blocks that wrap the Continue command.
+*/
+private List<EndIf_Command> lookupEndIfForContinue(List<Command> commandList, int iContinue, int iEndFor) {
+	List<EndIf_Command> endIfCommands = new ArrayList<>();
+	Command c;
+	for ( int i = iContinue; i < iEndFor; i++ ) {
+		c = commandList.get(i);
+		if ( c instanceof EndIf_Command ) {
+			// Only add the EndIf command if its matching If command is prior to the Continue command index
+			EndIf_Command ec = (EndIf_Command)c;
+			int index = lookupIfCommandIndex(commandList, ec.getName());
+			if ( (index >= 0) && (index < iContinue) ) {
+				endIfCommands.add(ec);
+			}
+		}
+	}
+	return endIfCommands;
+}
+
+/**
+Lookup the command index for the For() command with requested name.
+@param commandList list of commands to check.
+@param forName the name of the "for" name to find.
+@return the For command that matches "forName".
+*/
+private For_Command lookupForCommand(List<Command> commandList, String forName)
+{
+    For_Command fc;
+    for ( Command c : commandList ) {
+        if ( c instanceof For_Command ) {
+            fc = (For_Command)c;
+            if ( fc.getName().equalsIgnoreCase(forName) ) {
+                return fc;
+            }
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the command index for the For() command with requested starting command index.
+@param commandList list of commands to check.
+@param iStart the starting index (0+) in the command list.
+@return the previous For() command, or null if not found.
+*/
+private For_Command lookupForCommand(List<Command> commandList, int iStart)
+{
+    Command c;
+    for ( int i = iStart; i >= 0; i-- ) {
+    	c = commandList.get(i);
+        if ( c instanceof For_Command ) {
+            return (For_Command)c;
+        }
+    }
+    return null;
 }
 
 // TODO SAM optimize this so that lookup searches backward from a starting point, for example from EndFor()
@@ -2553,6 +2635,45 @@ private If_Command lookupIfCommand ( List<If_Command> ifCommandStack, String nam
         }
     }
     return null;
+}
+
+/**
+Lookup the command index for the If() command with requested name.
+@param commandList list of commands to check.
+@param ifName the name of the "if" name to find.
+@return the index of the requested If() command.
+*/
+private int lookupIfCommandIndex(List<Command> commandList, String ifName )
+{
+    int i = -1;
+    If_Command ic;
+    for ( Command c : commandList ) {
+        ++i;
+        if ( c instanceof If_Command ) {
+            ic = (If_Command)c;
+            if ( ic.getName().equalsIgnoreCase(ifName) ) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+/**
+Lookup the command index for the EndFor() command with requested name.
+@param commandList list of commands to check, typically the full command list.
+@param iStart the index (0+) for the starting point of the search, a command within a For loop.
+*/
+private int lookupNextEndForCommandIndex(List<Command> commandList, int iStart)
+{
+    Command c;
+    for ( int i = iStart; i < commandList.size(); i++ ) {
+    	c = commandList.get(i);
+        if ( c instanceof EndFor_Command ) {
+        	return i;
+        }
+    }
+    return -1;
 }
 
 /**
@@ -2730,6 +2851,7 @@ throws Exception
 	CommandProfile commandProfile = null; // Profile to track execution time, memory use
 	Command commandPrev = null; // previous command in loop
 	// Initialize the If() command stack that is in effect, needed to "and" the if conditions
+	// - all tested If blocks are evaluated and if all evaluate to true, the command can be run
 	List<If_Command> ifCommandStack = new ArrayList<If_Command>();
 	// Initialize the For() command stack that is in effect, needed to handle command logging
 	List<For_Command> forCommandStack = new ArrayList<For_Command>();
@@ -2742,7 +2864,7 @@ throws Exception
     boolean needToInterrupt = false; // Will set to true if need to break out of running (e.g., no for loop end)
     // Loop through the commands and reset any For() commands to make sure they don't think they are complete.
     // Nested for loops will be handled when processed by resetting when a for loop is totally complete.
-    For_Command forCommand = null;
+    //For_Command forCommand = null;
     CommandStatusProvider commandStatusProvider = null;
     for ( i = 0; i < size; i++ ) {
     	//Message.printStatus(2, routine, "Processing: " + command);
@@ -2756,7 +2878,7 @@ throws Exception
         	commandStatusProvider = (CommandStatusProvider)command;
         }
         if ( command instanceof For_Command ) {
-            forCommand = (For_Command)command;
+            For_Command forCommand = (For_Command)command;
             forCommand.resetCommand();
         }
         if ( commandStatusProvider != null ) {
@@ -2815,8 +2937,7 @@ throws Exception
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 			return;
 		}
-		try {
-		    // Catch errors in all the commands.
+		try { // Catch errors in all the commands.
     		command = commandList.get(i);
     		commandString = command.toString();
     		if ( commandString == null ) {
@@ -2941,12 +3062,167 @@ throws Exception
     				}
     				// Check to see whether in one or more If() commands and if so evaluate their values to determine
     				// whether to run
+                   	Message.printStatus(3, routine, "Checking ifStackOkToRun: " + ifStackOkToRun);
     				if ( ifStackOkToRun ) {
         				// Run the command...
         				if ( Message.isDebugOn ) {
         					Message.printDebug ( 1, routine, "Running command through new code..." );
         				}
-        	    		if ( command instanceof Exit_Command ) {
+        	    		if ( command instanceof Break_Command ) {
+        	    			// First find the For command that starts the loop
+        				    if ( Message.isDebugOn ) {
+                           	    Message.printDebug(1, routine, "Looking up previous For() command for Break() command." );
+        				    }
+                            For_Command forCommand = lookupForCommand(commandList,i);
+                            if ( forCommand == null ) {
+                                // Did not find a prior For() command so generate an error and exit
+                                needToInterrupt = true;
+                                commandStatus.addToLog(CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                    	"Unable to find a For() command before Break() command.",
+                                    	"Remove the Break() command or add a For() command."));
+                                throw new CommandException ( "Unable to find previous For() command for Break() command.");
+                            }
+                            else {
+        	    			    // Then find the EndFor command that matches the beginning For command name
+                                int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
+                                if ( endForIndex < 0 ) {
+                                    // Did not match the end of the For() so generate an error and exit
+                                    needToInterrupt = true;
+                                    commandStatus.addToLog(CommandPhaseType.RUN,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                    	    "Unable to match for For() loop name \"" + forCommand.getName() + "\" in EndFor() commands for Break() command.", "Add a matching EndFor() command."));
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands for Break() command.");
+                                }
+                                else {
+                            	    // Before jumping to EndFor, also need to step out of If blocks that surround the Break statement.
+                                	// - this is necessary to keep the If/EndIf block stack correct for:
+                                	//
+                                	//   If
+                                	//     Break
+                                	//   EndIf
+                                	//
+                                	// - any If/EndIf blocks are self-contained, the stack does not need to be changed because they would not have been opened:
+                                	//
+                                	//   Break
+                                	//   If
+                                	//   EndIf
+                                    if ( Message.isDebugOn ) {
+                                  	    Message.printDebug(1, routine, "Found For() command for Break() command:  " + forCommand );
+                                    }
+                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);  // Method works for Continue and Break
+                            	    for ( EndIf_Command endifCommand: endifCommandList ) {
+                            		    // Treat as if an EndIf had been encountered.
+                            		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
+                            		    // The following is the same as EndIf code below in this method
+    	                	            // Run the command so the status is set to success
+    	                                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
+    	                                if ( ifCommand == null ) {
+    	                                    commandStatus.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                                                "Unable to find matching If() command for EndIf(Name=\"" + endifCommand.getName() + "\").",
+                                                "Confirm that matching If() and EndIf() commands are specified.") );
+    	                                }
+    	                                else {
+    	                	                // Run the command so the status is set to success
+    	                	                endifCommand.runCommand(i_for_message);
+    	                	                // Remove the If command from the stack since it has essentially been traversed
+                                            if ( Message.isDebugOn ) {
+                            	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
+                                            }
+    	                                    ifCommandStack.remove(ifCommand);
+    	                                }
+    	                                // Re-evaluate if stack
+                                        ifStackOkToRun = evaluateIfStack(ifCommandStack);
+                                        if ( Message.isDebugOn ) {
+                         	                Message.printDebug(1,routine,"ifStackOkToRun = " + ifStackOkToRun );
+                                        }
+                            	    }
+                            	    // Tell the For() command that it has been interrupted by a Break.
+                            	    // - this will cause it to evaluate as done on the next iteration
+                            	    forCommand.breakFor();
+                            	    // No need to remove the For() command with forCommandStack.remove(forCommand) because calling forCommand.break() handles.
+                                    // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                            	    // - this is similar to Continue but calling forCommand.break() above will cause loop to evaluate as done
+                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
+                                    if ( Message.isDebugOn ) {
+                            	        Message.printDebug(1, routine, "Jumping to command " + (i + 1) + " [" + i + "] (command loop will be ignored): " + commandList.get(i) );
+                                    }
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
+                                    continue;
+                                }
+                            }
+        	    		}
+        	    		else if ( command instanceof Continue_Command ) {
+        	    			// First find the For command that starts the loop
+                            For_Command forCommand = lookupForCommand(commandList,i);
+                            if ( forCommand == null ) {
+                                // Did not find a prior For() command so generate an error and exit
+                                needToInterrupt = true;
+                                commandStatus.addToLog(CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                    	"Unable to find a For() command before Continue() command.",
+                                    	"Remove the Continue() command or add a For() command."));
+                                throw new CommandException ( "Unable to find previous For() command for Break() command.");
+                            }
+                            else {
+        	    			    // Then find the EndFor command that matches the beginning For command name
+                                int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
+                                if ( endForIndex < 0 ) {
+                                    // Did not match the end of the For() so generate an error and exit
+                                    needToInterrupt = true;
+                                    commandStatus.addToLog(CommandPhaseType.RUN,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                    	    "Unable to match for For() loop name \"" + forCommand.getName() + "\" in EndFor() commands", "Add a matching EndFor() command."));
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands");
+                                }
+                                else {
+                            	    // Before jumping to EndFor, also need to step out of If blocks that surround the Continue statement.
+                                	// - this is necessary to keep the If/EndIf block stack correct for:
+                                	//
+                                	//   If
+                                	//     Continue
+                                	//   EndIf
+                                	//
+                                	// - any If/EndIf blocks are self-contained, the stack does not need to be changed because they would not have been opened:
+                                	//
+                                	//   Continue
+                                	//   If
+                                	//   EndIf
+                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);
+                            	    for ( EndIf_Command endifCommand: endifCommandList ) {
+                            		    // Treat as if an EndIf had been encountered.
+                            		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
+                            		    // The following is the same as EndIf code below in this method
+    	                	            // Run the command so the status is set to success
+    	                                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
+    	                                if ( ifCommand == null ) {
+    	                                    commandStatus.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                                                "Unable to find matching If() command for EndIf(Name=\"" + endifCommand.getName() + "\").",
+                                                "Confirm that matching If() and EndIf() commands are specified.") );
+    	                                }
+    	                                else {
+    	                	                // Run the command so the status is set to success
+    	                	                endifCommand.runCommand(i_for_message);
+    	                	                // Remove the If command from the stack since it has essentially been traversed
+                                            if ( Message.isDebugOn ) {
+                            	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
+                                            }
+    	                                    ifCommandStack.remove(ifCommand);
+    	                                }
+    	                                // Re-evaluate if stack
+                                        ifStackOkToRun = evaluateIfStack(ifCommandStack);
+                                        if ( Message.isDebugOn ) {
+                         	                Message.printDebug(1,routine,"ifStackOkToRun = " + ifStackOkToRun );
+                                        }
+                            	    }
+                                    // Modify the main command loop index and continue - the EndFor will be executed (or done)
+                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
+                                    continue;
+                                }
+                            }
+        	    		}
+        	    		else if ( command instanceof Exit_Command ) {
         	    			// Exit the processing...
         	    			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
         	                commandProfile.setEndTime(System.currentTimeMillis());
@@ -2958,13 +3234,13 @@ throws Exception
                             // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so that they
                             // will run through again
                             // Initialize or increment the for loop
-                            forCommand = (For_Command)command;
+                            For_Command forCommand = (For_Command)command;
                             boolean okToRunFor;
                             try {
                                 okToRunFor = forCommand.next();
                                 //Message.printStatus(2,routine,"okToRunFor="+okToRunFor);
                                 // If false, the for loop is done.  However, need to handle case where for loop
-                                // may be nexted and need to run again...
+                                // may be nested and need to run again...
                                 // TODO SAM 2015-06-06 Are there any technical issues with this simple reset?
                                 if ( !okToRunFor ) {
                                 	forCommand.resetCommand();
@@ -3025,7 +3301,10 @@ throws Exception
                         else if ( command instanceof EndFor_Command ) {
                             // Jump to matching For()
                             EndFor_Command efc = (EndFor_Command)command;
+                            // Find the matching For() command
+                            For_Command forCommand = lookupForCommand(commandList,efc.getName());
                             try {
+                            	// Remove from the stack, will be added again when matching For() is executed (next command).
                             	forCommandStack.remove(forCommand);
                             }
                             catch ( Exception e ) {
@@ -3035,7 +3314,7 @@ throws Exception
                             i = forIndex - 1; // Decrement by one because the main loop will increment
                             if ( Message.isDebugOn ) {
                             	Message.printDebug(1,routine,"At EndFor(Name=\"" + efc.getName() +
-                            		"\") - jumping to command [" + (i + 1) + "] at top of For() loop" );
+                            		"\") - jumping to command " + (i + 1) + " [" + i + "] at top of For() loop for next iteration" );
                             }
                             continue; // Goes to the top of the loop to get the command at "i"
                         }
@@ -3056,6 +3335,11 @@ throws Exception
                             }
                         }
                     }
+    				else {
+                        if ( Message.isDebugOn ) {
+                         	Message.printDebug(1,routine,"ifStackOkToRun=" + ifStackOkToRun + ", not running this command");
+                        }
+    				}
     				// TODO SAM 2014-06-29 Why are these here and not before the if stack check?  Need to document logic
     	            if ( command instanceof If_Command ) {
     	                // Add to the if command stack
@@ -3063,6 +3347,9 @@ throws Exception
     	                ifCommandStack.add(ifCommand);
     	                // Re-evaluate if stack
     	                ifStackOkToRun = evaluateIfStack(ifCommandStack);
+                        if ( Message.isDebugOn ) {
+                         	Message.printDebug(1,routine,"If_Command detected, added to stack, ifStackOkToRun=" + ifStackOkToRun );
+                        }
     	            }
     	            else if ( command instanceof EndIf_Command ) {
     	                // Remove from the if command stack (generate a warning if the matching If() is not found in the stack
@@ -3078,8 +3365,11 @@ throws Exception
     	                	endifCommand.runCommand(i_for_message);
     	                    ifCommandStack.remove(ifCommand);
     	                }
-    	                // Re-evalute if stack
+    	                // Re-evaluate if stack
                         ifStackOkToRun = evaluateIfStack(ifCommandStack);
+                        if ( Message.isDebugOn ) {
+                         	Message.printDebug(1,routine,"EndIf_Command detected, removed from stack, ifStackToRun=" + ifStackOkToRun );
+                        }
     	            }
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "...back from running command." );

@@ -213,6 +213,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ColumnFilters = parameters.getValue ( "ColumnFilters" );
+    if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
+   		ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
+    }
     Hashtable<String,String> columnFilters = new Hashtable<String,String>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma
@@ -296,14 +299,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Append to the table...
-        table.appendTable ( table, appendTable, includeColumns, columnMap, columnData, columnFilters );
+        int rowsAppended = table.appendTable ( table, appendTable, includeColumns, columnMap, columnData, columnFilters );
+        Message.printStatus(2, routine, "Appended " + rowsAppended + " rows.");
     }
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error appending table (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report problem to software support." ) );
+            message, "See the log file for details." ) );
 		throw new CommandWarningException ( message );
 	}
 	

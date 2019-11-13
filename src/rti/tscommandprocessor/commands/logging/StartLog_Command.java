@@ -26,7 +26,6 @@ package rti.tscommandprocessor.commands.logging;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -85,6 +84,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String routine = getCommandName() + ".checkCommandParameters";
 	String LogFile = parameters.getValue ( "LogFile" );
+	String MaxSize = parameters.getValue ( "MaxSize" );
 	String Suffix = parameters.getValue ( "Suffix" );
 	String working_dir = null;
 	String warning = "";
@@ -139,6 +139,15 @@ throws InvalidCommandParameterException
 		status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Verify that the path information is consistent." ) );
 	}
+
+    if ( (MaxSize != null) && !MaxSize.isEmpty() && !StringUtil.isInteger(MaxSize) ) {
+        message = "The screen warning level \"" + MaxSize + "\" is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Change the screen level to an integer." ) );
+    }
+
 	if ( (Suffix != null) && (Suffix.length() != 0) &&
 		!Suffix.equalsIgnoreCase(_Date) &&
 		!Suffix.equalsIgnoreCase(_DateTime) ) {
@@ -149,8 +158,9 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+	List<String> validList = new ArrayList<>(3);
 	validList.add ( "Logfile" );
+	validList.add ( "MaxSize" );
 	validList.add ( "Suffix" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -178,7 +188,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector<File>();
+	List<File> list = new ArrayList<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -241,6 +251,11 @@ throws CommandWarningException, CommandException
 	String LogFile_full = null;	// File with path, used below and in final catch.
 	try {
 		String LogFile = parameters.getValue ( "LogFile" ); // Expanded below
+		String MaxSize = parameters.getValue ( "MaxSize" );
+		int maxSize = -1;
+		if ( (MaxSize != null) && !MaxSize.isEmpty() ) {
+			maxSize = Integer.parseInt(MaxSize);
+		}
 		String Suffix = parameters.getValue ( "Suffix" );
 		if ( (LogFile == null) || (LogFile.length() == 0) ) {
 			// Restart the current log file...
@@ -292,6 +307,7 @@ throws CommandWarningException, CommandException
 			Message.closeLogFile();
 			// Open the new log file...
 			Message.openNewLogFile ( LogFile_full );
+			Message.setLogFileMaxSize ( maxSize );
 			Message.printStatus(2, routine, "Opened log file \"" + LogFile_full + "\"");
 			Message.printStatus(2, routine, "Previous log file was \"" + previousLogFile + "\"");
 			setOutputFile ( new File(LogFile_full));

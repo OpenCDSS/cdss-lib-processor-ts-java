@@ -232,7 +232,10 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
         "Operator can be:  <, <=, >, >=, ==, !="),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Operator for strings also can be:  contains, !contains, isempty"),
+        "Operator for strings also can be:  contains, !contains, isempty, !isempty"),
+        0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "Strings comparisons are case-specific and null value is treated as an empty string."),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Value should agree with column type, for example don't specify text characters for numeric column type."),

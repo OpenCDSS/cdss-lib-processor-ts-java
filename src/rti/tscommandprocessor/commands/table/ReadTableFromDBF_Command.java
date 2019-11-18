@@ -51,6 +51,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DbaseDataTable;
+import RTi.Util.Table.TableField;
 
 /**
 This class initializes, checks, and runs the ReadTableFromDBF() command.
@@ -160,9 +161,12 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<>(6);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
+    validList.add ( "DoubleColumns" );
+    validList.add ( "IntegerColumns" );
+    validList.add ( "TextColumns" );
     validList.add ( "Top" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
@@ -245,7 +249,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -278,6 +282,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
 	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
+	String DoubleColumns = parameters.getValue ( "DoubleColumns" );
+	if ( (DoubleColumns != null) && (DoubleColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
+	}
+	String IntegerColumns = parameters.getValue ( "IntegerColumns" );
+	if ( (IntegerColumns != null) && (IntegerColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
+	}
+	String TextColumns = parameters.getValue ( "TextColumns" );
+	if ( (TextColumns != null) && (TextColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
+	}
     String Top = parameters.getValue ( "Top" );
     Integer top = 0;
     if ( (Top != null) && !Top.equals("") ) {
@@ -317,6 +333,105 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        if ( (top != null) && (top != 0) ) {
 	            for ( int i = table.getNumberOfRecords() - 1; i >= top; i-- ) {
 	                table.deleteRecord(i);
+	            }
+	        }
+	        // Convert specified columns to double if specified.
+	        if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
+	            // Split the parameter into separate strings.
+	            String [] doubleColumns = DoubleColumns.split(",");
+	            for ( int i = 0; i < doubleColumns.length; i++ ) {
+	                // Convert * to Java style regular expression
+	                doubleColumns[i] = doubleColumns[i].trim().replace("*", ".*");
+	            }
+	            // Get a list of specific table columns considering possible regex in parameter
+	            // - must match case
+	            // - check regex
+	            List<String> doubleColumns2 = StringUtil.includeStrings(
+	            	StringUtil.toList(table.getFieldNames()),
+	            	StringUtil.toList(doubleColumns), false, true);
+	            int [] fieldNum = new int[doubleColumns2.size()];
+	            for ( int icol = 0; icol < doubleColumns2.size(); icol++ ) {
+	          	    fieldNum[icol] = table.getFieldIndex(doubleColumns2.get(icol));
+	            }
+	            // Loop through the double column names.
+	            for ( int i = 0; i < doubleColumns2.size(); i++ ) {
+	            	try {
+	            		// Set the precision so that table display shows a double
+	                    table.changeFieldDataType(fieldNum[i], TableField.DATA_TYPE_DOUBLE, -1, 6);
+	            	}
+	            	catch ( Exception e ) {
+		                Message.printWarning ( 3, routine, e );
+		                message = "Error changing columnn \"" + doubleColumns2.get(i) + "\" to double (" + e + ").";
+		                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Review original data to ensure that it can be converted to double." ) );
+		                throw new CommandWarningException ( message );
+	            	}
+	            }
+	        }
+	        // Convert specified columns to integer if specified.
+	        // - currently this can only be used for Double or Float columns
+	        if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
+	            // Split the parameter into separate strings.
+	            String [] integerColumns = IntegerColumns.split(",");
+	            for ( int i = 0; i < integerColumns.length; i++ ) {
+	                // Convert * to Java style regular expression
+	                integerColumns[i] = integerColumns[i].trim().replace("*", ".*");
+	            }
+	            // Get a list of specific table columns considering possible regex in parameter
+	            // - must match case
+	            // - check regex
+	            List<String> integerColumns2 = StringUtil.includeStrings(
+	            	StringUtil.toList(table.getFieldNames()),
+	            	StringUtil.toList(integerColumns), false, true);
+	            int [] fieldNum = new int[integerColumns2.size()];
+	            for ( int icol = 0; icol < integerColumns2.size(); icol++ ) {
+	          	    fieldNum[icol] = table.getFieldIndex(integerColumns2.get(icol));
+	            }
+	            for ( int i = 0; i < integerColumns2.size(); i++ ) {
+	            	try {
+	                    table.changeFieldDataType(fieldNum[i], TableField.DATA_TYPE_INT, -1, -1);
+	            	}
+	            	catch ( Exception e ) {
+		                Message.printWarning ( 3, routine, e );
+		                message = "Error changing columnn \"" + integerColumns2.get(i) + "\" to integer (" + e + ").";
+		                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Review original data to ensure that it can be converted to integer." ) );
+		                throw new CommandWarningException ( message );
+	            	}
+	            }
+	        }
+	        // Convert specified columns to text if specified.
+	        if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
+	            // Split the parameter into separate strings.
+	            String [] textColumns = TextColumns.split(",");
+	            for ( int i = 0; i < textColumns.length; i++ ) {
+	                // Convert * to Java style regular expression
+	                textColumns[i] = textColumns[i].trim().replace("*", ".*");
+	            }
+	            // Get a list of specific table columns considering possible regex in parameter
+	            // - must match case
+	            // - check regex
+	            List<String> textColumns2 = StringUtil.includeStrings(
+	            	StringUtil.toList(table.getFieldNames()),
+	            	StringUtil.toList(textColumns), false, true);
+	            int [] fieldNum = new int[textColumns2.size()];
+	            for ( int icol = 0; icol < textColumns2.size(); icol++ ) {
+	          	    fieldNum[icol] = table.getFieldIndex(textColumns2.get(icol));
+	            }
+	            for ( int i = 0; i < textColumns2.size(); i++ ) {
+	            	try {
+	                    table.changeFieldDataType(fieldNum[i], TableField.DATA_TYPE_STRING, -1, -1);
+	            	}
+	            	catch ( Exception e ) {
+	                    Message.printWarning ( 3, routine, e );
+	                    message = "Error changing columnn \"" + textColumns2.get(i) + "\" to text/string (" + e + ").";
+	                    Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Review original data to ensure that it can be converted to text/string." ) );
+	                    throw new CommandWarningException ( message );
+	                }
 	            }
 	        }
 	    }
@@ -381,6 +496,9 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
+	String DoubleColumns = props.getValue("DoubleColumns");
+	String IntegerColumns = props.getValue("IntegerColumns");
+	String TextColumns = props.getValue("TextColumns");
 	String Top = props.getValue( "Top" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
@@ -394,6 +512,24 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
+	}
+	if ( (DoubleColumns != null) && (DoubleColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "DoubleColumns=\"" + DoubleColumns + "\"" );
+	}
+	if ( (IntegerColumns != null) && (IntegerColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IntegerColumns=\"" + IntegerColumns + "\"" );
+	}
+	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TextColumns=\"" + TextColumns + "\"" );
 	}
     if ( (Top != null) && (Top.length() > 0) ) {
         if ( b.length() > 0 ) {

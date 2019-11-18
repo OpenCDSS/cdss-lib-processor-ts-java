@@ -139,12 +139,20 @@ public class TableRowConditionEvaluator {
             pos2 = pos + 8;
             compareAsStrings = true; // "contains" is only used on strings
         }
+        else if ( conditionUpper.indexOf("!ISEMPTY") > 0 ) {
+        	// Put this before the next "ISEMPTY" operator
+            pos = conditionUpper.indexOf("!ISEMPTY");
+            op = "!ISEMPTY";
+            pos1 = pos;
+            pos2 = pos + 8;
+            compareAsStrings = true; // "!isempty" is only used on strings
+        }
         else if ( conditionUpper.indexOf("ISEMPTY") > 0 ) {
             pos = conditionUpper.indexOf("ISEMPTY");
             op = "ISEMPTY";
             pos1 = pos;
             pos2 = pos + 7;
-            compareAsStrings = true; // "contains" is only used on strings
+            compareAsStrings = true; // "isempty" is only used on strings
         }
         else if ( condition.indexOf("=") > 0 ) {
             message = "Bad use of = in condition.  Use == to check for equality";
@@ -228,7 +236,7 @@ public class TableRowConditionEvaluator {
 			Integer o_int = null;
 			String o_string = null;
 			if ( o != null ) {
-					o_string = "" + o;
+				o_string = "" + o;
 				if ( o instanceof Integer ) {
 					o_int = (Integer)o;
 					o_double = o_int.doubleValue();
@@ -239,72 +247,166 @@ public class TableRowConditionEvaluator {
 				else if ( o instanceof String ) {
 					o_string = (String)o;
 				}
+				else {
+					throw new Exception ("Evaluating condition not implemented for type: " + o.getClass() );
+				}
 				// Evaluate the condition
 				if ( this.operator.equals("<") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (o_int < this.valueInt) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( o_int < this.valueInt ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (o_double < this.valueDouble) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( o_double < this.valueDouble ) {
+						    return true;
+						}
 					}
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( o_string.compareTo(this.valueString) < 0 ) {
+						    return true;
+						}
+					}
+				    else {
+					    throw new Exception ("< operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("<=") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (o_int <= this.valueInt) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( o_int <= this.valueInt ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (o_double <= this.valueDouble) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( o_double <= this.valueDouble ) {
+						    return true;
+						}
 					}
+				    else {
+					    throw new Exception ("<= operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals(">") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (o_int > this.valueInt) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( o_int > this.valueInt ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (o_double > this.valueDouble) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( o_double > this.valueDouble ) {
+						    return true;
+						}
 					}
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( o_string.compareTo(this.valueString) > 0 ) {
+						    return true;
+						}
+					}
+				    else {
+					    throw new Exception ("> operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals(">=") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (o_int >= this.valueInt) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( o_int >= this.valueInt ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (o_double >= this.valueDouble) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( o_double >= this.valueDouble ) {
+						    return true;
+						}
 					}
+				    else {
+					    throw new Exception (">= operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("==") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (o_int.equals(this.valueInt)) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( o_int.equals(this.valueInt) ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (o_double.equals(this.valueDouble)) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( o_double.equals(this.valueDouble) ) {
+						    return true;
+						}
 					}
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( o_string.equals(this.valueString) ) {
+						    return true;
+						}
+					}
+				    else {
+					    throw new Exception ("== operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("!=") ) {
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_INT) && (!o_int.equals(this.valueInt)) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_INT ) {
+						if ( !o_int.equals(this.valueInt) ) {
+						    return true;
+						}
 					}
-					else if ( (this.conditionFieldType == TableField.DATA_TYPE_DOUBLE) && (!o_double.equals(this.valueDouble)) ) {
-						return true;
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_DOUBLE ) {
+						if ( !o_double.equals(this.valueDouble) ) {
+						    return true;
+						}
 					}
+					else if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( !o_string.equals(this.valueString) ) {
+						    return true;
+						}
+					}
+				    else {
+					    throw new Exception ("!= operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("CONTAINS") ) {
-					String o_upper = o_string.toUpperCase();
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_upper.indexOf(this.valueStringUpper) >= 0) ) {
-						return true;
+					//String o_upper = o_string.toUpperCase();
+					//if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_upper.indexOf(this.valueStringUpper) >= 0) ) {
+					if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( o_string.indexOf(this.valueString) >= 0 ) {
+						    return true;
+						}
 					}
+				    else {
+					    throw new Exception ("CONTAINS operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("!CONTAINS") ) {
-					String o_upper = o_string.toUpperCase();
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_upper.indexOf(this.valueStringUpper) < 0) ) {
-						return true;
+					//String o_upper = o_string.toUpperCase();
+					//if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_upper.indexOf(this.valueStringUpper) < 0) ) {
+					if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( o_string.indexOf(this.valueString) < 0 ) {
+						    return true;
+						}
 					}
+				    else {
+					    throw new Exception ("!CONTAINS operator is not implemented for data type: " + o.getClass() );
+				    }
 				}
 				else if ( this.operator.equals("ISEMPTY") ) {
-					String o_upper = o_string.toUpperCase();
-					if ( (this.conditionFieldType == TableField.DATA_TYPE_STRING) && (o_string.isEmpty()) ) {
-						return true;
+					if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( (o_string.isEmpty()) || (o_string == null) ) {
+						    return true;
+						}
 					}
+				    else {
+					    throw new Exception ("ISEMPTY operator is not implemented for data type: " + o.getClass() );
+				    }
+				}
+				else if ( this.operator.equals("!ISEMPTY") ) {
+					if ( this.conditionFieldType == TableField.DATA_TYPE_STRING ) {
+						if ( !o_string.isEmpty() && (o_string != null) ) {
+						    return true;
+						}
+					}
+				    else {
+					    throw new Exception ("!ISEMPTY operator is not implemented for data type: " + o.getClass() );
+				    }
+				}
+				else {
+				    throw new Exception ("Operator " + operator + " is not recognized." );
 				}
 			}
 		}

@@ -367,18 +367,23 @@ private void initialize(JFrame parent, ReadWaterML2_Command command) {
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText ("Specify path to input file, can use ${Property}");
 	__InputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(general_JPanel, __InputFile_JTextField,
-		1, yGeneral, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    // Input file layout fights back with other rows so put in its own panel
+	JPanel InputFile_JPanel = new JPanel();
+	InputFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "...", this );
 	__browse_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(general_JPanel, __browse_JButton,
-		6, yGeneral, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
-	    JGUIUtil.addComponent(general_JPanel, __path_JButton,
-	    	7, yGeneral, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	JGUIUtil.addComponent(general_JPanel, InputFile_JPanel,
+		1, yGeneral, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(general_JPanel, new JLabel( "Read method:"),
         0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -565,7 +570,7 @@ private void initialize(JFrame parent, ReadWaterML2_Command command) {
 
     pack();
     JGUIUtil.center( this );
-	refreshPathControl();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -734,34 +739,22 @@ private void refresh()
 	props.add("InputEnd=" + InputEnd);
 	__Command_JTextArea.setText( __command.toString(props) );
 
-	// Refresh the Path Control text.
-	refreshPathControl();
-}
-
-/**
-Refresh the PathControl text based on the contents of the input text field contents.
-*/
-private void refreshPathControl()
-{
-	String InputFile = __InputFile_JTextField.getText().trim();
-	if ( (InputFile == null) || (InputFile.trim().length() == 0) ) {
-		if ( __path_JButton != null ) {
-			__path_JButton.setEnabled ( false );
-		}
-		return;
-	}
-
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
-		__path_JButton.setEnabled ( true );
-		File f = new File ( InputFile );
-		if ( f.isAbsolute() ) {
-			__path_JButton.setText(	__RemoveWorkingDirectory );
-			__path_JButton.setToolTipText("Change path to relative to command file");
+		if ( (InputFile != null) && !InputFile.isEmpty() ) {
+			__path_JButton.setEnabled ( true );
+			File f = new File ( InputFile );
+			if ( f.isAbsolute() ) {
+				__path_JButton.setText ( __RemoveWorkingDirectory );
+				__path_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+		    	__path_JButton.setText ( __AddWorkingDirectory );
+		    	__path_JButton.setToolTipText("Change path to absolute");
+			}
 		}
 		else {
-            __path_JButton.setText(	__AddWorkingDirectory );
-			__path_JButton.setToolTipText("Change path to absolute");
+			__path_JButton.setEnabled(false);
 		}
 	}
 }

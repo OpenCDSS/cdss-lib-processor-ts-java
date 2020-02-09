@@ -75,9 +75,6 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
-private final String __ToAbsolute = "To Absolute";
-private final String __ToRelative = "To Relative";
-
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -211,19 +208,25 @@ public void actionPerformed( ActionEvent event )
                 return;
             }
     
-            if (path != null) {
-                __StyleFile_JTextField.setText(path );
-                JGUIUtil.setLastFileDialogDirectory(directory );
-                refresh();
-            }
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__StyleFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, __command.getCommandName() + "_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory );
+				refresh();
+			}
         }
     }
     else if ( o == __styleFilePath_JButton ) {
-        if ( __styleFilePath_JButton.getText().equals(__ToAbsolute) ) {
+        if ( __styleFilePath_JButton.getText().equals(__AddWorkingDirectory) ) {
             __StyleFile_JTextField.setText (
             IOUtil.toAbsolutePath(__working_dir, __StyleFile_JTextField.getText() ) );
         }
-        else if ( __styleFilePath_JButton.getText().equals(__ToRelative) ) {
+        else if ( __styleFilePath_JButton.getText().equals(__RemoveWorkingDirectory) ) {
             try {
                 __StyleFile_JTextField.setText (
                 IOUtil.toRelativePath ( __working_dir, __StyleFile_JTextField.getText() ) );
@@ -411,14 +414,23 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ( "...", this );
 	__browse_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel OutputFile_JPanel = new JPanel();
+	OutputFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
-	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
-	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
+	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __main_JTabbedPane = new JTabbedPane ();
     //__main_JTabbedPane.setBorder(
@@ -604,15 +616,23 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
         0, yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StyleFile_JTextField = new JTextField ( 50 );
     __StyleFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(style_JPanel, __StyleFile_JTextField,
-        1, yStyle, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __styleFileBrowse_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(style_JPanel, __styleFileBrowse_JButton,
-        6, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-    __styleFilePath_JButton = new SimpleJButton ( __ToRelative, this );
-    JGUIUtil.addComponent(style_JPanel, __styleFilePath_JButton,
-        7, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-    __styleFilePath_JButton.setToolTipText("Change style file path to/from absolute/relative path.");
+    // Style file layout fights back with other rows so put in its own panel
+	JPanel StyleFile_JPanel = new JPanel();
+	StyleFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(StyleFile_JPanel, __StyleFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__styleFileBrowse_JButton = new SimpleJButton ( "...", this );
+	__styleFileBrowse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(StyleFile_JPanel, __styleFileBrowse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__styleFilePath_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(StyleFile_JPanel, __styleFilePath_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(style_JPanel, StyleFile_JPanel,
+		1, yStyle, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(style_JPanel, new JLabel ( "StyleUrl:" ),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -831,32 +851,39 @@ private void refresh ()
         }
     }
     if ( __path_JButton != null ) {
-        __path_JButton.setEnabled ( true );
-        File f = new File ( OutputFile );
-        if ( f.isAbsolute() ) {
-            __path_JButton.setText ( __RemoveWorkingDirectory );
-			__path_JButton.setToolTipText("Change path to relative to command file");
-        }
-        else {
-            __path_JButton.setText ( __AddWorkingDirectory );
-			__path_JButton.setToolTipText("Change path to absolute");
-        }
+		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
+			__path_JButton.setEnabled ( true );
+			File f = new File ( OutputFile );
+			if ( f.isAbsolute() ) {
+				__path_JButton.setText ( __RemoveWorkingDirectory );
+				__path_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__path_JButton.setText ( __AddWorkingDirectory );
+            	__path_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__path_JButton.setEnabled(false);
+		}
     }
     // Style file
-    if ( (StyleFile == null) || (StyleFile.length() == 0) ) {
-        if ( __styleFilePath_JButton != null ) {
-            __styleFilePath_JButton.setEnabled ( false );
-        }
-    }
     if ( __styleFilePath_JButton != null ) {
-        __styleFilePath_JButton.setEnabled ( true );
-        File f = new File ( StyleFile );
-        if ( f.isAbsolute() ) {
-            __styleFilePath_JButton.setText ( __ToRelative );
-        }
-        else {
-            __styleFilePath_JButton.setText ( __ToAbsolute );
-        }
+		if ( (StyleFile != null) && !StyleFile.isEmpty() ) {
+			__styleFilePath_JButton.setEnabled ( true );
+			File f = new File ( StyleFile );
+			if ( f.isAbsolute() ) {
+				__styleFilePath_JButton.setText ( __RemoveWorkingDirectory );
+				__styleFilePath_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__styleFilePath_JButton.setText ( __AddWorkingDirectory );
+            	__styleFilePath_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__styleFilePath_JButton.setEnabled(false);
+		}
     }
 }
 

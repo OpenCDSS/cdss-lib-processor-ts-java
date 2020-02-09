@@ -295,18 +295,23 @@ private void initialize ( JFrame parent, StartLog_Command command )
 	__LogFile_JTextField = new JTextField ( 50 );
 	__LogFile_JTextField.setToolTipText("Specify the path to the log file to write, can use ${Property} notation");
 	__LogFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __LogFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    // Log file layout fights back with other rows so put in its own panel
+	JPanel LogFile_JPanel = new JPanel();
+	LogFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(LogFile_JPanel, __LogFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
 	__browse_JButton = new SimpleJButton ( "...", this );
 	__browse_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(LogFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
-	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
-	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(LogFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
+	JGUIUtil.addComponent(main_JPanel, LogFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum file size:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -444,21 +449,21 @@ private void refresh ()
 	props.add ( "Suffix=" + Suffix );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
-	if ( (LogFile == null) || (LogFile.length() == 0) ) {
-		if ( __path_JButton != null ) {
-			__path_JButton.setEnabled ( false );
-		}
-	}
 	if ( __path_JButton != null ) {
-		__path_JButton.setEnabled ( true );
-		File f = new File ( LogFile );
-		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( __RemoveWorkingDirectory );
-			__path_JButton.setToolTipText("Change path to relative to command file");
+		if ( (LogFile != null) && !LogFile.isEmpty() ) {
+			__path_JButton.setEnabled ( true );
+			File f = new File ( LogFile );
+			if ( f.isAbsolute() ) {
+				__path_JButton.setText ( __RemoveWorkingDirectory );
+				__path_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__path_JButton.setText ( __AddWorkingDirectory );
+            	__path_JButton.setToolTipText("Change path to absolute");
+			}
 		}
 		else {
-		    __path_JButton.setText ( __AddWorkingDirectory );
-            __path_JButton.setToolTipText("Change path to absolute");
+			__path_JButton.setEnabled(false);
 		}
 	}
 }

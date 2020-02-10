@@ -72,8 +72,8 @@ public class WriteSHEF_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __cancel_JButton = null;
@@ -135,15 +135,16 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
 			String path = fc.getSelectedFile().getPath(); 
 	
-			if (filename == null || filename.equals("")) {
-				return;
-			}
-	
 			if (path != null) {
-				__OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, __command.getCommandName() + "_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory );
 				refresh();
 			}
@@ -492,11 +493,23 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify the output file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(out_JPanel, __OutputFile_JTextField,
-		1, yOut, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(out_JPanel, __browse_JButton,
-		6, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel OutputFile_JPanel = new JPanel();
+	OutputFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(out_JPanel, OutputFile_JPanel,
+		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Append to output?:"),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -505,6 +518,7 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
     appendChoices.add ( "" );  // Default
     appendChoices.add ( __command._False );
     appendChoices.add ( __command._True );
+    __Append_JComboBox.setData(appendChoices);
     __Append_JComboBox.select ( 0 );
     __Append_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(out_JPanel, __Append_JComboBox,
@@ -550,11 +564,6 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
-		button_JPanel.add ( __path_JButton );
-	}
 	button_JPanel.add ( __cancel_JButton = new SimpleJButton( "Cancel", this) );
 	button_JPanel.add ( __ok_JButton = new SimpleJButton( "OK", this) );
 
@@ -762,13 +771,20 @@ private void refresh ()
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
-		__path_JButton.setEnabled ( true );
-		File f = new File ( OutputFile );
-		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( __RemoveWorkingDirectory );
+		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
+			__path_JButton.setEnabled ( true );
+			File f = new File ( OutputFile );
+			if ( f.isAbsolute() ) {
+				__path_JButton.setText ( __RemoveWorkingDirectory );
+				__path_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__path_JButton.setText ( __AddWorkingDirectory );
+            	__path_JButton.setToolTipText("Change path to absolute");
+			}
 		}
 		else {
-            __path_JButton.setText ( __AddWorkingDirectory );
+			__path_JButton.setEnabled(false);
 		}
 	}
 }

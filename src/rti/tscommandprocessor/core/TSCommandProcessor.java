@@ -4495,7 +4495,15 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
     }
 	else {
 	    // Not recognized...
-		String message = "Unable to set data for unknown property \"" + propName + "\".";
+		String message = null;
+		if ( contents instanceof String ) {
+			// Common case so provide more information
+			message = "Unable to set TSCommandProcessor data for unknown property \"" + propName + "\"=\"" + contents + "\".";
+		}
+		else {
+			// Could be a complex object so don't output the value
+			message = "Unable to set TSCommandProcessor data for unknown property \"" + propName + "\".";
+		}
 		throw new UnrecognizedRequestException ( message );
 	}
 }

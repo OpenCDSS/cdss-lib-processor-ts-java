@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TSUtil;
+import RTi.TS.TransferDataHowType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
@@ -550,9 +551,9 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
 	JGUIUtil.addComponent(set_JPanel, new JLabel ( "Transfer data how:" ), 
 		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TransferHow_JComboBox = new SimpleJComboBox ( false );
-	List<String> transferChoices = new ArrayList<String>();
-	transferChoices.add ( TSUtil.TRANSFER_BYDATETIME );
-	transferChoices.add ( TSUtil.TRANSFER_SEQUENTIALLY );
+	List<String> transferChoices = new ArrayList<>();
+	transferChoices.add ( "" + TransferDataHowType.BY_DATETIME );
+	transferChoices.add ( "" + TransferDataHowType.SEQUENTIALLY );
 	__TransferHow_JComboBox.setData(transferChoices);
 	__TransferHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(set_JPanel, __TransferHow_JComboBox,
@@ -564,7 +565,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Handle missing data how?:" ), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
-	List<String> missingChoices = new ArrayList<String>();
+	List<String> missingChoices = new ArrayList<>();
 	missingChoices.add ( "" );
 	missingChoices.add ( __command._IgnoreMissing );
 	missingChoices.add ( __command._SetMissing );
@@ -615,7 +616,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-    List<String>recalcChoices = new ArrayList<String>();
+    List<String>recalcChoices = new ArrayList<>();
     recalcChoices.add ( "" );
     recalcChoices.add ( __command._False );
     recalcChoices.add ( __command._True );

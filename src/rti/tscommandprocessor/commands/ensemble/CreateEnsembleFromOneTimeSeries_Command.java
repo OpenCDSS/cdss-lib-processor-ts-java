@@ -35,6 +35,7 @@ import rti.tscommandprocessor.core.TSListType;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSUtil_CreateTracesFromTimeSeries;
+import RTi.TS.TransferDataHowType;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -110,6 +111,7 @@ throws InvalidCommandParameterException
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String OutputYearType = parameters.getValue ( "OutputYearType" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
+	String TransferDataHow = parameters.getValue ( "TransferDataHow" );
     
     if ( (TSID == null) || (TSID.length() == 0) ) {
         message = "A time series identifier must be specified.";
@@ -209,8 +211,19 @@ throws InvalidCommandParameterException
                         _ShiftToReference + "." ) );
     }
 
+    if ( (TransferDataHow!= null) && !TransferDataHow.isEmpty() ) {
+    	if ( TransferDataHowType.valueOfIgnoreCase(TransferDataHow) == null ) {
+    		message = "The TransferDataHow parameter (" + TransferDataHow + ") is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+    			new CommandLogRecord(CommandStatusType.FAILURE,
+    				message, "Specify TransferDataHow as " + TransferDataHowType.SEQUENTIALLY + " or " +
+    				TransferDataHowType.BY_DATETIME ) );
+    	}
+    }
+
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(11);
+    List<String> validList = new ArrayList<>(12);
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
@@ -222,6 +235,7 @@ throws InvalidCommandParameterException
 	validList.add ( "ReferenceDate" );
 	validList.add ( "OutputYearType" );
     validList.add ( "ShiftDataHow" );
+    validList.add ( "TransferDataHow" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -389,6 +403,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
     }
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
+    String TransferDataHow = parameters.getValue("TransferDataHow");
+    TransferDataHowType transferDataHowType = TransferDataHowType.SEQUENTIALLY; // Default
+    if ( (TransferDataHow != null) && !TransferDataHow.isEmpty() ) {
+    	transferDataHowType = TransferDataHowType.valueOfIgnoreCase(TransferDataHow);
+    }
 
     TS ts = null;
     PropList request_params = null;
@@ -499,13 +518,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     try {
         TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
         tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
-            outputYearType, ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, TraceDescription, createData );
+            outputYearType, ShiftDataHow, transferDataHowType, InputStart_DateTime, InputEnd_DateTime, Alias, TraceDescription, createData );
         // The above code does not recognize ${Properties} from the processor so reset the alias if necessary
         if ( (Alias != null) && Alias.indexOf("${") >= 0 ) {
         	for ( TS ts2 : tslist ) {
         		String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, ts2, Alias, status, commandPhase);
-                ts2.setAlias ( alias );
+                   	processor, ts2, Alias, status, commandPhase);
+               	ts2.setAlias ( alias );
         	}
         }
     }
@@ -608,6 +627,7 @@ public String toString ( PropList parameters )
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String OutputYearType = parameters.getValue ( "OutputYearType" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
+    String TransferDataHow = parameters.getValue( "TransferDataHow" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -674,6 +694,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ShiftDataHow=" + ShiftDataHow );
+    }
+    if ( (TransferDataHow != null) && (TransferDataHow.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TransferDataHow=" + TransferDataHow );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.TS.TransferDataHowType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
@@ -87,6 +88,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TraceLength_JTextField = null;
 private JTextField __TraceDescription_JTextField = null;
 private SimpleJComboBox __ShiftDataHow_JComboBox = null;
+private SimpleJComboBox	__TransferDataHow_JComboBox =null;
 private JTextField __ReferenceDate_JTextField = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 
@@ -175,6 +177,7 @@ private void checkInput ()
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
+    String TransferDataHow = __TransferDataHow_JComboBox.getSelected();
 
     __error_wait = false;
     
@@ -211,6 +214,9 @@ private void checkInput ()
     if ( ShiftDataHow.length() > 0 ) {
         parameters.set ( "ShiftDataHow", ShiftDataHow );
     }
+    if ( TransferDataHow.length() > 0 ) {
+        parameters.set ( "TransferDataHow", TransferDataHow );
+    }
     try {   // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
     }
@@ -237,6 +243,7 @@ private void commitEdits ()
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
+    String TransferDataHow = __TransferDataHow_JComboBox.getSelected();
     
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "InputStart", InputStart );
@@ -249,6 +256,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "ReferenceDate", ReferenceDate );
     __command.setCommandParameter ( "OutputYearType", OutputYearType );
     __command.setCommandParameter ( "ShiftDataHow", ShiftDataHow );
+    __command.setCommandParameter ( "TransferDataHow", TransferDataHow );
 }
 
 /**
@@ -422,6 +430,24 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=" + __command._NoShift + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transfer data how?:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__TransferDataHow_JComboBox = new SimpleJComboBox ( false );
+	__TransferDataHow_JComboBox.setToolTipText("" + TransferDataHowType.SEQUENTIALLY +
+		" ensures continuity of historical data but may shift dates due to leap year.  " +
+	    TransferDataHowType.BY_DATETIME + " ensures historical dates are preserved, but leap year values may be discarded or be missing.");
+	List<String> transferChoices = new ArrayList<>();
+	transferChoices.add ( "" );
+	transferChoices.add ( "" + TransferDataHowType.BY_DATETIME );
+	transferChoices.add ( "" + TransferDataHowType.SEQUENTIALLY );
+	__TransferDataHow_JComboBox.setData(transferChoices);
+	__TransferDataHow_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TransferDataHow_JComboBox,
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - how are data values transferred (default=" + TransferDataHowType.SEQUENTIALLY + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 5, 65 );
@@ -514,6 +540,7 @@ private void refresh ()
 	String ReferenceDate = "";
 	String OutputYearType = "";
 	String ShiftDataHow = "";
+    String TransferDataHow = "";
     PropList parameters = null;      // Parameters as PropList.
     if ( __first_time ) {
         __first_time = false;
@@ -530,6 +557,7 @@ private void refresh ()
         ReferenceDate = parameters.getValue("ReferenceDate");
         OutputYearType = parameters.getValue ( "OutputYearType" );
         ShiftDataHow = parameters.getValue("ShiftDataHow");
+        TransferDataHow = parameters.getValue ( "TransferDataHow" );
 
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
@@ -604,6 +632,21 @@ private void refresh ()
                 "ShiftDataHow \"" + ShiftDataHow + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+        if ( TransferDataHow == null ) {
+            // Select default...
+            __TransferDataHow_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TransferDataHow_JComboBox,TransferDataHow, JGUIUtil.NONE, null, null ) ) {
+                __TransferDataHow_JComboBox.select ( TransferDataHow );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTransferDataHow value \"" + TransferDataHow +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
@@ -617,6 +660,7 @@ private void refresh ()
     ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     OutputYearType = __OutputYearType_JComboBox.getSelected();
     ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
+    TransferDataHow = __TransferDataHow_JComboBox.getSelected();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "InputStart=" + InputStart );
@@ -629,6 +673,7 @@ private void refresh ()
     parameters.add ( "ReferenceDate=" + ReferenceDate );
     parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "ShiftDataHow=" + ShiftDataHow );
+    parameters.add ( "TransferDataHow=" + TransferDataHow );
     __command_JTextArea.setText( __command.toString ( parameters ) );
 }
 

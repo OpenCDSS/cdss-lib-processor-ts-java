@@ -34,6 +34,7 @@ import java.util.List;
 import RTi.TS.TS;
 import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
+import RTi.TS.TransferDataHowType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -202,14 +203,14 @@ throws InvalidCommandParameterException
         }
     }
     if ( (TransferHow != null) && !TransferHow.equals("") &&
-            !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_SEQUENTIALLY) &&
-            !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_BYDATETIME) ) {
+        !TransferHow.equalsIgnoreCase(TransferDataHowType.SEQUENTIALLY.toString()) &&
+        !TransferHow.equalsIgnoreCase(TransferDataHowType.BY_DATETIME.toString()) ) {
         message = "The TransferHow parameter (" + TransferHow + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify TransferHow as " + TSUtil.TRANSFER_SEQUENTIALLY + " or " +
-                TSUtil.TRANSFER_BYDATETIME ) );
+                message, "Specify TransferHow as " + TransferDataHowType.SEQUENTIALLY.toString() + " or " +
+                TransferDataHowType.BY_DATETIME.toString() ) );
     }
 
     if ( (HandleMissingHow != null) && !HandleMissingHow.equals("") &&

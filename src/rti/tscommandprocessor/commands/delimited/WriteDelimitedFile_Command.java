@@ -216,7 +216,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	ArrayList<String> validList = new ArrayList<String>(14);
+	ArrayList<String> validList = new ArrayList<>(15);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -231,6 +231,7 @@ throws InvalidCommandParameterException
 	validList.add ( "MissingValue" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
+	validList.add ( "HeaderComments" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -361,6 +362,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Set to null to indicate default internal value should be used
         MissingValue = null;
     }
+    String HeaderComments = parameters.getValue ( "HeaderComments" );
+    List<String> headerComments = new ArrayList<>();
+    if ( HeaderComments != null ) {
+    	if ( (HeaderComments != null) && (HeaderComments.indexOf("${") >= 0) ) {
+		   	HeaderComments = TSCommandProcessorUtil.expandParameterValue(processor, this, HeaderComments);
+	   	}
+    	// Expand \\n to actual newlines and \\" to quote
+    	HeaderComments = HeaderComments.replace("\\n", "\n").replace("\\\"", "\"");
+    	headerComments = StringUtil.breakStringList(HeaderComments, "\n", 0);
+    	// Make sure that comments have # at front
+    	String comment;
+    	for ( int i = 0; i < headerComments.size(); i++ ) {
+    		comment = headerComments.get(i);
+    		if ( ! comment.startsWith("#") ) {
+    			comment = "# " + comment;
+    			headerComments.set(i,comment);
+    		}
+    	}
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -460,6 +480,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             List<String> problems = new ArrayList<String>();
             writeTimeSeries ( tslist, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat, ValueColumns,
                 HeadingSurround, Delimiter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
+                headerComments,
                 problems, processor, status, CommandPhaseType.RUN );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
@@ -509,6 +530,7 @@ public String toString ( PropList parameters )
 	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String HeaderComments = parameters.getValue ( "HeaderComments" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -594,6 +616,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+	if ( (HeaderComments != null) && (HeaderComments.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "HeaderComments=\"" + HeaderComments + "\"" );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -611,11 +639,13 @@ Write a time series to the output file.
 @param missingValue requested missing value to output, or null to output time series missing value
 @param outputStart start for output values
 @param output End end for output values
+@param headerComments list of strings for file header, should already have '#' at front.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTimeColumn,
     DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat, String valueColumns,
     String headingSurround, String delim,
     Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
+    List<String> headerComments,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 {   String message;
     PrintWriter fout = null;
@@ -693,6 +723,13 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
                     missingValueStrings[its] = missingValue;
                 }
             }
+        }
+        // Output the file header
+        // - currently does not output the standard header like DateValue but may add this
+        if ( headerComments.size() > 0 ) {
+        	for ( String headerComment : headerComments ) {
+        		fout.println(headerComment);
+        	}
         }
         // Output the column headings
         if ( headingSurround == null ) {

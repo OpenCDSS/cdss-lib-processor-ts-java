@@ -101,9 +101,10 @@ private TSFormatSpecifiersJPanel __ValueColumns_JTextField = null;
 private JTextField __HeadingSurround_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
+private JTextField __MissingValue_JTextField = null;// Missing value for output
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
-private JTextField __MissingValue_JTextField = null;// Missing value for output
+private JTextArea __HeaderComments_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog.
@@ -267,9 +268,10 @@ private void checkInput ()
 	String HeadingSurround = __HeadingSurround_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
+    String MissingValue = __MissingValue_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-    String MissingValue = __MissingValue_JTextField.getText().trim();
+	String HeaderComments = __HeaderComments_JTextArea.getText().trim();
 
 	__error_wait = false;
 	
@@ -315,6 +317,9 @@ private void checkInput ()
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
+    if ( HeaderComments.length() > 0 ) {
+        parameters.set ( "HeaderComments", HeaderComments );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -345,6 +350,7 @@ private void commitEdits ()
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String HeaderComments = __HeaderComments_JTextArea.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -359,6 +365,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
+	// Make sure that the value for the command contains escaped values
+	__command.setCommandParameter ( "HeaderComments", HeaderComments.replace("\r\n","\\n").replace("\n", "\\n").replace("\"", "\\\"") );
 }
 
 /**
@@ -534,6 +542,18 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Header comments:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HeaderComments_JTextArea = new JTextArea (6,50);
+    __HeaderComments_JTextArea.setToolTipText(
+    	"Comments will be printed at the top of the file with # at front of each line.  " +
+        "Use \\n or use 'Enter' key to indicate new line.");
+    __HeaderComments_JTextArea.setLineWrap ( true );
+    __HeaderComments_JTextArea.setWrapStyleWord ( true );
+    __HeaderComments_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__HeaderComments_JTextArea),
+        1, y, 6, 1, 1.0, .3, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -542,7 +562,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    		1, y, 8, 1, 1.0, .7, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -584,15 +604,16 @@ public void itemStateChanged (ItemEvent e)
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+{	//int code = event.getKeyCode();
 
-	if ( code == KeyEvent.VK_ENTER ) {
+	// Don't exit the window if enter is pressed because it could be used in comments
+	//if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
-		checkInput();
-		if ( !__error_wait ) {
-			response ( true );
-		}
-	}
+		//checkInput();
+		//if ( !__error_wait ) {
+			//response ( true );
+		//}
+	//}
 }
 
 public void keyReleased ( KeyEvent event )
@@ -630,6 +651,7 @@ private void refresh ()
 	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String HeaderComments = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -650,6 +672,7 @@ private void refresh ()
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		HeaderComments = parameters.getValue ( "HeaderComments" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -740,6 +763,10 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+        if ( (HeaderComments != null) && !HeaderComments.equals("") ) {
+        	// Replace escaped newlines with actual newline
+            __HeaderComments_JTextArea.setText ( HeaderComments.replace("\\n", "\n").replace("\\s",  "\"") );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -756,6 +783,8 @@ private void refresh ()
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	// Replace newlines with escaped version for parameter
+	HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\r\n","\\n").replace("\n", "\\n").replace("\"", "\\\"");
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -771,6 +800,7 @@ private void refresh ()
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "HeaderComments=" + HeaderComments );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

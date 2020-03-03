@@ -115,6 +115,7 @@ private JLabel __BracketByMonth_JLabel = null;
 private JTextField __BracketByMonth_JTextField = null;
 private JLabel __CustomBracketByMonth_JLabel = null;
 private JTextField __CustomBracketByMonth_JTextField = null;
+//private SimpleJComboBox __SampleFilter_JComboBox = null;
 private JLabel __filler_JLabel = null; // Use to make layout work nice
 private JTextField __AllowMissingCount_JTextField = null;
 private JTextField __MinimumSampleSize_JTextField = null;
@@ -361,6 +362,7 @@ private void checkInput ()
     String Bracket = __Bracket_JTextField.getText().trim();
     String BracketByMonth = __BracketByMonth_JTextField.getText().trim();
     String CustomBracketByMonth = __CustomBracketByMonth_JTextField.getText().trim();
+    //String SampleFilter = __SampleFilter_JComboBox.getSelected();
     String NormalStart = __NormalStart_JTextField.getText().trim();
     String NormalEnd = __NormalEnd_JTextField.getText().trim();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
@@ -414,6 +416,9 @@ private void checkInput ()
     if ( CustomBracketByMonth.length() > 0 ) {
         parameters.set ( "CustomBracketByMonth", CustomBracketByMonth );
     }
+    //if ( SampleFilter.length() > 0 ) {
+        //parameters.set ( "SampleFilter", SampleFilter );
+    //}
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         parameters.set ( "AllowMissingCount", AllowMissingCount );
     }
@@ -470,6 +475,7 @@ private void commitEdits ()
     String Bracket = __Bracket_JTextField.getText().trim();
     String BracketByMonth = __BracketByMonth_JTextField.getText().trim();
     String CustomBracketByMonth = __CustomBracketByMonth_JTextField.getText().trim();
+    //String SampleFilter = __SampleFilter_JComboBox.getSelected();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String NormalStart = __NormalStart_JTextField.getText().trim();
@@ -493,6 +499,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Bracket", Bracket );
     __command.setCommandParameter ( "BracketByMonth", BracketByMonth );
     __command.setCommandParameter ( "CustomBracketByMonth", CustomBracketByMonth );
+    //__command.setCommandParameter ( "SampleFilter", SampleFilter );
     __command.setCommandParameter ( "NormalStart", NormalStart );
     __command.setCommandParameter ( "NormalEnd", NormalEnd );
     __command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
@@ -744,6 +751,23 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
 		1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - 12 monthly bracket ranges 1-3,3-6,... (Jan first)."),
         3, ySample, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    /*
+    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Sample filter:" ), 
+		0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SampleFilter_JComboBox = new SimpleJComboBox ( false );
+	List<String> filterChoices = new ArrayList<>();
+	// TODO smalers 2020-03-01 for now hard-code strings, add enumeration later
+	filterChoices.add ( "" );
+	filterChoices.add ( "MatchDay" );
+	__SampleFilter_JComboBox.setData(filterChoices);
+	__SampleFilter_JComboBox.setMaximumRowCount(__SampleFilter_JComboBox.getItemCount());
+	__SampleFilter_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(sample_JPanel, __SampleFilter_JComboBox,
+		1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - further filter sample."),
+        3, ySample, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        */
     
     JGUIUtil.addComponent(sample_JPanel, new JLabel ("Allow missing count:"),
         0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -975,6 +999,7 @@ private void refresh ()
     String Bracket = "";
     String BracketByMonth = "";
     String CustomBracketByMonth = "";
+    //String SampleFilter = "";
     String AllowMissingCount = "";
     String MinimumSampleSize = "";
     String NormalStart = "";
@@ -1002,6 +1027,7 @@ private void refresh ()
         Bracket = props.getValue ( "Bracket" );
         BracketByMonth = props.getValue ( "BracketByMonth" );
         CustomBracketByMonth = props.getValue ( "CustomBracketByMonth" );
+        //SampleFilter = props.getValue ( "SampleFilter" );
         AllowMissingCount = props.getValue ( "AllowMissingCount" );
         MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
         NormalStart = props.getValue ( "NormalStart" );
@@ -1131,7 +1157,7 @@ private void refresh ()
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nAverageMethod value \"" + SampleMethod +
+                "Existing command references an invalid\nSampleMethod value \"" + SampleMethod +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -1145,6 +1171,23 @@ private void refresh ()
         if ( CustomBracketByMonth != null ) {
             __CustomBracketByMonth_JTextField.setText( CustomBracketByMonth );
         }
+        /*
+        if ( SampleFilter == null ) {
+            // Select default...
+            __SampleFilter_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SampleFilter_JComboBox,SampleFilter, JGUIUtil.NONE, null, null ) ) {
+                __SampleFilter_JComboBox.select ( SampleFilter );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSampleFilter value \"" + SampleFilter +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        */
         if ( AllowMissingCount != null ) {
             __AllowMissingCount_JTextField.setText ( AllowMissingCount );
         }
@@ -1188,6 +1231,7 @@ private void refresh ()
     Bracket = __Bracket_JTextField.getText().trim();
     BracketByMonth = __BracketByMonth_JTextField.getText().trim();
     CustomBracketByMonth = __CustomBracketByMonth_JTextField.getText().trim();
+    //SampleFilter = __SampleFilter_JComboBox.getSelected();
     AllowMissingCount = __AllowMissingCount_JTextField.getText();
     MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
     NormalStart = __NormalStart_JTextField.getText().trim();
@@ -1212,6 +1256,7 @@ private void refresh ()
     props.add ( "Bracket=" + Bracket );
     props.add ( "BracketByMonth=" + BracketByMonth );
     props.add ( "CustomBracketByMonth=" + CustomBracketByMonth );
+    //props.add ( "SampleFilter=" + SampleFilter );
     props.add ( "AllowMissingCount=" + AllowMissingCount );
     props.add ( "MinimumSampleSize=" + MinimumSampleSize );
     props.add ( "NormalStart=" + NormalStart );

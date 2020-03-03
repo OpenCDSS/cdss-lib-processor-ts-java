@@ -366,8 +366,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         List<String>pairs = StringUtil.breakStringList(ProcedureParameters, ",", 0 );
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            procedureParameters.put(parts[0].trim(), parts[1].trim() );
+        	if ( pair.endsWith(":") ) {
+        		// Second part is empty string
+        		procedureParameters.put(pair.replace(":", ""), "" );
+        	}
+        	else {
+        		String [] parts = pair.split(":");
+        		procedureParameters.put(parts[0].trim(), parts[1].trim() );
+        	}
         }
     }
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );

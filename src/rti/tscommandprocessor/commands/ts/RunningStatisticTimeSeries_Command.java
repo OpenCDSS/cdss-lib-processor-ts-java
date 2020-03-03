@@ -104,6 +104,7 @@ throws InvalidCommandParameterException
     if ( BracketByMonth == null ) {
         BracketByMonth = ""; // To simplify checks below
     }
+	//String SampleFilter = parameters.getValue ( "SampleFilter" );
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     //String Alias = parameters.getValue ( "Alias" );
@@ -130,6 +131,7 @@ throws InvalidCommandParameterException
 	}
     */
     
+    TSStatisticType statisticType = null;
     if ( (Statistic == null) || Statistic.equals("") ) {
         message = "The statistic must be specified.";
         warning += "\n" + message;
@@ -140,7 +142,6 @@ throws InvalidCommandParameterException
     else {
         // Make sure that the statistic is known in general
         boolean supported = false;
-        TSStatisticType statisticType = null;
         try {
             statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
             supported = true;
@@ -312,6 +313,29 @@ throws InvalidCommandParameterException
             }
         }
     }
+	
+	// Additional combinations to check
+
+	if ( (statisticType != null) && (sampleMethod != null) ) {
+		if ( ((statisticType == TSStatisticType.NEW_MAX) || (statisticType == TSStatisticType.NEW_MIN)) &&
+			(sampleMethod != RunningAverageType.N_ALL_YEAR) ) {
+            message = "Statistic " + statisticType + " can only be specified with SampleMethod=" + RunningAverageType.N_ALL_YEAR + ".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify 12 bracket values separated by commas." ) );
+		}
+    }
+
+	/*
+    if ( (SampleFilter != null) && !SampleFilter.equals("") && !SampleFilter.equalsIgnoreCase("MatchDay") ) {
+        message = "The sample filter (" + SampleFilter + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the SampleFilter as MatchDay." ) );
+    }
+    */
     
     if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
         if ( !StringUtil.isInteger(AllowMissingCount) ) {
@@ -426,7 +450,7 @@ throws InvalidCommandParameterException
     }
       
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(23);
+    List<String> validList = new ArrayList<>(24);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -441,6 +465,7 @@ throws InvalidCommandParameterException
     validList.add ( "Bracket" );
     validList.add ( "BracketByMonth" );
     validList.add ( "CustomBracketByMonth" );
+    //validList.add ( "SampleFilter" );
     validList.add ( "AllowMissingCount" );
     validList.add ( "MinimumSampleSize" );
     validList.add ( "NormalStart" );
@@ -669,6 +694,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
+	//String SampleFilter = parameters.getValue ( "SampleFilter" );
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     int allowMissingCount = 0;
     if ( (AllowMissingCount != null) && AllowMissingCount.length() > 0) {
@@ -1007,6 +1033,7 @@ public String toString ( PropList props )
 	String Bracket = props.getValue("Bracket");
 	String BracketByMonth = props.getValue("BracketByMonth");
 	String CustomBracketByMonth = props.getValue("CustomBracketByMonth");
+	//String SampleFilter = props.getValue("SampleFilter");
 	String AllowMissingCount = props.getValue("AllowMissingCount");
 	String MinimumSampleSize = props.getValue("MinimumSampleSize");
     String NormalStart = props.getValue( "NormalStart" );
@@ -1101,6 +1128,14 @@ public String toString ( PropList props )
 		}
 		b.append ( "CustomBracketByMonth=\"" + CustomBracketByMonth + "\"" );
 	}
+	/*
+	if ( (SampleFilter != null) && (SampleFilter.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "SampleFilter=" + SampleFilter );
+	}
+	*/
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

@@ -666,6 +666,9 @@ throws MalformedURLException, Exception
     int apiVersion = getAPIVersion();
     // The station ID needs to specify the location type...
     String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocationType(), tsident.getLocation() );
+    if ( Message.isDebugOn ) {
+    	Message.printStatus(2, routine, "stationIDAndStationType=\"" + stationIDAndStationType + "\"");
+    }
     // The start and end date are required.
     String readStartString = "por";
     String readEndString = "por";

@@ -648,6 +648,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
     List<String> headerComments,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 {   String message;
+	String routine = getClass().getSimpleName() + ".writeTimeSeries";
     PrintWriter fout = null;
     // Make sure the time series have the same interval
     try {
@@ -871,6 +872,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
     }
     catch ( Exception e ) {
         message = "Unexpected error writing time series to file \"" + outputFile + "\" (" + e + ").";
+        Message.printWarning(3, routine, e);
         problems.add(message);
         throw new RuntimeException ( message );
     }

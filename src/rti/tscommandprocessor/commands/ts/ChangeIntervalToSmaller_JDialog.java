@@ -68,12 +68,12 @@ import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
 @SuppressWarnings("serial")
-public class ChangeIntervalSmaller_JDialog extends JDialog
+public class ChangeIntervalToSmaller_JDialog extends JDialog
 	implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
-private ChangeIntervalSmaller_Command __command = null;// Command object.
+private ChangeIntervalToSmaller_Command __command = null;// Command object.
 
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -129,7 +129,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public ChangeIntervalSmaller_JDialog ( JFrame parent, ChangeIntervalSmaller_Command command )
+public ChangeIntervalToSmaller_JDialog ( JFrame parent, ChangeIntervalToSmaller_Command command )
 {	
 	super(parent, true);
 	
@@ -539,7 +539,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Vector of String containing the command.
 */
-private void initialize ( JFrame parent, ChangeIntervalSmaller_Command command )
+private void initialize ( JFrame parent, ChangeIntervalToSmaller_Command command )
 {		
 	__command = command;
 	

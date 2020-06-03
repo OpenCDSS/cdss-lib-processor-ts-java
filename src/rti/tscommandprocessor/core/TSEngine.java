@@ -1005,6 +1005,8 @@ private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 }
 
 /**
+TODO smalers 2020-06-03 this may be disabled at some point.
+It was developed for HydroBase but is no longer used.
 Make the TSProductDMI instances known to a TSViewJFrame.  This examines DMI instances to see
 if they implement TSProductDMI, which is used to persist TSProduct information to a database.
 If the implementation is detected, the TSView.addTSProductDMI() method is called with the instance.
@@ -1013,20 +1015,33 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 {	// Check the HydroBase instances...
     // First add the new datastore list
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
-    HydroBaseDataStore hbds = null;
-    for ( DataStore dataStore: dataStoreList ) {
-        hbds = (HydroBaseDataStore)dataStore;
-        view.addTSProductDMI ( (HydroBaseDMI)hbds.getDMI() );
+    // Disable HydroBase datastores as TSProduct providers.
+    // - feature is not used
+    // - may remove code in the future, but leave in for now as an example
+    // - need a way to query a DMI to ask whether the feature is supported
+    boolean addHydroBase = false;
+    if ( addHydroBase ) {
+    	HydroBaseDataStore hbds = null;
+    	for ( DataStore dataStore: dataStoreList ) {
+        	hbds = (HydroBaseDataStore)dataStore;
+        	view.addTSProductDMI ( (HydroBaseDMI)hbds.getDMI() );
+    	}
     }
     // Next add the legacy DMI list
-	int hsize = __hbdmi_Vector.size();
-	HydroBaseDMI hbdmi = null;
-	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = __hbdmi_Vector.get(ih);
-		if ((hbdmi != null) && (hbdmi instanceof TSProductDMI)){
-			view.addTSProductDMI(hbdmi);
-		}
-	}
+    // - feature is not used
+    // - may remove code in the future, but leave in for now as an example
+    // - need a way to query a DMI to ask whether the feature is supported
+    boolean addLegacy = false;
+    if ( addLegacy ) {
+    	int hsize = __hbdmi_Vector.size();
+	   	HydroBaseDMI hbdmi = null;
+	   	for ( int ih = 0; ih < hsize; ih++ ) {
+		   	hbdmi = __hbdmi_Vector.get(ih);
+		   	if ((hbdmi != null) && (hbdmi instanceof TSProductDMI)){
+			   	view.addTSProductDMI(hbdmi);
+		   	}
+	   	}
+    }
 }
 
 /**

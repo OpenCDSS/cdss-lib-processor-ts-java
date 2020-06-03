@@ -167,7 +167,7 @@ private void initialize ( JFrame parent, Empty_Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    setTitle ( "Edit " + __command.getCommandName() + "() command" );
+    setTitle ( "Edit empty line" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );

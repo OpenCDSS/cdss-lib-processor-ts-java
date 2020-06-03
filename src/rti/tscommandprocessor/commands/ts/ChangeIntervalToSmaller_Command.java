@@ -1,4 +1,4 @@
-// ChangeIntervalLarger_Command - class for ChangeIntervalLarger command
+// ChangeIntervalSmaller_Command - class for ChangeIntervalSmaller command
 
 /* NoticeStart
 
@@ -93,9 +93,9 @@ import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
 /**
-This command initializes and runs the ChangeInterval() command.
+This command initializes and runs the ChangeIntervalSmaller() command.
 */
-public class ChangeIntervalLarger_Command extends AbstractCommand
+public class ChangeIntervalToSmaller_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
@@ -127,10 +127,10 @@ private List<TS> __discoveryTSList = null;
 /**
 Command constructor.
 */
-public ChangeIntervalLarger_Command ()
+public ChangeIntervalToSmaller_Command ()
 {	
 	super();
-	setCommandName ( "ChangeIntervalLarger" );
+	setCommandName ( "ChangeIntervalSmaller" );
 }
 
 /**
@@ -548,7 +548,7 @@ Edit the command.
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new ChangeIntervalLarger_JDialog ( parent, this ) ).ok();
+	return ( new ChangeIntervalToSmaller_JDialog ( parent, this ) ).ok();
 }
 
 /**

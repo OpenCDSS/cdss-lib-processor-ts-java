@@ -216,9 +216,9 @@ import rti.tscommandprocessor.commands.ts.ARMA_Command;
 import rti.tscommandprocessor.commands.ts.Blend_Command;
 import rti.tscommandprocessor.commands.ts.CalculateTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.ts.ChangeIntervalIrregularToRegular_Command;
-import rti.tscommandprocessor.commands.ts.ChangeIntervalLarger_Command;
+import rti.tscommandprocessor.commands.ts.ChangeIntervalToLarger_Command;
 import rti.tscommandprocessor.commands.ts.ChangeIntervalRegularToIrregular_Command;
-import rti.tscommandprocessor.commands.ts.ChangeIntervalSmaller_Command;
+import rti.tscommandprocessor.commands.ts.ChangeIntervalToSmaller_Command;
 import rti.tscommandprocessor.commands.ts.ChangeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.ChangeTimeZone_Command;
@@ -503,14 +503,14 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("ChangeIntervalIrregularToRegular") ) {
 		return new ChangeIntervalIrregularToRegular_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalLarger") ) {
-		return new ChangeIntervalLarger_Command ();
-	}
 	else if ( commandName.equalsIgnoreCase("ChangeIntervalRegularToIrregular") ) {
 		return new ChangeIntervalRegularToIrregular_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalSmaller") ) {
-		return new ChangeIntervalSmaller_Command ();
+	else if ( commandName.equalsIgnoreCase("ChangeIntervalToLarger") ) {
+		return new ChangeIntervalToLarger_Command ();
+	}
+	else if ( commandName.equalsIgnoreCase("ChangeIntervalToSmaller") ) {
+		return new ChangeIntervalToSmaller_Command ();
 	}
     else if ( commandName.equalsIgnoreCase("ChangePeriod") ) {
         return new ChangePeriod_Command ();

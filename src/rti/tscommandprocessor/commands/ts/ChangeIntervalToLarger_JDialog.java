@@ -70,10 +70,10 @@ import RTi.Util.Time.YearType;
  *
  */
 @SuppressWarnings("serial")
-public class ChangeIntervalLarger_JDialog extends JDialog
+public class ChangeIntervalToLarger_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private ChangeIntervalLarger_Command __command = null;
+private ChangeIntervalToLarger_Command __command = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -127,7 +127,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public ChangeIntervalLarger_JDialog ( JFrame parent, ChangeIntervalLarger_Command command )
+public ChangeIntervalToLarger_JDialog ( JFrame parent, ChangeIntervalToLarger_Command command )
 {	
 	super(parent, true);
 	
@@ -465,7 +465,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Vector of String containing the command.
 */
-private void initialize ( JFrame parent, ChangeIntervalLarger_Command command )
+private void initialize ( JFrame parent, ChangeIntervalToLarger_Command command )
 {		
 	__command = command;
 	

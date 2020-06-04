@@ -71,6 +71,12 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+ * Properties for OutputProductFormat
+ */
+protected final String _Properties = "Properties";
+protected final String _JSON = "JSON";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -98,6 +104,8 @@ throws InvalidCommandParameterException
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String VisibleStart = parameters.getValue ( "VisibleStart" );
     String VisibleEnd = parameters.getValue ( "VisibleEnd" );
+	String OutputProductFile = parameters.getValue ( "OutputProductFile" );
+	String OutputProductFormat = parameters.getValue ( "OutputProductFormat" );
 	String warning = "";
     String message;
 	
@@ -205,7 +213,7 @@ throws InvalidCommandParameterException
                 message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
   				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
+                        new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Create the folder for the output file." ) );
             }
 			f = null;
@@ -216,7 +224,7 @@ throws InvalidCommandParameterException
             working_dir + "\".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
+                    new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify that the output file path and working directory are compatible." ) );
 		}
 	}
@@ -251,15 +259,67 @@ throws InvalidCommandParameterException
                         message, "Specify a valid Visible end date/time." ) );
         }
     }
+
+	if ( (OutputProductFile != null) && !OutputProductFile.isEmpty() && (OutputProductFile.indexOf("${") < 0) ) {
+		String working_dir = null;
+		try { Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
+			}
+		}
+		catch ( Exception e ) {
+			// Not fatal, but of use to developers.
+			message = "Error requesting WorkingDir from processor.";
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Software error - report problem to support." ) );
+		}
+				
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS( IOUtil.adjustPath (working_dir, OutputProductFile) );
+			File f = new File ( adjusted_path );
+			File f2 = new File ( f.getParent() );
+			if ( !f2.exists() ) {
+                message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
+  				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Create the folder for the output product file." ) );
+            }
+			f = null;
+			f2 = null;
+		}
+		catch ( Exception e ) {
+            message = "The output product file \"" + OutputProductFile + "\" cannot be adjusted by the working directory: \"" +
+            working_dir + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that the output product file path and working directory are compatible." ) );
+		}
+	}
+	if ( (OutputProductFormat != null) && !OutputProductFormat.isEmpty() &&
+		!OutputProductFormat.equalsIgnoreCase(_JSON) &&
+		!OutputProductFormat.equalsIgnoreCase(_Properties) ) {
+        message = "The OutputProductFormat parameter \"" + OutputProductFormat + "\" must be " + _JSON + " or " + _Properties + ".";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Correct the output product format parameter to be blank, " + _JSON + ", or " + _Properties + "." ) );
+	}
+
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<String>(9);
     validList.add ( "TSProductFile" );
     validList.add ( "RunMode" );
     validList.add ( "View" );
     validList.add ( "OutputFile" );
-    validList.add ( "DefaultSaveFile" );
     validList.add ( "VisibleStart" );
     validList.add ( "VisibleEnd" );
+    validList.add ( "OutputProductFile" );
+    validList.add ( "OutputProductFormat" );
+    validList.add ( "DefaultSaveFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -394,7 +454,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	PropList parameters = getCommandParameters();
-	String TSProductFile = parameters.getValue ( "TSProductFile" );
+	String TSProductFile = parameters.getValue ( "TSProductFile" );  // Property expansion below
 	String RunMode = parameters.getValue ( "RunMode" );
 	if ( (RunMode == null) || RunMode.equals("") ) {
 		RunMode = _GUIAndBatch;
@@ -408,7 +468,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// No output file so view is true by default...
 		View = _True;
 	}
-	String DefaultSaveFile = parameters.getValue ( "DefaultSaveFile" );
+	String OutputProductFile = parameters.getValue ( "OutputProductFile" );  // Property expansion below
+	String OutputProductFormat = parameters.getValue ( "OutputProductFormat" );
+	String DefaultSaveFile = parameters.getValue ( "DefaultSaveFile" );  // Property expansion below
 
 	// Get from the processor...
 
@@ -516,6 +578,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    overrideProps.set ( "DefaultSaveFile", DefaultSaveFile_full );
 			}
 		}
+		if ( (OutputProductFile != null) && !OutputProductFile.isEmpty() ) {
+			// Add the output product file
+		    String OutputProductFile_full =
+		        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+		        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputProductFile));
+		    overrideProps.set ( "OutputProductFile", OutputProductFile_full );
+		    // OK if null as default will be handled in called code
+		    overrideProps.set ( "OutputProductFomat", OutputProductFormat );
+		}
 		if ( (IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("Batch")))) ||
 			(!IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("GUIOnly")))) ) {
 			// Only run the command for the requested run mode...
@@ -597,9 +668,11 @@ public String toString ( PropList props )
 	String RunMode = props.getValue("RunMode");
 	String View = props.getValue("View");
 	String OutputFile = props.getValue("OutputFile");
-	String DefaultSaveFile = props.getValue("DefaultSaveFile");
     String VisibleStart = props.getValue ( "VisibleStart" );
     String VisibleEnd = props.getValue ( "VisibleEnd" );
+	String OutputProductFile = props.getValue("OutputProductFile");
+	String OutputProductFormat = props.getValue("OutputProductFormat");
+	String DefaultSaveFile = props.getValue("DefaultSaveFile");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSProductFile != null) && (TSProductFile.length() > 0) ) {
 		b.append ( "TSProductFile=\"" + TSProductFile + "\"" );
@@ -622,12 +695,6 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-    if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DefaultSaveFile=\"" + DefaultSaveFile + "\"" );
-    }
     if ( (VisibleStart != null) && (VisibleStart.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -639,6 +706,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "VisibleEnd=\"" + VisibleEnd + "\"" );
+    }
+	if ( (OutputProductFile != null) && (OutputProductFile.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputProductFile=\"" + OutputProductFile + "\"" );
+	}
+	if ( (OutputProductFormat != null) && (OutputProductFormat.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputProductFormat=\"" + OutputProductFormat + "\"" );
+	}
+    if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DefaultSaveFile=\"" + DefaultSaveFile + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

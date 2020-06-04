@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -76,21 +77,26 @@ private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
+private SimpleJButton __browseOutputProduct_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null; // Convert between relative and absolute paths
 private SimpleJButton __pathOutput_JButton = null;
-private ProcessTSProduct_Command __command = null;// Command to edit
+private SimpleJButton __pathOutputProduct_JButton = null;
+private ProcessTSProduct_Command __command = null;
 private String __working_dir = null; // Working directory.
 private JTextArea __command_JTextArea = null;
-private JTextField __TSProductFile_JTextField=null;
-private JTextField __OutputFile_JTextField=null;
-private JTextField __DefaultSaveFile_JTextField=null;
+private JTextField __TSProductFile_JTextField = null;
+private JTextField __OutputFile_JTextField = null;
+private JTextField __OutputProductFile_JTextField = null;
+private SimpleJComboBox	__OutputProductFormat_JComboBox = null;
+private JTextField __DefaultSaveFile_JTextField = null;
 private JTextField __VisibleStart_JTextField = null;
 private JTextField __VisibleEnd_JTextField = null;
 private SimpleJComboBox	__RunMode_JComboBox = null;
 private SimpleJComboBox	__View_JComboBox = null;
+private JTabbedPane __main_JTabbedPane = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -182,6 +188,41 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
+	else if ( o == __browseOutputProduct_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		}
+		fc.setDialogTitle("Select Output Time Series Product File");
+		SimpleFileFilter sff = new SimpleFileFilter("png", "PNG Image File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__OutputProductFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ProcessTSProduct_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory( directory);
+				refresh();
+			}
+		}
+	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -229,6 +270,23 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else if ( o == __pathOutputProduct_JButton ) {
+		if ( __pathOutput_JButton.getText().equals( __AddWorkingDirectory) ) {
+			__OutputProductFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
+			__OutputProductFile_JTextField.getText() ) );
+		}
+		else if ( __pathOutputProduct_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+			try {
+				__OutputProductFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+						__OutputProductFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,
+				"ProcessTSProduct_JDialog",	"Error converting output product file to relative path." );
+			}
+		}
+		refresh ();
+	}
 	else {
 	    // Other combo boxes, etc...
 		refresh();
@@ -246,6 +304,8 @@ private void checkInput ()
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
 	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
@@ -261,6 +321,12 @@ private void checkInput ()
 	}
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
+	}
+	if ( OutputProductFile.length() > 0 ) {
+		props.set ( "OutputProductFile", OutputProductFile );
+	}
+	if ( OutputProductFormat.length() > 0 ) {
+		props.set ( "OutputProductFormat", OutputProductFormat );
 	}
     if ( DefaultSaveFile.length() > 0 ) {
         props.set ( "DefaultSaveFile", DefaultSaveFile );
@@ -290,6 +356,8 @@ private void commitEdits ()
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
 	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
@@ -297,6 +365,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "RunMode", RunMode );
 	__command.setCommandParameter ( "View", View );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "OutputProductFile", OutputProductFile );
+	__command.setCommandParameter ( "OutputProductFormat", OutputProductFormat );
 	__command.setCommandParameter ( "DefaultSaveFile", DefaultSaveFile );
     __command.setCommandParameter ( "VisibleStart", VisibleStart );
     __command.setCommandParameter ( "VisibleEnd", VisibleEnd );
@@ -329,9 +399,6 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify paths relative to the working directory, or use an absolute path."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If the TSP file contains a comment #@template then the file will be expanded similar to ExpandTemplateFile() and then used."),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
@@ -340,8 +407,24 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for input
+    int yInput = -1;
+    JPanel input_JPanel = new JPanel();
+    input_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", input_JPanel );
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+		"If the TSP file contains a comment #@template, then the file will be expanded similar to ExpandTemplateFile() and then used."),
+		0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("TS product file (TSP):" ), 
+		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSProductFile_JTextField = new JTextField ( 50 );
 	__TSProductFile_JTextField.setToolTipText("Specify the path to the time series product (TSP) file or use ${Property} notation");
 	__TSProductFile_JTextField.addKeyListener ( this );
@@ -360,38 +443,44 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 		JGUIUtil.addComponent(TSProductFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, TSProductFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(input_JPanel, TSProductFile_JPanel,
+		1, yInput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Run mode:" ), 
+		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunMode_JComboBox = new SimpleJComboBox ( false );
 	__RunMode_JComboBox.add ( "" );
 	__RunMode_JComboBox.add ( __command._BatchOnly );
 	__RunMode_JComboBox.add ( __command._GUIOnly );
 	__RunMode_JComboBox.add ( __command._GUIAndBatch );
 	__RunMode_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+        JGUIUtil.addComponent(input_JPanel, __RunMode_JComboBox,
+		1, yInput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel,
 		new JLabel ( "Optional - when to process products (default=" + __command._GUIAndBatch + ")." ), 
-		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		2, yInput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "View:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for output
+    int yOutput = -1;
+    JPanel output_JPanel = new JPanel();
+    output_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", output_JPanel );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "View:" ), 
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__View_JComboBox = new SimpleJComboBox ( false );
 	__View_JComboBox.add ( "" );
 	__View_JComboBox.add ( __command._False );
 	__View_JComboBox.add ( __command._True );
 	__View_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __View_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(output_JPanel, __View_JComboBox,
+		1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel,
 		new JLabel ( "Optional - display product in window (default=" + __command._True + ")." ), 
-		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		2, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output image file:"),
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (30);
 	__OutputFile_JTextField.setToolTipText("Specify the path to the output PNG or JPG file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -411,42 +500,100 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
-	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(output_JPanel, OutputFile_JPanel,
+		1, yOutput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default save file:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Visible start:"), 
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VisibleStart_JTextField = new JTextField (20);
+    __VisibleStart_JTextField.setToolTipText("Specify the visible period start using a date/time string or ${Property} notation");
+    __VisibleStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(output_JPanel, __VisibleStart_JTextField,
+        1, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "Optional - start of (initial) visible period (default=all data visible)."),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Visible end:"), 
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VisibleEnd_JTextField = new JTextField (20);
+    __VisibleEnd_JTextField.setToolTipText("Specify the visible period end using a date/time string or ${Property} notation");
+    __VisibleEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(output_JPanel, __VisibleEnd_JTextField,
+        1, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "Optional - end of (initial) visible period (default=all data visible)."),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for output product
+    int yOutputProduct = -1;
+    JPanel outputProduct_JPanel = new JPanel();
+    outputProduct_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Product", outputProduct_JPanel );
+
+    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel (
+        "The time series product file that results from input can be written to an output file."),
+        0, ++yOutputProduct, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel (
+        "This allows, for example, automated creation of templates that can be used with other commands and applications."),
+        0, ++yOutputProduct, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(outputProduct_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yOutputProduct, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel ( "Output product file:"),
+		0, ++yOutputProduct, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputProductFile_JTextField = new JTextField (30);
+	__OutputProductFile_JTextField.setToolTipText("Specify the path to the output time series product file, can use ${Property} notation");
+	__OutputProductFile_JTextField.addKeyListener ( this );
+	__OutputProductFile_JTextField.setEditable ( true );
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel OutputProductFile_JPanel = new JPanel();
+	OutputProductFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(OutputProductFile_JPanel, __OutputProductFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browseOutput_JButton = new SimpleJButton ( "...", this );
+	__browseOutput_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(OutputProductFile_JPanel, __browseOutput_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOutput_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputProductFile_JPanel, __pathOutput_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(outputProduct_JPanel, OutputProductFile_JPanel,
+		1, yOutputProduct, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel ( "Output product format:" ), 
+		0, ++yOutputProduct, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputProductFormat_JComboBox = new SimpleJComboBox ( false );
+	__OutputProductFormat_JComboBox.add ( "" );
+	__OutputProductFormat_JComboBox.add ( __command._JSON );
+	__OutputProductFormat_JComboBox.add ( __command._Properties );
+	__OutputProductFormat_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(outputProduct_JPanel, __OutputProductFormat_JComboBox,
+		1, yOutputProduct, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(outputProduct_JPanel,
+		new JLabel ( "Optional - output format (default=" + __command._JSON + ")." ), 
+		2, yOutputProduct, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for editing
+    int yEdit = -1;
+    JPanel edit_JPanel = new JPanel();
+    edit_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Editing", edit_JPanel );
+
+    JGUIUtil.addComponent(edit_JPanel, new JLabel ( "Default save file:"),
+            0, ++yEdit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultSaveFile_JTextField = new JTextField ();
     __DefaultSaveFile_JTextField.setToolTipText("Specify the path to the output save (used when interactively editing time series) or use ${Property} notation");
     __DefaultSaveFile_JTextField.addKeyListener ( this );
     __DefaultSaveFile_JTextField.setEditable ( true );
-    JGUIUtil.addComponent(main_JPanel, __DefaultSaveFile_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(edit_JPanel, __DefaultSaveFile_JTextField,
+        1, yEdit, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(edit_JPanel,
         new JLabel ( "Optional - file to save during interactive editing (*.dv)." ), 
-        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Visible start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __VisibleStart_JTextField = new JTextField (20);
-    __VisibleStart_JTextField.setToolTipText("Specify the visible period start using a date/time string or ${Property} notation");
-    __VisibleStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __VisibleStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - start of (initial) visible period (default=all data visible)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Visible end:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __VisibleEnd_JTextField = new JTextField (20);
-    __VisibleEnd_JTextField.setToolTipText("Specify the visible period end using a date/time string or ${Property} notation");
-    __VisibleEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __VisibleEnd_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - end of (initial) visible period (default=all data visible)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        2, yEdit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -530,6 +677,8 @@ private void refresh ()
 	String RunMode = "";
 	String View = "";
 	String OutputFile = "";
+	String OutputProductFile = "";
+	String OutputProductFormat = "";
 	String DefaultSaveFile = "";
     String VisibleStart = "";
     String VisibleEnd = "";
@@ -542,6 +691,8 @@ private void refresh ()
 		RunMode = props.getValue ( "RunMode" );
 		View = props.getValue ( "View" );
 		OutputFile = props.getValue("OutputFile");
+		OutputProductFile = props.getValue("OutputProductFile");
+		OutputProductFormat = props.getValue("OutputProductFormat");
 		DefaultSaveFile = props.getValue("DefaultSaveFile");
 		VisibleStart = props.getValue ( "VisibleStart" );
 		VisibleEnd = props.getValue ( "VisibleEnd" );
@@ -586,6 +737,26 @@ private void refresh ()
 	    if ( OutputFile != null ) {
 	         __OutputFile_JTextField.setText( OutputFile );
 	    }
+	    if ( OutputProductFile != null ) {
+	         __OutputProductFile_JTextField.setText( OutputProductFile );
+	    }
+		if ( (OutputProductFormat == null) || (OutputProductFormat.length() == 0) ) {
+			// Select default...
+			__OutputProductFormat_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __OutputProductFormat_JComboBox,
+				OutputProductFormat, JGUIUtil.NONE, null, null ) ) {
+				__OutputProductFormat_JComboBox.select ( OutputProductFormat );
+			}
+			else {
+			    Message.printWarning ( 1,
+				"processTSProduct_JDialog.refresh", "Existing "+
+				"command references an invalid\n"+
+				"output product format \"" + OutputProductFormat +
+				"\".  Select a\ndifferent value or Cancel." );
+			}
+		}
 	    if ( DefaultSaveFile != null ) {
 	         __DefaultSaveFile_JTextField.setText( DefaultSaveFile );
 	    }
@@ -601,6 +772,8 @@ private void refresh ()
 	RunMode = __RunMode_JComboBox.getSelected();
 	View = __View_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
 	DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     VisibleStart = __VisibleStart_JTextField.getText().trim();
     VisibleEnd = __VisibleEnd_JTextField.getText().trim();
@@ -609,6 +782,8 @@ private void refresh ()
 	props.add ( "RunMode=" + RunMode );
 	props.add ( "View=" + View );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "OutputProductFile=" + OutputProductFile );
+	props.add ( "OutputProductFormat=" + OutputProductFormat );
 	props.add ( "DefaultSaveFile=" + DefaultSaveFile );
 	props.add ( "VisibleStart=" + VisibleStart );
 	props.add ( "VisibleEnd=" + VisibleEnd );

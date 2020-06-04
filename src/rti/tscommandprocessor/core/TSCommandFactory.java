@@ -330,6 +330,7 @@ import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.TestCommand_Command;
+import rti.tscommandprocessor.commands.util.TextEdit_Command;
 import rti.tscommandprocessor.commands.util.UnzipFile_Command;
 import rti.tscommandprocessor.commands.util.Wait_Command;
 import rti.tscommandprocessor.commands.util.WebGet_Command;
@@ -1157,6 +1158,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("TestCommand") ) {
 		return new TestCommand_Command ();
+	}
+    else if ( commandName.equalsIgnoreCase("TextEdit") ) {
+		return new TextEdit_Command ();
 	}
     else if ( commandName.equalsIgnoreCase("TimeSeriesToTable") ) {
         return new TimeSeriesToTable_Command ();

@@ -238,7 +238,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputFile = parameters.getValue ( "InputFile" ); // Expand below
 	String OutputFile = parameters.getValue ( "OutputFile" ); // Expand below
 	String SearchFor = parameters.getValue ( "SearchFor" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (SearchFor != null) && (SearchFor.indexOf("${") >= 0) ) {
+		SearchFor = TSCommandProcessorUtil.expandParameterValue(processor, this, SearchFor);
+	}
 	String ReplaceWith = parameters.getValue ( "ReplaceWith" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ReplaceWith != null) && (ReplaceWith.indexOf("${") >= 0) ) {
+		ReplaceWith = TSCommandProcessorUtil.expandParameterValue(processor, this, ReplaceWith);
+	}
+	// Replace \$\{ pattern with ${ to use in output
+	if ( ReplaceWith != null ) {
+		ReplaceWith = ReplaceWith.replace("\\$\\{", "${");
+	}
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 	if ( (IfInputNotFound == null) || IfInputNotFound.equals("")) {
 	    IfInputNotFound = _Warn; // Default

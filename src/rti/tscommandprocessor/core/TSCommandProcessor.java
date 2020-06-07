@@ -1461,7 +1461,7 @@ data available for a command.
 private List<String> getPropContents_OutputComments()
 {
 	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
-	List<String> v = new Vector<String>();
+	List<String> v = new ArrayList<>();
 	if ( array != null ) {
 		for ( int i = 0; i < array.length; i++ ) {
 			v.add( array[i]);

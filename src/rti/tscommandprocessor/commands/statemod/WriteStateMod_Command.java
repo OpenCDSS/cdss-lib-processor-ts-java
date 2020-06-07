@@ -138,20 +138,22 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;		
-			try { Object o = processor.getPropContents ( "WorkingDir" );
-				// Working directory is available so use it...
-				if ( o != null ) {
-					working_dir = (String)o;
-				}
+	else if ( OutputFile.indexOf("${") < 0 ) {
+		// Does not contain property notation so can check folder
+		String working_dir = null;		
+		try { Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-				message = "Error requesting WorkingDir from processor.";
-				warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Software error - report to support." ) );
-			}
+		}
+		catch ( Exception e ) {
+			message = "Error requesting WorkingDir from processor.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Software error - report to support." ) );
+		}
 	
 		try {
 			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
@@ -336,7 +338,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "writeStateMod_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -357,7 +359,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	if ( TSID.indexOf("${") >= 0 ) {
+        TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded for property below
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
@@ -590,11 +595,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)));
 		Message.printStatus ( 2, routine,"Writing StateMod file \"" + OutputFile_full + "\"" );
+		
+		// Make sure the parent folder exists
+		File f = new File(OutputFile_full);
+		File parent = f.getParentFile();
+		if ( !parent.exists() ) {
+			message = "Parent folder (" + parent.getAbsolutePath() + ") of of output file does not exist. Can't write output.";
+			Message.printWarning ( warning_level, 
+			MessageUtil.formatMessageTag(command_tag,
+			++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Verify that all time series being written have interval of either Day or Month." ) );
+		}
 
 		// Get the comments to add to the top of the file.
 
 		List<String> OutputComments_Vector = null;
-		try { Object o = processor.getPropContents ( "OutputComments" );
+		try {
+			Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
 				@SuppressWarnings("unchecked")

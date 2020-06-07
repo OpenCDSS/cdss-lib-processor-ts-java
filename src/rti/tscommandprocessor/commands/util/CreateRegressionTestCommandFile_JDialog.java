@@ -130,10 +130,10 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle( "Select Folder to Search For Command Files");
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			String filename = fc.getSelectedFile().getName(); 
+			String folder = fc.getSelectedFile().getName(); 
 			String path = fc.getSelectedFile().getPath(); 
 	
-			if (filename == null || filename.equals("")) {
+			if (folder == null || folder.equals("")) {
 				return;
 			}
 	

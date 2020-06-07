@@ -84,6 +84,8 @@ private JTextField __InputFile_JTextField = null;// Field for input file.
 private JTextField __InputStart_JTextField = null;
 private JTextField __InputEnd_JTextField = null;
 private JTextField __TSID_JTextField = null;
+private JTextField __IncludeDataTypes_JTextField = null;
+private JTextField __ExcludeDataTypes_JTextField = null;
 private JTextField __Version_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
 private boolean __error_wait = false; // Is there an error waiting to be cleared up or Cancel?
@@ -228,6 +230,8 @@ private void checkInput ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+    String IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
+    String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	__error_wait = false;
@@ -243,6 +247,12 @@ private void checkInput ()
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
 	}
+    if ( IncludeDataTypes.length() > 0 ) {
+        props.set ( "IncludeDataTypes", IncludeDataTypes );
+    }
+    if ( ExcludeDataTypes.length() > 0 ) {
+        props.set ( "ExcludeDataTypes", ExcludeDataTypes );
+    }
 	if ( Version.length() > 0 ) {
 		props.set ( "Version", Version );
 	}
@@ -268,12 +278,16 @@ private void commitEdits ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+    String IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
+    String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "InputStart", InputStart );
 	__command.setCommandParameter ( "InputEnd", InputEnd );
+	__command.setCommandParameter ( "IncludeDataTypes", IncludeDataTypes );
+	__command.setCommandParameter ( "ExcludeDataTypes", ExcludeDataTypes );
 	__command.setCommandParameter ( "Version", Version );
 	__command.setCommandParameter ( "Alias", Alias );
 }
@@ -383,6 +397,28 @@ private void initialize ( JFrame parent, ReadStateModB_Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - override the global input end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data types to include:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeDataTypes_JTextField = new JTextField ( 20 );
+    __IncludeDataTypes_JTextField.setToolTipText("Indicate StateMod data types (parameters) to include, separated by commas.");
+    __IncludeDataTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeDataTypes_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - data types to include (default=all)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data types to exclude:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeDataTypes_JTextField = new JTextField ( 20 );
+    __ExcludeDataTypes_JTextField.setToolTipText("Indicate StateMod data types (parameters) to exclude, separated by commas.");
+    __ExcludeDataTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeDataTypes_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - data types to exclude (default=none)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "StateMod version:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Version_JTextField = new JTextField ( 10 );
@@ -477,6 +513,8 @@ private void refresh ()
 	String TSID="";
 	String InputStart = "";
 	String InputEnd = "";
+    String IncludeDataTypes = "";
+    String ExcludeDataTypes = "";
 	String Version="";
     String Alias = "";
 	PropList props = null;
@@ -488,6 +526,8 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
+		IncludeDataTypes = props.getValue ( "IncludeDataTypes" );
+		ExcludeDataTypes = props.getValue ( "ExcludeDataTypes" );
 		Version = props.getValue ( "Version" );
         Alias = props.getValue("Alias");
 		if ( InputFile != null ) {
@@ -502,6 +542,12 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
+		if ( IncludeDataTypes != null ) {
+			__IncludeDataTypes_JTextField.setText (IncludeDataTypes);
+		}
+		if ( ExcludeDataTypes != null ) {
+			__ExcludeDataTypes_JTextField.setText (ExcludeDataTypes);
+		}
 		if ( Version != null ) {
 			__Version_JTextField.setText (Version);
 		}
@@ -514,6 +560,8 @@ private void refresh ()
 	TSID = __TSID_JTextField.getText().trim();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
+	IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
+	ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	Version = __Version_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -521,6 +569,8 @@ private void refresh ()
 	props.add ( "TSID=" + TSID );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
+	props.add ( "IncludeDataTypes=" + IncludeDataTypes );
+	props.add ( "ExcludeDataTypes=" + ExcludeDataTypes );
 	props.add ( "Version=" + Version );
 	props.add ( "Alias=" + Alias );
 	__command_JTextArea.setText( __command.toString ( props ) );

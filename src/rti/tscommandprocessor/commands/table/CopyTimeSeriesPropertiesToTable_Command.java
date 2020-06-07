@@ -292,6 +292,10 @@ CommandWarningException, CommandException
     String [] includeProperties = null;
     if ( (IncludeProperties != null) && !IncludeProperties.equals("") ) {
         includeProperties = IncludeProperties.trim().split(",");
+        // Remove surrounding whitespace.
+        for ( int i = 0; i < includeProperties.length; i++ ) {
+        	includeProperties[i] = includeProperties[i].trim();
+        }
     }
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {

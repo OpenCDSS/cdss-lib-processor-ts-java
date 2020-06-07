@@ -107,11 +107,6 @@ private JLabel __ParcelYear_JLabel = null;
 private JTextField __ParcelYear_JTextField = null; // Parcel year for parcel total water rights
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
-// TODO SAM 2007-02-18 Evaluate whether to support alias
-//private boolean		__use_alias = false;	// If true, then the syntax is
-						// TS Alias = readStateMod().
-						// If false, it is:
-						// readStateMod().
 private boolean __ok = false; // Whether OK was pressed when closing the dialog.
 
 /**
@@ -377,6 +372,7 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("StateMod file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("StateMod file to read.  Can use ${Property} notation.");
 	__InputFile_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel
 	JPanel InputFile_JPanel = new JPanel();

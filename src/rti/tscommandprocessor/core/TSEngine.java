@@ -1809,9 +1809,10 @@ include the commands file and database version information.
 in the comments.  IOUtil.printCreatorHeader will automatically include the
 commands if a commands file has been set but is probably better to move
 to a case where the commands are passed to the write methods.
+@return a String array with output comments.
 */
 protected String [] formatOutputHeaderComments ( List<Command> commands )
-{	List<String> comments = new ArrayList<String>();
+{	List<String> comments = new ArrayList<>();
 	// Commands.  Show the file name but all commands may be in memory.
 	comments.add ( "-----------------------------------------------------------------------" );
 	String commands_filename = __ts_processor.getCommandFileName();
@@ -1827,14 +1828,15 @@ protected String [] formatOutputHeaderComments ( List<Command> commands )
 		comments.add ( ((Command)commands.get(i)).toString() );
 	}
 	// Save information about data sources.
-	// HydroBase datastores...
+	// - only include enabled datastores
+	// - HydroBase datastores
 	String db_comments[] = null;
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
     HydroBaseDataStore hbds = null;
     for ( DataStore dataStore: dataStoreList ) {
         hbds = (HydroBaseDataStore)dataStore;
         HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();
-        if ( hbdmi != null ) {
+        if ( (hbdmi != null) && hbdmi.connected() ) {
             try {
                 db_comments = hbdmi.getVersionComments ();
             }
@@ -1850,7 +1852,7 @@ protected String [] formatOutputHeaderComments ( List<Command> commands )
     }
 	// Legacy HydroBaseDMI list...
 	for ( HydroBaseDMI hbdmi : __hbdmi_Vector ) {
-		if ( hbdmi != null ) {
+		if ( (hbdmi != null) && hbdmi.connected() ) {
 			try {
 			    db_comments = hbdmi.getVersionComments ();
 			}

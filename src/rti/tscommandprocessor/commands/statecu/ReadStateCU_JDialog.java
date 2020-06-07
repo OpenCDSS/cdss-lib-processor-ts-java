@@ -74,6 +74,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -107,6 +108,7 @@ private JTextField __InputEnd_JTextField = null;
 private JTextField __TSID_JTextField = null;// Field for time series
 						// identifier
 private JTextField __NewScenario_JTextField = null;// Field for new scenario
+private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
 private SimpleJComboBox __AutoAdjust_JComboBox = null;  // For development to
 						// deal with non-standard issues in data (e.g., crop
 						// names that include "."
@@ -250,6 +252,7 @@ private void checkInput ()
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String TSID = __TSID_JTextField.getText().trim();
 	String NewScenario = __NewScenario_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	String AutoAdjust = __AutoAdjust_JComboBox.getSelected();
 	String CheckData = __CheckData_JComboBox.getSelected();
 	__error_wait = false;
@@ -268,6 +271,9 @@ private void checkInput ()
 	if (NewScenario.length() > 0) {
 		props.set("NewScenario", NewScenario);
 	}
+    if (Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
 	if (AutoAdjust.length() > 0) {
 		props.set("AutoAdjust", AutoAdjust);
 	}
@@ -292,6 +298,7 @@ private void commitEdits ()
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String TSID = __TSID_JTextField.getText().trim();
 	String NewScenario = __NewScenario_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	String AutoAdjust = __AutoAdjust_JComboBox.getSelected();
 	String CheckData = __CheckData_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -299,6 +306,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "InputEnd", InputEnd );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewScenario", NewScenario );
+	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "AutoAdjust", AutoAdjust );
 	__command.setCommandParameter ( "CheckData", CheckData );
 }
@@ -432,6 +440,18 @@ private void initialize ( JFrame parent, ReadStateCU_Command command )
     	"Optional - to help uniquely identify time series (default=none)."),
     	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.getTextField().setToolTipText(
+         "Use %L for location, %T for data type, ${ts:property} for time series property.");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, ${ts:property}, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically adjust?:" ), 
    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
    	__AutoAdjust_JComboBox = new SimpleJComboBox ( false );
@@ -545,13 +565,14 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "readStateCU_JDialog.refresh";
+{	String routine = "ReadStateCU_JDialog.refresh";
 	__error_wait = false;
 	String InputFile="";
 	String InputStart="";
 	String InputEnd="";
 	String TSID="";
 	String NewScenario="";
+    String Alias = "";
 	String AutoAdjust = "";
 	String CheckData = "";
 	if ( __first_time ) {
@@ -562,6 +583,7 @@ private void refresh ()
 		InputEnd = props.getValue ( "InputEnd" );
 		TSID = props.getValue ( "TSID" );
 		NewScenario = props.getValue ( "NewScenario" );
+	    Alias = props.getValue ( "Alias" );
 		AutoAdjust = props.getValue ( "AutoAdjust" );
 		CheckData = props.getValue ( "CheckData" );
 		if ( InputFile != null ) {
@@ -579,6 +601,9 @@ private void refresh ()
 		if ( NewScenario != null ) {
 			__NewScenario_JTextField.setText (NewScenario);
 		}
+        if (Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
 		if (	JGUIUtil.isSimpleJComboBoxItem(
 				__AutoAdjust_JComboBox,
 				AutoAdjust, JGUIUtil.NONE, null, null ) ) {
@@ -622,6 +647,7 @@ private void refresh ()
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	TSID = __TSID_JTextField.getText().trim();
 	NewScenario = __NewScenario_JTextField.getText().trim();
+	Alias = __Alias_JTextField.getText().trim();
 	AutoAdjust = __AutoAdjust_JComboBox.getSelected();
 	CheckData = __CheckData_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
@@ -630,6 +656,7 @@ private void refresh ()
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "TSID=" + TSID );
 	props.add ( "NewScenario=" + NewScenario );
+	props.add ( "Alias=" + Alias );
 	props.add ( "AutoAdjust=" + AutoAdjust );
 	props.add ( "CheckData=" + CheckData );
 	__command_JTextArea.setText(__command.toString(props) );

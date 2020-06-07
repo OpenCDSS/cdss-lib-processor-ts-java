@@ -148,7 +148,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {	String working_dir = null;
+	else if ( InputFile.indexOf("${") < 0 ) { // No properties used so can check path
+		String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
@@ -171,7 +172,7 @@ throws InvalidCommandParameterException
                     message = "The input file does not exist:  \"" + adjusted_path + "\".";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
+                            new CommandLogRecord(CommandStatusType.WARNING,
                                     message, "Verify that the input file exists - may be OK if created at run time." ) );
                 }
 		}
@@ -187,9 +188,9 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	if (	(InputStart != null) && !InputStart.equals("") &&
+	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
-		!InputStart.equalsIgnoreCase("InputEnd") ) {
+		!InputStart.equalsIgnoreCase("InputEnd") && (InputStart.indexOf("${") < 0) ) {
 		try {	DateTime.parse(InputStart);
 		}
 		catch ( Exception e ) {
@@ -200,9 +201,9 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
-	if (	(InputEnd != null) && !InputEnd.equals("") &&
+	if ( (InputEnd != null) && !InputEnd.equals("") &&
 		!InputEnd.equalsIgnoreCase("InputStart") &&
-		!InputEnd.equalsIgnoreCase("InputEnd") ) {
+		!InputEnd.equalsIgnoreCase("InputEnd") && (InputEnd.indexOf("${") < 0) ) {
 		try {	DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
@@ -249,7 +250,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<>(7);
     validList.add ( "InputFile" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
@@ -419,6 +420,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTime InputEnd_DateTime = null;
 
     if ( (InputStart != null) && (InputStart.length() != 0) ) {
+	    if ( InputStart.indexOf("${") >= 0) {
+	    	InputStart = TSCommandProcessorUtil.expandParameterValue(
+	            this.getCommandProcessor(),this,InputStart);
+	    }
         try {
         PropList request_params = new PropList ( "" );
         request_params.set ( "DateTime", InputStart );
@@ -483,6 +488,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     
     if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
+	    if ( InputEnd.indexOf("${") >= 0) {
+	    	InputEnd = TSCommandProcessorUtil.expandParameterValue(
+	            this.getCommandProcessor(),this,InputEnd);
+	    }
         try {
             PropList request_params = new PropList ( "" );
             request_params.set ( "DateTime", InputEnd );
@@ -585,124 +594,129 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
     
         List<TS> tslist = null;
-        if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full)) {
-            message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
-            Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
-                    status.addToLog(commandPhase,
-                        new CommandLogRecord( CommandStatusType.FAILURE, message,
-                            "Verify that the file exists and is readable."));
-            throw new CommandException ( message );
-        }
-        if ( StateMod_DiversionRight.isDiversionRightFile(InputFile_full)) {
-            TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
-            // Read the diversion rights file and convert to time series
-            // (default is to sum time series at a location).
-            List<StateMod_DiversionRight> ddrList = StateMod_DiversionRight.readStateModFile ( InputFile_full );
-            // Convert the rights to time series (one per location)...
-            tslist = StateMod_Util.createWaterRightTimeSeriesList (
-                    ddrList, // raw water rights
-                    Interval_TimeInterval.getBase(), // time series interval
-                    SpatialAggregation_int, // Where to summarize time series
-                    ParcelYear_int, // Parcel year for filter
-                    true, // Create a data set total
-                    InputStart_DateTime, // time series start
-                    InputEnd_DateTime, // time series end
-                    999999.00000, // No special free water rights
-                    null, // ...
-                    null, // ...
+       	// Can only check for file existence and if ${Property} is not used
+        // - TODO smalers 2020-06-06 figure out how to run discovery with properties
+        // - this limits how time series are listed in discovery
+        if ( InputFile_full.indexOf("${") < 0 ) {
+       	    if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full) ) {
+       	    	message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
+           		Message.printWarning ( warning_level,
+                   		MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                   		status.addToLog(commandPhase,
+                       		new CommandLogRecord( CommandStatusType.FAILURE, message,
+                           		"Verify that the file exists and is readable."));
+           		throw new CommandException ( message );
+        	}
+        	if ( StateMod_DiversionRight.isDiversionRightFile(InputFile_full)) {
+            	TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
+            	// Read the diversion rights file and convert to time series
+            	// (default is to sum time series at a location).
+            	List<StateMod_DiversionRight> ddrList = StateMod_DiversionRight.readStateModFile ( InputFile_full );
+            	// Convert the rights to time series (one per location)...
+            	tslist = StateMod_Util.createWaterRightTimeSeriesList (
+                    	ddrList, // raw water rights
+                    	Interval_TimeInterval.getBase(), // time series interval
+                    	SpatialAggregation_int, // Where to summarize time series
+                    	ParcelYear_int, // Parcel year for filter
+                    	true, // Create a data set total
+                    	InputStart_DateTime, // time series start
+                    	InputEnd_DateTime, // time series end
+                    	999999.00000, // No special free water rights
+                    	null, // ...
+                    	null, // ...
+                    	read_data ); // do read data
+        	}
+        	else if ( StateMod_InstreamFlowRight.isInstreamFlowRightFile(InputFile_full)) {
+            	TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
+            	// Read the instream flow rights file and convert to time series
+            	// (default is to sum time series at a location).
+            	List<StateMod_InstreamFlowRight> ifrList = StateMod_InstreamFlowRight.readStateModFile ( InputFile_full );
+            	// Convert the rights to time series (one per location)...
+            	tslist = StateMod_Util.createWaterRightTimeSeriesList (
+                    	ifrList, // raw water rights
+                    	Interval_TimeInterval.getBase(), // time series interval
+                    	SpatialAggregation_int, // Where to summarize time series
+                    	ParcelYear_int, // Parcel year for filter
+                    	true, // Create a data set total
+                    	InputStart_DateTime, // time series start
+                    	InputEnd_DateTime, // time series end
+                    	999999.00000, // No special free water rights
+                    	null, // ...
+                    	null, // ...
                     read_data ); // do read data
-        }
-        else if ( StateMod_InstreamFlowRight.isInstreamFlowRightFile(InputFile_full)) {
-            TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
-            // Read the instream flow rights file and convert to time series
-            // (default is to sum time series at a location).
-            List<StateMod_InstreamFlowRight> ifrList = StateMod_InstreamFlowRight.readStateModFile ( InputFile_full );
-            // Convert the rights to time series (one per location)...
-            tslist = StateMod_Util.createWaterRightTimeSeriesList (
-                    ifrList, // raw water rights
-                    Interval_TimeInterval.getBase(), // time series interval
-                    SpatialAggregation_int, // Where to summarize time series
-                    ParcelYear_int, // Parcel year for filter
-                    true, // Create a data set total
-                    InputStart_DateTime, // time series start
-                    InputEnd_DateTime, // time series end
-                    999999.00000, // No special free water rights
-                    null, // ...
-                    null, // ...
-                    read_data ); // do read data
-        }
-        else if ( StateMod_ReservoirRight.isReservoirRightFile(InputFile_full)) {
-            TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
-            // Read the reservoir rights file and convert to time series
-            // (default is to sum time series at a location).
-            List<StateMod_ReservoirRight> rer_Vector = StateMod_ReservoirRight.readStateModFile ( InputFile_full );
-            // Convert the rights to time series (one per location)...
-            tslist = StateMod_Util.createWaterRightTimeSeriesList (
-                    rer_Vector, // raw water rights
-                    Interval_TimeInterval.getBase(), // time series interval
-                    SpatialAggregation_int, // Where to summarize time series
-                    ParcelYear_int, // Parcel year for filter
-                    true, // Create a data set total
-                    InputStart_DateTime, // time series start
-                    InputEnd_DateTime, // time series end
-                    999999.00000, // No special free water rights
-                    null, // ...
-                    null, // ...
-                    read_data ); // do read data
-        }
-        else if ( StateMod_WellRight.isWellRightFile(InputFile_full)) {
-            TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
-            // Read the well rights file and convert to time series
-            // (default is to sum time series at a location).
-            List<StateMod_WellRight> wer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
-            // Convert the rights to time series (one per location)...
-            tslist = StateMod_Util.createWaterRightTimeSeriesList (
-                    wer_Vector, // raw water rights
-                    Interval_TimeInterval.getBase(), // time series interval
-                    SpatialAggregation_int, // Where to summarize time series
-                    ParcelYear_int, // Parcel year for filter
-                    true, // Create a data set total
-                    InputStart_DateTime, // time series start
-                    InputEnd_DateTime, // time series end
-                    999999.00000, // No special free water rights
-                    null, // ...
-                    null, // ...
-                    read_data ); // do read data
-        }
-        else {
-            // Read a time series file that follows typical column-oriented formatting
-            //   *.stm monthly (including average monthly) and daily format
-            //   *.xop monthly format
-            int interval = StateMod_TS.getFileDataInterval(InputFile_full);
+        	}
+        	else if ( StateMod_ReservoirRight.isReservoirRightFile(InputFile_full)) {
+            	TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
+            	// Read the reservoir rights file and convert to time series
+            	// (default is to sum time series at a location).
+            	List<StateMod_ReservoirRight> rer_Vector = StateMod_ReservoirRight.readStateModFile ( InputFile_full );
+            	// Convert the rights to time series (one per location)...
+            	tslist = StateMod_Util.createWaterRightTimeSeriesList (
+                    	rer_Vector, // raw water rights
+                    	Interval_TimeInterval.getBase(), // time series interval
+                    	SpatialAggregation_int, // Where to summarize time series
+                    	ParcelYear_int, // Parcel year for filter
+                    	true, // Create a data set total
+                    	InputStart_DateTime, // time series start
+                    	InputEnd_DateTime, // time series end
+                    	999999.00000, // No special free water rights
+                    	null, // ...
+                    	null, // ...
+                    	read_data ); // do read data
+        	}
+        	else if ( StateMod_WellRight.isWellRightFile(InputFile_full)) {
+            	TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
+            	// Read the well rights file and convert to time series
+            	// (default is to sum time series at a location).
+            	List<StateMod_WellRight> wer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            	// Convert the rights to time series (one per location)...
+            	tslist = StateMod_Util.createWaterRightTimeSeriesList (
+                    	wer_Vector, // raw water rights
+                    	Interval_TimeInterval.getBase(), // time series interval
+                    	SpatialAggregation_int, // Where to summarize time series
+                    	ParcelYear_int, // Parcel year for filter
+                    	true, // Create a data set total
+                    	InputStart_DateTime, // time series start
+                    	InputEnd_DateTime, // time series end
+                    	999999.00000, // No special free water rights
+                    	null, // ...
+                    	null, // ...
+                    	read_data ); // do read data
+        	}
+        	else {
+            	// Read a time series file that follows typical column-oriented formatting
+            	//   *.stm monthly (including average monthly) and daily format
+            	//   *.xop monthly format
+            	int interval = StateMod_TS.getFileDataInterval(InputFile_full);
 
-            if ( (interval == TimeInterval.MONTH) || (interval == TimeInterval.DAY) ) {
-                tslist = StateMod_TS.readTimeSeriesList (
-                InputFile_full, InputStart_DateTime,
-                InputEnd_DateTime,
-                null,   // Requested units
-                read_data ); // Read all data
-            }
-            else {
-                message = "StateMod file \"" + InputFile_full + "\" is not a recognized daily or monthly file (bad file format?).";
-                Message.printWarning ( warning_level, 
-                        MessageUtil.formatMessageTag(command_tag,
-                        ++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the file being read is a StateMod file." ) );
-                throw new CommandException ( message );
-            }
+            	if ( (interval == TimeInterval.MONTH) || (interval == TimeInterval.DAY) ) {
+                	tslist = StateMod_TS.readTimeSeriesList (
+                	InputFile_full, InputStart_DateTime,
+                	InputEnd_DateTime,
+                	null,   // Requested units
+                	read_data ); // Read all data
+            	}
+            	else {
+                	message = "StateMod file \"" + InputFile_full + "\" is not a recognized daily or monthly file (bad file format?).";
+                	Message.printWarning ( warning_level, 
+                        	MessageUtil.formatMessageTag(command_tag,
+                        	++warning_count), routine, message );
+                	status.addToLog ( commandPhase,
+                        	new CommandLogRecord(CommandStatusType.FAILURE,
+                                	message, "Verify that the file being read is a StateMod file." ) );
+                	throw new CommandException ( message );
+            	}
+        	}
         }
         
         int size = 0;
         if ( tslist != null ) {
             size = tslist.size();
             
-            List<String> aliasList = new ArrayList<String>();
+            List<String> aliasList = new ArrayList<>();
             TS ts = null;
             for (int i = 0; i < size; i++) {
-                ts = (TS)tslist.get(i);
+                ts = tslist.get(i);
                 if ( (Alias != null) && (Alias.length() > 0) ) {
                     // Set the alias to the desired string - this is impacted by the Location parameter
                     String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(

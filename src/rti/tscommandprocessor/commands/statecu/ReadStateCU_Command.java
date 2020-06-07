@@ -37,7 +37,6 @@ package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,19 +141,20 @@ throws InvalidCommandParameterException
 				"Specify a StateCU IPY file to read.  " +
 				"May be OK if created dynamically during run." ) );
 	}
-	else {	try { Object o = processor.getPropContents ( "WorkingDir" );
-				// Working directory is available so use it...
-				if ( o != null ) {
-					__working_dir = (String)o;
-				}
+	else if ( InputFile.indexOf("${") < 0 ) { // No properties used so can check path
+		try { Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				__working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-                message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-			}
+		}
+		catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+		}
 	
 		try {	
 			// Adjust the path to the working directory...
@@ -240,13 +240,14 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
     validList.add ( "AutoAdjust" );
     validList.add ( "NewScenario" );
+    validList.add ( "Alias" );
     validList.add ( "CheckData" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -444,6 +445,7 @@ CommandWarningException, CommandException
 	DateTime InputEnd_DateTime = null;
 	String TSID = parameters.getValue ( "TSID" );
 	String NewScenario = parameters.getValue ( "NewScenario" );
+    String Alias = parameters.getValue("Alias");
 	String AutoAdjust = parameters.getValue ( "AutoAdjust" );
 	if ( (AutoAdjust == null) || AutoAdjust.equals("") ) {
 	    AutoAdjust = _True;
@@ -569,7 +571,8 @@ CommandWarningException, CommandException
 			throw new InvalidCommandParameterException ( message );
 		}
 		}
-		else {	// Get from the processor...
+		else {
+			// Get from the processor...
 			try {	Object o = processor.getPropContents ( "InputEnd" );
 					if ( o != null ) {
 						InputEnd_DateTime = (DateTime)o;
@@ -613,79 +616,110 @@ CommandWarningException, CommandException
         if ( command_phase == CommandPhaseType.DISCOVERY ){
             read_data = false;
         }
-        InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
-        Message.printStatus ( 2, routine, "Reading StateCU file \"" + InputFile_full + "\"" );
+       	// Can only check for file existence and if ${Property} is not used
+        // - this limits how time series are listed in discovery
+        // - TODO smalers 2020-06-06 figure out how to run discovery with properties
 		List<TS> tslist = null;
 		String file_type = "unknown file type";
-		if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile_full ) ) {
-			file_type = "crop pattern";
-			PropList read_props = null;
-			if ( AutoAdjust != null ) {
-				read_props = new PropList ( "CDS" );
-				read_props.set ( "AutoAdjust", AutoAdjust );
+      	InputFile_full = IOUtil.verifyPathForOS(
+           	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+               	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
+        if ( InputFile_full.indexOf("${") < 0 ) {
+        	Message.printStatus ( 2, routine, "Reading StateCU file \"" + InputFile_full + "\"" );
+			if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile_full ) ) {
+				file_type = "crop pattern";
+				PropList read_props = null;
+				if ( AutoAdjust != null ) {
+					read_props = new PropList ( "CDS" );
+					read_props.set ( "AutoAdjust", AutoAdjust );
+				}
+				tslist = StateCU_CropPatternTS.toTSList(
+					StateCU_CropPatternTS.readStateCUFile (
+					InputFile_full, InputStart_DateTime, InputEnd_DateTime,
+					read_props ),
+					IncludeLocationTotal_boolean,
+					IncludeDataSetTotal_boolean,
+					null,
+					null );
 			}
-			tslist = StateCU_CropPatternTS.toTSList(
-				StateCU_CropPatternTS.readStateCUFile (
-				InputFile_full, InputStart_DateTime, InputEnd_DateTime,
-				read_props ),
-				IncludeLocationTotal_boolean,
-				IncludeDataSetTotal_boolean,
-				null,
-				null );
-		}
-		else if(StateCU_IrrigationPracticeTS.isIrrigationPracticeTSFile(InputFile_full ) ) {
-			file_type = "irrigation practice";
-			// Clear the status...
-			status.clearLog(command_phase);
-			try {
-				List<StateCU_IrrigationPracticeTS> ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
-					InputFile_full, InputStart_DateTime, InputEnd_DateTime );
-					// Get the individual time series for use by TSTool.
-					tslist = StateCU_IrrigationPracticeTS.toTSList(
-							ipylist, IncludeDataSetTotal_boolean, null, null );
-					if ( CheckData_boolean ) {
-						// Check the time series for integrity (acreage adds, etc.)...
-						checkIrrigationPracticeTS ( ipylist, status );
-					}
-			}
-			catch ( IOException e ) {
-				status.addToLog ( command_phase,
+			else if ( StateCU_IrrigationPracticeTS.isIrrigationPracticeTSFile(InputFile_full ) ) {
+				file_type = "irrigation practice";
+				// Clear the status...
+				status.clearLog(command_phase);
+				try {
+					List<StateCU_IrrigationPracticeTS> ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
+						InputFile_full, InputStart_DateTime, InputEnd_DateTime );
+						// Get the individual time series for use by TSTool.
+						tslist = StateCU_IrrigationPracticeTS.toTSList(
+								ipylist, IncludeDataSetTotal_boolean, null, null );
+						if ( CheckData_boolean ) {
+							// Check the time series for integrity (acreage adds, etc.)...
+							checkIrrigationPracticeTS ( ipylist, status );
+						}
+				}
+				catch ( Exception e ) {
+					message = "Unexpected error reading irrigation practice file \"" + InputFile_full + "\".";
+					status.addToLog ( command_phase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
-						"Unexpected error reading irrigation practice file \"" +
-						InputFile_full + "\"", "Check location and contents." ) );
+						message, "Check the log file to troubleshoot." ) );
+					Message.printWarning ( warning_level, 
+						MessageUtil.formatMessageTag(command_tag,
+						++warning_count), routine, message );
+					Message.printWarning(2,routine,e );
+				}
 			}
-			catch ( Exception e ) {
-				status.addToLog ( command_phase,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-						"Unexpected error reading irrigation practice file \"" +
-						InputFile_full + "\"", "Check the log file to troubleshoot." ) );
+			else if ( StateCU_TS.isReportFile ( InputFile ) ) {
+				file_type = "model results";
+				tslist = StateCU_TS.readTimeSeriesList (
+					TSID, InputFile, InputStart_DateTime, InputEnd_DateTime,
+					(String)null, read_data );
 			}
-		}
-		else if ( StateCU_TS.isReportFile ( InputFile ) ) {
-			file_type = "model results";
-			tslist = StateCU_TS.readTimeSeriesList (
-				TSID, InputFile, InputStart_DateTime, InputEnd_DateTime,
-				(String)null, read_data );
-		}
-		else {
-            message = "File \"" + InputFile + "\" is not a recognized StateCU file type.  Not reading.";
-			Message.printWarning ( warning_level, 
-					MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                    "Unexpected error reading irrigation practice file \"" +
-                    InputFile_full + "\"", "Verify the that the file is a StateCU file as specified." ) );
-			throw new CommandException ( message );
-		}
+			else {
+            	message = "File \"" + InputFile + "\" is not a recognized StateCU file type.  Not reading.";
+				Message.printWarning ( warning_level, 
+						MessageUtil.formatMessageTag(command_tag,
+						++warning_count), routine, message );
+            	status.addToLog ( command_phase,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                    	"Unexpected error reading irrigation practice file \"" +
+                    	InputFile_full + "\"", "Verify the that the file is a StateCU file as specified." ) );
+				throw new CommandException ( message );
+			}
+        }
 		
 		// Print out how many time series were actually read...
 
 		int size = 0;
-		if ( tslist != null ) {
-			size = tslist.size();
-		}
+        if ( tslist != null ) {
+            size = tslist.size();
+            
+            List<String> aliasList = new ArrayList<>();
+            TS ts = null;
+            for (int i = 0; i < size; i++) {
+                ts = tslist.get(i);
+                if ( (Alias != null) && (Alias.length() > 0) ) {
+                    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, command_phase);
+                    ts.setAlias ( alias );
+                    // Search for duplicate alias and warn
+                    int aliasListSize = aliasList.size();
+                    for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
+                        if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
+                            message = "Alias \"" + alias +
+                            "\" was also used for another time series read from the StateMod file.";
+                            Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Consider using a more specific alias to uniquely identify the time series." ) );
+                        }
+                    }
+                    // Now add the new list to the alias...
+                    aliasList.add ( alias );
+                }
+            }
+        }
+
 		Message.printStatus ( 2, routine, "Read " + size + " StateCU " + file_type + " time series." );
 		
 		// If the scenario was specified set it in all the time series...
@@ -784,6 +818,7 @@ public String toString ( PropList parameters )
 	String InputEnd = parameters.getValue("InputEnd");
 	String TSID = parameters.getValue("TSID");
 	String NewScenario = parameters.getValue("NewScenario");
+	String Alias = parameters.getValue("Alias");
 	String AutoAdjust = parameters.getValue("AutoAdjust");
 	String CheckData = parameters.getValue("CheckData");
 	StringBuffer b = new StringBuffer ();
@@ -817,6 +852,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "NewScenario=\"" + NewScenario + "\"");
 	}
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
+    }
 	if ( (AutoAdjust != null) && (AutoAdjust.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

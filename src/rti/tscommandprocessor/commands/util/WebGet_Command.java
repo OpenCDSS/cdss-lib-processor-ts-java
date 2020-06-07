@@ -423,7 +423,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "See the log file for details."));
+					message, "See the log file for details.  Make sure the output file is not open in other software."));
 		throw new CommandException ( message );
 	}
 

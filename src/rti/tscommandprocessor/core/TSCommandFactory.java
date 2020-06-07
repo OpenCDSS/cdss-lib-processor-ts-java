@@ -303,6 +303,7 @@ import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.CompareFiles_Command;
 import rti.tscommandprocessor.commands.util.Continue_Command;
 import rti.tscommandprocessor.commands.util.CopyFile_Command;
+import rti.tscommandprocessor.commands.util.CreateFolder_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.Empty_Command;
 import rti.tscommandprocessor.commands.util.EndFor_Command;
@@ -577,6 +578,9 @@ throws UnknownCommandException
         commandName.equalsIgnoreCase("CreateEnsemble")) {
         // The command name changed...
         return new CreateEnsembleFromOneTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CreateFolder") ) {
+        return new CreateFolder_Command ();
     }
     else if ( commandName.equalsIgnoreCase("CreateFromList") ) {
         return new CreateFromList_Command ();

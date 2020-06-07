@@ -379,6 +379,7 @@ private void initialize ( JFrame parent, WriteStateMod_Command command )
 	// Always allow a "*" to let all time series be filled (put at end)...
 	tsids.add ( "*" );
 	__TSID_JComboBox = new SimpleJComboBox ( true );
+	__TSID_JComboBox.setToolTipText("Time series identifier to match, can use * for wildcard and ${Property}.");
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addActionListener ( this );
 	__TSID_JComboBox.addTextFieldKeyListener ( this );

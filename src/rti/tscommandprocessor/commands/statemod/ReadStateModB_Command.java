@@ -128,7 +128,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {
+	else if ( InputFile.indexOf("${") < 0 ) { // Does not contain property so can check for existence
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
@@ -151,7 +151,7 @@ throws InvalidCommandParameterException
                     message = "The input file does not exist:  \"" + adjusted_path + "\".";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
+                            new CommandLogRecord(CommandStatusType.WARNING,
                                     message, "Verify that the input file exists - may be OK if created at run time." ) );
                 }
         }
@@ -216,11 +216,13 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "IncludeDataTypes" );
+    validList.add ( "ExcludeDataTypes" );
     validList.add ( "Version" );
     validList.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -346,10 +348,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String TSID = parameters.getValue ( "TSID" );
-	String Version = parameters.getValue ( "Version" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
+    String IncludeDataTypes = parameters.getValue ( "IncludeDataTypes" );
+    String [] includeDataTypes = null;
+    if ( (IncludeDataTypes != null) && !IncludeDataTypes.isEmpty() ) {
+        includeDataTypes = IncludeDataTypes.trim().split(",");
+        // Remove surrounding whitespace.
+        for ( int i = 0; i < includeDataTypes.length; i++ ) {
+        	includeDataTypes[i] = includeDataTypes[i].trim();
+        }
+    }
+    String ExcludeDataTypes = parameters.getValue ( "ExcludeDataTypes" );
+    String [] excludeDataTypes = null;
+    if ( (ExcludeDataTypes != null) && !ExcludeDataTypes.isEmpty() ) {
+        excludeDataTypes = ExcludeDataTypes.trim().split(",");
+        // Remove surrounding whitespace.
+        for ( int i = 0; i < excludeDataTypes.length; i++ ) {
+        	excludeDataTypes[i] = excludeDataTypes[i].trim();
+        }
+    }
+	String Version = parameters.getValue ( "Version" );
 	String Alias = parameters.getValue("Alias");
 
 	DateTime InputEnd_DateTime = null;
@@ -505,77 +525,83 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
         Message.printStatus ( 2, routine, "Reading StateMod binary file \"" + InputFile_full + "\"" );
 
-		StateMod_BTS bts = null;
-		if ( (Version != null) && StringUtil.isDouble(Version) ) {
-			bts = new StateMod_BTS ( InputFile_full, Version );
-		}
-		else {
-		    bts = new StateMod_BTS ( InputFile_full );
-		}
-		List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, readData );
-		bts.close();
-		bts = null;
+       	// Can only read if ${Property} is not used
+        // - TODO smalers 2020-06-06 figure out how to run discovery with properties
+        // - this limits how time series are listed in discovery
+        if ( InputFile_full.indexOf("${") < 0 ) {
+        	StateMod_BTS bts = null;
+		    if ( (Version != null) && StringUtil.isDouble(Version) ) {
+			   	bts = new StateMod_BTS ( InputFile_full, Version );
+		    }
+		    else {
+		       	bts = new StateMod_BTS ( InputFile_full );
+		    }
+		    List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime,
+			   	includeDataTypes, excludeDataTypes, null, readData );
+		    bts.close();
+		    bts = null;
 
-        List<String> aliasList = new Vector<String>();
-        if ( tslist != null ) {
-            int tscount = tslist.size();
-            message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
-            Message.printStatus ( 2, routine, message );
-            TS ts = null;
-            for (int i = 0; i < tscount; i++) {
-                ts = (TS)tslist.get(i);
-                if ( (Alias != null) && (Alias.length() > 0) ) {
-                    // Set the alias to the desired string - this is impacted by the Location parameter
-                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts, Alias, status, commandPhase);
-                    ts.setAlias ( alias );
-                    // Search for duplicate alias and warn
-                    int aliasListSize = aliasList.size();
-                    for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
-                        if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
-                            message = "Alias \"" + alias +
-                            "\" was also used for another time series read from the StateMod output file.";
-                            Message.printWarning(log_level,
-                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Consider using a more specific alias to uniquely identify the time series." ) );
-                        }
-                    }
-                    // Now add the new list to the alias...
-                    aliasList.add ( alias );
-                }
-            }
-        }
-	    if ( commandPhase == CommandPhaseType.RUN ) {
-	        if ( tslist != null ) {
-	            // Further process the time series...
-	            // This makes sure the period is at least as long as the output period...
-	            int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
-	            if ( wc > 0 ) {
-	                message = "Error post-processing time series after read.";
-	                Message.printWarning ( warning_level, 
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-	                    message, "Report the problem to software support." ) );
-	                throw new CommandException ( message );
-	            }
+		    List<String> aliasList = new ArrayList<>();
+		    if ( tslist != null ) {
+		    	int tscount = tslist.size();
+		    	message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
+		    	Message.printStatus ( 2, routine, message );
+		    	TS ts = null;
+		    	for (int i = 0; i < tscount; i++) {
+		    		ts = (TS)tslist.get(i);
+		    		if ( (Alias != null) && (Alias.length() > 0) ) {
+		    			// Set the alias to the desired string - this is impacted by the Location parameter
+		    			String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		    				processor, ts, Alias, status, commandPhase);
+		    			ts.setAlias ( alias );
+		    			// Search for duplicate alias and warn
+		    			int aliasListSize = aliasList.size();
+		    			for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
+		    				if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
+		    					message = "Alias \"" + alias +
+		    						"\" was also used for another time series read from the StateMod output file.";
+		    					Message.printWarning(log_level,
+		    						MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+		    					status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		    						message, "Consider using a more specific alias to uniquely identify the time series." ) );
+		    				}
+		    			}
+		    			// Now add the new list to the alias...
+		    			aliasList.add ( alias );
+		    		}
+		    	}
+		    }
+		    if ( commandPhase == CommandPhaseType.RUN ) {
+	        	if ( tslist != null ) {
+	        		// Further process the time series...
+	        		// This makes sure the period is at least as long as the output period...
+	        		int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+	        		if ( wc > 0 ) {
+	        			message = "Error post-processing time series after read.";
+	        			Message.printWarning ( warning_level, 
+	        				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	        			status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	        				message, "Report the problem to software support." ) );
+	        			throw new CommandException ( message );
+	        		}
 	    
-	            // Now add the list in the processor...
+	        		// Now add the list in the processor...
 	            
-	            int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
-	            if ( wc2 > 0 ) {
-	                message = "Error adding time series after read.";
-	                Message.printWarning ( warning_level, 
-	                    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
-	                status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
-	                    message, "Report the problem to software support." ) );
-	                throw new CommandException ( message );
-	            }
+	        		int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+	        		if ( wc2 > 0 ) {
+	        			message = "Error adding time series after read.";
+	        			Message.printWarning ( warning_level, 
+	        				MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+	        			status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
+	        				message, "Report the problem to software support." ) );
+	        			throw new CommandException ( message );
+	        		}
+	        	}
 	        }
-	    }
-	    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	        setDiscoveryTSList ( tslist );
-	    }
+		    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		    	setDiscoveryTSList ( tslist );
+		    }
+        }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -619,6 +645,8 @@ public String toString ( PropList props )
 	String TSID = props.getValue("TSID");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String IncludeDataTypes = props.getValue("IncludeDataTypes");
+	String ExcludeDataTypes = props.getValue("ExcludeDataTypes");
 	String Version = props.getValue("Version");
 	String Alias = props.getValue("Alias");
 	StringBuffer b = new StringBuffer ();
@@ -645,6 +673,18 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
+	}
+	if ( (IncludeDataTypes != null) && (IncludeDataTypes.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IncludeDataTypes=\"" + IncludeDataTypes + "\"" );
+	}
+	if ( (ExcludeDataTypes != null) && (ExcludeDataTypes.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "ExcludeDataTypes=\"" + ExcludeDataTypes + "\"" );
 	}
 	if ( (Version != null) && (Version.length() > 0) ) {
 		if ( b.length() > 0 ) {

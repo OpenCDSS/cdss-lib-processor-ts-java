@@ -348,6 +348,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && TSID.indexOf("${") >= 0 ) {
+        TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );

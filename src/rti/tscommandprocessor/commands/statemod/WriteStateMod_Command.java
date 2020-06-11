@@ -359,7 +359,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	if ( TSID.indexOf("${") >= 0 ) {
+	if ( (TSID != null) && TSID.indexOf("${") >= 0 ) {
         TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded for property below

@@ -338,7 +338,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Search for:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SearchFor_JTextField = new JTextField ( 20 );
+    __SearchFor_JTextField = new JTextField ( 40 );
 	__SearchFor_JTextField.setToolTipText("Literal string to search for, can use ${Property} notation.");
     __SearchFor_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SearchFor_JTextField,
@@ -349,7 +349,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replace with:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ReplaceWith_JTextField = new JTextField ( 20 );
+    __ReplaceWith_JTextField = new JTextField ( 40 );
 	__ReplaceWith_JTextField.setToolTipText("Literal string to replace in output, can use ${Property} notation.");
     __ReplaceWith_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ReplaceWith_JTextField,

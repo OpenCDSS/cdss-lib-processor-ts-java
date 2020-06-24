@@ -23,11 +23,11 @@ NoticeEnd */
 
 package rti.tscommandprocessor.commands.util;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
@@ -193,10 +193,23 @@ private File getOutputFile ()
  * @param replaceWith literal string to replace with.
  */
 private void replaceString ( StringBuilder sb, String searchFor, String replaceWith ) {
-	int start = -1;
-	while ( (start = sb.indexOf(searchFor)) > -1 ) {
-		int end = start + searchFor.length();
-		sb.replace(start, end, replaceWith);
+	boolean useMatcher = true;
+	if ( useMatcher) {
+		Pattern pattern = Pattern.compile(searchFor);
+		Matcher matcher = pattern.matcher(sb);
+		// Replace the substring in the entire string and then replace in the StringBuilder
+		// - this is not very efficient for large strings
+		sb.replace(0, sb.length(), matcher.replaceAll(replaceWith));
+	}
+	else {
+		// Use literal strings
+		int start = 0;
+		while ( (start = sb.indexOf(searchFor,start)) > -1 ) {
+			int end = start + searchFor.length();
+			sb.replace(start, end, replaceWith);
+			// Increment start to end of filled string for next search
+			start += replaceWith.length();
+		}
 	}
 }
 
@@ -241,14 +254,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (SearchFor != null) && (SearchFor.indexOf("${") >= 0) ) {
 		SearchFor = TSCommandProcessorUtil.expandParameterValue(processor, this, SearchFor);
 	}
+	if ( SearchFor != null ) {
+		SearchFor = SearchFor.
+			replace("\\n", "\n").
+			replace("\\r", "\r").
+			replace("\\t", "\t");
+	}
 	String ReplaceWith = parameters.getValue ( "ReplaceWith" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (ReplaceWith != null) && (ReplaceWith.indexOf("${") >= 0) ) {
+		// Expand properties, will skip over if escaped with \$\{
 		ReplaceWith = TSCommandProcessorUtil.expandParameterValue(processor, this, ReplaceWith);
 	}
-	// Replace \$\{ pattern with ${ to use in output
 	if ( ReplaceWith != null ) {
-		ReplaceWith = ReplaceWith.replace("\\$\\{", "${");
+		//ReplaceWith = ReplaceWith.replace("\\$\\{", "${");
+		// Replace literal strings with equivalent internal characters
+		ReplaceWith = ReplaceWith.
+			replace("\\n", "\n").
+			replace("\\r", "\r").
+			replace("\\t", "\t");
 	}
+	// Replace known escaped strings with actual values
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 	if ( (IfInputNotFound == null) || IfInputNotFound.equals("")) {
 	    IfInputNotFound = _Warn; // Default
@@ -274,10 +299,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    File in = new File(InputFile_full);
 	    if ( in.exists() ) {
 	    	// Read the file into a StringBuilder.
+	    	Message.printStatus(2,routine,"Reading file into StringBuilder.");
     		StringBuilder sb = IOUtil.fileToStringBuilder(InputFile_full);
+	    	Message.printStatus(2,routine,"Replacing string.");
 	    	replaceString ( sb, SearchFor, ReplaceWith );
 	    	// Write the output file.
+	    	Message.printStatus(2,routine,"Writing StringBuilder to file.");
 	    	IOUtil.writeFile(OutputFile_full, sb.toString());
+	    	Message.printStatus(2,routine,"Back from writing file.");
 	        // Save the output file name.
 	        setOutputFile ( new File(OutputFile_full));
 	    }
@@ -299,7 +328,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
 	}
     catch ( Exception e ) {
-		message = "Unexpected error copying file \"" + InputFile_full + "\" to \"" +
+		message = "Unexpected error editing text file \"" + InputFile_full + "\" to \"" +
 		    OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );

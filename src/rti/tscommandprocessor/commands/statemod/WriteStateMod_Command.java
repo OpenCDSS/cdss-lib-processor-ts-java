@@ -701,7 +701,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 			else {
 			    message = "Don't know how to write StateMod output for interval \"" +
-			        ts.getIdentifier().getInterval() + "\".";
+			        ts.getIdentifier().getInterval() + "\": \"" + ts.getIdentifierString() + "\".";
 				Message.printWarning ( warning_level, 
 				MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );

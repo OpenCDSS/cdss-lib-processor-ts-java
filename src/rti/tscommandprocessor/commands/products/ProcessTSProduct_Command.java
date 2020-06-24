@@ -186,13 +186,13 @@ throws InvalidCommandParameterException
                         "Correct the view parameter to be blank, " + _True + ", or " + _False + "." ) );
 	}
 	if ( (View != null) && View.equalsIgnoreCase(_False) &&
-		((OutputFile == null) || OutputFile.isEmpty()) ) {
-        message = "The output file must be specified when View=False.";
+		(((OutputFile == null) || OutputFile.isEmpty()) && ((OutputProductFile == null) || OutputProductFile.isEmpty())) ) {
+        message = "The output file and/or output product file must be specified when View=False.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Specify an output file for the product." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message,
+                "Specify an output and/or output product file for the product." ) );
 	}
 	else if ( (OutputFile != null) && !OutputFile.isEmpty() && (OutputFile.indexOf("${") < 0) ) {
 		String working_dir = null;

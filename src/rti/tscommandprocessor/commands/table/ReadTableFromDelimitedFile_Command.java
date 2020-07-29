@@ -129,15 +129,17 @@ throws InvalidCommandParameterException
 		// Can only check if no property in path
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
+            /* Deal with this at runtime since file may be created dynamically
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The input file does not exist:  \"" + adjusted_path + "\".";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
+                        new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Verify that the input file exists - may be OK if created at run time." ) );
 			}
 			f = null;
+			*/
 		}
 		catch ( Exception e ) {
             message = "The input file:\n" +
@@ -192,7 +194,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<>(11);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );

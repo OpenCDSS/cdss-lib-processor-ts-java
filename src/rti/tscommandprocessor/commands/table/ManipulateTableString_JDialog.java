@@ -378,7 +378,8 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
     __Operator_JComboBox.setData ( DataTableStringManipulator.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
-    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    // Set to the maximum known number
+    __Operator_JComboBox.setMaximumRowCount(DataTableStringManipulator.getOperatorChoicesAsStrings().size());
     JGUIUtil.addComponent(main_JPanel, __Operator_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(

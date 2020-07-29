@@ -3156,7 +3156,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        setDiscoveryTSList ( tslist );
+    	if ( (tslist != null) && (tslist.size() > 0) ) {
+    		// Have time series to add
+    		setDiscoveryTSList ( tslist );
+    	}
+    	else if ( (Alias != null) && !Alias.isEmpty() && (Alias.indexOf("%") < 0) ) {
+    		// Add the alias
+    		// - ${property} is OK
+    		// - however, cannot handle % specifiers because they are not the same in other commands
+    		TS ts = new TS();
+    		ts.setAlias(Alias);
+    		List<TS> discoveryList = new ArrayList<>();
+    		discoveryList.add(ts);
+    		setDiscoveryTSList ( discoveryList );
+    	}
     }
 
 	// Throw CommandWarningException in case of problems.

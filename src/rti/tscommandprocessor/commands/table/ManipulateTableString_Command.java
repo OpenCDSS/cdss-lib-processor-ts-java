@@ -213,7 +213,9 @@ throws InvalidCommandParameterException
     if ( (operatorType != null) && (operatorType != DataTableStringOperatorType.TO_DOUBLE) &&
         (operatorType != DataTableStringOperatorType.TO_INTEGER) &&
         (operatorType != DataTableStringOperatorType.TO_DATE) &&
-        (operatorType != DataTableStringOperatorType.TO_DATE_TIME)) {
+        (operatorType != DataTableStringOperatorType.TO_DATE_TIME) &&
+        (operatorType != DataTableStringOperatorType.TO_LOWERCASE) &&
+        (operatorType != DataTableStringOperatorType.TO_UPPERCASE) ) {
         if ( ((InputColumn2 == null) || InputColumn2.equals("")) &&
             ((InputValue2 == null) || InputValue2.equals(""))) {
             message = "Either InputColumn2 or InputValue2 MUST be specified.";

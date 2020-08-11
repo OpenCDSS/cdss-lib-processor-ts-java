@@ -29,6 +29,7 @@ package rti.tscommandprocessor.core;
 //import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.IO.Command;
@@ -356,9 +357,10 @@ public class TSCommandFactory implements CommandFactory
 
 /**
  * List of classes for plugin commands.
+ * OK to be empty.
  */
 @SuppressWarnings("rawtypes")
-List<Class> pluginCommandClassList = null;
+List<Class> pluginCommandClassList = new ArrayList<>();
  
 /**
 Constructor.
@@ -1302,7 +1304,8 @@ throws UnknownCommandException
     // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name
     // Check for plugin commands - for now brute force based on naming convention
     
-    if ( this.pluginCommandClassList != null ) {
+   	Message.printStatus(2,routine,"Did not match built-in command, checking plugin command classes.");
+    if ( this.pluginCommandClassList.size() > 0 ) {
     	Message.printStatus(2,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
     	for ( Class c : this.pluginCommandClassList ) {
 	    	String nameFromClass = c.getSimpleName(); // Should be like CommandName_Command
@@ -1335,6 +1338,9 @@ throws UnknownCommandException
     	    	break;
 	    	}
     	}
+    }
+    else {
+    	Message.printStatus(2,routine,"Plugin class list size is 0.");
     }
     
     // Check for time series identifier

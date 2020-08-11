@@ -112,6 +112,7 @@ import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
 import riverside.datastore.DataStore;
+import riverside.datastore.WebServiceDataStore;
 import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands
@@ -161,7 +162,15 @@ public final int	INSERT_TS = 1,
 /**
 The list of commands managed by this command processor, guaranteed to be non-null.
 */
-private List<Command> __CommandList = new Vector<Command>();
+private List<Command> __CommandList = new Vector<>(); // Use vector for thread-safe
+
+/**
+List of plugin command classes, which allow third-party commands to be recognized and run.
+These are created in the TSTool main program.
+There is no need to have data in TSEngine because by the time TSEngine is used,
+commands are already created.
+*/
+private List<Class> pluginCommandClassList = new Vector<>(); // Use vector for thread-safe
 
 /**
 The name of the file to which the commands are saved, or null if not saved.
@@ -491,7 +500,8 @@ throws IOException
     }
     String line;
     Command command = null;
-    TSCommandFactory cf = new TSCommandFactory();
+    // TODO smalers 2020-08-04 does it make sense to pass in a command factory instance to this method?
+    TSCommandFactory cf = new TSCommandFactory(this.pluginCommandClassList);
     // Use this to control whether listeners should be notified for each
     // insert.  Why would this be done?  If, for example, a GUI should display
     // the progress in reading/initializing the commands.
@@ -907,26 +917,68 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass )
 }
 
 /**
-Return the list of data stores for the requested type (e.g., RiversideDBDataStore).  A non-null list
+Return the list of data stores for the requested type (e.g., HydroBaseDataStore).  A non-null list
 is guaranteed, but the list may be empty.
 @param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
 public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly )
 {   List<DataStore> dataStoreList = new ArrayList<DataStore>();
+	boolean debug = Message.isDebugOn;
+	if ( debug ) {
+		Message.printStatus(2, "getDataStoresByType",
+			"Getting datastores for class by checking " + getDataStores().size() + " datastores for:  " + dataStoreClass);
+	}
     for ( DataStore dataStore : getDataStores() ) {
-    	// If only active are requested, then status must be 0
+    	// If only active are requested, then status must be 0 (OK)
     	if ( activeOnly && (dataStore.getStatus() != 0) ) {
+    		if ( debug ) {
+    			Message.printStatus(2, "getDataStoresByType", "Datastore " + dataStore.getName() + " is not active - ignoring.");
+    		}
     		continue;
     	}
         // Check for exact match on class
+   		if ( debug ) {
+   			Message.printStatus(2, "getDataStoresByType", "Checking datastore:  " + dataStore.getClass() );
+   		}
         if ( dataStore.getClass() == dataStoreClass ) {
+        	if ( debug ) {
+        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing class for datastore:  " + dataStore.getClass() );
+        	}
             dataStoreList.add(dataStore);
         }
+        // The following will work if the objects were loaded by two different class loaders, but problems will arise later.
+        // - TODO smalers 2020-07-26 figuring this out during adding a new plugin that is causing ClassCastExceptions
+        // - it is generally best to make sure a single class loader is used to load the code
+        /*
+        else if ( ("" + dataStoreClass).equals("" + dataStore.getClass()) ) {
+        	if ( debug ) {
+        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing class strings for datastore:  " + dataStore.getClass() );
+        	}
+            dataStoreList.add(dataStore);
+        }
+        */
         // Also check for common base classes
         // TODO SAM 2012-01-31 Why not just use instanceof all the time?
         else if ( (dataStoreClass == DatabaseDataStore.class) && dataStore instanceof DatabaseDataStore ) {
+        	if ( debug ) {
+        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing base class DatabaseDataStore for datastore:  " +
+        			dataStore.getClass() );
+        	}
             dataStoreList.add(dataStore);
+        }
+        else if ( (dataStoreClass == WebServiceDataStore.class) && dataStore instanceof WebServiceDataStore ) {
+        	if ( debug ) {
+        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing base class WebServiceDataStore for datastore:  " +
+        			dataStore.getClass() );
+        	}
+            dataStoreList.add(dataStore);
+        }
+        else {
+        	if ( debug ) {
+        		Message.printStatus(2, "getDataStoresByType", "Datastore " + dataStore.getName() + " (" +
+    			  	dataStore.getClass() + ") is not a match.");
+        	}
         }
     }
     return dataStoreList;
@@ -4294,6 +4346,25 @@ private void setOutputFileList ( List<File> outputFileList )
 throws Exception
 {
 	__outputFileList = outputFileList;
+}
+
+/**
+Set the list of all plugin command classes instances known to the processor.
+These are needed by any instance of TSCommandFactory to use the plugin commands.
+The plugin commands are typically loaded by TSTool at startup (for example)
+because it knows how to deal with application folders where plugins are loaded.
+@param pluginCommandClasses list of DataStore to use in the processor
+@param append if True, append to the internal list.  Otherwise create a new list.
+*/
+public void setPluginCommandClasses ( List<Class> pluginCommandClasses, boolean append )
+{
+	// Add to an internal list to protect from manipulation.
+	if ( !append ) {
+		this.pluginCommandClassList = new Vector<>();
+	}
+    for ( Class c : pluginCommandClasses ) {
+		this.pluginCommandClassList.add(c);
+    }
 }
 
 /**

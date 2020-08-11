@@ -129,6 +129,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an alias." ) );
 	}
+	/* Default is all available time series
+	 * TODO smalers 2020-08-04 remove once used for awhile
 	if ( ((TSID == null) || TSID.isEmpty()) && ((EnsembleID == null) || EnsembleID.isEmpty()) ) {
         message = "The time series identifier or ensemble identifier must be specified.";
         warning += "\n" + message;
@@ -136,6 +138,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series or ensemble identifier." ) );
 	}
+	*/
 	if ( ((TSID != null) && !TSID.isEmpty()) && ((EnsembleID != null) && !EnsembleID.isEmpty()) ) {
         message = "The time series identifier and ensemble identifier cannot both be specified.";
         warning += "\n" + message;
@@ -603,6 +606,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String Alias = parameters.getValue ( "Alias" ); // Expansion handled below
 	String TSList = parameters.getValue ( "TSList" );
+	if ( (TSList == null) || TSList.isEmpty() ) {
+		TSList = "" + TSListType.ALL_TS; // Default
+	}
 	String TSID = parameters.getValue ( "TSID" );
 	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
@@ -750,15 +756,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
+            Message.printWarning(log_level, routine, e);
             status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
         }
+        Object o_TSList = null;
         if ( bean == null ) {
             Message.printStatus ( 2, routine, "Bean is null.");
         }
-        PropList bean_PropList = bean.getResultsPropList();
-        Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+        else {
+        	PropList bean_PropList = bean.getResultsPropList();
+        	o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+        }
         if ( o_TSList == null ) {
             message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

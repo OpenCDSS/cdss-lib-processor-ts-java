@@ -655,8 +655,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Do the setting...
 		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Replacing value in " +
             ts.getIdentifier().toStringAliasAndTSID() );
-		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier()+ "\" with new value " +
-		    NewValue + ", action=\"" + Action + "\"." );
+		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier() +
+			"\" with NewValue=" + NewValue_double +
+			", SetStart=" + SetStart_DateTime + ", SetEnd=" + SetEnd_DateTime +
+			", AnalysisWindowStart=" + AnalysisWindowStart_DateTime + ", AnalysisWindowEnd=" + AnalysisWindowEnd_DateTime +
+			", SetFlag=" + SetFlag + ", SetFlagDescription=" + SetFlagDesc +
+			" Action=\"" + Action + "\"." );
 		try {
             TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
                 NewValue_double, MatchFlag, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SetFlag, SetFlagDesc );

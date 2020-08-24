@@ -71,7 +71,6 @@ import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSLivestockStats_InputFi
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_CUPopulation_InputFilter_JPanel;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_GroundWater_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel;
@@ -1203,24 +1202,6 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
             "Unable to initialize input filter for HydroBase wells - old database?" );
         Message.printWarning ( 3, routine, e );
     }
-
-    try {
-        // Water information sheets...
-        HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel panel = new
-            HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ( dataStore );
-        panel.setName(dataStore.getName() + "_WIS" );
-        JGUIUtil.addComponent(parent_JPanel, panel,
-            x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-        inputFilterJPanelList.add ( panel );
-        panel.addEventListeners ( this );
-        panel.setVisible ( visibility );
-    }
-    catch ( Exception e ) {
-        // WIS tables probably not in HydroBase...
-        Message.printWarning ( 2, routine,
-        "Unable to initialize input filter for HydroBase WIS (" + e + ")." );
-        Message.printWarning ( 3, routine, e );
-    }
 }
 
 /**
@@ -1289,8 +1270,7 @@ private void populateDataTypeChoices ( HydroBaseDMI dmi )
         HydroBase_Util.DATA_TYPE_DEMOGRAPHICS_ALL |
         HydroBase_Util.DATA_TYPE_HARDWARE |
         HydroBase_Util.DATA_TYPE_STATION_ALL |
-        HydroBase_Util.DATA_TYPE_STRUCTURE_ALL |
-        HydroBase_Util.DATA_TYPE_WIS,
+        HydroBase_Util.DATA_TYPE_STRUCTURE_ALL,
         true ); // Add notes
     __DataType_JComboBox.setData ( dataTypes );
     // Select the default...
@@ -1310,8 +1290,7 @@ private void populateIntervalChoices ( HydroBaseDMI dmi )
         HydroBase_Util.DATA_TYPE_DEMOGRAPHICS_ALL |
         HydroBase_Util.DATA_TYPE_HARDWARE |
         HydroBase_Util.DATA_TYPE_STATION_ALL |
-        HydroBase_Util.DATA_TYPE_STRUCTURE_ALL |
-        HydroBase_Util.DATA_TYPE_WIS );
+        HydroBase_Util.DATA_TYPE_STRUCTURE_ALL );
     __Interval_JComboBox.setData ( timeSteps );
     // Select monthly as the default if available...
     if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox,"Month", JGUIUtil.NONE, null, null ) ) {
@@ -1846,17 +1825,6 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
                 HydroBase_Util.isGroundWaterWellTimeSeriesDataType ( hbdmi, hbMeasType) ) {
                 matched = true;
                 Message.printStatus(2, routine, "Setting groundwater wells input filter panel visible.");
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ) {
-            // Water Information Sheet time series
-            HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isWISTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting WIS input filter panel visible.");
             }
         }
         // If the panel was matched, set it visible...

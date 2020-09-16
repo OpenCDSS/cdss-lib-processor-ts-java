@@ -81,6 +81,7 @@ private JTextField __SkipLines_JTextField = null;
 // FIXME SAM 2008-01-27 Enable later
 //private JTextField __SkipColumns_JTextField = null;
 private JTextField __HeaderLines_JTextField = null;
+private JTextField __ColumnNames_JTextField = null;
 private JTextField __DateTimeColumns_JTextField = null;
 private JTextField __DoubleColumns_JTextField = null;
 private JTextField __IntegerColumns_JTextField = null;
@@ -191,6 +192,7 @@ private void checkInput ()
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
+	String ColumnNames = __ColumnNames_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
 	String DoubleColumns  = __DoubleColumns_JTextField.getText().trim();
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
@@ -216,6 +218,9 @@ private void checkInput ()
 	//}
 	if ( HeaderLines.length() > 0 ) {
 		props.set ( "HeaderLines", HeaderLines );
+	}
+	if ( ColumnNames.length() > 0 ) {
+		props.set ( "ColumnNames", ColumnNames );
 	}
     if ( DateTimeColumns.length() > 0 ) {
         props.set ( "DateTimeColumns", DateTimeColumns );
@@ -257,6 +262,7 @@ private void commitEdits ()
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
+	String ColumnNames = __ColumnNames_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
 	String DoubleColumns  = __DoubleColumns_JTextField.getText().trim();
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
@@ -269,6 +275,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SkipLines", SkipLines );
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderLines", HeaderLines );
+	__command.setCommandParameter ( "ColumnNames", ColumnNames );
 	__command.setCommandParameter ( "DateTimeColumns", DateTimeColumns );
 	__command.setCommandParameter ( "DoubleColumns", DoubleColumns );
 	__command.setCommandParameter ( "IntegerColumns", IntegerColumns );
@@ -413,12 +420,24 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File line containing column names:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HeaderLines_JTextField = new JTextField (10);
+	__HeaderLines_JTextField.setToolTipText("Non-comment line number 1+ containing column names, or range 1-N if multiple lines.");
 	__HeaderLines_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __HeaderLines_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel,
    	    new JLabel ( "Optional - specify line number 1+ (default=first row if double quoted)." ),
 		//"Specify as a range (e.g., \"5-7\")."),
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ColumnNames_JTextField = new JTextField (20);
+	__ColumnNames_JTextField.setToolTipText("Column names, separated by commas, if not read from the file header.");
+	__ColumnNames_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __ColumnNames_JTextField,
+		1, y, 2, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel,
+   	    new JLabel ( "Optional - column names if not read from file." ),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time columns:"),
@@ -567,6 +586,7 @@ private void refresh ()
 	String SkipLines = "";
 	//String SkipColumns = "";
 	String HeaderLines = "";
+	String ColumnNames = "";
 	String DateTimeColumns = "";
 	String DoubleColumns = "";
 	String IntegerColumns = "";
@@ -582,6 +602,7 @@ private void refresh ()
 		SkipLines = props.getValue ( "SkipLines" );
 		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderLines = props.getValue ( "HeaderLines" );
+		ColumnNames = props.getValue ( "ColumnNames" );
 		DateTimeColumns = props.getValue ( "DateTimeColumns" );
 		DoubleColumns = props.getValue ( "DoubleColumns" );
 		IntegerColumns = props.getValue ( "IntegerColumns" );
@@ -605,6 +626,9 @@ private void refresh ()
 		//}
 		if ( HeaderLines != null ) {
 			__HeaderLines_JTextField.setText ( HeaderLines );
+		}
+		if ( ColumnNames != null ) {
+			__ColumnNames_JTextField.setText ( ColumnNames );
 		}
         if ( DateTimeColumns != null ) {
             __DateTimeColumns_JTextField.setText ( DateTimeColumns );
@@ -632,6 +656,7 @@ private void refresh ()
 	SkipLines = __SkipLines_JTextField.getText().trim();
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderLines = __HeaderLines_JTextField.getText().trim();
+	ColumnNames = __ColumnNames_JTextField.getText().trim();
 	DateTimeColumns = __DateTimeColumns_JTextField.getText().trim();
 	DoubleColumns = __DoubleColumns_JTextField.getText().trim();
 	IntegerColumns = __IntegerColumns_JTextField.getText().trim();
@@ -645,6 +670,7 @@ private void refresh ()
 	props.add ( "SkipLines=" + SkipLines );
 	//props.add ( "SkipColumns=" + SkipColumns );
 	props.add ( "HeaderLines=" + HeaderLines );
+	props.add ( "ColumnNames=" + ColumnNames );
 	props.add ( "DateTimeColumns=" + DateTimeColumns );
 	props.add ( "DoubleColumns=" + DoubleColumns );
 	props.add ( "IntegerColumns=" + IntegerColumns );

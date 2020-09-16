@@ -69,6 +69,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeZoneDefaultType;
 
 /**
@@ -366,9 +367,12 @@ throws FileNotFoundException, IOException
                 return null;
             }
             try {
+            	StopWatch sw = new StopWatch();
+            	sw.start();
             	Message.printStatus(2,routine,"Creating in-memory workbook...");
                 wb = WorkbookFactory.create(inp);
-            	Message.printStatus(2,routine,"done creating in-memory workbook.");
+                sw.stop();
+            	Message.printStatus(2,routine,"done creating in-memory workbook (took " + sw.getMilliseconds() + " ms).");
             }
             catch ( InvalidFormatException e ) {
                 problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );

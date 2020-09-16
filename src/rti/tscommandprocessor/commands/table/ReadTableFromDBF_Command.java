@@ -129,6 +129,7 @@ throws InvalidCommandParameterException
 	else if ( InputFile.indexOf("${") < 0 ) {
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
+            /* Don't check for existence during discovery.  Do it at runtime because file may be dynamically created.
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The input file does not exist:  \"" + adjusted_path + "\".";
@@ -138,6 +139,7 @@ throws InvalidCommandParameterException
                                 message, "Verify that the input file exists - may be OK if created at run time." ) );
 			}
 			f = null;
+			*/
 		}
 		catch ( Exception e ) {
             message = "The input file:\n" +

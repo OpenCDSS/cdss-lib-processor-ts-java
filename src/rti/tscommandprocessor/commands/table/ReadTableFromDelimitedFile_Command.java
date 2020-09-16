@@ -27,7 +27,6 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -83,7 +82,8 @@ throws InvalidCommandParameterException
     String InputFile = parameters.getValue ( "InputFile" );
 	//String SkipLines = parameters.getValue ( "SkipLines" );
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
-	//String HeaderLines = parameters.getValue ( "HeaderLines" );
+	String HeaderLines = parameters.getValue ( "HeaderLines" );
+	String ColumnNames = parameters.getValue ( "ColumnNames" );
 	String warning = "";
     String message;
     
@@ -125,33 +125,6 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else if ( InputFile.indexOf("${") < 0 ) {
-		// Can only check if no property in path
-        try {
-            String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
-            /* Deal with this at runtime since file may be created dynamically
-			File f = new File ( adjusted_path );
-			if ( !f.exists() ) {
-                message = "The input file does not exist:  \"" + adjusted_path + "\".";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Verify that the input file exists - may be OK if created at run time." ) );
-			}
-			f = null;
-			*/
-		}
-		catch ( Exception e ) {
-            message = "The input file:\n" +
-            "    \"" + InputFile +
-            "\"\ncannot be adjusted using the working directory:\n" +
-            "    \"" + working_dir + "\".";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that input file and working directory paths are compatible." ) );
-		}
-	}
 
     /* FIXME add checks for columns
 	if ( (Columns == null) || (Columns.length() == 0) ) {
@@ -183,24 +156,47 @@ throws InvalidCommandParameterException
                                     message, "Specify the column as an integer >= 1." ) );
 				}
 				else {
-                    // Decrement by one to make zero-referended.
+                    // Decrement by one to make zero-referenced.
 					__Columns_intArray[i] = StringUtil.atoi(token) - 1;
 				}
 			}
 		}
 	}
     */
+
+	int paramCount = 0;
+    if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
+    	++paramCount;
+    	/* TODO smalers 2020-09-12 need to check that header lines are valid
+        message = ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the table identifier." ) );
+                */
+    }
+    if ( (ColumnNames != null) && !ColumnNames.isEmpty() ) {
+    	++paramCount;
+    }
+    if ( paramCount == 2 ) {
+        message = "Only one of HeaderLines and ColumnNames parameter can be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify HeaderLines or ColumnNames, but not both." ) );
+    }
  
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(13);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );
     validList.add ( "SkipLines" );
     validList.add ( "SkipColumns" );
     validList.add ( "HeaderLines" );
+    validList.add ( "ColumnNames" );
     validList.add ( "DateTimeColumns" );
     validList.add ( "DoubleColumns" );
     validList.add ( "IntegerColumns" );
@@ -335,6 +331,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String HeaderLines = parameters.getValue ( "HeaderLines" );
 	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
+	String ColumnNames = parameters.getValue ( "ColumnNames" );
+	if ( (ColumnNames != null) && (ColumnNames.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		ColumnNames = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnNames);
+	}
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
 	if ( (DateTimeColumns != null) && (DateTimeColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
@@ -443,6 +443,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
         if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
             props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
+        }
+        if ( (ColumnNames != null) && !ColumnNames.isEmpty() ) {
+            props.set ( "ColumnNames=" + ColumnNames);
         }
         if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
             props.set ( "DateTimeColumns=" + DateTimeColumns);
@@ -554,6 +557,7 @@ public String toString ( PropList props )
 	String SkipLines = props.getValue("SkipLines");
 	String SkipColumns = props.getValue("SkipColumns");
 	String HeaderLines = props.getValue("HeaderLines");
+	String ColumnNames = props.getValue("ColumnNames");
 	String DateTimeColumns = props.getValue("DateTimeColumns");
 	String DoubleColumns = props.getValue("DoubleColumns");
 	String IntegerColumns = props.getValue("IntegerColumns");
@@ -596,6 +600,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "HeaderLines=\"" + HeaderLines + "\"" );
+	}
+	if ( (ColumnNames != null) && (ColumnNames.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "ColumnNames=\"" + ColumnNames + "\"" );
 	}
 	if ( (DateTimeColumns != null) && (DateTimeColumns.length() > 0) ) {
 		if ( b.length() > 0 ) {

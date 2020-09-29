@@ -31,5 +31,6 @@
 	<classpathentry kind="lib" path="lib/WaterML2.0/waterml20.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-rest-java"/>
 	<classpathentry kind="lib" path="lib/PostgreSQL_JDBC/postgresql-42.2.9.jar"/>
+	<classpathentry kind="lib" path="lib/SQLite_JDBC/sqlite-jdbc-3.32.3.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

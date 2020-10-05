@@ -35,6 +35,7 @@ import javax.swing.SwingConstants;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -50,6 +51,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 //import RTi.DMI.DMI;
@@ -72,6 +74,7 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __StatusMessage_JTextField = null;
+private SimpleJComboBox	__IfNotFound_JComboBox =null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -113,6 +116,10 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+	else {
+		// Other event
+		refresh();
+	}
 }
 
 /**
@@ -145,11 +152,15 @@ private void checkInput ()
         props.set ( "DataStore", "" );
     }
     String StatusMessage = __StatusMessage_JTextField.getText().trim();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( StatusMessage.length() > 0 ) {
         props.set ( "StatusMessage", StatusMessage );
     }
+	if ( IfNotFound.length() > 0 ) {
+		props.set ( "IfNotFound", IfNotFound );
+	}
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -168,8 +179,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
     String StatusMessage = __StatusMessage_JTextField.getText().trim();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "StatusMessage", StatusMessage );
+	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
 /**
@@ -220,16 +233,22 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
         "This command closes a database datastore connection."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "This functionality is used in testing to evaluate response to lost data connections."),
+        "This command is used to manage datastores that are dynamically created, such as in-memory databases."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "This command is also used in testing to evaluate response to lost data connections."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The command also can be used to close database connections when resources are limited."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Once closed, the database connection will not be available unless the datastore is capable of automatically reconnecting."),
+        "Once closed, the database connection will not be available unless the datastore is capable of automatically reconnecting, or is reopened."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "All database datastores are listed below, even those that are closed, to allow command files to be edited regardless of current state."),
+        "All database datastores that have been previously opened are listed below (even those that are currently closed),"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "to allow command files to be edited regardless of current state."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -242,17 +261,53 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStore_JComboBox = new SimpleJComboBox ( false );
+    // Allow editing to deal with dynamic databases like SQLite
+    __DataStore_JComboBox = new SimpleJComboBox ( true );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class, false );
     List<String> dataStoreChoices = new ArrayList<String>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	dataStoreChoices.add ( dataStore.getName() );
+    boolean found = false;
+    String parameterDataStore = __command.getCommandParameters().getValue("DataStore");
+    if ( (parameterDataStore != null) && !parameterDataStore.isEmpty() ) {
+    	for ( DataStore dataStore: dataStoreList ) {
+    		dataStoreChoices.add ( dataStore.getName() );
+    		if ( dataStore.getName().equals(parameterDataStore) ) {
+    			found = true;
+    		}
+    	}
+    	if ( !found ) {
+    		dataStoreChoices.add(parameterDataStore);
+    		Collections.sort(dataStoreChoices);
+    	}
+    }
+    /* TODO smalers 2020-10-04 don't need this.  Just add the datastore from this command
+     * because this command may be before any datastore is opened such as with NewSQLiteDatabase().
+    // Also get database datastore names from discovery
+    // - TODO smalers evaluate moving this to utility code once figure it out
+    List<String> dsnames = TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand(
+         (TSCommandProcessor)__command.getCommandProcessor(), __command, true, false );
+    for ( String dsname : dsnames ) {
+    	// Add to the active list
+    	boolean found = false;
+    	for ( String dataStoreChoice : dataStoreChoices ) {
+    		if ( dsname.equals(dataStoreChoice) ) {
+    			// Matches what is already in the list
+    			found = true;
+    			break;
+    		}
+     	}
+    	if ( !found ) {
+    		// Add to the choices
+    		dataStoreChoices.add(dsname);
+    	}
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	dataStoreChoices.add ( "" );
     }
+    // Sort in case any were added above
+    Collections.sort(dataStoreChoices);
+    */
     __DataStore_JComboBox.setData(dataStoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
@@ -269,6 +324,23 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - status message to set for datastore."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfNotFound_JComboBox.setData(notFoundChoices);
+	__IfNotFound_JComboBox.select ( 0 );
+	__IfNotFound_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - action if datastore not found (default=" + __command._Warn + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -356,11 +428,13 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
     String DataStore = "";
     String StatusMessage = "";
+	String IfNotFound = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
 		StatusMessage = props.getValue ( "StatusMessage" );
+		IfNotFound = props.getValue ( "IfNotFound" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -381,6 +455,22 @@ private void refresh ()
         if ( StatusMessage != null ) {
             __StatusMessage_JTextField.setText ( StatusMessage );
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
+			__IfNotFound_JComboBox.select ( IfNotFound );
+		}
+		else {
+            if ( (IfNotFound == null) || IfNotFound.equals("") ) {
+				// New command...select the default...
+				__IfNotFound_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IfNotFound parameter \"" +	IfNotFound +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 	}
 	// Regardless, reset the command from the fields...
     DataStore = __DataStore_JComboBox.getSelected();
@@ -388,9 +478,11 @@ private void refresh ()
         DataStore = "";
     }
     StatusMessage = __StatusMessage_JTextField.getText().trim();
+	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
     props.add ( "StatusMessage=" + StatusMessage );
+	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

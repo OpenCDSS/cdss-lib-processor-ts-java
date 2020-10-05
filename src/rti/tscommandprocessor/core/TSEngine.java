@@ -5868,7 +5868,9 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
     if ( Message.isDebugOn ) {
     	Message.printDebug(1, routine, "Setting datastore \"" + dataStore.getName() + "\"" );
     }
+    int i = -1; // Datastore position
     for ( DataStore ds : __dataStoreList ) {
+    	++i;
         if ( ds.getName().equalsIgnoreCase(dataStore.getName())){
             // The input name of the current instance matches that of the instance in the list.
             // Replace the instance in the list by the new instance...
@@ -5881,6 +5883,9 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
                         	// - if there was a configuration error then a datastore may exist without open DMI
                         	dmi.close();
                         }
+                        // Replace the datastore and return
+                        __dataStoreList.set(i, dataStore);
+                        return;
                     }
                 }
                 catch ( Exception e ) {

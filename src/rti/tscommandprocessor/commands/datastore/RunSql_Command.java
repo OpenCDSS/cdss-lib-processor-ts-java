@@ -98,11 +98,11 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
     if ( (DataStore == null) || (DataStore.length() == 0) ) {
-        message = "The data store must be specified.";
+        message = "The datastore must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store." ) );
+                message, "Specify the datastore." ) );
     }
     int specCount = 0;
     if ( (Sql != null) && !Sql.equals("") ) {
@@ -115,18 +115,18 @@ throws InvalidCommandParameterException
         ++specCount;
     }
     if ( specCount == 0 ) {
-        message = "The data store table, SQL statement, SQL file, or procedure must be specified.";
+        message = "The datastore table, SQL statement, SQL file, or procedure must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table, SQL statement, SQL file, or procedure." ) );
+                message, "Specify the datastore table, SQL statement, SQL file, or procedure." ) );
     }
     if ( specCount > 1 ) {
-        message = "Onely one of the data store table, SQL statement, SQL file, or procedure can be specified.";
+        message = "Onely one of the datastore table, SQL statement, SQL file, or procedure can be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table, SQL statement, or SQL file." ) );
+                message, "Specify the datastore table, SQL statement, or SQL file." ) );
     }
     String SqlFile_full = null;
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
@@ -232,12 +232,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     HashMap<String,String> procedureParameters = StringUtil.parseDictionary(ProcedureParameters);
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );
     
-    // Find the data store to use...
+    // Find the datastore to use...
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
         DataStore, DatabaseDataStore.class );
     DMI dmi = null;
     if ( dataStore == null ) {
-        message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+        message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -448,7 +448,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the database for data store \"" + DataStore +
+                message, "Verify that the database for datastore \"" + DataStore +
                 "\" is appropriate for SQL statement: \"" + sqlString + "\"." ) );
         Message.printWarning ( 3, routine, e );
     }

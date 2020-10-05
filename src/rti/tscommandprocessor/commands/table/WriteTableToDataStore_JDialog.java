@@ -152,10 +152,18 @@ private void actionPerformedDataStoreSelected ( )
         return;
     }
     __dataStore = getSelectedDataStore();
-    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
-    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
-    populateDataStoreTableChoices ( __dmi );
+    if ( __dataStore == null ) {
+    	// May be the case for dynamic datastores such as SQLite
+    	// - clear the table list
+    	__DataStoreTable_JComboBox.removeAll();
+    	__DataStoreTable_JComboBox.select ( null );
+    }
+    else {
+    	__dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    	//Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    	// Now populate the data type choices corresponding to the data store
+    	populateDataStoreTableChoices ( __dmi );
+    }
 }
 
 /**
@@ -187,7 +195,10 @@ private void checkInput ()
     if ( (DataStore != null) && DataStore.length() > 0 ) {
         props.set ( "DataStore", DataStore );
         __dataStore = getSelectedDataStore();
-        __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        if ( __dataStore != null ) {
+        	// May occur for dynamic databases such as SQLite
+        	__dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        }
     }
     else {
         props.set ( "DataStore", "" );
@@ -309,7 +320,8 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    // Allow edit to table list because may be created dynamically and difficult to know ahead of time.
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -341,7 +353,8 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStore_JComboBox = new SimpleJComboBox ( false );
+    // Allow edit to datastore list because may be created dynamically and difficult to know ahead of time.
+    __DataStore_JComboBox = new SimpleJComboBox ( true );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
     List<String> datastoreChoices = new ArrayList<String>();
@@ -364,7 +377,8 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore table/view:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStoreTable_JComboBox = new SimpleJComboBox ( false );
+    // Allow edit to table list because may be created dynamically and difficult to know ahead of time.
+    __DataStoreTable_JComboBox = new SimpleJComboBox ( true );
     __DataStoreTable_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStoreTable_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -416,7 +430,7 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     JGUIUtil.addComponent(main_JPanel, __WriteMode_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - how to write (default=" +
-        DMIWriteModeType.INSERT_UPDATE + ")."), 
+        DMIWriteModeType.UPDATE_INSERT + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -503,12 +517,12 @@ Populate the data type list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
 private void populateDataStoreTableChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreTableChoices";
+{   String routine = getClass().getSimpleName() + ".populateDataStoreTableChoices";
     //__TableID_JTextField.removeAll ();
     List<String> tableList = null;
-    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new Vector<>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
-        tableList = new Vector<String>();
+        tableList = new Vector<>();
     }
     else {
         try {
@@ -521,7 +535,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
         }
     }
     if ( tableList == null ) {
-        tableList = new Vector<String>();
+        tableList = new Vector<>();
     }
     // Always add a blank option at the start to help with initialization
     tableList.add ( 0, "" );

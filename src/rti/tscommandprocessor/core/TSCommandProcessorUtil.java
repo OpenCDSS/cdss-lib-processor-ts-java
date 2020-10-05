@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
+import RTi.DMI.DatabaseDataStore;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
@@ -74,6 +75,8 @@ import freemarker.template.Configuration;
 import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
 import freemarker.template.Version;
+import riverside.datastore.DataStore;
+import riverside.datastore.WebServiceDataStore;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
@@ -1033,6 +1036,160 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 		Message.printWarning(3, routine, e );
 	}
 	return true;
+
+}
+
+/**
+Return the datastore names for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of names to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which datastore names are needed.
+@param includeDatabases indicate whether to include DatabaseDataStore names.
+@param includeWebServices indicate whether to include WebServiceDataStore names.
+@return a list of String containing the datastore names, or an empty list.
+*/
+public static List<String> getDataStoreNamesFromCommandsBeforeCommand(
+	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices )
+{	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand";
+	// Get the position of the command in the list...
+	int pos = processor.indexOf(command);
+	if ( Message.isDebugOn ) {
+	    Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+	}
+	if ( pos < 0 ) {
+		// Just return a blank list...
+		return new ArrayList<String>();
+	}
+    // Find the commands above the position...
+	List<Command> commands = getCommandsBeforeIndex ( processor, pos );
+	// Get the datastore names from the commands...
+	return getDataStoreNamesFromCommands ( commands, includeDatabases, includeWebServices, true );
+}
+
+/**
+Get a list of datastore names from a list of commands.
+These strings are suitable for drop-down lists, etc.
+Datastore names are determined as follows:
+<ol>
+<li>    Commands that implement ObjectListProvider have their getObjectList(DataStore) method called.
+        The datastore names from the datastore list are returned.</li>
+</ol>
+@param commands commands to search, in order of first command to process to last.
+@param includeDatabases indicate whether to include DatabaseDataStore names.
+@param includeWebServices indicate whether to include WebServiceDataStore names.
+@param sort Should output be sorted by names.
+@return list of datastore names or an empty non-null list if nothing found.
+*/
+protected static List<String> getDataStoreNamesFromCommands ( List<Command> commands,
+	boolean includeDatabases, boolean includeWebServices, boolean sort )
+{	if ( commands == null ) {
+		return new ArrayList<String>();
+	}
+	List<String> namesFromCommands = new ArrayList<>(); // The DataStore names
+	List<DataStore> dsFromCommands = new ArrayList<>(); // The DataStores, used to store each TSIdent
+	int size = commands.size();
+	String commandString = null;
+	boolean in_comment = false;
+	Object command_o = null; // Command as object
+	Command command; // Command as Command instance
+	String commandName = null;
+	for ( int i = 0; i < size; i++ ) {
+		command_o = commands.get(i);
+		command = null;
+		commandName = ""; // Only care about instances of Free() commands below
+		if ( command_o instanceof Command ) {
+			commandString = command_o.toString().trim();
+			command = (Command)command_o;
+			commandName = command.getCommandName();
+		}
+		if ( (commandString == null) || commandString.startsWith("#") || (commandString.length() == 0) ) {
+			// Make sure comments are ignored...
+			continue;
+		}
+		if ( commandString.startsWith("/*") ) {
+			in_comment = true;
+			continue;
+		}
+		else if ( commandString.startsWith("*/") ) {
+			in_comment = false;
+			continue;
+		}
+		if ( in_comment ) {
+			continue;
+		}
+        if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
+            // Try to get the list of identifiers using the interface method.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias (takes priority over TSID) - probably good.
+        	Object o = ((ObjectListProvider)command_o).getObjectList ( DataStore.class );
+            List<DataStore> list = null;
+            if ( o != null ) {
+            	@SuppressWarnings("unchecked")
+				List<DataStore> list0 = (List<DataStore>)o;
+            	list = list0;
+            }
+            if ( list != null ) {
+                int dssize = list.size();
+                DataStore ds;
+                for ( int ids = 0; ids < dssize; ids++ ) {
+                    ds = list.get(ids);
+                    if ( ds == null ) {
+                    	// This should not happen and is symptomatic of a command not fully handling a
+                    	// time series in discovery mode, more of an issue with ${property} use in parameters.
+                    	// Log a message so the issue can be tracked down
+                    	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+                    	Message.printWarning(3, routine,
+                    		"Null datastore in discovery mode - need to check code for command to improve handling: " + commandString);
+                    }
+                    else {
+                    	boolean doInclude = false;
+                    	if ( !includeWebServices && !includeWebServices ) {
+                    		// Default is to always include
+                    		doInclude = true;
+                    	}
+                    	if ( includeDatabases && (ds instanceof DatabaseDataStore) ) {
+                    		doInclude = true;
+                    	}
+                    	if ( includeWebServices && (ds instanceof WebServiceDataStore) ) {
+                    		doInclude = true;
+                    	}
+                    	if ( doInclude ) {
+                    		// Use the name for the returned identifier.
+                    		namesFromCommands.add ( ds.getName() );
+                    		dsFromCommands.add( ds );
+                    	}
+                    }
+                }
+            }
+        }
+        // TODO smalers 2020-10-04 need to figure out need to handle CloseDataStore
+        /*
+		else if ( commandName.equalsIgnoreCase("Free") ) {
+		    // Need to remove matching time series identifiers that are in the list
+		    // (otherwise editing commands will show extra time series as of that point in the workflow, which will
+		    // be confusing and may lead to errors, e.g., if consistent units are expected but the units are
+		    // not consistent).
+		    // First get the matching time series for the Free() command parameters
+		    Command commandInst = (Command)command_o;
+		    PropList parameters = commandInst.getCommandParameters();
+		    // TODO SAM 2011-04-04 Need to get ensembles above command
+		    List<TSEnsemble> ensemblesFromCommands = new ArrayList<TSEnsemble>();
+		    TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tsFromCommands, ensemblesFromCommands,
+	            parameters.getValue("TSList"), parameters.getValue("TSID"),
+	            parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
+		    // Loop through the list of matching time series and remove identifiers at the matching positions
+		    // (the time series list and identifier lists should match in position).
+		    int [] pos = tsToProcess.getTimeSeriesPositions();
+		    //Message.printStatus(2,"", "Detected Free() command, have " + pos.length + " time series to check." ); 
+		    // Loop backwards so that position values don't need to be adjusted.
+		    for ( int ipos = pos.length - 1; ipos >= 0; ipos--  ) {
+	            //Message.printStatus(2,"", "Removing time series " + pos[ipos] + ": " + tsidsFromCommands.get(pos[ipos]));
+		        dsFromCommands.remove(pos[ipos]);
+		        idsFromCommands.remove(pos[ipos]);
+		    }
+		}
+		*/
+	}
+	return namesFromCommands;
 }
 
 /**

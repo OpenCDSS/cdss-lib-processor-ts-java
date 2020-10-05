@@ -62,6 +62,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.ResultSetToDataTableFactory;
+import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -388,12 +389,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         DataStore, DatabaseDataStore.class );
     DMI dmi = null;
     if ( dataStore == null ) {
-        message = "Could not get data store for name \"" + DataStore + "\" to query data.";
-        Message.printWarning ( 2, routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that a database connection has been opened with name \"" +
-                DataStore + "\"." ) );
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
+    		Message.printWarning ( 2, routine, message );
+    		status.addToLog ( commandPhase,
+    			new CommandLogRecord(CommandStatusType.FAILURE,
+    				message, "Verify that a database connection has been opened with name \"" +
+    				DataStore + "\"." ) );
+    	}
     }
     else {
     	DatabaseDataStore dbds = (DatabaseDataStore)dataStore;
@@ -702,6 +705,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         finally {
             DMI.closeResultSet(rs);
+        }
+        // Do some final checks, which may be indicative of database not being fully supported.
+        int numStringColsWithZeroWidth = 0;
+        int numStringCols = 0;
+        for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+        	TableField col = table.getTableField(icol);
+        	if ( col.getDataType() == TableField.DATA_TYPE_STRING ) {
+        		++numStringCols;
+        		if ( col.getWidth() == 0 ) {
+        			++numStringColsWithZeroWidth;
+        		}
+        	}
+        }
+        if ( numStringCols == numStringColsWithZeroWidth ) {
+            message = "All string columns have zero width in table - columns will not display properly.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Report the problem to software support - database metadata should return the width." ) );
         }
 	    // Set the property indicating the number of rows in the table
         if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {

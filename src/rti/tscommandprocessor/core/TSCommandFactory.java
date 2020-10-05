@@ -148,6 +148,10 @@ import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcelBlock_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcel_Command;
 
+// SQLite commands.
+
+import rti.tscommandprocessor.commands.sqlite.NewSQLiteDatabase_Command;
+
 // StateCU commands.
 import rti.tscommandprocessor.commands.statecu.ReadStateCU_Command;
 import rti.tscommandprocessor.commands.statecu.ReadStateCUB_Command;
@@ -785,6 +789,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("NewPatternTimeSeries") ) {
         return new NewPatternTimeSeries_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("NewSQLiteDatabase") ) {
+        return new NewSQLiteDatabase_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("NewStatisticEnsemble") ) {
         return new NewStatisticEnsemble_Command ();
     }
@@ -1307,7 +1314,7 @@ throws UnknownCommandException
    	Message.printStatus(2,routine,"Did not match built-in command, checking plugin command classes.");
     if ( this.pluginCommandClassList.size() > 0 ) {
     	Message.printStatus(2,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
-    	for ( Class c : this.pluginCommandClassList ) {
+    	for ( @SuppressWarnings("rawtypes") Class c : this.pluginCommandClassList ) {
 	    	String nameFromClass = c.getSimpleName(); // Should be like CommandName_Command
 	    	int pos = nameFromClass.indexOf("_Command");
 	    	if ( pos > 0 ) {

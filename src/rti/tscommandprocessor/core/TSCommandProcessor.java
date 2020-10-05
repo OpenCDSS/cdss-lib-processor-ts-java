@@ -4512,6 +4512,7 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
         setCommandsShouldClearRunStatus((Boolean)contents);
     }
     else if ( propName.equalsIgnoreCase("DataStore" ) ) {
+    	// Open the datastore, closing the old datastore if the name is matched.
         __tsengine.setDataStore ( (DataStore)contents, true );
     }
 	else if ( propName.equalsIgnoreCase("HydroBaseDMIList" ) ) {

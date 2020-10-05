@@ -442,7 +442,7 @@ private DMI getDMI ()
 Get the selected data store.
 */
 private DatabaseDataStore getSelectedDataStore ()
-{   String routine = getClass().getName() + ".getSelectedDataStore";
+{   String routine = getClass().getSimpleName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     DatabaseDataStore dataStore = (DatabaseDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
@@ -951,7 +951,7 @@ Populate the schema list based on the selected database.
 @param dmi DMI to use when selecting schema list
 */
 private void populateDataStoreSchemaChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreSchemaChoices";
+{   String routine = getClass().getSimpleName() + "populateDataStoreSchemaChoices";
     List<String> schemaList = null;
     List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
@@ -996,7 +996,7 @@ Populate the table list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
 private void populateDataStoreTableChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreTableChoices";
+{   String routine = getClass().getSimpleName() + "populateDataStoreTableChoices";
     List<String> tableList = null;
     List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
@@ -1043,7 +1043,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 try{
     String DataStore = "";
     String DataStoreCatalog = "";

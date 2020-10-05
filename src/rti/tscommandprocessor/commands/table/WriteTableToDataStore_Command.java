@@ -171,7 +171,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -329,7 +329,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int iRow = -1; // Table row being written
     try {
         // Always get the columns from the database to check parameters, to guard against SQL injection
-        List<String> datastoreTableColumns = new Vector<String>();
+        List<String> datastoreTableColumns = new Vector<>();
         try {
             datastoreTableColumns = DMIUtil.getTableColumns(dmi,DataStoreTable);
         }
@@ -530,6 +530,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // First check to see if the datastore column is a related table (foreign key)
                     if ( (dataStoreRelatedTables[iCol] != null) && (dataStoreRelatedLookupColumns[iCol] != null) &&
                         (dataStoreRelatedPrimaryKeyColumns[iCol] != null)) {
+                    	if ( Message.isDebugOn ) {
+                    		Message.printDebug(10,routine,"Adding where clause for related table for mapped column \"" +
+                    			tableFieldNamesMapped[iCol] + "\"");
+                    	}
                         fkSelect = new DMISelectStatement(dmi);
                         fkSelect.addTable(dataStoreRelatedTables[iCol]);
                         // Return only the primary key column value below.
@@ -708,7 +712,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Write data using the statement that was built
             sqlString = ws.toString();
             int rowCount = dmi.dmiWrite(ws, writeMode.getCode());
-            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with SQL \"" + sqlString + "\".");
+            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with write mode \"" + writeMode + "\" with SQL \"" + sqlString + "\".");
         }
     }
     catch ( Exception e ) {

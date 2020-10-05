@@ -55,6 +55,13 @@ public class CloseDataStore_Command extends AbstractCommand implements Command
 {
 
 /**
+Data members used for parameter values.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
+
+/**
 Constructor.
 */
 public CloseDataStore_Command ()
@@ -73,6 +80,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
 
 	String warning = "";
     String message;
@@ -87,11 +95,24 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the datastore." ) );
     }
+
+	if ( (IfNotFound != null) && !IfNotFound.isEmpty() ) {
+		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
+		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
+			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + ", " + _Warn + " (default), or " +
+					_Fail + "."));
+		}
+	}
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<>(3);
     validList.add ( "DataStore" );
     validList.add ( "StatusMessage" );
+	validList.add ( "IfNotFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -125,7 +146,7 @@ command could produce some results).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -144,18 +165,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StatusMessage == null) || StatusMessage.equals("") ) {
     	StatusMessage = "Database connection closed by CloseDataStore command.";
     }
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
+	if ( (IfNotFound == null) || IfNotFound.equals("")) {
+	    IfNotFound = _Warn; // Default
+	}
     
     // Find the data store to use...
-    DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-        DataStore, DatabaseDataStore.class );
+    DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, DatabaseDataStore.class );
     DMI dmi = null;
     if ( dataStore == null ) {
-        message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
-        Message.printWarning ( 2, routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.WARNING,
-                message, "Verify that a database connection has been opened with name \"" +
-                DataStore + "\"." ) );
+        message = "Could not get datastore for name \"" + DataStore + "\" to close the datastore.";
+        if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the file exists at the time the command is run."));
+        }
+        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Verify that the file exists at the time the command is run."));
+        }
+        else {
+        	// Ignore the unmatched datastore.
+            Message.printStatus( 2, routine, message + "  Ignoring.");
+	   }
     }
     else {
         dmi = ((DatabaseDataStore)dataStore).getDMI();
@@ -210,6 +245,7 @@ public String toString ( PropList props )
 	}
 	String DataStore = props.getValue( "DataStore" );
     String StatusMessage = props.getValue( "StatusMessage" );
+	String IfNotFound = props.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -223,6 +259,12 @@ public String toString ( PropList props )
         }
         b.append ( "StatusMessage=\"" + StatusMessage + "\"" );
     }
+	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IfNotFound=" + IfNotFound );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

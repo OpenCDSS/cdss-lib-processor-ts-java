@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+	List<String> validList = new ArrayList<>(2);
 	validList.add ( "InputFile" );
 	validList.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );

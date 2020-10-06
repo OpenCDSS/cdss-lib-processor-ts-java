@@ -93,6 +93,10 @@ private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __ReferenceTables_JTextField = null;
 private JTextField __ExcludeTables_JTextField = null;
+private JTextField __DataStoreMetaTableForTables_JTextField = null; // Datastore table
+private JTextField __DataStoreMetaTableForColumns_JTextField = null; // Datastore table
+private JTextField __MetaTableForTables_JTextField = null; // TSTool table
+private JTextField __MetaTableForColumns_JTextField = null; // TSTool table
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Newline_JTextField = null;
 private SimpleJComboBox __SurroundWithPre_JComboBox = null;
@@ -237,6 +241,10 @@ private void checkInput ()
     }
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
     String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
+    String DataStoreMetaTableForTables = __DataStoreMetaTableForTables_JTextField.getText().trim();
+    String DataStoreMetaTableForColumns = __DataStoreMetaTableForColumns_JTextField.getText().trim();
+    String MetaTableForTables = __MetaTableForTables_JTextField.getText().trim();
+    String MetaTableForColumns = __MetaTableForColumns_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Newline = __Newline_JTextField.getText().trim();
 	String SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
@@ -255,6 +263,18 @@ private void checkInput ()
     }
     if ( !ExcludeTables.isEmpty() ) {
         props.set ( "ExcludeTables", ExcludeTables );
+    }
+    if ( !DataStoreMetaTableForTables.isEmpty() ) {
+        props.set ( "DataStoreMetaTableForTables", DataStoreMetaTableForTables );
+    }
+    if ( !DataStoreMetaTableForColumns.isEmpty() ) {
+        props.set ( "DataStoreMetaTableForColumns", DataStoreMetaTableForColumns );
+    }
+    if ( !MetaTableForTables.isEmpty() ) {
+        props.set ( "MetaTableForTables", MetaTableForTables );
+    }
+    if ( !MetaTableForColumns.isEmpty() ) {
+        props.set ( "MetaTableForColumns", MetaTableForColumns );
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
@@ -308,6 +328,10 @@ private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
     String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
+    String DataStoreMetaTableForTables = __DataStoreMetaTableForTables_JTextField.getText().trim();
+    String DataStoreMetaTableForColumns = __DataStoreMetaTableForColumns_JTextField.getText().trim();
+    String MetaTableForTables = __MetaTableForTables_JTextField.getText().trim();
+    String MetaTableForColumns = __MetaTableForColumns_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Newline = __Newline_JTextField.getText().trim();
 	String SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
@@ -322,6 +346,10 @@ private void commitEdits ()
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "ReferenceTables", ReferenceTables );
 	__command.setCommandParameter ( "ExcludeTables", ExcludeTables );
+	__command.setCommandParameter ( "DataStoreMetaTableForTables", DataStoreMetaTableForTables );
+	__command.setCommandParameter ( "DataStoreMetaTableForColumns", DataStoreMetaTableForColumns );
+	__command.setCommandParameter ( "MetaTableForTables", MetaTableForTables );
+	__command.setCommandParameter ( "MetaTableForColumns", MetaTableForColumns );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Newline", Newline );
 	__command.setCommandParameter ( "SurroundWithPre", SurroundWithPre );
@@ -465,6 +493,65 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - tables to exclude, *=wildcard (default=include all)."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for metadata
+
+    int yMeta = -1;
+    JPanel meta_JPanel = new JPanel();
+    meta_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Metadata", meta_JPanel );
+    
+    JGUIUtil.addComponent(meta_JPanel, new JLabel (
+        "Metadata such as descriptions for tables and columns are automatically read from the database schema, if possible."),
+        0, ++yMeta, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel (
+        "However, some database technologies do not store sufficient metadata to complete the data dictionary."),
+        0, ++yMeta, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel (
+        "Use the following parameters to provide metadata about tables and table columns."),
+        0, ++yMeta, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yMeta, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Database metadata table for tables:"), 
+        0, ++yMeta, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreMetaTableForTables_JTextField = new JTextField (10);
+    __DataStoreMetaTableForTables_JTextField.setToolTipText("Name of datastore table containing table metadata (id, name, description), can use ${Property}");
+    __DataStoreMetaTableForTables_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(meta_JPanel, __DataStoreMetaTableForTables_JTextField,
+        1, yMeta, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Optional - table metadata (default=none)."),
+        3, yMeta, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Database metadata table for columns:"), 
+        0, ++yMeta, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreMetaTableForColumns_JTextField = new JTextField (20);
+    __DataStoreMetaTableForColumns_JTextField.setToolTipText("Name of datastore table containing column metadata (id, table_id, name, description), can use ${Property}");
+    __DataStoreMetaTableForColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(meta_JPanel, __DataStoreMetaTableForColumns_JTextField,
+        1, yMeta, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Optional - column metadata (default=include all)."),
+        3, yMeta, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Metadata table for tables:"), 
+        0, ++yMeta, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MetaTableForTables_JTextField = new JTextField (10);
+    __MetaTableForTables_JTextField.setToolTipText("Name of TSTool table containing table metadata (id, name, description), can use ${Property}");
+    __MetaTableForTables_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(meta_JPanel, __MetaTableForTables_JTextField,
+        1, yMeta, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Optional - table metadata (default=none)."),
+        3, yMeta, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Metadata table for columns:"), 
+        0, ++yMeta, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MetaTableForColumns_JTextField = new JTextField (20);
+    __MetaTableForColumns_JTextField.setToolTipText("Name of TSTool table containing column metadata (id, table_id, name, description), can use ${Property}");
+    __MetaTableForColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(meta_JPanel, __MetaTableForColumns_JTextField,
+        1, yMeta, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(meta_JPanel, new JLabel ("Optional - column metadata (default=include all)."),
+        3, yMeta, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     // Panel for data dictionary
     int yDict = -1;
@@ -754,6 +841,10 @@ try{
     String DataStore = "";
     String ReferenceTables = "";
     String ExcludeTables = "";
+    String DataStoreMetaTableForTables = "";
+    String DataStoreMetaTableForColumns = "";
+    String MetaTableForTables = "";
+    String MetaTableForColumns = "";
     String OutputFile = "";
     String Newline = "";
     String SurroundWithPre = "";
@@ -771,6 +862,10 @@ try{
 		DataStore = props.getValue ( "DataStore" );
 		ReferenceTables = props.getValue ( "ReferenceTables" );
 		ExcludeTables = props.getValue ( "ExcludeTables" );
+		DataStoreMetaTableForTables = props.getValue ( "DataStoreMetaTableForTables" );
+		DataStoreMetaTableForColumns = props.getValue ( "DataStoreMetaTableForColumns" );
+		MetaTableForTables = props.getValue ( "MetaTableForTables" );
+		MetaTableForColumns = props.getValue ( "MetaTableForColumns" );
 		OutputFile = props.getValue ( "OutputFile" );
 		Newline = props.getValue ( "Newline" );
 		SurroundWithPre = props.getValue ( "SurroundWithPre" );
@@ -809,6 +904,18 @@ try{
         }
         if ( (ExcludeTables != null) && !ExcludeTables.isEmpty() ) {
             __ExcludeTables_JTextField.setText ( ExcludeTables );
+        }
+        if ( (DataStoreMetaTableForTables != null) && !DataStoreMetaTableForTables.isEmpty() ) {
+            __DataStoreMetaTableForTables_JTextField.setText ( DataStoreMetaTableForTables );
+        }
+        if ( (DataStoreMetaTableForColumns != null) && !DataStoreMetaTableForColumns.isEmpty() ) {
+            __DataStoreMetaTableForColumns_JTextField.setText ( DataStoreMetaTableForColumns );
+        }
+        if ( (MetaTableForTables != null) && !MetaTableForTables.isEmpty() ) {
+            __MetaTableForTables_JTextField.setText ( MetaTableForTables );
+        }
+        if ( (MetaTableForColumns != null) && !MetaTableForColumns.isEmpty() ) {
+            __MetaTableForColumns_JTextField.setText ( MetaTableForColumns );
         }
         if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
             __OutputFile_JTextField.setText(OutputFile);
@@ -927,6 +1034,10 @@ try{
     }
 	ReferenceTables = __ReferenceTables_JTextField.getText().trim();
 	ExcludeTables = __ExcludeTables_JTextField.getText().trim();
+	DataStoreMetaTableForTables = __DataStoreMetaTableForTables_JTextField.getText().trim();
+	DataStoreMetaTableForColumns = __DataStoreMetaTableForColumns_JTextField.getText().trim();
+	MetaTableForTables = __MetaTableForTables_JTextField.getText().trim();
+	MetaTableForColumns = __MetaTableForColumns_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Newline = __Newline_JTextField.getText().trim();
 	SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
@@ -942,6 +1053,10 @@ try{
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "ReferenceTables=" + ReferenceTables );
 	props.add ( "ExcludeTables=" + ExcludeTables );
+	props.add ( "DataStoreMetaTableForTables=" + DataStoreMetaTableForTables );
+	props.add ( "DataStoreMetaTableForColumns=" + DataStoreMetaTableForColumns );
+	props.add ( "MetaTableForTables=" + MetaTableForTables );
+	props.add ( "MetaTableForColumns=" + MetaTableForColumns );
 	props.add ( "OutputFile=" + OutputFile);
 	props.add ( "Newline=" + Newline);
 	props.add ( "SurroundWithPre=" + SurroundWithPre);

@@ -32,6 +32,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.io.File;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,7 @@ import RTi.DMI.ERDiagram_JFrame;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.ResultSetToDataTableFactory;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -93,6 +95,10 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
+    String DataStoreMetaTableForTables = parameters.getValue ( "DataStoreMetaTableForTables" );
+    String DataStoreMetaTableForColumns = parameters.getValue ( "DataStoreMetaTableForColumns" );
+    String MetaTableForTables = parameters.getValue ( "MetaTableForTables" );
+    String MetaTableForColumns = parameters.getValue ( "MetaTableForColumns" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String SurroundWithPre = parameters.getValue ( "SurroundWithPre" );
     String EncodeHtmlChars = parameters.getValue ( "EncodeHtmlChars" );
@@ -164,6 +170,37 @@ throws InvalidCommandParameterException
         }
     }
     
+    // Make sure that metadata are specified only once
+    int count = 0;
+    if ( (DataStoreMetaTableForTables != null) && !DataStoreMetaTableForTables.isEmpty() ) {
+    	++count;
+    }
+    if ( (MetaTableForTables != null) && !MetaTableForTables.isEmpty() ) {
+    	++count;
+    }
+    if ( count == 2 ) {
+        message = "Specify DataStoreMetaTableForTables or MetaTableForTables, not both.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only one metadata table for tables."));
+    }
+
+    count = 0;
+    if ( (DataStoreMetaTableForColumns != null) && !DataStoreMetaTableForColumns.isEmpty() ) {
+    	++count;
+    }
+    if ( (MetaTableForColumns != null) && !MetaTableForColumns.isEmpty() ) {
+    	++count;
+    }
+    if ( count == 2 ) {
+        message = "Specify DataStoreMetaTableForColumns or MetaTableForColumns, not both.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only one metadata table for columns."));
+    }
+    
     if ( (SurroundWithPre != null) && !SurroundWithPre.isEmpty() ) {
         if ( !SurroundWithPre.equalsIgnoreCase(_False) && !SurroundWithPre.equalsIgnoreCase(_True) ) {
             message = "The SurroundWithPre parameter \"" + SurroundWithPre + "\" is invalid.";
@@ -230,10 +267,14 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(14);
+	List<String> validList = new ArrayList<>(18);
     validList.add ( "DataStore" );
     validList.add ( "ReferenceTables" );
     validList.add ( "ExcludeTables" );
+    validList.add ( "DataStoreMetaTableForTables" );
+    validList.add ( "DataStoreMetaTableForColumns" );
+    validList.add ( "MetaTableForTables" );
+    validList.add ( "MetaTableForColumns" );
     validList.add ( "OutputFile" );
     validList.add ( "Newline" );
     validList.add ( "SurroundWithPre" );
@@ -352,6 +393,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	excludeTablesList.add(excludeTables[i]);
         }
     }
+    String DataStoreMetaTableForTables = parameters.getValue ( "DataStoreMetaTableForTables" );
+	if ( (DataStoreMetaTableForTables != null) && (DataStoreMetaTableForTables.indexOf("${") >= 0) && !DataStoreMetaTableForTables.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		DataStoreMetaTableForTables = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreMetaTableForTables);
+	}
+    String DataStoreMetaTableForColumns = parameters.getValue ( "DataStoreMetaTableForColumns" );
+	if ( (DataStoreMetaTableForColumns != null) && (DataStoreMetaTableForColumns.indexOf("${") >= 0) && !DataStoreMetaTableForColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		DataStoreMetaTableForColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreMetaTableForColumns);
+	}
+    String MetaTableForTables = parameters.getValue ( "MetaTableForTables" );
+	if ( (MetaTableForTables != null) && (MetaTableForTables.indexOf("${") >= 0) && !MetaTableForTables.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		MetaTableForTables = TSCommandProcessorUtil.expandParameterValue(processor, this, MetaTableForTables);
+	}
+    String MetaTableForColumns = parameters.getValue ( "MetaTableForColumns" );
+	if ( (MetaTableForColumns != null) && (MetaTableForColumns.indexOf("${") >= 0) && !MetaTableForColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		MetaTableForColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, MetaTableForColumns);
+	}
     String OutputFile = parameters.getValue("OutputFile"); // Expanded below
     String Newline = parameters.getValue("Newline");
     String SurroundWithPre = parameters.getValue("SurroundWithPre");
@@ -450,10 +507,82 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
         OutputFile_full = IOUtil.enforceFileExtension(OutputFile_full, "html");
+        // Read the metadata tables
+        DataTable metadataForTables = null;
+        DataTable metadataForColumns = null;
+        if ( (DataStoreMetaTableForTables != null) && !DataStoreMetaTableForTables.isEmpty() ) {
+        	// Read the metadata table from the datastore.
+        	String queryString = "SELECT * from " + DataStoreMetaTableForTables;
+            ResultSet rs = dmi.dmiSelect(queryString);
+           	ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
+           	metadataForTables = factory.createDataTable(dmi.getDatabaseEngineType(), rs, DataStoreMetaTableForTables);
+        }
+        else if ( (MetaTableForTables != null) && !MetaTableForTables.isEmpty() ) {
+        	// Get the metadata table (for tables) from processor.
+	        request_params = new PropList ( "" );
+	        request_params.set ( "TableID", MetaTableForTables );
+	        try {
+	            bean = processor.processRequest( "GetTable", request_params);
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetTable(TableID=\"" + MetaTableForTables + "\") from processor.";
+	            Message.printWarning(warning_level,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report problem to software support." ) );
+	        }
+	        PropList bean_PropList = bean.getResultsPropList();
+	        Object o_Table = bean_PropList.getContents ( "Table" );
+	        if ( o_Table == null ) {
+	            message = "Unable to find table to process using TableID=\"" + MetaTableForTables + "\".";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that a table exists with the requested ID." ) );
+	        }
+	        else {
+	            metadataForTables = (DataTable)o_Table;
+	        }
+        }
+        if ( (DataStoreMetaTableForTables != null) && !DataStoreMetaTableForTables.isEmpty() ) {
+        	// Read the metadata table from the datastore.
+        	String queryString = "SELECT * from " + DataStoreMetaTableForColumns;
+            ResultSet rs = dmi.dmiSelect(queryString);
+           	ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
+           	metadataForColumns = factory.createDataTable(dmi.getDatabaseEngineType(), rs, DataStoreMetaTableForColumns);
+        }
+        else if ( (MetaTableForColumns != null) && !MetaTableForColumns.isEmpty() ) {
+        	// Get the metadata table (for columns) from processor.
+	        request_params = new PropList ( "" );
+	        request_params.set ( "TableID", MetaTableForColumns );
+	        try {
+	            bean = processor.processRequest( "GetTable", request_params);
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetTable(TableID=\"" + MetaTableForColumns + "\") from processor.";
+	            Message.printWarning(warning_level,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report problem to software support." ) );
+	        }
+	        PropList bean_PropList = bean.getResultsPropList();
+	        Object o_Table = bean_PropList.getContents ( "Table" );
+	        if ( o_Table == null ) {
+	            message = "Unable to find table to process using TableID=\"" + MetaTableForColumns + "\".";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that a table exists with the requested ID." ) );
+	        }
+	        else {
+	            metadataForColumns = (DataTable)o_Table;
+	        }
+        }
+
         // Create the data dictionary.
         DataDictionary dd = new DataDictionary();
         dd.createHTMLDataDictionary(dmi, OutputFile_full, Newline, surroundWithPre, encodeHtmlChars,
-        	referenceTablesList, excludeTablesList);
+        	referenceTablesList, excludeTablesList, metadataForTables, metadataForColumns);
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
         
@@ -515,6 +644,10 @@ public String toString ( PropList props )
 	String DataStore = props.getValue( "DataStore" );
 	String ReferenceTables = props.getValue( "ReferenceTables" );
 	String ExcludeTables = props.getValue( "ExcludeTables" );
+	String DataStoreMetaTableForTables = props.getValue( "DataStoreMetaTableForTables" );
+	String DataStoreMetaTableForColumns = props.getValue( "DataStoreMetaTableForColumns" );
+	String MetaTableForTables = props.getValue( "MetaTableForTables" );
+	String MetaTableForColumns = props.getValue( "MetaTableForColumns" );
 	String OutputFile = props.getValue( "OutputFile" );
 	String Newline = props.getValue( "Newline" );
 	String SurroundWithPre = props.getValue( "SurroundWithPre" );
@@ -544,6 +677,30 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ExcludeTables=\"" + ExcludeTables + "\"" );
+    }
+    if ( (DataStoreMetaTableForTables != null) && (DataStoreMetaTableForTables.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreMetaTableForTables=\"" + DataStoreMetaTableForTables + "\"" );
+    }
+    if ( (DataStoreMetaTableForColumns != null) && (DataStoreMetaTableForColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreMetaTableForColumns=\"" + DataStoreMetaTableForColumns + "\"" );
+    }
+    if ( (MetaTableForTables != null) && (MetaTableForTables.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MetaTableForTables=\"" + MetaTableForTables + "\"" );
+    }
+    if ( (MetaTableForColumns != null) && (MetaTableForColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MetaTableForColumns=\"" + MetaTableForColumns + "\"" );
     }
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {

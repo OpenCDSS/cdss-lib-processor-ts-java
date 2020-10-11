@@ -1233,7 +1233,8 @@ try{
 	props.add ( "DataStoreColumns=" + DataStoreColumns );
 	props.add ( "OrderBy=" + OrderBy );
 	props.add ( "Top=" + Top );
-	props.add ( "Sql=" + Sql );
+	// Surround with double quotes because = in content causes the parse in called code to not work.
+	props.add ( "Sql=\"" + Sql + "\"" );
 	props.add ( "SqlFile=" + SqlFile);
 	props.add ( "DataStoreProcedure=" + DataStoreProcedure );
 	props.add ( "ProcedureParameters=" + ProcedureParameters );

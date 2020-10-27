@@ -152,7 +152,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<>(9);
     validList.add ( "TableID" );
     validList.add ( "TableToJoinID" );
     validList.add ( "JoinColumns" );
@@ -161,6 +161,7 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnFilters" );
     validList.add ( "JoinMethod" );
     validList.add ( "HandleMultipleJoinMatchesHow" );
+    validList.add ( "RowCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -343,6 +344,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( handleMultipleJoinMatchesHow == null ) {
     	handleMultipleJoinMatchesHow = HandleMultipleJoinMatchesHowType.USE_LAST_MATCH; // Default
     }
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
     
     // Get the tables to process.
 
@@ -422,10 +427,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
     List<String> problems = new ArrayList<String>();
+    boolean problemsAdded = false;
 	try {
     	// Join the tables...
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters,
+	        int rowCount = table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters,
 	        	joinMethodType, handleMultipleJoinMatchesHow, problems );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
@@ -433,23 +439,53 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, p );
 	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, p, "Check input." ) );
 	        }
+	        problemsAdded = true;
+
+	        // Set the property indicating the number of rows in the table
+            if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", RowCountProperty );
+                request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                    Message.printWarning(3,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
         }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error joining tables (" + e + ").";
+		if ( problems.size() > 0 ) {
+			message = "Unexpected error joining tables (" + e + ").  See problem details below.";
+		}
+		else {
+			message = "Unexpected error joining tables (" + e + ").";
+		}
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
-        int i = -1;
-        for ( String p : problems ) {
-            ++i;
-            if ( i < 1000 ) {
-                // TODO SAM 2014-06-26 Cap warnings without hard-coding
-                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-                    p, "Check input." ) );
-            }
+        if ( !problemsAdded ) {
+        	int i = -1;
+        	int maxWarn = 500;
+          	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+          		"Limiting warnings to " + maxWarn, "Check input." ) );
+        	for ( String p : problems ) {
+            	++i;
+            	if ( i < maxWarn ) {
+                	// TODO SAM 2014-06-26 Cap warnings without hard-coding
+                	Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                    	p, "Check input." ) );
+            	}
+        	}
         }
 		throw new CommandWarningException ( message );
 	}
@@ -487,6 +523,7 @@ public String toString ( PropList props )
 	String ColumnFilters = props.getValue( "ColumnFilters" );
 	String JoinMethod = props.getValue( "JoinMethod" );
 	String HandleMultipleJoinMatchesHow = props.getValue( "HandleMultipleJoinMatchesHow" );
+	String RowCountProperty = props.getValue( "RowCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -535,6 +572,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
+    }
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -155,8 +155,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     status.clearLog(commandPhase);
 
-	// Make sure there are time series available to operate on...
-	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 

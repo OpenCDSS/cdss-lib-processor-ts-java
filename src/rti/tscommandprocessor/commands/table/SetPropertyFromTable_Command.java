@@ -206,12 +206,19 @@ private List<TableRecord> findTableRecords ( DataTable table,
     int icol;
     Object o;
     String s;
+    boolean debug = false; // Set to true when troubleshooting code
     for ( int irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
         filterMatches = true; // Default is match all
+        if ( debug ) {
+            Message.printStatus(2,"","columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
+        }
         if ( columnIncludeFiltersNumbers.length > 0 ) {
             // Filters can be done on any columns so loop through to see if row matches
             for ( icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
                 if ( columnIncludeFiltersNumbers[icol] < 0 ) {
+                	if ( debug ) {
+                    	Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] < 0" );
+                	}
                     filterMatches = false;
                     break;
                 }
@@ -219,12 +226,18 @@ private List<TableRecord> findTableRecords ( DataTable table,
                     o = table.getFieldValue(irow, columnIncludeFiltersNumbers[icol]);
                     if ( o == null ) {
                         filterMatches = false;
+                        if ( debug ) {
+                    	     Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] object is null" );
+               	        }
                         break; // Don't include nulls when checking values
                     }
                     s = ("" + o).toUpperCase();
                     if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
-                        // A filter did not match so don't copy the record
+                        // A filter did not match so don't include the record
                         filterMatches = false;
+                        if ( debug ) {
+                    	     Message.printStatus(2,"","Skipping filter because value \"" + s + "\" does not match columnIncludeFiltersGlobs[" + icol + "]" );
+               	        }
                         break;
                     }
                 }
@@ -236,8 +249,14 @@ private List<TableRecord> findTableRecords ( DataTable table,
             }
             if ( !filterMatches ) {
                 // Skip the record.
+            	if ( debug ) {
+                	Message.printStatus(2,"","Filters do not match row [" + irow + "] ... skipping." );
+            	}
                 continue;
             }
+        }
+        if ( debug ) {
+            Message.printStatus(2,"","columnExcludeFiltersNumbers.length=" + columnExcludeFiltersNumbers.length );
         }
         if ( columnExcludeFiltersNumbers.length > 0 ) {
             int matchesCount = 0;
@@ -249,21 +268,28 @@ private List<TableRecord> findTableRecords ( DataTable table,
                 }
                 try {
                     o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
-                    //Message.printStatus(2,"","Got cell object " + o );
+                    if ( debug ) {
+                    	Message.printStatus(2,"","Got cell object " + o );
+                    }
                     if ( o == null ) {
                     	if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
                     		// Trying to match blank cells
                     		++matchesCount;
                     	}
-                    	else { // Don't include nulls when checking values
+                    	else {
+                    		// Don't include nulls when checking values
                     		break;
                     	}
                     }
                     s = ("" + o).toUpperCase();
-                    //Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
+                    if ( debug ) {
+                    	Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
+                    }
                     if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
                         // A filter matched so don't copy the record
-                    	//Message.printStatus(2,"","Exclude filter matches");
+                    	if ( debug ) {
+                    		Message.printStatus(2,"","Exclude filter matches");
+                    	}
                         ++matchesCount;
                     }
                 }
@@ -272,16 +298,22 @@ private List<TableRecord> findTableRecords ( DataTable table,
                        	columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
                 }
             }
-            //Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
+            if ( debug ) {
+            	Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
+            }
             if ( matchesCount == columnExcludeFiltersNumbers.length ) {
                 // Skip the record since all exclude filters were matched
-            	//Message.printStatus(2,"","Skipping since all exclude filters matched");
+            	if ( debug ) {
+            		Message.printStatus(2,"","Skipping since all exclude filters matched");
+            	}
                 continue;
             }
         }
         // If here then the row should be included
         try {
-        	//Message.printStatus(2,"","Matched table row [" + irow + "]");
+        	if ( debug ) {
+        		Message.printStatus(2,"","Matched table row [" + irow + "]");
+        	}
         	matchedRows.add(table.getRecord(irow));
         }
         catch ( Exception e ) {
@@ -484,8 +516,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 	    	// Match 1+ rows so first match can be used 
-	    	List<String> errors = new ArrayList<String>();
+	    	List<String> errors = new ArrayList<>();
 	        List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, errors );
+	        for ( String error : errors ) {
+	        	Message.printWarning(3, routine, "Error: " + error);
+	        }
+	        Message.printStatus(2, routine, "Found " + records.size() + " matching records.");
 	        if ( records.size() <= 0 ) {
 	        	// Set to the default value if specified
 	        	String propValue = null;

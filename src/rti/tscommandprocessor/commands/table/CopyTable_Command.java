@@ -114,7 +114,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "TableID" );
     validList.add ( "NewTableID" );
     validList.add ( "DistinctColumns" );

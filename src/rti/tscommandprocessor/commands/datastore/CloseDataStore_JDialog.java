@@ -309,7 +309,9 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
     Collections.sort(dataStoreChoices);
     */
     __DataStore_JComboBox.setData(dataStoreChoices);
-    __DataStore_JComboBox.select ( 0 );
+    if ( dataStoreChoices.size() > 0 ) {
+    	__DataStore_JComboBox.select ( 0 );
+    }
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -444,7 +446,9 @@ private void refresh ()
             if ( (DataStore == null) || DataStore.equals("") ) {
                 // New command...select the default...
                 __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
-                __DataStore_JComboBox.select ( 0 );
+                if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+                	__DataStore_JComboBox.select ( 0 );
+                }
             }
             else {
                 // Bad user command...

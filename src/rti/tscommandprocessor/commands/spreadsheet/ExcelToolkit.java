@@ -565,6 +565,8 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 }
             }
         }
+        // Make sure there are no random whitespace characters that will complicate column mapping.
+   		columnNames[columnIndex] = columnNames[columnIndex].trim();
     }
     // Now loop through and determine the column data type from the data row
     // and add columns to the table

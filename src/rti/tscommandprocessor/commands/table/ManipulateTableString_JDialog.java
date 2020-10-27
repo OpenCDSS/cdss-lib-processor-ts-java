@@ -144,10 +144,12 @@ public void actionPerformed( ActionEvent event )
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
+This just sets tooltips to be appropriate for choices.
 */
 private void checkGUIState ()
 {
 	// Reset the tooltips based on the selected operator.
+	// - set to initial values
 	__InputColumn1_JComboBox.setToolTipText("Not used.");
 	__InputColumn2_JComboBox.setToolTipText("Not used.");
 	__InputValue2_JTextField.setToolTipText("Not used.");
@@ -162,6 +164,10 @@ private void checkGUIState ()
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column as the input - see also InputColumn2 and InputValue2");
     	__InputColumn2_JComboBox.setToolTipText("Specify an input column that will be prepended to InputColumn1... OR use InputValue2");
     	__InputValue2_JTextField.setToolTipText("Specify an input value that will be prepended to InputColumn1... OR use InputColumn2");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REMOVE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings removed - see also InputValue2");
+    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be removed (^=start of line, $=end of line, \\s=space, see also InputValue3)");
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REPLACE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings replaced - see also InputValue2 and InputValue3");
@@ -190,6 +196,15 @@ private void checkGUIState ()
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_INTEGER) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to integer value");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_MIXEDCASE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to Mixedcase");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_LOWERCASE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to lowercase");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_UPPERCASE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to UPPERCASE");
     }
 }
 
@@ -448,6 +463,8 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 	// Refresh the contents...
     checkGUIState();
 	refresh ();
+    // Somewhat redundant but make sure tooltips are correct
+    checkGUIState();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -476,6 +493,8 @@ Handle ItemEvent events.
 public void itemStateChanged ( ItemEvent e )
 {	checkGUIState();
     refresh();
+    // Somewhat redundant but make sure tooltips are correct
+    checkGUIState();
 }
 
 /**

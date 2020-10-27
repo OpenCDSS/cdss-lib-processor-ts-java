@@ -274,7 +274,7 @@ CommandWarningException, CommandException
                 	dmi = new GenericDMI( "SQLite", "memory", DataStore, -1, systemLogin, systemPassword );
                 }
                 else {
-                	// Get fill path
+                	// Get file path
                 	String DatabaseFile_full = IOUtil.verifyPathForOS(
                     	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                         	TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseFile)));

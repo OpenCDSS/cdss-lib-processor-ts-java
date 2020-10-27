@@ -215,6 +215,7 @@ throws InvalidCommandParameterException
         (operatorType != DataTableStringOperatorType.TO_DATE) &&
         (operatorType != DataTableStringOperatorType.TO_DATE_TIME) &&
         (operatorType != DataTableStringOperatorType.TO_LOWERCASE) &&
+        (operatorType != DataTableStringOperatorType.TO_MIXEDCASE) &&
         (operatorType != DataTableStringOperatorType.TO_UPPERCASE) ) {
         if ( ((InputColumn2 == null) || InputColumn2.equals("")) &&
             ((InputValue2 == null) || InputValue2.equals(""))) {
@@ -258,7 +259,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(9);
+    List<String> validList = new ArrayList<>(9);
     validList.add ( "TableID" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );

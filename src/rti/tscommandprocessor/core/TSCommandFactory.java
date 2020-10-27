@@ -44,9 +44,11 @@ import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
+// Datastore commands
+import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
+import rti.tscommandprocessor.commands.datastore.OpenDataStore_Command;
 // Datastream commands
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
-import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
 // DateValue commands
 import rti.tscommandprocessor.commands.datastore.CreateDataStoreDataDictionary_Command;
 import rti.tscommandprocessor.commands.datastore.DeleteDataStoreTableRows_Command;
@@ -822,6 +824,9 @@ throws UnknownCommandException
 
 	// "O" commands...
 
+	else if ( commandName.equalsIgnoreCase("OpenDataStore") ) {
+		return new OpenDataStore_Command ();
+	}
 	else if ( commandName.equalsIgnoreCase("OpenHydroBase") ) {
 		return new OpenHydroBase_Command ();
 	}

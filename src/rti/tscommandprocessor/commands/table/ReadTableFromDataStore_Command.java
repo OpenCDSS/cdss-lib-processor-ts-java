@@ -462,6 +462,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 // Use the columns from the parameter
                 String [] columnsReq = DataStoreColumns.split(",");
                 for ( int i = 0; i < columnsReq.length; i++ ) {
+                	columnsReq[i] = columnsReq[i].trim();
                     if ( StringUtil.indexOf(columns,columnsReq[i]) < 0 ) {
                         message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
                         Message.printWarning ( 2, routine, message );
@@ -471,7 +472,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 "\".") );
                     }
                     else {
-                        q.addField(columnsReq[i].trim());
+                        q.addField(columnsReq[i]);
                     }
                 }
             }
@@ -488,16 +489,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 String [] columnsReq = OrderBy.split(",");
                 for ( int i = 0; i < columnsReq.length; i++ ) {
                     // Check for table to guard against SQL injection
-                    if ( StringUtil.indexOfIgnoreCase(columns,columnsReq[i]) < 0 ) {
-                        message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
+                	// - it may be necessary to add modifiers to the column, such as "columnname COLLATE NOCASE"
+                	//   in SQLite to ignore case
+                	// - therefore, split if a space
+                	columnsReq[i] = columnsReq[i].trim();
+                	String columnName = columnsReq[i];
+                	if ( columnsReq[i].indexOf(" ") > 0 ) {
+                		columnName = StringUtil.getToken(columnsReq[i], " ", 0, 0);
+                	}
+                    if ( StringUtil.indexOfIgnoreCase(columns,columnName) < 0 ) {
+                        message = "Database table/view does not contain columnn \"" + columnName + "\".";
                         Message.printWarning ( 2, routine, message );
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the database table/view contains column \"" + columnsReq[i] +
+                                message, "Verify that the database table/view contains column \"" + columnName +
                                 "\".") );
                     }
                     else {
-                        q.addOrderByClause(columnsReq[i].trim());
+                    	// Include everything provided, including extra keywords for a specific database
+                        q.addOrderByClause(columnsReq[i]);
                     }
                 }
             }
@@ -706,49 +716,51 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         finally {
             DMI.closeResultSet(rs);
         }
-        // Do some final checks, which may be indicative of database not being fully supported.
-        int numStringColsWithZeroWidth = 0;
-        int numStringCols = 0;
-        for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
-        	TableField col = table.getTableField(icol);
-        	if ( col.getDataType() == TableField.DATA_TYPE_STRING ) {
-        		++numStringCols;
-        		if ( col.getWidth() == 0 ) {
-        			++numStringColsWithZeroWidth;
+        if ( table != null ) {
+        	// Do some final checks, which may be indicative of database not being fully supported.
+        	int numStringColsWithZeroWidth = 0;
+        	int numStringCols = 0;
+        	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+        		TableField col = table.getTableField(icol);
+        		if ( col.getDataType() == TableField.DATA_TYPE_STRING ) {
+        			++numStringCols;
+        			if ( col.getWidth() == 0 ) {
+        				++numStringColsWithZeroWidth;
+        			}
         		}
         	}
-        }
-        if ( numStringCols == numStringColsWithZeroWidth ) {
-            message = "All string columns have zero width in table - columns will not display properly.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Report the problem to software support - database metadata should return the width." ) );
+        	if ( (table.getNumberOfRecords() > 0) && (numStringCols > 0) && (numStringCols == numStringColsWithZeroWidth) ) {
+            	message = "All string columns have zero width in table - columns will not display properly.";
+            	Message.printWarning(log_level,
+                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                	routine, message );
+            	status.addToLog ( CommandPhaseType.RUN,
+                	new CommandLogRecord(CommandStatusType.WARNING,
+                    	message, "Report the problem to software support - database metadata should return the width." ) );
+        	}
         }
 	    // Set the property indicating the number of rows in the table
         if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
         	String rowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
-            int rowCount = 0;
-            if ( table != null ) {
-                rowCount = table.getNumberOfRecords();
-            }
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", rowCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
+           	int rowCount = 0;
+           	if ( table != null ) {
+               	rowCount = table.getNumberOfRecords();
+           	}
+           	PropList request_params = new PropList ( "" );
+           	request_params.setUsingObject ( "PropertyName", rowCountProperty );
+           	request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+           	try {
+               	processor.processRequest( "SetProperty", request_params);
+           	}
+           	catch ( Exception e ) {
+               	message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+               	Message.printWarning(log_level,
+                   	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                   	routine, message );
+               	status.addToLog ( CommandPhaseType.RUN,
+                   	new CommandLogRecord(CommandStatusType.FAILURE,
+                       	message, "Report the problem to software support." ) );
+           	}
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {

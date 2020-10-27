@@ -75,6 +75,7 @@ private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
 private SimpleJComboBox __JoinMethod_JComboBox = null;
 private SimpleJComboBox __HandleMultipleJoinMatchesHow_JComboBox = null;
+private JTextField __RowCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -176,6 +177,7 @@ private void checkInput ()
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	String JoinMethod = __JoinMethod_JComboBox.getSelected();
 	String HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -202,6 +204,9 @@ private void checkInput ()
     if ( HandleMultipleJoinMatchesHow.length() > 0 ) {
         props.set ( "HandleMultipleJoinMatchesHow", HandleMultipleJoinMatchesHow );
     }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -226,6 +231,7 @@ private void commitEdits ()
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
     String JoinMethod = __JoinMethod_JComboBox.getSelected();
     String HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableToJoinID", TableToJoinID );
     __command.setCommandParameter ( "JoinColumns", JoinColumns );
@@ -234,6 +240,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
 	__command.setCommandParameter ( "JoinMethod", JoinMethod );
 	__command.setCommandParameter ( "HandleMultipleJoinMatchesHow", HandleMultipleJoinMatchesHow );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
 /**
@@ -386,6 +393,16 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the joined row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as joined row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -471,6 +488,7 @@ private void refresh ()
     String ColumnFilters = "";
     String JoinMethod = "";
     String HandleMultipleJoinMatchesHow = "";
+    String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -482,6 +500,7 @@ private void refresh ()
         ColumnFilters = props.getValue ( "ColumnFilters" );
         JoinMethod = props.getValue ( "JoinMethod" );
         HandleMultipleJoinMatchesHow = props.getValue ( "HandleMultipleJoinMatchesHow" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -554,6 +573,9 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
@@ -564,6 +586,7 @@ private void refresh ()
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
 	JoinMethod = __JoinMethod_JComboBox.getSelected();
 	HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "TableToJoinID=" + TableToJoinID );
@@ -573,6 +596,7 @@ private void refresh ()
 	props.add ( "ColumnFilters=" + ColumnFilters );
 	props.add ( "JoinMethod=" + JoinMethod );
 	props.add ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
+	props.add ( "RowCountProperty=" + RowCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

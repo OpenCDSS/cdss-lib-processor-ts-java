@@ -575,11 +575,11 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __AddTSID_JComboBox, AddTSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __AddTSID_JComboBox.select ( AddTSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __AddTSID_JComboBox, AddTSID, JGUIUtil.NONE, null, null ) ) {
+            __AddTSID_JComboBox.select ( AddTSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank...
             if ( (AddTSID != null) && (AddTSID.length() > 0) ) {
                 if ( !TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
                     __AddTSID_JComboBox.insertItemAt ( AddTSID, 1 );

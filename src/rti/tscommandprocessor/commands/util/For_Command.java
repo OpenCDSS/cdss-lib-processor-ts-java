@@ -195,6 +195,7 @@ throws InvalidCommandParameterException
     if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
     	this.iteratorIsSequence = true;
     	++count;
+    	// TODO smalers 2020-11-02 not sure why this is here.  It is repeated in runCommand().
     	Double sequenceStartD = null;
     	Integer sequenceStartI = null;
 		if ( StringUtil.isInteger(SequenceStart) ) {
@@ -313,6 +314,101 @@ public String getName ()
 }
 
 /**
+ * Initialize the iterator for a list.
+ */
+private void initializeListIterator ( TSCommandProcessor processor ) {
+	String List = getCommandParameters().getValue ( "List" );
+	if ( List.indexOf("${") >= 0 ) {
+		// Can specify with property
+		List = TSCommandProcessorUtil.expandParameterValue(processor, this, List);
+ 	}
+	String [] parts = List.split(",");
+	this.list = new ArrayList<Object>();
+	for ( int i = 0; i < parts.length; i++ ) {
+		this.list.add(parts[i].trim());
+	}
+}
+
+/**
+ * Initialize the iterator for a sequence.
+ */
+private void initializeSequenceIterator ( TSCommandProcessor processor ) {
+	PropList parameters = getCommandParameters();
+	String SequenceStart = parameters.getValue ( "SequenceStart" );
+	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) {
+		// Can specify with property
+		String s0 = SequenceStart;
+		SequenceStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceStart);
+		/*
+		if ( s0.equals(SequenceStart) ) {
+            message = "For loop 'SequenceStart' (" + SequenceStart + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+		*/
+	}
+	Double sequenceStartD = null;
+	Integer sequenceStartI = null;
+	if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceStart) ) {
+			sequenceStartI = Integer.parseInt(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartI;
+			// Default increment value, may be reset with property below
+			this.iteratorSequenceIncrement = new Integer(1);
+		}
+		else if ( StringUtil.isDouble(SequenceStart) ) {
+			sequenceStartD = Double.parseDouble(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartD;
+			// Default increment value, may be reset with property below
+			this.iteratorSequenceIncrement = new Double(1.0);
+		}
+		this.iteratorIsSequence = true;
+	}
+	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
+	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) {
+		// Can specify with property
+		String s0 = SequenceEnd;
+		SequenceEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceEnd);
+		/*
+		if ( s0.equals(SequenceEnd) ) {
+            message = "For loop 'SequenceEnd' (" + SequenceEnd + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+		*/
+	}
+	Double sequenceEndD = null;
+	Integer sequenceEndI = null;
+	if ( (SequenceEnd != null) && !SequenceEnd.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceEnd) ) {
+			sequenceEndI = Integer.parseInt(SequenceEnd);
+			this.iteratorSequenceEnd = sequenceEndI;
+		}
+		else if ( StringUtil.isDouble(SequenceEnd) ) {
+			sequenceEndD = Double.parseDouble(SequenceEnd);
+			this.iteratorSequenceEnd = sequenceEndD;
+		}
+	}
+	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
+	Double sequenceIncrementD = null;
+	Integer sequenceIncrementI = null;
+	if ( (SequenceIncrement != null) && !SequenceIncrement.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceIncrement) ) {
+			sequenceIncrementI = Integer.parseInt(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementI;
+		}
+		else if ( StringUtil.isDouble(SequenceIncrement) ) {
+			sequenceIncrementD = Double.parseDouble(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementD;
+		}
+	}
+}
+
+/**
 Increment the loop counter.
 If called the first time, initialize.  This may be called before runCommands() so have to process properties here.
 @return If the increment will go past the end (for loop is done), return false.
@@ -330,12 +426,8 @@ public boolean next ()
     	if ( this.iteratorIsList ) {
     	    // Iterate with the list
 	        setIteratorPropertyValue(null);
-	  		String List = getCommandParameters().getValue ( "List" );
-    		String [] parts = List.split(",");
-    		this.list = new ArrayList<Object>();
-    		for ( int i = 0; i < parts.length; i++ ) {
-    			this.list.add(parts[i].trim());
-    		}
+	        // TODO smalers 2020-11-01 why is this reprocessed here?  In case it is dynamic?
+	        initializeListIterator(processor);
 	        CommandStatus status = getCommandStatus();
 	        status.clearLog(CommandPhaseType.RUN);
 	        try {
@@ -359,6 +451,7 @@ public boolean next ()
     		// Iterating on a sequence
     		// Initialize the loop
     		setIteratorPropertyValue(null);
+	        initializeSequenceIterator(processor);
 	        CommandStatus status = getCommandStatus();
 	        status.clearLog(CommandPhaseType.RUN);
 	        try {
@@ -366,6 +459,8 @@ public boolean next ()
 	            //this.iteratorObjectList = this.list;
 	            this.iteratorObject = this.iteratorSequenceStart;
 	            if ( this.iteratorSequenceIncrement == null ) {
+	            	// Defaults
+	            	// - TODO smalers 2020-11-02 should be set in runCommand()
 	            	if ( this.iteratorSequenceStart instanceof Integer ) {
 	            		this.iteratorSequenceIncrement = new Integer(1);
 	            	}
@@ -514,6 +609,7 @@ public boolean next ()
     	}
     	else if ( this.iteratorIsSequence ) {
     		// If the iterator object is already at or will exceed the maximum, then done iterating
+    		Message.printStatus(2, routine, "start=" + this.iteratorSequenceStart + ", end=" + this.iteratorSequenceEnd + ", increment=" + this.iteratorSequenceIncrement + ", object=" + this.iteratorObject);
 	    	if ( ((this.iteratorSequenceStart instanceof Integer) &&
 	    			(((Integer)this.iteratorObject >= (Integer)this.iteratorSequenceEnd) ||
 	    			((Integer)this.iteratorObject + (Integer)this.iteratorSequenceIncrement > (Integer)this.iteratorSequenceEnd))
@@ -522,6 +618,7 @@ public boolean next ()
 	    			(((Double)this.iteratorObject >= (Double)this.iteratorSequenceEnd) ||
 	    			((Double)this.iteratorObject + (Double)this.iteratorSequenceIncrement) >= (Double)this.iteratorSequenceEnd))
 	    			) {
+	    		// Done iterating
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Done iterating on list." );
 	        	}
@@ -675,8 +772,12 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	}
 	String List = parameters.getValue ( "List" );
 	if ( (List != null) && !List.isEmpty() ) {
+		if ( List.indexOf("${") >= 0 ) {
+			// Can specify with property
+			List = TSCommandProcessorUtil.expandParameterValue(processor, this, List);
+		}
 		String [] parts = List.split(",");
-		this.list = new ArrayList<Object>();
+		this.list = new ArrayList<>();
 		for ( int i = 0; i < parts.length; i++ ) {
 			this.list.add(parts[i].trim());
 		}
@@ -685,7 +786,15 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
 	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) {
 		// Can specify with property
+		String s0 = SequenceStart;
 		SequenceStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceStart);
+		if ( s0.equals(SequenceStart) ) {
+            message = "For loop 'SequenceStart' (" + SequenceStart + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
 	}
 	Double sequenceStartD = null;
 	Integer sequenceStartI = null;
@@ -693,17 +802,29 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		if ( StringUtil.isInteger(SequenceStart) ) {
 			sequenceStartI = Integer.parseInt(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartI;
+			// Default increment value, may be reset with property below
+			this.iteratorSequenceIncrement = new Integer(1);
 		}
 		else if ( StringUtil.isDouble(SequenceStart) ) {
 			sequenceStartD = Double.parseDouble(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartD;
+			// Default increment value, may be reset with property below
+			this.iteratorSequenceIncrement = new Double(1.0);
 		}
 		this.iteratorIsSequence = true;
 	}
 	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
 	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) {
 		// Can specify with property
+		String s0 = SequenceEnd;
 		SequenceEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceEnd);
+		if ( s0.equals(SequenceEnd) ) {
+            message = "For loop 'SequenceEnd' (" + SequenceEnd + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
 	}
 	Double sequenceEndD = null;
 	Integer sequenceEndI = null;
@@ -730,6 +851,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 			this.iteratorSequenceIncrement = sequenceIncrementD;
 		}
 	}
+
 	String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);

@@ -771,11 +771,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Set period...
 
 	String SetStart = parameters.getValue("SetStart");
+	if ( (SetStart != null) && (SetStart.indexOf("${") >= 0) ) {
+		SetStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SetStart);
+	}
 	String SetEnd = parameters.getValue("SetEnd");
+	if ( (SetEnd != null) && (SetEnd.indexOf("${") >= 0) ) {
+		SetEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SetEnd);
+	}
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
+			// The following expands built-in DateTime
 			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
 				status, warningLevel, command_tag );
 		}
@@ -784,6 +791,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warning_count;
 		}
 		try {
+			// The following expands built-in DateTime
 			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
 				status, warningLevel, command_tag );
 		}

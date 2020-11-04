@@ -395,6 +395,7 @@ The characters \" will be replaced by a literal quote (").  Properties that cann
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
 @param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
+@return the expanded string
 */
 public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
 {   String routine = "TSCommandProcessorUtil.expandParameterValue";

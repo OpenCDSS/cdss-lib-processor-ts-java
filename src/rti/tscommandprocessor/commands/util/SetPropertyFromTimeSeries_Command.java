@@ -348,10 +348,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			ts = (TS)o_ts;
 	
 	    	// Set the property in the processor
+			// - TODO smalers 2020-11-01 this always returns a string but could return a non-string property if direct property look-up
 			Object Property_Object = null;
 			if ( commandPhase == CommandPhaseType.RUN ) {
 				Property_Object = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
 						processor, ts, PropertyValue, status, commandPhase);
+				// TODO smalers 2020-11-01 added this check to help with typos, but might need a command parameter like IfPropertyNotFound
+				if ( (Property_Object != null) && (Property_Object instanceof String) &&
+					(((String)Property_Object).indexOf("${") >= 0) ) {
+					// Some property did not expand - still seeing ${} in result
+					message = "Property was not found.  Result is: " + Property_Object;
+					Message.printWarning(warning_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.WARNING,
+	                        message,
+	                        "Verify that the requested property is valid and is set." ) );
+				}
 			}
 	    	request_params = new PropList ( "" );
 	    	request_params.setUsingObject ( "PropertyName", PropertyName );

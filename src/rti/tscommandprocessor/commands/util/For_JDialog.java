@@ -304,7 +304,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     
     JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence start:" ), 
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SequenceStart_JTextField = new JTextField (10);
+    __SequenceStart_JTextField = new JTextField (20);
     __SequenceStart_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceStart_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -313,7 +313,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     
     JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence end:" ), 
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SequenceEnd_JTextField = new JTextField (10);
+    __SequenceEnd_JTextField = new JTextField (20);
     __SequenceEnd_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceEnd_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -322,7 +322,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     
     JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence increment:" ), 
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SequenceIncrement_JTextField = new JTextField (10);
+    __SequenceIncrement_JTextField = new JTextField (20);
     __SequenceIncrement_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceIncrement_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

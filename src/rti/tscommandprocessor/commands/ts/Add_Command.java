@@ -465,8 +465,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         request_params.set ( "TSList", TSList );
         request_params.set ( "EnsembleID", EnsembleID );
     }
-	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below
-	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" ); // ${Property} is handled below
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+	if ( (AnalysisStart != null) && (AnalysisStart.indexOf("${") >= 0) ) {
+		AnalysisStart = TSCommandProcessorUtil.expandParameterValue(processor, this, AnalysisStart);
+	}
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	if ( (AnalysisEnd != null) && (AnalysisEnd.indexOf("${") >= 0) ) {
+		AnalysisEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, AnalysisEnd);
+	}
 	
 	// Figure out the dates to use for the analysis.
 	// Default of null means to analyze the full period.
@@ -474,6 +480,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	DateTime AnalysisEnd_DateTime = null;
 	
 	try {
+		// The following expands built-in DateTime properties
 		AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
 			status, warning_level, command_tag );
 	}
@@ -482,6 +489,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		++warning_count;
 	}
 	try {
+		// The following expands built-in DateTime properties
 		AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
 			status, warning_level, command_tag );
 	}

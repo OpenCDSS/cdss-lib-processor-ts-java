@@ -445,9 +445,15 @@ CommandWarningException, CommandException
 	if ( (SetStart == null) || SetStart.isEmpty() ) {
 		SetStart = "${OutputStart}";
 	}
+	else if ( (SetStart != null) && (SetStart.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		SetStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SetStart);
+	}
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	if ( (SetEnd == null) || SetEnd.isEmpty() ) {
 		SetEnd = "${OutputEnd}";
+	}
+	else if ( (SetEnd != null) && (SetEnd.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		SetEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SetEnd);
 	}
 	String Units = parameters.getValue ( "Units" );
 	if ( (Units != null) && (Units.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {

@@ -312,13 +312,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// New date/times...
 
 	String NewStart = parameters.getValue("NewStart");
+	if ( (NewStart != null) && (NewStart.indexOf("${") >= 0) ) {
+		NewStart = TSCommandProcessorUtil.expandParameterValue(processor, this, NewStart);
+	}
 	String NewEnd = parameters.getValue("NewEnd");
+	if ( (NewEnd != null) && (NewEnd.indexOf("${") >= 0) ) {
+		NewEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, NewEnd);
+	}
 
 	// Figure out the dates to use for the analysis...
 	DateTime NewStart_DateTime = null;
 	DateTime NewEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
+			// The following will expand build-in DateTime properties
 			NewStart_DateTime = TSCommandProcessorUtil.getDateTime ( NewStart, "NewStart", processor,
 				status, warning_level, command_tag );
 		}
@@ -327,6 +334,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warning_count;
 		}
 		try {
+			// The following will expand build-in DateTime properties
 			NewEnd_DateTime = TSCommandProcessorUtil.getDateTime ( NewEnd, "NewEnd", processor,
 				status, warning_level, command_tag );
 		}

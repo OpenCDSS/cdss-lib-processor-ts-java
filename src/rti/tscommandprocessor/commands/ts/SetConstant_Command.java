@@ -462,7 +462,13 @@ CommandWarningException, CommandException
 	// Set period...
 
 	String SetStart = parameters.getValue("SetStart");
+	if ( (SetStart != null) && (SetStart.indexOf("${") >= 0) ) {
+		SetStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SetStart);
+	}
 	String SetEnd = parameters.getValue("SetEnd");
+	if ( (SetEnd != null) && (SetEnd.indexOf("${") >= 0) ) {
+		SetEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SetEnd);
+	}
 	//String FillFlag = parameters.getValue("SetFlag");
 
 	// Figure out the dates to use for the analysis...
@@ -470,6 +476,7 @@ CommandWarningException, CommandException
 	DateTime SetEnd_DateTime = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
+			// The following expands built-in DateTime properties
 			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
 				status, warning_level, command_tag );
 		}
@@ -478,6 +485,7 @@ CommandWarningException, CommandException
 			++warning_count;
 		}
 		try {
+			// The following expands built-in DateTime properties
 			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
 				status, warning_level, command_tag );
 		}

@@ -145,7 +145,7 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(5);
+    List<String> validList = new ArrayList<>(5);
     validList.add ( "RProgram" );
     validList.add ( "ROptions" );
     //validList.add ( "PythonPath" );
@@ -272,11 +272,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    RProgram = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, RProgram);
 	}
 	String ROptions = parameters.getValue ( "ROptions" );
+	// The following will replace \" with "
 	if ( (ROptions != null) && !ROptions.isEmpty() && (ROptions.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 	    ROptions = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, ROptions);
 	}
 	String ScriptFile = parameters.getValue ( "ScriptFile" ); // Expanded below
 	String ScriptArguments = parameters.getValue ( "ScriptArguments" );
+	// The following will replace \" with "
 	if ( (ScriptArguments != null) && !ScriptArguments.isEmpty() && (ScriptArguments.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 	    ScriptArguments = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, ScriptArguments);
 	}
@@ -320,8 +322,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         
 		Message.printStatus ( 2, routine, "Processing R script file \"" + ScriptFile_full + "\" using R program.");
 
-		String [] rOptions = StringUtil.toArray(StringUtil.breakStringList(ROptions, " ", StringUtil.DELIM_ALLOW_STRINGS));
-		String [] scriptArgs = StringUtil.toArray(StringUtil.breakStringList(ScriptArguments, " ", StringUtil.DELIM_ALLOW_STRINGS));
+		String [] rOptions = StringUtil.toArray(StringUtil.breakStringList(ROptions, " ", StringUtil.DELIM_ALLOW_STRINGS_RETAIN_QUOTES));
+		String [] scriptArgs = StringUtil.toArray(StringUtil.breakStringList(ScriptArguments, " ", StringUtil.DELIM_ALLOW_STRINGS_RETAIN_QUOTES));
 		String rProgram = getRProgram(RProgram);
 		if ( rProgram == null ) {
             message = "Unable to find R (Rscript) program to run in expected locations.";
@@ -442,6 +444,7 @@ private int runR ( String command_tag, int warning_count, String rProgram, Strin
     pm.saveOutput ( true );
     pm.run();
     CommandStatus status = getCommandStatus();
+    Message.printStatus(2,routine,"R program exited with status " + pm.getExitStatus() );
     if ( pm.getExitStatus() == 996 ) {
         message = "Program \"" + commandLine + "\" timed out.  Full output may not be available.";
         Message.printWarning ( warning_level, 
@@ -451,7 +454,7 @@ private int runR ( String command_tag, int warning_count, String rProgram, Strin
                     message, "Check the log file and verify running the program on the command " +
                     		"line before running in TSTool."));
     }
-    else if ( pm.getExitStatus() > 0 ) {
+    else if ( pm.getExitStatus() != 0 ) {
         message = "Program \"" + commandLine + "\" exited with status " + pm.getExitStatus() +
         ".  Full output may not be available.";
         Message.printWarning ( warning_level, 

@@ -124,6 +124,7 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle( "Select R Script");
         SimpleFileFilter sff = new SimpleFileFilter("R", "R script");
         fc.addChoosableFileFilter(sff);
+        fc.setFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -453,12 +454,13 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String routine = __command.getCommandName() + "_JDialog.refresh";
+{	String routine = __command.getCommandName() + "_JDialog.refresh";
     String RProgram = "";
     String ROptions = "";
     //String PythonPath = "";
     String ScriptFile = "";
     String ScriptArguments = "";
+    String SetwdHow = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -469,6 +471,7 @@ private void refresh ()
 	    //PythonPath = props.getValue ( "PythonPath" );
 		ScriptFile = props.getValue ( "ScriptFile" );
 		ScriptArguments = props.getValue ( "ScriptArguments" );
+		SetwdHow = props.getValue ( "SetwdHow" );
         if ( RProgram != null ) {
             __RProgram_JTextField.setText ( RProgram );
         }
@@ -484,6 +487,22 @@ private void refresh ()
         if ( ScriptArguments != null ) {
             __ScriptArguments_JTextArea.setText ( ScriptArguments );
         }
+        if ( SetwdHow == null ) {
+            // Select default...
+            __SetwdHow_JComboBox.select ( 0 );
+        }
+        else {  
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SetwdHow_JComboBox,
+                SetwdHow, JGUIUtil.NONE, null,null)){
+                __SetwdHow_JComboBox.select ( SetwdHow );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid SetwdHow parameter \""
+                + SetwdHow + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	RProgram = __RProgram_JTextField.getText().trim();
@@ -491,12 +510,14 @@ private void refresh ()
 	//PythonPath = __PythonPath_JTextField.getText().trim();
 	ScriptFile = __ScriptFile_JTextField.getText().trim();
 	ScriptArguments = __ScriptArguments_JTextArea.getText().trim();
+    SetwdHow =__SetwdHow_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "RProgram=" + RProgram );
     props.add ( "ROptions=" + ROptions );
     //props.add ( "PythonPath=" + PythonPath );
 	props.add ( "ScriptFile=" + ScriptFile );
 	props.add ( "ScriptArguments=" + ScriptArguments );
+	props.add ( "SetwdHow=" + SetwdHow );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

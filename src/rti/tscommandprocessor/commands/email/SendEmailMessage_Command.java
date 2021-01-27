@@ -24,17 +24,27 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.email;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Scanner;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
+import javax.mail.BodyPart;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -52,6 +62,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+
 
 /**
 This class initializes, checks, and runs the SendEmailMessage() command.
@@ -197,65 +208,73 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default
 	}
-
 	//String MessageFile_full = IOUtil.verifyPathForOS(
     //   IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
     //    	TSCommandProcessorUtil.expandParameterValue(processor,this,MessageFile) ) );
-	String AttachmentFiles_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor,this,AttachmentFiles) ) );
-	// Expand to a list of files...
-	File f = new File(AttachmentFiles_full);
-	String ext = null;
-	List<File> fileList = new ArrayList<File>();
-	if ( AttachmentFiles_full.indexOf("*") < 0 ) {
-	    // Processing a single file
-	    fileList.add(new File(AttachmentFiles_full));
-	}
-	else if ( f.getName().equals("*") ) {
-	    // Process all files in folder
-	    fileList = Arrays.asList(f.getParentFile().listFiles());
-	}
-	else if ( f.getName().startsWith("*.") ) {
-	    // Process all files in the folder with the matching extension
-	    ext = IOUtil.getFileExtension(f.getName());
-	    // TODO SAM 2016-02-08 Need to enable parameter for case
-	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext,false);
-	}
-	if ( fileList.size() == 0 ) {
-	    message = "Unable to match any files using AttachmentFiles=\"" + AttachmentFiles + "\"";
-	    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the input file(s) exist(s) at the time the command is run."));
-        }
-        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                message, "Verify that the input file(s) exist(s) at the time the command is run."));
-        }
-	}
-	for ( File file : fileList ) {
-    	if ( !file.exists() ) {
-            message = "Attachment file \"" + file + "\" does not exist.";
-            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the attachment file exists at the time the command is run."));
-            }
-            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Verify that the attachment file exists at the time the command is run."));
-            }
-            else {
-                Message.printStatus( 2, routine, message + "  Ignoring.");
-            }
-    	}
+	
+	// Check if AttachmentFiles is null. If not, then process.
+	List<File> fileList = null;
+	
+	if (AttachmentFiles != null) {
+//		System.out.println(AttachmentFiles);
+		String AttachmentFiles_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor,this,AttachmentFiles) ) );
+		// Expand to a list of files...
+		File f = new File(AttachmentFiles_full);
+		String ext = null;
+		fileList = new ArrayList<File>();
+		if ( AttachmentFiles_full.indexOf("*") < 0 ) {
+		    // Processing a single file
+		    fileList.add(new File(AttachmentFiles_full));
+		}
+		else if ( f.getName().equals("*") ) {
+		    // Process all files in folder
+		    fileList = Arrays.asList(f.getParentFile().listFiles());
+		}
+		else if ( f.getName().startsWith("*.") ) {
+		    // Process all files in the folder with the matching extension
+		    ext = IOUtil.getFileExtension(f.getName());
+		    // TODO SAM 2016-02-08 Need to enable parameter for case
+		    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext,false);
+		}
+		if ( fileList.size() == 0 ) {
+		    message = "Unable to match any files using AttachmentFiles=\"" + AttachmentFiles + "\"";
+		    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+	            Message.printWarning ( warning_level,
+	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that the input file(s) exist(s) at the time the command is run."));
+	        }
+	        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	            Message.printWarning ( warning_level,
+	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	                message, "Verify that the input file(s) exist(s) at the time the command is run."));
+	        }
+		}
+		// Print warnings depending on what was picked from the drop-down list.
+		for ( File file : fileList ) {
+	    	if ( !file.exists() ) {
+	            message = "Attachment file \"" + file + "\" does not exist.";
+	            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Verify that the attachment file exists at the time the command is run."));
+	            }
+	            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	                    message, "Verify that the attachment file exists at the time the command is run."));
+	            }
+	            else {
+	                Message.printStatus( 2, routine, message + "  Ignoring.");
+	            }
+	    	}
+		}
+//		System.out.println(fileList);
 	}
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -284,7 +303,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	*/
 	
 	try {
-		sendEmailMessage ( To, From, CC, BCC, Subject, Message0 );
+		sendEmailMessage ( To, From, CC, BCC, Subject, Message0, fileList );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -319,17 +338,82 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
  * @param subject
  * @param message
  */
-private MimeMessage createEmailMessage ( Session session, String from, String to, String cc, String bcc, String subject, String message )
+private MimeMessage createEmailMessage ( Session session, String from, String to, String cc, String bcc, String subject,
+		String message, List<File> fileList )
 throws AddressException, MessagingException {
 	
 	MimeMessage emailMessage = new MimeMessage(session);
 	InternetAddress toAddress = new InternetAddress(to);
 	InternetAddress fromAddress = new InternetAddress(from);
+	
 	emailMessage.setFrom(fromAddress);
 	emailMessage.addRecipient(javax.mail.Message.RecipientType.TO, toAddress);
 	emailMessage.setSubject(subject);
-	emailMessage.setText(message);
+	
+	// If any attachment files are present, send them along with the message
+	if (fileList != null) {
+		
+		Multipart multipart = new MimeMultipart();
+		BodyPart messageBodyPart = new MimeBodyPart();  
+	    messageBodyPart.setText(message);
+	    // Iterate over each attachment file and add them to the multipart object
+		for (File file: fileList) {
+			BodyPart attachmentBodyPart = new MimeBodyPart();
+			
+			DataSource source = new FileDataSource(file);  
+			attachmentBodyPart.setDataHandler(new DataHandler(source));
+		    // If forward or backward slash.
+		    if (file.toString().lastIndexOf("\\") != -1) {
+		    	attachmentBodyPart.setFileName(file.toString().substring(file.toString().lastIndexOf("\\") + 1));
+		    } else {
+		    	attachmentBodyPart.setFileName(file.toString().substring(file.toString().lastIndexOf("/") + 1));
+		    }
+		    // Add the attached file to the Multipart.
+		    multipart.addBodyPart(attachmentBodyPart);
+		}
+		// Add the message body part to the Multipart
+		multipart.addBodyPart(messageBodyPart);
+		// Set the message body part and subsequent attachment body parts to the MimeMessage emailMessage.
+		emailMessage.setContent(multipart);  
+	} else {
+		emailMessage.setText(message);
+	}
+	
+	// Add any CC users to recipients.
+	if (cc != null) {
+		for (String ccRecipient: cc.split(",")) {
+            emailMessage.addRecipient(javax.mail.Message.RecipientType.CC, new InternetAddress(ccRecipient));
+        }
+	}
+	// Add any BCC users to recipients.
+	if (bcc != null) {
+		for (String bccRecipient: bcc.split(",")) {
+            emailMessage.addRecipient(javax.mail.Message.RecipientType.BCC, new InternetAddress(bccRecipient));
+        }
+	}
+	
 	return emailMessage;
+}
+
+/**
+ * Reads in the contents of the .mailpass file in the user's home directory with the correct email user name and
+ * password. To be used as the user's credentials when trying to send an email.
+ * @return An array of length two containing the user's email ID and password.
+ */
+private String[] readUserCredentials() throws FileNotFoundException {
+	
+	String fullMailPassPath = IOUtil.verifyPathForOS(System.getProperty("user.home") + "\\.mailpass");
+	String[] credentials = new String[2];
+	
+	File myObj = new File(fullMailPassPath);
+    Scanner myReader = new Scanner(myObj);
+    while (myReader.hasNextLine()) {
+      String data = myReader.nextLine();
+      credentials = data.split(":");
+    }
+    myReader.close();
+	
+	return credentials;
 }
 
 /**
@@ -342,17 +426,31 @@ throws AddressException, MessagingException {
  * @param message
  * @throws AddressException
  * @throws MessagingException
+ * @throws FileNotFoundException 
  */
-private void sendEmailMessage ( String to, String from, String cc, String bcc, String subject, String message )
-throws AddressException, MessagingException {
+private void sendEmailMessage ( String to, String from, String cc, String bcc, String subject, String message, List<File> fileList )
+throws AddressException, MessagingException, FileNotFoundException {
 	Properties props = new Properties();
-	// TODO SAM 2016-04-02 Need to set properties for email server here
-	// See:  http://crunchify.com/java-mailapi-example-send-an-email-via-gmail-smtp/
-	Session session = Session.getDefaultInstance(props,null);
-	MimeMessage emailMessage = createEmailMessage ( session, from, to, cc, bcc, subject, message );
+	// Port 25 is the default port used, and is considered to not be a great option, as many firewalls will block
+	// it. The following 2 ports are suggested, in order of importance. Port 587 - Uses STARTTLS. Port 465- Uses SMTPS
+	// Set properties. See: http://crunchify.com/java-mailapi-example-send-an-email-via-gmail-smtp/
+	props.put("mail.smtp.port", "587");
+	props.put("mail.smtp.auth", "true");
+	props.put("mail.smtp.starttls.enable", "true");
+	// Populate the 2 element sized array userCredentials with accountID and accountPassword
+	String[] userCredentials = readUserCredentials();
+	String accountId = userCredentials[0];
+	// This is recommended to be an app-specific password for Google.
+	String accountPassword = userCredentials[1];
+	Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+		protected PasswordAuthentication getPasswordAuthentication() {
+			return new PasswordAuthentication(accountId, accountPassword);
+		}
+	});
+	
+	MimeMessage emailMessage = createEmailMessage ( session, from, to, cc, bcc, subject, message, fileList );
 	Transport transport = session.getTransport("smtp");
-	String accountId = "";
-	String accountPassword = "";
+	
 	transport.connect("smtp.gmail.com",accountId,accountPassword);
 	transport.sendMessage(emailMessage,emailMessage.getAllRecipients());
 	transport.close();

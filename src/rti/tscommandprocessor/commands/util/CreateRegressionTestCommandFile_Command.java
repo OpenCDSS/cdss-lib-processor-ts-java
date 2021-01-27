@@ -577,7 +577,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( FilenamePattern == null ) {
 		// The default patterns are:
 		//     "Test_*.TSTool" where the . is literal, and want ignore case
-		//     "test_*.TSTool" where the . is literal, and want ignore case
+		//     "test-*.TSTool" where the . is literal, and want ignore case
 		// For Java string matching, need to replace * with .* and . with \...
 		// The \\x2e means literal period, so as to not be confused with regex period.
 		FilenamePattern_Java = new String[2];
@@ -588,7 +588,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		String [] parts = FilenamePattern.split(",");
 		FilenamePattern_Java = new String[parts.length];
 		for ( int i = 0; i < parts.length; i++ ) {
-			FilenamePattern_Java[i] = StringUtil.replaceString(parts[i],"*",".*");
+			FilenamePattern_Java[i] = StringUtil.replaceString(parts[i].trim(),"*",".*");
 		}
 	}
 	String Append = parameters.getValue ( "Append" );

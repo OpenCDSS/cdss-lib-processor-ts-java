@@ -170,6 +170,10 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else {
+		// Parameter choices
+		refresh ();
+	}
 }
 
 /**
@@ -246,7 +250,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
 		"Read a command file and run the commands using a separate command processor." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Parent command processor data stores can be shared with the processor for the command file." ),
+        "Parent command processor datastores can be shared with the processor for the command file." ),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Results are cleared before processing each command file." ),
@@ -290,7 +294,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExpectedStatus_JComboBox = new SimpleJComboBox ( false );
-    List<String> statusChoices = new ArrayList<String>();
+    List<String> statusChoices = new ArrayList<>();
     statusChoices.add ( "" );   // Default
     statusChoices.add ( __command._Unknown );
     statusChoices.add ( __command._Success );
@@ -322,10 +326,10 @@ private void initialize ( JFrame parent, RunCommands_Command command )
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         */
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent data stores?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent datastores?:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
-    List<String> shareChoices = new ArrayList<String>();
+    List<String> shareChoices = new ArrayList<>();
     shareChoices.add ( "" );   // Default
     //shareChoices.add ( __command._Copy ); // Too difficult?
     shareChoices.add ( __command._DoNotShare );
@@ -336,7 +340,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(main_JPanel, __ShareDataStores_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - share data stores (default=" + __command._Share + ")."), 
+        "Optional - share datastores (default=" + __command._Share + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

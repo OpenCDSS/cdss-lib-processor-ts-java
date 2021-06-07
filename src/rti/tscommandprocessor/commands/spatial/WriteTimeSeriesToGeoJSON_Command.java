@@ -35,6 +35,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
@@ -187,15 +188,15 @@ throws InvalidCommandParameterException
         message = "The latitude property OR WKT geometry property must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the latitude column OR WKT geometry property." ) );
+            message, "Specify the latitude property OR WKT geometry property." ) );
     }
     
-    if ( ((LatitudeProperty != null) && (LatitudeProperty.length() != 0)) &&
+    if ( ((LongitudeProperty != null) && (LongitudeProperty.length() != 0)) &&
         ((WKTGeometryProperty != null) && (WKTGeometryProperty.length() != 0)) ) {
-        message = "The latitude property OR WKT geometry property must be specified.";
+        message = "The longitude property OR WKT geometry property must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the latitude column OR WKT geometry property." ) );
+            message, "Specify the longitude property OR WKT geometry property." ) );
     }
 
     if ( (CoordinatePrecision != null) && !CoordinatePrecision.isEmpty() &&
@@ -350,7 +351,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     String [] includeProperties = null;
     if ( (IncludeProperties != null) && !IncludeProperties.isEmpty() ) {
-        // Use the provided columns
+        // Use the provided properties
         includeProperties = IncludeProperties.split(",");
         for ( int i = 0; i < includeProperties.length; i++ ) {
             // Convert glob notation to Java
@@ -363,7 +364,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     String [] excludeProperties = null;
     if ( (ExcludeProperties != null) && !ExcludeProperties.isEmpty() ) {
-        // Use the provided columns
+        // Use the provided properties
         excludeProperties = ExcludeProperties.split(",");
         for ( int i = 0; i < excludeProperties.length; i++ ) {
         	// Convert glob notation to Java
@@ -621,7 +622,7 @@ throws IOException
 		coordinateFormat = "%." + coordinatePrecision + "f";
 	}
 	try {
-		// Open the output file
+		// Open the output file.
 		FileOutputStream fos = new FileOutputStream ( outputFile, append );
 		if ( includeProperties == null ) {
 			includeProperties = new String[1]; // Simplifies error handling
@@ -700,22 +701,25 @@ throws IOException
 	    }
 	    fout.print( i1 + "\"features\": [\n");
 	
-	    Object latitudeO = null, longitudeO = null, elevationO = null; // Can be double, int, or string
+	    Object latitudeO = null, longitudeO = null, elevationO = null; // Can be double, int, or string.
 	    Object wkt0 = null;
 	    WKTGeometryParser wktParser = null;
 	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2, coordinatePrecision, -1);
-	    Gson gson = new Gson();
+	    // TODO smalers 2021-05-11 Remove the following if tests out.
+	    // - problem is, for example, string with = gets replaced with \u003d, which breaks URL strings.
+	    //Gson gson = new Gson();
+	    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 	    String wkt = null;
 	    if ( doWkt ) {
 	        wktParser = new WKTGeometryParser();
 	    }
-	    GRShape shape = null; // Shape instances to add below
+	    GRShape shape = null; // Shape instances to add below.
 	    GRPoint point = null;
 	    GRPointZM pointzm = null;
 	    Double x = 0.0, y = 0.0, z = 0.0;
 	    int nts = tslist.size();
 	    int nts0 = nts - 1;
-	    Object o = null; // Object from t
+	    Object o = null; // Object from time series.
 	    TS ts = null;
 	    boolean haveElevation = false;
 	    double shapeZmin = 0.0, shapeZmax = 0.0;
@@ -735,7 +739,7 @@ throws IOException
 	            latitudeO = null;
 	            haveElevation = false;
 	            if ( doPoint ) {
-	                // Property columns can be any type because objects are treated as strings below
+	                // Properties can be any type because objects are treated as strings below.
 	                longitudeO = ts.getProperty(longitudeProperty);
 	                if ( longitudeO == null ) {
 	                	Message.printStatus(2,routine,"Skipping because longitude property is null.");
@@ -802,7 +806,7 @@ throws IOException
 	                }
 	            }
 	            if ( doWkt ) {
-	                // Extract shape from WKT
+	                // Extract shape from WKT.
 	                wkt0 = ts.getProperty(wktGeometryProperty);
 	                if ( wkt0 != null ) {
 	                	wkt = (String)wkt0;
@@ -815,12 +819,12 @@ throws IOException
 		                }
 	                }
 	            }
-	            // If get to here it is OK to output the feature and table columns as related properties.
+	            // If get to here it is OK to output the feature and time series properties as related properties.
 	    	    fout.print( i2 + "{\n");
 	    	    fout.print( i3 + "\"type\": \"Feature\",\n");
 	    	    if ( haveElevation ) {
-	    		    // Write X, Y, Z coordinates
-	    	    	// TODO deal with Z when parsing WTK
+	    		    // Write X, Y, Z coordinates.
+	    	    	// TODO deal with Z when parsing WTK.
 	    	    	if ( coordinatePrecision < 0 ) {
  				   	    fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shapeZmin + ", " + shape.xmax + ", " + shape.ymax + ", " + shapeZmax + "],\n" );
 	    	    	}
@@ -835,23 +839,25 @@ throws IOException
 	    	    	}
 	    	    }
 	    	    else {
-	    		    // Write X, Y coordinates
+	    		    // Write X, Y coordinates.
 	    	    	if ( coordinatePrecision < 0 ) {
+	    	    		// Write bounding box using data precision.
 	    	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
 	    	    	}
 	    	    	else {
+	    	    		// Write bounding box using specified precision.
 	    	    		fout.print ( i3 + "\"bbox\": [" +
-	    			      	String.format(coordinateFormat, bbox[0]) + ", " +
-	    			      	String.format(coordinateFormat, bbox[1]) + ", " +
-	    			      	String.format(coordinateFormat, bbox[3]) + ", " +
-	    			      	String.format(coordinateFormat, bbox[4]) + "],\n" );
+	    			      	String.format(coordinateFormat, shape.xmin) + ", " +
+	    			      	String.format(coordinateFormat, shape.ymin) + ", " +
+	    			      	String.format(coordinateFormat, shape.xmax) + ", " +
+	    			      	String.format(coordinateFormat, shape.ymax) + "],\n" );
 	    	    	}
 	        	}
 	    	    fout.print( i3 + "\"properties\": {\n");
-	    		// Get all the properties.  Then extract the properties that match the IncludeProperties list
+	    		// Get all the properties.  Then extract the properties that match the IncludeProperties list.
 	    	    // - Do not output WKT property but do output latitude and longitude
 	    		HashMap<String,Object> props = ts.getProperties();
-	    		List<String> matchedProps = new ArrayList<String>();
+	    		List<String> matchedProps = new ArrayList<>();
 	    		for ( int iprop = 0; iprop < includeProperties.length; iprop++ ) {
 	    			for ( String key: props.keySet() ) {
 	    				if ( key.matches(includeProperties[iprop]) ) {
@@ -873,26 +879,29 @@ throws IOException
 	    				}
 	    			}
 	    		}
-	    		// Remove if in the exclude list
+	    		// Remove if in the exclude list.
 	    		for ( int iex = 0; iex < excludeProperties.length; iex++ ) {
-		    		for ( int iprop = matchedProps.size(); iprop >= 0; --iprop ) {
+		    		for ( int iprop = (matchedProps.size() - 1); iprop >= 0; --iprop ) {
 		    			if ( excludeProperties[iex].matches(matchedProps.get(iprop)) ) {
 		    				matchedProps.remove(iprop--);
 		    			}
 		    		}
 	    		}
-	    		// Output the properties that remain
+	    		// Output the properties that remain.
 	    		int iprop = -1;
 	    		int nprop0 = matchedProps.size() - 1;
 	    		for ( String prop : matchedProps ) {
+	    			++iprop;
 	    	    	try {
 	    	    		// Gson will properly output with quotes, etc.
 	    	    		o = ts.getProperty(prop);
 		    	    	fout.print( i4 + "\"" + prop + "\": " + gson.toJson(o) );
 			    	    if ( iprop != nprop0 ) {
+			    	    	// All except last properties.
 			    	    	fout.print ( ",\n" );
 			    	    }
 			    	    else {
+			    	    	// Last property.
 			    	    	fout.print ( "\n" );
 			    	    }
 	    	    	}
@@ -901,7 +910,7 @@ throws IOException
 	    	    	}
 	    	    }
 	    	    fout.print( i3 + "},\n");
-	    	    // Output the geometry based on the shape type
+	    	    // Output the geometry based on the shape type.
 	    	    fout.print( i3 + "\"geometry\": " + geoJSONFormatter.format(shape, true, i3) );
 	    	    if ( its == nts0 ) {
 	    	    	fout.print( i2 + "}\n");
@@ -975,7 +984,7 @@ private double[] writeTimeSeriesToGeoJSON_GetBBox(List<TS> tslist,
 	        longitudeO = null;
 	        latitudeO = null;
 	        if ( doPoint ) {
-	            // Property columns can be any type because objects are treated as strings below
+	            // Properties can be any type because objects are treated as strings below
 	            longitudeO = ts.getProperty(longitudeProperty);
 	            if ( longitudeO == null ) {
 	                //Message.printStatus(2,routine,"Skipping because longitude property is null.");

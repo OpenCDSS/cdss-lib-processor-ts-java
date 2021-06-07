@@ -3269,7 +3269,7 @@ throws Exception
                                 // Add to the command log as a failure...
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
-                                        "Error going to next iteration (" + e + ")", "Check For() command iteration data.") );
+                                        "Error going to next iteration (" + e + ")", "Check For() command iteration data.  Has required input been read?") );
                                 Message.printWarning(3, routine, e);
                                 // Same logic as ending the loop...
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());

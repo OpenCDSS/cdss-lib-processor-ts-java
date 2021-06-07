@@ -32,6 +32,8 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -63,14 +65,30 @@ Indicate whether breakFor() has been called, indicating that the iteration is co
 private boolean breakSet = false;
 
 /**
-Current index property value.
+ * Iterator property name, whose value will be set during iteration for use in the processor.
+ * This reflects the user's value and default of the property name.
+ */
+private String iteratorPropertyName = "";
+
+/**
+Current iterator property value, a simple value that can be used in iterating.
 */
 private Object iteratorObject = null;
 
 /**
-Hashmap for column to property map.
+Current iterator time series, a time series that 'iteratorObject' can be extracted from.
+*/
+private TS iteratorTimeSeries = null;
+
+/**
+Hashmap for table column to property map.
 */
 private Hashtable<String,String> tablePropertyMap = null;
+
+/**
+Hashmap for time series property to property map.
+*/
+private Hashtable<String,String> timeSeriesPropertyMap = null;
 
 /**
 Indicate that the iterator is using a list.
@@ -86,6 +104,11 @@ private boolean iteratorIsSequence = false;
 Indicate that the iterator is using a table.
 */
 private boolean iteratorIsTable = false;
+
+/**
+Indicate that the iterator is using a time series list.
+*/
+private boolean iteratorIsTsList = false;
 
 /**
 Indicate whether the loop has been initialized.  This will be done with the first call to next().
@@ -113,24 +136,34 @@ Iterator increment if sequence.
 private Object iteratorSequenceIncrement = null;
 
 /**
-List of objects to iterate if a list or table.
+List of objects to iterate if a list, table, or time series.
+TODO smalers 2021-05-09 need to clarify the difference between 'list' and 'iteratorObjectList'.
 */
 private List<Object> list = null;
 
 /**
 List of objects to iterate through (from list, table, etc.).
+TODO smalers 2021-05-09 need to clarify the difference between 'list' and 'iteratorObjectList'.
 */
 private List<Object> iteratorObjectList = null;
 
 /**
+List of time series objects to iterate.
+TODO smalers 2021-05-09 need to clarify the difference between 'list' and 'iteratorObjectList'.
+*/
+private List<TS> tslist = null;
+
+/**
 Position in the iterator object list for processing.
+Also used to track time series position.
+TODO smalers 2021-05-09 need to clarify the difference between 'list' and 'iteratorObjectList'.
 */
 private int iteratorObjectListIndex = -1;
 
 /**
  * List that is reused to pass problems back from next() function.
  */
-private List<String> nextProblems = new ArrayList<String>();
+private List<String> nextProblems = new ArrayList<>();
 
 /**
 Constructor.
@@ -165,6 +198,7 @@ throws InvalidCommandParameterException
 	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
 	String TableID = parameters.getValue ( "TableID" );
 	String TableColumn = parameters.getValue ( "TableColumn" );
+	String TSList = parameters.getValue ( "TSList" );
 	String warning = "";
 	String message;
 	
@@ -174,18 +208,20 @@ throws InvalidCommandParameterException
 	this.iteratorIsList = false;
 	this.iteratorIsSequence = false;
 	this.iteratorIsTable = false;
+	this.iteratorIsTsList = false;
     if ( (Name == null) || Name.equals("") ) {
         message = "A name for the for block must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( ((TableID == null) || TableID.isEmpty()) && ((List == null) || List.isEmpty()) && ((SequenceStart == null) || SequenceStart.isEmpty())) {
-        message = "A list, sequence, or table must be specified";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
-    }
+    // TODO smalers 2021-05-09 remove when code tests out
+    //if ( ((TableID == null) || (TableID.isEmpty()) && ((List == null)) || (List.isEmpty()) && ((SequenceStart == null)) || SequenceStart.isEmpty())) {
+    //    message = "A list of values, sequence, table, or time series list must be specified";
+    //    warning += "\n" + message;
+    //    status.addToLog ( CommandPhaseType.INITIALIZATION,
+    //        new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
+    //}
 
     int count = 0;
     if ( (List != null) && !List.isEmpty() ) {
@@ -244,17 +280,35 @@ throws InvalidCommandParameterException
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table column." ) );
 	    }
     }
-    if ( count > 1 ) {
-        message = "A list, sequence, or table must be specified, but not more than one";
+    if ( (TSList != null) && !TSList.isEmpty() ) {
+    	this.iteratorIsTsList = true;
+    	++count;
+	    if ( (TSList == null) || TSList.equals("") ) {
+	        message = "The TSList parameter value must be specified";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the TSList parameter." ) );
+	    }
+    }
+    if ( count == 0 ) {
+        message = "A list, sequence, table, or time series list must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message,
+            	"Specify the list OR sequence OR table ID/column OR time series list." ) );
+    }
+    else if ( count > 1 ) {
+        message = "A list, sequence, table, or time series list must be specified, but not more than one";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
     }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(9);
+    List<String> validList = new ArrayList<>(13);
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
+	validList.add ( "IteratorValueProperty" );
 	validList.add ( "List" );
 	validList.add ( "SequenceStart" );
 	validList.add ( "SequenceEnd" );
@@ -262,6 +316,10 @@ throws InvalidCommandParameterException
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
 	validList.add ( "TablePropertyMap" );
+	validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+	validList.add ( "TimeSeriesPropertyMap" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
@@ -409,8 +467,80 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 }
 
 /**
+ * Initialize the iterator for a time series list.
+ */
+private int initializeTsListIterator ( TSCommandProcessor processor,
+	CommandStatus status, int warning_level, String command_tag, int warning_count ) {
+	String routine = this.getClass().getSimpleName() + ".initializeTsListIterator";
+	// Get the list of time series
+	PropList parameters = getCommandParameters();
+	String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = TSListType.ALL_TS.toString();
+    }
+	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
+
+	// Get the time series to process...
+	PropList request_params = new PropList ( "" );
+	request_params.set ( "TSList", TSList );
+	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
+	CommandProcessorRequestResultsBean bean = null;
+	try {
+        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	}
+	catch ( Exception e ) {
+        String message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+		Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Report problem to software support." ) );
+	}
+	PropList bean_PropList = bean.getResultsPropList();
+	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	if ( o_TSList == null ) {
+        String message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(
+		command_tag,++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
+	}
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
+	if ( tslist.size() == 0 ) {
+        String message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.WARNING,
+				message, "Confirm that time series are available (may be OK for partial run)." ) );
+	}
+	else {
+		Message.printStatus(2, routine, "TSList iterator has " + tslist.size() + " time series.");
+	}
+	
+	this.tslist = tslist;
+	return warning_count;
+}
+
+/**
 Increment the loop counter.
-If called the first time, initialize.  This may be called before runCommands() so have to process properties here.
+If called the first time, initialize.
+This is called before runCommands() when processing commands so initialize some command runtime data here.
 @return If the increment will go past the end (for loop is done), return false.
 If the loop advanced, return true.
 */
@@ -422,6 +552,16 @@ public boolean next ()
   	if ( !this.forInitialized ) {
     	// Initialize the loop
   		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+
+  		// Set important properties so don't need to retrieve repetitively.
+  		PropList parameters = this.getCommandParameters();
+  		String IteratorProperty = parameters.getValue ( "IteratorProperty" );
+	 	if ( (IteratorProperty == null) || IteratorProperty.equals("") ) {
+	 		String Name = parameters.getValue ( "Name" );
+	    	IteratorProperty = Name;
+	 	}
+    	this.iteratorPropertyName = IteratorProperty;
+
   		this.breakSet = false;
     	if ( this.iteratorIsList ) {
     	    // Iterate with the list
@@ -433,7 +573,7 @@ public boolean next ()
 	        try {
 	            this.iteratorObjectListIndex = 0;
 	            this.iteratorObjectList = this.list;
-	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            setIteratorPropertyValue ( this.iteratorObjectList.get(this.iteratorObjectListIndex) );
 	            this.forInitialized = true;
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
@@ -457,7 +597,7 @@ public boolean next ()
 	        try {
 	            this.iteratorObjectListIndex = 0;
 	            //this.iteratorObjectList = this.list;
-	            this.iteratorObject = this.iteratorSequenceStart;
+	            setIteratorPropertyValue ( this.iteratorSequenceStart );
 	            if ( this.iteratorSequenceIncrement == null ) {
 	            	// Defaults
 	            	// - TODO smalers 2020-11-02 should be set in runCommand()
@@ -488,7 +628,7 @@ public boolean next ()
 	        // Create the list of objects for the iterator
 	        // The list is looked up once because rows cannot be added to the table during processing.
 	        String TableID = getCommandParameters().getValue ( "TableID" );
-	        if ( (TableID != null) && !TableID.isEmpty() && TableID.indexOf("${") >= 0 ) {
+	        if ( (TableID != null) && !TableID.isEmpty() && TableID.indexOf("${") >= 0 ) { // Use to match braces }
 	       		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	        }
 	        String columnName = getCommandParameters().getValue ( "TableColumn" );
@@ -540,7 +680,7 @@ public boolean next ()
 	            	// No data in list
 	            	return false;
 	            }
-	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            setIteratorPropertyValue ( this.iteratorObjectList.get(this.iteratorObjectListIndex) );
 	            this.forInitialized = true;
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
@@ -563,6 +703,61 @@ public boolean next ()
 	            throw new RuntimeException ( message, e );
 	        }
 	    }
+	    else if ( this.iteratorIsTsList ) {
+    	    // Iterate with the time series list, not a simple value.
+	        setIteratorPropertyValue(null);
+	        // TODO smalers 2020-11-01 why is this reprocessed here?  In case it is dynamic?
+	        parseTimeSeriesPropertyMap ( getCommandParameters().getValue ( "TimeSeriesPropertyMap" ) );
+	        CommandStatus status = getCommandStatus();
+	        int warning_level = 2;
+	        String command_tag = "";
+	        int warning_count = 0;
+	        // The following sets this.tslist.
+	        warning_count = initializeTsListIterator(processor,
+	        	status, warning_level, command_tag, warning_count );
+	        status.clearLog(CommandPhaseType.RUN);
+	        try {
+	        	// Position of the first time series in the list.
+	            this.iteratorObjectListIndex = 0;
+	            // 
+	            //this.iteratorObjectList = this.list;
+	            //this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            // Object is the time series.  Will need to use other methods to get time series data.
+	            if ( (tslist == null) || (tslist.size() == 0) ) {
+                    message = "No time series are available from the processor - unable to initialize.";
+		            Message.printWarning ( warning_level,
+		            MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		            status.addToLog ( CommandPhaseType.RUN,
+				            new CommandLogRecord(CommandStatusType.WARNING,
+						            message, "Confirm that time series are available (may be OK for partial run)." ) );
+	            }
+	            else {
+	            	this.nextSetIteratorObjectFromTimeSeries(routine, (TS)this.tslist.get(this.iteratorObjectListIndex) );
+	            }
+	            this.forInitialized = true;
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator time series object to time series having TSID=\"" +
+	            		this.iteratorTimeSeries.getIdentifierString() + "\" alias=" +
+	            		this.iteratorTimeSeries.getAlias() + "\"");
+	            }
+	            // Also need to set properties
+	            nextSetPropertiesFromTimeSeries(this.nextProblems);
+        		if ( this.nextProblems.size() > 0 ) {
+        			StringBuilder b = new StringBuilder();
+	        		for ( String problem : this.nextProblems ) {
+	        			b.append(problem + "\n");
+	        		}
+	                throw new RuntimeException ( b.toString() );
+        		}
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error initializing For() iterator to initial value (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+	    }
 	    else {
 	    	message = "Unknown iteration type (not list, sequence, or table).";
             Message.printWarning(3, routine, message);
@@ -570,7 +765,7 @@ public boolean next ()
 	    }
   	}
     else {
-    	// For loop was previously initialized and is now being run
+    	// For loop was previously initialized and is now being run.
     	if ( this.breakSet ) {
     		// Loop is complete because it was broken out of with Break() command
     		// - leave iterator as it was before with no further action
@@ -588,7 +783,7 @@ public boolean next ()
 	        }
 	        else {
 	            ++this.iteratorObjectListIndex;
-	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            this.setIteratorPropertyValue(this.iteratorObjectList.get(this.iteratorObjectListIndex));
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
 	        	}
@@ -609,7 +804,8 @@ public boolean next ()
     	}
     	else if ( this.iteratorIsSequence ) {
     		// If the iterator object is already at or will exceed the maximum, then done iterating
-    		Message.printStatus(2, routine, "start=" + this.iteratorSequenceStart + ", end=" + this.iteratorSequenceEnd + ", increment=" + this.iteratorSequenceIncrement + ", object=" + this.iteratorObject);
+    		Message.printStatus(2, routine, "start=" + this.iteratorSequenceStart +
+    			", end=" + this.iteratorSequenceEnd + ", increment=" + this.iteratorSequenceIncrement + ", object=" + this.iteratorObject);
 	    	if ( ((this.iteratorSequenceStart instanceof Integer) &&
 	    			(((Integer)this.iteratorObject >= (Integer)this.iteratorSequenceEnd) ||
 	    			((Integer)this.iteratorObject + (Integer)this.iteratorSequenceIncrement > (Integer)this.iteratorSequenceEnd))
@@ -630,16 +826,43 @@ public boolean next ()
 	    			Integer o = (Integer)this.iteratorObject;
 	    			Integer oinc = (Integer)this.iteratorSequenceIncrement;
 	    			o = o + oinc;
-	    			this.iteratorObject = o;
+	    			setIteratorPropertyValue(o);
 	    		}
 	    		else if ( this.iteratorSequenceStart instanceof Double ) {
 	    			Double o = (Double)this.iteratorObject;
 	    			Double oinc = (Double)this.iteratorSequenceIncrement;
 	    			o = o + oinc;
-	    			this.iteratorObject = o;
+	    			setIteratorPropertyValue(o);
 	    		}
 	    		return true;
 	    	}
+    	}
+    	else if ( this.iteratorIsTsList ) {
+	        if ( this.iteratorObjectListIndex >= (this.tslist.size() - 1) ) {
+	            // Done iterating
+	        	if ( Message.isDebugOn ) {
+	        		Message.printDebug(1, routine, "Done iterating on time series list." );
+	        	}
+	            return false;
+	        }
+	        else {
+	        	// Increment the position for the time series.
+	            ++this.iteratorObjectListIndex;
+	            // Get the next time series from the time series list.
+	            this.nextSetIteratorObjectFromTimeSeries(routine, this.tslist.get(this.iteratorObjectListIndex));
+	        	// If properties were requested, set.
+	        	if ( this.timeSeriesPropertyMap != null ) {
+	        		nextSetPropertiesFromTimeSeries(this.nextProblems);
+	        		if ( this.nextProblems.size() > 0 ) {
+	        			StringBuilder b = new StringBuilder();
+		        		for ( String problem : this.nextProblems ) {
+		        			b.append(problem + "\n");
+		        		}
+		                throw new RuntimeException ( b.toString() );
+	        		}
+	        	}
+	            return true;
+	        }
     	}
     	else {
     		// Iteration type not recognized so jump out right away to avoid infinite loop.
@@ -649,7 +872,68 @@ public boolean next ()
 }
 
 /**
+ * Helper method to set the iterator object from the iterator time series.
+ * This is necessary because the time series has built-in and custom properties that
+ * can be used for the iterator object, such as alias, identifier, or other value.
+ * @param routine calling routine, for logging
+ * @param iteratorTimeSeries the time series to set for the current iteration
+ */
+private void nextSetIteratorObjectFromTimeSeries(String routine, TS iteratorTimeSeries) {
+	this.iteratorTimeSeries = iteratorTimeSeries;
+   	if ( Message.isDebugOn ) {
+   		Message.printDebug(1, routine, "Set iterator time series object to time series having TSID=\"" +
+  		  	this.iteratorTimeSeries.getIdentifierString() +
+  		  	"\" alias=" + this.iteratorTimeSeries.getAlias() + "\"");
+   	}
+   	// Set the value of the iterator property.
+   	TSCommandProcessor processor = (TSCommandProcessor)this.getCommandProcessor();
+	PropList props = this.getCommandParameters();
+	CommandStatus status = this.getCommandStatus();
+    String IteratorValueProperty = props.getValue( "IteratorValueProperty" );
+    Object iteratorValue = null;
+    if ( (IteratorValueProperty != null) && !IteratorValueProperty.isEmpty() ) { // A property value is specified so need to use it to set the iterator value. 
+    	if ( IteratorValueProperty.indexOf("${") >= 0 ) {
+    		// Output is an expanded string...
+    		iteratorValue = TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, iteratorTimeSeries, IteratorValueProperty,
+    			status, CommandPhaseType.RUN);
+    		if ( Message.isDebugOn ) {
+    			// Print with quotes since a string.
+    			Message.printDebug(1, routine, "Setting time series iterator property " + this.iteratorPropertyName + "=\"" + iteratorValue + "\"" );
+   	 		}
+    	}
+    	else{
+    		// Output can be any type, depending on what type is matched with the property name.
+    		iteratorValue = iteratorTimeSeries.getProperty(IteratorValueProperty);
+    		if ( Message.isDebugOn ) {
+    			// Print with no quotes.
+    			Message.printDebug(1, routine, "Setting time series iterator property " + this.iteratorPropertyName + "=" + iteratorValue  );
+   	 		}
+    	}
+    	if ( iteratorValue == null ) {
+			Message.printWarning(3, routine, "Iterator property value from expanded time series property \"" + IteratorValueProperty + "\" is null." );
+    	}
+    }
+    else {
+    	// Iterator value defaults to time series alias if available, or TSID if not.
+    	String alias = iteratorTimeSeries.getAlias();
+    	if ( (alias != null) && !alias.isEmpty() ) {
+    		iteratorValue = alias;
+    	}
+    	else {
+    		iteratorValue = iteratorTimeSeries.getIdentifierString();
+    	}
+    	if ( iteratorValue == null ) {
+			Message.printWarning(3, routine, "Iterator property value from time serues alias and TSID null."  );
+    	}
+    }
+
+    // Set the iterator value, can be a string or other object type.
+	this.setIteratorPropertyValue(iteratorValue);
+}
+
+/**
 Set processor properties from the table using the TablePropertyMap command parameter.
+This DOES NOT set the iterator property value.
 @param problems non-null list of problems to populate.  If any issues occur looking up the table column,
 then the problems list will have non-zero length upon return and the list can be populated.
 */
@@ -715,6 +999,99 @@ private void nextSetPropertiesFromTable ( List<String> problems) {
 }
 
 /**
+Set processor properties from the time series using the TimeSeriesPropertyMap command parameter.
+This DOES NOT set the iterator property value.
+@param problems non-null list of problems to populate.  If any issues occur looking up the table column,
+then the problems list will have non-zero length upon return and the list can be populated.
+*/
+private void nextSetPropertiesFromTimeSeries ( List<String> problems) {
+	String message, routine = getClass().getSimpleName() + ".nextSetPropertiesFromTimeSeries";
+	problems.clear();
+	TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+	Hashtable<String,String> map = this.timeSeriesPropertyMap;
+	String tsPropertyName = null;
+	String propertyName = null;
+	CommandStatus status = this.getCommandStatus();
+	// Get the current time series for the iteration loop
+	if ( (tslist == null) || (tslist.size() == 0) ) {
+        message = "No time series are available from the processor - unable to set properties.";
+	    Message.printWarning ( 3, routine, message );
+	    // Don't log to command since earlier initialization message will have been set.
+	    problems.add(message);
+	    return;
+	}
+
+    TS ts = this.tslist.get(this.iteratorObjectListIndex);
+    if ( Message.isDebugOn ) {
+      	Message.printDebug(1, routine, "Set iterator time series object to time series having TSID=\"" +
+       		ts.getIdentifierString() + "\" alias=" + ts.getAlias() + "\"");
+    }
+	// Set command processor properties using time series properties.
+	// - remapping names is allowed
+	for ( Map.Entry<String,String> entry : map.entrySet() ) {
+	    try {
+	    	// Key is the time series property name.
+	        tsPropertyName = entry.getKey();
+	        propertyName = entry.getValue();
+	    }
+	    catch ( Exception e ) {
+	    	//message = "Column \"" + key + "\" not found in table (" + e + ").  Cannot set corresponding property \"" + propertyName + "\".";
+	        //Message.printWarning(3, routine, message);
+	        //problems.add(message);
+	        continue;
+	    }
+	    Object o = null;
+	    try {
+	        // Set the time series processor property value.
+	    	// Set using a property because processor.setPropContents() only works for built-in properties.
+	    	// Want to set the same as the table value even if null, but also need string value.
+	    	if ( tsPropertyName.indexOf("${") >= 0 ) {
+	    		// Output is an expanded string...
+	    		o = TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, ts, tsPropertyName,
+	    			status, CommandPhaseType.RUN);
+	    		if ( Message.isDebugOn ) {
+	    			Message.printDebug(1, routine, "Setting property " + propertyName + "=\"" + o + "\"" );
+     	 		}
+	    	}
+	    	else{
+	    		// Output can be any type, depending on what type is matched with the property name.
+	    		o = ts.getProperty(tsPropertyName);
+	    	}
+	    	if ( Message.isDebugOn ) {
+	    		Message.printDebug(1, routine, "Setting property " + propertyName + "=" + o );
+     	 	}
+	    }
+	    catch ( Exception e ) {
+	    	message = "Error getting property value from time series for property \"" + tsPropertyName + "\" (" + e + ").";
+	    	problems.add(message);
+	        Message.printWarning(3, routine, message);
+	        continue;
+	    }
+	    PropList request_params = new PropList ( "" );
+		request_params.setUsingObject ( "PropertyName", propertyName );
+		request_params.setUsingObject ( "PropertyValue", o );
+		try {
+	        processor.processRequest( "SetProperty", request_params);
+		}
+		catch ( Exception e ) {
+			message = "Error requesting SetProperty(Property=\"" + propertyName + "\") from processor.";
+			/* TODO SAM 2016-04-09 Need to do logging for errors
+			Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
+	        */
+	    	message = "Error setting property \"" + propertyName + " value (" + e + ").";
+	        Message.printWarning(3, routine, message);
+	        problems.add(message);
+	        continue;
+		}
+	}
+}
+
+/**
 Parse the TablePropertyMap command parameter and set internal data.
 This is necessary because the next() method is called before runCommand().
 */
@@ -728,6 +1105,23 @@ private void parseTablePropertyMap ( String TablePropertyMap ) {
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             this.tablePropertyMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
+}
+
+/**
+Parse the TimeSeriesPropertyMap command parameter and set internal data.
+This is necessary because the next() method is called before runCommand().
+*/
+private void parseTimeSeriesPropertyMap ( String TimeSeriesPropertyMap ) {
+    this.timeSeriesPropertyMap = new Hashtable<String,String>();
+    if ( (TimeSeriesPropertyMap != null) && (TimeSeriesPropertyMap.length() > 0) && (TimeSeriesPropertyMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(TimeSeriesPropertyMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            this.timeSeriesPropertyMap.put(parts[0].trim(), parts[1].trim() );
         }
     }
 }
@@ -770,6 +1164,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	if ( (IteratorProperty == null) || IteratorProperty.equals("") ) {
 	    IteratorProperty = Name;
 	}
+    this.iteratorPropertyName = IteratorProperty;
 	String List = parameters.getValue ( "List" );
 	if ( (List != null) && !List.isEmpty() ) {
 		if ( List.indexOf("${") >= 0 ) {
@@ -859,8 +1254,9 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
     if ( (TableID != null) && !TableID.isEmpty() ) {
     	this.iteratorIsTable = true;
     }
-	// TableColumn is looked up in next() method because table columns may be added within loop
-    // TablePropertyMap handled in next(), which is called before this method
+	// TableColumn is looked up in next() method because table columns may be added within the loop.
+    // TablePropertyMap is handled in next(), which is called before this method.
+    // TimeSeriesPropertyMap is handled in next(), which is called before this method.
 	
     // Get the table to process.  This logic is repeated in next() because next() is called first.
 
@@ -907,7 +1303,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	    // next() will have been called by the command processor so at this point just set the processor property
 	    // Set the basic property as well as property with 0 and 1 indicating zero and 1 offset list positions
         request_params = new PropList ( "" );
-        request_params.setUsingObject ( "PropertyName", IteratorProperty );
+        request_params.setUsingObject ( "PropertyName", this.iteratorPropertyName );
         request_params.setUsingObject ( "PropertyValue", this.iteratorObject );
         try {
         	if ( Message.isDebugOn ) {
@@ -922,7 +1318,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
             processor.processRequest( "SetProperty", request_params);
         }
         catch ( Exception e ) {
-            message = "Error requesting SetProperty(Property=\"" + IteratorProperty + "\") from processor.";
+            message = "Error requesting SetProperty(Property=\"" + this.iteratorPropertyName + "\") from processor.";
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -932,13 +1328,13 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
         }
         // Property with zero on end
         request_params = new PropList ( "" );
-        request_params.setUsingObject ( "PropertyName", IteratorProperty + "0" );
+        request_params.setUsingObject ( "PropertyName", this.iteratorPropertyName + "0" );
         request_params.setUsingObject ( "PropertyValue", this.iteratorObjectListIndex );
         try {
             processor.processRequest( "SetProperty", request_params);
         }
         catch ( Exception e ) {
-            message = "Error requesting SetProperty(Property=\"" + IteratorProperty + "\") from processor.";
+            message = "Error requesting SetProperty(Property=\"" + this.iteratorPropertyName + "\") from processor.";
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -948,13 +1344,13 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
         }
         // Property with 1 on end
         request_params = new PropList ( "" );
-        request_params.setUsingObject ( "PropertyName", IteratorProperty + "1" );
+        request_params.setUsingObject ( "PropertyName", this.iteratorPropertyName + "1" );
         request_params.setUsingObject ( "PropertyValue", this.iteratorObjectListIndex + 1 );
         try {
             processor.processRequest( "SetProperty", request_params);
         }
         catch ( Exception e ) {
-            message = "Error requesting SetProperty(Property=\"" + IteratorProperty + "\") from processor.";
+            message = "Error requesting SetProperty(Property=\"" + this.iteratorPropertyName + "\") from processor.";
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -978,11 +1374,40 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 
 /**
 Set the value of the index property.
+This is the current index value that can be used by commands within the loop to control logic.
 @param IteratorPropertyValue value of the index property
 */
-private void setIteratorPropertyValue ( Object IteratorPropertyValue )
-{
-    this.iteratorObject = IteratorPropertyValue;
+private void setIteratorPropertyValue ( Object iteratorPropertyValue )
+{	String routine = getClass().getSimpleName() + ".setIteratorPropertyValue";
+	TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+    this.iteratorObject = iteratorPropertyValue;
+    // TODO smalers 2021-05-10 this needs to set in the processor also, right?
+    PropList request_params = new PropList ( "" );
+	request_params.setUsingObject ( "PropertyName", this.iteratorPropertyName );
+	request_params.setUsingObject ( "PropertyValue", iteratorPropertyValue );
+	try {
+        processor.processRequest( "SetProperty", request_params);
+        if ( Message.isDebugOn ) {
+	       	Message.printDebug(1, routine, "Set iterator object " + this.iteratorPropertyName +
+	       		" to: " + iteratorPropertyValue );
+        }
+	}
+	catch ( Exception e ) {
+		String message = "Error requesting SetProperty(Property=\"" + this.iteratorPropertyName + "\") from processor.";
+		/* TODO SAM 2016-04-09 Need to do logging for errors
+		Message.printWarning(log_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+        */
+    	message = "Error setting property \"" + this.iteratorPropertyName + " value (" + e + ").";
+        Message.printWarning(3, routine, message);
+        // TODO smalers 2021-05-10 should not happen
+        //problems.add(message);
+        //continue;
+	}
 }
 
 /**
@@ -994,6 +1419,7 @@ public String toString ( PropList props )
     }
     String Name = props.getValue( "Name" );
     String IteratorProperty = props.getValue( "IteratorProperty" );
+    String IteratorValueProperty = props.getValue( "IteratorValueProperty" );
     String List = props.getValue( "List" );
     String SequenceStart = props.getValue( "SequenceStart" );
     String SequenceEnd = props.getValue( "SequenceEnd" );
@@ -1001,6 +1427,10 @@ public String toString ( PropList props )
     String TableID = props.getValue( "TableID" );
     String TableColumn = props.getValue( "TableColumn" );
     String TablePropertyMap = props.getValue( "TablePropertyMap" );
+	String TSList = props.getValue ( "TSList" );
+	String TSID = props.getValue( "TSID" );
+	String EnsembleID = props.getValue( "EnsembleID" );
+    String TimeSeriesPropertyMap = props.getValue( "TimeSeriesPropertyMap" );
     StringBuffer b = new StringBuffer ();
     if ( (Name != null) && (Name.length() > 0) ) {
         b.append ( "Name=\"" + Name + "\"" );
@@ -1010,6 +1440,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "IteratorProperty=\"" + IteratorProperty + "\"" );
+    }
+    if ( (IteratorValueProperty != null) && (IteratorValueProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IteratorValueProperty=\"" + IteratorValueProperty + "\"" );
     }
     if ( (List != null) && (List.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1052,6 +1488,30 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TablePropertyMap=\"" + TablePropertyMap + "\"" );
+    }
+	if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (TimeSeriesPropertyMap != null) && (TimeSeriesPropertyMap.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TimeSeriesPropertyMap=\"" + TimeSeriesPropertyMap + "\"" );
     }
     return getCommandName() + "(" + b.toString() + ")";
 }

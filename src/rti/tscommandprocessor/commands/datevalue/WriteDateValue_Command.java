@@ -242,7 +242,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(13);
+	List<String> validList = new ArrayList<>(13);
 	validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );

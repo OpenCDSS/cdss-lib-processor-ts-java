@@ -1046,11 +1046,11 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     ts.setProperty("ordinal", new Integer(i2) );
                     HeightDepth hd = sel.getHeightDepth();
                     if ( hd == null ) {
-                        ts.setProperty("heighDepthValue", null );
+                        ts.setProperty("heightDepthValue", null );
                         ts.setProperty("heightDepthUnitCd", null );
                     }
                     else {
-                        ts.setProperty("heighDepthValue", (hd.getValue() == null) ? null : new Double(hd.getValue().doubleValue()));
+                        ts.setProperty("heightDepthValue", (hd.getValue() == null) ? null : new Double(hd.getValue().doubleValue()));
                         ts.setProperty("heightDepthUnitCd", (hd.getUnitCd() == null) ? "" : hd.getUnitCd() );
                     }
                     ts.setProperty("stationDataTimeZone", (stationDataTimeZone == null) ? null : stationDataTimeZone.doubleValue() );

@@ -832,7 +832,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                             }
                         }
                         else {
-                            // This handles conversion of integers to strings
+                            // This handles conversion of objects to strings.
                             propvalString = "" + propO;
                         }
                     }

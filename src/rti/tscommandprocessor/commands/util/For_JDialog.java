@@ -55,6 +55,10 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 /**
 Editor dialog for the For() command.
@@ -69,6 +73,7 @@ private SimpleJButton __help_JButton = null;
 private For_Command __command = null;
 private JTextField __Name_JTextField = null;
 private JTextField __IteratorProperty_JTextField = null;
+private JTextField __IteratorValueProperty_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __List_JTextArea = null;
 private JTextField __SequenceStart_JTextField = null;
@@ -77,6 +82,12 @@ private JTextField __SequenceIncrement_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
 private JTextArea __TablePropertyMap_JTextArea = null;
+private SimpleJComboBox	__TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextArea __TimeSeriesPropertyMap_JTextArea = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -127,6 +138,55 @@ public void actionPerformed( ActionEvent event )
             refresh();
         }
     }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditTimeSeriesPropertyMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim();
+        String [] notes = {
+            "Time series properties can be mapped to processor property names, to set time series properties as properties.",
+            "The property will be of the same object type as in the time series."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, TimeSeriesPropertyMap,
+            "Edit TimeSeriesPropertyMap Parameter", notes, "Time Series Property Name", "Property Name",10)).response();
+        if ( dict != null ) {
+        	__TimeSeriesPropertyMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
+
+    /* TODO smalers 2021-06-06 don't need as long as parameter is only used with time series
+    if ( (TSList == null) || TSList.isEmpty() ) {
+    	__IteratorValueProperty_JTextField.setEnabled(false);
+    }
+    else {
+    	__IteratorValueProperty_JTextField.setEnabled(true);
+    }
+    */
 }
 
 /**
@@ -138,6 +198,7 @@ private void checkInput ()
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     String SequenceStart = __SequenceStart_JTextField.getText().trim();
     String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
@@ -145,11 +206,18 @@ private void checkInput ()
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
 	String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
     if ( IteratorProperty.length() > 0 ) {
         props.set ( "IteratorProperty", IteratorProperty );
+    }
+    if ( IteratorValueProperty.length() > 0 ) {
+        props.set ( "IteratorValueProperty", IteratorValueProperty );
     }
     if ( List.length() > 0 ) {
         props.set ( "List", List );
@@ -172,6 +240,18 @@ private void checkInput ()
     if ( TablePropertyMap.length() > 0 ) {
         props.set ( "TablePropertyMap", TablePropertyMap );
     }
+	if ( TSList.length() > 0 ) {
+		props.set ( "TSList", TSList );
+	}
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( TimeSeriesPropertyMap.length() > 0 ) {
+        props.set ( "TimeSeriesPropertyMap", TimeSeriesPropertyMap );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -188,6 +268,7 @@ Commit the edits to the command.
 private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     String SequenceStart = __SequenceStart_JTextField.getText().trim();
     String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
@@ -195,8 +276,13 @@ private void commitEdits ()
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
+    String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
+    __command.setCommandParameter ( "IteratorValueProperty", IteratorValueProperty );
     __command.setCommandParameter ( "List", List );
     __command.setCommandParameter ( "SequenceStart", SequenceStart );
     __command.setCommandParameter ( "SequenceEnd", SequenceEnd );
@@ -204,6 +290,10 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
     __command.setCommandParameter ( "TablePropertyMap", TablePropertyMap );
+	__command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "TimeSeriesPropertyMap", TimeSeriesPropertyMap );
 }
 
 /**
@@ -244,6 +334,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Name_JTextField = new JTextField ( 20 );
+    __Name_JTextField.setToolTipText("Name for the 'For' loop, must be unique for all 'For' commands and match and 'EndFor' command.");
     __Name_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Name_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -254,16 +345,17 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop iterator property:" ), 
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IteratorProperty_JTextField = new JTextField (20);
+    __IteratorProperty_JTextField.setToolTipText("Property name for property that will contain iterator value in each iteration.");
     __IteratorProperty_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(main_JPanel, __IteratorProperty_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - name of iterator property for iteration (default=for loop name)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     // Panel for list iteration
     int yList = -1;
     JPanel list_JPanel = new JPanel();
@@ -384,6 +476,71 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTablePropertyMap",this),
         3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel to use time series list for iteration
+    int yTs = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "TS List", ts_JPanel );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "The for loop can iterate over a list of time series, similar to other commands."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "This may be useful when iterating using a table of time series identifiers is not sufficient."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Specify the 'For loop Iterator value' to indicate the iterator property value."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "  For example, specify ${ts:alias} to use the time series built-in 'alias' property as the iteration property value."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "For loop iterator value:" ), 
+        0, ++yTs, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IteratorValueProperty_JTextField = new JTextField (20);
+    __IteratorValueProperty_JTextField.setToolTipText("Optional - iterator value property, "
+   		+ "Use syntax ${ts:PropertyName} for built-in time series properties (default is alias or TSID).");
+    __IteratorValueProperty_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(ts_JPanel, __IteratorValueProperty_JTextField,
+        1, yTs, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel("Optional - iteration property value from time series (default=alias or TSID)."), 
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, new JLabel("TS list"),
+    	__TSList_JComboBox, yTs, new JLabel("Required for time series - indicates the time series to process.") );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTs = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTs );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Time series property map:"),
+        0, ++yTs, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesPropertyMap_JTextArea = new JTextArea (6,35);
+    __TimeSeriesPropertyMap_JTextArea.setLineWrap ( true );
+    __TimeSeriesPropertyMap_JTextArea.setWrapStyleWord ( true );
+    __TimeSeriesPropertyMap_JTextArea.setToolTipText("TSProperty1:PropertyName1,TSProperty2:PropertyName2");
+    __TimeSeriesPropertyMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, new JScrollPane(__TimeSeriesPropertyMap_JTextArea),
+        1, yTs, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Optional - to set processor properties from time series (default=none set)."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(ts_JPanel, new SimpleJButton ("Edit","EditTimeSeriesPropertyMap",this),
+        3, ++yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -395,6 +552,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
 		1, y, 6, 1, 1, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -424,6 +582,7 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged (ItemEvent e) {
+    checkGUIState();
     refresh();
 }
 
@@ -462,6 +621,7 @@ private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String Name = "";
     String IteratorProperty = "";
+    String IteratorValueProperty = "";
     String List = "";
     String SequenceStart = "";
     String SequenceEnd = "";
@@ -469,12 +629,17 @@ private void refresh ()
 	String TableID = "";
 	String TableColumn = "";
 	String TablePropertyMap = "";
+    String TSList = "";
+    String TSID = "";
+	String EnsembleID = "";
+	String TimeSeriesPropertyMap = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
 		Name = props.getValue( "Name" );
 	    IteratorProperty = props.getValue( "IteratorProperty" );
+	    IteratorValueProperty = props.getValue( "IteratorValueProperty" );
 	    List = props.getValue( "List" );
 	    SequenceStart = props.getValue( "SequenceStart" );
 	    SequenceEnd = props.getValue( "SequenceEnd" );
@@ -482,11 +647,18 @@ private void refresh ()
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
 		TablePropertyMap = props.getValue ( "TablePropertyMap" );
+		TSList = props.getValue ( "TSList" );
+        TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
+		TimeSeriesPropertyMap = props.getValue ( "TimeSeriesPropertyMap" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
         if ( IteratorProperty != null ) {
             __IteratorProperty_JTextField.setText( IteratorProperty );
+        }
+        if ( IteratorValueProperty != null ) {
+            __IteratorValueProperty_JTextField.setText( IteratorValueProperty );
         }
         if ( List != null ) {
             __List_JTextArea.setText( List );
@@ -524,10 +696,61 @@ private void refresh ()
         if ( TablePropertyMap != null ) {
             __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
         }
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+            // Also select tab.
+		    __main_JTabbedPane.setSelectedIndex(3);
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {
+            // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {
+                // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TimeSeriesPropertyMap != null ) {
+            __TimeSeriesPropertyMap_JTextArea.setText ( TimeSeriesPropertyMap );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Name = __Name_JTextField.getText().trim();
     IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     SequenceStart = __SequenceStart_JTextField.getText().trim();
     SequenceEnd = __SequenceEnd_JTextField.getText().trim();
@@ -535,9 +758,14 @@ private void refresh ()
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
 	TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
+	TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.add ( "IteratorProperty=" + IteratorProperty );
+    props.add ( "IteratorValueProperty=" + IteratorValueProperty );
     props.add ( "List=" + List );
     props.add ( "SequenceStart=" + SequenceStart );
     props.add ( "SequenceEnd=" + SequenceEnd );
@@ -545,6 +773,10 @@ private void refresh ()
     props.set ( "TableID", TableID ); // May contain = so handle differently
     props.add ( "TableColumn=" + TableColumn );
     props.add ( "TablePropertyMap=" + TablePropertyMap );
+	props.add ( "TSList=" + TSList );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
+    props.add ( "TimeSeriesPropertyMap=" + TimeSeriesPropertyMap );
     __command_JTextArea.setText( __command.toString(props) );
 }
 

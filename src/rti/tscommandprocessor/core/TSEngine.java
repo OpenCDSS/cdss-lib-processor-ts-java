@@ -2986,7 +2986,41 @@ throws Exception
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
     
     		if ( command instanceof Comment_Command ) {
-    			// Comment.  Mark as processing successful.
+    			// Comment.  Mark as processing successful unless requirements were not met.
+                String commandStringUpper = commandString.toUpperCase();
+                if ( commandStringUpper.indexOf("@REQUIRE") > 0 ) {
+                	// Check @require comments for syntax errors
+                	// - need to be correct to ensure that tests run properly
+                	// - when running automated tests with RunCommands, these conditions are checked for the entire command file
+                	//   before even attempting to run so FAILURE will not occur in test (it won't even be run)
+                	// - TODO smalers 2021-01-03 evaluate whether this can be put in Comment_Command.runCommand(),
+                	//   but currently the logic depends on the processor.
+                	try {
+                		List<Command> commentList = new ArrayList<>();
+                		commentList.add(command);
+        	        	if ( TSCommandFileRunner.areRequirementsMet(__ts_processor, commentList) ) {
+        	        		commandStatus.addToLog(CommandPhaseType.RUN,
+			    			    new CommandLogRecord(CommandStatusType.SUCCESS,
+				   			    "@require condition was met", "Check log file for details. Command file will be run unless other requirement is not met.") );
+        	        	}
+        	        	else {
+        	        		commandStatus.addToLog(CommandPhaseType.RUN,
+			    			    new CommandLogRecord(CommandStatusType.FAILURE,
+				   			    "@require condition was NOT met", "Check log file for details. Command file should not be run unless requirements are met.") );
+        	        	}
+                	}
+                	catch ( Exception e ) {
+        	        	// Syntax error - mark the command with an error
+                		// Set the command status information.
+        	    		if ( command instanceof CommandStatusProvider ) {
+				    		// Add to the command log as a failure...
+				    		commandStatus.addToLog(CommandPhaseType.RUN,
+				    			new CommandLogRecord(CommandStatusType.FAILURE,
+					   			"Error checking @require comment (" + e + ").", "See log file for details.") );
+				    		Message.printWarning(3, routine, e);
+			    		}
+                	}
+                }
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -3269,7 +3303,7 @@ throws Exception
                                 // Add to the command log as a failure...
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
-                                        "Error going to next iteration (" + e + ")", "Check For() command iteration data.  Has required input been read?") );
+                                        "Error going to next iteration (" + e + ")", "Check For() command iteration data.  Has required input been read or created?") );
                                 Message.printWarning(3, routine, e);
                                 // Same logic as ending the loop...
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());

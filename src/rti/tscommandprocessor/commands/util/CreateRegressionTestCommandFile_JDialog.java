@@ -455,6 +455,9 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     	" and can be independently loaded and run."),
     	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Command files are sorted alphabetically to facilitate review.  Use appropriate filenames or #@order comment to control run order."),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A \"setup\" command file can be inserted at the top of the generated command file, for example to initialize " +
         "database connections."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

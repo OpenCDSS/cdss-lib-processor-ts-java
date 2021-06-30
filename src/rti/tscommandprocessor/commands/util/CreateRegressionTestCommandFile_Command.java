@@ -27,19 +27,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandFile;
+import RTi.Util.IO.CommandFileOrderType;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
@@ -83,11 +83,11 @@ public CreateRegressionTestCommandFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
+@param commandTag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
+@param warningLevel The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
+public void checkCommandParameters ( PropList parameters, String commandTag, int warningLevel )
 throws InvalidCommandParameterException
 {	String routine = getClass().getSimpleName() + ".checkCommandParameters";
     String SearchFolder = parameters.getValue ( "SearchFolder" );
@@ -281,9 +281,9 @@ throws InvalidCommandParameterException
 
     // Throw an InvalidCommandParameterException in case of errors.
     if ( warning.length() > 0 ) {       
-        Message.printWarning ( warning_level,
+        Message.printWarning ( warningLevel,
             MessageUtil.formatMessageTag(
-                command_tag, warning_level ), warning );
+                commandTag, warningLevel ), warning );
         throw new InvalidCommandParameterException ( warning );
     }
     
@@ -293,48 +293,20 @@ throws InvalidCommandParameterException
 /**
 Determine the expected status parameter by searching the command file for an "@expectedStatus" string.
 @param filename Name of file to open to scan.
-@return a string for the ExpectedStatus parameter or empty string if no expected status is known.
+@return a string for the ExpectedStatus parameter or empty string if no expected status is
+used for the command file (default expected status is success).
 */
-private String determineExpectedStatusParameter ( String filename )
+private String determineExpectedStatusParameter ( CommandFile commandFile )
 throws FileNotFoundException
 {   String expectedStatusParameter = "";
-    BufferedReader in = new BufferedReader ( new FileReader( filename ) );
-    try {
-        String line;
-        int index;
-        while ( true ) {
-            line = in.readLine();
-            if ( line == null ) {
-                break;
-            }
-            index = line.indexOf("@expectedStatus");
-            if ( index >= 0 ) {
-                // Get the status as the next token after the tag
-                String expectedStatus = StringUtil.getToken(line.substring(index), " \t",
-                        StringUtil.DELIM_SKIP_BLANKS, 1);
-                // Translate variations to the official name recognized by RunCommands()
-                if ( expectedStatus.equalsIgnoreCase("Warn") ) {
-                    expectedStatus = "Warning";
-                }
-                else if ( expectedStatus.equalsIgnoreCase("Fail") ) {
-                    expectedStatus = "Failure";
-                }
-                expectedStatusParameter = ",ExpectedStatus=" + expectedStatus;
-                break;
-            }
-        }
+    CommandStatusType expectedStatus = commandFile.getExpectedStatus();
+   	// Translate variations to the official name recognized by RunCommands()
+    if ( expectedStatus == CommandStatusType.WARNING ) {
+    	expectedStatusParameter = ",ExpectedStatus=Warning";
     }
-    catch ( IOException e ) {
-        // Ignore - just don't have the tag that is being searched for
-    }
-    finally {
-        try {
-            in.close();
-        }
-        catch ( IOException e ) {
-            // Not much to do but absorb - should not happen
-        }
-    }
+    else if ( expectedStatus == CommandStatusType.FAILURE ) {
+    	expectedStatusParameter = ",ExpectedStatus=Failure";
+   	}
     return expectedStatusParameter;
 }
 
@@ -354,7 +326,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector<File>();
+	List<File> list = new ArrayList<>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -542,12 +514,12 @@ Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
-public void runCommand ( int command_number )
+public void runCommand ( int commandNumber )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
-	int warning_level = 2;
-	String command_tag = "" + command_number;
-	int warning_count = 0;
+	int warningLevel = 2;
+	String commandTag = "" + commandNumber;
+	int warningCount = 0;
 	
 	PropList parameters = getCommandParameters();
 	
@@ -617,8 +589,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 	if ( !IOUtil.fileExists(SearchFolder_full) ) {
 		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		Message.printWarning ( warningLevel,
+			MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
 		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
 			"Verify that the folder exists at the time the command is run."));
 	}
@@ -629,8 +601,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,SetupCommandFile)));
         if ( !IOUtil.fileExists(SetupCommandFile_full) ) {
             message = "The setup command file \"" + SetupCommandFile_full + "\" does not exist.";
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            Message.printWarning ( warningLevel,
+                MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
             status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
                 "Verify that the file exists at the time the command is run."));
         }
@@ -642,44 +614,73 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,EndCommandFile)));
         if ( !IOUtil.fileExists(EndCommandFile_full) ) {
             message = "The end command file \"" + EndCommandFile_full + "\" does not exist.";
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            Message.printWarning ( warningLevel,
+                MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
             status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
                 "Verify that the file exists at the time the command is run."));
         }
 	}
 
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
+	if ( warningCount > 0 ) {
+		message = "There were " + warningCount + " warnings about command parameters.";
+		Message.printWarning ( warningLevel, 
+		MessageUtil.formatMessageTag(commandTag, ++warningCount),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
 	try {
 	    // Get the list of files to run as test cases...
-		List<String> files = new Vector<String>();
+		List<String> files = new ArrayList<>();
+		List<CommandFile> commandFiles = new ArrayList<>();
         String [] includedTestSuitePatterns = new String[0];
         includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
         String [] includedOSPatterns = new String[0];
         includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
         getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
             includedTestSuitePatterns, includedOSPatterns );
-        // Sort the list because it may not be sorted, due to dates on files
+        Message.printStatus(2, routine, "Found " + files.size() + " command files matching search criteria.");
+        // Sort the list because it may not be sorted, due to dates on files.
         files = StringUtil.sortStringList(files);
-        int size = files.size();
-		// Open the output file...
+        // Transfer the filenames into CommandFile objects for further processing.
+        int expectedStatusCount = 0;
+        int idCount = 0;
+        int orderCount = 0;
+        int testSuiteCount = 0;
+        for ( String file : files ) {
+        	// Create a new CommandFile instance using the absolute filename.
+        	CommandFile commandFile = new CommandFile(file, true);
+        	commandFiles.add(commandFile);
+        	// Indicate whether any additional ordering needs to be done.
+        	if ( !commandFile.getId().isEmpty() ) {
+        		++idCount;
+        	}
+        	if ( !commandFile.getOrderId().isEmpty() ) {
+        		++orderCount;
+        	}
+        	if ( !commandFile.getExpectedStatusString().isEmpty() ) {
+        		++expectedStatusCount;
+        	}
+        	if ( !commandFile.getTestSuite().isEmpty() ) {
+        		++testSuiteCount;
+        	}
+        }
+        // Sort the command files based on 'order' annotation.
+        // - only do if 'order' was detected above since is a slight performance hit
+        if ( orderCount > 0 ) {
+        	warningCount += sortBasedOnOrder(commandFiles, status, warningLevel, commandTag);
+        }
+		// Open the output file.
 		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
 		File OutputFile_full_File = new File(OutputFile_full);
-		// Write a standard header to the file so that it is clear when the file was created
+		// Write a standard header to the file so that it is clear when the file was created.
 		IOUtil.printCreatorHeader(out, "#", 120, 0 );
-		// Include the setup command file if requested
+		// Include the setup command file if requested.
 		//Message.printStatus ( 2, routine, "Adding commands from setup command file \"" + SetupCommandFile_full + "\"");
 		includeCommandFile ( out, SetupCommandFile_full, "setup" );
 		// Include the matching test cases
 		out.println ( "#" );
-		out.println ( "# The following " + size + " test cases will be run to compare results with expected results.");
+		out.println ( "# The following " + commandFiles.size() + " test cases will be run to compare results with expected results.");
 		out.println ( "# Individual log files are generally created for each test.");
 		if ( IncludeTestSuite.equals("") ) {
 		    out.println ( "# All test cases will be included.");
@@ -693,6 +694,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         else {
             out.println ( "# Test cases for @os comments are included: " + IncludeOS );
         }
+        out.println ( "# Number of tests with 'expectedStatus' defined: " + expectedStatusCount );
+        out.println ( "# Number of tests with 'id' defined: " + idCount );
+        out.println ( "# Number of tests with 'order' defined: " + orderCount );
+        out.println ( "# Number of tests with 'testSuite' defined: " + testSuiteCount );
         // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
         // individual logs for each command file regression test
         String tableParam = "";
@@ -702,13 +707,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\"" + tableParam + ")");
 		// Find the list of matching files...
 		String commandFileToRun;
-		for ( int i = 0; i < size; i++ ) {
+		for ( CommandFile commandFile: commandFiles ) {
 			// The command files to run are relative to the commands file being created.
-			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), files.get(i) );
+			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), commandFile.getFilename() );
 			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
 			// parameter for the command.
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
-		        determineExpectedStatusParameter ( (String)files.get(i) ) + ")");
+		        determineExpectedStatusParameter(commandFile) + ")");
 		}
 		// Include the end command file if requested
 		//Message.printStatus ( 2, routine, "Adding commands from end command file \"" + EndCommandFile_full + "\"");
@@ -719,8 +724,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error creating regression command file \"" + OutputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
-	        MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+		Message.printWarning ( warningLevel, 
+	        MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "See the log file for details."));
@@ -736,6 +741,151 @@ Set the output file that is created by this command.  This is only used internal
 private void setOutputFile ( File file )
 {
     __OutputFile_File = file;
+}
+
+/**
+ * Sort the tests based on the '@order' annotation.
+ * Search command files for '@order' annotation and if corresponding @id is found,
+ * reorder the test.
+ * @param commandFiles list of command files to process
+ * @param warningCount number of warnings at start of call
+ * @return warningCount number of warnings due to sorting
+ */
+private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus status, int warningLevel, String commandTag ) {
+	String routine = getClass().getSimpleName() + ".sortBasedOnOrder";
+	String orderId = null;
+	CommandFileOrderType orderOperator = null;
+	int warningCount = 0;
+	// Loop indefinitely because must modify loop contents outside of loop or else have concurrency issue.
+	int startingIndex = 0; // Starting index to process, needed to ensure progress occurs even if errors
+	CommandFile foundCommandFile = null;
+	CommandFile commandFile = null;
+	CommandFile commandFile2 = null; // Used for iteration
+	int iCommandFile = 0; // Index for command file matching Id.
+	int iFoundCommandFile = 0; // Index for command file matching Id.
+	int loopCount = 0;
+	boolean needToProcessOrder = false; // Used to indicate that 'order' needs to be processed
+	while ( true ) {
+		Message.printStatus(2, routine, "Processing tests for 'order' starting at index " +
+			startingIndex + ", max index = " + (commandFiles.size() - 1) ); 
+		++loopCount;
+		if ( loopCount >= commandFiles.size()) {
+			String message = "Checking @order has logic problem - reached maximum number of tests without finishing reordering.";
+			Message.printWarning ( warningLevel,
+				MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
+				status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+				"Check code logic."));
+			break;
+		}
+		foundCommandFile = null;
+		needToProcessOrder = false;
+		for ( iCommandFile = startingIndex; iCommandFile < commandFiles.size(); iCommandFile++ ) {
+			commandFile = commandFiles.get(iCommandFile);
+			orderOperator = commandFile.getOrderOperatorType(); // If not null will be valid due to parsing
+			orderId = commandFile.getOrderId(); // Could still be null or empty if not properly specified
+			if ( (orderOperator != null) && (orderId != null) && !orderId.isEmpty() ) {
+				// Find a command file with matching 'Id', need to search all tests.
+				// - matched Id will cause 'foundCommandFile' and 'ifoundCommandFile' to be set for use later
+				needToProcessOrder = true;
+				for ( iFoundCommandFile = 0; iFoundCommandFile < commandFiles.size(); iFoundCommandFile++ ) {
+					commandFile2 = commandFiles.get(iFoundCommandFile);
+					// Matched command file cannot be itself.
+					if ( (iCommandFile != iFoundCommandFile) && (commandFile2.getId() != null) &&
+						(commandFile2.getId().equalsIgnoreCase(orderId))) {
+						foundCommandFile = commandFile2;
+						break;
+					}
+				}
+				if ( foundCommandFile != null ) {
+					// Break out of the loop with non-null object so move can occur.
+					// The next search index will depend on how the reorder occurred.
+					break;
+				}
+				else {
+					// Could not find the Id of interest.  Add a warning so 'Id' can be corrected.
+					String message = "The @order command file identifier \"" + orderId + "\" was not found in other command files.";
+					Message.printWarning ( warningLevel,
+						MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
+						status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+						"Verify that '@order' with identifier \"" + orderId + "\" exists."));
+					// Next search needs to start after current index to avoid the same error again.
+					startingIndex = iCommandFile + 1;
+					break;
+				}
+			}
+		}
+		if ( !needToProcessOrder ) {
+			// No 'order' needs to be processed so can exit outer loop.
+			break;
+		}
+		else if ( foundCommandFile != null ) {
+			// Reorder the command.
+			Message.printStatus(2, routine, "Reordering command from index " + iCommandFile + " to " + orderOperator +
+				" " + orderId + " (index " + iFoundCommandFile + ")");
+			if ( iFoundCommandFile < iCommandFile ) {
+				if ( orderOperator == CommandFileOrderType.BEFORE ) {
+					if ( iFoundCommandFile != (iCommandFile - 1) ) {
+						// Required position is not already in place.
+						// Move the current command to before the found command.
+						commandFiles.add(iFoundCommandFile, commandFile);
+						Message.printStatus(2, routine, "  Adding command from old index " + iCommandFile + " to before found index " + iFoundCommandFile );
+						// Original position will be shifted by one.
+						commandFiles.remove(iCommandFile + 1);
+						Message.printStatus(2, routine, "  Removing command at old index " + (iCommandFile + 1) );
+					}
+				}
+				else if ( orderOperator == CommandFileOrderType.AFTER ) {
+					if ( iFoundCommandFile != (iCommandFile + 1) ) {
+						// Required position is not already in place.
+						// Move the current command to after the found command.
+						commandFiles.add((iFoundCommandFile + 1), commandFile);
+						Message.printStatus(2, routine, "  Adding command from old index " + iCommandFile + " to after found index " + (iFoundCommandFile + 1) );
+						// Original position will be shifted by one.
+						commandFiles.remove(iCommandFile + 1);
+						Message.printStatus(2, routine, "  Removing command at old index " + (iCommandFile + 1) );
+					}
+				}
+				// Starting index will be 'iFoundCommand' + 1 due to insert + 1 to process next,
+				// regardless of whether moved to before or after.
+				startingIndex = iFoundCommandFile + 2;
+			}
+			else if ( iFoundCommandFile > iCommandFile ) {
+				if ( orderOperator == CommandFileOrderType.BEFORE ) {
+					if ( iFoundCommandFile != (iCommandFile - 1) ) {
+						// Required position is not already in place.
+						// Move the current command to before the found command.
+						commandFiles.add(iFoundCommandFile, commandFile);
+						Message.printStatus(2, routine, "  Adding command from old index " + iCommandFile + " to before found index " + iFoundCommandFile );
+						// Original position will be the same.
+						commandFiles.remove(iCommandFile);
+						Message.printStatus(2, routine, "  Removing command at old index " + iCommandFile );
+					}
+				}
+				else if ( orderOperator == CommandFileOrderType.AFTER ) {
+					if ( iFoundCommandFile != (iCommandFile + 1) ) {
+						// Required position is not already in place.
+						// Move the current command to after the found command.
+						commandFiles.add((iFoundCommandFile + 1), commandFile);
+						Message.printStatus(2, routine, "  Adding command from old index " + iCommandFile + " to after found index " + (iFoundCommandFile + 1) );
+						// Original position will be the same.
+						commandFiles.remove(iCommandFile);
+						Message.printStatus(2, routine, "  Removing command at old index " + iCommandFile );
+					}
+				}
+				// Starting index will be current command since current command is shifted later.
+				// No need to change the value of 'startingIndex'.
+			}
+		}
+		else {
+			// Count find the command matching 'order' - warnings were handled above.
+		}
+		if ( startingIndex > commandFiles.size() ) {
+			// Next starting index to process is after the last item so done processing:
+			// - this should not be needed but do to avoid infinite loop in 'while'
+			break;
+		}
+	}
+	return warningCount;
 }
 
 /**

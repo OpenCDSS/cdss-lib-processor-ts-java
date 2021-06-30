@@ -571,6 +571,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
     }
+    if ( size == 0 ) {
+    	message = "Output ensemble contains 0 time series.";
+	    Message.printWarning ( warning_level, 
+	       MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+	    status.addToLog ( commandPhase,
+	    	new CommandLogRecord(CommandStatusType.WARNING,
+				message, "Check that input time series can be split into an ensemble.  Is the data period too short?" ) );
+    }
     // Always set the data in discovery mode
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Create an ensemble and add the discovery time series...

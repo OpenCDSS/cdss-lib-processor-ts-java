@@ -44,6 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -79,6 +80,7 @@ private SimpleJButton __visualDiff_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __InputFile1_JTextField = null; // First file
 private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
@@ -88,6 +90,11 @@ private JTextField __ExcludeText_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox =null;
 private SimpleJComboBox __IfSame_JComboBox =null;
+
+private SimpleJComboBox __FileProperty_JComboBox = null;
+private SimpleJComboBox __FilePropertyOperator_JComboBox = null;
+private SimpleJComboBox __FilePropertyAction_JComboBox =null;
+
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private String __diffProgram = null;
@@ -273,6 +280,9 @@ private void checkInput ()
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
+	String FileProperty = __FileProperty_JComboBox.getSelected();
+	String FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
+	String FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile1.length() > 0 ) {
 		props.set ( "InputFile1", InputFile1 );
@@ -301,6 +311,15 @@ private void checkInput ()
 	if ( IfSame.length() > 0 ) {
 		props.set ( "IfSame", IfSame );
 	}
+	if ( FileProperty.length() > 0 ) {
+		props.set ( "FileProperty", FileProperty );
+	}
+	if ( FilePropertyOperator.length() > 0 ) {
+		props.set ( "FilePropertyOperator", FilePropertyOperator );
+	}
+	if ( FilePropertyAction.length() > 0 ) {
+		props.set ( "FilePropertyAction", FilePropertyAction );
+	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -324,6 +343,9 @@ private void commitEdits ()
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
+	String FileProperty = __FileProperty_JComboBox.getSelected();
+	String FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
+	String FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
@@ -333,6 +355,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
 	__command.setCommandParameter ( "IfDifferent", IfDifferent );
 	__command.setCommandParameter ( "IfSame", IfSame );
+	__command.setCommandParameter ( "FileProperty", FileProperty );
+	__command.setCommandParameter ( "FilePropertyOperator", FilePropertyOperator );
+	__command.setCommandParameter ( "FilePropertyAction", FilePropertyAction );
 }
 
 /**
@@ -360,13 +385,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command compares text files.  Comment lines starting with # are ignored." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "A line by line comparison is made, alternating between files and skipping comments."),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The comparison does not look forward or back to match lines."),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use the visual difference program to review differences."),
+		"This command compares files and is used for automated testing." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -424,71 +443,94 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile2_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for file contents comparison
+    int yContent = -1;
+    JPanel content_JPanel = new JPanel();
+    content_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Compare File Contents", content_JPanel );
+
+    JGUIUtil.addComponent(content_JPanel, new JLabel (
+		"Text files are compared line by line and character by character within lines.  Comment lines starting with # are ignored." ),
+		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "A line by line comparison is made, alternating between files and skipping comments."),
+		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "The comparison does not look forward or back to match lines."),
+		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Use the visual difference program to review differences."),
+		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(content_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comment line character:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Comment line character:"),
+        0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommentLineChar_JTextField = new JTextField ( 20 );
     __CommentLineChar_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __CommentLineChar_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - must be first char on line (default=#)"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, __CommentLineChar_JTextField,
+        1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - must be first char on line (default=#)"), 
+        3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match case:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Match case:"),
+        0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchCase_JComboBox = new SimpleJComboBox ( false );
-    List<String> matchChoices = new ArrayList<String>();
+    List<String> matchChoices = new ArrayList<>();
     matchChoices.add ( "" );
     matchChoices.add ( __command._False );
     matchChoices.add ( __command._True );
     __MatchCase_JComboBox.setData(matchChoices);
     __MatchCase_JComboBox.select ( 0 );
     __MatchCase_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MatchCase_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(content_JPanel, __MatchCase_JComboBox,
+        1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel(
         "Optional - match case (default=" + __command._True + ")"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ignore whitespace:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Ignore whitespace:"),
+		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IgnoreWhitespace_JComboBox = new SimpleJComboBox ( false );
-	List<String> ignoreChoices = new ArrayList<String>();
+	List<String> ignoreChoices = new ArrayList<>();
 	ignoreChoices.add ( "" );	// Default
 	ignoreChoices.add ( __command._False );
 	ignoreChoices.add ( __command._True );
 	__IgnoreWhitespace_JComboBox.setData(ignoreChoices);
 	__IgnoreWhitespace_JComboBox.select ( 0 );
 	__IgnoreWhitespace_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IgnoreWhitespace_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(content_JPanel, __IgnoreWhitespace_JComboBox,
+		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel(
 		"Optional - ignore whitespace at ends of lines (default=" + __command._False + ")"), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Exclude text:"),
+        0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
     __ExcludeText_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ExcludeText_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(content_JPanel, __ExcludeText_JTextField,
+        1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel(
         "Optional - exclude lines matching regular expression (default=include all)"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allowed # of different lines:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Allowed # of different lines:"),
+        0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AllowedDiff_JTextField = new JTextField ( 5 );
     __AllowedDiff_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AllowedDiff_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, __AllowedDiff_JTextField,
+        1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+        3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Action if different:"),
+		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
-	List<String> diffChoices = new ArrayList<String>();
+	List<String> diffChoices = new ArrayList<>();
 	diffChoices.add ( "" );	// Default
 	diffChoices.add ( __command._Ignore );
 	diffChoices.add ( __command._Warn );
@@ -496,16 +538,16 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__IfDifferent_JComboBox.setData(diffChoices);
 	__IfDifferent_JComboBox.select ( 0 );
 	__IfDifferent_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(content_JPanel, __IfDifferent_JComboBox,
+		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel(
 		"Optional - action if files are different (default=" + __command._Ignore + ")"), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel ( "Action if same:"),
+		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfSame_JComboBox = new SimpleJComboBox ( false );
-	List<String> sameChoices = new ArrayList<String>();
+	List<String> sameChoices = new ArrayList<>();
 	sameChoices.add ( "" );	// Default
 	sameChoices.add ( __command._Ignore );
 	sameChoices.add ( __command._Warn );
@@ -513,11 +555,79 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__IfSame_JComboBox.setData(sameChoices);
 	__IfSame_JComboBox.select ( 0 );
 	__IfSame_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(content_JPanel, __IfSame_JComboBox,
+		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(content_JPanel, new JLabel(
 		"Optional - action if files are the same (default=" + __command._Ignore + ")"), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for file property comparison
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Compare File Properties", prop_JPanel );
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"File properties can be compared." ),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"For example, this can be used to ensure that a file is an expected size or one file is newer than another file." ),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "File property:"),
+		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__FileProperty_JComboBox = new SimpleJComboBox ( false );
+	List<String> propChoices = new ArrayList<>();
+	propChoices.add ( "" );	// Default
+	propChoices.add ( __command._ModificationTime );
+	propChoices.add ( __command._Size );
+	__FileProperty_JComboBox.setData(propChoices);
+	__FileProperty_JComboBox.select ( 0 );
+	__FileProperty_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __FileProperty_JComboBox,
+		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
+		"Required (for property comparison) - property"), 
+		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property comparison operator:"),
+		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__FilePropertyOperator_JComboBox = new SimpleJComboBox ( false );
+	List<String> opChoices = new ArrayList<>();
+	opChoices.add ( "" ); // Default
+	opChoices.add ( "<" );
+	opChoices.add ( "<=" );
+	opChoices.add ( "=" );
+	opChoices.add ( ">" );
+	opChoices.add ( ">=" );
+	opChoices.add ( "!=" );
+	__FilePropertyOperator_JComboBox.setData(opChoices);
+	__FilePropertyOperator_JComboBox.select ( 0 );
+	__FilePropertyOperator_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __FilePropertyOperator_JComboBox,
+		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
+		"Required (for property comparison) - how to compare"), 
+		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Action if met:"),
+		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__FilePropertyAction_JComboBox = new SimpleJComboBox ( false );
+	List<String> actionChoices = new ArrayList<>();
+	actionChoices.add ( "" );	// Default
+	actionChoices.add ( __command._Warn );
+	actionChoices.add ( __command._Fail );
+	__FilePropertyAction_JComboBox.setData(actionChoices);
+	__FilePropertyAction_JComboBox.select ( 0 );
+	__FilePropertyAction_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __FilePropertyAction_JComboBox,
+		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
+		"Optional - action if condition is met (default=" + __command._Warn + ")"), 
+		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -594,6 +704,9 @@ private void refresh ()
 	String AllowedDiff = "";
 	String IfDifferent = "";
 	String IfSame = "";
+	String FileProperty = "";
+	String FilePropertyOperator = "";
+	String FilePropertyAction = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -607,6 +720,9 @@ private void refresh ()
 		AllowedDiff = parameters.getValue ( "AllowedDiff" );
 		IfDifferent = parameters.getValue ( "IfDifferent" );
 		IfSame = parameters.getValue ( "IfSame" );
+		FileProperty = parameters.getValue ( "FileProperty" );
+		FilePropertyOperator = parameters.getValue ( "FilePropertyOperator" );
+		FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
 		if ( InputFile1 != null ) {
 			__InputFile1_JTextField.setText ( InputFile1 );
 		}
@@ -652,6 +768,7 @@ private void refresh ()
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfDifferent_JComboBox, IfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__IfDifferent_JComboBox.select ( IfDifferent );
+			__main_JTabbedPane.setSelectedIndex(0);
 		}
 		else {
 		    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
@@ -664,10 +781,9 @@ private void refresh ()
 				"IfDifferent parameter \"" + IfDifferent + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__IfSame_JComboBox, IfSame,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __IfSame_JComboBox, IfSame, JGUIUtil.NONE, null, null ) ) {
 			__IfSame_JComboBox.select ( IfSame );
+			__main_JTabbedPane.setSelectedIndex(0);
 		}
 		else {
 			if ( (IfSame == null) || IfSame.equals("") ) {
@@ -678,6 +794,50 @@ private void refresh ()
 				// Bad user command...
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem( __FileProperty_JComboBox, FileProperty, JGUIUtil.NONE, null, null ) ) {
+			__FileProperty_JComboBox.select ( FileProperty );
+			__main_JTabbedPane.setSelectedIndex(1);
+		}
+		else {
+			if ( (FileProperty == null) || FileProperty.equals("") ) {
+				// New command...select the default...
+				__FileProperty_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"FileProperty parameter \"" + FileProperty + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem( __FilePropertyOperator_JComboBox, FilePropertyOperator, JGUIUtil.NONE, null, null ) ) {
+			__FilePropertyOperator_JComboBox.select ( FilePropertyOperator );
+			__main_JTabbedPane.setSelectedIndex(1);
+		}
+		else {
+			if ( (FilePropertyOperator == null) || FilePropertyOperator.equals("") ) {
+				// New command...select the default...
+				__FilePropertyOperator_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"FilePropertyOperator parameter \"" + FilePropertyOperator + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem( __FilePropertyAction_JComboBox, FilePropertyAction, JGUIUtil.NONE, null, null ) ) {
+			__FilePropertyAction_JComboBox.select ( FilePropertyAction );
+		}
+		else {
+			if ( (FilePropertyAction == null) || FilePropertyAction.equals("") ) {
+				// New command...select the default...
+				__FilePropertyAction_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"FilePropertyAction parameter \"" + FilePropertyAction + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	}
@@ -692,6 +852,9 @@ private void refresh ()
 	AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	IfDifferent = __IfDifferent_JComboBox.getSelected();
 	IfSame = __IfSame_JComboBox.getSelected();
+	FileProperty = __FileProperty_JComboBox.getSelected();
+	FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
+	FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
@@ -702,6 +865,9 @@ private void refresh ()
 	props.add ( "AllowedDiff=" + AllowedDiff );
 	props.add ( "IfDifferent=" + IfDifferent );
 	props.add ( "IfSame=" + IfSame );
+	props.add ( "FileProperty=" + FileProperty );
+	props.add ( "FilePropertyOperator=" + FilePropertyOperator );
+	props.add ( "FilePropertyAction=" + FilePropertyAction );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path1_JButton != null ) {

@@ -25,6 +25,7 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,7 +58,13 @@ implements Command
 {
 
 /**
-Data members used for parameter values (these have been replaced with _Warn, etc. instead).
+Possible values for FileProperty parameter.
+*/
+protected final String _ModificationTime = "ModificationTime";
+protected final String _Size = "Size";
+
+/**
+Possible values for boolean parameters.
 */
 protected final String _False = "False";
 protected final String _True = "True";
@@ -93,6 +100,9 @@ throws InvalidCommandParameterException
 	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	String IfSame = parameters.getValue ( "IfSame" );
+	String FileProperty = parameters.getValue ( "FileProperty" );
+	String FilePropertyOperator = parameters.getValue ( "FilePropertyOperator" );
+	String FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
 	String warning = "";
 	String message;
 
@@ -157,8 +167,42 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as " + _Ignore + " (default), " +
 					_Warn + ", or " + _Fail + "."));
 	}
+	if ( (FileProperty != null) && !FileProperty.equals("") ) {
+		if ( !FileProperty.equalsIgnoreCase(_ModificationTime) && !FileProperty.equalsIgnoreCase(_Size) ) {
+			message = "The FileProperty parameter \"" + FileProperty + "\" is not a valid value.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify the parameter as " + _ModificationTime + 
+						", or " + _Size + "."));
+		}
+		// Also check the operator.
+		if ( (FilePropertyOperator != null) && !FilePropertyOperator.equals("") &&
+			!FilePropertyOperator.equalsIgnoreCase("<") &&
+			!FilePropertyOperator.equalsIgnoreCase("<=") &&
+			!FilePropertyOperator.equalsIgnoreCase("=") &&
+			!FilePropertyOperator.equalsIgnoreCase(">") &&
+			!FilePropertyOperator.equalsIgnoreCase(">=") &&
+			!FilePropertyOperator.equalsIgnoreCase("!=") ) {
+			message = "The FilePropertyOperator parameter \"" + FilePropertyOperator + "\" is not a valid value.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify the parameter as >, >=, =, <, <=, or !="));
+		}
+		if ( (FilePropertyAction != null) && !FilePropertyAction.equals("") &&
+			!FilePropertyAction.equalsIgnoreCase(_Warn) && !FilePropertyAction.equalsIgnoreCase(_Fail) ) {
+			message = "The FilePropertyAction parameter \"" + FilePropertyAction + "\" is not a valid value.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Warn + " (default) " +
+					" or " + _Fail + "."));
+		}
+	}
+
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<>(12);
 	validList.add ( "InputFile1" );
 	validList.add ( "InputFile2" );
 	validList.add ( "CommentLineChar" );
@@ -168,6 +212,9 @@ throws InvalidCommandParameterException
 	validList.add ( "AllowedDiff" );
 	validList.add ( "IfDifferent" );
 	validList.add ( "IfSame" );
+	validList.add ( "FileProperty" );
+	validList.add ( "FilePropertyOperator" );
+	validList.add ( "FilePropertyAction" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -176,6 +223,104 @@ throws InvalidCommandParameterException
 		throw new InvalidCommandParameterException ( warning );
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+ * Compare a file property.
+ * @param inputFile1 path to first file to compare
+ * @param inputFile1Full full path to first file to compare
+ * @param inputFile2 path to second file to compare
+ * @param inputFile2Full full path to second file to compare
+ * @param fileProperty property to compare
+ * @param filePropertyOperator operator to use when comparing property
+ * @return the number of warnings generated in the method
+ */
+private int compareFileProperty(String inputFile1, String inputFile1Full,
+	String inputFile2, String inputFile2Full, String fileProperty, String filePropertyOperator,
+	CommandStatusType FilePropertyAction_CommandStatusType,
+	CommandStatus status, int warningLevel, String commandTag ) {
+	String routine = getClass().getSimpleName() + ".compareFileProperty";
+	File file1 = new File(inputFile1Full);
+	File file2 = new File(inputFile2Full);
+	long value1 = 0, value2 = 0;
+	String message;
+	int warningCount = 0;
+	// Get the values to compare.
+	if ( fileProperty.equalsIgnoreCase(this._ModificationTime) ) {
+		value1 = file1.lastModified();
+		value2 = file2.lastModified();
+		//Message.printStatus(2, routine, inputFile1 + " modification time is " + value1);
+		//Message.printStatus(2, routine, inputFile2 + " modification time is " + value2);
+	}
+	else if ( fileProperty.equalsIgnoreCase(this._Size) ) {
+		value1 = file1.length();
+		value2 = file2.length();
+		//Message.printStatus(2, routine, inputFile1 + " size is " + value1);
+		//Message.printStatus(2, routine, inputFile2 + " size is " + value2);
+	}
+	else {
+		// Error - property unknown.
+		message = "Property property " + fileProperty + " is not recognized.";
+		Message.printWarning ( warningLevel,
+			MessageUtil.formatMessageTag(
+			commandTag,++warningCount), routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Verify that the property being compared is valid."));
+	}
+	// Do the comparison based on the operator.
+	boolean conditionMet = false;
+	if ( filePropertyOperator.equals("<") ) {
+		if ( value1 < value2 ) {
+			conditionMet = true;
+		}
+	}
+	else if ( filePropertyOperator.equals("<=") ) {
+		if ( value1 <= value2 ) {
+			conditionMet = true;
+		}
+	}
+	else if ( filePropertyOperator.equals("=") || filePropertyOperator.equals("==") ) {
+		if ( value1 == value2 ) {
+			conditionMet = true;
+		}
+	}
+	else if ( filePropertyOperator.equals(">") ) {
+		if ( value1 > value2 ) {
+			conditionMet = true;
+		}
+	}
+	else if ( filePropertyOperator.equals(">=") ) {
+		if ( value1 >= value2 ) {
+			conditionMet = true;
+		}
+	}
+	else if ( filePropertyOperator.equals("!=") ) {
+		if ( value1 >= value2 ) {
+			conditionMet = true;
+		}
+	}
+	else {
+		// Error - operator unknown.
+		message = "Property operator " + filePropertyOperator + " is not recognized.";
+		Message.printWarning ( warningLevel,
+			MessageUtil.formatMessageTag(
+			commandTag,++warningCount), routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Verify that the operator is valid."));
+	}
+	if ( conditionMet && ((FilePropertyAction_CommandStatusType == CommandStatusType.WARNING) ||
+		(FilePropertyAction_CommandStatusType == CommandStatusType.FAILURE))) {
+		message = inputFile1 + " property " + fileProperty + " " + filePropertyOperator + " " + inputFile2;
+		Message.printWarning ( warningLevel,
+		MessageUtil.formatMessageTag( commandTag,++warningCount),
+		routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+			new CommandLogRecord(FilePropertyAction_CommandStatusType,
+				message, "") );
+	}
+	return warningCount;
 }
 
 /**
@@ -370,6 +515,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (CommentLineChar == null) || CommentLineChar.equals("") ) {
 	    CommentLineChar = "#";
 	}
+	boolean doCompareContent = false; // Whether to compare file content
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	CommandStatusType IfDifferent_CommandStatusType = CommandStatusType.UNKNOWN;
 	if ( IfDifferent == null ) {
@@ -378,6 +524,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	else {
 		if ( !IfDifferent.equalsIgnoreCase(_Ignore) ) {
 			IfDifferent_CommandStatusType = CommandStatusType.parse(IfDifferent);
+			doCompareContent = true;
 		}
 	}
 	String IfSame = parameters.getValue ( "IfSame" );
@@ -388,8 +535,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	else {
 		if ( !IfSame.equalsIgnoreCase(_Ignore) ) {
 			IfSame_CommandStatusType = CommandStatusType.parse(IfSame);
+			doCompareContent = true;
 		}
 	}
+	String FileProperty = parameters.getValue ( "FileProperty" );
+	String FilePropertyOperator = parameters.getValue ( "FilePropertyOperator" );
+	String FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
+	CommandStatusType FilePropertyAction_CommandStatusType = CommandStatusType.UNKNOWN;
+	if ( FilePropertyAction == null ) {
+		IfSame = _Warn; // default
+	}
+	else {
+		FilePropertyAction_CommandStatusType = CommandStatusType.parse(FilePropertyAction);
+	}
+
 	int diff_count = 0; // Number of lines that are different
 
 	String InputFile1_full = IOUtil.verifyPathForOS(
@@ -426,70 +585,78 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	int lineCountCompared = 0;
 	try {
-	    // Open the files...
-		BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
-		BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
-		// Loop through the files, comparing non-comment lines...
-		String iline1 = null, iline2 = null;
-		boolean file1EndReached = false;
-		boolean file2EndReached = false;
-		while ( true ) {
-			// The following will discard comments and only return non-comment lines
-			// Therefore comparisons are made on chunks of non-comment lines.
-			if ( !file1EndReached ) {
-				iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
-			}
-			if ( !file2EndReached ) {
-				iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
-			}
-			if ( (iline1 == null) && (iline2 == null) ) {
-				// both are done at the same time...
-				break;
-			}
-			// TODO SAM 2006-04-20 The following needs to handle comments at the end...
-			if ( (iline1 == null) && (iline2 != null) ) {
-				// First file is done (second is not) so files are different...
-				// - increment the count because a line exists in one file but not the other
-				file1EndReached = true;
-				++diff_count;
-			}
-			if ( (iline2 == null) && (iline1 != null) ) {
-				// Second file is done (first is not) so files are different...
-				// - increment the count because a line exists in one file but not the other
-				file2EndReached = true;
-				++diff_count;
-			}
-			++lineCountCompared;
-			if ( (iline1 != null) && (iline2 != null) ) {
-				// Have lines from each file to compare
-				if ( MatchCase_boolean ) {
-    				if ( !iline1.equals(iline2) ) {
-    					++diff_count;
-    				}
+		if ( doCompareContent ) {
+			// Compare the file content.
+			// Open the files...
+			BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
+			BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
+			// Loop through the files, comparing non-comment lines...
+			String iline1 = null, iline2 = null;
+			boolean file1EndReached = false;
+			boolean file2EndReached = false;
+			while ( true ) {
+				// The following will discard comments and only return non-comment lines
+				// Therefore comparisons are made on chunks of non-comment lines.
+				if ( !file1EndReached ) {
+					iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
 				}
-				else {
-			    	if ( !iline1.equalsIgnoreCase(iline2) ) {
-                    	++diff_count;
-                	}
+				if ( !file2EndReached ) {
+					iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
 				}
-				if ( Message.isDebugOn ) {
-					Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
-							diff_count );
+				if ( (iline1 == null) && (iline2 == null) ) {
+					// both are done at the same time...
+					break;
 				}
+				// TODO SAM 2006-04-20 The following needs to handle comments at the end...
+				if ( (iline1 == null) && (iline2 != null) ) {
+					// First file is done (second is not) so files are different...
+					// - increment the count because a line exists in one file but not the other
+					file1EndReached = true;
+					++diff_count;
+				}
+				if ( (iline2 == null) && (iline1 != null) ) {
+					// Second file is done (first is not) so files are different...
+					// - increment the count because a line exists in one file but not the other
+					file2EndReached = true;
+					++diff_count;
+				}
+				++lineCountCompared;
+				if ( (iline1 != null) && (iline2 != null) ) {
+					// Have lines from each file to compare
+					if ( MatchCase_boolean ) {
+    					if ( !iline1.equals(iline2) ) {
+    						++diff_count;
+    					}
+					}
+					else {
+			    		if ( !iline1.equalsIgnoreCase(iline2) ) {
+                    		++diff_count;
+                		}
+					}
+					if ( Message.isDebugOn ) {
+						Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
+								diff_count );
+					}
+				}
+			}
+			in1.close();
+			in2.close();
+			if ( lineCountCompared == 0 ) {
+				// Likely because both files are empty.
+				double diffPercent = 0.0;
+				Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
+					StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?");
+			}
+			else {
+				Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
+					StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
+					"% (compared " + lineCountCompared + " lines).");
 			}
 		}
-		in1.close();
-		in2.close();
-		if ( lineCountCompared == 0 ) {
-			// Likely because both files are empty.
-			double diffPercent = 0.0;
-			Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
-				StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?");
-		}
-		else {
-			Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
-				StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
-				"% (compared " + lineCountCompared + " lines).");
+		else if ( (FileProperty != null) && !FileProperty.isEmpty() ) {
+			warning_level += compareFileProperty(InputFile1, InputFile1_full,
+				InputFile2, InputFile2_full, FileProperty, FilePropertyOperator,
+				FilePropertyAction_CommandStatusType, status, warning_level, command_tag);
 		}
 	}
 	catch ( Exception e ) {
@@ -553,6 +720,9 @@ public String toString ( PropList parameters )
 	String AllowedDiff = parameters.getValue("AllowedDiff");
 	String IfDifferent = parameters.getValue("IfDifferent");
 	String IfSame = parameters.getValue("IfSame");
+	String FileProperty = parameters.getValue("FileProperty");
+	String FilePropertyOperator = parameters.getValue("FilePropertyOperator");
+	String FilePropertyAction = parameters.getValue("FilePropertyAction");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile1 != null) && (InputFile1.length() > 0) ) {
 		b.append ( "InputFile1=\"" + InputFile1 + "\"" );
@@ -604,6 +774,24 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "IfSame=" + IfSame );
+	}
+	if ( (FileProperty != null) && (FileProperty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FileProperty=" + FileProperty );
+	}
+	if ( (FilePropertyOperator != null) && (FilePropertyOperator.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FilePropertyOperator=" + FilePropertyOperator );
+	}
+	if ( (FilePropertyAction != null) && (FilePropertyAction.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "FilePropertyAction=" + FilePropertyAction );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

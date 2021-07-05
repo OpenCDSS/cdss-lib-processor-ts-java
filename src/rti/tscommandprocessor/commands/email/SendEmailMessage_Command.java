@@ -76,6 +76,11 @@ Data members used for parameter values.
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
+protected final String _JavaAPI = "JavaAPI";
+protected final String _Sendmail = "Sendmail";
+protected final String _WindowsMail = "WindowsMail";
+
+protected String _SMTPConfigPath = System.getenv("APPDATA") + "\\tstool\\.smtp.cfg";
 
 /**
 Constructor.
@@ -94,11 +99,15 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String To = parameters.getValue ( "To" );
+{	String MailProgram = parameters.getValue("MailProgram");
+	String To = parameters.getValue ( "To" );
 	String Subject = parameters.getValue ( "Subject" );
-	//String Message0 = parameters.getValue ( "Message" );
-	//String MessageFile = parameters.getValue ( "MessageFile" );   
+	String Message0 = parameters.getValue ( "Message" );
+	String MessageFile = parameters.getValue ( "MessageFile" );   
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
+	String SMTPServer = parameters.getValue ( "SMTPServer" );
+	String SMTPAccount = parameters.getValue ( "SMTPAccount" );
+	String SMTPPassword = parameters.getValue ( "SMTPPassword" );
 	String warning = "";
 	String message;
 
@@ -107,7 +116,7 @@ throws InvalidCommandParameterException
 	
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
-
+	// If the To field is not given, warn the user.
 	if ( (To == null) || To.isEmpty() ) {
 		message = "The \"To\" addresses must be specified.";
 		warning += "\n" + message;
@@ -115,6 +124,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the To addresses."));
 	}
+	// If the Subject is not given, warn the user.
 	if ( (Subject == null) || Subject.isEmpty() ) {
 		message = "The subject must be specified.";
 		warning += "\n" + message;
@@ -133,8 +143,44 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
+	// If neither a message or message file is given, warn the user.
+	if ( (Message0 == null) && (MessageFile == null)) {
+		message = "The Message or Message file must be specified.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the message or message file."));
+	}
+	// If both a message and message file 
+	if ( ((Message0 != null) && (MessageFile != null)) ) {
+		message = "The Message and Message file cannot both be specified.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify either the message or message file."));
+	}
+	// JavaAPI (default) chosen and one of the SMTP text fields is empty
+	if ( (MailProgram == null) || (MailProgram.equals(_JavaAPI)) ) {
+		if (!SMTPPassword.equalsIgnoreCase("smtp.cfg")) {
+			// Don't do anything, don't need to check if all three fields are null. ONLY if the password is smtp.cfg.
+			message = "SMTPPassword must be smtp.cfg.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "SMTPPassword must be smtp.cfg."));
+		}
+//		else if ( (SMTPServer == null) || (SMTPAccount == null) || (SMTPPassword == null) ) {
+//			message = "All SMTP fields must be filled out when using JavaAPI";
+//			warning += "\n" + message;
+//			status.addToLog(CommandPhaseType.INITIALIZATION,
+//				new CommandLogRecord(CommandStatusType.FAILURE,
+//					message, "Specify either the message or message file."));
+//		}
+		
+	}
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(9);
+	List<String> validList = new ArrayList<String>(13);
+	validList.add ( "MailProgram" );
 	validList.add ( "From" );
 	validList.add ( "To" );
 	validList.add ( "CC" );
@@ -144,6 +190,9 @@ throws InvalidCommandParameterException
 	validList.add ( "MessageFile" );
 	validList.add ( "AttachmentFiles" );
 	validList.add ( "IfNotFound" );
+	validList.add( "SMTPServer" );
+	validList.add( "SMTPAccount" );
+	validList.add( "SMTPPassword" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -196,18 +245,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(commandPhase);
 	}
 	
+    String MailProgram = parameters.getValue( "MailProgram" );
+    if ( (MailProgram == null) || (MailProgram.equals("")) ) {
+    	MailProgram = _JavaAPI; // Default
+    }
     String From = parameters.getValue ( "From" );
 	String To = parameters.getValue ( "To" );
 	String CC = parameters.getValue ( "CC" );
 	String BCC = parameters.getValue ( "BCC" );
     String Subject = parameters.getValue ( "Subject" );
     String Message0 = parameters.getValue ( "Message" );
-    //String MessageFile = parameters.getValue ( "MessageFile" );
+//    String MessageFile = parameters.getValue ( "MessageFile" );
     String AttachmentFiles = parameters.getValue ( "AttachmentFiles" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default
 	}
+	String[] SMTPParameters = new String[3];
+	if (MailProgram.equals(_JavaAPI)) {
+		SMTPParameters[0] = parameters.getValue("SMTPServer");
+//		SMTPParameters[1] = parameters.getValue("SMTPAccount");
+		SMTPParameters[2] = parameters.getValue("SMTPPassword");
+		
+//		System.out.println(IOUtil.verifyPathForOS(_SMTPConfigPath));
+	}
+	
 	//String MessageFile_full = IOUtil.verifyPathForOS(
     //   IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
     //    	TSCommandProcessorUtil.expandParameterValue(processor,this,MessageFile) ) );
@@ -216,7 +278,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<File> fileList = null;
 	
 	if (AttachmentFiles != null) {
-//		System.out.println(AttachmentFiles);
 		String AttachmentFiles_full = IOUtil.verifyPathForOS(
 	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	        	TSCommandProcessorUtil.expandParameterValue(processor,this,AttachmentFiles) ) );
@@ -274,7 +335,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            }
 	    	}
 		}
-//		System.out.println(fileList);
 	}
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -303,7 +363,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	*/
 	
 	try {
-		sendEmailMessage ( To, From, CC, BCC, Subject, Message0, fileList );
+		if (MailProgram.equals(_JavaAPI)) {
+			sendEmailMessageViaJavaAPI ( To, From, CC, BCC, Subject, Message0, MailProgram, fileList, SMTPParameters );
+		}
+		else if (MailProgram.equals(_Sendmail)) {
+			sendEmailMessageViaSendmail();
+		}
+		else if (MailProgram.equals(_WindowsMail)) {
+			sendEmailMessageViaWindowsMail();
+		}
+		
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -402,10 +471,10 @@ throws AddressException, MessagingException {
  */
 private String[] readUserCredentials() throws FileNotFoundException {
 	
-	String fullMailPassPath = IOUtil.verifyPathForOS(System.getProperty("user.home") + "\\.mailpass");
+	String fullSMTPConfigPath = IOUtil.verifyPathForOS(System.getenv("APPDATA") + "\\tstool\\.smtp.cfg");
 	String[] credentials = new String[2];
 	
-	File myObj = new File(fullMailPassPath);
+	File myObj = new File(fullSMTPConfigPath);
     Scanner myReader = new Scanner(myObj);
     while (myReader.hasNextLine()) {
       String data = myReader.nextLine();
@@ -424,12 +493,17 @@ private String[] readUserCredentials() throws FileNotFoundException {
  * @param bcc
  * @param subject
  * @param message
+ * @param MailProgram
+ * @param fileList
+ * @param SMTPParameters
  * @throws AddressException
  * @throws MessagingException
  * @throws FileNotFoundException 
  */
-private void sendEmailMessage ( String to, String from, String cc, String bcc, String subject, String message, List<File> fileList )
+private void sendEmailMessageViaJavaAPI ( String to, String from, String cc, String bcc, String subject, String message,
+		String MailProgram, List<File> fileList, String[] SMTPParameters )
 throws AddressException, MessagingException, FileNotFoundException {
+	
 	Properties props = new Properties();
 	// Port 25 is the default port used, and is considered to not be a great option, as many firewalls will block
 	// it. The following 2 ports are suggested, in order of importance. Port 587 - Uses STARTTLS. Port 465- Uses SMTPS
@@ -437,23 +511,41 @@ throws AddressException, MessagingException, FileNotFoundException {
 	props.put("mail.smtp.port", "587");
 	props.put("mail.smtp.auth", "true");
 	props.put("mail.smtp.starttls.enable", "true");
-	// Populate the 2 element sized array userCredentials with accountID and accountPassword
-	String[] userCredentials = readUserCredentials();
-	String accountId = userCredentials[0];
-	// This is recommended to be an app-specific password for Google.
-	String accountPassword = userCredentials[1];
-	Session session = Session.getInstance(props, new javax.mail.Authenticator() {
-		protected PasswordAuthentication getPasswordAuthentication() {
-			return new PasswordAuthentication(accountId, accountPassword);
-		}
-	});
 	
-	MimeMessage emailMessage = createEmailMessage ( session, from, to, cc, bcc, subject, message, fileList );
-	Transport transport = session.getTransport("smtp");
+	// Password can only be smtp.cfg to read from the smtp.cfg file.
+	if (SMTPParameters[2].equalsIgnoreCase("smtp.cfg")) {
+		// Populate the 2 element sized array userCredentials with accountID and accountPassword
+		String[] userCredentials = readUserCredentials();
+		String accountId = userCredentials[0];
+		// This is recommended to be an app-specific password for Google.
+		String accountPassword = userCredentials[1];
+		Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(accountId, accountPassword);
+			}
+		});
+		
+		MimeMessage emailMessage = createEmailMessage ( session, from, to, cc, bcc, subject, message, fileList );
+		Transport transport = session.getTransport("smtp");
+		// Use the smtp server provided from the SMTP Server text field.
+		transport.connect(SMTPParameters[0],accountId,accountPassword);
+		transport.sendMessage(emailMessage,emailMessage.getAllRecipients());
+		transport.close();
+	}
 	
-	transport.connect("smtp.gmail.com",accountId,accountPassword);
-	transport.sendMessage(emailMessage,emailMessage.getAllRecipients());
-	transport.close();
+	
+	
+}
+
+/**
+ * 
+ */
+private void sendEmailMessageViaSendmail() {
+	
+}
+
+private void sendEmailMessageViaWindowsMail() {
+	
 }
 
 /**
@@ -463,6 +555,7 @@ public String toString ( PropList parameters )
 {	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
+	String MailProgram = parameters.getValue("MailProgram");
 	String From = parameters.getValue("From");
 	String To = parameters.getValue("To");
 	String CC = parameters.getValue("CC");
@@ -472,8 +565,18 @@ public String toString ( PropList parameters )
 	String MessageFile = parameters.getValue("MessageFile");
 	String AttachmentFiles = parameters.getValue("AttachmentFiles");
 	String IfNotFound = parameters.getValue("IfNotFound");
+	String SMTPServer = parameters.getValue("SMTPServer");
+	String SMTPAccount = parameters.getValue("SMTPAccount");
+	String SMTPPassword = parameters.getValue("SMTPPassword");
 	StringBuffer b = new StringBuffer ();
+	
+	if ( (MailProgram != null) && (MailProgram.length() > 0) ) {
+		b.append ( "MailProgram=" + MailProgram );
+	}
 	if ( (From != null) && (From.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
 		b.append ( "From=\"" + From + "\"" );
 	}
 	if ( (To != null) && (To.length() > 0) ) {
@@ -524,6 +627,24 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "IfNotFound=" + IfNotFound );
 	}
+	if ( (SMTPServer != null) && (SMTPServer.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SMTPServer=\"" + SMTPServer + "\"" );
+    }
+	if ( (SMTPAccount != null) && (SMTPAccount.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SMTPAccount=\"" + SMTPAccount + "\"" );
+    }
+	if ( (SMTPPassword != null) && (SMTPPassword.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SMTPPassword=\"" + SMTPPassword + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

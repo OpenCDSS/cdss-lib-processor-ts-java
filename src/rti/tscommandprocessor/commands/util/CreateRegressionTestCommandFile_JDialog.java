@@ -91,6 +91,7 @@ private JTextField __EndCommandFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextField __IncludeTestSuite_JTextField = null;
 private JTextField __IncludeOS_JTextField = null;
+private SimpleJComboBox __UseOrder_JComboBox = null;
 private JTextField __TestResultsTableID_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
@@ -354,6 +355,7 @@ private void checkInput ()
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
 	String IncludeOS = __IncludeOS_JTextField.getText().trim();
+	String UseOrder = __UseOrder_JComboBox.getSelected();
 	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 
 	if ( SearchFolder.length() > 0 ) {
@@ -380,6 +382,9 @@ private void checkInput ()
     if ( IncludeOS.length() > 0 ) {
         props.set ( "IncludeOS", IncludeOS );
     }
+	if ( UseOrder.length() > 0 ) {
+		props.set ( "UseOrder", UseOrder );
+	}
 	if ( TestResultsTableID.length() > 0 ) {
 		props.set ( "TestResultsTableID", TestResultsTableID );
 	}
@@ -407,6 +412,7 @@ private void commitEdits ()
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
 	String IncludeOS = __IncludeOS_JTextField.getText().trim();
+	String UseOrder = __UseOrder_JComboBox.getSelected();
 	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 	__command.setCommandParameter ( "SearchFolder", SearchFolder );
     __command.setCommandParameter ( "OutputFile", OutputFile );
@@ -416,6 +422,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Append", Append );
 	__command.setCommandParameter ( "IncludeTestSuite", IncludeTestSuite );
 	__command.setCommandParameter ( "IncludeOS", IncludeOS );
+	__command.setCommandParameter ( "UseOrder", UseOrder );
 	__command.setCommandParameter ( "TestResultsTableID", TestResultsTableID );
 }
 
@@ -581,7 +588,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
-	List<String> appendChoices = new ArrayList<String>();
+	List<String> appendChoices = new ArrayList<>();
 	appendChoices.add ( "" );	// Default
 	appendChoices.add ( __command._False );
 	appendChoices.add ( __command._True );
@@ -593,7 +600,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - append to command file? (default=" + __command._True + ")."), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to include:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeTestSuite_JTextField = new JTextField ( "", 30 );
@@ -613,6 +620,22 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel,
         new JLabel( "Optional - check \"#@os Windows|UNIX\" comments for tests to include (default=*)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use @order?"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__UseOrder_JComboBox = new SimpleJComboBox ( false );
+	List<String> orderChoices = new ArrayList<>();
+	orderChoices.add ( "" );	// Default
+	orderChoices.add ( __command._False );
+	orderChoices.add ( __command._True );
+	__UseOrder_JComboBox.setData(orderChoices);
+	__UseOrder_JComboBox.select ( 0 );
+	__UseOrder_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __UseOrder_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - use @order for sorting tests? (default=" + __command._True + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Test results table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -695,6 +718,7 @@ private void refresh ()
 	String Append = "";
 	String IncludeTestSuite = "*";
 	String IncludeOS = "*";
+	String UseOrder = "";
 	String TestResultsTableID = "";
 	PropList props = null;
 	if ( __first_time ) {
@@ -708,6 +732,7 @@ private void refresh ()
 		Append = props.getValue ( "Append" );
 		IncludeTestSuite = props.getValue ( "IncludeTestSuite" );
 		IncludeOS = props.getValue ( "IncludeOS" );
+		UseOrder = props.getValue ( "UseOrder" );
 		TestResultsTableID = props.getValue ( "TestResultsTableID" );
 		if ( SearchFolder != null ) {
 			__SearchFolder_JTextField.setText ( SearchFolder );
@@ -745,6 +770,21 @@ private void refresh ()
         if ( IncludeOS != null ) {
             __IncludeOS_JTextField.setText ( IncludeOS );
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem( __UseOrder_JComboBox, UseOrder, JGUIUtil.NONE, null, null ) ) {
+			__UseOrder_JComboBox.select ( UseOrder );
+		}
+		else {
+		    if ( (UseOrder == null) || UseOrder.equals("") ) {
+				// New command...select the default...
+				__UseOrder_JComboBox.select ( 0 );
+			}
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\nUseOrder parameter \"" +
+				UseOrder + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
 		if ( TestResultsTableID != null ) {
 			__TestResultsTableID_JTextField.setText ( TestResultsTableID );
 		}
@@ -759,6 +799,7 @@ private void refresh ()
 	Append = __Append_JComboBox.getSelected();
 	IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
 	IncludeOS = __IncludeOS_JTextField.getText().trim();
+	UseOrder = __UseOrder_JComboBox.getSelected();
 	TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "SearchFolder=" + SearchFolder );
@@ -769,6 +810,7 @@ private void refresh ()
 	props.add ( "Append=" + Append );
 	props.add ( "IncludeTestSuite=" + IncludeTestSuite );
 	props.add ( "IncludeOS=" + IncludeOS );
+	props.add ( "UseOrder=" + UseOrder );
 	props.add ( "TestResultsTableID=" + TestResultsTableID );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

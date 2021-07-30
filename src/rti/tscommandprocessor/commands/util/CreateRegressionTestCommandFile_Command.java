@@ -267,7 +267,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(9);
+	List<String> validList = new ArrayList<>(10);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
     validList.add ( "SetupCommandFile" );
@@ -276,6 +276,7 @@ throws InvalidCommandParameterException
 	validList.add ( "Append" );
 	validList.add ( "IncludeTestSuite" );
 	validList.add ( "IncludeOS" );
+	validList.add ( "UseOrder" );
 	validList.add ( "TestResultsTableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -298,9 +299,10 @@ used for the command file (default expected status is success).
 */
 private String determineExpectedStatusParameter ( CommandFile commandFile )
 throws FileNotFoundException
-{   String expectedStatusParameter = "";
+{   // Default is success, which will not add an ExpectedStatus parameter.
+	String expectedStatusParameter = "";
     CommandStatusType expectedStatus = commandFile.getExpectedStatus();
-   	// Translate variations to the official name recognized by RunCommands()
+   	// Translate variations to the official name recognized by RunCommands().
     if ( expectedStatus == CommandStatusType.WARNING ) {
     	expectedStatusParameter = ",ExpectedStatus=Warning";
     }
@@ -564,9 +566,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 	String Append = parameters.getValue ( "Append" );
-	boolean Append_boolean = true;	// Default
+	boolean append = true; // Default
 	if ( (Append != null) && Append.equalsIgnoreCase(_False)){
-		Append_boolean = false;
+		append = false;
 	}
 	String IncludeTestSuite = parameters.getValue ( "IncludeTestSuite" );
 	if ( (IncludeTestSuite == null) || IncludeTestSuite.equals("") ) {
@@ -576,6 +578,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (IncludeOS == null) || IncludeOS.equals("") ) {
         IncludeOS = "*"; // Default - include all OS
     }
+	String UseOrder = parameters.getValue ( "UseOrder" );
+	boolean useOrder = true; // Default
+	if ( (UseOrder != null) && UseOrder.equalsIgnoreCase(_False)){
+		useOrder = false;
+	}
     String TestResultsTableID = parameters.getValue ( "TestResultsTableID" );
     // Get Java regular expression pattern to match
     String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
@@ -640,7 +647,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
             includedTestSuitePatterns, includedOSPatterns );
         Message.printStatus(2, routine, "Found " + files.size() + " command files matching search criteria.");
-        // Sort the list because it may not be sorted, due to dates on files.
+        // Sort the list because it may not be sorted, due to dates on files:
+        // - some reordering may occur if @order annotations are present
         files = StringUtil.sortStringList(files);
         // Transfer the filenames into CommandFile objects for further processing.
         int expectedStatusCount = 0;
@@ -667,11 +675,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         // Sort the command files based on 'order' annotation.
         // - only do if 'order' was detected above since is a slight performance hit
-        if ( orderCount > 0 ) {
+        if ( useOrder && (orderCount > 0) ) {
         	warningCount += sortBasedOnOrder(commandFiles, status, warningLevel, commandTag);
         }
 		// Open the output file.
-		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
+		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, append));
 		File OutputFile_full_File = new File(OutputFile_full);
 		// Write a standard header to the file so that it is clear when the file was created.
 		IOUtil.printCreatorHeader(out, "#", 120, 0 );
@@ -770,11 +778,12 @@ private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus statu
 			startingIndex + ", max index = " + (commandFiles.size() - 1) ); 
 		++loopCount;
 		if ( loopCount >= commandFiles.size()) {
-			String message = "Checking @order has logic problem - reached maximum number of tests without finishing reordering.";
+			String message = "Checking @order has logic problem - reached maximum number of tests (" +
+				commandFiles.size() + " without finishing reordering.";
 			Message.printWarning ( warningLevel,
 				MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
 				status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-				"Check code logic."));
+				"Check code logic.  Contact support."));
 			break;
 		}
 		foundCommandFile = null;
@@ -903,6 +912,7 @@ public String toString ( PropList parameters )
 	String Append = parameters.getValue("Append");
 	String IncludeTestSuite = parameters.getValue("IncludeTestSuite");
 	String IncludeOS = parameters.getValue("IncludeOS");
+	String UseOrder = parameters.getValue("UseOrder");
 	String TestResultsTableID = parameters.getValue("TestResultsTableID");
 	StringBuffer b = new StringBuffer ();
 	if ( (SearchFolder != null) && (SearchFolder.length() > 0) ) {
@@ -950,6 +960,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "IncludeOS=\"" + IncludeOS + "\"" );
     }
+	if ( (UseOrder != null) && (UseOrder.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "UseOrder=" + UseOrder );
+	}
     if ( (TestResultsTableID != null) && (TestResultsTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

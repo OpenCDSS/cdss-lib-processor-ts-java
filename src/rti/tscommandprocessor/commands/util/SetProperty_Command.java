@@ -71,6 +71,13 @@ protected final String _Integer = "Integer";
 protected final String _String = "String";
 
 /**
+Data members used for parameter values.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
+
+/**
 Property set during discovery.
 */
 private Prop __discovery_Prop = null;
@@ -99,6 +106,9 @@ throws InvalidCommandParameterException
 	    PropertyType = "";
     }
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
+	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );
+	String JavaProperty = parameters.getValue ( "JavaProperty" );
+	String IfJavaPropertyUndefined = parameters.getValue ( "IfJavaPropertyUndefined" );
 	String SetEmpty = parameters.getValue ( "SetEmpty" );
 	String SetNaN = parameters.getValue ( "SetNaN" );
 	String SetNull = parameters.getValue ( "SetNull" );
@@ -141,21 +151,54 @@ throws InvalidCommandParameterException
                     message, "Provide a property value, set to null special value, or indicate to remove." ) );
 		}
     }
-	if ( (PropertyValue == null) || PropertyValue.equals("") ) {
-		// The property value is not required if a special value is used
-		if ( ((SetEmpty == null) || SetEmpty.isEmpty()) &&
-			((SetNaN == null) || SetNaN.isEmpty()) &&
-			((SetNull == null) || SetNull.isEmpty()) &&
-			((RemoveProperty == null) || RemoveProperty.isEmpty()) ) {
-			message = "The property value must be specified unless a special value is indicated or property is being removed.";
-	        warning += "\n" + message;
-	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Provide a property value, special value, or indicate to remove." ) );
-		}
+    int setCount = 0;
+    String method = "";
+	if ( (PropertyValue != null) && !PropertyValue.isEmpty() ) {
+		++setCount;
+		method += " PropertyValue";
 	}
-	else if ( PropertyValue.indexOf("${") < 0 ){
-	    // Check the value given the type.
+	if ( (EnvironmentVariable != null) && !EnvironmentVariable.isEmpty() ) {
+		++setCount;
+		method += " EnvironmentVariable";
+	}
+	if ( (JavaProperty != null) && !JavaProperty.isEmpty() ) {
+		++setCount;
+		method += " JavaProperty";
+	}
+	if ( (SetEmpty != null) && !SetEmpty.isEmpty() ) {
+		++setCount;
+		method += " SetEmpty";
+	}
+	if ( (SetNaN != null) && !SetNaN.isEmpty() ) {
+		++setCount;
+		method += " SetNaN";
+	}
+	if ( (SetNull != null) && !SetNull.isEmpty() ) {
+		++setCount;
+		method += " SetNull";
+	}
+	if ( (RemoveProperty != null) && !RemoveProperty.isEmpty() ) {
+		++setCount;
+		method += " RemoveProperty";
+	}
+	if ( setCount == 0 ) {
+		message = "The property value must be set only one way: value, environment variable, "
+				+ "Java property, special value, or remove.";
+	    warning += "\n" + message;
+	    status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the property value using one of the available choices." ) );
+	}
+	else if ( setCount > 1 ) {
+		message = "The property value must be set only one way: value, environment variable, "
+				+ "Java property, special value, or remove (currently using: " + method + ").";
+	    warning += "\n" + message;
+	    status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a property value using one of the available choices." ) );
+	}
+	if ( (PropertyValue != null) && !PropertyValue.isEmpty() && (PropertyValue.indexOf("${") < 0) ) {
+	    // Check the property value given the type.
 	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
 	    if ( PropertyType.equalsIgnoreCase(_Boolean) && !PropertyValue.equalsIgnoreCase("true") && !PropertyValue.equalsIgnoreCase("false") ) {
     		message = "The property value \"" + PropertyValue + "\" is not a boolean.";
@@ -191,6 +234,18 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the property value as an integer." ));
+		}
+	}
+
+	if ( (IfJavaPropertyUndefined != null) && !IfJavaPropertyUndefined.isEmpty() ) {
+		if ( !IfJavaPropertyUndefined.equalsIgnoreCase(_Ignore) && !IfJavaPropertyUndefined.equalsIgnoreCase(_Warn)
+		    && !IfJavaPropertyUndefined.equalsIgnoreCase(_Fail) ) {
+			message = "The IfJavaPropertyUndefined parameter \"" + IfJavaPropertyUndefined + "\" is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + ", " + _Warn + " (default), or " +
+					_Fail + "."));
 		}
 	}
 	
@@ -295,10 +350,13 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(14);
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
+    validList.add ( "EnvironmentVariable" );
+    validList.add ( "JavaProperty" );
+    validList.add ( "IfJavaPropertyUndefined" );
     validList.add ( "SetEmpty" );
     validList.add ( "SetNaN" );
     validList.add ( "SetNull" );
@@ -425,6 +483,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
+	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnvironmentVariable != null) && (EnvironmentVariable.indexOf("${") >= 0) ) {
+		EnvironmentVariable = TSCommandProcessorUtil.expandParameterValue(processor, this, EnvironmentVariable);
+	}
+	String JavaProperty = parameters.getValue ( "JavaProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (JavaProperty != null) && (JavaProperty.indexOf("${") >= 0) ) {
+		JavaProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, JavaProperty);
+	}
+	String IfJavaPropertyUndefined = parameters.getValue ( "IfJavaPropertyUndefined" );
+	if ( (IfJavaPropertyUndefined == null) || IfJavaPropertyUndefined.isEmpty() ) {
+		IfJavaPropertyUndefined = this._Warn; // Default.
+	}
 	String SetEmpty = parameters.getValue ( "SetEmpty" );
 	boolean setEmpty = false;
 	if ( (SetEmpty != null) && SetEmpty.equalsIgnoreCase(_True) ) {
@@ -488,19 +558,64 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    }
 	    }
 	    else {
-	    	// Not setting to null so expect to have a property value or special value
+	    	// Not setting to null so expect to have one of:
+	    	// - property value
+	    	// - environment variable
+	    	// - Java property
+	    	// - special value
+	    	String propertyValue = null;
+	    	if ( (PropertyValue != null) && !PropertyValue.isEmpty() ) {
+	    		// Set the property value from PropertyValue.
+	    		propertyValue = PropertyValue;
+	    	}
+	    	else if ( (EnvironmentVariable != null) && !EnvironmentVariable.isEmpty() ) {
+	    		// Set the property value from EnvironmentVariable.
+	    		propertyValue = System.getenv(EnvironmentVariable);
+	    		if ( propertyValue == null ) {
+		    		message = "Environment variable \"" + EnvironmentVariable + "\" is not set.";
+		    		Message.printWarning(log_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+		            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check that environment variable \"" + EnvironmentVariable + "\" is set." ) );
+	    		}
+	    	}
+	    	else if ( (JavaProperty != null) && !JavaProperty.isEmpty() ) {
+	    		// Set the property value from JavaProperty.
+	    		propertyValue = System.getProperty(JavaProperty);
+	    		if ( propertyValue == null ) {
+		    		message = "Java property \"" + JavaProperty + "\" is not defined.";
+            		if ( IfJavaPropertyUndefined.equalsIgnoreCase(_Fail) ) {
+                		Message.printWarning ( warning_level,
+                    		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        		message, "Check that Java property \"" + JavaProperty + "\" is defined."));
+            		}
+            		else if ( IfJavaPropertyUndefined.equalsIgnoreCase(_Warn) ) {
+                		Message.printWarning ( warning_level,
+                    		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                        		message, "Check that Java property \"" + JavaProperty + "\" is defined."));
+            		}
+            		else {
+                		Message.printStatus( 2, routine, message + "  Ignoring.");
+            		}
+	    		}
+	    	}
+	    	// Now have the property value.  Set as a property in the processor.
 	    	if ( commandPhase == CommandPhaseType.RUN ) {
 			    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
 			    	if ( !setNull ) {
-			    		Property_Object = Boolean.valueOf(PropertyValue);
+			    		Property_Object = Boolean.valueOf(propertyValue);
 			    	}
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
-			        // This handles special strings like CurrentToHour
+			        // This handles special strings like CurrentToHour.
 			        // Have to specify a PropList to ensure the special syntax is handled
 			    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties
 			    	if ( !setNull ) {
-			    		Property_Object = DateTime.parse(PropertyValue,(PropList)null);
+			    		Property_Object = DateTime.parse(propertyValue,(PropList)null);
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			DateTime dt = (DateTime)Property_Object;
 			    			TimeInterval interval = TimeInterval.parseInterval(Add);
@@ -519,7 +634,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    	}
 			    	else if ( !setNull ) {
 			    		// Set a number value
-			    		Property_Object = Double.valueOf(PropertyValue);
+			    		Property_Object = Double.valueOf(propertyValue);
 			    		// Do math operations if specified
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
@@ -547,7 +662,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
 			    	if ( !setNull ) {
-			    		Property_Object = Integer.valueOf(PropertyValue);
+			    		Property_Object = Integer.valueOf(propertyValue);
 			    		// Do math operations if specified
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
@@ -578,7 +693,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    		Property_Object = "";
 			    	}
 			    	else if ( !setNull ) {
-			    		Property_Object = PropertyValue;
+			    		Property_Object = propertyValue;
 			    		// Do math operations if specified
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			// Concatenate
@@ -694,6 +809,9 @@ public String toString ( PropList props )
     String PropertyName = props.getValue( "PropertyName" );
 	String PropertyType = props.getValue( "PropertyType" );
     String PropertyValue = props.getValue( "PropertyValue" );
+    String EnvironmentVariable = props.getValue( "EnvironmentVariable" );
+    String JavaProperty = props.getValue( "JavaProperty" );
+    String IfJavaPropertyUndefined = props.getValue( "IfJavaPropertyUndefined" );
     String SetEmpty = props.getValue ( "SetEmpty" );
     String SetNaN = props.getValue ( "SetNaN" );
     String SetNull = props.getValue ( "SetNull" );
@@ -720,6 +838,24 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	}
+	if ( (EnvironmentVariable != null) && (EnvironmentVariable.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "EnvironmentVariable=\"" + EnvironmentVariable + "\"" );
+	}
+	if ( (JavaProperty != null) && (JavaProperty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "JavaProperty=\"" + JavaProperty + "\"" );
+	}
+	if ( (IfJavaPropertyUndefined != null) && (IfJavaPropertyUndefined.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IfJavaPropertyUndefined=\"" + IfJavaPropertyUndefined + "\"" );
 	}
 	if ( (SetEmpty != null) && (SetEmpty.length() > 0) ) {
 		if ( b.length() > 0 ) {

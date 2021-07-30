@@ -69,6 +69,9 @@ private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
+private JTextField __EnvironmentVariable_JTextField = null;
+private JTextField __JavaProperty_JTextField = null;
+private SimpleJComboBox	__IfJavaPropertyUndefined_JComboBox =null;
 private SimpleJComboBox	__SetNull_JComboBox = null;
 private SimpleJComboBox	__SetNaN_JComboBox = null;
 private SimpleJComboBox	__SetEmpty_JComboBox = null;
@@ -111,6 +114,10 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+	else {
+		// Choices...
+		refresh();
+	}
 }
 
 /**
@@ -131,6 +138,9 @@ private void checkInput ()
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
 	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+	String JavaProperty = __JavaProperty_JTextField.getText().trim();
+	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	String SetEmpty = __SetEmpty_JComboBox.getSelected();
 	String SetNaN = __SetNaN_JComboBox.getSelected();
 	String SetNull = __SetNull_JComboBox.getSelected();
@@ -150,6 +160,15 @@ private void checkInput ()
     }
 	if ( PropertyValue.length() > 0 ) {
 		parameters.set ( "PropertyValue", PropertyValue );
+	}
+	if ( EnvironmentVariable.length() > 0 ) {
+		parameters.set ( "EnvironmentVariable", EnvironmentVariable );
+	}
+	if ( JavaProperty.length() > 0 ) {
+		parameters.set ( "JavaProperty", JavaProperty );
+	}
+	if ( IfJavaPropertyUndefined.length() > 0 ) {
+		parameters.set ( "IfJavaPropertyUndefined", IfJavaPropertyUndefined );
 	}
 	if ( SetEmpty.length() > 0 ) {
 		parameters.set ( "SetEmpty", SetEmpty );
@@ -194,6 +213,9 @@ private void commitEdits ()
 {	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected(); 
 	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+	String JavaProperty = __JavaProperty_JTextField.getText().trim();
+	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	String SetEmpty = __SetEmpty_JComboBox.getSelected();
 	String SetNaN = __SetNaN_JComboBox.getSelected();
 	String SetNull = __SetNull_JComboBox.getSelected();
@@ -205,6 +227,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "PropertyType", PropertyType );
 	__command.setCommandParameter ( "PropertyValue", PropertyValue );
 	__command.setCommandParameter ( "PropertyName", PropertyName );
+	__command.setCommandParameter ( "EnvironmentVariable", EnvironmentVariable );
+	__command.setCommandParameter ( "JavaProperty", JavaProperty);
+	__command.setCommandParameter ( "IfJavaPropertyUndefined", IfJavaPropertyUndefined);
 	__command.setCommandParameter ( "SetEmpty", SetEmpty );
 	__command.setCommandParameter ( "SetNaN", SetNaN );
 	__command.setCommandParameter ( "SetNull", SetNull );
@@ -241,10 +266,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Refer to command documentation and command editors for information about support for ${Property} in command parameters." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be set using the \"Set\" or \"Special Values\" tabs.  Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
+		"Properties can be set using the \"Set\", \"Environment Variable\", \"Java Property\", or \"Special Values\" tabs." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
+		"Properties can be removed (unset) using the \"Remove (Unset)\" tab." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Existing properties can be modified using basic math.  Set the value using ${Property} (can reference itself) and modify using \"Math\" tab." ), 
@@ -305,7 +330,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    List<String> typeChoices = new ArrayList<String>();
+    List<String> typeChoices = new ArrayList<>();
     typeChoices.add ( "" ); // Use when setting special values or removing
     typeChoices.add ( __command._Boolean );
     typeChoices.add ( __command._DateTime );
@@ -327,8 +352,73 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyValue_JTextField,
 		1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required unless special value - property value, can use ${Property}."), 
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required if not specified otherwise - property value, can use ${Property}."), 
 		3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for environment variable.
+    int yEnv = -1;
+    JPanel env_JPanel = new JPanel();
+    env_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Environment Variable", env_JPanel );
+    
+    JGUIUtil.addComponent(env_JPanel, new JLabel (
+        "A property can be set to the value of an environment variable."),
+        0, ++yEnv, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JLabel (
+        "This is useful when configurating a workflow based on the user's computer environment."),
+        0, ++yEnv, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yEnv, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(env_JPanel, new JLabel ( "Environment variable:" ),
+		0, ++yEnv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__EnvironmentVariable_JTextField = new JTextField ( 20 );
+	__EnvironmentVariable_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(env_JPanel, __EnvironmentVariable_JTextField,
+		1, yEnv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(env_JPanel, new JLabel( "Optional - environment variable, can use ${Property}."), 
+		3, yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for Java property.
+    int yJava = -1;
+    JPanel java_JPanel = new JPanel();
+    java_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Java Property", java_JPanel );
+    
+    JGUIUtil.addComponent(java_JPanel, new JLabel (
+        "A property can be set to the value of a Java Property."),
+        0, ++yJava, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(java_JPanel, new JLabel (
+        "Java properties are set using the -DProperty=Value syntax when starting TSTool via the Java Runtime Environment."),
+        0, ++yJava, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(java_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yJava, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(java_JPanel, new JLabel ( "Java property:" ),
+		0, ++yJava, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__JavaProperty_JTextField = new JTextField ( 20 );
+	__JavaProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(java_JPanel, __JavaProperty_JTextField,
+		1, yJava, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(java_JPanel, new JLabel( "Optional - Java property, can use ${Property}."), 
+		3, yJava, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(java_JPanel, new JLabel ( "If Java property is undefined?:"),
+		0, ++yJava, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfJavaPropertyUndefined_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfJavaPropertyUndefined_JComboBox.setData(notFoundChoices);
+	__IfJavaPropertyUndefined_JComboBox.select ( 0 );
+	__IfJavaPropertyUndefined_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(java_JPanel, __IfJavaPropertyUndefined_JComboBox,
+		1, yJava, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(java_JPanel, new JLabel(
+		"Optional - action if property undefined (default=" + __command._Warn + ")."), 
+		3, yJava, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for special values
     int ySpecial = -1;
@@ -357,13 +447,13 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to empty string?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEmpty_JComboBox = new SimpleJComboBox ( false );
-	List<String> emptyChoices = new ArrayList<String>();
+	List<String> emptyChoices = new ArrayList<>();
 	emptyChoices.add ( "" );	// Default
 	emptyChoices.add ( __command._True );
 	__SetEmpty_JComboBox.setData(emptyChoices);
 	__SetEmpty_JComboBox.select ( 0 );
 	__SetEmpty_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(special_JPanel, __SetEmpty_JComboBox,
+    JGUIUtil.addComponent(special_JPanel, __SetEmpty_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
 		"Optional - set String property to empty string."), 
@@ -372,13 +462,13 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to NaN?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNaN_JComboBox = new SimpleJComboBox ( false );
-	List<String> nanChoices = new ArrayList<String>();
+	List<String> nanChoices = new ArrayList<>();
 	nanChoices.add ( "" );	// Default
 	nanChoices.add ( __command._True );
 	__SetNaN_JComboBox.setData(nanChoices);
 	__SetNaN_JComboBox.select ( 0 );
 	__SetNaN_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(special_JPanel, __SetNaN_JComboBox,
+    JGUIUtil.addComponent(special_JPanel, __SetNaN_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
 		"Optional - set Double property to \"not a number\" (NaN)."), 
@@ -387,18 +477,19 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to null?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNull_JComboBox = new SimpleJComboBox ( false );
-	List<String> nullChoices = new ArrayList<String>();
+	List<String> nullChoices = new ArrayList<>();
 	nullChoices.add ( "" );	// Default
 	nullChoices.add ( __command._True );
 	__SetNull_JComboBox.setData(nullChoices);
 	__SetNull_JComboBox.select ( 0 );
 	__SetNull_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(special_JPanel, __SetNull_JComboBox,
+    JGUIUtil.addComponent(special_JPanel, __SetNull_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
 		"Optional - set any property type to null."), 
 		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
+
     // Panel for unset/remove
     int yUnset = -1;
     JPanel unset_JPanel = new JPanel();
@@ -420,7 +511,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(unset_JPanel, new JLabel ( "Remove/unset property?"),
 		0, ++yUnset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RemoveProperty_JComboBox = new SimpleJComboBox ( false );
-	List<String> removeChoices = new ArrayList<String>();
+	List<String> removeChoices = new ArrayList<>();
 	removeChoices.add ( "" );	// Default
 	removeChoices.add ( __command._True );
 	__RemoveProperty_JComboBox.setData(removeChoices);
@@ -585,6 +676,9 @@ private void refresh ()
     String PropertyName = "";
     String PropertyType = "";
 	String PropertyValue = "";
+	String EnvironmentVariable = "";
+	String JavaProperty = "";
+	String IfJavaPropertyUndefined = "";
 	String SetEmpty = "";
 	String SetNaN = "";
 	String SetNull = "";
@@ -600,6 +694,9 @@ private void refresh ()
 		PropertyName = props.getValue ( "PropertyName" );
         PropertyType = props.getValue ( "PropertyType" );
 		PropertyValue = props.getValue ( "PropertyValue" );
+		EnvironmentVariable = props.getValue ( "EnvironmentVariable" );
+		JavaProperty = props.getValue ( "JavaProperty" );
+		IfJavaPropertyUndefined = props.getValue ( "IfJavaPropertyUndefined" );
 		SetEmpty = props.getValue ( "SetEmpty" );
 		SetNaN = props.getValue ( "SetNaN" );
 		SetNull = props.getValue ( "SetNull" );
@@ -628,6 +725,27 @@ private void refresh ()
         }
 		if ( PropertyValue != null ) {
 		    __PropertyValue_JTextField.setText ( PropertyValue );
+		}
+		if ( EnvironmentVariable != null ) {
+		    __EnvironmentVariable_JTextField.setText ( EnvironmentVariable );
+		}
+		if ( JavaProperty != null ) {
+		    __JavaProperty_JTextField.setText (JavaProperty);
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfJavaPropertyUndefined_JComboBox, IfJavaPropertyUndefined,JGUIUtil.NONE, null, null ) ) {
+			__IfJavaPropertyUndefined_JComboBox.select ( IfJavaPropertyUndefined );
+		}
+		else {
+            if ( (IfJavaPropertyUndefined == null) || IfJavaPropertyUndefined.equals("") ) {
+				// New command...select the default...
+				__IfJavaPropertyUndefined_JComboBox.select ( 0 );
+			}
+			else {	// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IfJavaPropertyUndefined parameter \"" + IfJavaPropertyUndefined +
+				"\".  Select a\n value or Cancel." );
+			}
 		}
         if ( (SetEmpty == null) || SetEmpty.isEmpty() ) {
             // Select default...
@@ -710,6 +828,9 @@ private void refresh ()
 	PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyType = __PropertyType_JComboBox.getSelected();
 	PropertyValue = __PropertyValue_JTextField.getText().trim();
+	EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+	JavaProperty = __JavaProperty_JTextField.getText().trim();
+	IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	SetEmpty = __SetEmpty_JComboBox.getSelected();
 	SetNaN = __SetNaN_JComboBox.getSelected();
 	SetNull = __SetNull_JComboBox.getSelected();
@@ -722,6 +843,9 @@ private void refresh ()
     props.add ( "PropertyType=" + PropertyType );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
+	props.add ( "EnvironmentVariable=" + EnvironmentVariable );
+	props.add ( "JavaProperty=" + JavaProperty );
+	props.add ( "IfJavaPropertyUndefined=" + IfJavaPropertyUndefined );
 	props.add ( "SetEmpty=" + SetEmpty );
 	props.add ( "SetNaN=" + SetNaN );
 	props.add ( "SetNull=" + SetNull );

@@ -2188,8 +2188,8 @@ public static List<Object> getTagValues ( CommandProcessor processor, String tag
 }
 
 /**
-Get values for a tag in command file comments.  Tags are strings like "@tagName" or "@tagName value"
-(without the quotes).
+Get values for a tag in command file comments.
+Tags are strings like "@tagName" or "@tagName value" (without the quotes).
 @param processor CommandProcessor to evaluate.
 @param tag Tag to search for, without the leading "@".
 @return a list of tag values, which are either Strings for the value or True if the tag has
@@ -2198,7 +2198,8 @@ no value.  Return an empty list if the tag was not found.
 public static List<Object> getTagValues ( String commandFile, String tag )
 throws IOException, FileNotFoundException
 {
-    TSCommandProcessor processor = new TSCommandProcessor();
+	// There is no need for initial properties so pass null.
+    TSCommandProcessor processor = new TSCommandProcessor(null);
     // TODO SAM 2013-02-17 This might be an expensive way to parse tags because
     // command objects are heavier than simple strings
     processor.readCommandFile(commandFile, true, false, false);

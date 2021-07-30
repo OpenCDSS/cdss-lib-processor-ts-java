@@ -37,6 +37,7 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,12 +61,20 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 
 /**
 This class initializes, checks, and runs the WebGet() command.
 */
 public class WebGet_Command extends AbstractCommand implements Command, FileGenerator
 {
+
+/**
+Data members used for parameter values.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
     
 /**
 Output file that is created by this command.
@@ -91,6 +100,11 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String URI = parameters.getValue ( "URI" );
+	String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
+	String ReadTimeout = parameters.getValue ( "ReadTimeout" );
+	String RetryMax = parameters.getValue ( "RetryMax" );
+	String RetryWait = parameters.getValue ( "RetryWait" );
+	String IfHttpError = parameters.getValue ( "IfHttpError" );
 	String LocalFile = parameters.getValue ( "LocalFile" );
 	String warning = "";
 	String message;
@@ -109,6 +123,39 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the URI."));
 	}
+
+	if ( (ConnectTimeout != null) && !ConnectTimeout.isEmpty() && !StringUtil.isDouble(ConnectTimeout)) {
+		message = "The ConnectTimeout (" + ConnectTimeout + ") is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the timeout as the number of ms."));
+	}
+
+	if ( (ReadTimeout != null) && !ReadTimeout.isEmpty() && !StringUtil.isDouble(ReadTimeout)) {
+		message = "The ReadTimeout (" + ReadTimeout + ") is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the timeout as the number of ms."));
+	}
+
+	if ( (RetryMax != null) && !RetryMax.isEmpty() && !StringUtil.isInteger(RetryMax)) {
+		message = "The RetryMax (" + RetryMax + ") is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the timeout as an integer."));
+	}
+
+	if ( (RetryWait != null) && !RetryWait.isEmpty() && !StringUtil.isDouble(RetryWait)) {
+		message = "The RetryWait (" + RetryWait + ") is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the retry wait as the number of ms."));
+	}
+
 	// LocalFile is not required given that output property can be specified
     if ( (LocalFile != null) && !LocalFile.isEmpty() && (LocalFile.indexOf("${") < 0) ) {
         String working_dir = null;
@@ -150,11 +197,25 @@ throws InvalidCommandParameterException
         }
     }
 
+	if ( (IfHttpError != null) && !IfHttpError.isEmpty() && !IfHttpError.equalsIgnoreCase(_Ignore) &&
+		!IfHttpError.equalsIgnoreCase(_Fail) && !IfHttpError.equalsIgnoreCase(_Warn) ) {
+		message = "The IfHttpError (" + IfHttpError + ") parameter is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the IfHttpError parameter as " + _Ignore + ", " + _Warn + " (default), or " + _Fail + "."));
+	}
+
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(4);
+	List<String> validList = new ArrayList<>(9);
 	validList.add ( "URI" );
+	validList.add ( "ConnectTimeout" );
+	validList.add ( "ReadTimeout" );
+	validList.add ( "RetryMax" );
+	validList.add ( "RetryWait" );
 	validList.add ( "LocalFile" );
 	validList.add ( "OutputProperty" );
+	validList.add ( "IfHttpError" );
 	validList.add ( "ResponseCodeProperty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -240,6 +301,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
 	    Message.printStatus(2, routine, "URI after expanding is \"" + URI + "\"");
 	}
+	if ( URI.indexOf("${") >= 0 ) {
+		// The above expansion did not work and will cause problems when doing the request.
+		message = "URI after expansion contains property reference (not a valid URI): " + URI;
+		Message.printWarning(log_level,
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Check that the property is defined for the command." ) );
+	}
+    String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
+    int connectTimeout = 60000;
+	if ( (ConnectTimeout != null) && StringUtil.isInteger(ConnectTimeout) ) {
+		Double d = Double.parseDouble(ConnectTimeout);
+		connectTimeout = d.intValue();
+	}
+    String ReadTimeout = parameters.getValue ( "ReadTimeout" );
+    int readTimeout = 60000;
+	if ( (ReadTimeout != null) && StringUtil.isInteger(ReadTimeout) ) {
+		Double d = Double.parseDouble(ReadTimeout);
+		readTimeout = d.intValue();
+	}
+    String RetryMax = parameters.getValue ( "RetryMax" );
+    int retryMax = 0;
+	if ( (ReadTimeout != null) && StringUtil.isInteger(RetryMax) ) {
+		retryMax = Integer.parseInt(RetryMax);
+	}
+    String RetryWait = parameters.getValue ( "RetryWait" );
+    int retryWait = 0;
+	if ( (RetryWait != null) && StringUtil.isInteger(RetryWait) ) {
+		retryWait = Integer.parseInt(RetryWait);
+	}
     String LocalFile = parameters.getValue ( "LocalFile" );
     boolean doOutputFile = false;
 	if ( (LocalFile != null) && !LocalFile.isEmpty() ) {
@@ -256,6 +349,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (OutputProperty != null) && !OutputProperty.isEmpty() ) {
 		doOutputProperty = true;
 	}
+	String IfHttpError = parameters.getValue ( "IfHttpError" );
+	if ( IfHttpError == null ) {
+		IfHttpError = _Warn; // Default
+	}
 	boolean doResponseCodeProperty = false;
 	String ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 	if ( (ResponseCodeProperty != null) && !ResponseCodeProperty.isEmpty() ) {
@@ -270,151 +367,215 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-	    FileOutputStream fos = null;
-	    HttpURLConnection urlConnection = null;
-	    InputStream is = null;
-    	StringBuilder content = null;
-    	if ( doOutputProperty ) {
-    		content = new StringBuilder();
+    	if ( retryMax <= 0 ) {
+    		// Do at least one try.
+    		retryMax = 1;
     	}
-        try {
-            // Some sites need cookie manager
-            // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
-            CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
-            // Open the input stream...
-            Message.printStatus(2,routine,"Reading URI \"" + URI + "\"" );
-            URL url = new URL(URI);
-            urlConnection = (HttpURLConnection)url.openConnection();
-            is = urlConnection.getInputStream();
-            BufferedInputStream isr = new BufferedInputStream(is);
-            // Open the output file...
-            if ( doOutputFile ) {
-            	fos = new FileOutputStream( LocalFile_full );
-            }
-            // Output the characters to the local file...
-            int numCharsRead;
-            int arraySize = 8192; // 8K optimal
-            byte[] byteArray = new byte[arraySize];
-            int bytesRead = 0;
-            while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
-            	if ( doOutputFile ) {
-            		fos.write(byteArray, 0, numCharsRead);
-            	}
-                if ( doOutputProperty ) {
-                	// Also set the content in memory
-                	if ( numCharsRead == byteArray.length ) {
-                		content.append(new String(byteArray));
-                	}
-                	else {
-                		byte [] byteArray2 = new byte[numCharsRead];
-                		System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
-                		content.append(new String(byteArray2));
-                	}
-                }
-                bytesRead += numCharsRead;
-            }
-            // Save the output file name...
-            Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
-            if ( doOutputFile ) {
-            	setOutputFile ( new File(LocalFile_full));
-            }
-            // If requested, also set as a property
-            if ( doOutputProperty ) {
-                PropList request_params = new PropList ( "" );
-                request_params.setUsingObject ( "PropertyName", OutputProperty );
-                request_params.setUsingObject ( "PropertyValue", content.toString() );
-                try {
-                    processor.processRequest( "SetProperty", request_params);
-                }
-                catch ( Exception e ) {
-                    message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
-                    Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                    status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-                }
-            }
-        }
-        catch (MalformedURLException e) {
-            message = "URI \"" + URI + "\" is malformed (" + e + ")";
-            Message.printWarning ( warning_level, 
+    	boolean readSuccessful = false;
+		int responseCode = -1;
+    	for ( int iRetry = 1; iRetry <= retryMax; ++iRetry ) {
+    		if ( iRetry > 1 ) {
+    			// Second and later retries.  Apply the wait.
+    			if ( retryWait > 0 ) {
+    				Thread.sleep(retryWait);
+    			}
+    		}
+    		FileOutputStream fos = null;
+	    	HttpURLConnection urlConnection = null;
+	    	InputStream is = null;
+    		StringBuilder content = null;
+    		responseCode = -1;
+    		if ( doOutputProperty ) {
+    			content = new StringBuilder();
+    		}
+    		try {
+    			// Some sites need cookie manager:
+    			// (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
+    			CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
+    			// Open the input stream.
+    			Message.printStatus(2,routine,"Reading URI \"" + URI + "\" (try " + iRetry + ")." );
+    			URL url = new URL(URI);
+    			urlConnection = (HttpURLConnection)url.openConnection();
+   				Message.printStatus(2,routine,"Connect timeout default is: " + urlConnection.getConnectTimeout() );
+   				Message.printStatus(2,routine,"Read timeout default is: " + urlConnection.getReadTimeout() );
+    			if ( connectTimeout > 0 ) {
+    				urlConnection.setConnectTimeout(connectTimeout);
+    			}
+    			if ( readTimeout > 0 ) {
+    				urlConnection.setReadTimeout(readTimeout);
+    			}
+    			is = urlConnection.getInputStream();
+    			BufferedInputStream isr = new BufferedInputStream(is);
+    			// Open the output file.
+    			if ( doOutputFile ) {
+    				fos = new FileOutputStream( LocalFile_full );
+    			}
+    			// Output the characters to the local file.
+    			int numCharsRead;
+    			int arraySize = 8192; // 8K optimal.
+    			byte[] byteArray = new byte[arraySize];
+    			int bytesRead = 0;
+    			while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
+    				if ( doOutputFile ) {
+    					fos.write(byteArray, 0, numCharsRead);
+    				}
+    				if ( doOutputProperty ) {
+    					// Also set the content in memory to set property below.
+    					if ( numCharsRead == byteArray.length ) {
+    						content.append(new String(byteArray));
+    					}
+    					else {
+    						byte [] byteArray2 = new byte[numCharsRead];
+    						System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
+    						content.append(new String(byteArray2));
+    					}
+    				}
+    				bytesRead += numCharsRead;
+    			}
+    			// Save the output file name.
+    			Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
+    			if ( doOutputFile ) {
+    				setOutputFile ( new File(LocalFile_full));
+    			}
+    			// If requested, also set as a property.
+    			if ( doOutputProperty ) {
+    				PropList request_params = new PropList ( "" );
+    				request_params.setUsingObject ( "PropertyName", OutputProperty );
+    				request_params.setUsingObject ( "PropertyValue", content.toString() );
+    				try {
+    					processor.processRequest( "SetProperty", request_params);
+    				}
+    				catch ( Exception e ) {
+    					message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
+    					Message.printWarning(log_level,
+    						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    						routine, message );
+    					status.addToLog ( CommandPhaseType.RUN,
+    						new CommandLogRecord(CommandStatusType.FAILURE,
+    							message, "Report the problem to software support." ) );
+    				}
+    			}
+    			
+    			// If here successful so break out of the retry loop.
+    			readSuccessful = true;
+    		}
+    		catch (MalformedURLException e) {
+    			message = "URI \"" + URI + "\" is malformed (" + e + ")";
+    			Message.printWarning ( warning_level, 
                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-            Message.printWarning ( 3, routine, e );
-            status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "See the log file for details."));
-        }
-        catch (IOException e) {
-        	StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + e );
-        	// Try reading error stream - may only work for some error numbers
-            if ( urlConnection != null ) {
-            	is = urlConnection.getErrorStream(); // close in finally
-            	if ( is != null ) {
-            		sb.append ( " " );
-	            	BufferedReader br = new BufferedReader(new InputStreamReader(is));
-	                // Output the lines to a StringBuilder to improve error handling...
-	            	String s;
-	                while ((s = br.readLine()) != null ) {
-	                    sb.append(s);
-	                }
-            	}
-            }
-            sb.append ( ")" );
-            Message.printWarning ( warning_level, 
-                   MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, sb.toString() );
-            Message.printWarning ( 3, routine, e );
-            status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    sb.toString(), "See the log file for details."));
-        }
-        catch (Exception e) {
-            message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
-            Message.printWarning ( warning_level, 
-                   MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-            Message.printWarning ( 3, routine, e );
-            status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "See the log file for details."));
-        }
-        finally {
-            // Close the streams and connection
-            if ( is != null ) {
-            	try {
-            		is.close();
-            	}
-            	catch ( IOException e ) {
-            	}
-            }
-            if ( doOutputFile ) {
-	            if ( fos != null ) {
-	                fos.close();
-	            }
-            }
-            if ( urlConnection != null ) {
-            	urlConnection.disconnect();
-            	int code = urlConnection.getResponseCode();
-                // If requested, set response code as a property
-                if ( doResponseCodeProperty ) {
-                    PropList request_params = new PropList ( "" );
-                    request_params.setUsingObject ( "PropertyName", ResponseCodeProperty );
-                    request_params.setUsingObject ( "PropertyValue", new Integer(code) );
-                    try {
-                        processor.processRequest( "SetProperty", request_params);
-                    }
-                    catch ( Exception e ) {
-                        message = "Error requesting SetProperty(Property=\"" + ResponseCodeProperty + "\") from processor.";
-                        Message.printWarning(log_level,
-                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                            routine, message );
-                        status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-                    }
-                }
-            }
-        }
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog(CommandPhaseType.RUN,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "See the log file for details."));
+    		}
+    		catch ( SocketTimeoutException te ) {
+    			if ( iRetry <= 5 ) {
+    				message = "Try " + iRetry + " - connect or read timeout reading URI \"" + URI +
+    					"\" (" + te + "), only logging message for tries <= 5.";
+    				Message.printWarning ( warning_level, 
+                    	MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    				Message.printWarning ( 3, routine, te );
+    				status.addToLog(CommandPhaseType.RUN,
+    					new CommandLogRecord(CommandStatusType.FAILURE,
+    						message, "See the log file for details."));
+    			}
+    		}
+    		catch (IOException e) {
+    			StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + e );
+    			// Try reading error stream - may only work for some error numbers.
+    			if ( urlConnection != null ) {
+    				is = urlConnection.getErrorStream(); // Close in finally.
+    				if ( is != null ) {
+    					sb.append ( " " );
+    					BufferedReader br = new BufferedReader(new InputStreamReader(is));
+    					// Output the lines to a StringBuilder to improve error handling.
+    					String s;
+    					while ((s = br.readLine()) != null ) {
+    						sb.append(s);
+    					}
+    				}
+    			}
+    			sb.append ( ")" );
+    			Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, sb.toString() );
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog(CommandPhaseType.RUN,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					sb.toString(), "See the log file for details.  Try using the full URI in a web browser."));
+    		}
+    		catch (Exception e) {
+    			// Catch everything else - should probably add specific handling to troubleshoot.
+    			message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
+    			Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog(CommandPhaseType.RUN,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "See the log file for details."));
+    		}
+    		finally {
+    			// Close the streams and connection
+    			if ( is != null ) {
+    				try {
+    					is.close();
+    				}
+    				catch ( IOException e ) {
+    				}
+    			}
+    			if ( doOutputFile ) {
+    				if ( fos != null ) {
+    					fos.close();
+    				}
+    			}
+    			if ( urlConnection != null ) {
+    				urlConnection.disconnect();
+    				responseCode = urlConnection.getResponseCode();
+    				// If requested, set response code as a property
+    				if ( doResponseCodeProperty ) {
+    					PropList request_params = new PropList ( "" );
+    					request_params.setUsingObject ( "PropertyName", ResponseCodeProperty );
+    					request_params.setUsingObject ( "PropertyValue", new Integer(responseCode) );
+    					try {
+    						processor.processRequest( "SetProperty", request_params);
+    					}
+    					catch ( Exception e ) {
+    						message = "Error requesting SetProperty(Property=\"" + ResponseCodeProperty + "\") from processor.";
+    						Message.printWarning(log_level,
+    							MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    							routine, message );
+    						status.addToLog ( CommandPhaseType.RUN,
+    							new CommandLogRecord(CommandStatusType.FAILURE,
+    								message, "Report the problem to software support." ) );
+    					}
+    				}
+    			}
+    		} // End 'finally'
+   			if ( readSuccessful ) {
+   				break;
+   			}
+    	} // End retry loop.
+
+    	// Check the response code.
+    	if ( readSuccessful ) {
+    		if ( responseCode != 200 ) {
+    			message = "Response code (" + responseCode + ") indicates an error retrieving the resource";
+        	    if ( IfHttpError.equalsIgnoreCase(_Fail) ) {
+            	    Message.printWarning ( warning_level,
+                	    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            	    status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    	    message, "Verify that the URI is correct, for example in a web browser."));
+        	    }
+        	    else if ( IfHttpError.equalsIgnoreCase(_Warn) ) {
+            	    Message.printWarning ( warning_level,
+                	    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            	    status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                    	    message, "Verify that the URI is correct, for example in a web browser."));
+        	    }
+        	    else {
+            	    Message.printStatus( 2, routine, message + "Ignoring HTTP error " + responseCode);
+        	    }
+    		}
+    	}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error getting resource from \"" + URI + "\" (" + e + ").";
@@ -446,12 +607,41 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
     String URI = parameters.getValue ( "URI" );
+    String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
+    String ReadTimeout = parameters.getValue ( "ReadTimeout" );
+    String RetryMax = parameters.getValue ( "RetryMax" );
+    String RetryWait = parameters.getValue ( "RetryWait" );
     String LocalFile = parameters.getValue ( "LocalFile" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
+    String IfHttpError = parameters.getValue ( "IfHttpError" );
     String ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 	StringBuffer b = new StringBuffer ();
 	if ( (URI != null) && (URI.length() > 0) ) {
 		b.append ( "URI=\"" + URI + "\"" );
+	}
+	if ( (ConnectTimeout != null) && (ConnectTimeout.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "ConnectTimeout=" + ConnectTimeout );
+	}
+	if ( (ReadTimeout != null) && (ReadTimeout.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "ReadTimeout=" + ReadTimeout );
+	}
+	if ( (RetryMax != null) && (RetryMax.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "RetryMax=" + RetryMax );
+	}
+	if ( (RetryWait != null) && (RetryWait.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "RetryWait=" + RetryWait );
 	}
 	if ( (LocalFile != null) && (LocalFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -464,6 +654,12 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
+	}
+	if ( (IfHttpError != null) && (IfHttpError.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IfHttpError=\"" + IfHttpError + "\"" );
 	}
 	if ( (ResponseCodeProperty != null) && (ResponseCodeProperty.length() > 0) ) {
 		if ( b.length() > 0 ) {

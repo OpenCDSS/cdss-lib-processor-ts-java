@@ -39,6 +39,7 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import cdss.dmi.hydrobase.rest.commands.ReadColoradoHydroBaseRest_Command;
+import rti.tscommandprocessor.commands.check.CheckFile_Command;
 // Data checks (for now keep separate from logging and data tests)
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
@@ -524,6 +525,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("ChangePeriod") ) {
         return new ChangePeriod_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CheckFile") ) {
+        return new CheckFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ChangeTimeZone") ) {
         return new ChangeTimeZone_Command ();

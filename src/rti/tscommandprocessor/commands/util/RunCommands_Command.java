@@ -297,47 +297,61 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Message.printStatus ( 2, routine,
 		"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 		
-		TSCommandFileRunner runner = new TSCommandFileRunner ();
-        // This will set the initial working directory of the runner to that of the command file...
+		// Create a runner for the commands, which will create a new command processor:
+		// - the initial application properties from the current processor are passed to the new processor
+		TSCommandFileRunner runner = new TSCommandFileRunner (
+			((TSCommandProcessor)processor).getInitialPropList(),
+			((TSCommandProcessor)processor).getPluginCommandClasses());
+        // This will set the initial working directory of the runner to that of the command file.
 		runner.readCommandFile(InputFile_full, runDiscovery );
-		// If the command file is not enabled, don't need to initialize or process
+		// If the command file is not enabled, don't need to initialize or process.
 		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case
 		boolean isEnabled = runner.isCommandFileEnabled();
-        String expectedStatus = CommandStatusType.SUCCESS.toString(); // Expected status of running command file
+        // Default expected status of running command file is success.
+        String expectedStatus = CommandStatusType.SUCCESS.toString();
         if ( ExpectedStatus != null ) {
             expectedStatus = ExpectedStatus;
         }
 		if ( isEnabled ) {
             // Set the database connection information...
             // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
-            TSCommandProcessor runner_processor = runner.getProcessor();
+            TSCommandProcessor runnerProcessor = runner.getProcessor();
             if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
-                // All data stores are transferred
-                runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
-                runner_processor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+                // All datastores are transferred.
+                runnerProcessor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+                runnerProcessor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+                // Also share the datastore substitution map.
+                runnerProcessor.setDatastoreSubstituteMap(((TSCommandProcessor)processor).getDataStoreSubstituteMap());
             }
+            
             /*
              * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
              * handled explicitly whereas user-defined properties are in a list that can be easily shared.
              * Also, some properties like the working directory receive special treatment.
              * For now don't bite off the property issue
             if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
-                setProcessorProperties(processor,runner_processor,true);
+                setProcessorProperties(processor,runnerProcessor,true);
             }
             else if ( ShareProperties.equalsIgnoreCase(_Share) ) {
                 // All data stores are transferred
-                setProcessorProperties(processor,runner_processor,false);
+                setProcessorProperties(processor,runnerProcessor,false);
             }
             */
-            // Actually, need to share the StartLogEnabled property because it is used in troubleshooting
+            
+            // Need to share the built-in StartLogEnabled property because it is used in troubleshooting
             // to ensure all logging goes to the main log file.
             Prop prop = processor.getProp("StartLogEnabled");
             if ( prop != null ) {
-            	// Will be a Boolean
+            	// Will be a Boolean.
             	runner.getProcessor().setPropContents("StartLogEnabled", prop.getContents());
             }
+
+            // Run the commands:
+            // - currently, the following will reset the processor properties to initial values; therefore,
+            //   don't set properties above
     		runner.runCommands();
-    	    // Total runtime for the commands
+
+    	    // Total runtime for the commands.
             long runTimeTotal = TSCommandProcessorUtil.getRunTimeTotal(runner.getProcessor().getCommands());
     		
     		// Set the CommandStatus for this command to the most severe status of the
@@ -381,7 +395,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				"Status messages from commands that were run are appended to RunCommand status messages."));
                 // Append the log records from the command file that was run.
                 // The status contains lists of CommandLogRecord for each run mode.
-                // For RunCommands() the log messages should be associated with the originating command, not this RunCommand command
+                // For RunCommands() the log messages should be associated with the originating command,
+                // not this RunCommand command.
                 CommandStatusUtil.appendLogRecords ( status, (List)runner.getProcessor().getCommands() );
                 if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
                     testPassFail = __FAIL;
@@ -391,7 +406,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
             }
 
-            // Add a record to the regression report...
+            // Add a record to the regression report.
 
             TSCommandProcessorUtil.appendToRegressionTestReport(processor,isEnabled,runTimeTotal,
                  testPassFail,expectedStatus,maxSeverity,InputFile_full);
@@ -402,7 +417,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
     			TSCommandProcessor processor2 = runner.getProcessor();
     			Object o_tslist = processor2.getPropContents("TSResultsList");
-    			PropList request_params = new PropList ( "" );
+    			PropList requestParams = new PropList ( "" );
     			if ( o_tslist != null ) {
     				@SuppressWarnings("unchecked")
 					List<TS> tslist = (List<TS>)o_tslist;
@@ -410,8 +425,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				TS ts;
     				for ( int i = 0; i < size; i++ ) {
     					ts = tslist.get(i);
-    					request_params.setUsingObject( "TS", ts );
-    					processor.processRequest( "AppendTimeSeries", request_params );
+    					requestParams.setUsingObject( "TS", ts );
+    					processor.processRequest( "AppendTimeSeries", requestParams );
     				}
     			}
     		}

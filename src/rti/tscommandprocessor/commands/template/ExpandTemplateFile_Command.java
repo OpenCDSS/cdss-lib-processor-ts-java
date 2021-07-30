@@ -252,7 +252,7 @@ throws InvalidCommandParameterException
 	/*
 	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
 		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
-			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
+			message = "The IfNotFound parameter \"" + IfNotFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
@@ -261,7 +261,7 @@ throws InvalidCommandParameterException
 	}
 	*/
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<>(8);
 	validList.add ( "InputFile" );
 	validList.add ( "InputText" );
 	validList.add ( "StringProperties" );

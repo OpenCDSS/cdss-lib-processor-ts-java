@@ -675,8 +675,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -954,6 +956,13 @@ Data store list, to generically manage database connections.  This list is guara
 non-null, although the individual data stores may not be opened and need to be handled appropriately.
 */
 private List<DataStore> __dataStoreList = new Vector<DataStore>();
+
+/**
+ * Map that allows a requested datastore to substitute another datastore.
+ * This is used, for example, when running test suites that use one datastore name but
+ * another datastore needs to be used for the test.
+ */
+private HashMap<String,String> __dataStoreSubstituteMap = new HashMap<>();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -1918,6 +1927,14 @@ Return the list of data stores known to the TSEngine.
 protected List<DataStore> getDataStoreList()
 {
     return __dataStoreList;
+}
+
+/**
+ * Get the datastore substitute map.
+ * @return the datastore substitute map.
+ */
+protected HashMap<String,String> getDataStoreSubstituteMap() {
+	return this.__dataStoreSubstituteMap;
 }
 
 /**
@@ -2989,7 +3006,7 @@ throws Exception
     			// Comment.  Mark as processing successful unless requirements were not met.
                 String commandStringUpper = commandString.toUpperCase();
                 if ( commandStringUpper.indexOf("@REQUIRE") > 0 ) {
-                	// Check @require comments for syntax errors
+                	// Check @require comments for syntax errors:
                 	// - need to be correct to ensure that tests run properly
                 	// - when running automated tests with RunCommands, these conditions are checked for the entire command file
                 	//   before even attempting to run so FAILURE will not occur in test (it won't even be run)
@@ -2998,20 +3015,23 @@ throws Exception
                 	try {
                 		List<Command> commentList = new ArrayList<>();
                 		commentList.add(command);
-        	        	if ( TSCommandFileRunner.areRequirementsMet(__ts_processor, commentList) ) {
+        	        	if ( TSCommandFileRunner.checkRequirements(__ts_processor, commentList).areRequirementsMet() ) {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    new CommandLogRecord(CommandStatusType.SUCCESS,
-				   			    "@require condition was met", "Check log file for details. Command file will be run unless other requirement is not met.") );
+				   			    "@require condition was met",
+				   			    "Check log file for details. Command file will be run unless other requirement is not met.") );
         	        	}
         	        	else {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    new CommandLogRecord(CommandStatusType.FAILURE,
-				   			    "@require condition was NOT met", "Check log file for details. Command file should not be run unless requirements are met.") );
+				   			    "@require condition was NOT met",
+				   			    "Check log file for details. Command file should not be run unless requirements are met.") );
         	        	}
                 	}
                 	catch ( Exception e ) {
-        	        	// Syntax error - mark the command with an error
-                		// Set the command status information.
+        	        	// Syntax error:
+                		// - mark the command with an error
+                		// - set the command status information
         	    		if ( command instanceof CommandStatusProvider ) {
 				    		// Add to the command log as a failure...
 				    		commandStatus.addToLog(CommandPhaseType.RUN,
@@ -3056,7 +3076,7 @@ throws Exception
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
-    		// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
+    		// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities.
     		else if ( commandString.regionMatches(true,0,"createYearStatisticsReport",0,26)){
     			do_createYearStatisticsReport ( commandString );
                 commandProfile.setEndTime(System.currentTimeMillis());
@@ -5518,7 +5538,7 @@ throws Exception
 		}
 	}
 	else {
-	    String message = "Unknown input type or data store \"" + inputType + "\" for time series " +
+	    String message = "Unknown input type or datastore \"" + inputType + "\" for time series " +
 	    "- don't know how to read time series using identifier \"" + tsidentString + "\".";
 	    Message.printWarning( 3, routine, message );
 	    throw new TimeSeriesNotFoundException ( message );
@@ -5951,6 +5971,15 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
 	    	__dataStoreList.add ( dataStore );
 	    }
 	}
+}
+
+/**
+ * Set the datastore substitute map.
+ * @param dsmap the datastore substitute map, which allows datastores referenced in command
+ * files to use another datastore.
+ */
+protected void setDatastoreSubstituteMap ( HashMap<String,String> dsmap ) {
+	this.__dataStoreSubstituteMap = dsmap;
 }
 
 /**

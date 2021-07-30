@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -248,6 +249,13 @@ HashMap allows null keys and values, although here keys should be non-null.
 private HashMap<String,Object> __propertyHashmap = new HashMap<String,Object>();
 
 /**
+ * Properties from the command line to be assigned in the processor before each run.
+ * These properties can be specified on TSTool command line with Property==Value.
+ * These properties should not be modified once set and are independent of built-in and dynamic workflow properties.
+ */
+private PropList initialProps = new PropList("AppProperties");
+
+/**
 Indicates whether the processor is currently running (false if has not started
 or has completed).  The running occurs in TSEngine.processCommands().
 */
@@ -284,8 +292,10 @@ List<File> __outputFileList = new Vector<File>();
 
 /**
 Construct a command processor with no commands.
+@initialProps initial properties, typically specified on the application command line,
+which are important to make available globally
 */
-public TSCommandProcessor ()
+public TSCommandProcessor ( PropList initialProps )
 {	super();
 
 	// Create a TSEngine that works parallel to this class.
@@ -300,6 +310,12 @@ public TSCommandProcessor ()
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     __propertyHashmap.put ( "UserHomeDir", homeDir );
     __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    
+    // Save the initial properties.
+    if ( initialProps == null ) {
+    	initialProps = new PropList("AppProperties");
+    }
+    this.initialProps = initialProps;
 }
 
 /**
@@ -853,7 +869,13 @@ is compatible with intended use - specify as null to not match class
 @return the data store for the requested name, or null if not found.
 */
 public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass )
-{   for ( DataStore dataStore : getDataStores() ) {
+{   // First see if there is a substitute for the datastore.
+	String substitute = this.__tsengine.getDataStoreSubstituteMap().get(name);
+	if ( substitute != null ) {
+		name = substitute;
+	}
+	// Search the datastores for the requested name.
+	for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
             if ( dataStoreClass != null ) {
                 if (dataStore.getClass() == dataStoreClass ) {
@@ -985,6 +1007,13 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean ac
 }
 
 /**
+Return the map of DataStore substitutions.
+*/
+public HashMap<String,String> getDataStoreSubstituteMap() {
+    return __tsengine.getDataStoreSubstituteMap();
+}
+
+/**
 Return an Ensemble matching the requested identifier, or null if not found.
 This method is meant to be used internally without going through the request mechanism.
 @param EnsembleID Ensemble ID to match, * wildcard is special value to match first ensemble,
@@ -1026,6 +1055,16 @@ protected TSEnsemble getEnsemble ( String EnsembleID )
 }
 
 /**
+ * Return the initial properties, which are those from the application command line.
+ * These properties should be chained from one processor to another
+ * (such as used by RunCommands command) to ensure that the original environment is available for all processing.
+ * @return the initial PropList, which holds properties from the command line
+ */
+public PropList getInitialPropList () {
+	return this.initialProps;
+}
+
+/**
 Return the initial working directory for the processor.
 @return the initial working directory for the processor.
 */
@@ -1039,6 +1078,15 @@ Indicate whether the processing is running.
 */
 public boolean getIsRunning ()
 {	return __is_running;
+}
+
+/**
+ * Get the plugin class list.
+ * This is necessary to hand off the list to RunCommands command.
+ * @return the plugin class list.
+ */
+public List<Class> getPluginCommandClasses () {
+	return this.pluginCommandClassList;
 }
 
 /**
@@ -1904,6 +1952,16 @@ protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, i
 }
 
 /**
+ * Process a request with no initial properties for the processor.
+ * @param request the request being processed
+ * @param requestParams request parameters - see overloaded method for documentation
+ */
+public CommandProcessorRequestResultsBean processRequest ( String request, PropList requestParams )
+throws Exception {
+	return processRequest ( request, requestParams, null );
+}
+
+/**
 Process a request, required by the CommandProcessor interface.
 This is a generalized way to allow commands to call specialized functionality
 through the interface without directly naming a processor.  For example, the
@@ -2328,10 +2386,11 @@ Returned values from this request are:
 
 </table>
 @param request_params An optional list of parameters to be used in the request.
+@param processorProps processor properties to initialize the processor before running
 @exception Exception if the request cannot be processed.
 @return the results of a request, or null if a value is not found.
 */
-public CommandProcessorRequestResultsBean processRequest ( String request, PropList request_params )
+public CommandProcessorRequestResultsBean processRequest ( String request, PropList request_params, PropList processorProps )
 throws Exception
 {	//return __tsengine.getPropContents ( prop );
     if ( request.equalsIgnoreCase("AddCommandProcessorEventListener") ) {
@@ -2426,7 +2485,8 @@ throws Exception
         return processRequest_RemoveTimeSeriesFromResultsList ( request, request_params );
     }
 	else if ( request.equalsIgnoreCase("RunCommands") ) {
-		return processRequest_RunCommands ( request, request_params );
+		// This requires the initial properties.
+		return processRequest_RunCommands ( request, request_params, processorProps );
 	}
     else if ( request.equalsIgnoreCase("DataStore") ) {
         return processRequest_SetDataStore ( request, request_params );
@@ -2456,10 +2516,8 @@ throws Exception
         return processRequest_SetTimeSeriesView ( request, request_params );
     }
 	else {
-		TSCommandProcessorRequestResultsBean bean =
-			new TSCommandProcessorRequestResultsBean();
-		String warning = "Unknown TSCommandProcessor request \"" +
-		request + "\"";
+		TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+		String warning = "Unknown TSCommandProcessor request \"" + request + "\"";
 		bean.setWarningText( warning );
 		Message.printWarning(3, "TSCommandProcessor.processRequest", warning);
 		// TODO SAM 2007-02-07 Need to figure out a way to indicate
@@ -2736,7 +2794,7 @@ private CommandProcessorRequestResultsBean processRequest_GetOutputPeriodForComm
         String request, PropList request_params )
 throws Exception
 {   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-    // Get the necessary parameters...
+    // Get the necessary parameters.
     Object o = request_params.getContents ( "Command" );
     if ( o == null ) {
         String warning = "Request GetOutputPeriodForCommand() does not provide a Command parameter.";
@@ -2745,27 +2803,28 @@ throws Exception
         throw new RequestParameterNotFoundException ( warning );
     }
     Command command = (Command)o;
-    // Get the index of the requested command...
+    // Get the index of the requested command.
     int index = indexOf ( command );
-    // Get the setWorkingDir() commands...
+    // Get the setWorkingDir() commands.
     List<String> neededCommandsStringList = new Vector<String>();
     neededCommandsStringList.add ( "SetOutputPeriod" );
     List<Command> setOutputPeriodCommandList = TSCommandProcessorUtil.getCommandsBeforeIndex (
         index,
         this,
         neededCommandsStringList,
-        false );    // Get all, not just last
-    // Create a local command processor
-    TSCommandProcessor tsProcessor = new TSCommandProcessor();
+        false );    // Get all, not just last.
+    // Create a local command processor:
+    // - pass along the initial properties
+    TSCommandProcessor tsProcessor = new TSCommandProcessor( this.initialProps);
     // Add all the commands (currently no method to add all because this is normally not done).
     for ( Command setOutputPeriodCommand : setOutputPeriodCommandList ) {
         tsProcessor.addCommand ( setOutputPeriodCommand );
     }
-    // Run the commands to set the working directory in the temporary processor...
+    // Run the commands to set the working directory in the temporary processor.
     try {
         tsProcessor.runCommands(
-            null, // Process all commands in this processor
-            null ); // No need for controlling properties since controlled by commands
+            null, // Process all commands in this processor.
+            null ); // No need for controlling properties since controlled by commands.
     }
     catch ( Exception e ) {
         // This is a software problem.
@@ -2773,8 +2832,7 @@ throws Exception
         Message.printWarning(2, routine, "Error getting output period for command (" + e + ")." );
         Message.printWarning(3, routine, e);
     }
-    // Return the output period as DateTime instances.  This can then be used in editors, for
-    // example.
+    // Return the output period as DateTime instances.  This can then be used in editors, for example.
     PropList results = bean.getResultsPropList();
     results.setUsingObject( "OutputStart", (DateTime)tsProcessor.getPropContents ( "OutputStart") );
     results.setUsingObject( "OutputEnd", (DateTime)tsProcessor.getPropContents ( "OutputEnd") );
@@ -3016,7 +3074,7 @@ private CommandProcessorRequestResultsBean processRequest_GetWorkingDirForComman
 throws Exception
 {	TSCommandProcessorRequestResultsBean bean =
 		new TSCommandProcessorRequestResultsBean();
-	// Get the necessary parameters...
+	// Get the necessary parameters.
 	Object o = request_params.getContents ( "Command" );
 	if ( o == null ) {
 			String warning = "Request GetWorkingDirForCommand() does not provide a Command parameter.";
@@ -3026,21 +3084,21 @@ throws Exception
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Command command = (Command)o;
-	// Get the index of the requested command...
+	// Get the index of the requested command.
 	int index = indexOf ( command );
-	// Get the setWorkingDir() commands...
-	List<String> needed_commands_String_Vector = new Vector<String>();
+	// Get the setWorkingDir() commands.
+	List<String> needed_commands_String_Vector = new Vector<>();
 	needed_commands_String_Vector.add ( "SetWorkingDir" );
 	List<Command> setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
 			index,
 			this,
 			needed_commands_String_Vector,
-			false );	// Get all, not just last
-	// Always add the starting working directory to the top to
-	// make sure an initial condition is set...
+			false ); // Get all, not just last.
+	// Always add the starting working directory to the top to make sure an initial condition is set.
 	setWorkingDir_CommandVector.add ( 0, newInitialSetWorkingDirCommand() );
-	// Create a local command processor
-	TSCommandProcessor ts_processor = new TSCommandProcessor();
+	// Create a local command processor:
+    // - pass along the initial properties
+	TSCommandProcessor ts_processor = new TSCommandProcessor(this.initialProps);
 	Object workingDir = getPropContents("InitialWorkingDir");
 	ts_processor.setPropContents("InitialWorkingDir", workingDir);
 	int size = setWorkingDir_CommandVector.size();
@@ -3048,11 +3106,11 @@ throws Exception
 	for ( int i = 0; i < size; i++ ) {
 		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.get(i));
 	}
-	// Run the commands to set the working directory in the temporary processor...
+	// Run the commands to set the working directory in the temporary processor.
 	try {
 	    ts_processor.runCommands(
-			null,	// Process all commands in this processor
-			null );	// No need for controlling properties since controlled by commands
+			null,	// Process all commands in this processor.
+			null);	// No need for controlling properties since controlled by commands.
 	}
 	catch ( Exception e ) {
 		// This is a software problem.
@@ -3060,7 +3118,7 @@ throws Exception
 		Message.printWarning(2, routine, "Error getting working directory for command." );
 		Message.printWarning(2, routine, e);
 	}
-	// Return the working directory as a String.
+	// Return the working directory as a String:
 	// - This can then be used in editors, for example.
 	// - The WorkingDir property will have been set in the temporary processor.
 	// - Also set WorkingDirPosix and WorkingDirPortable and phase in POSIX paths.
@@ -3521,10 +3579,10 @@ throws Exception
 Process the RunCommands request.
 */
 private CommandProcessorRequestResultsBean processRequest_RunCommands (
-		String request, PropList request_params )
+		String request, PropList request_params, PropList initialProps )
 throws Exception
 {	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-	// Get the necessary parameters...
+	// Get the necessary parameters.
 	// Command list.
 	Object o = request_params.getContents ( "CommandList" );
 	if ( o == null ) {
@@ -3535,7 +3593,7 @@ throws Exception
 	}
 	@SuppressWarnings("unchecked")
 	List<Command> commands = (List<Command>)o;
-	// Whether commands should create output...
+	// Whether commands should create output.
 	Object o3 = request_params.getContents ( "CreateOutput" );
 	if ( o3 == null ) {
 			String warning = "Request RunCommands() does not provide a CreateOutput parameter.";
@@ -3547,7 +3605,7 @@ throws Exception
 	// Set properties as per the legacy application.
 	PropList props = new PropList ( "TSEngine");
 	props.set ( "CreateOutput", "" + CreateOutput_Boolean );
-	// TODO SAM 2007-08-22 Need to evaluate recursion for complex workflow and testing
+	// TODO SAM 2007-08-22 Need to evaluate recursion for complex workflow and testing.
 	// Call the TSEngine method.
 	runCommands ( commands, props );
 	// No results need to be returned.
@@ -3864,7 +3922,7 @@ throws IOException, FileNotFoundException
         setCommandFileName ( path ); // This is used in headers, etc.
         // Read all the lines in the file
         String line;
-        List<String> commandStrings = new ArrayList<String>();
+        List<String> commandStrings = new ArrayList<>();
         while ( true ) {
         	line = br.readLine();
         	if ( line == null ) {
@@ -4108,6 +4166,22 @@ public void removeCommandListListener ( CommandListListener listener )
 
 /**
 Reset the workflow global properties to defaults, necessary when a command processor is rerun.
+For example, initial properties include user name, home folder, etc.
+This is the original code - newer overloaded allows the initial properties.
+@param intialProps initial property list to use to initialize the processor properties,
+such as specified on the TSTool command line
+*/
+/*
+private void resetWorkflowProperties ()
+throws Exception {
+	// Reset the workflow with no initial properties.
+	resetWorkflowProperties ( null );
+}
+*/
+
+/**
+Reset the workflow global properties to defaults, necessary when a command processor is rerun.
+For example, initial properties include user name, home folder, etc.
 */
 private void resetWorkflowProperties ()
 throws Exception
@@ -4116,7 +4190,8 @@ throws Exception
     
     // First clear user-defined properties.
     __propertyHashmap.clear();
-    // Define some standard properties
+
+    // Define some standard properties.
     __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
     boolean newTZ = true;
     if ( newTZ ) {
@@ -4125,14 +4200,14 @@ throws Exception
     	__propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
     }
     else {
-    	// Use old time zone approach
+    	// Use old time zone approach.
     	__propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
     }
     __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     __propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
-    // Temporary directory useful in some cases
+    // Temporary directory useful in some cases.
     __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
@@ -4154,11 +4229,11 @@ throws Exception
     pos = programVersion.indexOf(".");
     StringBuilder b = new StringBuilder();
     if ( pos < 0 ) {
-    	// Just a number
+    	// Just a number.
     	b.append(programVersion);
     }
     else {
-    	// Transfer the characters including the first period but no other periods
+    	// Transfer the characters including the first period but no other periods.
     	b.append(programVersion.substring(0,pos) + ".");
     	for ( int i = pos + 1; i < programVersion.length(); i++ ) {
     		if ( programVersion.charAt(i) == '.' ) {
@@ -4182,7 +4257,47 @@ throws Exception
     	programVersionNumber = -1.0;
     }
     __propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
-    // Now make sure that specific controlling properties are cleared out.
+    
+    // Set initial properties, such as from the command line:
+    // - all are strings, so are immutable
+	Message.printStatus(2, routine, "Setting initial (command line) application properties in processor." );
+    if ( this.initialProps == null ) {
+	    Message.printStatus(2, routine, "There are no initial application properties (null list)." );
+    }
+    else {
+    	if ( this.initialProps.getList().size() == 0 ) {
+    		Message.printStatus(2, routine, "There are 0 initial application properties." );
+    	}
+    	for ( Prop prop : this.initialProps.getList() ) {
+			Message.printStatus(2, routine, "  Setting initial (command line) application property in processor: " +
+				prop.getKey() + "=" + prop.getValue() );
+    		__propertyHashmap.put(prop.getKey(), prop.getValue());
+    	}
+    }
+
+    // TODO smalers 2021-07-30 Remove the following when the above checks out.
+    /*
+    // Handle the special case of processor properties that are set on the command line when the application was started.
+    // These need to be shared because they are often used to share important environment configurations.
+	PropList appProps = IOUtil.getPropListManager().getPropList("TSTool.CommandLine");
+	if ( appProps == null ) {
+		Message.printWarning(3,routine,"Application properties are not available - software code error.");
+	}
+	else {
+		for ( Prop prop : appProps.getList() ) {
+			// Make a copy so as to not corrupt the application properties:
+			// - there is no copy constructor so pass the parts
+			Message.printStatus(2, routine, "Setting application property in processor: " +
+				prop.getKey() + "=" + prop.getValue() );
+			PropList requestParams = new PropList("");
+			requestParams.set("PropertyName=" + prop.getKey());
+			requestParams.set("PropertyValue=" + prop.getValue());
+			runnerProcessor.processRequest ("SetProperty", requestParams );
+		}
+    }
+	*/
+
+    // Now make sure that specific controlling properties that may be set with commands are cleared out.
     // FIXME SAM 2008-07-15 Move data members from TSEngine to this class
     __tsengine.setIgnoreLEZero ( false );
     __tsengine.setIncludeMissingTS ( false );
@@ -4196,35 +4311,40 @@ throws Exception
 /**
 Run the specified commands.  If no commands are specified, run all that are being managed.
 @param commands list of Command to process.
-@param props Properties to control run.  See full list in TSEngine.processCommands.  This
+@param runProps Properties to control run.  See full list in TSEngine.processCommands.  This
 method only acts on the properties shown below.
 <td><b>Property</b></td>    <td><b>Description</b></td>
 </tr>
 
 <tr>
 <td><b>ResetWorkflowProperties</b></td>
-<td>If set to true (default), indicates that global properties like output period should be
-reset before running.
+<td>If set to true (default), indicates that global processor properties (output period, etc.)
+should be reset before running.
 </td>
 <td>False</td>
 </tr>
 
 </table>
 */
-public void runCommands ( List<Command> commands, PropList props )
+public void runCommands ( List<Command> commands, PropList runProps )
 throws Exception
 {
     // Reset the global workflow properties if requested
-    String ResetWorkflowProperties = "True";   // default
-    if ( props != null ) {
-        String prop = props.getValue ( "ResetWorkflowProperties" );
+    boolean resetWorkflowProperties = true;   // default
+    if ( runProps != null ) {
+        String prop = runProps.getValue ( "ResetWorkflowProperties" );
         if ( (prop != null) && prop.equalsIgnoreCase("False") ) {
-            ResetWorkflowProperties = "False";
+            resetWorkflowProperties = false;
         }
     }
-    if ( ResetWorkflowProperties.equalsIgnoreCase("True")) {
+    if ( resetWorkflowProperties ) {
+    	// Clear all processor properties before running:
+    	// - some standard properties will be initialized for each run
         resetWorkflowProperties();
     }
+    
+    // Currently, always set the properties defined for the initial application command line.
+
     // Remove all registered CommandProcessorEventListener, so that listeners don't get added
     // more than once if the processor is rerun.  Currently this will require that an OpenCheckFile()
     // command is always run since it is the only thing that handles events at this time.
@@ -4234,7 +4354,7 @@ throws Exception
     // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands
     // have been converted to classes - then code size should be more manageable and can remove
     // redundant code in the two classes.
-	__tsengine.processCommands ( commands, props );
+	__tsengine.processCommands ( commands, runProps );
 	
 	// Now finalize the results by processing the check files, if any
 
@@ -4293,8 +4413,8 @@ protected void setCreateOutput ( Boolean CreateOutput_Boolean )
 }
 
 /**
-Set the list of all DataStore instances known to the processor.  These are named database
-connections that correspond to input type/name for time series.
+Set the list of all DataStore instances known to the processor.
+These are named database connections that correspond to input type/name for time series.
 This method is normally only called in special cases.  For example, the RunCommands() command
 sets the data stores from the main processor into the called commands.
 Note that each data store in the list is set using setDataStore() - the instance of the list that
@@ -4309,6 +4429,14 @@ public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld )
     for ( DataStore dataStore : dataStoreList ) {
         __tsengine.setDataStore(dataStore, closeOld );
     }
+}
+
+/**
+ * Set the datastore substitute map.
+ * Requests for a specific datastore will return a different datastore if matched.
+ */
+public void setDatastoreSubstituteMap ( HashMap<String,String> dsmap ) {
+	__tsengine.setDatastoreSubstituteMap(dsmap);
 }
 
 /**

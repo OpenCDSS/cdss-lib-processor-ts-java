@@ -158,7 +158,8 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
-	else {	// Choices...
+	else {
+		// Choices...
 		refresh();
 	}
 }

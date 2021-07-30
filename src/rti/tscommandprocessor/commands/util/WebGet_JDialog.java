@@ -34,6 +34,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -50,6 +52,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -71,8 +74,13 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextArea __URI_JTextArea = null;
+private JTextField __ConnectTimeout_JTextField = null;
+private JTextField __ReadTimeout_JTextField = null;
+private JTextField __RetryMax_JTextField = null;
+private JTextField __RetryWait_JTextField = null;
 private JTextField __LocalFile_JTextField = null;
 private JTextField __OutputProperty_JTextField = null;
+private SimpleJComboBox	__IfHttpError_JComboBox =null;
 private JTextField __ResponseCodeProperty_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
@@ -177,18 +185,38 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
+	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
+	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
+	String RetryMax = __RetryMax_JTextField.getText().trim();
+	String RetryWait = __RetryWait_JTextField.getText().trim();
 	String LocalFile = __LocalFile_JTextField.getText().trim();
 	String OutputProperty = __OutputProperty_JTextField.getText().trim();
+	String IfHttpError = __IfHttpError_JComboBox.getSelected();
 	String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__error_wait = false;
 	if ( URI.length() > 0 ) {
 		props.set ( "URI", URI );
+	}
+	if ( ConnectTimeout.length() > 0 ) {
+		props.set ( "ConnectTimeout", ConnectTimeout );
+	}
+	if ( ReadTimeout.length() > 0 ) {
+		props.set ( "ReadTimeout", ReadTimeout );
+	}
+	if ( RetryMax.length() > 0 ) {
+		props.set ( "RetryMax", RetryMax );
+	}
+	if ( RetryWait.length() > 0 ) {
+		props.set ( "RetryWait", RetryWait );
 	}
     if ( LocalFile.length() > 0 ) {
         props.set ( "LocalFile", LocalFile );
     }
     if ( OutputProperty.length() > 0 ) {
         props.set ( "OutputProperty", OutputProperty );
+    }
+    if ( IfHttpError.length() > 0 ) {
+        props.set ( "IfHttpError", IfHttpError );
     }
     if ( ResponseCodeProperty.length() > 0 ) {
         props.set ( "ResponseCodeProperty", ResponseCodeProperty );
@@ -209,12 +237,22 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
+	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
+	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
+	String RetryMax = __RetryMax_JTextField.getText().trim();
+	String RetryWait = __RetryWait_JTextField.getText().trim();
     String LocalFile = __LocalFile_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
+	String IfHttpError = __IfHttpError_JComboBox.getSelected();
     String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
+	__command.setCommandParameter ( "ConnectTimeout", ConnectTimeout );
+	__command.setCommandParameter ( "ReadTimeout", ReadTimeout );
+	__command.setCommandParameter ( "RetryMax", RetryMax );
+	__command.setCommandParameter ( "RetryWait", RetryWait );
 	__command.setCommandParameter ( "LocalFile", LocalFile );
 	__command.setCommandParameter ( "OutputProperty", OutputProperty );
+	__command.setCommandParameter ( "IfHttpError", IfHttpError );
 	__command.setCommandParameter ( "ResponseCodeProperty", ResponseCodeProperty );
 }
 
@@ -265,6 +303,49 @@ private void initialize ( JFrame parent, WebGet_Command command )
     __URI_JTextArea.setEditable ( true );
         JGUIUtil.addComponent(main_JPanel, new JScrollPane(__URI_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - URI for content to download."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Connection timeout:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConnectTimeout_JTextField = new JTextField (10);
+    __ConnectTimeout_JTextField.setToolTipText("Timeout for establishing connection (ms), after which an error will occur.");
+    __ConnectTimeout_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ConnectTimeout_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - connection timeout, ms (default=60000)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Read timeout:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadTimeout_JTextField = new JTextField (10);
+    __ReadTimeout_JTextField.setToolTipText("Timeout for starting read (ms), after which an error will occur.");
+    __ReadTimeout_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ReadTimeout_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - read timeout, ms (default=60000)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry maximum:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RetryMax_JTextField = new JTextField (10);
+    __RetryMax_JTextField.setToolTipText("Maximum number of retries if a connection:w"
+    		+ " timeout or error occurs.");
+    __RetryMax_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RetryMax_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - (default=no retries)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry wait:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RetryWait_JTextField = new JTextField (10);
+    __RetryWait_JTextField.setToolTipText("Wait between retries (ms).");
+    __RetryWait_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RetryWait_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - wait between retries, ms (default=0)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
       
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Local file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -298,6 +379,24 @@ private void initialize ( JFrame parent, WebGet_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for output (default=not set)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If HTTP error occurs?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfHttpError_JComboBox = new SimpleJComboBox ( false );
+	__IfHttpError_JComboBox.setToolTipText("An HTTP error is any code other than 200, which indicates success.");
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfHttpError_JComboBox.setData(notFoundChoices);
+	__IfHttpError_JComboBox.select ( 0 );
+	__IfHttpError_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfHttpError_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - action if HTTP error after retries (default=" + __command._Warn + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Response code property:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -372,21 +471,43 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String routine = "WebGet_JDialog.refresh";
+{	String routine = "WebGet_JDialog.refresh";
     String URI = "";
+    String ConnectTimeout = "";
+    String ReadTimeout = "";
+    String RetryMax = "";
+    String RetryWait = "";
     String LocalFile = "";
     String OutputProperty = "";
+    String IfHttpError = "";
     String ResponseCodeProperty = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
         parameters = __command.getCommandParameters();
         URI = parameters.getValue ( "URI" );
+        ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
+        ReadTimeout = parameters.getValue ( "ReadTimeout" );
+        RetryMax = parameters.getValue ( "RetryMax" );
+        RetryWait = parameters.getValue ( "RetryWait" );
         LocalFile = parameters.getValue ( "LocalFile" );
         OutputProperty = parameters.getValue ( "OutputProperty" );
+        IfHttpError = parameters.getValue ( "IfHttpError" );
         ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 		if ( URI != null ) {
 			__URI_JTextArea.setText ( URI );
+		}
+		if ( ConnectTimeout != null ) {
+			__ConnectTimeout_JTextField.setText ( ConnectTimeout );
+		}
+		if ( ReadTimeout != null ) {
+			__ReadTimeout_JTextField.setText ( ReadTimeout );
+		}
+		if ( RetryMax != null ) {
+			__RetryMax_JTextField.setText ( RetryMax );
+		}
+		if ( RetryWait != null ) {
+			__RetryWait_JTextField.setText ( RetryWait );
 		}
         if ( LocalFile != null ) {
             __LocalFile_JTextField.setText ( LocalFile );
@@ -394,6 +515,22 @@ private void refresh ()
         if ( OutputProperty != null ) {
             __OutputProperty_JTextField.setText ( OutputProperty );
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfHttpError_JComboBox, IfHttpError,JGUIUtil.NONE, null, null ) ) {
+			__IfHttpError_JComboBox.select ( IfHttpError );
+		}
+		else {
+            if ( (IfHttpError == null) ||	IfHttpError.equals("") ) {
+				// New command...select the default...
+				__IfHttpError_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IfHttpError parameter \"" +	IfHttpError +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
         if ( ResponseCodeProperty != null ) {
             __ResponseCodeProperty_JTextField.setText ( ResponseCodeProperty );
         }
@@ -401,13 +538,23 @@ private void refresh ()
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
+	ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
+	ReadTimeout = __ReadTimeout_JTextField.getText().trim();
+	RetryMax = __RetryMax_JTextField.getText().trim();
+	RetryWait = __RetryWait_JTextField.getText().trim();
     LocalFile = __LocalFile_JTextField.getText().trim();
     OutputProperty = __OutputProperty_JTextField.getText().trim();
+	IfHttpError = __IfHttpError_JComboBox.getSelected();
     ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "URI=" + URI );
+	props.add ( "ConnectTimeout=" + ConnectTimeout );
+	props.add ( "ReadTimeout=" + ReadTimeout );
+	props.add ( "RetryMax=" + RetryMax );
+	props.add ( "RetryWait=" + RetryWait );
 	props.add ( "LocalFile=" + LocalFile );
 	props.add ( "OutputProperty=" + OutputProperty );
+	props.add ( "IfHttpError=" + IfHttpError );
 	props.add ( "ResponseCodeProperty=" + ResponseCodeProperty );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

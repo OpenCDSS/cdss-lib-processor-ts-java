@@ -30,16 +30,18 @@ import java.util.List;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.RequirementCheck;
+import RTi.Util.IO.RequirementCheckList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import riverside.datastore.DataStore;
-import riverside.datastore.DataStoreVersionChecker;
+import riverside.datastore.DataStoreRequirementChecker;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 
 /**
 This class allows a commands file to be be run.  For example, it can be
-used to make a batch run of a commands file.  An instance of TSCommandProcessor
-is created to process the commands.
+used to make a batch run of a commands file.
+An instance of TSCommandProcessor is created to process the commands.
 */
 public class TSCommandFileRunner
 {
@@ -47,7 +49,19 @@ public class TSCommandFileRunner
 /**
 The TSCommandProcessor instance that is used to run the commands.
 */
-private TSCommandProcessor __processor = new TSCommandProcessor();
+private TSCommandProcessor __processor = null;
+
+/**
+ * Constructor.
+ * The initial properties should typically be passed throughout nested runners to ensure that
+ * processors have initial environment properties.
+ * @param initProps initial properties for runner, from application command line properties
+ */
+public TSCommandFileRunner ( PropList initProps, List<Class> pluginCommandClassList ) {
+	// Create a new processor that is used to run the commands.
+	this.__processor = new TSCommandProcessor(initProps);
+	this.__processor.setPluginCommandClasses(pluginCommandClassList, false);
+}
 
 /**
 Determine whether the command file requirements are met.
@@ -56,26 +70,29 @@ to run, typically version compatibility.
 This method is static because it is called for single commands and full command file.
 Syntax for command files is, for example:
 <pre>
-#@require app tstool > x.y.z
-#@reqiure datastore HydroBase >= YYYYMMDD
+#@require application tstool version > x.y.z
+#@require datastore HydroBase version >= YYYYMMDD
 </pre>
 @param processor The command processor.
 @param commands list of commands to check.
 If null or empty, process all the commands for the processor, such as when called from RunCommands command.
 If a single command, then checking syntax errors in a comment from the command processor.
-@return false if any comments have "@require" statements that evaluate to false, otherwise true
+@return RequirementCheckList object that contains check criteria, result, and justification of the result.
+If any comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
 */
-public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Command> commands ) {
+public static RequirementCheckList checkRequirements ( TSCommandProcessor processor, List<Command> commands ) {
 	String routine = TSCommandFileRunner.class.getSimpleName() + ".areRequirementsMet";
+	RequirementCheckList checkList = new RequirementCheckList();
 	String message;
-	boolean requirementsMet = true; // Default until indicated otherwise
+	//boolean requirementsMet = true; // Default until indicated otherwise
 	if ( (commands == null) || (commands.size() == 0) ) {
 		commands = processor.getCommands();
 	}
     String commandString;
     String commandStringUpper;
     int pos;
-    String appName;
+    //String appName;
+    //String appDataName;
     String datastoreName;
     String operator;
     String version;
@@ -83,11 +100,15 @@ public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Co
    		if ( command instanceof Comment_Command ) {
    			commandString = command.toString();
    			commandStringUpper = commandString.toUpperCase();
-   			// The following handles #@require and # @require (whitespace after comment)
+   			// The following handles #@require and # @require (whitespace after comment).
    			pos = commandStringUpper.indexOf("@REQUIRE");
    			if ( pos > 0 ) {
    				// Detected a @require annotation.
    				// - check the token following @require
+
+   				// Create a requirement check object, which will be further populated below.
+   				RequirementCheck check = new RequirementCheck (commandString.substring(pos).trim());
+   				checkList.add(check);
    				Message.printStatus(2, routine, "Detected @REQUIRE: " + commandString);
    				if ( commandString.length() > (pos + 8) ) {
    					// Have trailing characters.
@@ -97,23 +118,23 @@ public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Co
    					if ( parts.length > 1 ) {
    						if ( parts[1].trim().toUpperCase().startsWith("APP") ) {
    							Message.printStatus(2, routine, "Detected APP");
-   							if ( parts.length < 5 ) {
-   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length + "): " + commandString;
+   							if ( parts.length < 6 ) {
+   								message = "Error processing @require - expecting 6+ tokens (have " + parts.length + "): " + commandString;
+   								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
-   								throw new RuntimeException(message);
    							}
    							else {
-   								// appName must be StateDMI
-   								appName = parts[2].trim();
-   								operator = parts[3].trim();
-   								version = parts[4].trim();
-   								// Get the version for the app
+   								//appName = parts[2].trim(); // For example:  TSTool or StateDMI (for readability, ignored)
+   								//appDataName = parts[3].trim(); // For example:  version (for readability, ignored)
+   								operator = parts[4].trim(); // Operator to compare the data
+   								version = parts[5].trim(); // Version criteria to compare.
+   								// Get the version for the application, currently there is no more flexibility to check other application properties.
    								//String appVersion = processor.getStateDmiVersionString();
    								String appVersion = IOUtil.getProgramVersion();
    								if ( (appVersion == null) || appVersion.isEmpty() ) {
    									message = "Don't know how to determine application version for @require: " + commandString;
+   									check.setIsRequirementMet(false, message);
    									Message.printWarning(3, routine, message);
-   									throw new RuntimeException(message);
    								}
    								// If the version contains a space such as '(x.x.x (YYYY-MM-DD)', only use the first part.
    								if ( appVersion.indexOf(' ') > 0) {
@@ -122,7 +143,8 @@ public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Co
    								// Check the app version against the requirement, using semantic version comparison.
    								// - only compare the first 3 parts because modifier can cause issues comparing.
    								if ( !StringUtil.compareSemanticVersions(appVersion, operator, version, 3) ) {
-   									requirementsMet = false;
+   									message = "Application (" + appVersion + ") does not meet requirement.";
+   									check.setIsRequirementMet(false, message);
    								}
    							}
                     	}
@@ -131,27 +153,18 @@ public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Co
    							// @require datastore HydroBase >= 20200720
    							Message.printStatus(2, routine, "Detected DATASTORE");
    							if ( parts.length < 5 ) {
-   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length + "): " + commandString;
+   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length;
+								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
-   								throw new RuntimeException (message);
    							}
    							else {
-   								// datastoreName should always be 'HydroBase' for general tests
+   								// datastoreName is needed to check whether it implements the DataStoreRequirementChecker interface.
    								datastoreName = parts[2].trim();
-   								operator = parts[3].trim();
-   								version = parts[4].trim();
-   								// Get the datastore from the processor
-   								if ( !datastoreName.equalsIgnoreCase("HydroBase") ) {
-   									message = "Don't know how to handle datastore name in @require (only handle HydroBase): " + commandString;
-   									Message.printWarning(3, routine, message);
-   									throw new RuntimeException(message);
-   								}
    								DataStore dataStore = processor.getDataStoreForName ( datastoreName, null );
    								if ( dataStore == null ) {
-   									// This is currently a major issue since StateDMI depends on HydroBase datastore
    									message = "Unable to get datastore for name \"" + datastoreName + "\"";
+   									check.setIsRequirementMet(false, message);
    									Message.printWarning(3, routine, message);
-   									throw new RuntimeException(message);
    								}
    								else {
    									// Get the version for the processor
@@ -159,47 +172,38 @@ public static boolean areRequirementsMet ( TSCommandProcessor processor, List<Co
    									//HydroBaseDMI dmi = (HydroBaseDMI)dataStore.getDMI();
    									//String dbVersion = dmi.getDatabaseVersionFromName();
    									// Check the datastore version against the requirement, using string comparison since no delimiters.
-   									//if ( !StringUtil.compareUsingOperator(versionType, dbVersion, operator, version) ) {
-   									if ( dataStore instanceof DataStoreVersionChecker ) {
-   										DataStoreVersionChecker checker = (DataStoreVersionChecker)dataStore;
-   										if ( !checker.checkVersion(operator, version) ) {
-   											Message.printStatus(2, routine, "Database version \"" + checker.getVersionForCheck() + "\" DOES NOT meet required " + operator + " \"" + version + "\"");
-   											// Set the return value.
-   											// - any false value from list of comments will set the overall return value to false
-   											requirementsMet = false;
-   										}
-   										else {
-   											Message.printStatus(2, routine, "Database version \"" + checker.getVersionForCheck() + "\" DOES meet required " + operator + " \"" + version + "\"");
-   										}
+   									//if ( !StringUtil.compareUsingOperator(versionType, dbVersion, operator, version) ) { }
+   									if ( dataStore instanceof DataStoreRequirementChecker ) {
+   										DataStoreRequirementChecker checker = (DataStoreRequirementChecker)dataStore;
+   										// The following will handle reason for failure.
+   										checker.checkRequirement(check);
    									}
    									else {
-   										Message.printStatus(2, routine, "Database DOES NOT implement version check.  Cannot check that version " + operator + " \"" + version + "\"");
-   										// Set the return value.
-   										// - any false value from list of comments will set the overall return value to false
-   										requirementsMet = false;
+   										message = "Datastore code DOES NOT implement requirement checker.";
+   										check.setIsRequirementMet(false, message);
+   										Message.printWarning(3, routine, message);
    									}
    								}
    							}
    						}
                     }
    					else {
-  						message = "Error processing @require - expecting 5+ tokens (have " + parts.length + "): " + commandString;
+  						message = "Error processing @require - expecting 6+ tokens (have " + parts.length + ").";
+						check.setIsRequirementMet(false, message);
    						Message.printWarning(3, routine, message);
-   						throw new RuntimeException (message);
    					}
                 }
    				else {
-  					message = "Error processing @require - expecting 5+ tokens but line is too short: " + commandString;
+  					message = "Error processing @require - expecting at least 2+ tokens but line is too short: " + commandString;
+					Message.printWarning(3, routine, message);
    					Message.printWarning(3, routine, message);
    					throw new RuntimeException (message);
    				}
             }
-   			else {
-   				// OK - since comments may not contain any @require
-   			}
+   			// Else no @require
         }
     }
-    return requirementsMet;
+    return checkList;
 }
 
 /**
@@ -248,26 +252,26 @@ throws FileNotFoundException, IOException {
 		runDiscoveryOnLoad );
 }
 
-
 /**
 Run the commands.
+No properties are specified to control the run.
 */
 public void runCommands ()
 throws Exception {
 	__processor.runCommands(
-			null, // Subset of Command instances to run - just run all
-			null ); // Properties to control run
+			null, // Subset of Command instances to run - just run all.
+			null); // No properties to control run.
 }
 
 /**
 Run the commands.
-@param runProps properties to pass to the processor
+@param runProps properties to control the processor execution (these are NOT properties to initialize in the processor).
 */
 public void runCommands ( PropList runProps )
 throws Exception {
 	__processor.runCommands(
-			null, // Subset of Command instances to run - just run all commands
-			runProps ); // Properties to control run
+			null, // Subset of Command instances to run - just run all commands.
+			runProps ); // Properties to control run.
 }
 
 /**

@@ -98,7 +98,7 @@ throws InvalidCommandParameterException
 	if ( (IfNotFound != null) && !IfNotFound.isEmpty() ) {
 		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
 		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
-			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
+			message = "The IfNotFound parameter \"" + IfNotFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,

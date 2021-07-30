@@ -586,7 +586,7 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     JGUIUtil.addComponent(check_JPanel, __PropertyName_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - name of property to set when criteria are met."), 
+        "Optional - name of time series property to set when criteria are met."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Property value:" ), 
@@ -596,7 +596,7 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     JGUIUtil.addComponent(check_JPanel, __PropertyValue_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - value of property to set when criteria are met."), 
+        "Optional - value of time series property to set when criteria are met."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     /*
@@ -931,9 +931,9 @@ private void refresh ()
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "Statistic=" + Statistic );
-    props.add ( "Value1=" + StatisticValue1 );
-    props.add ( "Value2=" + StatisticValue2 );
-    props.add ( "Value3=" + StatisticValue3 );
+    props.add ( "StatisticValue1=" + StatisticValue1 );
+    props.add ( "StatisticValue2=" + StatisticValue2 );
+    props.add ( "StatisticValue3=" + StatisticValue3 );
     props.add ( "AnalysisStart=" + AnalysisStart );
     props.add ( "AnalysisEnd=" + AnalysisEnd );
     props.add ( "TableID=" + TableID );

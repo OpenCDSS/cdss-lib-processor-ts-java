@@ -109,7 +109,7 @@ throws InvalidCommandParameterException
 	if ( (IfFound != null) && !IfFound.isEmpty() ) {
 		if ( !IfFound.equalsIgnoreCase(_Close) && !IfFound.equalsIgnoreCase(_Warn)
 		    && !IfFound.equalsIgnoreCase(_Fail) ) {
-			message = "The IfNoutFound parameter \"" + IfFound + "\" is invalid.";
+			message = "The IfNotFound parameter \"" + IfFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,

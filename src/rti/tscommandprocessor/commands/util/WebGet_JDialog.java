@@ -74,6 +74,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextArea __URI_JTextArea = null;
+private SimpleJComboBox	__EncodeURI_JComboBox =null;
 private JTextField __ConnectTimeout_JTextField = null;
 private JTextField __ReadTimeout_JTextField = null;
 private JTextField __RetryMax_JTextField = null;
@@ -185,6 +186,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
+	String EncodeURI = __EncodeURI_JComboBox.getSelected();
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -196,6 +198,9 @@ private void checkInput ()
 	__error_wait = false;
 	if ( URI.length() > 0 ) {
 		props.set ( "URI", URI );
+	}
+	if ( EncodeURI.length() > 0 ) {
+		props.set ( "EncodeURI", EncodeURI );
 	}
 	if ( ConnectTimeout.length() > 0 ) {
 		props.set ( "ConnectTimeout", ConnectTimeout );
@@ -237,6 +242,7 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
+	String EncodeURI = __EncodeURI_JComboBox.getSelected();
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -246,6 +252,7 @@ private void commitEdits ()
 	String IfHttpError = __IfHttpError_JComboBox.getSelected();
     String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
+	__command.setCommandParameter ( "EncodeURI", EncodeURI );
 	__command.setCommandParameter ( "ConnectTimeout", ConnectTimeout );
 	__command.setCommandParameter ( "ReadTimeout", ReadTimeout );
 	__command.setCommandParameter ( "RetryMax", RetryMax );
@@ -305,6 +312,24 @@ private void initialize ( JFrame parent, WebGet_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - URI for content to download."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Encode URI?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__EncodeURI_JComboBox = new SimpleJComboBox ( false );
+	__EncodeURI_JComboBox.setToolTipText(
+		"Should the query part of the URI be encoded, for example space character becomes + and other special charactes are %-encoded.");
+	List<String> encodeChoices = new ArrayList<>();
+	encodeChoices.add ( "" );	// Default
+	encodeChoices.add ( __command._False );
+	encodeChoices.add ( __command._True );
+	__EncodeURI_JComboBox.setData(encodeChoices);
+	__EncodeURI_JComboBox.select ( 0 );
+	__EncodeURI_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __EncodeURI_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - encode the URI? (default=" + __command._True + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Connection timeout:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -473,6 +498,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "WebGet_JDialog.refresh";
     String URI = "";
+    String EncodeURI = "";
     String ConnectTimeout = "";
     String ReadTimeout = "";
     String RetryMax = "";
@@ -486,6 +512,7 @@ private void refresh ()
 		__first_time = false;
         parameters = __command.getCommandParameters();
         URI = parameters.getValue ( "URI" );
+        EncodeURI = parameters.getValue ( "EncodeURI" );
         ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
         ReadTimeout = parameters.getValue ( "ReadTimeout" );
         RetryMax = parameters.getValue ( "RetryMax" );
@@ -496,6 +523,22 @@ private void refresh ()
         ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 		if ( URI != null ) {
 			__URI_JTextArea.setText ( URI );
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__EncodeURI_JComboBox, EncodeURI,JGUIUtil.NONE, null, null ) ) {
+			__EncodeURI_JComboBox.select ( EncodeURI );
+		}
+		else {
+            if ( (EncodeURI == null) ||	EncodeURI.equals("") ) {
+				// New command...select the default...
+				__EncodeURI_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"EncodeURI parameter \"" + EncodeURI +
+				"\".  Select a\n value or Cancel." );
+			}
 		}
 		if ( ConnectTimeout != null ) {
 			__ConnectTimeout_JTextField.setText ( ConnectTimeout );
@@ -519,7 +562,7 @@ private void refresh ()
 			__IfHttpError_JComboBox.select ( IfHttpError );
 		}
 		else {
-            if ( (IfHttpError == null) ||	IfHttpError.equals("") ) {
+            if ( (IfHttpError == null) || IfHttpError.equals("") ) {
 				// New command...select the default...
 				__IfHttpError_JComboBox.select ( 0 );
 			}
@@ -527,7 +570,7 @@ private void refresh ()
 				// Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
-				"IfHttpError parameter \"" +	IfHttpError +
+				"IfHttpError parameter \"" + IfHttpError +
 				"\".  Select a\n value or Cancel." );
 			}
 		}
@@ -538,6 +581,7 @@ private void refresh ()
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
+	EncodeURI = __EncodeURI_JComboBox.getSelected();
 	ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	RetryMax = __RetryMax_JTextField.getText().trim();
@@ -548,6 +592,7 @@ private void refresh ()
     ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "URI=" + URI );
+	props.add ( "EncodeURI=" + EncodeURI );
 	props.add ( "ConnectTimeout=" + ConnectTimeout );
 	props.add ( "ReadTimeout=" + ReadTimeout );
 	props.add ( "RetryMax=" + RetryMax );

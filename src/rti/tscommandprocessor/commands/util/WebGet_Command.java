@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -39,6 +40,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -75,6 +78,9 @@ Data members used for parameter values.
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
+
+protected final String _False = "False";
+protected final String _True = "True";
     
 /**
 Output file that is created by this command.
@@ -209,6 +215,7 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	List<String> validList = new ArrayList<>(9);
 	validList.add ( "URI" );
+	validList.add ( "EncodeURI" );
 	validList.add ( "ConnectTimeout" );
 	validList.add ( "ReadTimeout" );
 	validList.add ( "RetryMax" );
@@ -236,6 +243,39 @@ not (e.g., "Cancel" was pressed.
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new WebGet_JDialog ( parent, this )).ok();
+}
+
+/**
+ * Encode the URL.  Only encode the query parameter values to the right of '='.
+ * @param uri full URI
+ * @return the encoded URI
+ */
+private String encode ( String uri ) throws UnsupportedEncodingException {
+	int pos = uri.indexOf("?");
+	String uriEncoded = uri;
+	int paramCount = 0;
+	if ( (pos > 0) && (uri.substring(pos).indexOf("=") > 0) ) {
+		// URI includes query parameters.
+		StringBuilder b = new StringBuilder(uri.substring(0,pos));
+		b.append("?");
+		String query = uri.substring(pos + 1);
+		// Split by &, if only one parameter after ? will return one part.
+		String [] paramParts = query.split("&");
+		for ( String param : paramParts ) {
+			++paramCount;
+			// Split by =.
+			String [] vParts = param.split("=");
+			if ( paramCount > 1 ) {
+				b.append("&");
+			}
+			b.append(vParts[0]);
+			b.append("=");
+			b.append(URLEncoder.encode(vParts[1], StandardCharsets.UTF_8.toString()));
+		}
+		uriEncoded = b.toString();
+	}
+	Message.printStatus(2, "", "URL before encoding=\"" + uri + "\", after=\"" + uriEncoded + "\"");
+	return uriEncoded;
 }
 
 /**
@@ -311,6 +351,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "Check that the property is defined for the command." ) );
 	}
+	String EncodeURI = parameters.getValue ( "EncodeURI" );
+	boolean encodeUri = true; // Default.
+	if ( (EncodeURI != null) && ! EncodeURI.isEmpty() ) {
+		if ( EncodeURI.equalsIgnoreCase("false") ) {
+			encodeUri = false;
+		}
+	}
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     int connectTimeout = 60000;
 	if ( (ConnectTimeout != null) && StringUtil.isInteger(ConnectTimeout) ) {
@@ -367,6 +414,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
+		// Encode the URI if requested.
+		if ( encodeUri ) {
+			URI = encode ( URI );
+		}
     	if ( retryMax <= 0 ) {
     		// Do at least one try.
     		retryMax = 1;
@@ -383,6 +434,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		FileOutputStream fos = null;
 	    	HttpURLConnection urlConnection = null;
 	    	InputStream is = null;
+   			BufferedInputStream isr = null;
     		StringBuilder content = null;
     		responseCode = -1;
     		if ( doOutputProperty ) {
@@ -405,7 +457,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				urlConnection.setReadTimeout(readTimeout);
     			}
     			is = urlConnection.getInputStream();
-    			BufferedInputStream isr = new BufferedInputStream(is);
+    			isr = new BufferedInputStream(is);
     			// Open the output file.
     			if ( doOutputFile ) {
     				fos = new FileOutputStream( LocalFile_full );
@@ -459,11 +511,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			// If here successful so break out of the retry loop.
     			readSuccessful = true;
     		}
-    		catch (MalformedURLException e) {
-    			message = "URI \"" + URI + "\" is malformed (" + e + ")";
+    		catch (MalformedURLException me) {
+    			message = "URI \"" + URI + "\" is malformed (" + me + ")";
     			Message.printWarning ( warning_level, 
                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-    			Message.printWarning ( 3, routine, e );
+    			Message.printWarning ( 3, routine, me );
     			status.addToLog(CommandPhaseType.RUN,
     				new CommandLogRecord(CommandStatusType.FAILURE,
     					message, "See the log file for details."));
@@ -480,8 +532,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     						message, "See the log file for details."));
     			}
     		}
-    		catch (IOException e) {
-    			StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + e );
+    		catch (IOException ioe) {
+    			StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + ioe + ").\n" );
     			// Try reading error stream - may only work for some error numbers.
     			if ( urlConnection != null ) {
     				is = urlConnection.getErrorStream(); // Close in finally.
@@ -492,13 +544,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					String s;
     					while ((s = br.readLine()) != null ) {
     						sb.append(s);
+    						// Append the newline to make sure command status output looks nice.
+    						sb.append("\n");
     					}
     				}
     			}
     			sb.append ( ")" );
     			Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, sb.toString() );
-    			Message.printWarning ( 3, routine, e );
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, sb.toString() );
+    			Message.printWarning ( 3, routine, ioe );
     			status.addToLog(CommandPhaseType.RUN,
     				new CommandLogRecord(CommandStatusType.FAILURE,
     					sb.toString(), "See the log file for details.  Try using the full URI in a web browser."));
@@ -514,10 +568,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					message, "See the log file for details."));
     		}
     		finally {
-    			// Close the streams and connection
-    			if ( is != null ) {
+    			// Close the streams and connection.
+    			if ( isr != null ) {
     				try {
-    					is.close();
+    					isr.close();
     				}
     				catch ( IOException e ) {
     				}
@@ -607,6 +661,7 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
     String URI = parameters.getValue ( "URI" );
+    String EncodeURI = parameters.getValue ( "EncodeURI" );
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     String ReadTimeout = parameters.getValue ( "ReadTimeout" );
     String RetryMax = parameters.getValue ( "RetryMax" );
@@ -618,6 +673,12 @@ public String toString ( PropList parameters )
 	StringBuffer b = new StringBuffer ();
 	if ( (URI != null) && (URI.length() > 0) ) {
 		b.append ( "URI=\"" + URI + "\"" );
+	}
+	if ( (EncodeURI != null) && (EncodeURI.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "EncodeURI=" + EncodeURI );
 	}
 	if ( (ConnectTimeout != null) && (ConnectTimeout.length() > 0) ) {
 		if ( b.length() > 0 ) {

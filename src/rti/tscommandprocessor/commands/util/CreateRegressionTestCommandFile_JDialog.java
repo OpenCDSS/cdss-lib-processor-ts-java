@@ -75,10 +75,12 @@ private final String __RemoveWorkingDirectory = "Rel";
 private SimpleJButton __browseSearchFolder_JButton = null;
 private SimpleJButton __browseOutputFile_JButton = null;
 private SimpleJButton __browseSetupCommandFile_JButton = null;
+private SimpleJButton __browseTestResultsFile_JButton = null;
 private SimpleJButton __browseEndCommandFile_JButton = null;
 private SimpleJButton __pathSearchFolder_JButton = null;
 private SimpleJButton __pathOutputFile_JButton = null;
 private SimpleJButton __pathSetupCommandFile_JButton = null;
+private SimpleJButton __pathTestResultsFile_JButton = null;
 private SimpleJButton __pathEndCommandFile_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -87,6 +89,7 @@ private JTextField __SearchFolder_JTextField = null;	// Top folder to start sear
 private JTextField __FilenamePattern_JTextField = null;	// Pattern for file names
 private JTextField __OutputFile_JTextField = null;	// Resulting command file
 private JTextField __SetupCommandFile_JTextField = null; // Setup command file
+private JTextField __TestResultsFile_JTextField = null;
 private JTextField __EndCommandFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextField __IncludeTestSuite_JTextField = null;
@@ -177,6 +180,41 @@ public void actionPerformed( ActionEvent event )
 				// Convert path to relative path by default.
 				try {
 					__SetupCommandFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CreateRegressionTestCommandFile_JDialog", "Error converting file to relative path." );
+				}
+                JGUIUtil.setLastFileDialogDirectory(directory);
+                refresh();
+            }
+        }
+    }
+	else if ( o == __browseTestResultsFile_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser(__working_dir );
+        }
+        fc.setDialogTitle( "Select Test Results File");
+        SimpleFileFilter sff = new SimpleFileFilter("txt","test results report file");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__TestResultsFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
 					Message.printWarning ( 1,"CreateRegressionTestCommandFile_JDialog", "Error converting file to relative path." );
@@ -318,6 +356,22 @@ public void actionPerformed( ActionEvent event )
         }
         refresh ();
     }
+    else if ( o == __pathTestResultsFile_JButton ) {
+        if ( __pathTestResultsFile_JButton.getText().equals( __AddWorkingDirectory) ) {
+            __TestResultsFile_JTextField.setText (
+            IOUtil.toAbsolutePath(__working_dir,__TestResultsFile_JTextField.getText() ) );
+        }
+        else if ( __pathTestResultsFile_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+            try {
+                __TestResultsFile_JTextField.setText (
+                IOUtil.toRelativePath ( __working_dir,__TestResultsFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1,routine,"Error converting test results file name to relative path." );
+            }
+        }
+        refresh ();
+    }
     else if ( o == __pathEndCommandFile_JButton ) {
         if ( __pathEndCommandFile_JButton.getText().equals( __AddWorkingDirectory) ) {
             __EndCommandFile_JTextField.setText (
@@ -350,6 +404,7 @@ private void checkInput ()
 	String SearchFolder = __SearchFolder_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String SetupCommandFile = __SetupCommandFile_JTextField.getText().trim();
+	String TestResultsFile = __TestResultsFile_JTextField.getText().trim();
 	String EndCommandFile = __EndCommandFile_JTextField.getText().trim();
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
@@ -366,6 +421,9 @@ private void checkInput ()
 	}
     if ( SetupCommandFile.length() > 0 ) {
         props.set ( "SetupCommandFile", SetupCommandFile );
+    }
+    if ( TestResultsFile.length() > 0 ) {
+        props.set ( "TestResultsFile", TestResultsFile );
     }
     if ( EndCommandFile.length() > 0 ) {
         props.set ( "EndCommandFile", EndCommandFile );
@@ -407,6 +465,7 @@ private void commitEdits ()
 {	String SearchFolder = __SearchFolder_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText();
 	String SetupCommandFile = __SetupCommandFile_JTextField.getText().trim();
+	String TestResultsFile = __TestResultsFile_JTextField.getText().trim();
 	String EndCommandFile = __EndCommandFile_JTextField.getText().trim();
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
@@ -417,6 +476,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SearchFolder", SearchFolder );
     __command.setCommandParameter ( "OutputFile", OutputFile );
     __command.setCommandParameter ( "SetupCommandFile", SetupCommandFile );
+    __command.setCommandParameter ( "TestResultsFile", TestResultsFile );
     __command.setCommandParameter ( "EndCommandFile", EndCommandFile );
 	__command.setCommandParameter ( "FilenamePattern", FilenamePattern );
 	__command.setCommandParameter ( "Append", Append );
@@ -550,6 +610,29 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, SetupCommandFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test results file:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TestResultsFile_JTextField = new JTextField ( 50 );
+    __TestResultsFile_JTextField.setToolTipText("Test results file for StartRegressionTestResultsReport(OutputFile=...), can use ${Property} notation");
+    __TestResultsFile_JTextField.addKeyListener ( this );
+    // Setup command file layout fights back with other rows so put in its own panel
+	JPanel TestResultsFile_JPanel = new JPanel();
+	TestResultsFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(TestResultsFile_JPanel, __TestResultsFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browseTestResultsFile_JButton = new SimpleJButton ( "...", this );
+	__browseTestResultsFile_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(TestResultsFile_JPanel, __browseTestResultsFile_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathTestResultsFile_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(TestResultsFile_JPanel, __pathTestResultsFile_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(main_JPanel, TestResultsFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "End command file:" ), 
@@ -712,6 +795,7 @@ private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
 	String SearchFolder = "";
 	String SetupCommandFile = "";
+	String TestResultsFile = "";
 	String EndCommandFile = "";
 	String OutputFile = "";
 	String FilenamePattern = "";
@@ -727,6 +811,7 @@ private void refresh ()
 		SearchFolder = props.getValue ( "SearchFolder" );
 		OutputFile = props.getValue ( "OutputFile" );
 		SetupCommandFile = props.getValue ( "SetupCommandFile" );
+		TestResultsFile = props.getValue ( "TestResultsFile" );
 		EndCommandFile = props.getValue ( "EndCommandFile" );
 	    FilenamePattern = props.getValue ( "FilenamePattern" );
 		Append = props.getValue ( "Append" );
@@ -742,6 +827,9 @@ private void refresh ()
 		}
         if ( SetupCommandFile != null ) {
             __SetupCommandFile_JTextField.setText ( SetupCommandFile );
+        }
+        if ( TestResultsFile != null ) {
+            __TestResultsFile_JTextField.setText ( TestResultsFile );
         }
         if ( EndCommandFile != null ) {
             __EndCommandFile_JTextField.setText ( EndCommandFile );
@@ -794,6 +882,7 @@ private void refresh ()
 	SearchFolder = __SearchFolder_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	SetupCommandFile = __SetupCommandFile_JTextField.getText().trim();
+	TestResultsFile = __TestResultsFile_JTextField.getText().trim();
 	EndCommandFile = __EndCommandFile_JTextField.getText().trim();
 	FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
@@ -805,6 +894,7 @@ private void refresh ()
 	props.add ( "SearchFolder=" + SearchFolder );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "SetupCommandFile=" + SetupCommandFile );
+	props.add ( "TestResultsFile=" + TestResultsFile );
 	props.add ( "EndCommandFile=" + EndCommandFile );
 	props.add ( "FilenamePattern=" + FilenamePattern );
 	props.add ( "Append=" + Append );

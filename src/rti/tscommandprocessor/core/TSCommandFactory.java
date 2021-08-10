@@ -87,10 +87,13 @@ import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Comm
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
-import rti.tscommandprocessor.commands.table.ReadTableFromJSON_Command;
+
+// JSON commands.
+import rti.tscommandprocessor.commands.json.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
-import rti.tscommandprocessor.commands.logging.ConfigureLogging_Command;
+
 // Logging commands.
+import rti.tscommandprocessor.commands.logging.ConfigureLogging_Command;
 import rti.tscommandprocessor.commands.logging.Message_Command;
 import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;

@@ -763,6 +763,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.RequirementCheckList;
 import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -3015,7 +3016,8 @@ throws Exception
                 	try {
                 		List<Command> commentList = new ArrayList<>();
                 		commentList.add(command);
-        	        	if ( TSCommandFileRunner.checkRequirements(__ts_processor, commentList).areRequirementsMet() ) {
+        	        	RequirementCheckList checks = TSCommandFileRunner.checkRequirements(__ts_processor, commentList);
+        	        	if ( checks.areRequirementsMet() ) {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    new CommandLogRecord(CommandStatusType.SUCCESS,
 				   			    "@require condition was met",
@@ -3024,7 +3026,7 @@ throws Exception
         	        	else {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    new CommandLogRecord(CommandStatusType.FAILURE,
-				   			    "@require condition was NOT met",
+				   			    "@require condition was NOT met: \n" + checks.formatResults(),
 				   			    "Check log file for details. Command file should not be run unless requirements are met.") );
         	        	}
                 	}

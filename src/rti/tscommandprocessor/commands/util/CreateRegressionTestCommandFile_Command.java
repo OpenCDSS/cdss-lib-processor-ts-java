@@ -267,10 +267,11 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<>(10);
+	List<String> validList = new ArrayList<>(11);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
     validList.add ( "SetupCommandFile" );
+    validList.add ( "TestResultsFile" );
     validList.add ( "EndCommandFile" );
     validList.add ( "FilenamePattern" );
 	validList.add ( "Append" );
@@ -545,6 +546,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String SearchFolder = parameters.getValue ( "SearchFolder" ); // Expanded below
     String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String SetupCommandFile = parameters.getValue ( "SetupCommandFile" ); // Expanded below
+    String TestResultsFile = parameters.getValue ( "TestResultsFile" ); // Expanded below
     String EndCommandFile = parameters.getValue ( "EndCommandFile" ); // Expanded below
 	String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String [] FilenamePattern_Java = new String[0];
@@ -613,6 +615,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
                 "Verify that the file exists at the time the command is run."));
         }
+	}
+	// Do not expand to full because the path is relative to the output command file, not current working files:
+	// - just expand for property
+	if ( (TestResultsFile != null) && !TestResultsFile.equals("") ) {
+	    TestResultsFile = IOUtil.verifyPathForOS(
+            TSCommandProcessorUtil.expandParameterValue(processor,this,TestResultsFile));
 	}
 	String EndCommandFile_full = null;
 	if ( (EndCommandFile != null) && !EndCommandFile.equals("") ) {
@@ -712,7 +720,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (TestResultsTableID != null) && !TestResultsTableID.isEmpty() ) {
         	tableParam = ",TestResultsTableID=\"" + TestResultsTableID + "\"";
         }
-		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\"" + tableParam + ")");
+       	// Default to output filename that is the command file name appended with ".out.txt".
+        String outputFile = OutputFile_full_File.getName() + ".out.txt";
+        if ( (TestResultsFile != null) && !TestResultsFile.isEmpty() ) {
+        	outputFile = TestResultsFile;
+        }
+		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + outputFile + "\"" + tableParam + ")");
 		// Find the list of matching files...
 		String commandFileToRun;
 		for ( CommandFile commandFile: commandFiles ) {
@@ -907,6 +920,7 @@ public String toString ( PropList parameters )
 	String SearchFolder = parameters.getValue("SearchFolder");
 	String OutputFile = parameters.getValue("OutputFile");
 	String SetupCommandFile = parameters.getValue("SetupCommandFile");
+	String TestResultsFile = parameters.getValue("TestResultsFile");
 	String EndCommandFile = parameters.getValue("EndCommandFile");
 	String FilenamePattern = parameters.getValue("FilenamePattern");
 	String Append = parameters.getValue("Append");
@@ -929,6 +943,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "SetupCommandFile=\"" + SetupCommandFile + "\"");
+    }
+    if ( (TestResultsFile != null) && (TestResultsFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TestResultsFile=\"" + TestResultsFile + "\"");
     }
     if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() ) {
         if ( b.length() > 0 ) {

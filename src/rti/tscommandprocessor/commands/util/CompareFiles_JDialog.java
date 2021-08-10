@@ -401,7 +401,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
-	__InputFile1_JTextField.setToolTipText("Specify the filename for the first file, can use ${Property} notation");
+	__InputFile1_JTextField.setToolTipText("Name of the first file, can use ${Property} notation");
 	__InputFile1_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel
 	JPanel InputFile1_JPanel = new JPanel();
@@ -424,7 +424,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
-	__InputFile2_JTextField.setToolTipText("Specify the filename for the second file, can use ${Property} notation");
+	__InputFile2_JTextField.setToolTipText("Name of the second file, can use ${Property} notation");
 	__InputFile2_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel
 	JPanel InputFile2_JPanel = new JPanel();
@@ -455,7 +455,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     __main_JTabbedPane.addTab ( "Compare File Contents", content_JPanel );
 
     JGUIUtil.addComponent(content_JPanel, new JLabel (
-		"Text files are compared line by line and character by character within lines.  Comment lines starting with # are ignored." ),
+		"Text files are compared line by line and character by character within lines.  Comment lines are ignored." ),
 		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "A line by line comparison is made, alternating between files and skipping comments."),
 		0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -470,6 +470,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Comment line character:"),
         0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommentLineChar_JTextField = new JTextField ( 20 );
+    __CommentLineChar_JTextField.setToolTipText("For example: #");
     __CommentLineChar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(content_JPanel, __CommentLineChar_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -511,6 +512,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Exclude text:"),
         0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
+    __ExcludeText_JTextField.setToolTipText("Pattern(s) to exclude lines separated by commas, use * for wildcard and | for multiple 'or' in one patterns.");
     __ExcludeText_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(content_JPanel, __ExcludeText_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

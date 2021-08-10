@@ -299,19 +299,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__CompareColumns2_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
@@ -359,7 +346,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table1 ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Table1ID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Table1ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __Table1ID_JComboBox.setData ( tableIDChoices );
     __Table1ID_JComboBox.addItemListener ( this );
@@ -389,7 +376,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table2 ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Table2ID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Table2ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit
     __Table2ID_JComboBox.setData ( tableIDChoices );
     __Table2ID_JComboBox.addItemListener ( this );
     //__Table2D_JComboBox.setMaximumRowCount(tableIDChoices.size());

@@ -387,7 +387,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(stat_JPanel, new JLabel ( "Search pattern:" ), 
         0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SearchPattern_JTextField = new JTextField ( 30 );
-    __SearchPattern_JTextField.setToolTipText("Search pattern should use * at start and/or end if necessary.");
+    __SearchPattern_JTextField.setToolTipText("Search pattern should use * at start and/or end to match substring in a line.");
     __SearchPattern_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(stat_JPanel, __SearchPattern_JTextField,
         1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

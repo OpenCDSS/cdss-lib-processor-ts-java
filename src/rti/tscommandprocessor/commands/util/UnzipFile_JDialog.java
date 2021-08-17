@@ -82,6 +82,7 @@ private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __OutputFolder_JTextField = null;
 private SimpleJComboBox __IfInputNotFound_JComboBox = null;
+private SimpleJComboBox __RemoveOutputFolder_JComboBox = null;
 private SimpleJComboBox __ListInResults_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
@@ -283,6 +284,7 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputFolder = __OutputFolder_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+	String RemoveOutputFolder = __RemoveOutputFolder_JComboBox.getSelected();
 	String ListInResults = __ListInResults_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
@@ -297,6 +299,9 @@ private void checkInput ()
 	if ( IfInputNotFound.length() > 0 ) {
 		props.set ( "IfInputNotFound", IfInputNotFound );
 	}
+    if ( RemoveOutputFolder.length() > 0 ) {
+        props.set ( "RemoveOutputFolder", RemoveOutputFolder );
+    }
     if ( ListInResults.length() > 0 ) {
         props.set ( "ListInResults", ListInResults );
     }
@@ -318,11 +323,13 @@ private void commitEdits ()
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String OutputFolder = __OutputFolder_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+	String RemoveOutputFolder = __RemoveOutputFolder_JComboBox.getSelected();
     String ListInResults = __ListInResults_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputFolder", OutputFolder );
 	__command.setCommandParameter ( "IfInputNotFound", IfInputNotFound );
+	__command.setCommandParameter ( "RemoveOutputFolder", RemoveOutputFolder );
 	__command.setCommandParameter ( "ListInResults", ListInResults );
 }
 
@@ -449,6 +456,20 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - action if input file is not found (default=" + __command._Warn + ")."), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Remove output folder?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RemoveOutputFolder_JComboBox = new SimpleJComboBox ( false );
+    __RemoveOutputFolder_JComboBox.add ( "" );
+    __RemoveOutputFolder_JComboBox.add ( __command._False );
+    __RemoveOutputFolder_JComboBox.add ( __command._True );
+    __RemoveOutputFolder_JComboBox.add ( __command._TrueWithPrompt );
+    __RemoveOutputFolder_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RemoveOutputFolder_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - remove output folder before unzipping (default=" + __command._False + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "List output in results?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -539,6 +560,7 @@ private void refresh ()
 	String OutputFile = "";
 	String OutputFolder = "";
 	String IfInputNotFound = "";
+	String RemoveOutputFolder = "";
 	String ListInResults = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -548,6 +570,7 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
 		OutputFolder = parameters.getValue ( "OutputFolder" );
 		IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
+		RemoveOutputFolder = parameters.getValue ( "RemoveOutputFolder" );
 		ListInResults = parameters.getValue ( "ListInResults" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
@@ -573,6 +596,20 @@ private void refresh ()
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+        if ( (RemoveOutputFolder == null) || (RemoveOutputFolder.length() == 0) ) {
+            // Select default...
+            __RemoveOutputFolder_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __RemoveOutputFolder_JComboBox,
+                RemoveOutputFolder, JGUIUtil.NONE, null, null ) ) {
+                __RemoveOutputFolder_JComboBox.select ( RemoveOutputFolder );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "RemoveOutputFolder \"" + RemoveOutputFolder + "\" parameter.  Select a\ndifferent value or Cancel." );
+            }
+        }
         if ( (ListInResults == null) || (ListInResults.length() == 0) ) {
             // Select default...
             __ListInResults_JComboBox.select ( 0 );
@@ -594,12 +631,14 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	OutputFolder = __OutputFolder_JTextField.getText().trim();
 	IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+	RemoveOutputFolder = __RemoveOutputFolder_JComboBox.getSelected();
 	ListInResults = __ListInResults_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "OutputFolder=" + OutputFolder );
 	props.add ( "IfInputNotFound=" + IfInputNotFound );
+	props.add ( "RemoveOutputFolder=" + RemoveOutputFolder );
 	props.add ( "ListInResults=" + ListInResults );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

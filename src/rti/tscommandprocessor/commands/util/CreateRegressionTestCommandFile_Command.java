@@ -116,7 +116,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
+                // Working directory is available so use it.
                 if ( o != null ) {
                     working_dir = (String)o;
                 }
@@ -195,7 +195,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
+                // Working directory is available so use it.
                 if ( o != null ) {
                     working_dir = (String)o;
                 }
@@ -228,7 +228,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-            // Working directory is available so use it...
+            // Working directory is available so use it.
             if ( o != null ) {
                 working_dir = (String)o;
             }
@@ -266,7 +266,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(11);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
@@ -320,7 +320,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new CreateRegressionTestCommandFile_JDialog ( parent, this )).ok();
 }
 
@@ -336,7 +336,7 @@ public List<File> getGeneratedFileList ()
     return list;
 }
 
-// FIXME SAM 2008-07-31 Should separate out this method from the checks for tags to simplify logic of each
+// FIXME SAM 2008-07-31 Should separate out this method from the checks for tags to simplify logic of each.
 /**
 Visits all files and directories under the given directory and if
 the file matches a valid commands file it is added to the test list.
@@ -355,8 +355,8 @@ private void getMatchingFilenamesInTree ( List<String> commandFileList, File pat
         String[] includedTestSuites, String[] includedOS ) 
 throws IOException
 {   String routine = getClass().getSimpleName() + ".getMatchingFilenamesInTree";
-    // Determine if UNIX and Windows tests have been requested
-    // Check the OS only if the specific  
+    // Determine if UNIX and Windows tests have been requested.
+    // Check the OS only if the specific.
     boolean needToCheckForUnixOS = false;
     boolean needToCheckForWindowsOS = false;
     for ( int i = 0; i < includedOS.length; i++ ) {
@@ -380,14 +380,14 @@ throws IOException
         }
     }
     else {
-        //add to list if command file is valid
+        // Add to list if command file is valid.
         String pathName = path.getName();
     	// Do comparison on file name without directory.
     	for ( int i = 0; i < patterns.length; i++ ) {
     		String pattern = patterns[i];
     		Message.printStatus(2, "", "Checking path \"" + pathName + "\" against pattern \"" + pattern + "\"" );
     	    if( pathName.matches( pattern )
-    		    // FIXME SAM 2007-10-15 Need to enable something like the following to make more robust
+    		    // FIXME SAM 2007-10-15 Need to enable something like the following to make more robust.
     		    //&& isValidCommandsFile( dir )
     		    ) {
         	    Message.printStatus(2, "", "File matched." );
@@ -396,12 +396,12 @@ throws IOException
         	    boolean doAddForOS = false;
         	    List<Object> tagValues = TSCommandProcessorUtil.getTagValues ( path.toString(), "os" );
         	    if ( !needToCheckForUnixOS && !needToCheckForWindowsOS ) {
-        	        // Not checking for OS so go ahead and add
+        	        // Not checking for OS so go ahead and add.
         	        doAddForOS = true;
         	    }
         	    if ( !doAddForOS && needToCheckForUnixOS ) {
                     boolean tagHasUNIX = false;
-        	        // os tag needs to be blank or include "UNIX"
+        	        // os tag needs to be blank or include "UNIX".
         	        for ( int ivalue = 0; ivalue < tagValues.size(); ivalue++ ) {
         	            Object o = tagValues.get(ivalue);
         	            if ( o instanceof String ) {
@@ -412,13 +412,13 @@ throws IOException
         	            }
         	        }
                     if ( (tagValues.size() == 0) || tagHasUNIX ) {
-                        // Test is not OS-specific or test is for UNIX so include for UNIX
+                        // Test is not OS-specific or test is for UNIX so include for UNIX.
                         doAddForOS = true;
                     }
          	    }
         	    if ( !doAddForOS && needToCheckForWindowsOS ) {
                     boolean tagHasWindows = false;
-                    // os tag needs to be blank or include "Windows"
+                    // os tag needs to be blank or include "Windows".
                     for ( int ivalue = 0; ivalue < tagValues.size(); ivalue++ ) {
                         Object o = tagValues.get(ivalue);
                         if ( o instanceof String ) {
@@ -429,24 +429,24 @@ throws IOException
                         }
                     }
                     if ( (tagValues.size() == 0) || tagHasWindows ) {
-                        // Test is not OS-specific or test is for Windows so include for Windows
+                        // Test is not OS-specific or test is for Windows so include for Windows.
                         doAddForOS = true;
                     }
         	    }
-        	    // Check to see if the test suite has been specified and matches that in the file
+        	    // Check to see if the test suite has been specified and matches that in the file.
         	    boolean doAddForTestSuite = false;
         	    if ( includedTestSuites.length == 0 ) {
         	        doAddForTestSuite = true;
         	    }
         	    else {
-        	        // Check to see if the test suites in the test match the requested test suites
+        	        // Check to see if the test suites in the test match the requested test suites.
         	        List<Object> tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
         	        if ( tagValues2.size() == 0 ) {
-        	            // Test case is not specified to belong to a specific suite so it is always included
+        	            // Test case is not specified to belong to a specific suite so it is always included.
         	            doAddForTestSuite = true;
         	        }
         	        else {
-        	            // Check each value in the file against requested test suites
+        	            // Check each value in the file against requested test suites.
         	            for ( int itag = 0; itag < tagValues2.size(); itag++ ) {
         	                if ( !(tagValues2.get(itag) instanceof String) ) {
         	                    continue;
@@ -489,7 +489,7 @@ Include the setup command file in the regression test command file.
 */
 private void includeCommandFile ( PrintWriter out, String includeCommandFile, String label )
 throws IOException
-{   //String routine = getClass().getName() + ".includeSetupCommandFile";
+{   //String routine = getClass().getSimpleName() + ".includeSetupCommandFile";
     if ( includeCommandFile == null ) {
         return;
     }
@@ -509,7 +509,7 @@ throws IOException
     in.close();
 }
 
-// Use the base class parse()
+// Use the base class parse().
 
 /**
 Run the command.
@@ -537,7 +537,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -574,19 +574,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String IncludeTestSuite = parameters.getValue ( "IncludeTestSuite" );
 	if ( (IncludeTestSuite == null) || IncludeTestSuite.equals("") ) {
-	    IncludeTestSuite = "*"; // Default - include all test suites
+	    IncludeTestSuite = "*"; // Default - include all test suites.
 	}
 	String IncludeOS = parameters.getValue ( "IncludeOS" );
     if ( (IncludeOS == null) || IncludeOS.equals("") ) {
-        IncludeOS = "*"; // Default - include all OS
+        IncludeOS = "*"; // Default - include all OS.
     }
 	String UseOrder = parameters.getValue ( "UseOrder" );
-	boolean useOrder = true; // Default
+	boolean useOrder = true; // Default.
 	if ( (UseOrder != null) && UseOrder.equalsIgnoreCase(_False)){
 		useOrder = false;
 	}
     String TestResultsTableID = parameters.getValue ( "TestResultsTableID" );
-    // Get Java regular expression pattern to match
+    // Get Java regular expression pattern to match.
     String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
     String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
 
@@ -616,7 +616,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the file exists at the time the command is run."));
         }
 	}
-	// Do not expand to full because the path is relative to the output command file, not current working files:
+	// Do not expand to full because the path relative to the working directory because the file
+	// is relative to the output command file, not current working files:
 	// - just expand for property
 	if ( (TestResultsFile != null) && !TestResultsFile.equals("") ) {
 	    TestResultsFile = IOUtil.verifyPathForOS(
@@ -645,7 +646,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-	    // Get the list of files to run as test cases...
+	    // Get the list of files to run as test cases.
 		List<String> files = new ArrayList<>();
 		List<CommandFile> commandFiles = new ArrayList<>();
         String [] includedTestSuitePatterns = new String[0];
@@ -681,7 +682,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		++testSuiteCount;
         	}
         }
-        // Sort the command files based on 'order' annotation.
+        // Sort the command files based on 'order' annotation:
         // - only do if 'order' was detected above since is a slight performance hit
         if ( useOrder && (orderCount > 0) ) {
         	warningCount += sortBasedOnOrder(commandFiles, status, warningLevel, commandTag);
@@ -715,7 +716,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         out.println ( "# Number of tests with 'order' defined: " + orderCount );
         out.println ( "# Number of tests with 'testSuite' defined: " + testSuiteCount );
         // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
-        // individual logs for each command file regression test
+        // individual logs for each command file regression test.
         String tableParam = "";
         if ( (TestResultsTableID != null) && !TestResultsTableID.isEmpty() ) {
         	tableParam = ",TestResultsTableID=\"" + TestResultsTableID + "\"";
@@ -726,7 +727,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	outputFile = TestResultsFile;
         }
 		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + outputFile + "\"" + tableParam + ")");
-		// Find the list of matching files...
+		// Find the list of matching files.
 		String commandFileToRun;
 		for ( CommandFile commandFile: commandFiles ) {
 			// The command files to run are relative to the commands file being created.
@@ -736,11 +737,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
 		        determineExpectedStatusParameter(commandFile) + ")");
 		}
-		// Include the end command file if requested
+		// Include the end command file if requested.
 		//Message.printStatus ( 2, routine, "Adding commands from end command file \"" + EndCommandFile_full + "\"");
 		includeCommandFile ( out, EndCommandFile_full, "end" );
 		out.close();
-        // Save the output file name...
+        // Save the output file name.
         setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
@@ -778,14 +779,14 @@ private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus statu
 	CommandFileOrderType orderOperator = null;
 	int warningCount = 0;
 	// Loop indefinitely because must modify loop contents outside of loop or else have concurrency issue.
-	int startingIndex = 0; // Starting index to process, needed to ensure progress occurs even if errors
+	int startingIndex = 0; // Starting index to process, needed to ensure progress occurs even if errors.
 	CommandFile foundCommandFile = null;
 	CommandFile commandFile = null;
-	CommandFile commandFile2 = null; // Used for iteration
+	CommandFile commandFile2 = null; // Used for iteration.
 	int iCommandFile = 0; // Index for command file matching Id.
 	int iFoundCommandFile = 0; // Index for command file matching Id.
 	int loopCount = 0;
-	boolean needToProcessOrder = false; // Used to indicate that 'order' needs to be processed
+	boolean needToProcessOrder = false; // Used to indicate that 'order' needs to be processed.
 	while ( true ) {
 		Message.printStatus(2, routine, "Processing tests for 'order' starting at index " +
 			startingIndex + ", max index = " + (commandFiles.size() - 1) ); 
@@ -803,8 +804,8 @@ private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus statu
 		needToProcessOrder = false;
 		for ( iCommandFile = startingIndex; iCommandFile < commandFiles.size(); iCommandFile++ ) {
 			commandFile = commandFiles.get(iCommandFile);
-			orderOperator = commandFile.getOrderOperatorType(); // If not null will be valid due to parsing
-			orderId = commandFile.getOrderId(); // Could still be null or empty if not properly specified
+			orderOperator = commandFile.getOrderOperatorType(); // If not null will be valid due to parsing.
+			orderId = commandFile.getOrderId(); // Could still be null or empty if not properly specified.
 			if ( (orderOperator != null) && (orderId != null) && !orderId.isEmpty() ) {
 				// Find a command file with matching 'Id', need to search all tests.
 				// - matched Id will cause 'foundCommandFile' and 'ifoundCommandFile' to be set for use later

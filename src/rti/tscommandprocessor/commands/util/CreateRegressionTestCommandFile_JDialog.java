@@ -903,7 +903,7 @@ private void refresh ()
 	props.add ( "UseOrder=" + UseOrder );
 	props.add ( "TestResultsTableID=" + TestResultsTableID );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __pathSearchFolder_JButton != null ) {
 		if ( (SearchFolder != null) && !SearchFolder.isEmpty() ) {
 			__pathSearchFolder_JButton.setEnabled ( true );
@@ -953,6 +953,23 @@ private void refresh ()
 		}
 		else {
 			__pathSetupCommandFile_JButton.setEnabled(false);
+		}
+    }
+    if ( __pathTestResultsFile_JButton != null ) {
+		if ( (TestResultsFile != null) && !TestResultsFile.isEmpty() ) {
+			__pathTestResultsFile_JButton.setEnabled ( true );
+			File f = new File ( TestResultsFile );
+			if ( f.isAbsolute() ) {
+				__pathTestResultsFile_JButton.setText ( __RemoveWorkingDirectory );
+				__pathTestResultsFile_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathTestResultsFile_JButton.setText ( __AddWorkingDirectory );
+            	__pathTestResultsFile_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathTestResultsFile_JButton.setEnabled(false);
 		}
     }
     if ( __pathEndCommandFile_JButton != null ) {

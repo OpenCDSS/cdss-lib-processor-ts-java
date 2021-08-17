@@ -464,7 +464,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			}
     			// Output the characters to the local file.
     			int numCharsRead;
-    			int arraySize = 8192; // 8K optimal.
+    			// 8K optimal for small files:
+    			// - TODO smalers, 2021-08-16 should a command parameter allow changing?
+    			int arraySize = 8192;
     			byte[] byteArray = new byte[arraySize];
     			int bytesRead = 0;
     			while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
@@ -523,7 +525,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		catch ( SocketTimeoutException te ) {
     			if ( iRetry <= 5 ) {
     				message = "Try " + iRetry + " - connect or read timeout reading URI \"" + URI +
-    					"\" (" + te + "), only logging message for tries <= 5.";
+    					"\" (" + te + "), only logging message for retries <= 5 (RetryMax=" + RetryMax + ").";
     				Message.printWarning ( warning_level, 
                     	MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     				Message.printWarning ( 3, routine, te );
@@ -582,9 +584,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				}
     			}
     			if ( urlConnection != null ) {
-    				urlConnection.disconnect();
     				responseCode = urlConnection.getResponseCode();
-    				// If requested, set response code as a property
+    				urlConnection.disconnect();
+    				// If requested, set response code as a property:
+    				// - this is set in the loop, should be OK
     				if ( doResponseCodeProperty ) {
     					PropList request_params = new PropList ( "" );
     					request_params.setUsingObject ( "PropertyName", ResponseCodeProperty );

@@ -30,6 +30,7 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.Util.GUI.ResponseJDialog;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -65,6 +66,8 @@ protected final String _Fail = "Fail";
 protected final String _False = "False";
 protected final String _True = "True";
 
+protected final String _TrueWithPrompt = "TrueWithPrompt";
+
 /**
 Output file that is created by this command.
 */
@@ -91,6 +94,7 @@ throws InvalidCommandParameterException
     String OutputFile = parameters.getValue ( "OutputFile" );
     String OutputFolder = parameters.getValue ( "OutputFolder" );
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
+	String RemoveOutputFolder = parameters.getValue ( "RemoveOutputFolder" );
 	String ListInResults = parameters.getValue ( "ListInResults" );
 	String warning = "";
 	String message;
@@ -126,6 +130,18 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
+    if ( (RemoveOutputFolder != null) && !RemoveOutputFolder.isEmpty() &&
+        !RemoveOutputFolder.equalsIgnoreCase(_True) &&
+        !RemoveOutputFolder.equalsIgnoreCase(_TrueWithPrompt) &&
+        !RemoveOutputFolder.equalsIgnoreCase(_False) ) {
+        message = "The RemoveOutputFolder parameter \"" + RemoveOutputFolder + "\" must be " + _False + ", " +
+        	_True + ", or " + _TrueWithPrompt + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Correct the RemoveOutputFolder parameter " + _False + " (default) or " +
+                _True + ", or " + _TrueWithPrompt + "." ) );
+    }
     if ( (ListInResults != null) && !ListInResults.isEmpty() &&
         !ListInResults.equalsIgnoreCase(_True) &&
         !ListInResults.equalsIgnoreCase(_False) ) {
@@ -136,11 +152,12 @@ throws InvalidCommandParameterException
                 message, "Correct the ListInResults parameter " + _True + " (default) or " + _False + "." ) );
     }
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+	List<String> validList = new ArrayList<>(6);
 	validList.add ( "InputFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "OutputFolder" );
 	validList.add ( "IfInputNotFound" );
+	validList.add ( "RemoveOutputFolder" );
 	validList.add ( "ListInResults" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -226,6 +243,10 @@ CommandWarningException, CommandException
 	if ( (IfInputNotFound == null) || IfInputNotFound.equals("")) {
 	    IfInputNotFound = _Warn; // Default
 	}
+	String RemoveOutputFolder = parameters.getValue ( "RemoveOutputFolder" );
+	if ( (RemoveOutputFolder == null) || RemoveOutputFolder.isEmpty() ) {
+		RemoveOutputFolder = _False; // Default
+	}
 	String ListInResults = parameters.getValue ( "ListInResults" );
 	boolean listInResults = true;
 	if ( (ListInResults != null) && ListInResults.equalsIgnoreCase(_False) ) {
@@ -261,46 +282,112 @@ CommandWarningException, CommandException
 		OutputFolder_full = f.getParent();
 	}
 	try {
-	    File in = new File(InputFile_full);
-	    if ( in.exists() && InputFile_full.toUpperCase().endsWith("ZIP") ) {
-			ZipToolkit zt = new ZipToolkit();
-			List<String> outputFileList0 = zt.unzipFileToFolder(InputFile_full,OutputFolder_full,true);
-	        // TODO SAM 2015-10-13 Evaluate this to make sure it works with single zipped file and maybe directory.
-	        // Save the output file name...
-			if ( listInResults ) {
-				List<File> outputFileList = new ArrayList<File>();
-				for ( String outputFile: outputFileList0 ) {
-					outputFileList.add(new File(outputFile));
-				}
-				setOutputFileList ( outputFileList );
+		// Remove the output folder if requested.
+		File outputFolder = new File(OutputFolder_full);
+		boolean okToUnzip = true;
+		if ( outputFolder.exists() ) {
+			boolean doRemove = false;
+			if ( RemoveOutputFolder.equalsIgnoreCase(_True) ) {
+				doRemove = true;
 			}
-	    }
-	    else if ( in.exists() && InputFile_full.toUpperCase().endsWith("GZ") ) {
-			GzipToolkit zt = new GzipToolkit();
-	        String unzippedFile = zt.unzipFileToFolder(InputFile_full,OutputFolder_full,null);
-	        if ( listInResults ) {
-		        // Save the output file name...
-		        List<File> outputFileList = new ArrayList<File>();
-		        outputFileList.add(new File(unzippedFile));
-		        setOutputFileList ( outputFileList );
-	        }
-	    }
-	    else {
-	        // Input file does not exist so generate a warning
-	        message = "Input file \"" + InputFile + "\" does not exist.";
-	        if ( IfInputNotFound.equalsIgnoreCase(_Fail) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Verify that the input file exists at the time the command is run."));
-	        }
-	        else if ( IfInputNotFound.equalsIgnoreCase(_Warn) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-	                message, "Verify that the input file exists at the time the command is run."));
-	        }
-	    }
+			else if ( RemoveOutputFolder.equalsIgnoreCase(_TrueWithPrompt) ) {
+				// Prompt for confirmation:
+				// - this will interrupt the workflow
+				// - if the UI is not defined, always fail since no way to prompt and confirm
+				if ( Message.getTopLevel() == null ) {
+					message = "No UI and requesting prompt for output folder delete.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+					status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Only request prompt if running using the user interface."));
+					okToUnzip = false;
+				}
+				else {
+					int x = new ResponseJDialog ( Message.getTopLevel(), "Delete Output Folder?",
+						"Are you sure you want to delete the output folder ("
+						+ OutputFolder_full + ") before unzipping?",
+						ResponseJDialog.YES|ResponseJDialog.NO|ResponseJDialog.CANCEL).response();
+					if ( x == ResponseJDialog.YES ) {
+						doRemove = true;
+					}
+					else if ( x == ResponseJDialog.CANCEL ) {
+						doRemove = false;
+						okToUnzip = false;
+					}
+					else {
+						doRemove = false;
+					}
+				}
+			}
+			if ( doRemove ) {
+				if ( ! IOUtil.deleteDirectory(outputFolder) ) {
+					message = "Output folder could not be deleted.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+					status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that no other program is using files in the folder."));
+					okToUnzip = false;
+				}
+			}
+		}
+		if ( okToUnzip ) {
+			File in = new File(InputFile_full);
+	    	if ( !in.exists() ) {
+	        	// Input file does not exist so generate a warning
+	        	message = "Input file \"" + InputFile + "\" does not exist.";
+	        	if ( IfInputNotFound.equalsIgnoreCase(_Fail) ) {
+	            	Message.printWarning ( warning_level,
+	            		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            		message, "Verify that the input file exists at the time the command is run."));
+	        	}
+	        	else if ( IfInputNotFound.equalsIgnoreCase(_Warn) ) {
+	            	Message.printWarning ( warning_level,
+	            		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	            		message, "Verify that the input file exists at the time the command is run."));
+	        	}
+	    	}
+	    	else if ( in.exists() && InputFile_full.toUpperCase().endsWith("ZIP") ) {
+				ZipToolkit zt = new ZipToolkit();
+				List<String> outputFileList0 = zt.unzipFileToFolder(InputFile_full,OutputFolder_full,true);
+	        	// TODO SAM 2015-10-13 Evaluate this to make sure it works with single zipped file and maybe directory.
+	        	// Save the output file name...
+				if ( listInResults ) {
+					List<File> outputFileList = new ArrayList<>();
+					for ( String outputFile: outputFileList0 ) {
+						outputFileList.add(new File(outputFile));
+					}
+					setOutputFileList ( outputFileList );
+				}
+	    	}
+	    	else if ( in.exists() && InputFile_full.toUpperCase().endsWith("GZ") ) {
+				GzipToolkit zt = new GzipToolkit();
+	        	String unzippedFile = zt.unzipFileToFolder(InputFile_full,OutputFolder_full,null);
+	        	if ( listInResults ) {
+		        	// Save the output file name...
+		        	List<File> outputFileList = new ArrayList<>();
+		        	outputFileList.add(new File(unzippedFile));
+		        	setOutputFileList ( outputFileList );
+	        	}
+	    	}
+	    	else {
+	    		message = "Do not know how to unzip with '" +
+	    			IOUtil.getFileExtension(InputFile_full) + "' file extension.";
+            	Message.printWarning ( warning_level,
+            		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            		message, "Can handle .zip and .gz extension."));
+	    	}
+		}
+		else {
+			// Something was wrong so show another warning.
+			message = "There was a problem and could not unzip the file.";
+           	Message.printWarning ( warning_level,
+           		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+           	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+           		message, "Verify that zip file is available and can be unzipped to the output location."));
+		}
 	}
     catch ( Exception e ) {
 		message = "Unexpected error unzipping file \"" + InputFile_full + "\" to \"" +
@@ -345,6 +432,7 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue("OutputFile");
 	String OutputFolder = parameters.getValue("OutputFolder");
 	String IfInputNotFound = parameters.getValue("IfInputNotFound");
+	String RemoveOutputFolder = parameters.getValue("RemoveOutputFolder");
 	String ListInResults = parameters.getValue("ListInResults");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
@@ -368,6 +456,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "IfInputNotFound=" + IfInputNotFound );
 	}
+    if ( (RemoveOutputFolder != null) && (RemoveOutputFolder.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "RemoveOutputFolder=" + RemoveOutputFolder );
+    }
     if ( (ListInResults != null) && (ListInResults.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append(",");

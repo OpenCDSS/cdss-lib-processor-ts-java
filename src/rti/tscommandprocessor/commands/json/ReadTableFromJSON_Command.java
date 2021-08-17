@@ -65,6 +65,17 @@ This class initializes, checks, and runs the ReadTableFromJSON() command.
 */
 public class ReadTableFromJSON_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Data members used for AppendArrays parameter values.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
+ * Default precision for floating point numbers.
+ */
+protected final int defaultPrecision = 6;
     
 /**
 The table that is read.
@@ -160,10 +171,11 @@ throws InvalidCommandParameterException
 	}
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(12);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "ArrayName" );
+    validList.add ( "AppendArrays" );
     validList.add ( "ExcludeNames" );
     validList.add ( "ArrayColumns" );
     validList.add ( "BooleanColumns" );
@@ -203,14 +215,26 @@ private DataTable getDiscoveryTable()
 }
 
 /**
- * Get the JSON array (list) object corresponding to the requested array name.
+ * Get a list of JSON array (list) objects corresponding to the requested array name.
+ * In some case, a single array will be found.
+ * In other cases, an array is embedded in other arrays and multiple arrays are found.
+ * The resulting array(s) can be processed into one merged table.
  * If the name is in a list of such objects, the first array (list) is returned.
- * @param data map read from a JSON string
- * @param arrayName name of the array to find.
+ * This method is called recursively to dig down into the JSON object model.
+ * @param map read from a JSON string, can be a top level map the first call or an embedded
+ * map from recursive call
+ * @param arrayName name of the array to find or empty to use the first array,
+ * such as a top-level array
+ * @param appendArrays whether to append multiple matched arrays (false will return the first instance)
+ * @param arrays list of arrays to return.  If null, a new array will be created.
+ * If non-null, the list will be modified, such as by recursive calls.
  * @return the object for the requested array (a list), or null if not found
  */
-private List<?> getJsonArrayByName ( Map<?,?> map, String arrayName ) {
-	String routine = getClass().getSimpleName() + ".getJsonArrayByName";
+private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, boolean appendArrays, List<List<?>> arrays ) {
+	String routine = getClass().getSimpleName() + ".getJsonArraysByName";
+	if ( arrays == null ) {
+		arrays = new ArrayList<>();
+	}
 	// Start by iterating through the top-level map.
 	String name;
 	Object value;
@@ -218,10 +242,15 @@ private List<?> getJsonArrayByName ( Map<?,?> map, String arrayName ) {
 		name = (String)entry.getKey();
 		Message.printStatus(2, routine, "Map entry has name \"" + name + "\".");
 		value = entry.getValue();
-		if ( name.equals(arrayName) ) {
+		// If the requested array name is empty, use the first array found.
+		if ( name.equals(arrayName) || arrayName.isEmpty() ) {
 			if ( value instanceof List ) {
-				Message.printStatus(2, routine, "Found array name \"" + arrayName + "\".");
-				return (List<?>)value;
+				arrays.add((List<?>)value);
+				Message.printStatus(2, routine, "Found array name \"" + name + "\".");
+				if ( arrayName.isEmpty() ) {
+					// Return because only want to match the top array.
+					return arrays;
+				}
 			}
 		}
 	}
@@ -230,10 +259,15 @@ private List<?> getJsonArrayByName ( Map<?,?> map, String arrayName ) {
 		value = entry.getValue();
 		if ( value instanceof Map ) {
 			Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
-			List<?> array2 = getJsonArrayByName ( (Map<?,?>)value, arrayName );
-			if ( array2 != null ) {
+			// The following will add to the "arrays" list.
+			int sizeBefore = arrays.size();
+			List<List<?>> arrays2 = getJsonArraysByName ( (Map<?,?>)value, arrayName, appendArrays, arrays );
+			if ( sizeBefore != arrays2.size() ) {
 				Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
-				return array2;
+				if ( !appendArrays ) {
+					// Only want the first match.
+					return arrays;
+				}
 			}
 		}
 		else if ( value instanceof List ) {
@@ -245,22 +279,27 @@ private List<?> getJsonArrayByName ( Map<?,?> map, String arrayName ) {
 			for ( Object o : objectList ) {
 				if ( o instanceof Map ) {
 					Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
-					List<?> array2 = getJsonArrayByName ( (Map<?,?>)o, arrayName );
-					if ( array2 != null ) {
+					int sizeBefore = arrays.size();
+					List<List<?>> arrays2 = getJsonArraysByName ( (Map<?,?>)o, arrayName, appendArrays, arrays );
+					if ( sizeBefore != arrays2.size() ) {
 						Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
-						return array2;
+						if ( !appendArrays ) {
+							// Only want the first match.
+							return arrays;
+						}
 					}
 				}
 			}
 		}
 	}
-	// If here nothing was found so return null value.
-	return null;
+	// Always return the list.
+	return arrays;
 }
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 The following classes can be requested:  DataTable
+
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c )
@@ -276,7 +315,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
  * Initialize the table columns based on JSON data.
  * @param table data table being read
- * @param objectList list of objects to process, from JSON map
+ * @param objectList list of object lists to process, from JSON map
  * @excludeNames the object names to exclude
  * @arrayColumns column names for primitive array data (otherwise arrays are ignored)
  * @booleanColumns column names for boolean data (overrides auto-determined type)
@@ -285,7 +324,7 @@ public <T> List<T> getObjectList ( Class<T> c )
  * @integerColumns column names for integer data (overrides auto-determined type)
  * @textColumns column names for text data (overrides auto-determined type)
  */
-private void initializeTableColumns ( DataTable table, List<?> objectList,
+private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
 	String[] excludeNames,
 	String [] arrayColumns, String[] booleanColumns, String [] dateTimeColumns,
 	String [] doubleColumns, String [] integerColumns, String [] textColumns ) {
@@ -295,12 +334,15 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 	// - it is not required that all objects have the same element names (although this is usually the case)
 	
 	Map<?,?> listMap = null;
-	List<String> columnNames = new ArrayList<String>();
+	List<String> columnNames = new ArrayList<>();
 	String name;
 	Object value;
 	boolean nameFound = false;
 	boolean excludeNameFound = false;
-	for ( Object o : objectList ) {
+	// Loop through the list of lists.
+	for ( List<?> listItem : objectList ) {
+	// Loop through the objects in each list.
+	for ( Object o : listItem ) {
 		if ( o instanceof Map ) {
 			// As expected each list item is a Map of individual name/value objects.
 			listMap = (Map<?,?>)o;
@@ -362,6 +404,7 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 			}
 		}
 	}
+	}
 	
 	int numColumns = columnNames.size();
 	Message.printStatus(2, routine, "Number of columns = " + numColumns );
@@ -375,6 +418,7 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
     int [] countString = new int[numColumns];
     int [] lenmaxString = new int[numColumns];
     int [] precision = new int[numColumns];
+    int [] precisionString = new int[numColumns]; // If a string but contains period, the precision based on the string
 
     // Additional granularity for array columns.
     boolean [] isArray = new boolean[numColumns];
@@ -391,6 +435,7 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
         countNull[icol] = 0;
         countString[icol] = 0;
         lenmaxString[icol] = 0;
+        precisionString[icol] = 0;
         precision[icol] = 0;
 
         isArray[icol] = false;
@@ -404,7 +449,10 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
     // Empty list as a fall through:
     // - should be created below for actual columns
     List<TableField> tableFields = new ArrayList<>();
-	for ( Object o : objectList ) {
+	// Loop through the list of lists.
+	for ( List<?> listItem : objectList ) {
+	// Loop through the objects in each list.
+	for ( Object o : listItem ) {
 		if ( o instanceof Map ) {
 			// As expected each list item is a Map of individual name/value objects.
 			listMap = (Map<?,?>)o;
@@ -415,6 +463,7 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 			int len;
 			double d;
 			float f;
+			int periodPos;
 			for (Map.Entry<?, ?> entry : listMap.entrySet() ) {
 				value = entry.getValue();
 				name = (String)entry.getKey();
@@ -523,7 +572,8 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 						d = ((Double)value).doubleValue();
 						// TODO smalers 2021-08-02 need to handle precision:
 						// - for now default to 4
-						precision[iColumn] = 4;
+						// - does "toString" return a reasonable number of digits (but could be a problem if exponential notation)
+						precision[iColumn] = this.defaultPrecision;
 						if ( d > 0.0 ) {
 							len = (int)(Math.log10(d) + 1) + 1 + precision[iColumn];
 							if ( len > lenmaxString[iColumn] ) {
@@ -537,7 +587,7 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 						f = ((Float)value).floatValue();
 						// TODO smalers 2021-08-02 need to handle precision:
 						// - for now default to 4
-						precision[iColumn] = 4;
+						precision[iColumn] = this.defaultPrecision;
 						if ( f > 0.0 ) {
 							len = (int)(Math.log10(f) + 1) + 1 + precision[iColumn];
 							if ( len > lenmaxString[iColumn] ) {
@@ -560,13 +610,25 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
 						++countString[iColumn];
 						s = (String)value;
 						len = s.length();
+						// The following also helps with floating point numbers as the total width.
 						if ( len > lenmaxString[iColumn]) {
 							lenmaxString[iColumn] = len;
+						}
+						// If the string contains a period, get the number of characters after the last period.
+						// This is used later if the type is specified by the command as a double.
+						periodPos = s.lastIndexOf('.');
+						if ( periodPos > 0 ) {
+							precisionString[iColumn] = Math.max(precisionString[iColumn], (len - periodPos - 1));
+							Message.printStatus(2, routine, "precisonString for " + name + " is " + precisionString[iColumn]);
+						}
+						else {
+							// Rely on precision from other strings.
 						}
 					}
 				}
 			}
 		}
+	}
 	}
 		
 	// Set the initial column types from the data.
@@ -706,10 +768,23 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
         	Message.printStatus ( 2, routine, "Column [" + icol +
             	"] \"" + columnName + "\" type is double as determined from specified column type." );
            	tableField.setWidth (lenmaxString[icol] );
-           	tableField.setPrecision ( precision[icol] );
-        	// Default the following
-           	//tableField.setWidth (-1);
-           	//tableField.setPrecision ( 6 );
+           	// Precision is not provided in command parameters so try to determine from data, likely was a string.
+           	if ( (precisionString[icol] > 0) && (precisionString[icol] <= 6) ) {
+           		// Original type was a string and precision was determined from decimal point position:
+           		// - but only use if <= 6 (otherwise may be a mistake)
+           		tableField.setPrecision ( precisionString[icol] );
+           	}
+           	else {
+           		// Default to value determined above.
+           		if ( precision[icol] > 0 ) {
+           			tableField.setPrecision ( Math.min(this.defaultPrecision,precision[icol]) );
+           		}
+           		else {
+           			tableField.setPrecision ( this.defaultPrecision );
+           		}
+           	}
+           	// Set the number of digits to the original string length.
+           	tableField.setWidth (lenmaxString[icol] );
     	}
     	else if ( isInteger ) {
     		tableField.setDataType(TableField.DATA_TYPE_INT);
@@ -761,7 +836,21 @@ private void initializeTableColumns ( DataTable table, List<?> objectList,
             tableField.setDataType(TableField.DATA_TYPE_DOUBLE);
             tableFieldType[icol] = TableField.DATA_TYPE_DOUBLE;
             tableField.setWidth (lenmaxString[icol] );
-            tableField.setPrecision ( precision[icol] );
+           	// Precision is not provided in command parameters so try to determine from data, likely was a string.
+           	if ( (precisionString[icol] > 0) && (precisionString[icol] <= 6) ) {
+           		// Original type was a string and precision was determined from decimal point position:
+           		// - but only use if <= 6 (otherwise may be a mistake)
+           		tableField.setPrecision ( precisionString[icol] );
+           	}
+           	else {
+           		// Default to value determined above.
+           		if ( precision[icol] > 0 ) {
+           			tableField.setPrecision ( Math.min(this.defaultPrecision,precision[icol]) );
+           		}
+           		else {
+           			tableField.setPrecision ( this.defaultPrecision );
+           		}
+           	}
             Message.printStatus ( 2, routine, "Column [" + icol +
                 "] \"" + columnName + "\" type is double as determined from examining data (" + countInt[icol] +
                 " integers, " + countDouble[icol] + " doubles, " + countString[icol] + " strings, " +
@@ -1135,7 +1224,8 @@ throws FileNotFoundException, IOException
 Read a JSON file into a table object.
 This code is similar to reading a CSV file, with automatic determination of column types.
 */
-private int readJSONUsingJackson ( String inputFile, DataTable table, String arrayName, String [] excludeNames,
+private int readJSONUsingJackson ( String inputFile, DataTable table, String arrayName, boolean appendArrays,
+	String [] excludeNames,
 	String [] arrayColumns, String [] booleanColumns, String [] dateTimeColumns,
 	String [] doubleColumns, String [] integerColumns, String [] textColumns,
 	int top,
@@ -1151,32 +1241,59 @@ throws FileNotFoundException, IOException
 		// First read the input file into a string.
 		StringBuilder responseJson = IOUtil.fileToStringBuilder(inputFile);
 		
-		// Parse the string into object hierarchy.
+		// Parse the string into object hierarchy:
+		// - if the JSON string starts with '{', read into a map
+		// - if the JSON string starts with '[', read into an array and add to a map for further processing
 		ObjectMapper mapper = new ObjectMapper();
-		Map<?,?> map = mapper.readValue(responseJson.toString(), Map.class);
+		Map<?,?> map = null;
+		if ( responseJson.charAt(0) == '{' ) {
+			map = mapper.readValue(responseJson.toString(), Map.class);
+		}
+		else if ( responseJson.charAt(0) == '[' ) {
+			// Create a top-level map with black name:
+			// - use a LinkedHashMap to preserve element order
+			//map = new LinkedHashMap<>();
+			Message.printStatus(2, routine,
+				"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+			responseJson.insert(0, "{ \"toparray\" : ");
+			responseJson.append("}");
+			map = mapper.readValue(responseJson.toString(), Map.class);
+		}
+		else {
+			String message = "JSON does not start with { or [ - cannot parse.";
+        	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            	message, "Verify that the JSON file content is valid JSON starting with { or [ ." ) );
+        	Message.printWarning(3, routine, message);
+        	// Cannot read any more data.
+        	++warningCount;
+        	return warningCount;
+		}
 		Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
 
-		// Find the array of interest, which is actually a Java List.
-		List<?> array = getJsonArrayByName (map, arrayName );
-		if ( array == null ) {
+		// Find the array of interest, which is actually a Java List:
+		// - create the list up front
+		List<List<?>> arrays = new ArrayList<>();
+		getJsonArraysByName (map, arrayName, appendArrays, arrays );
+		if ( arrays.size() == 0 ) {
 			String message = "Unable to locate array named \"" + arrayName + "\" in the JSON.";
         	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
             	message, "Verify that the JSON file format includes the named array object." ) );
         	Message.printWarning(3, routine, message);
         	// Cannot read any more data.
+        	++warningCount;
         	return warningCount;
 		}
 		
 		// Process the objects in the list.
 		
-		initializeTableColumns ( table, array,
+		initializeTableColumns ( table, arrays,
 			excludeNames,
 			arrayColumns, booleanColumns, dateTimeColumns, doubleColumns, integerColumns, textColumns );
 		
 		// Read the data.
 		
 		List<String> problems = new ArrayList<>();
-		readTableData ( table, array, arrayColumns, excludeNames, top, problems );
+		readTableData ( table, arrays, arrayColumns, excludeNames, top, problems );
 		
 		// Log the problems.
 		int maxProblems = 100;
@@ -1188,11 +1305,13 @@ throws FileNotFoundException, IOException
 				++warningCount;
         		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
             		message, "Check the JSON file format." ) );
+        		Message.printWarning(3, routine, message);
 				break;
 			}
 			String message = "Error reading data [" + (iProblem + 1) + "]: " + problem;
         	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
             	message, "Check the JSON file format." ) );
+        	Message.printWarning(3, routine, message);
         	++warningCount;
 		}
 
@@ -1320,13 +1439,13 @@ private boolean readJSON_ExcludeName(String name, String [] excludeNames) {
 /**
  * Read the data into the table.
  * @param table data table to read
- * @param objectList list of objects to process 
+ * @param objectList list of objects lists to process 
  * @param arrayColumns array of columns that are arrays
  * @param excludeNames array of data array object names to exclude
  * @param top if non-zero indicates the number of first records to read
  * @param problems list of strings indicating parse problems
  */
-private void readTableData ( DataTable table, List<?> objectList, String [] arrayColumns,
+private void readTableData ( DataTable table, List<List<?>> objectList, String [] arrayColumns,
 	String[] excludeNames, int top, List<String> problems ) {
 	String routine = getClass().getSimpleName() + ".readTableData";
 	Map<?,?> listMap;
@@ -1338,9 +1457,12 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 	int iColumn = 0;
 	int columnType = 0;
 	boolean excludeNameFound = false;
-	for ( Object o : objectList ) {
+	// Loop through the list of lists.
+	for ( List<?> listItem : objectList ) {
+	// Loop through the objects in each list.
+	for ( Object o : listItem ) {
 		++iObject;
-		// Check 'top'
+		// Check 'top'.
 		if ( (top != 0) && (iObject >= top) ) {
 			// Done reading.
 			break;
@@ -1452,7 +1574,7 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 									value = Boolean.parseBoolean(s);
 								}
 								catch ( Exception e ) {
-									problems.add("Invalid boolean for object (" + (iObject + 1) + "): " + s );
+									problems.add("Invalid boolean for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
 									value = null;
 								}
 							}
@@ -1462,7 +1584,7 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 									value = DateTime.parse(s);
 								}
 								catch ( Exception e ) {
-									problems.add("Invalid date/time for object (" + (iObject + 1) + ") (" + e + "): " + s );
+									problems.add("Invalid date/time for \"" + name + "\" object (" + (iObject + 1) + ") (" + e + "): " + s );
 								    Message.printWarning(3,routine,e);
 									value = null;
 								}
@@ -1473,7 +1595,7 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 									value = Double.parseDouble(s);
 								}
 								catch ( Exception e ) {
-									problems.add("Invalid double for object (" + (iObject + 1) + "): " + s );
+									problems.add("Invalid double for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
 									value = null;
 								}
 							}
@@ -1483,7 +1605,7 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 									value = Integer.parseInt(s);
 								}
 								catch ( Exception e ) {
-									problems.add("Invalid integer for object (" + (iObject + 1) + "): " + s );
+									problems.add("Invalid integer for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
 									value = null;
 								}
 							}
@@ -1499,7 +1621,7 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 							}
 							else {
 								// Null value is OK.
-								problems.add("Unknown column type for object (" + (iObject + 1) + "): " + columnType);
+								problems.add("Unknown column type for \"" + name + "\" object (" + (iObject + 1) + "): " + columnType);
 							}
 						}
 					}
@@ -1509,10 +1631,11 @@ private void readTableData ( DataTable table, List<?> objectList, String [] arra
 					rec.setFieldValue(iColumn, value);
 				}
 				catch ( Exception e ) {
-					problems.add("Error setting table record value for object [" + (iObject + 1) + "] name: " + name );
+					problems.add("Error setting table record value for \"" + name + "\" object [" + (iObject + 1) + "]." );
 				}
 			}
 		}
+	}
 	}
 }
 
@@ -1580,13 +1703,22 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
-		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-	}
-	String InputFile = parameters.getValue ( "InputFile" );
+	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
 	String ArrayName = parameters.getValue ( "ArrayName" );
+	ArrayName = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayName);
+	if ( ArrayName == null ) {
+		// Set to empty to avoid null pointer exceptions.
+		ArrayName = "";
+	}
+	boolean appendArrays = false;
+	String AppendArrays = parameters.getValue ( "AppendArrays" );
+	if ( (AppendArrays != null) && AppendArrays.equalsIgnoreCase(this._True) ) {
+		appendArrays = true;
+	}
 
 	String ExcludeNames = parameters.getValue ( "ExcludeNames" );
+	ExcludeNames = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeNames);
 	String [] excludeNames = null;
     if ( (ExcludeNames != null) && !ExcludeNames.isEmpty() ) {
     	excludeNames = ExcludeNames.split(",");
@@ -1599,6 +1731,7 @@ CommandWarningException, CommandException
     	excludeNames = new String[0];
     }
 	String ArrayColumns = parameters.getValue ( "ArrayColumns" );
+	ArrayColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayColumns);
 	String [] arrayColumns = null;
     if ( (ArrayColumns != null) && !ArrayColumns.isEmpty() ) {
         arrayColumns = ArrayColumns.split(",");
@@ -1610,6 +1743,7 @@ CommandWarningException, CommandException
     	arrayColumns = new String[0];
     }
 	String BooleanColumns = parameters.getValue ( "BooleanColumns" );
+	BooleanColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, BooleanColumns);
 	String [] booleanColumns = null;
     if ( (BooleanColumns != null) && !BooleanColumns.isEmpty() ) {
         booleanColumns = BooleanColumns.split(",");
@@ -1621,6 +1755,7 @@ CommandWarningException, CommandException
     	booleanColumns = new String[0];
     }
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
+	DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
 	String [] dateTimeColumns = null;
     if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
         dateTimeColumns = DateTimeColumns.split(",");
@@ -1632,6 +1767,7 @@ CommandWarningException, CommandException
     	dateTimeColumns = new String[0];
     }
 	String DoubleColumns = parameters.getValue ( "DoubleColumns" );
+	DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
 	String [] doubleColumns = null;
     if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
     	doubleColumns = DoubleColumns.split(",");
@@ -1643,6 +1779,7 @@ CommandWarningException, CommandException
     	doubleColumns = new String[0];
     }
 	String IntegerColumns = parameters.getValue ( "IntegerColumns" );
+	IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
 	String [] integerColumns = null;
     if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
     	integerColumns = IntegerColumns.split(",");
@@ -1654,6 +1791,7 @@ CommandWarningException, CommandException
     	integerColumns = new String[0];
     }
 	String TextColumns = parameters.getValue ( "TextColumns" );
+	TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
 	String [] textColumns = null;
     if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
     	textColumns = TextColumns.split(",");
@@ -1665,6 +1803,7 @@ CommandWarningException, CommandException
     	textColumns = new String[0];
     }
 	String Top = parameters.getValue ( "Top" );
+	Top = TSCommandProcessorUtil.expandParameterValue(processor, this, Top);
 	int top = 0;
 	if ( (Top != null) && !Top.isEmpty() ) {
 		top = Integer.parseInt(Top);
@@ -1712,7 +1851,7 @@ CommandWarningException, CommandException
     			table = new DataTable();
 	   			table.setTableID(TableID);
     			warning_count = readJSONUsingJackson ( InputFile_full, table,
-    				ArrayName, excludeNames,
+    				ArrayName, appendArrays, excludeNames,
     				arrayColumns, booleanColumns, dateTimeColumns, doubleColumns, integerColumns, textColumns,
     				top, status, warning_count);
     		}
@@ -1784,6 +1923,7 @@ public String toString ( PropList props )
     String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
 	String ArrayName = props.getValue( "ArrayName" );
+	String AppendArrays = props.getValue( "AppendArrays" );
 	String ExcludeNames = props.getValue("ExcludeNames");
 	String ArrayColumns = props.getValue("ArrayColumns");
 	String BooleanColumns = props.getValue("BooleanColumns");
@@ -1810,6 +1950,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "ArrayName=\"" + ArrayName + "\"" );
+	}
+	if ( (AppendArrays != null) && (AppendArrays.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "AppendArrays=" + AppendArrays );
 	}
 	if ( (ExcludeNames != null) && (ExcludeNames.length() > 0) ) {
 		if ( b.length() > 0 ) {

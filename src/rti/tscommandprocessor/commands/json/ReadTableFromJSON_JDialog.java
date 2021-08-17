@@ -50,11 +50,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -77,6 +80,7 @@ private JTextArea __command_JTextArea=null;
 private JTextField __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __ArrayName_JTextField = null;
+private SimpleJComboBox	__AppendArrays_JComboBox =null;
 private JTextField __ExcludeNames_JTextField = null;
 private JTextField __ArrayColumns_JTextField = null;
 private JTextField __BooleanColumns_JTextField = null;
@@ -171,6 +175,10 @@ public void actionPerformed(ActionEvent event)
 		}
 		refresh ();
 	}
+	else {
+		// Choices...
+		refresh();
+	}
 }
 
 /**
@@ -183,6 +191,7 @@ private void checkInput ()
     String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String ArrayName = __ArrayName_JTextField.getText().trim();
+	String AppendArrays = __AppendArrays_JComboBox.getSelected();
 	String ExcludeNames  = __ExcludeNames_JTextField.getText().trim();
 	String ArrayColumns  = __ArrayColumns_JTextField.getText().trim();
 	String BooleanColumns  = __BooleanColumns_JTextField.getText().trim();
@@ -201,6 +210,9 @@ private void checkInput ()
 	}
     if ( ArrayName.length() > 0 ) {
         props.set ( "ArrayName", ArrayName );
+    }
+    if ( AppendArrays.length() > 0 ) {
+        props.set ( "AppendArrays", AppendArrays );
     }
     if ( ExcludeNames.length() > 0 ) {
         props.set ( "ExcludeNames", ExcludeNames );
@@ -245,6 +257,7 @@ private void commitEdits ()
 {	String TableID = __TableID_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
 	String ArrayName = __ArrayName_JTextField.getText().trim();
+	String AppendArrays = __AppendArrays_JComboBox.getSelected();
     String ExcludeNames  = __ExcludeNames_JTextField.getText().trim();
 	String ArrayColumns  = __ArrayColumns_JTextField.getText().trim();
 	String BooleanColumns  = __BooleanColumns_JTextField.getText().trim();
@@ -256,6 +269,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "ArrayName", ArrayName );
+	__command.setCommandParameter ( "AppendArrays", AppendArrays );
 	__command.setCommandParameter ( "ExcludeNames", ExcludeNames );
 	__command.setCommandParameter ( "ArrayColumns", ArrayColumns );
 	__command.setCommandParameter ( "BooleanColumns", BooleanColumns );
@@ -292,7 +306,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-		"This command reads a table from a JavaScript Object Notation (JSON) file by processing an array of objects."),
+		"This command reads a table from a JavaScript Object Notation (JSON) file by processing one or more array(s) of objects."),
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
 		"See the following JSON reference:  http://www.json.org/"),
@@ -313,6 +327,9 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The object list must be contained in an array and each object must contain simple name/value pairs."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "If the array data are embedded in an outside array, specify AppendArrays=True to join all matching named arrays."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Each name/value within a JSON object will be converted to a table column."),
@@ -376,8 +393,24 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(main_JPanel, __ArrayName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - JSON array name containing objects to read."),
+        new JLabel ("Optional - JSON array name containing objects to read (default = first array)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append arrays?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__AppendArrays_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._False );
+	notFoundChoices.add ( __command._True );
+	__AppendArrays_JComboBox.setData(notFoundChoices);
+	__AppendArrays_JComboBox.select ( 0 );
+	__AppendArrays_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __AppendArrays_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - should all matched arrays be appended? (default=" + __command._False + ")"), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Exclude names:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -542,9 +575,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String TableID = "";
+{	String routine = getClass().getSimpleName() + ".refresh";
+	String TableID = "";
     String InputFile = "";
     String ArrayName = "";
+    String AppendArrays = "";
     String ExcludeNames = "";
 	String ArrayColumns = "";
 	String BooleanColumns = "";
@@ -559,6 +594,7 @@ private void refresh ()
         TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
 		ArrayName = props.getValue ( "ArrayName" );
+		AppendArrays = props.getValue ( "AppendArrays" );
 		ExcludeNames = props.getValue ( "ExcludeNames" );
 		ArrayColumns = props.getValue ( "ArrayColumns" );
 		BooleanColumns = props.getValue ( "BooleanColumns" );
@@ -575,6 +611,21 @@ private void refresh ()
 		}
 		if ( ArrayName != null ) {
 			__ArrayName_JTextField.setText ( ArrayName );
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__AppendArrays_JComboBox, AppendArrays,JGUIUtil.NONE, null, null ) ) {
+			__AppendArrays_JComboBox.select ( AppendArrays );
+		}
+		else {
+            if ( (AppendArrays == null) ||	AppendArrays.equals("") ) {
+				// New command...select the default...
+				__AppendArrays_JComboBox.select ( 0 );
+			}
+			else {	// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"AppendArrays parameter \"" + AppendArrays +
+				"\".  Select a\n value or Cancel." );
+			}
 		}
         if ( ExcludeNames != null ) {
             __ExcludeNames_JTextField.setText ( ExcludeNames );
@@ -605,6 +656,7 @@ private void refresh ()
     TableID = __TableID_JTextField.getText().trim();
 	InputFile = __InputFile_JTextField.getText().trim();
 	ArrayName = __ArrayName_JTextField.getText().trim();
+	AppendArrays = __AppendArrays_JComboBox.getSelected();
 	ExcludeNames = __ExcludeNames_JTextField.getText().trim();
 	ArrayColumns = __ArrayColumns_JTextField.getText().trim();
 	BooleanColumns = __BooleanColumns_JTextField.getText().trim();
@@ -617,6 +669,7 @@ private void refresh ()
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "ArrayName=" + ArrayName );
+	props.add ( "AppendArrays=" + AppendArrays );
 	props.add ( "ExcludeNames=" + ExcludeNames );
 	props.add ( "ArrayColumns=" + ArrayColumns );
 	props.add ( "BooleanColumns=" + BooleanColumns );

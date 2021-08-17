@@ -216,7 +216,7 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<>(14);
+    List<String> validList = new ArrayList<>(15);
     validList.add ( "InputFile" );
     validList.add ( "IfNotFound" );
     validList.add ( "Statistic" );
@@ -229,8 +229,9 @@ throws InvalidCommandParameterException
     validList.add ( "CheckValue2" );
     validList.add ( "IfCriteriaMet" );
     validList.add ( "ProblemType" );
-    validList.add ( "PropertyName" );
-    validList.add ( "PropertyValue" );
+    validList.add ( "CheckResultPropertyName" );
+    validList.add ( "CriteriaMetPropertyValue" );
+    validList.add ( "CriteriaNotMetPropertyValue" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -252,8 +253,6 @@ Check the time series statistic.
 @param checkValue2 the second value of the check criteria (if needed)
 @param ifCriteriaMet action if the criteria is matched (for messaging)
 @param problemType the string to use for problem messages, when criteria is met
-@param propertyName the property name to assign, when the criteria is met
-@param propertyValue the property value to assign to the time series, when criteria is met
 @param problems a list of problems encountered during processing, to add to command status in calling code
 @return true if the check matches the criteria, false if not (or could not be evaluated).
 For example, true will be returned if the statistic
@@ -261,7 +260,7 @@ is 100 and the check criteria is for values > 90.
 */
 public boolean checkStatistic ( Object statisticValue,
     CheckType checkCriteria, Integer checkValue1, Integer checkValue2,
-    String ifCriteriaMet, String problemType, String propertyName, String propertyValue,
+    String ifCriteriaMet, String problemType,
     List<String> problems )
 {
     if ( statisticValue == null ) {
@@ -429,8 +428,9 @@ CommandWarningException, CommandException
     if ( (ProblemType == null) || ProblemType.equals("") ) {
         ProblemType = Statistic + "-" + CheckCriteria; // Default
     }
-    String PropertyName = parameters.getValue ( "PropertyName" );
-    String PropertyValue = parameters.getValue ( "PropertyValue" );
+    String CheckResultPropertyName = parameters.getValue ( "CheckResultPropertyName" );
+    String CriteriaMetPropertyValue = parameters.getValue ( "CriteriaMetPropertyValue" );
+    String CriteriaNotMetPropertyValue = parameters.getValue ( "CriteriaNotMetPropertyValue" );
 
     PropList request_params = new PropList ( "" );
     CommandProcessorRequestResultsBean bean = null;
@@ -560,7 +560,7 @@ CommandWarningException, CommandException
                 // value and therefore is much simpler... so include the code in this class for now
                 boolean ifCriteriaMet = checkStatistic ( statisticInt, checkCriteria,
                     CheckValue1_Integer, CheckValue2_Integer,
-                    IfCriteriaMet, ProblemType, PropertyName, PropertyValue, problems );
+                    IfCriteriaMet, ProblemType, problems );
                 if ( ifCriteriaMet ) {
                     // Generate a warning
                     CommandStatusType commandStatusType = CommandStatusType.WARNING;
@@ -575,7 +575,7 @@ CommandWarningException, CommandException
                     if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
                         b.append ( ", " + CheckValue2 );
                     }
-                    b.append ( " for file " + InputFile );
+                    b.append ( " for file " + InputFile_full );
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,b.toString() );
                     if ( !IfCriteriaMet.equalsIgnoreCase(_Ignore) ) {
@@ -584,16 +584,39 @@ CommandWarningException, CommandException
                     }
 
                     // Set the requested processor property.
-                    if ( (PropertyName != null) && !PropertyName.isEmpty() &&
-                        (PropertyValue != null) && !PropertyValue.isEmpty() ) {
+                    if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
+                    	// Allow null and empty value, but following commands will probably have issues.
        	   	            PropList requestParams = new PropList ( "" );
-       	   	            requestParams.setUsingObject ( "PropertyName", PropertyName );
-       	   	            requestParams.setUsingObject ( "PropertyValue", PropertyValue );
+       	   	            requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
+       	   	            requestParams.setUsingObject ( "PropertyValue", CriteriaMetPropertyValue );
        	   	            try {
            	   	            processor.processRequest( "SetProperty", requestParams);
        	   	            }
        	   	            catch ( Exception e ) {
-           	   	            message = "Error requesting SetProperty(" + PropertyName + "=\"" + PropertyValue + "\") from processor.";
+           	   	            message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
+           	   	            	+ CriteriaMetPropertyValue + "\") from processor.";
+           	   	            Message.printWarning(log_level,
+               	   	            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               	   	            routine, message );
+           	   	            status.addToLog ( CommandPhaseType.RUN,
+               	   	            new CommandLogRecord(CommandStatusType.FAILURE,
+                   		               message, "Report the problem to software support." ) );
+      	   	            }
+                    }
+                }
+                else {
+                	// Set the property if provided.
+                    if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
+                    	// Allow null and empty value, but following commands will probably have issues.
+       	   	            PropList requestParams = new PropList ( "" );
+       	   	            requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
+       	   	            requestParams.setUsingObject ( "PropertyValue", CriteriaNotMetPropertyValue );
+       	   	            try {
+           	   	            processor.processRequest( "SetProperty", requestParams);
+       	   	            }
+       	   	            catch ( Exception e ) {
+           	   	            message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
+           	   	            	+ CriteriaNotMetPropertyValue + "\") from processor.";
            	   	            Message.printWarning(log_level,
                	   	            MessageUtil.formatMessageTag( command_tag, ++warning_count),
                	   	            routine, message );
@@ -658,15 +681,16 @@ public String toString ( PropList parameters )
     String Statistic = parameters.getValue( "Statistic" );
     String SearchPattern = parameters.getValue( "SearchPattern" );
     String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableFilenameColumn" );
+    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     String CheckCriteria = parameters.getValue( "CheckCriteria" );
     String CheckValue1 = parameters.getValue( "CheckValue1" );
     String CheckValue2 = parameters.getValue( "CheckValue2" );
     String IfCriteriaMet = parameters.getValue( "IfCriteriaMet" );
     String ProblemType = parameters.getValue( "ProblemType" );
-    String PropertyName = parameters.getValue( "PropertyName" );
-    String PropertyValue = parameters.getValue( "PropertyValue" );
+    String CheckResultPropertyName = parameters.getValue( "CheckResultPropertyName" );
+    String CriteriaMetPropertyValue = parameters.getValue( "CriteriaMetPropertyValue" );
+    String CriteriaNotMetPropertyValue = parameters.getValue( "CriteriaNotMetPropertyValue" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -700,11 +724,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "TableID=\"" + TableID + "\"" );
     }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
+    if ( (TableFilenameColumn != null) && (TableFilenameColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
+        b.append ( "TableFilenameColumn=\"" + TableFilenameColumn + "\"" );
     }
     if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -742,17 +766,23 @@ public String toString ( PropList parameters )
         }
         b.append ( "ProblemType=\"" + ProblemType + "\"" );
     }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
+    if ( (CheckResultPropertyName != null) && (CheckResultPropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
+        b.append ( "CheckResultPropertyName=\"" + CheckResultPropertyName + "\"" );
     }
-    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
+    if ( (CriteriaMetPropertyValue != null) && (CriteriaMetPropertyValue.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+        b.append ( "CriteriaMetPropertyValue=\"" + CriteriaMetPropertyValue + "\"" );
+    }
+    if ( (CriteriaNotMetPropertyValue != null) && (CriteriaNotMetPropertyValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CriteriaNotMetPropertyValue=\"" + CriteriaNotMetPropertyValue + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

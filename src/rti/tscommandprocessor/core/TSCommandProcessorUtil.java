@@ -395,21 +395,24 @@ The characters \" will be replaced by a literal quote (").  Properties that cann
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
 @param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
-@return the expanded string
+@return the expanded string or null if the input string was null
 */
 public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
 {   String routine = "TSCommandProcessorUtil.expandParameterValue";
-    if ( (parameterValue == null) || (parameterValue.length() == 0) ) {
-        // Just return what was provided.
+    if ( (parameterValue == null) || (parameterValue.length() == 0) ||
+    	(parameterValue.indexOf("${") < 0) ) {
+    	// Nothing to expand:
+    	// - null and empty string can't expand
+    	// - if no ${Property} notation can't expand
+        // - just return the input
         return parameterValue;
     }
     // First replace escaped characters.
-    // TODO SAM 2009-04-03 Evaluate this
     // Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
     parameterValue = parameterValue.replace("\\\"", "\"" );
     parameterValue = parameterValue.replace("\\'", "'" );
-    // Else see if the parameter value can be expanded to replace ${} symbolic references with other values
-    // Search the parameter string for $ until all processor parameters have been resolved
+    // Else see if the parameter value can be expanded to replace ${} symbolic references with other values.
+    // Search the parameter string for $ until all processor parameters have been resolved.
     int searchPos = 0; // Position in the "parameter_val" string to search for ${} references
     int foundPos; // Position when leading ${ is found
     int foundPosEnd; // Position when ending } is found
@@ -423,36 +426,36 @@ public static String expandParameterValue( CommandProcessor processor, Command c
             // No more $ property names, so return what we have.
             return parameterValue;
         }
-        // Else found the delimiter so continue with the replacement
+        // Else found the delimiter so continue with the replacement.
         //Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
-        // Get the name of the property
+        // Get the name of the property.
         propname = parameterValue.substring((foundPos+2),foundPosEnd);
-        // Try to get the property from the processor
+        // Try to get the property from the processor.
         // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
         Object propval = null;
         String propvalString = "";
         try {
             propval = processor.getPropContents ( propname );
-            // The following should work for all representations as long as the toString() does not truncate
+            // The following should work for all representations as long as the toString() does not truncate.
             propvalString = "" + propval;
         }
         catch ( Exception e ) {
-            // Keep the original literal value to alert user that property could not be expanded
+            // Keep the original literal value to alert user that property could not be expanded.
             propvalString = delimStart + propname + delimEnd;
         }
         if ( propval == null ) {
-            // Keep the original literal value to alert user that property could not be expanded
+            // Keep the original literal value to alert user that property could not be expanded.
             propvalString = delimStart + propname + delimEnd;
         }
-        // If here have a property
+        // If here have a property.
         StringBuffer b = new StringBuffer();
-        // Append the start of the string
+        // Append the start of the string.
         if ( foundPos > 0 ) {
             b.append ( parameterValue.substring(0,foundPos) );
         }
         // Now append the value of the property.
         b.append ( propvalString );
-        // Now append the end of the original string if anything is at the end...
+        // Now append the end of the original string if anything is at the end.
         if ( parameterValue.length() > (foundPosEnd + 1) ) {
             b.append ( parameterValue.substring(foundPosEnd + 1) );
         }

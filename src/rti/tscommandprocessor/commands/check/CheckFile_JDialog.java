@@ -87,8 +87,9 @@ private JTextField __CheckValue1_JTextField = null;
 private JTextField __CheckValue2_JTextField = null;
 private SimpleJComboBox __IfCriteriaMet_JComboBox = null;
 private JTextField __ProblemType_JTextField = null; // Field for problem type
-private JTextField __PropertyName_JTextField = null;
-private JTextField __PropertyValue_JTextField = null;
+private JTextField __CheckResultPropertyName_JTextField = null;
+private JTextField __CriteriaMetPropertyValue_JTextField = null;
+private JTextField __CriteriaNotMetPropertyValue_JTextField = null;
 //private SimpleJComboBox __Action_JComboBox = null;
 private String __working_dir = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
@@ -179,8 +180,9 @@ private void checkInput ()
 	String CheckValue2 = __CheckValue2_JTextField.getText().trim();
 	String IfCriteriaMet = __IfCriteriaMet_JComboBox.getSelected();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
-    String PropertyName = __PropertyName_JTextField.getText().trim();
-    String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String CheckResultPropertyName = __CheckResultPropertyName_JTextField.getText().trim();
+    String CriteriaMetPropertyValue = __CriteriaMetPropertyValue_JTextField.getText().trim();
+    String CriteriaNotMetPropertyValue = __CriteriaNotMetPropertyValue_JTextField.getText().trim();
     //String Action = __Action_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -220,11 +222,14 @@ private void checkInput ()
 	if ( ProblemType.length() > 0 ) {
 		parameters.set ( "ProblemType", ProblemType );
 	}
-    if ( PropertyName.length() > 0 ) {
-        parameters.set ( "PropertyName", PropertyName );
+    if ( CheckResultPropertyName.length() > 0 ) {
+        parameters.set ( "CheckResultPropertyName", CheckResultPropertyName );
     }
-    if ( PropertyValue.length() > 0 ) {
-        parameters.set ( "PropertyValue", PropertyValue );
+    if ( CriteriaMetPropertyValue.length() > 0 ) {
+        parameters.set ( "CriteriaMetPropertyValue", CriteriaMetPropertyValue );
+    }
+    if ( CriteriaNotMetPropertyValue.length() > 0 ) {
+        parameters.set ( "CriteriaNotMetPropertyValue", CriteriaNotMetPropertyValue );
     }
     //if ( Action.length() > 0 ) {
     //    parameters.set ( "Action", Action );
@@ -256,8 +261,9 @@ private void commitEdits () {
 	String CheckValue2 = __CheckValue2_JTextField.getText().trim();
 	String IfCriteriaMet = __IfCriteriaMet_JComboBox.getSelected();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
-    String PropertyName = __PropertyName_JTextField.getText().trim();
-	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String CheckResultPropertyName = __CheckResultPropertyName_JTextField.getText().trim();
+	String CriteriaMetPropertyValue = __CriteriaMetPropertyValue_JTextField.getText().trim();
+	String CriteriaNotMetPropertyValue = __CriteriaNotMetPropertyValue_JTextField.getText().trim();
     //String Action = __Action_JComboBox.getSelected();
     __command.setCommandParameter ( "InputFile", InputFile );
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
@@ -271,8 +277,9 @@ private void commitEdits () {
 	__command.setCommandParameter ( "CheckValue2", CheckValue2 );
 	__command.setCommandParameter ( "IfCriteriaMet", IfCriteriaMet );
 	__command.setCommandParameter ( "ProblemType", ProblemType );
-    __command.setCommandParameter ( "PropertyName", PropertyName );
-	__command.setCommandParameter ( "PropertyValue", PropertyValue );
+    __command.setCommandParameter ( "CheckResultPropertyName", CheckResultPropertyName );
+	__command.setCommandParameter ( "CriteriaMetPropertyValue", CriteriaMetPropertyValue );
+	__command.setCommandParameter ( "CriteriaNotMetPropertyValue", CriteriaNotMetPropertyValue );
 	//__command.setCommandParameter ( "Action", Action );
 }
 
@@ -388,50 +395,6 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "Optional - use with PatternCount statistic."), 
         3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for table output
-    int yOut = -1;
-    JPanel out_JPanel = new JPanel();
-    out_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Output", out_JPanel );
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel (
-        "The statistic that is calculated can be saved in a table containing columns for the file name and statistic value."),
-        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID for output:" ), 
-        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
-    __TableID_JComboBox.setData ( tableIDChoices );
-    __TableID_JComboBox.addItemListener ( this );
-    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(out_JPanel, __TableID_JComboBox,
-        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(out_JPanel, new JLabel(
-        "Optional - table to save the statistic."), 
-        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table file name column:" ), 
-        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableFilenameColumn_JTextField = new JTextField ( 10 );
-    __TableFilenameColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(out_JPanel, __TableFilenameColumn_JTextField,
-        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(out_JPanel, new JLabel( "Required if using table - column name for file name."), 
-        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ), 
-        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStatisticColumn_JTextField = new JTextField ( 10 );
-    __TableStatisticColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(out_JPanel, __TableStatisticColumn_JTextField,
-        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(out_JPanel, new JLabel(
-        "Required if using table - column name for statistic."), 
-        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     // Panel for check and actions
     int yCheck = -1;
     JPanel check_JPanel = new JPanel();
@@ -506,21 +469,31 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "Optional - should warning/failure be generated (default=" + __command._Warn + ")."),
         3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Property name:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check result property name:" ), 
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyName_JTextField = new JTextField ( 20 );
-    __PropertyName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(check_JPanel, __PropertyName_JTextField,
+    __CheckResultPropertyName_JTextField = new JTextField ( 20 );
+    __CheckResultPropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __CheckResultPropertyName_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - name of property to set when criteria are met."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Property value:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria met property value:" ), 
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyValue_JTextField = new JTextField ( 20 );
-    __PropertyValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(check_JPanel, __PropertyValue_JTextField,
+    __CriteriaMetPropertyValue_JTextField = new JTextField ( 20 );
+    __CriteriaMetPropertyValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __CriteriaMetPropertyValue_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
+        "Optional - value of property to set when criteria are met."), 
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria not met property value:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CriteriaNotMetPropertyValue_JTextField = new JTextField ( 20 );
+    __CriteriaNotMetPropertyValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __CriteriaNotMetPropertyValue_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - value of property to set when criteria are met."), 
@@ -543,6 +516,51 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         */
+
+    // Panel for table output
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", out_JPanel );
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "The statistic that is calculated can be saved in a table containing columns for the file name and statistic value."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID for output:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox.setData ( tableIDChoices );
+    __TableID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(out_JPanel, __TableID_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+        "Optional - table to save the statistic."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table file name column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableFilenameColumn_JTextField = new JTextField ( 10 );
+    __TableFilenameColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __TableFilenameColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel( "Required if using table - column name for file name."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableStatisticColumn_JTextField = new JTextField ( 10 );
+    __TableStatisticColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __TableStatisticColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+        "Required if using table - column name for statistic."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -635,8 +653,9 @@ private void refresh ()
 	String CheckValue2 = "";
 	String IfCriteriaMet = "";
 	String ProblemType = "";
-    String PropertyName = "";
-    String PropertyValue = "";
+    String CheckResultPropertyName = "";
+    String CriteriaMetPropertyValue = "";
+    String CriteriaNotMetPropertyValue = "";
 	//String Action = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -654,8 +673,9 @@ private void refresh ()
 		CheckValue2 = props.getValue ( "CheckValue2" );
 		IfCriteriaMet = props.getValue ( "IfCriteriaMet" );
 		ProblemType = props.getValue ( "ProblemType" );
-		PropertyName = props.getValue ( "PropertyName" );
-		PropertyValue = props.getValue ( "PropertyValue" );
+		CheckResultPropertyName = props.getValue ( "CheckResultPropertyName" );
+		CriteriaMetPropertyValue = props.getValue ( "CriteriaMetPropertyValue" );
+		CriteriaNotMetPropertyValue = props.getValue ( "CriteriaNotMetPropertyValue" );
 		//Action = props.getValue ( "Action" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
@@ -754,11 +774,14 @@ private void refresh ()
 		if ( ProblemType != null ) {
 			__ProblemType_JTextField.setText ( ProblemType );
 		}
-        if ( PropertyName != null ) {
-            __PropertyName_JTextField.setText ( PropertyName );
+        if ( CheckResultPropertyName != null ) {
+            __CheckResultPropertyName_JTextField.setText ( CheckResultPropertyName );
         }
-        if ( PropertyValue != null ) {
-            __PropertyValue_JTextField.setText ( PropertyValue );
+        if ( CriteriaMetPropertyValue != null ) {
+            __CriteriaMetPropertyValue_JTextField.setText ( CriteriaMetPropertyValue );
+        }
+        if ( CriteriaNotMetPropertyValue != null ) {
+            __CriteriaNotMetPropertyValue_JTextField.setText ( CriteriaNotMetPropertyValue );
         }
         /*
         if ( Action == null ) {
@@ -790,8 +813,9 @@ private void refresh ()
 	CheckValue1 = __CheckValue1_JTextField.getText().trim();
     IfCriteriaMet = __IfCriteriaMet_JComboBox.getSelected();
 	ProblemType = __ProblemType_JTextField.getText().trim();
-	PropertyName = __PropertyName_JTextField.getText().trim();
-    PropertyValue = __PropertyValue_JTextField.getText().trim();
+	CheckResultPropertyName = __CheckResultPropertyName_JTextField.getText().trim();
+    CriteriaMetPropertyValue = __CriteriaMetPropertyValue_JTextField.getText().trim();
+    CriteriaNotMetPropertyValue = __CriteriaNotMetPropertyValue_JTextField.getText().trim();
 	//Action = __Action_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "InputFile=" + InputFile );
@@ -807,8 +831,9 @@ private void refresh ()
     props.add ( "CheckValue2=" + CheckValue2 );
     props.add ( "IfCriteriaMet=" + IfCriteriaMet );
 	props.add ( "ProblemType=" + ProblemType );
-	props.add ( "PropertyName=" + PropertyName );
-	props.add ( "PropertyValue=" + PropertyValue );
+	props.add ( "CheckResultPropertyName=" + CheckResultPropertyName );
+	props.add ( "CriteriaMetPropertyValue=" + CriteriaMetPropertyValue );
+	props.add ( "CriteriaNotMetPropertyValue=" + CriteriaNotMetPropertyValue );
 	//props.add ( "Action=" + Action );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...

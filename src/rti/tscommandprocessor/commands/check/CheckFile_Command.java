@@ -469,7 +469,7 @@ CommandWarningException, CommandException
         	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
     File file = new File ( InputFile_full );
 	if ( !file.exists() ) {
-        message = "File to remove \"" + InputFile_full + "\" does not exist.";
+        message = "File to check \"" + InputFile_full + "\" does not exist.";
         if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
@@ -518,7 +518,9 @@ CommandWarningException, CommandException
                 }
                 else if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) ) {
                 	// Convert the search pattern to Java regular expression.
-                	statisticInt = IOUtil.matchCount(f, SearchPattern.replace("*", ".*"), true);
+                	String pattern = SearchPattern.replace("*", ".*");
+                	statisticInt = IOUtil.matchCount(f, pattern, true);
+                	Message.printStatus(2, routine, "Found " + statisticInt + " occurrances of '" + pattern + "'");
                 }
                 // Now set in the table
                 if ( (TableID != null) && !TableID.equals("") ) {
@@ -554,10 +556,11 @@ CommandWarningException, CommandException
                     }
                 }
                 
-                // Do the check by comparing to the statistic...
+                // Do the check by comparing to the statistic.
                 List<String> problems = new ArrayList<>();
                 // This is similar to TSUtil_CheckTimeSeries but it only needs to check the one statistic
-                // value and therefore is much simpler... so include the code in this class for now
+                // value and therefore is much simpler... so include the code in this class for now.
+                // For now all statistics are integers.
                 boolean ifCriteriaMet = checkStatistic ( statisticInt, checkCriteria,
                     CheckValue1_Integer, CheckValue2_Integer,
                     IfCriteriaMet, ProblemType, problems );
@@ -575,7 +578,11 @@ CommandWarningException, CommandException
                     if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
                         b.append ( ", " + CheckValue2 );
                     }
-                    b.append ( " for file " + InputFile_full );
+                    b.append ( " for file: " + InputFile_full );
+                    // Add an extra bit of information based on a common mistake.
+                    if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) && (statisticInt == 0) ) {
+                    	b.append("\nIf zero (0) is not expected, may need to use wildcard * in pattern to match substring in each line.");
+                    }
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,b.toString() );
                     if ( !IfCriteriaMet.equalsIgnoreCase(_Ignore) ) {
@@ -605,6 +612,18 @@ CommandWarningException, CommandException
                     }
                 }
                 else {
+                	// Add to the log as info to confirm check was evaluated properly.
+                    StringBuilder b = new StringBuilder("Statistic " + Statistic + " (" + statisticInt + ") DOES NOT meet criteria " + CheckCriteria);
+                    if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
+                        b.append ( " " + CheckValue1 );
+                    }
+                    if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
+                        b.append ( ", " + CheckValue2 );
+                    }
+                    b.append ( " for file: " + InputFile_full );
+      	            status.addToLog ( CommandPhaseType.RUN,
+           	            new CommandLogRecord(CommandStatusType.INFO,
+        	               b.toString(), "No action will be taken." ) );
                 	// Set the property if provided.
                     if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
                     	// Allow null and empty value, but following commands will probably have issues.

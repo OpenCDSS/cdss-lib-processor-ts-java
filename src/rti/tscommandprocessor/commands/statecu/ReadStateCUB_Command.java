@@ -55,9 +55,7 @@ import RTi.Util.Time.DateTime;
 import DWR.StateCU.StateCU_BTS;
 
 /**
-<p>
 This class initializes, checks, and runs the ReadStateCUB() command.
-</p>
 */
 public class ReadStateCUB_Command extends AbstractCommand implements Command
 {
@@ -103,7 +101,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {	String working_dir = null;
+	else if ( InputFile.indexOf("${") < 0  ) {
+		String working_dir = null;
 			try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
@@ -137,10 +136,11 @@ throws InvalidCommandParameterException
                             message, "Verify that input file and working directory paths are compatible." ) );
             }
     }
-	if (	(InputStart != null) && !InputStart.equals("") &&
+	if ( (InputStart != null) && !InputStart.isEmpty() &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
-		!InputStart.equalsIgnoreCase("InputEnd") ) {
-		try {	DateTime.parse(InputStart);
+		!InputStart.equalsIgnoreCase("InputEnd") && (InputStart.indexOf("${") < 0) ) {
+		try {
+			DateTime.parse(InputStart);
 		}
 		catch ( Exception e ) {
             message = "The input start date/time \"" +InputStart + "\" is not a valid date/time.";
@@ -150,9 +150,9 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
-	if (	(InputEnd != null) && !InputEnd.equals("") &&
+	if ( (InputEnd != null) && !InputEnd.isEmpty() &&
 		!InputEnd.equalsIgnoreCase("InputStart") &&
-		!InputEnd.equalsIgnoreCase("InputEnd") ) {
+		!InputEnd.equalsIgnoreCase("InputEnd") && (InputEnd.indexOf("${") < 0) ) {
 		try {	DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
@@ -165,7 +165,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(4);
+	List<String> validList = new ArrayList<>(4);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
@@ -230,7 +230,7 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadStateCUB_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -241,8 +241,9 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
-	String InputFile = parameters.getValue ( "InputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
 	String TSID = parameters.getValue ( "TSID" );
+    TSID = TSCommandProcessorUtil.expandParameterValue(processor,this,TSID);
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
@@ -256,8 +257,7 @@ CommandWarningException, CommandException
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting InputStart DateTime(DateTime=" +
-			InputStart + ") from processor.";
+			message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -390,7 +390,8 @@ CommandWarningException, CommandException
     String InputFile_full = InputFile;
 	try {
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         Message.printStatus ( 2, routine, "Reading StateCU binary file \"" + InputFile_full + "\"" );
 
 		StateCU_BTS bts = null;

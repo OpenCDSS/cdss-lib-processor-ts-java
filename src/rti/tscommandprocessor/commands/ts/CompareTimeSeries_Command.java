@@ -1573,7 +1573,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        status.addToLog ( commandPhase,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                message, "Verify that time series being different is OK." ) );
-			throw new CommandException ( message );
+	        // TODO smalers 2021-08-18 log is enough - the command was successful in running
+			//throw new CommandException ( message );
 		}
 		if ( WarnIfSame_boolean && (tsdiff_count == 0) ) {
 			message = "All " + size + " time series are the same.";
@@ -1582,7 +1583,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        status.addToLog ( commandPhase,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                message, "Verify that all time seres being the same is OK." ) );
-			throw new CommandException ( message );
+	        // TODO smalers 2021-08-18 log is enough - the command was successful in running
+			//throw new CommandException ( message );
 		}
 	}
 	

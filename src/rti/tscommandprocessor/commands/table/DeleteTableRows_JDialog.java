@@ -271,14 +271,14 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
 	JGUIUtil.addComponent(rowNum_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yRowNum, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(rowNum_JPanel, new JLabel("Delete row number:"),
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel("Delete row numbers:"),
         0, ++yRowNum, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteRowNumbers_JTextField = new JTextField ( "", 25 );
     __DeleteRowNumbers_JTextField.setToolTipText("Specify row number (1+) to delete, separated by commas, can use ${Property}, * to delete all, or use \"last\" to delete the last row.");
     __DeleteRowNumbers_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(rowNum_JPanel, __DeleteRowNumbers_JTextField,
         1, yRowNum, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(rowNum_JPanel, new JLabel ( "Optional - row number to delete (default=none)." ),
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel ( "Optional - row numbers to delete (default=none)." ),
         3, yRowNum, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
@@ -418,7 +418,8 @@ private void refresh ()
     //DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
-    props.add ( "Condition=" + Condition );
+    // Use the following to handle equal sign in the property.
+    props.set ( "Condition", Condition );
     props.add ( "DeleteRowNumbers=" + DeleteRowNumbers );
     //props.add ( "DeleteCountProperty=" + DeleteCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );

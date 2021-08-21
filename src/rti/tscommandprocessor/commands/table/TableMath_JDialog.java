@@ -35,8 +35,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -45,6 +45,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -65,6 +66,8 @@ private SimpleJButton __help_JButton = null;
 private TableMath_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __Condition_JTextField = null;
+private JTextField __ProcessRows_JTextField = null;
 private SimpleJComboBox __Input1_JComboBox = null;
 private SimpleJComboBox __Operator_JComboBox = null;
 private SimpleJComboBox __Input2_JComboBox = null;
@@ -121,6 +124,8 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
     String TableID = __TableID_JComboBox.getSelected();
+	String Condition = __Condition_JTextField.getText().trim();
+	String ProcessRows = __ProcessRows_JTextField.getText().trim();
     String Input1 = __Input1_JComboBox.getSelected();
     String Input2 = __Input2_JComboBox.getSelected();
     String Operator = __Operator_JComboBox.getSelected();
@@ -132,6 +137,12 @@ private void checkInput ()
 
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
+    }
+    if ( Condition.length() > 0 ) {
+        parameters.set ( "Condition", Condition );
+    }
+    if ( ProcessRows.length() > 0 ) {
+        parameters.set ( "ProcessRows", ProcessRows );
     }
     if ( Input1.length() > 0 ) {
         parameters.set ( "Input1", Input1 );
@@ -165,30 +176,22 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
+	String Condition = __Condition_JTextField.getText().trim();
+	String ProcessRows = __ProcessRows_JTextField.getText().trim();
     String Input1 = __Input1_JComboBox.getSelected();
     String Input2 = __Input2_JComboBox.getSelected();
     String Operator = __Operator_JComboBox.getSelected();
     String Output = __Output_JComboBox.getSelected();
     String NonValue = __NonValue_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "Condition", Condition );
+    __command.setCommandParameter ( "ProcessRows", ProcessRows );
     __command.setCommandParameter ( "Input1", Input1 );
     __command.setCommandParameter ( "Input2", Input2 );
     __command.setCommandParameter ( "Operator", Operator );
     __command.setCommandParameter ( "Output", Output );
     __command.setCommandParameter ( "NonValue", NonValue );
 
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -222,9 +225,6 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "   - process input from a column and a constant to populate the output column" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Future enhancements may provide filters to limit processing.  Currently all rows are processed." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -240,12 +240,33 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Condition:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Condition_JTextField = new JTextField ( "", 25 );
+    __Condition_JTextField.setToolTipText("Specify condition to evaluate for each row.  If true, process the row.");
+    __Condition_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Condition_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - condition to match rows (deault=all)." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Process rows:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ProcessRows_JTextField = new JTextField ( "", 25 );
+    //__ProcessRows_JTextField.setToolTipText("Specify row numbers (1+) to process, separated by commas, can use ${Property}, \"first\" for the first row, \"last\" for the row.");
+    __ProcessRows_JTextField.setToolTipText("Specify rows to process, separated by commas, can use ${Property}, currently only allow \"first\" for the first row, \"last\" for the last row.");
+    __ProcessRows_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ProcessRows_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - row numbers to process (default=all)." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     __Input1_JComboBox.setToolTipText("Input column name, can use ${Property} notation");
-    List<String> input1Choices = new Vector<String>();
+    List<String> input1Choices = new ArrayList<>();
     input1Choices.add("");
     __Input1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Input1_JComboBox.addItemListener ( this );
@@ -271,7 +292,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     __Input2_JComboBox.setToolTipText("Input column name or constant, can use ${Property} notation");
-    Vector<String> input2Choices = new Vector<String>();
+    List<String> input2Choices = new ArrayList<>();
     input2Choices.add("");
     __Input2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Input2_JComboBox.addItemListener ( this );
@@ -285,7 +306,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Output_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     __Output_JComboBox.setToolTipText("Output column name, can use ${Property} notation");
-    Vector<String> outputChoices = new Vector<String>();
+    List<String> outputChoices = new ArrayList<>();
     outputChoices.add("");
     __Output_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Output_JComboBox.addItemListener ( this );
@@ -298,7 +319,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-value:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NonValue_JComboBox = new SimpleJComboBox ( 12, false );    // Allow edit
-    Vector<String> nonValueChoices = new Vector<String>();
+    List<String> nonValueChoices = new ArrayList<>();
     nonValueChoices.add("");
     nonValueChoices.add(__command._NaN );
     nonValueChoices.add(__command._Null );
@@ -389,8 +410,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "TableMath_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+    String Condition = "";
+    String ProcessRows = "";
     String Input1 = "";
     String Input2 = "";
     String Operator = "";
@@ -402,6 +425,8 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 	    TableID = props.getValue ( "TableID" );
+        Condition = props.getValue ( "Condition" );
+        ProcessRows = props.getValue ( "ProcessRows" );
         Input1 = props.getValue ( "Input1" );
         Input2 = props.getValue ( "Input2" );
         Operator = props.getValue ( "Operator" );
@@ -421,6 +446,12 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+        if ( Condition != null ) {
+            __Condition_JTextField.setText ( Condition );
+        }
+        if ( ProcessRows != null ) {
+            __ProcessRows_JTextField.setText ( ProcessRows );
         }
         if ( Input1 == null ) {
             // Select default...
@@ -494,6 +525,8 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
+    Condition = __Condition_JTextField.getText().trim();
+    ProcessRows = __ProcessRows_JTextField.getText().trim();
 	Input1 = __Input1_JComboBox.getSelected();
     Operator = __Operator_JComboBox.getSelected();
     Input2 = __Input2_JComboBox.getSelected();
@@ -501,6 +534,9 @@ private void refresh ()
     NonValue = __NonValue_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    // Use the following to handle equal sign in the property.
+    props.set ( "Condition", Condition );
+    props.set ( "ProcessRows", ProcessRows );
     props.add ( "Input1=" + Input1 );
     props.add ( "Operator=" + Operator );
     props.add ( "Input2=" + Input2 );

@@ -511,7 +511,7 @@ throws FileNotFoundException, IOException
                             cellType = formulaCellValue.getCellType();
                             if ( Message.isDebugOn ) {
                                 Message.printDebug(1, routine, "Detected formula, new cellType=" + cellType +
-                                    ", cell value=\"" + formulaCellValue + "\"" );
+                                    " " + tk.lookupExcelCellType(cellType) + ", cell value=\"" + formulaCellValue + "\"" );
                             }
                         }
                         catch ( Exception e ) {
@@ -597,10 +597,21 @@ throws FileNotFoundException, IOException
                         }
                     }
                     else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
+                       	if ( Message.isDebugOn ) {
+                           	Message.printDebug(1, routine, "Cell type is numeric, from formula=" + cellIsFormula);
+                       	}
                         if (DateUtil.isCellDateFormatted(cell)) {
+                        	// The above returns true if the cell value "looks like a date" (from Apache POI docs).
+                           	if ( Message.isDebugOn ) {
+                               	Message.printDebug(1, routine, "Cell is number and formatted as date.");
+                           	}
                             if ( cellIsFormula ) {
-                                // TODO SAM 2013-02-25 Does not seem to method to return date 
-                                cellValueDate = null;
+                                cellValueDate = DateUtil.getJavaDate((double)cell.getNumericCellValue());
+                                // See explanation of Excel date/time:
+                                //   https://www.myonlinetraininghub.com/excel-date-and-time
+                                // Therefore, if the input is just a fraction with whole number of zero,
+                                // the value indicates time only and the date will be 1899-12-31.
+                                // This is accurate according to the Excel specification.
                             }
                             else {
                                 cellValueDate = cell.getDateCellValue();
@@ -611,7 +622,8 @@ throws FileNotFoundException, IOException
                                 table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
-                                // date to date/time
+                                // Date to date/time:
+                            	// - if the intended final format is just time
                                 table.setFieldValue(iRowOut, iColOut, new DateTime(cellValueDate), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {

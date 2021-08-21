@@ -45,6 +45,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRowConditionEvaluator;
 
 /**
 This class initializes, checks, and runs the DeleteTableRows() command.
@@ -160,17 +161,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
-   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    }
+   	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     String Condition = parameters.getValue ( "Condition" );
-    if ( (Condition != null) && !Condition.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Condition.indexOf("${") >= 0 ) {
-    	Condition = TSCommandProcessorUtil.expandParameterValue(processor, this, Condition);
-    }
+   	Condition = TSCommandProcessorUtil.expandParameterValue(processor, this, Condition);
     String DeleteRowNumbers = parameters.getValue ( "DeleteRowNumbers" );
-    if ( (DeleteRowNumbers != null) && !DeleteRowNumbers.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DeleteRowNumbers.indexOf("${") >= 0 ) {
-    	DeleteRowNumbers = TSCommandProcessorUtil.expandParameterValue(processor, this, DeleteRowNumbers);
-    }
+   	DeleteRowNumbers = TSCommandProcessorUtil.expandParameterValue(processor, this, DeleteRowNumbers);
     String [] deleteRowNumbers = new String[0];
     boolean deleteAllRows = false;
     if ( (DeleteRowNumbers != null) && !DeleteRowNumbers.isEmpty() ) {

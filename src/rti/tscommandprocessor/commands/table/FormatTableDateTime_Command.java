@@ -255,18 +255,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	if ( TableID.indexOf("${") >= 0 ) {
-    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    	}
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String InputColumn = parameters.getValue ( "InputColumn" );
-	if ( (InputColumn != null) && InputColumn.indexOf("${") >= 0 ) {
-		InputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InputColumn);
-	}
+	InputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InputColumn);
     String IncrementStart = parameters.getValue ( "IncrementStart" );
-	if ( (IncrementStart != null) && IncrementStart.indexOf("${") >= 0 ) {
-		IncrementStart = TSCommandProcessorUtil.expandParameterValue(processor, this, IncrementStart);
-	}
+	IncrementStart = TSCommandProcessorUtil.expandParameterValue(processor, this, IncrementStart);
     String IncrementBaseUnit = parameters.getValue ( "IncrementBaseUnit" );
     TimeInterval incrementBaseUnit = null;
     if ( (IncrementBaseUnit != null) && !IncrementBaseUnit.isEmpty() ) {
@@ -278,26 +272,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     DateTimeFormatterType formatterType = DateTimeFormatterType.valueOfIgnoreCase(FormatterType);
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
-	if ( (DateTimeFormat != null) && DateTimeFormat.indexOf("${") >= 0 ) {
-		DateTimeFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeFormat);
-	}
+	DateTimeFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeFormat);
     String OutputYearType = parameters.getValue ( "OutputYearType" );
     YearType yearType = null;
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         yearType = YearType.valueOfIgnoreCase(OutputYearType);
     }
     String OutputColumn = parameters.getValue ( "OutputColumn" );
-	if ( (OutputColumn != null) && OutputColumn.indexOf("${") >= 0 ) {
-		OutputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputColumn);
-	}
+	OutputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputColumn);
     String OutputType = parameters.getValue ( "OutputType" );
     if ( (OutputType == null) || OutputType.equals("") ) {
         OutputType = _String;
     }
     String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
-	if ( (InsertBeforeColumn != null) && InsertBeforeColumn.indexOf("${") >= 0 ) {
-		InsertBeforeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertBeforeColumn);
-	}
+	InsertBeforeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertBeforeColumn);
 
     // Get the table to process.
 
@@ -354,7 +342,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Now process...
 
-    List<String> problems = new ArrayList<String>();
+    List<String> problems = new ArrayList<>();
     try {
         Object output;
         TableRecord rec;

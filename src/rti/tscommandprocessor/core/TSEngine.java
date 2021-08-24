@@ -708,9 +708,6 @@ import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
-import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
-import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
-import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 import DWR.StateCU.StateCU_BTS;
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
@@ -969,11 +966,6 @@ private HashMap<String,String> __dataStoreSubstituteMap = new HashMap<>();
 Reference date for year to date report (only use month and day).
 */
 private DateTime __reference_date = null;
-
-/**
-DMI for State of Colorado Satellite Monitoring System (real-time data).
-*/
-private SatMonSysDMI __smsdmi = null;
 
 /**
 The TSCommandProcessor instance that is managing this TSEngine instance.
@@ -2388,10 +2380,6 @@ protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
 			apList.add ( hbdmi );
 		}
-	}
-	// Check the ColoradoSMS instances...
-	if ( (__smsdmi != null) && (__smsdmi instanceof TSProductAnnotationProvider) ) {
-		apList.add ( __smsdmi );
 	}
 
 	return apList;
@@ -5077,20 +5065,6 @@ throws Exception
         catch ( Exception e ) {
             Message.printWarning ( 3, routine, "Error from ColoradoWaterHBGuestService.readTimeSeries (" + e + ").");
             Message.printWarning ( 3, routine, e );
-            ts = null;
-        }
-    }
-    else if ((dataStore != null) && (dataStore instanceof ColoradoWaterSMSDataStore) ) {
-        // New style TSID~dataStore
-        ColoradoWaterSMSDataStore cwds = (ColoradoWaterSMSDataStore)dataStore;
-        try {
-            ts = ColoradoWaterSMSAPI.readTimeSeries (
-                cwds.getColoradoWaterSMS(), tsidentString2, readStart, readEnd, readData );
-        }
-        catch ( Exception te ) {
-            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
-                "\" from ColoradoWaterSMS web service (" + te + ")." );
-            Message.printWarning ( 3, routine, te );
             ts = null;
         }
     }

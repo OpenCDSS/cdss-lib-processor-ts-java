@@ -678,7 +678,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -707,7 +706,6 @@ import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
-import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import DWR.StateCU.StateCU_BTS;
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
@@ -5039,31 +5037,6 @@ throws Exception
         }
         catch ( Exception e ) {
             Message.printWarning ( 3, routine, "Error from ColoradoHydroBaseRestDataStore.readTimeSeries (" + e + ").");
-            Message.printWarning ( 3, routine, e );
-            ts = null;
-        }
-    }
-	else if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
-        // New style TSID~dataStore
-        ColoradoWaterHBGuestDataStore cwds = (ColoradoWaterHBGuestDataStore)dataStore;
-        if ( Message.isDebugOn ) {
-            Message.printDebug ( 10, routine, "Reading time series..." +
-            tsidentString + "," + readStart + "," + readEnd);
-        }
-        try {
-            ts = cwds.getColoradoWaterHBGuestService().readTimeSeries (
-                tsidentString, readStart, readEnd, units, readData );
-            if ( Message.isDebugOn ) {
-                Message.printStatus ( 10, routine, "...done reading time series." );
-            }
-            // Update the header comments.
-            if ( ts != null ) {
-                //FIXME SAM 2010-08-15 Need to implement for web services
-                //updateHydroBaseComments(ts);
-            }
-        }
-        catch ( Exception e ) {
-            Message.printWarning ( 3, routine, "Error from ColoradoWaterHBGuestService.readTimeSeries (" + e + ").");
             Message.printWarning ( 3, routine, e );
             ts = null;
         }

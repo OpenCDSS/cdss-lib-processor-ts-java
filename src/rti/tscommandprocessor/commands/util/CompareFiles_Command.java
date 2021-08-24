@@ -785,7 +785,7 @@ public String toString ( PropList parameters )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FilePropertyOperator=" + FilePropertyOperator );
+		b.append ( "FilePropertyOperator=\"" + FilePropertyOperator + "\"" );
 	}
 	if ( (FilePropertyAction != null) && (FilePropertyAction.length() > 0) ) {
 		if ( b.length() > 0 ) {

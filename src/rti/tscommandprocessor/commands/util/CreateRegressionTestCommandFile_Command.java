@@ -267,7 +267,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(12);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
     validList.add ( "SetupCommandFile" );
@@ -276,6 +276,7 @@ throws InvalidCommandParameterException
     validList.add ( "FilenamePattern" );
 	validList.add ( "Append" );
 	validList.add ( "IncludeTestSuite" );
+	validList.add ( "ExcludeTestSuite" );
 	validList.add ( "IncludeOS" );
 	validList.add ( "UseOrder" );
 	validList.add ( "TestResultsTableID" );
@@ -346,13 +347,17 @@ All commands file that end with ".<product_name>" will be added to the list.
 @param patterns Array of pattern to match when searching files, for example "test*.TSTool",
 Java regular expressions.
 @param includedTestSuites the test suites for test cases that
-should be included, indicated by "@testSuite ABC" tags in the comments of command files.
+should be included, indicated by "@testSuite ABC" tags in the comments of command files,
+will be compare ignoring case
+@param excludedTestSuites the test suites for test cases that
+should be excluded, indicated by "@testSuite ABC" tags in the comments of command files,
+will be compare ignoring case
 @param includedOS the operating systems for test cases that
 should be included, indicated by "@os Windows" and "@os UNIX" tags in the comments of command files.
 @throws IOException 
  */
 private void getMatchingFilenamesInTree ( List<String> commandFileList, File path, String[] patterns,
-        String[] includedTestSuites, String[] includedOS ) 
+        String[] includedTestSuites, String[] excludedTestSuites, String[] includedOS ) 
 throws IOException
 {   String routine = getClass().getSimpleName() + ".getMatchingFilenamesInTree";
     // Determine if UNIX and Windows tests have been requested.
@@ -362,13 +367,17 @@ throws IOException
     for ( int i = 0; i < includedOS.length; i++ ) {
         if ( includedOS[i].equalsIgnoreCase("UNIX") ) {
             needToCheckForUnixOS = true;
-            Message.printStatus ( 2, routine, "Will only include tests that are for UNIX." );
+  	    	if ( Message.isDebugOn ) {
+  	    		Message.printStatus ( 2, routine, "Will only include tests that are for UNIX." );
+  	    	}
         }
     }
     for ( int i = 0; i < includedOS.length; i++ ) {
         if ( includedOS[i].equalsIgnoreCase("Windows") ) {
             needToCheckForWindowsOS = true;
-            Message.printStatus ( 2, routine, "Will only include tests that are for Windows." );
+  	    	if ( Message.isDebugOn ) {
+  	    		Message.printStatus ( 2, routine, "Will only include tests that are for Windows." );
+  	    	}
         }
     }
     if (path.isDirectory()) {
@@ -376,7 +385,7 @@ throws IOException
         for (int i = 0; i < children.length; i++) {
         	// Recursively call with full path using the directory and child name.
         	getMatchingFilenamesInTree(commandFileList,new File(path,children[i]), patterns,
-    	        includedTestSuites, includedOS );
+    	        includedTestSuites, excludedTestSuites, includedOS );
         }
     }
     else {
@@ -385,12 +394,16 @@ throws IOException
     	// Do comparison on file name without directory.
     	for ( int i = 0; i < patterns.length; i++ ) {
     		String pattern = patterns[i];
-    		Message.printStatus(2, "", "Checking path \"" + pathName + "\" against pattern \"" + pattern + "\"" );
+    		if ( Message.isDebugOn ) {
+    			Message.printStatus(2, "", "Checking path \"" + pathName + "\" against pattern \"" + pattern + "\"" );
+    		}
     	    if( pathName.matches( pattern )
     		    // FIXME SAM 2007-10-15 Need to enable something like the following to make more robust.
     		    //&& isValidCommandsFile( dir )
     		    ) {
-        	    Message.printStatus(2, "", "File matched." );
+    	    	if ( Message.isDebugOn ) {
+    	    		Message.printStatus(2, "", "    File matched." );
+    	    	}
         	    // Exclude the command file if tag in the file indicates that it is not compatible with
         	    // this command's parameters.
         	    boolean doAddForOS = false;
@@ -435,14 +448,15 @@ throws IOException
         	    }
         	    // Check to see if the test suite has been specified and matches that in the file.
         	    boolean doAddForTestSuite = false;
-        	    if ( includedTestSuites.length == 0 ) {
+        	    if ( (includedTestSuites.length == 0) && (excludedTestSuites.length > 0) ) {
+        	    	// No filtering test suites have been specified so include all by default.
         	        doAddForTestSuite = true;
         	    }
         	    else {
         	        // Check to see if the test suites in the test match the requested test suites.
         	        List<Object> tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
         	        if ( tagValues2.size() == 0 ) {
-        	            // Test case is not specified to belong to a specific suite so it is always included.
+        	            // Test case is not specified so it is always included.
         	            doAddForTestSuite = true;
         	        }
         	        else {
@@ -451,12 +465,24 @@ throws IOException
         	                if ( !(tagValues2.get(itag) instanceof String) ) {
         	                    continue;
         	                }
-        	                for ( int j = 0; j < includedTestSuites.length; j++ ) {
-        	                    if ( ((String)tagValues2.get(itag)).toUpperCase().matches(includedTestSuites[j]) ) {
+        	                String tagValue = (String)tagValues2.get(itag);
+        	                // First include test suites that are included (may use '*' to match all).
+        	                for ( String includedTestSuite : includedTestSuites ) {
+        	                    if ( tagValue.toUpperCase().matches(includedTestSuite.toUpperCase()) ) {
         	                        doAddForTestSuite = true;
+        	                        // Matched a pattern so break.
         	                        break;
         	                    }
         	                }
+        	                for ( String excludedTestSuite : excludedTestSuites ) {
+        	                    if ( tagValue.toUpperCase().matches(excludedTestSuite.toUpperCase()) ) {
+        	                        doAddForTestSuite = false;
+        	                        Message.printStatus(2, routine, "Excluding test because test suite '" + excludedTestSuite + "' is excluded.");
+        	                        // Matched a pattern so break.
+        	                        break;
+        	                    }
+        	                }
+        	                // Next remove test suites that are excluded.
         	                if ( doAddForTestSuite ) {
         	                    break;
         	                }
@@ -495,7 +521,8 @@ throws IOException
     }
     BufferedReader in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( includeCommandFile )) );
     out.println ( "#----------------" );
-    out.println ( "# The following " + label + " commands were imported from:  " + includeCommandFile );
+    out.println ( "# The following " + label + " commands were imported from:" );
+    out.println ( "#   " + includeCommandFile );
     String line;
     while ( true ) {
         line = in.readLine();
@@ -576,6 +603,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (IncludeTestSuite == null) || IncludeTestSuite.equals("") ) {
 	    IncludeTestSuite = "*"; // Default - include all test suites.
 	}
+	String ExcludeTestSuite = parameters.getValue ( "ExcludeTestSuite" );
 	String IncludeOS = parameters.getValue ( "IncludeOS" );
     if ( (IncludeOS == null) || IncludeOS.equals("") ) {
         IncludeOS = "*"; // Default - include all OS.
@@ -588,6 +616,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String TestResultsTableID = parameters.getValue ( "TestResultsTableID" );
     // Get Java regular expression pattern to match.
     String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
+    String ExcludeTestSuitePattern = StringUtil.replaceString(ExcludeTestSuite,"*",".*");
     String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
 
 	String SearchFolder_full = IOUtil.verifyPathForOS(
@@ -649,12 +678,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    // Get the list of files to run as test cases.
 		List<String> files = new ArrayList<>();
 		List<CommandFile> commandFiles = new ArrayList<>();
-        String [] includedTestSuitePatterns = new String[0];
-        includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
-        String [] includedOSPatterns = new String[0];
-        includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
+        String [] includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
+        String [] excludedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(ExcludeTestSuitePattern,",",0));
+        String [] includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
         getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
-            includedTestSuitePatterns, includedOSPatterns );
+            includedTestSuitePatterns, excludedTestSuitePatterns, includedOSPatterns );
         Message.printStatus(2, routine, "Found " + files.size() + " command files matching search criteria.");
         // Sort the list because it may not be sorted, due to dates on files:
         // - some reordering may occur if @order annotations are present
@@ -926,6 +954,7 @@ public String toString ( PropList parameters )
 	String FilenamePattern = parameters.getValue("FilenamePattern");
 	String Append = parameters.getValue("Append");
 	String IncludeTestSuite = parameters.getValue("IncludeTestSuite");
+	String ExcludeTestSuite = parameters.getValue("ExcludeTestSuite");
 	String IncludeOS = parameters.getValue("IncludeOS");
 	String UseOrder = parameters.getValue("UseOrder");
 	String TestResultsTableID = parameters.getValue("TestResultsTableID");
@@ -974,6 +1003,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "IncludeTestSuite=\"" + IncludeTestSuite + "\"" );
+    }
+    if ( (ExcludeTestSuite != null) && (ExcludeTestSuite.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeTestSuite=\"" + ExcludeTestSuite + "\"" );
     }
     if ( (IncludeOS != null) && (IncludeOS.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -93,6 +93,7 @@ private JTextField __TestResultsFile_JTextField = null;
 private JTextField __EndCommandFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextField __IncludeTestSuite_JTextField = null;
+private JTextField __ExcludeTestSuite_JTextField = null;
 private JTextField __IncludeOS_JTextField = null;
 private SimpleJComboBox __UseOrder_JComboBox = null;
 private JTextField __TestResultsTableID_JTextField = null;
@@ -409,6 +410,7 @@ private void checkInput ()
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	String ExcludeTestSuite = __ExcludeTestSuite_JTextField.getText().trim();
 	String IncludeOS = __IncludeOS_JTextField.getText().trim();
 	String UseOrder = __UseOrder_JComboBox.getSelected();
 	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
@@ -436,6 +438,9 @@ private void checkInput ()
 	}
     if ( IncludeTestSuite.length() > 0 ) {
         props.set ( "IncludeTestSuite", IncludeTestSuite );
+    }
+    if ( ExcludeTestSuite.length() > 0 ) {
+        props.set ( "ExcludeTestSuite", ExcludeTestSuite );
     }
     if ( IncludeOS.length() > 0 ) {
         props.set ( "IncludeOS", IncludeOS );
@@ -470,6 +475,7 @@ private void commitEdits ()
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	String ExcludeTestSuite = __ExcludeTestSuite_JTextField.getText().trim();
 	String IncludeOS = __IncludeOS_JTextField.getText().trim();
 	String UseOrder = __UseOrder_JComboBox.getSelected();
 	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
@@ -481,6 +487,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "FilenamePattern", FilenamePattern );
 	__command.setCommandParameter ( "Append", Append );
 	__command.setCommandParameter ( "IncludeTestSuite", IncludeTestSuite );
+	__command.setCommandParameter ( "ExcludeTestSuite", ExcludeTestSuite );
 	__command.setCommandParameter ( "IncludeOS", IncludeOS );
 	__command.setCommandParameter ( "UseOrder", UseOrder );
 	__command.setCommandParameter ( "TestResultsTableID", TestResultsTableID );
@@ -694,6 +701,16 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
         new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to include (default=*)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to exclude:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeTestSuite_JTextField = new JTextField ( "", 30 );
+    __ExcludeTestSuite_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeTestSuite_JTextField,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to exclude (default=none)."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include tests for OS:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeOS_JTextField = new JTextField ( "", 30 );
@@ -801,6 +818,7 @@ private void refresh ()
 	String FilenamePattern = "";
 	String Append = "";
 	String IncludeTestSuite = "*";
+	String ExcludeTestSuite = "*";
 	String IncludeOS = "*";
 	String UseOrder = "";
 	String TestResultsTableID = "";
@@ -816,6 +834,7 @@ private void refresh ()
 	    FilenamePattern = props.getValue ( "FilenamePattern" );
 		Append = props.getValue ( "Append" );
 		IncludeTestSuite = props.getValue ( "IncludeTestSuite" );
+		ExcludeTestSuite = props.getValue ( "ExcludeTestSuite" );
 		IncludeOS = props.getValue ( "IncludeOS" );
 		UseOrder = props.getValue ( "UseOrder" );
 		TestResultsTableID = props.getValue ( "TestResultsTableID" );
@@ -855,6 +874,9 @@ private void refresh ()
         if ( IncludeTestSuite != null ) {
             __IncludeTestSuite_JTextField.setText ( IncludeTestSuite );
         }
+        if ( ExcludeTestSuite != null ) {
+            __ExcludeTestSuite_JTextField.setText ( ExcludeTestSuite );
+        }
         if ( IncludeOS != null ) {
             __IncludeOS_JTextField.setText ( IncludeOS );
         }
@@ -887,6 +909,7 @@ private void refresh ()
 	FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
 	IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	ExcludeTestSuite = __ExcludeTestSuite_JTextField.getText().trim();
 	IncludeOS = __IncludeOS_JTextField.getText().trim();
 	UseOrder = __UseOrder_JComboBox.getSelected();
 	TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
@@ -899,6 +922,7 @@ private void refresh ()
 	props.add ( "FilenamePattern=" + FilenamePattern );
 	props.add ( "Append=" + Append );
 	props.add ( "IncludeTestSuite=" + IncludeTestSuite );
+	props.add ( "ExcludeTestSuite=" + ExcludeTestSuite );
 	props.add ( "IncludeOS=" + IncludeOS );
 	props.add ( "UseOrder=" + UseOrder );
 	props.add ( "TestResultsTableID=" + TestResultsTableID );

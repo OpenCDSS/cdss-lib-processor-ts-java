@@ -251,6 +251,10 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else {
+		// Choice selection.
+		refresh ();
+	}
 }
 
 /**

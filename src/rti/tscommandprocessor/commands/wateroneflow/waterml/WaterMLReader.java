@@ -505,9 +505,6 @@ throws IOException
         }
         dataStart = DateTime.parse( dateTimeString, DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
     }
-    catch (IOException ex) {
-        throw ex;
-    }
     catch (Exception ex) {
         throw new IOException("Error parsing start date/time \"" + dateTimeString + "\"", ex);
     }
@@ -523,9 +520,6 @@ throws IOException
             dateTimeString = dateTimeString.substring(0,pos);
         }
         dataEnd = DateTime.parse(dateTimeString,DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
-    }
-    catch (IOException ex) {
-        throw ex;
     }
     catch (Exception ex) {
         throw new IOException("Error parsing date/time \"" + dateTimeString + "\"", ex);

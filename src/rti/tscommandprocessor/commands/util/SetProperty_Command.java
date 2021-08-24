@@ -626,6 +626,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    			TimeInterval interval = TimeInterval.parseInterval(Subtract);
 			    			dt.addInterval(interval.getBase(), -interval.getMultiplier());
 			    		}
+			    		Message.printStatus(2, routine, "Parsed date/time from '" + propertyValue + "': " + Property_Object);
 			    	}
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_Double) ) {

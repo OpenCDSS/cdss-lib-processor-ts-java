@@ -70,7 +70,7 @@ private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
 private final String __VisualDiff = "Visual Diff";
-private final String visualDiffLabel = "Run program to visually compare output files (see TSTool DiffProgram configuration property).";
+private final String visualDiffLabel = "Run program to visually compare output files (see TSTool 'DiffProgram' configuration property).";
 
 private SimpleJButton __browse1_JButton = null;
 private SimpleJButton __browse2_JButton = null;
@@ -575,6 +575,18 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
 		"For example, this can be used to ensure that a file is an expected size or one file is newer than another file." ),
 		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The comparison is evaluated as follows:"),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    If.... File1Property Operator File2Property ... then action"),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"For example:"),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    If.... File1ModificationTime > File2ModificationTime ... then Warn"),
+		0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yProp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -868,7 +880,8 @@ private void refresh ()
 	props.add ( "IfDifferent=" + IfDifferent );
 	props.add ( "IfSame=" + IfSame );
 	props.add ( "FileProperty=" + FileProperty );
-	props.add ( "FilePropertyOperator=" + FilePropertyOperator );
+	// Use the following to handle '=' in parameters.
+	props.set ( "FilePropertyOperator" , FilePropertyOperator );
 	props.add ( "FilePropertyAction=" + FilePropertyAction );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

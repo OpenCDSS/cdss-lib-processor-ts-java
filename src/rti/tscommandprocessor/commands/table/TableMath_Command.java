@@ -134,7 +134,7 @@ throws InvalidCommandParameterException
             message, "Provide the operator to process input." ) );
     }
     else {
-        // Make sure that the operator is known in general
+        // Make sure that the operator is known in general.
         boolean supported = false;
         try {
             operatorType = DataTableMathOperatorType.valueOfIgnoreCase(Operator);
@@ -147,7 +147,7 @@ throws InvalidCommandParameterException
                 message, "Select a supported operator using the command editor." ) );
         }
         
-        // Make sure that it is in the supported list
+        // Make sure that it is in the supported list.
         
         if ( supported ) {
             supported = false;
@@ -165,7 +165,7 @@ throws InvalidCommandParameterException
             }
         }
        
-        // Additional checks that depend on the operator
+        // Additional checks that depend on the operator.
         /* TODO SAM 2010-09-13 Add this later
         if ( supported ) {
             int nRequiredValues = -1;
@@ -234,21 +234,15 @@ throws InvalidCommandParameterException
     }
 
     // Confirm that Input2 is specified when needed.
-    if ( (operatorType != null) && (operatorType != DataTableMathOperatorType.TO_INTEGER) &&
-    	(operatorType != DataTableMathOperatorType.CUMULATE) &&
-    	(operatorType != DataTableMathOperatorType.DELTA) ) {
-        if ( (Input2 == null) || Input2.equals("") ) {
+    if ( operatorType != null ) {
+    	if ( DataTableMath.requiresInput2(operatorType) && ((Input2 == null) || Input2.isEmpty()) ) {
             message = "The Input2 column/value must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Provide a column name or numeric constant as Input2." ) );
         }
-    }
-    // Check the inverse.
-    if ( (operatorType != null) && ((operatorType == DataTableMathOperatorType.TO_INTEGER) ||
-    	(operatorType == DataTableMathOperatorType.CUMULATE) ||
-    	(operatorType == DataTableMathOperatorType.DELTA)) ) {
-        if ( (Input2 != null) && !Input2.isEmpty() ) {
+    	// Check the inverse.
+    	if ( ! DataTableMath.requiresInput2(operatorType) && ((Input2 != null) && !Input2.isEmpty()) ) {
             message = "The Input2 column/value should not be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,

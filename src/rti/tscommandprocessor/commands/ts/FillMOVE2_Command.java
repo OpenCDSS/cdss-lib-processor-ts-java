@@ -43,8 +43,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSRegression;
@@ -363,30 +363,30 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "IndependentTSID" );
-    valid_Vector.add ( "NumberOfEquations" );
-    //valid_Vector.add ( "AnalysisMonth" );
-    //valid_Vector.add ( "Transformation" );
-    valid_Vector.add ( "LEZeroLogValue" );
-    //valid_Vector.add ( "Intercept" );
-    valid_Vector.add ( "MinimumSampleSize" );
-    valid_Vector.add ( "MinimumR" );
-    valid_Vector.add ( "ConfidenceInterval" );
-    valid_Vector.add ( "DependentAnalysisStart" );
-    valid_Vector.add ( "DependentAnalysisEnd" );
-    valid_Vector.add ( "IndependentAnalysisStart" );
-    valid_Vector.add ( "IndependentAnalysisEnd" );
-    valid_Vector.add ( "Fill" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    valid_Vector.add ( "FillFlag" );
-    valid_Vector.add ( "FillFlagDesc" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<>();
+    validList.add ( "TSID" );
+    validList.add ( "IndependentTSID" );
+    validList.add ( "NumberOfEquations" );
+    //validList.add ( "AnalysisMonth" );
+    //validList.add ( "Transformation" );
+    validList.add ( "LEZeroLogValue" );
+    //validList.add ( "Intercept" );
+    validList.add ( "MinimumSampleSize" );
+    validList.add ( "MinimumR" );
+    validList.add ( "ConfidenceInterval" );
+    validList.add ( "DependentAnalysisStart" );
+    validList.add ( "DependentAnalysisEnd" );
+    validList.add ( "IndependentAnalysisStart" );
+    validList.add ( "IndependentAnalysisEnd" );
+    validList.add ( "Fill" );
+    validList.add ( "FillStart" );
+    validList.add ( "FillEnd" );
+    validList.add ( "FillFlag" );
+    validList.add ( "FillFlagDesc" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -426,7 +426,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<T>();
         v.add ( (T)table );
     }
     return v;
@@ -597,13 +597,13 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "FillMOVE2_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Message level for non-user messages
+	int log_level = 3;	// Message level for non-user messages.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -616,7 +616,7 @@ CommandWarningException, CommandException
 	PropList request_params = new PropList ( "" );
 	TS tsToFill = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
+        // Get the discovery time series list from all time series above this command.
         String TSList = "" + TSListType.LAST_MATCHING_TSID;
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, null );
@@ -666,11 +666,11 @@ CommandWarningException, CommandException
                         message, "Verify that the dependent TSID matches a time series." ) );
 	}
 	// The independent identifier may or may not have TEMPTS at the front
-	// but is handled by getTimeSeries...
+	// but is handled by getTimeSeries.
 	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
 	TS tsIndependent = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
+        // Get the discovery time series list from all time series above this command.
         String TSList = "" + TSListType.LAST_MATCHING_TSID;
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, null );
@@ -723,7 +723,7 @@ CommandWarningException, CommandException
                         message, "Verify that the independent TSID matches a time series." ) );
 	}
 
-	// Determine parameters for TSUtil.fillRegress()...
+	// Determine parameters for TSUtil.fillRegress().
 
 	String NumberOfEquations = parameters.getValue ( "NumberOfEquations" );
 	NumberOfEquationsType numberOfEquations = NumberOfEquationsType.ONE_EQUATION; // Default
@@ -739,15 +739,16 @@ CommandWarningException, CommandException
 	*/
 
 	String Transformation = parameters.getValue("Transformation");
-	DataTransformationType transformation = DataTransformationType.NONE; // Default
+	DataTransformationType transformation = DataTransformationType.NONE; // Default.
 	if ( (Transformation != null) && !Transformation.equals("") ) {
-	    if ( Transformation.equalsIgnoreCase(_Linear)) { // Linear is obsolete
+	    if ( Transformation.equalsIgnoreCase(_Linear)) {
+	    	// Linear is obsolete, set to NONE.
 	        Transformation = "" + DataTransformationType.NONE;
 	    }
 		transformation = DataTransformationType.valueOfIgnoreCase(Transformation);
 	}
 
-	// Set the analysis/fill periods...
+	// Set the analysis/fill periods.
 
 	String DependentAnalysisStart =	parameters.getValue("DependentAnalysisStart");
 	DateTime dependentAnalysisStart = null;
@@ -756,7 +757,14 @@ CommandWarningException, CommandException
 		    dependentAnalysisStart = DateTime.parse(DependentAnalysisStart);
 		}
 		catch ( Exception e ) {
-		    // Should not happen
+		    // Should not happen because input is checked.
+			message = "Invalid DependentAnalysisStart (" + DependentAnalysisStart + ").";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			Message.printWarning(warning_level, routine, e);
+			status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check software." ) );
 		}
 	}
 	String DependentAnalysisEnd = parameters.getValue("DependentAnalysisEnd");
@@ -766,7 +774,14 @@ CommandWarningException, CommandException
 	        dependentAnalysisEnd = DateTime.parse(DependentAnalysisEnd);
 	    }
         catch ( Exception e ) {
-            // Should not happen
+            // Should not happen because input is checked.
+			message = "Invalid DependentAnalysisEnd (" + DependentAnalysisEnd + ").";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			Message.printWarning(warning_level, routine, e);
+			status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check software." ) );
         }
 	}
 
@@ -777,7 +792,14 @@ CommandWarningException, CommandException
 	        independentAnalysisStart = DateTime.parse(IndependentAnalysisStart);
 	    }
         catch ( Exception e ) {
-            // Should not happen
+            // Should not happen because input is checked.
+			message = "Invalid IndependentAnalysisStart (" + IndependentAnalysisStart + ").";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			Message.printWarning(warning_level, routine, e);
+			status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check software." ) );
         }
 	}
 	String IndependentAnalysisEnd = parameters.getValue("IndependentAnalysisEnd");
@@ -787,7 +809,14 @@ CommandWarningException, CommandException
 	        independentAnalysisEnd = DateTime.parse(IndependentAnalysisEnd);
 	    }
         catch ( Exception e ) {
-            // Should not happen
+            // Should not happen because input was checked.
+			message = "Invalid IndependentAnalysisEnd (" + IndependentAnalysisEnd + ").";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			Message.printWarning(warning_level, routine, e);
+			status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check software." ) );
         }
 	}
 
@@ -801,7 +830,7 @@ CommandWarningException, CommandException
 	String FillFlag = parameters.getValue("FillFlag");
 	String FillFlagDesc = parameters.getValue("FillFlagDesc");
 
-	/* TODO SAM 2006-04-16 Evaluate whether this can be enabled
+	/* TODO SAM 2006-04-16 Evaluate whether this can be enabled.
 	String Intercept = _parameters.getValue("Intercept");
 	if ( (Intercept != null) && !Intercept.equals("") ) {
 		props.set ( "Intercept="+ Intercept );
@@ -834,9 +863,9 @@ CommandWarningException, CommandException
     //String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     
     DataTable table = null;
-    boolean newTable = false; // true if a new table had to be created
+    boolean newTable = false; // true if a new table had to be created.
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         CommandProcessorRequestResultsBean bean = null;
@@ -855,8 +884,8 @@ CommandWarningException, CommandException
         if ( o_Table == null ) {
             Message.printStatus ( 2, routine, "Unable to find table to process using TableID=\"" + TableID +
                 "\" - creating empty table." );
-            // Create an empty table matching the identifier
-            table = new DataTable( new Vector<TableField>() );
+            // Create an empty table matching the identifier.
+            table = new DataTable( new ArrayList<TableField>() );
             table.setTableID ( TableID );
 
         }
@@ -866,7 +895,7 @@ CommandWarningException, CommandException
     }
     if ( newTable ) {
         if ( commandPhase == CommandPhaseType.RUN ) {
-            // Set the table in the processor...
+            // Set the table in the processor.
             
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", table );
@@ -884,7 +913,7 @@ CommandWarningException, CommandException
             }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
+            // Create an empty table and set the ID.
             table = new DataTable();
             table.setTableID ( TableID );
             setDiscoveryTable ( table );
@@ -892,7 +921,7 @@ CommandWarningException, CommandException
     }
 
 	if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -900,9 +929,9 @@ CommandWarningException, CommandException
         throw new CommandException ( message );
 	}
 
-	// Call the code that is used by both the old and new version...
+	// Call the code that is used by both the old and new version.
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis.
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
 	
@@ -1003,12 +1032,13 @@ CommandWarningException, CommandException
 			throw new InvalidCommandParameterException ( message );
 		}
 	
-	// Fill the dependent time series...
-	// This will result in the time series in the original data being modified...
+	// Fill the dependent time series.
+	// This will result in the time series in the original data being modified.
 
 	try {
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-            boolean doLegacy = false;
+	    	// TODO smalers 2021-08-23 Why is the following used when there is no new option?  Planned?
+            boolean doLegacy = true;
             if ( doLegacy ) {
     	        //TSUtil_FillRegression tsufr = new TSUtil_FillRegression ();
         	    TSRegression regressionResults = TSUtil.fillRegress ( tsToFill, tsIndependent,
@@ -1051,7 +1081,7 @@ CommandWarningException, CommandException
                         }
                     }
                 }
-        		// Print the results to the log file...
+        		// Print the results to the log file.
         		if ( regressionResults != null ) {
         			Message.printStatus ( 2, routine,"Analysis results are..." );
         			Message.printStatus ( 2, routine,regressionResults.toString() );

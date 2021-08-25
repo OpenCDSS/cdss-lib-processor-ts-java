@@ -2132,7 +2132,19 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of iden
 @param command the command above which time series identifiers are needed.
 @return a list of String containing the table identifiers, or an empty list.
 */
-public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+	return getTableIdentifiersFromCommandsBeforeCommand( processor, command, false );
+}
+
+/**
+Return the table identifiers for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@param inclusive if true also search the current specified command.
+@return a list of String containing the table identifiers, or an empty list.
+*/
+public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive )
 {   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
@@ -2142,6 +2154,10 @@ public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSComma
     if ( pos < 0 ) {
         // Just return a blank list...
         return new ArrayList<String>();
+    }
+    // If inclusive increment the index.
+    if ( inclusive ) {
+   		++pos;
     }
     // Find the commands above the position...
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );

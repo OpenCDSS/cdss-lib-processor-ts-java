@@ -37,7 +37,7 @@ import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -48,6 +48,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
@@ -57,8 +58,13 @@ import RTi.Util.Table.TableRecord;
 /**
 This class initializes, checks, and runs the CheckFile() command.
 */
-public class CheckFile_Command extends AbstractCommand implements Command
+public class CheckFile_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
+
+/**
+The table that is created in discovery mode.
+*/
+private DataTable __discoveryTable = null;
 
 /**
 Values for IfCriteriaMet parameter.
@@ -221,9 +227,6 @@ throws InvalidCommandParameterException
     validList.add ( "IfNotFound" );
     validList.add ( "Statistic" );
     validList.add ( "SearchPattern" );
-    validList.add ( "TableID" );
-    validList.add ( "TableFilenameColumn" );
-    validList.add ( "TableStatisticColumn" );
     validList.add ( "CheckCriteria" );
     validList.add ( "CheckValue1" );
     validList.add ( "CheckValue2" );
@@ -232,6 +235,10 @@ throws InvalidCommandParameterException
     validList.add ( "CheckResultPropertyName" );
     validList.add ( "CriteriaMetPropertyValue" );
     validList.add ( "CriteriaNotMetPropertyValue" );
+    validList.add ( "TableID" );
+    validList.add ( "TableFilenameColumn" );
+    validList.add ( "TableStatisticColumn" );
+    validList.add ( "TableStatisticValueColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -245,8 +252,7 @@ throws InvalidCommandParameterException
 }
 
 /**
-Check the time series statistic.
-@param ts the time series to check
+Check the file statistic.
 @param statisticInt the statistic that was computed
 @param checkCriteria the check criteria compared to the statistic
 @param checkValue1 the value of the check criteria
@@ -328,7 +334,7 @@ Edit the command.
 public boolean editCommand ( JFrame parent )
 {   List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)getCommandProcessor(), this);
+            (TSCommandProcessor)getCommandProcessor(), this, true);
     return (new CheckFile_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
@@ -365,6 +371,28 @@ public List<String> getCheckCriteriaChoicesAsStrings()
 }
 
 /**
+Return the table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoveryTable()
+{
+    return __discoveryTable;
+}
+
+/**
+Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+*/
+@SuppressWarnings("unchecked")
+public <T> List<T> getObjectList ( Class<T> c )
+{   DataTable table = getDiscoveryTable();
+    List<T> v = null;
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new ArrayList<T>();
+        v.add ( (T)table );
+    }
+    return v;
+}
+
+/**
  * Get the statistics choices for use in the editor.
  */
 public List<String> getStatisticChoicesAsStrings() {
@@ -379,12 +407,38 @@ public List<String> getStatisticChoicesAsStrings() {
 
 /**
 Run the command.
-@param command_number Number of command in sequence.
-@exception Exception if there is an error processing the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {   String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
@@ -395,27 +449,46 @@ CommandWarningException, CommandException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
     PropList parameters = getCommandParameters();
+
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTable ( null );
+    }
     
     // Get the input parameters...
 
-	String InputFile = parameters.getValue ( "InputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default
 	}
     String Statistic = parameters.getValue ( "Statistic" );
+	Statistic = TSCommandProcessorUtil.expandParameterValue(processor, this, Statistic);
     String SearchPattern = parameters.getValue ( "SearchPattern" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+	SearchPattern = TSCommandProcessorUtil.expandParameterValue(processor, this, SearchPattern);
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
+	CheckCriteria = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckCriteria);
     CheckType checkCriteria = CheckType.valueOfIgnoreCase(CheckCriteria);
     String CheckValue1 = parameters.getValue ( "CheckValue1" );
+	CheckValue1 = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckValue1);
     Integer CheckValue1_Integer = null;
     if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
         CheckValue1_Integer = new Integer(CheckValue1);
     }
     String CheckValue2 = parameters.getValue ( "CheckValue2" );
+	CheckValue2 = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckValue2);
     Integer CheckValue2_Integer = null;
     if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
         CheckValue2_Integer = new Integer(CheckValue2);
@@ -425,12 +498,35 @@ CommandWarningException, CommandException
         IfCriteriaMet = _Warn; // Default
     }
     String ProblemType = parameters.getValue ( "ProblemType" );
+	ProblemType = TSCommandProcessorUtil.expandParameterValue(processor, this, ProblemType);
     if ( (ProblemType == null) || ProblemType.equals("") ) {
         ProblemType = Statistic + "-" + CheckCriteria; // Default
     }
     String CheckResultPropertyName = parameters.getValue ( "CheckResultPropertyName" );
+	CheckResultPropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckResultPropertyName);
     String CriteriaMetPropertyValue = parameters.getValue ( "CriteriaMetPropertyValue" );
+	CriteriaMetPropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, CriteriaMetPropertyValue);
     String CriteriaNotMetPropertyValue = parameters.getValue ( "CriteriaNotMetPropertyValue" );
+	CriteriaNotMetPropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, CriteriaNotMetPropertyValue);
+
+	// Output table (optional).
+    String TableID = parameters.getValue ( "TableID" );
+	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
+	TableFilenameColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableFilenameColumn);
+    if ( (TableFilenameColumn == null) || TableFilenameColumn.isEmpty() ) {
+    	TableFilenameColumn = "File"; // Default.
+    }
+    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+	TableStatisticColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStatisticColumn);
+    if ( (TableStatisticColumn == null) || TableStatisticColumn.isEmpty() ) {
+    	TableStatisticColumn = "Statistic"; // Default.
+    }
+    String TableStatisticValueColumn = parameters.getValue ( "TableStatisticValueColumn" );
+	TableStatisticValueColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStatisticValueColumn);
+    if ( (TableStatisticValueColumn == null) || TableStatisticValueColumn.isEmpty() ) {
+    	TableStatisticValueColumn = "StatisticValue"; // Default.
+    }
 
     PropList request_params = new PropList ( "" );
     CommandProcessorRequestResultsBean bean = null;
@@ -447,17 +543,14 @@ CommandWarningException, CommandException
             message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Report problem to software support." ) );
         }
         PropList bean_PropList = bean.getResultsPropList();
         Object o_Table = bean_PropList.getContents ( "Table" );
         if ( o_Table == null ) {
             message = "Unable to find table to process using TableID=\"" + TableID + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that a table exists with the requested ID." ) );
+            Message.printStatus(2, routine, "Will create a new table.");
         }
         else {
             table = (DataTable)o_Table;
@@ -473,13 +566,13 @@ CommandWarningException, CommandException
         if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the file exists at the time the command is run."));
         }
         else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+            status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
                     message, "Verify that the file exists at the time the command is run."));
         }
         else {
@@ -490,7 +583,7 @@ CommandWarningException, CommandException
     if ( warning_count > 0 ) {
         // Input error...
         message = "Insufficient data to run command.";
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
@@ -499,178 +592,262 @@ CommandWarningException, CommandException
     // Now process...
     
     try {
-    	// TODO smalers 2021-07-24 loop in case later want to allow more than one file to be processed
-    	int nfiles = 1;
-        for ( int ifile = 0; ifile < nfiles; ifile++ ) {
-            // The the time series to process, from the list that was returned above.
-            
-            try {
-                // Do the statistic calculation...
-                notifyCommandProgressListeners ( ifile, nfiles, (float)-1.0, "Checking statistic for " +
-                    InputFile_full );
-                Integer statisticInt = null;
-               	File f = new File(InputFile_full);
-                if ( Statistic.equalsIgnoreCase(this._FileSizeBytes) ) {
-                	statisticInt = new Integer((int)f.length());
-                }
-                else if ( Statistic.equalsIgnoreCase(this._FileSizeLines) ) {
-                	statisticInt = IOUtil.lineCount(f);
-                }
-                else if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) ) {
-                	// Convert the search pattern to Java regular expression.
-                	String pattern = SearchPattern.replace("*", ".*");
-                	statisticInt = IOUtil.matchCount(f, pattern, true);
-                	Message.printStatus(2, routine, "Found " + statisticInt + " occurrances of '" + pattern + "'");
-                }
-                // Now set in the table
-                if ( (TableID != null) && !TableID.equals("") ) {
-                    if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
-                        // See if a matching row exists using the specified TSID column...
-                        String tsid = null;
-                        // TODO smalers 2021-07-24 Filename is currently the relative path, may add modifier function to convert to other value.
-                        Message.printStatus(2,routine, "Searching column \"" + TableFilenameColumn + "\" for \"" +
-                            InputFile + "\"" );
-                        TableRecord rec = table.getRecord ( TableFilenameColumn, tsid );
-                        Message.printStatus(2,routine, "Searched column \"" + TableFilenameColumn + "\" for \"" +
-                            tsid + "\" ... found " + rec );
-                        int statisticColumn = -1;
-                        try {
-                            statisticColumn = table.getFieldIndex(TableStatisticColumn);
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Create an empty table and set the ID
+            table = new DataTable();
+            table.setTableID ( TableID );
+            setDiscoveryTable ( table );
+        }
+        else {
+        	// Running the command.
+        	boolean newTable = false;
+    	   	if ( (table == null) && (TableID != null) && !TableID.isEmpty() &&
+           		(TableFilenameColumn != null) && !TableFilenameColumn.equals("") &&
+               	(TableStatisticColumn != null) && !TableStatisticColumn.equals("") &&
+               	(TableStatisticValueColumn != null) && !TableStatisticValueColumn.equals("") ) {
+    		   	// Create a new table.
+    		   	table = new DataTable();
+    		   	table.setTableID(TableID);
+    		   	// Add columns for the filename and statistic.
+    		   	table.addField(new TableField(TableField.DATA_TYPE_STRING, TableFilenameColumn, InputFile.length()), "" );
+    		   	table.addField(new TableField(TableField.DATA_TYPE_STRING, TableStatisticColumn, Statistic.toString().length()), "" );
+    		   	// All statistics are currently integers.
+    		   	table.addField(new TableField(TableField.DATA_TYPE_INT, TableStatisticValueColumn), null );
+    		   	newTable = true;
+    	   	}
+    	   	
+    	   	// TODO smalers 2021-07-24 loop in case later want to allow more than one file to be processed.
+    	   	int nfiles = 1;
+           	for ( int ifile = 0; ifile < nfiles; ifile++ ) {
+               	// The file to process, from the list that was returned above.
+               	
+               	try {
+                   	// Do the statistic calculation.
+                   	notifyCommandProgressListeners ( ifile, nfiles, (float)-1.0, "Checking statistic for " + InputFile_full );
+                   	Integer statisticInt = null;
+               	   	File f = new File(InputFile_full);
+                   	if ( Statistic.equalsIgnoreCase(this._FileSizeBytes) ) {
+                	   	statisticInt = new Integer((int)f.length());
+                   	}
+                   	else if ( Statistic.equalsIgnoreCase(this._FileSizeLines) ) {
+                	   	statisticInt = IOUtil.lineCount(f);
+                   	}
+                   	else if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) ) {
+                	   	// Convert the search pattern to Java regular expression.
+                	   	String pattern = SearchPattern.replace("*", ".*");
+                	   	statisticInt = IOUtil.matchCount(f, pattern, true);
+                	   	Message.printStatus(2, routine, "Found " + statisticInt + " occurrances of '" + pattern + "'");
+                   	}
+                   	// Now set in the table.
+                   	if ( (table != null) &&
+                   		(TableFilenameColumn != null) && !TableFilenameColumn.equals("") &&
+                       	(TableStatisticColumn != null) && !TableStatisticColumn.equals("") &&
+                       	(TableStatisticValueColumn != null) && !TableStatisticValueColumn.equals("") ) {
+                   		// Have everything needed to insert the result into a table.
+                       	// See if a row matching filename and statistic exists.
+                       	// TODO smalers 2021-07-24 Filename is currently the relative path, may add modifier function to convert to other value.
+                       	Message.printStatus(2,routine, "Searching column \"" + TableFilenameColumn + "\" for file \"" +
+                       	InputFile + "\" and statistic \"" + Statistic + "\"" );
+                        List<String> columnNames = new ArrayList<>();
+                        List<Object> columnValues = new ArrayList<>();
+                        columnNames.add(TableFilenameColumn);
+                        columnNames.add(TableStatisticColumn);
+                        columnValues.add(InputFile);
+                        columnValues.add(Statistic);
+                        List<TableRecord> records = table.getRecords(columnNames, columnValues);
+                        Message.printStatus(2,routine, "Found " + records.size() );
+                       	int fileColumn = -1;
+                       	int statisticColumn = -1;
+                       	int statisticValueColumn = -1;
+                        if ( records.size() > 0 ) {
+                        	// Should not happen. Should match one or zero records.
+                        	message = "Matched > records in table for file \"" + InputFile +
+                        		"\" and statistic \"" + Statistic + "\" - cannot save result.";
+                        	Message.printWarning ( warning_level,
+                           		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                        	status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                           		message, "Verify that the table has unique records for file and statistic."));
                         }
-                        catch ( Exception e2 ) {
-                            // Automatically add to the table, initialize with null (not nonValue).
-                        	// TODO smalers 2021-07-24 may need to use double.
-                            table.addField(new TableField(TableField.DATA_TYPE_INT,TableStatisticColumn,-1,-1), null );
-                            statisticColumn = table.getFieldIndex(TableStatisticColumn);
+                        else if ( records.size() == 0 ) {
+                        	// May be that the column does not exist:
+                        	// - if does not exist, create the column
+                        	try {
+                           		fileColumn = table.getFieldIndex(TableFilenameColumn);
+                        	}
+                        	catch ( Exception e2 ) {
+                           		// Automatically add to the table, initialize with null (not nonValue).
+                          		// TODO smalers 2021-07-24 may need to use double.
+                           		fileColumn = table.addField(new TableField(TableField.DATA_TYPE_STRING,TableFilenameColumn,InputFile.length()), null );
+                        	}
+                        	try {
+                           		statisticColumn = table.getFieldIndex(TableStatisticColumn);
+                        	}
+                        	catch ( Exception e2 ) {
+                           		// Automatically add to the table, initialize with null (not nonValue).
+                         		// TODO smalers 2021-07-24 may need to use double.
+                           		statisticColumn = table.addField(new TableField(TableField.DATA_TYPE_STRING,TableStatisticColumn,30), null );
+                        	}
+                        	try {
+                           		statisticValueColumn = table.getFieldIndex(TableStatisticValueColumn);
+                        	}
+                        	catch ( Exception e2 ) {
+                           		// Automatically add to the table, initialize with null (not nonValue).
+                         		// TODO smalers 2021-07-24 may need to use double.
+                           		statisticValueColumn = table.addField(new TableField(TableField.DATA_TYPE_INT,TableStatisticValueColumn,-1,-1), null );
+                        	}
                         }
-                        if ( rec != null ) {
-                            // There is already a row for the TSID so just set the value in the table column...
-                            rec.setFieldValue(statisticColumn, statisticInt);
-                        }
-                        else {
-                            // There is no row in the table for the time series so add a row to the table...
-                            int filenameColumn = table.getFieldIndex(TableFilenameColumn);
-                            table.addRecord(table.emptyRecord().setFieldValue(filenameColumn, InputFile).
-                                setFieldValue(statisticColumn, statisticInt));
-                        }
-                    }
-                }
-                
-                // Do the check by comparing to the statistic.
-                List<String> problems = new ArrayList<>();
-                // This is similar to TSUtil_CheckTimeSeries but it only needs to check the one statistic
-                // value and therefore is much simpler... so include the code in this class for now.
-                // For now all statistics are integers.
-                boolean ifCriteriaMet = checkStatistic ( statisticInt, checkCriteria,
-                    CheckValue1_Integer, CheckValue2_Integer,
-                    IfCriteriaMet, ProblemType, problems );
-                if ( ifCriteriaMet ) {
-                    // Generate a warning
-                    CommandStatusType commandStatusType = CommandStatusType.WARNING;
-                    if ( IfCriteriaMet.equals(_Fail) ) {
-                        commandStatusType = CommandStatusType.FAILURE;
-                    }
-                    StringBuffer b = new StringBuffer();
-                    b.append ( "Statistic " + Statistic + " (" + statisticInt + ") meets criteria " + CheckCriteria );
-                    if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
-                        b.append ( " " + CheckValue1 );
-                    }
-                    if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
-                        b.append ( ", " + CheckValue2 );
-                    }
-                    b.append ( " for file: " + InputFile_full );
-                    // Add an extra bit of information based on a common mistake.
-                    if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) && (statisticInt == 0) ) {
-                    	b.append("\nIf zero (0) is not expected, may need to use wildcard * in pattern to match substring in each line.");
-                    }
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,b.toString() );
-                    if ( !IfCriteriaMet.equalsIgnoreCase(_Ignore) ) {
-                        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(commandStatusType,
-                            ProblemType, b.toString(), "File should be treated accordingly." ) );
-                    }
+                       	if ( records.size() == 1 ) {
+                           	// There is already a row for the file and statistic so just set the value in the table column:
+                       		// - use the column numbers determined above
+                           	records.get(0).setFieldValue(fileColumn, InputFile);
+                           	records.get(0).setFieldValue(statisticColumn, Statistic);
+                           	records.get(0).setFieldValue(statisticValueColumn, statisticInt);
+                       	}
+                       	else {
+                           	// There is no matching row in the table so add a new row.
+                           	int filenameColumn = table.getFieldIndex(TableFilenameColumn);
+                           	table.addRecord(table.emptyRecord().
+                           		setFieldValue(filenameColumn, InputFile).
+                           		setFieldValue(statisticColumn, Statistic).
+                               	setFieldValue(statisticValueColumn, statisticInt));
+                       	}
+                   	}
+                   	
+                   	// Do the check by comparing to the statistic.
+              	   	List<String> problems = new ArrayList<>();
+               	   	// This is similar to TSUtil_CheckTimeSeries but it only needs to check the one statistic
+               	   	// value and therefore is much simpler... so include the code in this class for now.
+               	   	// For now all statistics are integers.
+               	   	boolean ifCriteriaMet = checkStatistic ( statisticInt, checkCriteria,
+                   	   	CheckValue1_Integer, CheckValue2_Integer,
+                   	   	IfCriteriaMet, ProblemType, problems );
+               	   	if ( ifCriteriaMet ) {
+                       	// Generate a warning
+                       	CommandStatusType commandStatusType = CommandStatusType.WARNING;
+                       	if ( IfCriteriaMet.equals(_Fail) ) {
+                           	commandStatusType = CommandStatusType.FAILURE;
+                       	}
+                       	StringBuffer b = new StringBuffer();
+                       	b.append ( "Statistic " + Statistic + " (" + statisticInt + ") meets criteria " + CheckCriteria );
+                       	if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
+                           	b.append ( " " + CheckValue1 );
+                       	}
+                       	if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
+                           	b.append ( ", " + CheckValue2 );
+                       	}
+                       	b.append ( " for file: " + InputFile_full );
+                       	// Add an extra bit of information based on a common mistake.
+                       	if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) && (statisticInt == 0) ) {
+                    	   	b.append("\nIf zero (0) is not expected, may need to use wildcard * in pattern to match substring in each line.");
+                       	}
+                       	Message.printWarning ( warning_level,
+                           	MessageUtil.formatMessageTag(command_tag,++warning_count),routine,b.toString() );
+                       	if ( !IfCriteriaMet.equalsIgnoreCase(_Ignore) ) {
+                           	status.addToLog ( commandPhase, new CommandLogRecord(commandStatusType,
+                               	ProblemType, b.toString(), "File should be treated accordingly." ) );
+                       	}
 
-                    // Set the requested processor property.
-                    if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
-                    	// Allow null and empty value, but following commands will probably have issues.
-       	   	            PropList requestParams = new PropList ( "" );
-       	   	            requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
-       	   	            requestParams.setUsingObject ( "PropertyValue", CriteriaMetPropertyValue );
-       	   	            try {
-           	   	            processor.processRequest( "SetProperty", requestParams);
-       	   	            }
-       	   	            catch ( Exception e ) {
-           	   	            message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
-           	   	            	+ CriteriaMetPropertyValue + "\") from processor.";
-           	   	            Message.printWarning(log_level,
-               	   	            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               	   	            routine, message );
-           	   	            status.addToLog ( CommandPhaseType.RUN,
-               	   	            new CommandLogRecord(CommandStatusType.FAILURE,
-                   		               message, "Report the problem to software support." ) );
-      	   	            }
-                    }
-                }
-                else {
-                	// Add to the log as info to confirm check was evaluated properly.
-                    StringBuilder b = new StringBuilder("Statistic " + Statistic + " (" + statisticInt + ") DOES NOT meet criteria " + CheckCriteria);
-                    if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
-                        b.append ( " " + CheckValue1 );
-                    }
-                    if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
-                        b.append ( ", " + CheckValue2 );
-                    }
-                    b.append ( " for file: " + InputFile_full );
-      	            status.addToLog ( CommandPhaseType.RUN,
-           	            new CommandLogRecord(CommandStatusType.INFO,
-        	               b.toString(), "No action will be taken." ) );
-                	// Set the property if provided.
-                    if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
-                    	// Allow null and empty value, but following commands will probably have issues.
-       	   	            PropList requestParams = new PropList ( "" );
-       	   	            requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
-       	   	            requestParams.setUsingObject ( "PropertyValue", CriteriaNotMetPropertyValue );
-       	   	            try {
-           	   	            processor.processRequest( "SetProperty", requestParams);
-       	   	            }
-       	   	            catch ( Exception e ) {
-           	   	            message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
-           	   	            	+ CriteriaNotMetPropertyValue + "\") from processor.";
-           	   	            Message.printWarning(log_level,
-               	   	            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               	   	            routine, message );
-           	   	            status.addToLog ( CommandPhaseType.RUN,
-               	   	            new CommandLogRecord(CommandStatusType.FAILURE,
-                   		               message, "Report the problem to software support." ) );
-      	   	            }
-                    }
-                }
-                int problemsSize = problems.size();
-                for ( int iprob = 0; iprob < problemsSize; iprob++ ) {
-                    message = problems.get(iprob);
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                    // No recommendation since it is a user-defined check
-                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
-                }
-            }
-            catch ( Exception e ) {
-                message = "Unexpected error checking file \""+ InputFile + " (" + e + ").";
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                Message.printWarning(3,routine,e);
-                status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
+                       	// Set the table in the processor...
+            
+                       	if ( newTable ) {
+                    	   	request_params = new PropList ( "" );
+                    	   	request_params.setUsingObject ( "Table", table );
+                    	   	try {
+                        	   	processor.processRequest( "SetTable", request_params);
+                    	   	}
+                    	   	catch ( Exception e ) {
+                        	   	message = "Error requesting SetTable(Table=...) from processor.";
+                        	   	Message.printWarning(warning_level,
+                            	   	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            	   	routine, message );
+                        	   	status.addToLog ( commandPhase,
+                            	   	new CommandLogRecord(CommandStatusType.FAILURE,
+                            		   	message, "Report problem to software support." ) );
+                    	   	}
+                       	}
+
+                       	// Set the requested processor property.
+                       	if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
+                    	   	// Allow null and empty value, but following commands will probably have issues.
+       	   	               	PropList requestParams = new PropList ( "" );
+       	   	               	requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
+       	   	               	requestParams.setUsingObject ( "PropertyValue", CriteriaMetPropertyValue );
+       	   	               	try {
+           	   	               	processor.processRequest( "SetProperty", requestParams);
+       	   	               	}
+       	   	               	catch ( Exception e ) {
+           	   	               	message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
+           	   	            	   	+ CriteriaMetPropertyValue + "\") from processor.";
+           	   	               	Message.printWarning(log_level,
+               	   	               	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               	   	               	routine, message );
+           	   	               	status.addToLog ( commandPhase,
+               	   	               	new CommandLogRecord(CommandStatusType.FAILURE,
+                   		                  	message, "Report the problem to software support." ) );
+      	   	               	}
+                       	}
+                   	}
+                   	else {
+                	   	// Add to the log as info to confirm check was evaluated properly.
+                       	StringBuilder b = new StringBuilder("Statistic " + Statistic + " (" + statisticInt + ") DOES NOT meet criteria " + CheckCriteria);
+                       	if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
+                           	b.append ( " " + CheckValue1 );
+                       	}
+                       	if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
+                           	b.append ( ", " + CheckValue2 );
+                       	}
+                       	b.append ( " for file: " + InputFile_full );
+      	               	status.addToLog ( commandPhase,
+           	               	new CommandLogRecord(CommandStatusType.INFO,
+        	                  	b.toString(), "No action will be taken." ) );
+                	   	// Set the property if provided.
+                       	if ( (CheckResultPropertyName != null) && !CheckResultPropertyName.isEmpty() ) {
+                    	   	// Allow null and empty value, but following commands will probably have issues.
+       	   	               	PropList requestParams = new PropList ( "" );
+       	   	               	requestParams.setUsingObject ( "PropertyName", CheckResultPropertyName );
+       	   	               	requestParams.setUsingObject ( "PropertyValue", CriteriaNotMetPropertyValue );
+       	   	               	try {
+           	   	               	processor.processRequest( "SetProperty", requestParams);
+       	   	               	}
+       	   	               	catch ( Exception e ) {
+           	   	               	message = "Error requesting SetProperty(" + CheckResultPropertyName + "=\""
+           	   	            	   	+ CriteriaNotMetPropertyValue + "\") from processor.";
+           	   	               	Message.printWarning(log_level,
+               	   	               	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               	   	               	routine, message );
+           	   	               	status.addToLog ( commandPhase,
+               	   	               	new CommandLogRecord(CommandStatusType.FAILURE,
+                   		                  	message, "Report the problem to software support." ) );
+      	   	               	}
+                       	}
+                   	}
+                   	int problemsSize = problems.size();
+                   	for ( int iprob = 0; iprob < problemsSize; iprob++ ) {
+                       	message = problems.get(iprob);
+                       	Message.printWarning ( warning_level,
+                           	MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                   	   	// No recommendation since it is a user-defined check
+                       	// FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+                       	status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+                   	}
+               	}
+               	catch ( Exception e ) {
+                   	message = "Unexpected error checking file \""+ InputFile + " (" + e + ").";
+                   	Message.printWarning ( warning_level,
+                       	MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                   	Message.printWarning(3,routine,e);
+                   	status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "See the log file for details - report the problem to software support." ) );
-            }
+               	}
+           	}
         }
     }
     catch ( Exception e ) {
-        message = "Unexpected error checking time series (" + e + ").";
+        message = "Unexpected error checking file (" + e + ").";
         Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Check log file for details." ) );
         throw new CommandException ( message );
     }
@@ -682,7 +859,15 @@ CommandWarningException, CommandException
         throw new CommandWarningException ( message );
     }
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase, CommandStatusType.SUCCESS);
+}
+
+/**
+Set the table that is read by this class in discovery mode.
+*/
+private void setDiscoveryTable ( DataTable table )
+{
+    __discoveryTable = table;
 }
 
 /**
@@ -699,9 +884,6 @@ public String toString ( PropList parameters )
     String IfNotFound = parameters.getValue( "IfNotFound" );
     String Statistic = parameters.getValue( "Statistic" );
     String SearchPattern = parameters.getValue( "SearchPattern" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     String CheckCriteria = parameters.getValue( "CheckCriteria" );
     String CheckValue1 = parameters.getValue( "CheckValue1" );
     String CheckValue2 = parameters.getValue( "CheckValue2" );
@@ -710,6 +892,10 @@ public String toString ( PropList parameters )
     String CheckResultPropertyName = parameters.getValue( "CheckResultPropertyName" );
     String CriteriaMetPropertyValue = parameters.getValue( "CriteriaMetPropertyValue" );
     String CriteriaNotMetPropertyValue = parameters.getValue( "CriteriaNotMetPropertyValue" );
+    String TableID = parameters.getValue ( "TableID" );
+    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
+    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+    String TableStatisticValueColumn = parameters.getValue ( "TableStatisticValueColumn" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -736,24 +922,6 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "SearchPattern=\"" + SearchPattern + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableFilenameColumn != null) && (TableFilenameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableFilenameColumn=\"" + TableFilenameColumn + "\"" );
-    }
-    if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
     }
     if ( (CheckCriteria != null) && (CheckCriteria.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -802,6 +970,30 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "CriteriaNotMetPropertyValue=\"" + CriteriaNotMetPropertyValue + "\"" );
+    }
+    if ( (TableID != null) && (TableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (TableFilenameColumn != null) && (TableFilenameColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableFilenameColumn=\"" + TableFilenameColumn + "\"" );
+    }
+    if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
+    }
+    if ( (TableStatisticValueColumn != null) && (TableStatisticValueColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStatisticValueColumn=\"" + TableStatisticValueColumn + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

@@ -56,9 +56,12 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 @SuppressWarnings("serial")
 public class CheckFile_JDialog extends JDialog
@@ -82,6 +85,7 @@ private JTextField __SearchPattern_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableFilenameColumn_JTextField = null;
 private JTextField __TableStatisticColumn_JTextField = null;
+private JTextField __TableStatisticValueColumn_JTextField = null;
 private SimpleJComboBox __CheckCriteria_JComboBox = null;
 private JTextField __CheckValue1_JTextField = null;
 private JTextField __CheckValue2_JTextField = null;
@@ -100,9 +104,9 @@ private boolean __ok = false; // Indicates whether OK button has been pressed.
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices list of table identifiers to provide as choices
 */
-public CheckFile_JDialog ( JFrame parent, CheckFile_Command command,
-    List<String> tableIDChoices )
+public CheckFile_JDialog ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices )
 {	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
@@ -175,6 +179,7 @@ private void checkInput ()
     String TableID = __TableID_JComboBox.getSelected();
     String TableFilenameColumn = __TableFilenameColumn_JTextField.getText().trim();
     String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+    String TableStatisticValueColumn = __TableStatisticValueColumn_JTextField.getText().trim();
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String CheckValue1 = __CheckValue1_JTextField.getText().trim();
 	String CheckValue2 = __CheckValue2_JTextField.getText().trim();
@@ -206,6 +211,9 @@ private void checkInput ()
     }
     if ( TableStatisticColumn.length() > 0 ) {
         parameters.set ( "TableStatisticColumn", TableStatisticColumn );
+    }
+    if ( TableStatisticValueColumn.length() > 0 ) {
+        parameters.set ( "TableStatisticValueColumn", TableStatisticValueColumn );
     }
     if ( CheckCriteria.length() > 0 ) {
         parameters.set ( "CheckCriteria", CheckCriteria );
@@ -256,6 +264,7 @@ private void commitEdits () {
     String TableID = __TableID_JComboBox.getSelected();
     String TableFilenameColumn = __TableFilenameColumn_JTextField.getText().trim();
     String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+    String TableStatisticValueColumn = __TableStatisticValueColumn_JTextField.getText().trim();
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String CheckValue1 = __CheckValue1_JTextField.getText().trim();
 	String CheckValue2 = __CheckValue2_JTextField.getText().trim();
@@ -272,6 +281,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableFilenameColumn", TableFilenameColumn );
     __command.setCommandParameter ( "TableStatisticColumn", TableStatisticColumn );
+    __command.setCommandParameter ( "TableStatisticValueColumn", TableStatisticValueColumn );
     __command.setCommandParameter ( "CheckCriteria", CheckCriteria );
 	__command.setCommandParameter ( "CheckValue1", CheckValue1 );
 	__command.setCommandParameter ( "CheckValue2", CheckValue2 );
@@ -291,6 +301,8 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices )
 {	__command = command;
+	CommandProcessor processor = __command.getCommandProcessor();
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
@@ -367,7 +379,10 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "The following parameters define how to compute the statistic."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
-        "Currently minimum sample size and number of missing allowed cannot be specified."),
+        "Currently, the minimum sample size and number of missing allowed cannot be specified."),
+        0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(stat_JPanel, new JLabel (
+        "For 'PatternMatchLineCount' specify * on each end to match a substring."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -392,7 +407,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(stat_JPanel, __SearchPattern_JTextField,
         1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel(
-        "Optional - use with PatternCount statistic."), 
+        "Optional - use with Pattern* statistics."), 
         3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for check and actions
@@ -455,7 +470,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(check_JPanel,new JLabel("If criteria met?:"),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfCriteriaMet_JComboBox = new SimpleJComboBox ( false );
-    List<String> criteriaChoices = new ArrayList<String>();
+    List<String> criteriaChoices = new ArrayList<>();
     criteriaChoices.add ( "" );
     criteriaChoices.add ( __command._Ignore );
     criteriaChoices.add ( __command._Warn );
@@ -544,7 +559,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table file name column:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableFilenameColumn_JTextField = new JTextField ( 10 );
+    __TableFilenameColumn_JTextField = new JTextField ( 25 );
     __TableFilenameColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __TableFilenameColumn_JTextField,
         1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -553,14 +568,23 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStatisticColumn_JTextField = new JTextField ( 10 );
+    __TableStatisticColumn_JTextField = new JTextField ( 25 );
     __TableStatisticColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __TableStatisticColumn_JTextField,
         1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JLabel(
-        "Required if using table - column name for statistic."), 
+        "Required if using table - column for statistic name."),
         3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic value column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableStatisticValueColumn_JTextField = new JTextField ( 25 );
+    __TableStatisticValueColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __TableStatisticValueColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+        "Required if using table - column for statistic value."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -648,6 +672,7 @@ private void refresh ()
     String TableID = "";
     String TableFilenameColumn = "";
     String TableStatisticColumn = "";
+    String TableStatisticValueColumn = "";
     String CheckCriteria = "";
 	String CheckValue1 = "";
 	String CheckValue2 = "";
@@ -668,6 +693,7 @@ private void refresh ()
         TableID = props.getValue ( "TableID" );
         TableFilenameColumn = props.getValue ( "TableFilenameColumn" );
         TableStatisticColumn = props.getValue ( "TableStatisticColumn" );
+        TableStatisticValueColumn = props.getValue ( "TableStatisticValueColumn" );
         CheckCriteria = props.getValue ( "CheckCriteria" );
 		CheckValue1 = props.getValue ( "CheckValue1" );
 		CheckValue2 = props.getValue ( "CheckValue2" );
@@ -733,6 +759,9 @@ private void refresh ()
         }
         if ( TableStatisticColumn != null ) {
             __TableStatisticColumn_JTextField.setText ( TableStatisticColumn );
+        }
+        if ( TableStatisticValueColumn != null ) {
+            __TableStatisticValueColumn_JTextField.setText ( TableStatisticValueColumn );
         }
         if ( CheckCriteria == null ) {
             // Select default...
@@ -808,6 +837,7 @@ private void refresh ()
     TableID = __TableID_JComboBox.getSelected();
     TableFilenameColumn = __TableFilenameColumn_JTextField.getText().trim();
     TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+    TableStatisticValueColumn = __TableStatisticValueColumn_JTextField.getText().trim();
     CheckCriteria = __CheckCriteria_JComboBox.getSelected();
     CheckValue2 = __CheckValue2_JTextField.getText().trim();
 	CheckValue1 = __CheckValue1_JTextField.getText().trim();
@@ -825,6 +855,7 @@ private void refresh ()
     props.add ( "TableID=" + TableID );
     props.add ( "TableFilenameColumn=" + TableFilenameColumn );
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
+    props.add ( "TableStatisticValueColumn=" + TableStatisticValueColumn );
     // Have to set in such a way that = at start of CheckCriteria does not foul up the method
     props.set ( "CheckCriteria", CheckCriteria );
     props.add ( "CheckValue1=" + CheckValue1 );

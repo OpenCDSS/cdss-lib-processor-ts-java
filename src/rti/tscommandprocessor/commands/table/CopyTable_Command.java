@@ -35,7 +35,6 @@ import java.util.List;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -55,7 +54,7 @@ import RTi.Util.Table.DataTable;
 /**
 This class initializes, checks, and runs the CopyTable() command.
 */
-public class CopyTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class CopyTable_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
     
 /**

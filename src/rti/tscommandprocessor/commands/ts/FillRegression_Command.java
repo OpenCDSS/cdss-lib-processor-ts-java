@@ -909,12 +909,18 @@ CommandWarningException, CommandException
 				fillMonthly = true;
 			}
 
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Creating new TSRegressionAnalysis.");
+			}
 			TSRegressionAnalysis ra = new TSRegressionAnalysis(tsIndependent, tsToFill, RegressionType.OLS_REGRESSION,
 				fillSingle, fillMonthly, analysisMonths,
 				transformation, LEZeroLogValue, forcedIntercept,
 				dependentAnalysisStart, dependentAnalysisEnd,
 				dependentAnalysisStart, dependentAnalysisEnd,
 				confidenceInterval);
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Back from creating new TSRegressionAnalysis.");
+			}
 
 			//error checking
 			if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
@@ -942,11 +948,20 @@ CommandWarningException, CommandException
 				}
 			}
 			
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Calling analyzeForFilling.");
+			}
 			ra.analyzeForFilling(minimumSampleSize, minimumR, confidenceInterval);
-			List<TSRegressionAnalysis> analyses = new ArrayList<TSRegressionAnalysis>();
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Back from analyzeForFilling.");
+			}
+			List<TSRegressionAnalysis> analyses = new ArrayList<>();
 			analyses.add(ra);
 			
-			//now do the filling....
+			//now do the filling.
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Creating new TSUtil_FillRegression.");
+			}
 			TSUtil_FillRegression tsufr = new TSUtil_FillRegression(tsToFill, RegressionType.OLS_REGRESSION,
 				analysisMonths,
 				LEZeroLogValue,
@@ -956,27 +971,30 @@ CommandWarningException, CommandException
 				minimumR, confidenceInterval, FillStart_DateTime,
 				FillEnd_DateTime, FillFlag, FillFlagDesc,
 				null, BestFitIndicatorType.NONE, analyses);
-			if (Fill_boolean) {
-				tsufr.fill();
+			if ( Message.isDebugOn ) {
+				Message.printDebug(2, routine, "Back from TSUtil_FillRegression.");
 			}
-			
-			// Print the results to the log file and optionally an output table...
-			if ( ra != null ) {
-				// Now set in the table
-				if ( (TableID != null) && !TableID.equals("") ) {
-					tsufr.saveStatisticsToTable ( tsToFill, table, TableTSIDColumn, 
-						TableTSIDFormat, RegressionType.OLS_REGRESSION, numberOfEquations);
+			if (Fill_boolean) {
+				if ( Message.isDebugOn ) {
+					Message.printDebug(2, routine, "Calling fill().");
+				}
+				tsufr.fill();
+				if ( Message.isDebugOn ) {
+					Message.printDebug(2, routine, "Back from fill().");
 				}
 			}
-			else {
-				message = "Unable to compute regression.";
-				Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(
-						command_tag,++warning_count), routine, message );
-				status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Verify that time series have overlapping periods." ) );
-				throw new CommandException ( message );
+			
+			// Print the results to the log file and optionally an output table.
+			// Now set in the table.
+			if ( (TableID != null) && !TableID.isEmpty() ) {
+				if ( Message.isDebugOn ) {
+					Message.printDebug(2, routine, "Calling saveStatisticsToTable().");
+				}
+				tsufr.saveStatisticsToTable ( tsToFill, table, TableTSIDColumn, 
+					TableTSIDFormat, RegressionType.OLS_REGRESSION, numberOfEquations);
+				if ( Message.isDebugOn ) {
+					Message.printDebug(2, routine, "Back from saveStatisticsToTable().");
+				}
 			}
 		}
 	}

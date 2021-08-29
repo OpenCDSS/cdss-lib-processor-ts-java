@@ -60,9 +60,12 @@ This class initializes, checks, and runs the ReadStateCUB() command.
 public class ReadStateCUB_Command extends AbstractCommand implements Command
 {
 
-// Indicates whether the TS Alias version of the command is being used...
-
-protected boolean _use_alias = false;
+/**
+ * Values for OutputVersion parameter.
+ */
+protected final String _Latest = "Latest";
+protected final String _Original = "Original";
+protected final String _Version14 = "14";
 
 /**
 Constructor.
@@ -87,6 +90,7 @@ throws InvalidCommandParameterException
 	//String TSID = parameters.getValue ( "TSID" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
+	String OutputVersion = parameters.getValue ( "OutputVersion" );
 	String warning = "";
     String message;
 
@@ -163,13 +167,25 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
+
+	if ( (OutputVersion != null) && !OutputVersion.isEmpty() &&
+		!OutputVersion.equalsIgnoreCase(_Original) &&
+		!OutputVersion.equalsIgnoreCase(_Latest) &&
+		!OutputVersion.equalsIgnoreCase(_Version14) ) {
+        message = "The OutputVersion \"" + OutputVersion + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Original + " (default), " + _Latest + ", or " + _Version14 ) );
+	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<>(4);
+	List<String> validList = new ArrayList<>(5);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "OutputVersion" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -191,32 +207,6 @@ not (e.g., "Cancel" was pressed.
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new ReadStateCUB_JDialog ( parent, this )).ok();
-}
-
-/**
-Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String message;
-
-	if ( StringUtil.startsWithIgnoreCase(command_string,"TS") ) {
-		// Syntax is TS Alias = ReadStateCUB()
-		_use_alias = true;
-		message = "TS Alias = ReadStateCUB() is not yet supported.";
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	else {
-	    // Syntax is ReadStateCUB()
-		_use_alias = false;
-		super.parseCommand ( command_string );
-	}
 }
 
 /**
@@ -248,6 +238,12 @@ CommandWarningException, CommandException
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
+	String OutputVersion = parameters.getValue ( "OutputVersion" );
+	if ( (OutputVersion == null) || OutputVersion.isEmpty() ) {
+		OutputVersion = _Original; // Default.
+	}
+	
+	// Get the period.
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		try {
 		PropList request_params = new PropList ( "" );
@@ -396,7 +392,9 @@ CommandWarningException, CommandException
 
 		StateCU_BTS bts = null;
 		bts = new StateCU_BTS ( InputFile_full );
-		List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
+		String reqUnits = null;
+		boolean readData = true;
+		List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, reqUnits, readData, OutputVersion );
 		bts.close();
 		bts = null;
 
@@ -492,6 +490,7 @@ public String toString ( PropList props )
 	String TSID = props.getValue("TSID");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String OutputVersion = props.getValue("OutputVersion");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -517,15 +516,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
+	if ( (OutputVersion != null) && (OutputVersion.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputVersion=\"" + OutputVersion + "\"" );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
-}
-
-/**
-Indicate whether the alias version of the command is being used.  This method
-should be called only after the parseCommandParameters() method is called.
-*/
-protected boolean useAlias ()
-{	return _use_alias;
 }
 
 }

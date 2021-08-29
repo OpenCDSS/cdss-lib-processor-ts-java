@@ -167,6 +167,28 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as " + _Ignore + " (default), " +
 					_Warn + ", or " + _Fail + "."));
 	}
+	int sameCount = 0;
+	int diffCount = 0;
+	if ( (IfSame != null) && (IfSame.equalsIgnoreCase(_Warn) || IfSame.equalsIgnoreCase(_Fail)) ) {
+		++sameCount;
+	}
+	if ( (IfDifferent != null) && (IfDifferent.equalsIgnoreCase(_Warn) || IfDifferent.equalsIgnoreCase(_Fail)) ) {
+		++diffCount;
+	}
+	if ( (sameCount + diffCount) == 0 ) {
+        message = "At lease one of IfDifferent or IfSame must be " + _Warn + " or + " + _Fail + ".";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check the values of IfDifferent and IfSame." ) );
+	}
+	if ( (sameCount + diffCount) > 1 ) {
+        message = "Only one of IfDifferent or IfSame can be " + _Warn + " or + " + _Fail + ".";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check the values of IfDifferent and IfSame." ) );
+	}
 	if ( (FileProperty != null) && !FileProperty.equals("") ) {
 		if ( !FileProperty.equalsIgnoreCase(_ModificationTime) && !FileProperty.equalsIgnoreCase(_Size) ) {
 			message = "The FileProperty parameter \"" + FileProperty + "\" is not a valid value.";
@@ -341,6 +363,7 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Parse the command string into a PropList of parameters.
+Can't use base class method because of change in parameter names.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.

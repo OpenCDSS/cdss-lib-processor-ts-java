@@ -81,15 +81,15 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
-private JTextField __InputFile1_JTextField = null; // First file
-private JTextField __InputFile2_JTextField = null; // Second file
+private JTextField __InputFile1_JTextField = null;
+private JTextField __InputFile2_JTextField = null;
 private JTextField __CommentLineChar_JTextField = null;
 private SimpleJComboBox __MatchCase_JComboBox = null;
 private SimpleJComboBox __IgnoreWhitespace_JComboBox = null;
 private JTextField __ExcludeText_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
-private SimpleJComboBox __IfDifferent_JComboBox =null;
-private SimpleJComboBox __IfSame_JComboBox =null;
+private SimpleJComboBox __IfDifferent_JComboBox = null;
+private SimpleJComboBox __IfSame_JComboBox = null;
 
 private SimpleJComboBox __FileProperty_JComboBox = null;
 private SimpleJComboBox __FilePropertyOperator_JComboBox = null;
@@ -259,7 +259,7 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else {
-	    // Choices...
+	    // Choices.
 		refresh();
 	}
 }

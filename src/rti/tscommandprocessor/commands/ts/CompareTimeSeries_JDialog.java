@@ -31,6 +31,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -53,10 +55,14 @@ import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -67,9 +73,16 @@ Editor dialog for CompareTimeSeries() command.
 public class CompareTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
+
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
+private SimpleJButton __browseDiff_JButton = null;
+private SimpleJButton __browseSummary_JButton = null;
+private SimpleJButton __pathDiff_JButton = null;
+private SimpleJButton __pathSummary_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox	__TSID1_JComboBox = null;
 private SimpleJComboBox	__TSID2_JComboBox = null;
@@ -84,15 +97,21 @@ private JTextField __AnalysisStart_JTextField;
 private JTextField __AnalysisEnd_JTextField;
 private JTextField __DiffFlag_JTextField = null;
 private SimpleJComboBox	__CreateDiffTS_JComboBox = null;
+private JTextField __DifferenceFile_JTextField = null;
+private JTextField __SummaryFile_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DiffCountProperty_JTextField = null;
-private SimpleJComboBox	__WarnIfDifferent_JComboBox = null;
-private SimpleJComboBox	__WarnIfSame_JComboBox = null;
+private SimpleJComboBox __IfDifferent_JComboBox = null;
+private SimpleJComboBox __IfSame_JComboBox = null;
+// TODO smalers 2021-08-26 old properties
+//private SimpleJComboBox __WarnIfDifferent_JComboBox = null;
+//private SimpleJComboBox __WarnIfSame_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private CompareTimeSeries_Command __command = null;
 private boolean __ok = false; // Indicates whether user has pressed OK to close the dialog.
+private String __working_dir = null;
 
 /**
 Command editor constructor.
@@ -112,7 +131,75 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
-	if ( o == __cancel_JButton ) {
+	if ( o == __browseDiff_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
+		}
+		fc.setDialogTitle("Select Difference File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Difference File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				try {
+					__DifferenceFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareTimeSeries_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory );
+				refresh();
+			}
+		}
+	}
+	else if ( o == __browseSummary_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
+		}
+		fc.setDialogTitle("Select Summary File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Summary File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				try {
+					__SummaryFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareTimeSeries_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory );
+				refresh();
+			}
+		}
+	}
+	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
 	else if ( o == __help_JButton ) {
@@ -125,7 +212,40 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
-	else {	// Choices...
+	else if ( o == __pathDiff_JButton ) {
+		if ( __pathDiff_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__DifferenceFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __DifferenceFile_JTextField.getText() ) );
+		}
+		else if ( __pathDiff_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+			    __DifferenceFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __DifferenceFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "CompareTimeSeries_JDialog", "Error converting file to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else if ( o == __pathSummary_JButton ) {
+		if ( __pathSummary_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__SummaryFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __SummaryFile_JTextField.getText() ) );
+		}
+		else if ( __pathSummary_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+			    __SummaryFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __SummaryFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "CompareTimeSeries_JDialog", "Error converting file to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else {
+		// Choices...
 		refresh();
 	}
 }
@@ -181,10 +301,14 @@ private void checkInput ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
 	String CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+	String DifferenceFile = __DifferenceFile_JTextField.getText().trim();
+	String SummaryFile = __SummaryFile_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
 	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
-	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	String IfDifferent = __IfDifferent_JComboBox.getSelected();
+	String IfSame = __IfSame_JComboBox.getSelected();
+	//String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
+	//String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__error_wait = false;
 	if ( TSID1.length() > 0 ) {
 		props.set ( "TSID1", TSID1 );
@@ -225,18 +349,32 @@ private void checkInput ()
 	if ( CreateDiffTS.length() > 0 ) {
 		props.set ( "CreateDiffTS", CreateDiffTS );
 	}
+    if ( DifferenceFile.length() > 0 ) {
+    	props.set ( "DifferenceFile", DifferenceFile );
+    }
+    if ( SummaryFile.length() > 0 ) {
+    	props.set ( "SummaryFile", SummaryFile );
+    }
     if ( TableID.length() > 0 ) {
     	props.set ( "TableID", TableID );
     }
     if ( DiffCountProperty.length() > 0 ) {
     	props.set ( "DiffCountProperty", DiffCountProperty );
     }
+	if ( IfDifferent.length() > 0 ) {
+		props.set ( "IfDifferent", IfDifferent );
+	}
+	if ( IfSame.length() > 0 ) {
+		props.set ( "IfSame", IfSame );
+	}
+	/*
 	if ( WarnIfDifferent.length() > 0 ) {
 		props.set ( "WarnIfDifferent", WarnIfDifferent );
 	}
 	if ( WarnIfSame.length() > 0 ) {
 		props.set ( "WarnIfSame", WarnIfSame );
 	}
+	*/
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -264,10 +402,14 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
 	String CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+	String DifferenceFile = __DifferenceFile_JTextField.getText().trim();
+	String SummaryFile = __SummaryFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
 	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
-	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	String IfDifferent = __IfDifferent_JComboBox.getSelected();
+	String IfSame = __IfSame_JComboBox.getSelected();
+	//String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
+	//String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSID1", TSID1 );
 	__command.setCommandParameter ( "TSID2", TSID2 );
 	__command.setCommandParameter ( "EnsembleID1", EnsembleID1 );
@@ -281,10 +423,14 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "DiffFlag", DiffFlag );
 	__command.setCommandParameter ( "CreateDiffTS", CreateDiffTS );
+    __command.setCommandParameter ( "DifferenceFile", DifferenceFile );
+    __command.setCommandParameter ( "SummaryFile", SummaryFile );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DiffCountProperty", DiffCountProperty );
-	__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
-	__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
+	__command.setCommandParameter ( "IfDifferent", IfDifferent );
+	__command.setCommandParameter ( "IfSame", IfSame );
+	//__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
+	//__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
 }
 
 /**
@@ -295,6 +441,8 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, CompareTimeSeries_Command command, List<String> tableIDChoices )
 {	__command = command;
+	CommandProcessor processor = __command.getCommandProcessor();
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 
@@ -424,7 +572,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match location:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
-	List<String> matchChoices = new ArrayList<String>();
+	List<String> matchChoices = new ArrayList<>();
 	matchChoices.add ( "" );	// Default
 	matchChoices.add ( __command._False );
 	matchChoices.add ( __command._True );
@@ -440,7 +588,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match data type:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
-	List<String> matchDataTypeChoices = new ArrayList<String>();
+	List<String> matchDataTypeChoices = new ArrayList<>();
 	matchDataTypeChoices.add ( "" );	// Default
 	matchDataTypeChoices.add ( __command._False );
 	matchDataTypeChoices.add ( __command._True );
@@ -489,7 +637,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CompareFlags_JComboBox = new SimpleJComboBox ( false );
 	__CompareFlags_JComboBox.setToolTipText("Should data value flags be compared?  The comparison is case-specific.");
-	List<String> flagChoices = new ArrayList<String>();
+	List<String> flagChoices = new ArrayList<>();
 	flagChoices.add ( "" );	// Default
 	flagChoices.add ( __command._False );
 	flagChoices.add ( __command._True );
@@ -534,10 +682,45 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		"Optional - 1-character flag to use for values that are different."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Action if different:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
+	List<String> diffChoices = new ArrayList<>();
+	diffChoices.add ( "" );	// Default
+	diffChoices.add ( __command._Ignore );
+	diffChoices.add ( __command._Warn );
+	diffChoices.add ( __command._Fail );
+	__IfDifferent_JComboBox.setData(diffChoices);
+	__IfDifferent_JComboBox.select ( 0 );
+	__IfDifferent_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __IfDifferent_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+		"Optional - action if time series are different (default=" + __command._Ignore + ")."),
+		3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Action if same:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfSame_JComboBox = new SimpleJComboBox ( false );
+	List<String> sameChoices = new ArrayList<>();
+	sameChoices.add ( "" );	// Default
+	sameChoices.add ( __command._Ignore );
+	sameChoices.add ( __command._Warn );
+	sameChoices.add ( __command._Fail );
+	__IfSame_JComboBox.setData(sameChoices);
+	__IfSame_JComboBox.select ( 0 );
+	__IfSame_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __IfSame_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+		"Optional - action if time series are the same (default=" + __command._Ignore + ")."),
+		3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    /*
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if different?:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
-	List<String> diffChoices = new ArrayList<String>();
+	List<String> diffChoices = new ArrayList<>();
 	diffChoices.add ( "" );	// Default
 	diffChoices.add ( __command._False );
 	diffChoices.add ( __command._True );
@@ -553,7 +736,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if same?:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
-	List<String> sameChoices = new ArrayList<String>();
+	List<String> sameChoices = new ArrayList<>();
 	sameChoices.add ( "" );	// Default
 	sameChoices.add ( __command._False );
 	sameChoices.add ( __command._True );
@@ -565,6 +748,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - generate a warning if same? (default=" + __command._False + ")."), 
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	*/
     
     // Panel specifying output parameters
     int yOut = -1;
@@ -584,10 +768,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Create difference time series?:"),
 		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
   	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
-  	List<String> createChoices = new ArrayList<String>();
+  	List<String> createChoices = new ArrayList<>();
   	createChoices.add ( "" );	// Default
   	createChoices.add ( __command._False );
   	createChoices.add ( __command._True );
+  	createChoices.add ( __command._IfDifferent );
   	__CreateDiffTS_JComboBox.setData(createChoices);
    	__CreateDiffTS_JComboBox.select ( 0 );
    	__CreateDiffTS_JComboBox.addActionListener ( this );
@@ -596,6 +781,52 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(out_JPanel, new JLabel(
 		"Optional - create a time series TS2 - TS1? (default=" + __command._False + ")."), 
 		3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Difference file:" ), 
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__DifferenceFile_JTextField = new JTextField ( 50 );
+	__DifferenceFile_JTextField.setToolTipText("Specify the path to the difference file for all time series, can use ${Property} notation");
+	__DifferenceFile_JTextField.addKeyListener ( this );
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel DifferenceFile_JPanel = new JPanel();
+	DifferenceFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(DifferenceFile_JPanel, __DifferenceFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browseDiff_JButton = new SimpleJButton ( "...", this );
+	__browseDiff_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(DifferenceFile_JPanel, __browseDiff_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathDiff_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(DifferenceFile_JPanel, __pathDiff_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(out_JPanel, DifferenceFile_JPanel,
+		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Summary file:" ), 
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SummaryFile_JTextField = new JTextField ( 50 );
+	__SummaryFile_JTextField.setToolTipText("Specify the path to the summary file for differences, can use ${Property} notation");
+	__SummaryFile_JTextField.addKeyListener ( this );
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel SummaryFile_JPanel = new JPanel();
+	SummaryFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(SummaryFile_JPanel, __SummaryFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browseSummary_JButton = new SimpleJButton ( "...", this );
+	__browseSummary_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(SummaryFile_JPanel, __browseSummary_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathSummary_JButton = new SimpleJButton( __RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(SummaryFile_JPanel, __pathSummary_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(out_JPanel, SummaryFile_JPanel,
+		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -706,10 +937,14 @@ private void refresh ()
 	String AnalysisEnd = "";
 	String DiffFlag = "";
 	String CreateDiffTS = "";
+	String DifferenceFile = "";
+	String SummaryFile = "";
 	String TableID = "";
 	String DiffCountProperty = "";
-	String WarnIfDifferent = "";
-	String WarnIfSame = "";
+	String IfDifferent = "";
+	String IfSame = "";
+	//String WarnIfDifferent = "";
+	//String WarnIfSame = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -726,10 +961,14 @@ private void refresh ()
 		AnalysisEnd = props.getValue("AnalysisEnd");
 		DiffFlag = props.getValue ( "DiffFlag" );
 		CreateDiffTS = props.getValue ( "CreateDiffTS" );
+        DifferenceFile = props.getValue ( "DifferenceFile" );
+        SummaryFile = props.getValue ( "SummaryFile" );
         TableID = props.getValue ( "TableID" );
         DiffCountProperty = props.getValue ( "DiffCountProperty" );
-		WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
-		WarnIfSame = props.getValue ( "WarnIfSame" );
+		IfDifferent = props.getValue ( "IfDifferent" );
+		IfSame = props.getValue ( "IfSame" );
+		//WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
+		//WarnIfSame = props.getValue ( "WarnIfSame" );
         // Select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID1_JComboBox, TSID1, JGUIUtil.NONE, null, null ) ) {
             __TSID1_JComboBox.select ( TSID1 );
@@ -834,8 +1073,8 @@ private void refresh ()
 		if ( Tolerance != null ) {
 			__Tolerance_JTextField.setText ( Tolerance );
 		}
-		if ( JGUIUtil.isSimpleJComboBoxItem(__CompareFlags_JComboBox, WarnIfSame, JGUIUtil.NONE, null, null ) ) {
-			__CompareFlags_JComboBox.select ( WarnIfSame );
+		if ( JGUIUtil.isSimpleJComboBoxItem(__CompareFlags_JComboBox, CompareFlags, JGUIUtil.NONE, null, null ) ) {
+			__CompareFlags_JComboBox.select ( CompareFlags );
 		}
 		else {
 		    if ( (CompareFlags == null) || CompareFlags.equals("") ) {
@@ -872,6 +1111,12 @@ private void refresh ()
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+		if ( DifferenceFile != null ) {
+			__DifferenceFile_JTextField.setText (DifferenceFile);
+		}
+		if ( SummaryFile != null ) {
+			__SummaryFile_JTextField.setText (SummaryFile);
+		}
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -893,6 +1138,36 @@ private void refresh ()
 		if ( DiffCountProperty != null ) {
 			__DiffCountProperty_JTextField.setText ( DiffCountProperty );
 		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfDifferent_JComboBox, IfDifferent, JGUIUtil.NONE, null, null ) ) {
+			__IfDifferent_JComboBox.select ( IfDifferent );
+		}
+		else {
+		    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
+				// New command...select the default...
+				__IfDifferent_JComboBox.select ( 0 );
+			}
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"IfDifferent parameter \"" +
+				IfDifferent + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfSame_JComboBox, IfSame, JGUIUtil.NONE, null, null ) ) {
+			__IfSame_JComboBox.select ( IfSame );
+		}
+		else {
+		    if ( (IfSame == null) || IfSame.equals("") ) {
+				// New command...select the default...
+				__IfSame_JComboBox.select ( 0 );
+			}
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		/*
 		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfDifferent_JComboBox, WarnIfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__WarnIfDifferent_JComboBox.select ( WarnIfDifferent );
 		}
@@ -922,6 +1197,7 @@ private void refresh ()
 				"WarnIfSame parameter \"" + WarnIfSame + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+		*/
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
@@ -938,10 +1214,14 @@ private void refresh ()
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	DiffFlag = __DiffFlag_JTextField.getText().trim();
 	CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+	DifferenceFile = __DifferenceFile_JTextField.getText().trim();
+	SummaryFile = __SummaryFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
-	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	IfDifferent = __IfDifferent_JComboBox.getSelected();
+	IfSame = __IfSame_JComboBox.getSelected();
+	//WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
+	//WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID1=" + TSID1 );
 	props.add ( "TSID2=" + TSID2 );
@@ -956,11 +1236,50 @@ private void refresh ()
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "DiffFlag=" + DiffFlag );
 	props.add ( "CreateDiffTS=" + CreateDiffTS );
+    props.add ( "DifferenceFile=" + DifferenceFile );
+    props.add ( "SummaryFile=" + SummaryFile );
     props.add ( "TableID=" + TableID );
     props.add ( "DiffCountProperty=" + DiffCountProperty );
-	props.add ( "WarnIfDifferent=" + WarnIfDifferent );
-	props.add ( "WarnIfSame=" + WarnIfSame );
+	props.add ( "IfDifferent=" + IfDifferent );
+	props.add ( "IfSame=" + IfSame );
+	//props.add ( "WarnIfDifferent=" + WarnIfDifferent );
+	//props.add ( "WarnIfSame=" + WarnIfSame );
 	__command_JTextArea.setText( __command.toString(props) );
+	// Check the path and determine what the label on the path button should be...
+	if ( __pathDiff_JButton != null ) {
+		if ( (DifferenceFile != null) && !DifferenceFile.isEmpty() ) {
+			__pathDiff_JButton.setEnabled ( true );
+			File f = new File ( DifferenceFile );
+			if ( f.isAbsolute() ) {
+				__pathDiff_JButton.setText ( __RemoveWorkingDirectory );
+				__pathDiff_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathDiff_JButton.setText ( __AddWorkingDirectory );
+            	__pathDiff_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathDiff_JButton.setEnabled(false);
+		}
+	}
+	if ( __pathSummary_JButton != null ) {
+		if ( (SummaryFile != null) && !SummaryFile.isEmpty() ) {
+			__pathSummary_JButton.setEnabled ( true );
+			File f = new File ( SummaryFile );
+			if ( f.isAbsolute() ) {
+				__pathSummary_JButton.setText ( __RemoveWorkingDirectory );
+				__pathSummary_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathSummary_JButton.setText ( __AddWorkingDirectory );
+            	__pathSummary_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathSummary_JButton.setEnabled(false);
+		}
+	}
 }
 
 /**

@@ -52,11 +52,14 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -80,9 +83,10 @@ private ReadStateCUB_Command __command = null; // Command to edit
 private JTextArea __command_JTextArea=null;// Command as TextField
 private String __working_dir = null;	// Working directory.
 private JTextField __InputFile_JTextField = null; // Field for input file. 
-private JTextField __InputStart_JTextField = null; // Start of period for input
-private JTextField __InputEnd_JTextField = null; // End of period for input
 private JTextField __TSID_JTextField = null; // Field for time series identifier
+private JTextField __InputStart_JTextField = null; // Start of period for input.
+private JTextField __InputEnd_JTextField = null; // End of period for input
+private SimpleJComboBox __OutputVersion_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up?
 private boolean __first_time = true;
 // TODO SAM 2007-02-18 Evaluate whether to support alias
@@ -170,6 +174,10 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else {
+	    // Choices.
+		refresh();
+	}
 }
 
 // Start event handlers for DocumentListener...
@@ -214,6 +222,7 @@ private void checkInput ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String OutputVersion = __OutputVersion_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -226,6 +235,9 @@ private void checkInput ()
 	}
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
+	}
+	if ( OutputVersion.length() > 0 ) {
+		props.set ( "OutputVersion", OutputVersion );
 	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -245,10 +257,12 @@ private void commitEdits ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String OutputVersion = __OutputVersion_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "InputStart", InputStart );
 	__command.setCommandParameter ( "InputEnd", InputEnd );
+	__command.setCommandParameter ( "OutputVersion", OutputVersion );
 }
 
 /**
@@ -273,7 +287,7 @@ private void initialize ( JFrame parent, ReadStateCUB_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read all the time series from a StateCU binary output file, "+
+		"Read one or more time series from a StateCU binary output file, "+
 		"using information in the file to assign the identifier."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -284,12 +298,13 @@ private void initialize ( JFrame parent, ReadStateCUB_Command command )
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is:" ),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series identifier pattern, if specified, will filter the read." ),
+		"The time series identifier pattern (Loc.Source.DataType.Interval), if specified, will filter the read." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"  Use blank or * to read all time series." ),
@@ -301,7 +316,7 @@ private void initialize ( JFrame parent, ReadStateCUB_Command command )
 		"  Use *.*.XXXXX.*.* to read all time series with data type XXXXX." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  Currently, data source, interval, and scenario are internally defaulted to *." ),
+		"  The data source, interval, and scenario internally default to *." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
@@ -355,6 +370,24 @@ private void initialize ( JFrame parent, ReadStateCUB_Command command )
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is global input end or all data."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output version:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputVersion_JComboBox = new SimpleJComboBox ( false );
+    __OutputVersion_JComboBox.setToolTipText("Version for output, used to translate to a specific version.");
+    List<String> versionChoices = new ArrayList<>();
+    versionChoices.add ( "" );
+    versionChoices.add ( __command._Original );
+    versionChoices.add ( __command._Latest );
+    versionChoices.add ( __command._Version14 );
+    __OutputVersion_JComboBox.setData(versionChoices);
+    __OutputVersion_JComboBox.select ( 0 );
+    __OutputVersion_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputVersion_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output version (default=" + __command._Original + ")"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -424,10 +457,12 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String InputFile="";
+{	String routine = getClass().getSimpleName() + ".refresh";
+	String InputFile="";
 	String TSID="";
 	String InputStart = "";
 	String InputEnd = "";
+	String OutputVersion = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -437,6 +472,7 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
+		OutputVersion = props.getValue ( "OutputVersion" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText (InputFile);
 		}
@@ -449,17 +485,33 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__OutputVersion_JComboBox, OutputVersion, JGUIUtil.NONE, null, null ) ) {
+            __OutputVersion_JComboBox.select ( OutputVersion );
+        }
+        else {
+            if ( (OutputVersion == null) || OutputVersion.equals("") ) {
+                // New command...select the default...
+                __OutputVersion_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "OutputVersion parameter \"" + OutputVersion + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
 	TSID = __TSID_JTextField.getText().trim();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
+	OutputVersion = __OutputVersion_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "TSID=" + TSID );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
+	props.add ( "OutputVersion=" + OutputVersion );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

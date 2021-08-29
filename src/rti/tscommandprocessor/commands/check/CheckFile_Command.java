@@ -557,29 +557,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
 
-	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
-    File file = new File ( InputFile_full );
-	if ( !file.exists() ) {
-        message = "File to check \"" + InputFile_full + "\" does not exist.";
-        if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the file exists at the time the command is run."));
-        }
-        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Verify that the file exists at the time the command is run."));
-        }
-        else {
-            Message.printStatus( 2, routine, message + "  Ignoring.");
-        }
-	}
-    
     if ( warning_count > 0 ) {
         // Input error...
         message = "Insufficient data to run command.";
@@ -600,6 +577,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         else {
         	// Running the command.
+        	String InputFile_full = IOUtil.verifyPathForOS(
+               	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	       	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
+           	File file = new File ( InputFile_full );
+	       	if ( !file.exists() ) {
+               	message = "File to check \"" + InputFile_full + "\" does not exist.";
+               	if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+                   	Message.printWarning ( warning_level,
+                       	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                   	status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                           	message, "Verify that the file exists at the time the command is run."));
+               	}
+               	else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+                   	Message.printWarning ( warning_level,
+                       	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                   	status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                           	message, "Verify that the file exists at the time the command is run."));
+               	}
+               	else {
+                   	Message.printStatus( 2, routine, message + "  Ignoring.");
+               	}
+	       	}
+    
         	boolean newTable = false;
     	   	if ( (table == null) && (TableID != null) && !TableID.isEmpty() &&
            		(TableFilenameColumn != null) && !TableFilenameColumn.equals("") &&

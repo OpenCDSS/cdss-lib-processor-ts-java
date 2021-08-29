@@ -82,9 +82,9 @@ private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __browse_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
+private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private WriteDelimitedFile_Command __command = null;
 private String __working_dir = null;

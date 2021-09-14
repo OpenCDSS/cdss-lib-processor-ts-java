@@ -812,7 +812,9 @@ private void refresh ()
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __FileProperty_JComboBox, FileProperty, JGUIUtil.NONE, null, null ) ) {
 			__FileProperty_JComboBox.select ( FileProperty );
-			__main_JTabbedPane.setSelectedIndex(1);
+			if ( (FileProperty != null) && !FileProperty.isEmpty() ) {
+				__main_JTabbedPane.setSelectedIndex(1);
+			}
 		}
 		else {
 			if ( (FileProperty == null) || FileProperty.equals("") ) {
@@ -827,7 +829,6 @@ private void refresh ()
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __FilePropertyOperator_JComboBox, FilePropertyOperator, JGUIUtil.NONE, null, null ) ) {
 			__FilePropertyOperator_JComboBox.select ( FilePropertyOperator );
-			__main_JTabbedPane.setSelectedIndex(1);
 		}
 		else {
 			if ( (FilePropertyOperator == null) || FilePropertyOperator.equals("") ) {

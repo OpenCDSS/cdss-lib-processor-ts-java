@@ -30,7 +30,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 
@@ -52,9 +51,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the DeselectTimeSeries() command.
-</p>
 */
 public class DeselectTimeSeries_Command extends AbstractCommand implements Command
 {
@@ -162,7 +159,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+	List<String> validList = new ArrayList<>(5);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -258,7 +255,9 @@ CommandWarningException, CommandException
 	    TSList = "" + TSListType.ALL_TS; // Default
 	}
 	String TSID = parameters.getValue ( "TSID" );
+	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	String TSPosition = parameters.getValue ( "TSPosition" );
 	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
 	boolean SelectAllFirst_boolean = false;  // Default
@@ -267,7 +266,7 @@ CommandWarningException, CommandException
 	}
 	
 	// If necessary, get the list of all time series...
-	List<TS> tslistAll = new Vector<TS>();
+	List<TS> tslistAll = new ArrayList<>();
 	if ( SelectAllFirst_boolean ) {
 	    // Select all first
 	    try {

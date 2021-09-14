@@ -26,6 +26,7 @@ package rti.tscommandprocessor.commands.ts;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -189,6 +190,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String MatchLocation = parameters.getValue ( "MatchLocation" );
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
+	String MatchAlias = parameters.getValue ( "MatchAlias" );
 	String Precision = parameters.getValue ( "Precision" );
 	String Tolerance = parameters.getValue ( "Tolerance" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -217,6 +219,15 @@ throws InvalidCommandParameterException
 	if ( (MatchDataType != null) && !MatchDataType.isEmpty() ) {
 		if ( !MatchDataType.equals(_False) && !MatchDataType.equals(_True) ) {
             message = "The MatchDataType parameter \"" + MatchDataType + "\" if specified must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify False or True (or do not specify to use default of False)." ) );
+		}
+	}
+	if ( (MatchAlias != null) && !MatchAlias.isEmpty() ) {
+		if ( !MatchAlias.equals(_False) && !MatchAlias.equals(_True) ) {
+            message = "The MatchAlias parameter \"" + MatchAlias + "\" if specified must be False or True.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -385,13 +396,14 @@ throws InvalidCommandParameterException
 	*/
     
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(19);
+	List<String> validList = new ArrayList<>(20);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
 	validList.add ( "EnsembleID1" );
 	validList.add ( "EnsembleID2" );
 	validList.add ( "MatchLocation" );
 	validList.add ( "MatchDataType" );
+	validList.add ( "MatchAlias" );
 	validList.add ( "Precision" );
 	validList.add ( "Tolerance" );
 	validList.add ( "CompareFlags" );
@@ -650,7 +662,7 @@ throws Exception {
 /**
  * Create report files.
  */
-private void createReportFiles ( List<TS> compare_tslist, String DifferenceFile_full, String SummaryFile_full,
+private void createReportFiles ( List<TS> outputTSList, String DifferenceFile_full, String SummaryFile_full,
 	boolean MatchDataType_boolean,
 	List<String> matchedList,
 	int Tolerance_count,
@@ -663,54 +675,87 @@ private void createReportFiles ( List<TS> compare_tslist, String DifferenceFile_
 	List<double []> compare_diffavg,
 	List<String> problems
 	) {
-	int size = compare_tslist.size();
+	int size = outputTSList.size();
 	StringBuilder diffBuilder = new StringBuilder(); // Full difference report (longer file).
 	StringBuilder summaryBuilder = new StringBuilder(); // Only summary of differences (shorter file).
-	int location_length = 8; // Enough for heading.
-	int datatype_length = 9; // Enough for heading.
+	int locationLength = 8; // Enough for heading text.
+	int datatypeLength = 9; // Enough for heading text.
+	int tsidLength = 4; // Enough for "TSID" heading text.
+	int tsaliasLength = 7; // Enough for "TSAlias" heading text.
 	TS ts = null;
 	// Figure out the length for some of the string columns.
 	for ( int its = 0; its < size; its++ ) {
-		ts = compare_tslist.get(its);
-		if ( ts.getIdentifier().getLocation().length() > location_length ) {
-			location_length = ts.getIdentifier().getLocation().length();
+		ts = outputTSList.get(its);
+		if ( ts.getIdentifier().getLocation().length() > locationLength ) {
+			locationLength = ts.getIdentifier().getLocation().length();
+		}
+		if ( ts.getIdentifierString().length() > tsidLength ) {
+			// This is for all time series and may result in spaces at the end for summary.
+			tsidLength = ts.getIdentifierString().length();
+		}
+		if ( ts.getAlias().length() > tsaliasLength ) {
+			// This is for all time series and may result in spaces at the end for summary.
+			tsaliasLength = ts.getAlias().length();
 		}
 		if ( MatchDataType_boolean ) {
-			if ( ts.getIdentifier().getType().length() > datatype_length ) {
-				datatype_length = ts.getIdentifier().getType().length();
+			if ( ts.getIdentifier().getType().length() > datatypeLength ) {
+				datatypeLength = ts.getIdentifier().getType().length();
 			}
 		}
 	}
 
-	String location_format = "%-14.14s"; // Default width.
-	if ( location_length > 14 ) {
+	String locationFormat = "%-8.8s"; // Default width, reset below.
+	String datatypeFormat = "%-9.9s"; // Default width, reset below.
+	String descriptionFormat = "%-20.20s"; // Fixed width - reasonable length but avoid wide output.
+	String tsidFormat = "%-4.4s"; // Default width, reset below.
+	String tsaliasFormat = "%-7.7s"; // Default width, reset below.
+	if ( locationLength > 8 ) {
 		// Increase the width.
-		location_format = "%-" + location_length + "." + location_length + "s";
+		locationFormat = "%-" + locationLength + "." + locationLength + "s";
 	}
-	String datatype_format = "%-14.14s"; // Default width.
-	if ( datatype_length > 14 ) {
+	if ( datatypeLength > 9 ) {
 		// Increase the width.
-		datatype_format = "%-" + datatype_length + "." + datatype_length + "s";
+		datatypeFormat = "%-" + datatypeLength + "." + datatypeLength + "s";
 	}
-	String int_format = "%7d";
-	String double_format = "%10.2f";
-	String double_blank = "          ";
-	String date_format = "%10.10s";
+	if ( tsidLength > 4 ) {
+		// Increase the width.
+		tsidFormat = "%-" + tsidLength + "." + tsidLength + "s";
+	}
+	if ( tsaliasLength > 4 ) {
+		// Increase the width.
+		tsaliasFormat = "%-" + tsaliasLength + "." + tsaliasLength + "s";
+	}
+	String intFormat = "%7d";
+	String intBlank = "       ";
+	String doubleFormat = "%10.2f";
+	String doubleBlank = "          ";
+	String dateFormat = "%10.10s";
+	String dateBlank = "          ";
 	String nl = System.getProperty ( "line.separator" );
-	summaryBuilder.append ( "# Summary of differences only." + nl );
+	summaryBuilder.append ( "# Summary of time series with differences only." + nl );
 	summaryBuilder.append ( "# Differences are second time series minus first time series." + nl );
-	summaryBuilder.append ( "# Time series without a match (if any) are listed at the bottom." + nl );
-	diffBuilder.append ( "# Summary of differences for all time series." + nl );
+	summaryBuilder.append ( "# Time series with a match are listed once." + nl );
+	summaryBuilder.append ( "# Time series without a match (if any) are listed with no analysis results." + nl );
+	summaryBuilder.append ( "# Time series with > 2 matches are listed with no analysis results." + nl );
+	diffBuilder.append ( "# Summary of differences for all time series, including those with no differences." + nl );
 	diffBuilder.append ( "# Differences are second time series minus first time series." + nl );
-	diffBuilder.append ( "# Time series without a match (if any) are listed at the bottom." + nl );
+	diffBuilder.append ( "# Time series matches are listed once." + nl );
+	diffBuilder.append ( "# Time series without a match (if any) are listed with no analysis results." + nl );
+	diffBuilder.append ( "# Time series with > 2 matches are listed with no analysis results." + nl );
 	// Print the headings rows.
 	diffBuilder.append ( "|  #  " );
-	diffBuilder.append ( "|" + StringUtil.formatString( "Location", location_format) );
+	diffBuilder.append ( "|" + StringUtil.formatString( "Location", locationFormat) );
+	diffBuilder.append ( "|" + StringUtil.formatString( "Description", descriptionFormat) );
+	diffBuilder.append ( "|" + StringUtil.formatString( "TSID", tsidFormat) );
+	diffBuilder.append ( "|" + StringUtil.formatString( "TSAlias", tsaliasFormat) );
 	summaryBuilder.append ( "|  #  " );
-	summaryBuilder.append ( "|" + StringUtil.formatString( "Location", location_format) );
+	summaryBuilder.append ( "|" + StringUtil.formatString( "Location", locationFormat) );
+	summaryBuilder.append ( "|" + StringUtil.formatString( "Description", descriptionFormat) );
+	summaryBuilder.append ( "|" + StringUtil.formatString( "TSID", tsidFormat) );
+	summaryBuilder.append ( "|" + StringUtil.formatString( "TSAlias", tsaliasFormat) );
 	if ( MatchDataType_boolean ) {
-		diffBuilder.append ( "|" + StringUtil.formatString( "Data Type", datatype_format));
-		summaryBuilder.append ( "|" + StringUtil.formatString( "Data Type", datatype_format));
+		diffBuilder.append ( "|" + StringUtil.formatString( "Data Type", datatypeFormat));
+		summaryBuilder.append ( "|" + StringUtil.formatString( "Data Type", datatypeFormat));
 	}
 	diffBuilder.append ( "|Matched" );
 	summaryBuilder.append ( "|Matched" );
@@ -730,86 +775,144 @@ private void createReportFiles ( List<TS> compare_tslist, String DifferenceFile_
 	summaryBuilder.append ( "| MaxDate  " );
 	diffBuilder.append ( "|" + nl );
 	summaryBuilder.append ( "|" + nl );
-	int [] diffcount_array;
-	double [] diffabsavg_array;
-	double [] diffavg_array;
+	int [] diffcount_array = null;
+	double [] diffabsavg_array = null;
+	double [] diffavg_array = null;
 	boolean is_diff;
 	for ( int its = 0; its < size; its++ ) {
-		ts = compare_tslist.get(its);
+		ts = outputTSList.get(its);
 		is_diff = false;
-		// Check for difference here so that difference-only summary report can be completed.
-		diffcount_array = (int[])compare_diffcount.get(its);
-		for ( int it = 0; it < Tolerance_count; it++ ) {
-			if ( diffcount_array[it] > 0 ) {
-				is_diff = true;
+		// Check for difference here so that difference-only summary report can be completed:
+		// - the diffcount_array will be null if no comparisons was performed (no matching time series)
+		// - show zeros for the difference and match column will indicate no match
+		if ( compare_diffcount.get(its) == null ) {
+			diffcount_array = new int[Tolerance_count];
+			for ( int it = 0; it < Tolerance_count; it++ ) {
+				diffcount_array[it] = 0;
+			}
+			is_diff = true;
+		}
+		else {
+			diffcount_array = (int[])compare_diffcount.get(its);
+			if ( diffcount_array != null ) {
+				for ( int it = 0; it < Tolerance_count; it++ ) {
+					if ( (diffcount_array.length > 0) && (diffcount_array[it] > 0) ) {
+						is_diff = true;
+					}
+				}
 			}
 		}
 		// Difference file includes all time series.
 		diffBuilder.append ( "|" + StringUtil.formatString((its + 1),"%5d") );
-		diffBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getLocation(),location_format) );
+		diffBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getLocation(),locationFormat) );
+		diffBuilder.append ( "|" + StringUtil.formatString(ts.getDescription(),descriptionFormat) );
+		diffBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifierString(),tsidFormat) );
+		diffBuilder.append ( "|" + StringUtil.formatString(ts.getAlias(),tsaliasFormat) );
 		if ( is_diff ) {
 			// Summary file only includes differences.
 		    summaryBuilder.append ( "|" + StringUtil.formatString((its + 1),"%5d") );
-			summaryBuilder.append ( "|" +StringUtil.formatString(ts.getIdentifier().getLocation(), location_format) );
+			summaryBuilder.append ( "|" +StringUtil.formatString(ts.getIdentifier().getLocation(), locationFormat) );
+			summaryBuilder.append ( "|" +StringUtil.formatString(ts.getDescription(), descriptionFormat) );
+			summaryBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifierString(),tsidFormat) );
+			summaryBuilder.append ( "|" + StringUtil.formatString(ts.getAlias(),tsaliasFormat) );
 		}
 		if ( MatchDataType_boolean ) {
-			diffBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatype_format) );
+			diffBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatypeFormat) );
 			if ( is_diff ) {
-				summaryBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatype_format) );
+				summaryBuilder.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatypeFormat) );
 			}
 		}
-		diffBuilder.append ( "|" + StringUtil.formatString(matchedList.get(its), "  %-3.3s  ") );
-		diffBuilder.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),int_format) );
+		boolean isMatched = false;
+		String matched = matchedList.get(its);
+		if ( matched.equals("yes") ) {
+			isMatched = true;
+		}
+		else {
+			isMatched = false;
+		}
+		diffBuilder.append ( "|" + StringUtil.formatString(matched, "  %-3.3s  ") );
 		if ( is_diff ) {
-			summaryBuilder.append ( "|" + StringUtil.formatString(matchedList.get(its), "  %-3.3s  ") );
-			summaryBuilder.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),int_format) );
+			summaryBuilder.append ( "|" + StringUtil.formatString(matched, "  %-3.3s  ") );
+		}
+		
+		// If a time series is matched, print out analysis.  Otherwise (not matched or > 1 match) print blanks.
+		if ( isMatched ) {
+			diffBuilder.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),intFormat) );
+		}
+		else {
+			diffBuilder.append ( "|" + intBlank );
+		}
+		if ( is_diff ) {
+			if ( isMatched ) {
+				summaryBuilder.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),intFormat) );
+			}
+			else {
+				summaryBuilder.append ( "|" + intBlank );
+			}
 		}
 		diffabsavg_array=(double[])compare_diffabsavg.get(its);
 		diffavg_array=(double[])compare_diffavg.get(its);
 		for ( int it = 0; it < Tolerance_count; it++ ) {
-			diffBuilder.append ( "|" + StringUtil.formatString(diffcount_array[it], int_format) );
-			if ( is_diff ) {
-				summaryBuilder.append ( "|" + StringUtil.formatString(diffcount_array[it], int_format) );
+			if ( isMatched ) {
+				diffBuilder.append ( "|" + StringUtil.formatString(diffcount_array[it], intFormat) );
 			}
-			if ( diffcount_array[it] > 0 ) {
-				diffBuilder.append ( "|" + StringUtil.formatString(diffabsavg_array[it], double_format) );
-				diffBuilder.append ( "|" + StringUtil.formatString(diffavg_array[it], double_format) );
+			else {
+				diffBuilder.append ( "|" + intBlank );
+			}
+			if ( is_diff ) {
+				if ( isMatched ) {
+					summaryBuilder.append ( "|" + StringUtil.formatString(diffcount_array[it], intFormat) );
+				}
+				else {
+					summaryBuilder.append ( "|" + intBlank );
+				}
+			}
+			if ( (diffcount_array != null) && (diffcount_array[it] > 0) ) {
+				diffBuilder.append ( "|" + StringUtil.formatString(diffabsavg_array[it], doubleFormat) );
+				diffBuilder.append ( "|" + StringUtil.formatString(diffavg_array[it], doubleFormat) );
 				if ( is_diff ) {
-					summaryBuilder.append ( "|" + StringUtil.formatString(diffabsavg_array[it], double_format) );
-					summaryBuilder.append ( "|" + StringUtil.formatString(diffavg_array[it], double_format) );
+					if ( isMatched ) {
+						summaryBuilder.append ( "|" + StringUtil.formatString(diffabsavg_array[it], doubleFormat) );
+						summaryBuilder.append ( "|" + StringUtil.formatString(diffavg_array[it], doubleFormat) );
+					}
+					else {
+						summaryBuilder.append ( "|" + doubleBlank );
+						summaryBuilder.append ( "|" + doubleBlank );
+					}
 				}
 			}
 			else {
-			    diffBuilder.append ( "|" + double_blank );
-				diffBuilder.append ( "|" + double_blank );
+			    diffBuilder.append ( "|" + doubleBlank );
+				diffBuilder.append ( "|" + doubleBlank );
 				if ( is_diff ) {
-					summaryBuilder.append ( "|" + double_blank );
-					summaryBuilder.append ( "|" + double_blank );
+					summaryBuilder.append ( "|" + doubleBlank );
+					summaryBuilder.append ( "|" + doubleBlank );
 				}
 			}
 		}
 		if ( is_diff ) {
 			if ( compare_diffmax.get(its) == null ) {
-				diffBuilder.append ( "|" +  double_blank );
-				summaryBuilder.append ( "|" + double_blank );
+				diffBuilder.append ( "|" +  doubleBlank );
+				summaryBuilder.append ( "|" + doubleBlank );
 			}
 			else {
-				diffBuilder.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(), double_format) );
-				summaryBuilder.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(),double_format) );
+				diffBuilder.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(), doubleFormat) );
+				summaryBuilder.append ( "|" + StringUtil.formatString(compare_diffmax.get(its).doubleValue(),doubleFormat) );
 			}
 			DateTime date = compare_diffmaxdate.get(its);
 			if ( date == null ) {
-				diffBuilder.append ( "|" + StringUtil.formatString( "", date_format) );
-				summaryBuilder.append ( "|" + StringUtil.formatString( "", date_format) );
+				diffBuilder.append ( "|" + StringUtil.formatString( "", dateFormat) );
+				summaryBuilder.append ( "|" + StringUtil.formatString( "", dateFormat) );
 			}
 			else {
-			    diffBuilder.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),date_format) );
-				summaryBuilder.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),date_format) );
+			    diffBuilder.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),dateFormat) );
+				summaryBuilder.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(its).toString(),dateFormat) );
 			}
 		}
 		else {
-		    diffBuilder.append ( "|" + double_blank );
-			diffBuilder.append ( "|" + StringUtil.formatString( "",date_format) );
+		    diffBuilder.append ( "|" + doubleBlank );
+			//diffBuilder.append ( "|" + StringUtil.formatString( "",dateFormat) );
+			diffBuilder.append ( "|" + dateBlank );
 		}
 		diffBuilder.append ( "|" + nl ); // Last border.
 		if ( is_diff ) {
@@ -1020,6 +1123,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String MatchLocation = parameters.getValue ( "MatchLocation" );
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
+	String MatchAlias = parameters.getValue ( "MatchAlias" );
 	String Precision = parameters.getValue ( "Precision" ); // What to round data to before comparing.
 	String Tolerance = parameters.getValue ( "Tolerance" );
 	String CompareFlags = parameters.getValue ( "CompareFlags" );
@@ -1078,6 +1182,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	boolean MatchDataType_boolean = false; // Default.
 	if ( (MatchDataType != null) && MatchDataType.equalsIgnoreCase(_True)){
 		MatchDataType_boolean = true;
+	}
+	boolean MatchAlias_boolean = false; // Default.
+	if ( (MatchAlias != null) && MatchAlias.equalsIgnoreCase(_True)){
+		MatchAlias_boolean = true;
 	}
 	/*
 	boolean WarnIfDifferent_boolean = false; // Default.
@@ -1454,12 +1562,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	double [] diffabsavg = null;
 	double [] diffavg = null;
 	boolean is_diff = false; // Indicates whether a differences has been determined.
-	boolean foundLoc1 = false; // Has the time series already been processed?
-	boolean foundDatatype1 = false;
+	//boolean foundLoc1 = false; // Has the time series already been processed?
+	//boolean foundDatatype1 = false;
+	//boolean foundAlias1 = false;
+	StringBuilder hashKey = new StringBuilder(); // Reused below
+	HashMap<String,Boolean> addedMap = new HashMap<>();
 	boolean foundMatch = false;
+	// If true, add a time series comparison analysis:
+	// - first ts1/ts2 match, and ts1 when not matched
+	//boolean doAnalysis = false;
 	int tsdiff_count = 0; // The number of time series that are different.
-	// Lists of data that were processed for the report, matching pairs of time series that are compared.
-	List<TS> compare_tslist = new ArrayList<>();
+	// Lists of data that were processed for the report,
+	// matching pairs of time series that are compared and time series that were not matched.
+	List<TS> outputTSList = new ArrayList<>();
 	// Whether the time series was matched ("yes" or "no")
 	List<String> matchedList = new ArrayList<>();
 	List<Integer> compare_numvalues = new ArrayList<>();
@@ -1509,392 +1624,597 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                }
 	            }
         	}
-	    // Loop through the time series:
-        // - for each time series, find its matching time series, by location, ignoring itself
-        // - when a match is found, do the comparison
-		TS ts1, ts2;
-		TS diffts = null; // Difference time series.
-		TSIterator tsi;
-		if ( do2Ts ) {
-			// Directly comparing so only need to process one comparison.
-			size = 1;
-		}
-		else {
-			// Must process all the time series and try to find match for each time series.
-			size = tslist.size();
-		}
-		double value1_orig; // Data values from each time series, rounded and original.
-		double value2_orig;
-		TSData tsdata1 = new TSData(), tsdata2 = new TSData(); // Data points for each time series.
-		String flag1, flag2; // Data flags for values in each time series.
-		DiffStats diffStats = new DiffStats();
-		DateTime date1 = null, date2 = null; // Dates for iteration.
-		int j;
-		String loc1, datatype1; // Location and data type for the first time series. 
-		List<String> locList = new ArrayList<>(); // Location/datatype.
-		List<String> datatypeList = new ArrayList<>(); // pairs that have already been processed.
-		for ( int i = 0; i < size; i++ ) {
-			diffts = null;
-			ts1 = tslist.get(i);
-			ts2 = null;
-			loc1 = ts1.getLocation();
-			datatype1 = ts1.getDataType();
-			if ( do2Ts ) {
-				// Only have two time series so always a match.
-				foundMatch = true;
-				ts1 = tslist.get(0);
-				ts2 = tslist.get(1);
-			}
-			else if ( do2Ensembles ) {
-				// Get one time series from each ensemble.
-				foundMatch = true;
-				ts1 = tslist.get(i);
-				ts2 = tslist2.get(i);
-			}
-			else {
-				// Try to pair up time series based on location and data type
-				// Make sure not to analyze the same combination more than once, based on the location ID and data type.
-				// TODO SAM 2005-05-25 Also need to check interval always.
-				foundMatch = false;
-				boolean alreadyProcessed = false;
-				for ( j = 0; j < locList.size(); j++ ) {
-					// TODO SAM 2016-03-23 This needs review - is there a more robust way to deal with this?
-					// These checks are to see if the location and data type have already been processed.
-					// Check the parts individually.
-					foundLoc1 = false;
-					foundDatatype1 = false;
-					if ( loc1.equalsIgnoreCase( locList.get(j)) ) {
-						foundLoc1 = true;
-					}
-					if ( datatype1.equalsIgnoreCase(datatypeList.get(j))) {
-						foundDatatype1 = true;
-					}
-					// Now reset found_loc1 depending on whether the location and datatype (one or both) are being matched.
-					if ( MatchLocation_boolean && MatchDataType_boolean ) {
-						// Need to check both.
-						if ( foundLoc1 && foundDatatype1 ) {
-							alreadyProcessed = true;
-							break;
-						}
-					}
-					else if ( MatchLocation_boolean && foundLoc1 ){
-						alreadyProcessed = true;
-						break;
-					}
-					else if ( MatchDataType_boolean && foundDatatype1 ) {
-						alreadyProcessed = true;
-						break;
-					}
-				}
-				if ( alreadyProcessed ) {
-					// Have already processed this time series.
-					continue;
-				}
-				// The time series location and data type have not already been processed.
-				// Try to find a matching location, skipping the same instance and incompatible intervals.
-				for ( j = 0; j < size; j++ ) {
-					if ( i == j ) {
-						// Don't compare a time series with itself.
-						continue;
-					}
-					ts2 = tslist.get(j);
-					// Make sure that the interval is the same.
-					if ( !((ts1.getDataIntervalBase() == ts2.getDataIntervalBase()) &&
-						(ts1.getDataIntervalMult() == ts2.getDataIntervalMult())) ) {
-						// Intervals do not match.
-						continue;
-					}
-					// Check the requested information.
-					if ( MatchLocation_boolean && !loc1.equalsIgnoreCase(ts2.getLocation())){
-						// Not a match.
-						continue;
-					}
-					if ( MatchDataType_boolean && !datatype1.equalsIgnoreCase(ts2.getDataType())){
-						// Not a match.
-						continue;
-					}
-					// Have a match.
-					foundMatch = true;
-					break;
-				}
-			}
-			if ( foundMatch ) {
-				// Have a match so do the comparison.
-				// Currently only compare the data values and flags but not the metadata.
-				// Add locations and data types that have been processed so they are not found again.
-				locList.add ( loc1 );
-				datatypeList.add ( datatype1 );
-				// If the differences will be flagged, allocate the data flag space in both time series.
-				if ( DiffFlag != null ) {
-					ts1.allocateDataFlagSpace ( null, true ); // Retain previous.
-					ts2.allocateDataFlagSpace ( null, true ); // Retain previous.
-				}
-				// If a difference time series is to be created, do it up front:
-				// - this ensures that it is available when differences are detected
-				// - only add to the output list later if appropriate (discard if CreateDiffTS=IfDifferent and no differences)
-				// - unused time series will not be allocated memory and will be garbage collected
-				if ( doCreateDiffTS ) {
-					diffts = createDiffTimeSeries ( ts2 );
-				}
-				// Initialize for the comparison.
-				diffStats.totalcount = 0;
-				diffStats.diffmaxabs = -1.0e10;
-				// Reallocate in order to have unique references to save for the report.
-				diffcount = new int[Tolerance_count];
-				diffabsavg = new double[Tolerance_count];
-				diffavg = new double[Tolerance_count];
-				for ( int it = 0; it < Tolerance_count; it++ ) {
-					diffcount[it] = 0;
-					difftotal[it] = 0.0;
-					difftotalabs[it] = 0.0;
-				}
-				// Analysis period should encompass the period from both time series.
-				if ( AnalysisStart_DateTime == null ) {
-					date1 = new DateTime (ts1.getDate1());
-					if ( ts2.getDate1().lessThan(date1) ) {
-						date1 = new DateTime( ts2.getDate1());
-					}
-				}
-				else {
-				    date1 = new DateTime ( AnalysisStart_DateTime);
-				}
-				if ( AnalysisEnd_DateTime == null ) {
-					date2 = new DateTime (ts1.getDate2());
-					if ( ts2.getDate2().greaterThan(date2)){
-						date2 = new DateTime(ts2.getDate2());
-					}
-				}
-				else {
-				    date2 = new DateTime ( AnalysisEnd_DateTime);
-				}
-				Message.printStatus ( 2, routine, "TS1 = " + ts1.getIdentifier().toString(true) );
-				Message.printStatus ( 2, routine, "TS2 = " + ts2.getIdentifier().toString(true) );
-				Message.printStatus ( 2, routine, "Data differences TS2 - TS1 follow " +
-					"(Tolerance=" + Tolerance + ", Period="+ date1 + " to " + date2 + "):" );
-				// Increment counter indicating that a test was tried.
-				++tsComparisonsTried;
-				if ( !TimeInterval.isRegularInterval(ts1.getDataIntervalBase()) ||
-					!TimeInterval.isRegularInterval(ts2.getDataIntervalBase()) ) {
-					// One or both of the time series are irregular.
-					// It is difficult to iterate because timestamps may not align.
-					// Therefore, retrieve all the date/times from each time series,
-					// sort them, and iterate using the overall list of date/times.
-					List<TS> tempList = new ArrayList<>();
-					tempList.add(ts1);
-					tempList.add(ts2);
-					List<DateTime> dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
-					tsi = ts1.iterator(date1,date2);
-					for ( DateTime dt : dateTimeList ) {
-						tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
-						value1_orig = tsdata1.getDataValue ();
-						flag1 = tsdata1.getDataFlag().trim();
-						tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
-						value2_orig = tsdata2.getDataValue ();
-						flag2 = tsdata2.getDataFlag().trim();
-						compareTimeSeriesValues(
-							routine,
-							ts1, loc1, ts2,
-							compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
-							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
-							diffcount, difftotal, difftotalabs,
-							doCreateDiffTS, doCreateDiffTSAlways, diffts,
-							doTable, table,
-							diffStats  );
-					}
-				} // End if irregular interval time series.
-				else {
-					// Both time series are regular interval and should align.
-					// Iterate using the first time series.
-					tsi = ts1.iterator(date1,date2);
-					DateTime dt = null;
-					for ( ; tsi.next() != null; ) {
-						dt = tsi.getDate();
-						// This is not overly efficient but currently the iterator does not have a way to set a data point.
-						tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
-						value1_orig = tsdata1.getDataValue ();
-						flag1 = tsdata1.getDataFlag().trim();
-						tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
-						value2_orig = tsdata2.getDataValue ();
-						flag2 = tsdata2.getDataFlag().trim();
-						compareTimeSeriesValues(
-							routine,
-							ts1, loc1, ts2,
-							compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
-							dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
-							diffcount, difftotal, difftotalabs,
-							doCreateDiffTS, doCreateDiffTSAlways, diffts,
-							doTable, table,
-							diffStats );
-					}
-				} // End if regular interval time series.
-				// Output status messages for summary of differences.
-				is_diff = false;
-				for ( int it = 0; it < Tolerance_count; it++ ) {
-					if ( diffcount[it] > 0 ) {
-						is_diff = true;
-						diffabsavg[it] = difftotalabs[it]/diffcount[it];
-						diffavg[it] = difftotal[it]/diffcount[it];
-						Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
-						") has " + diffcount[it] + " differences out of " + diffStats.totalcount + " values." );
-						Message.printStatus ( 2, routine, loc1 + " Average difference (tolerance=" +
-						Tolerance_double[it] + ")= " + StringUtil.formatString(diffavg[it],"%.6f") );
-						Message.printStatus ( 2, routine, loc1 + " Average absolute difference (tolerance=" +
-						Tolerance_double[it] + ")= " + StringUtil.formatString(diffabsavg[it],"%.6f") );
-					}
-				}
-				// Add the difference time series:
-				// - if always adding
-				// - if NOT always adding and there is a difference
-				if ( doCreateDiffTS ) {
-					if ( doCreateDiffTSAlways || (!doCreateDiffTSAlways && is_diff) ) {
-						difftsList.add ( diffts );
-					}
-				}
-				if ( is_diff ) {
-					Message.printStatus ( 2, routine, loc1 + " maximum difference = " +
-					StringUtil.formatString(diffStats.diffmax, value_format) +" earliest on "+ diffStats.diffmax_DateTime );
-					if ( IfDifferent.equalsIgnoreCase(_Warn) || IfDifferent.equalsIgnoreCase(_Fail) ) {
-						message = "Time series for " + ts1.getIdentifier() + " have differences.";
-						Message.printWarning (warning_level,
-						MessageUtil.formatMessageTag(command_tag,++warning_count),routine, message );
-					}
-					++tsdiff_count;
-				}
-				else {
-				    Message.printStatus ( 2, routine, loc1 + " had no differences." );
-				}
-				// Save information for the report.
-				compare_tslist.add ( ts1 );
-				matchedList.add ( "yes" );
-				compare_numvalues.add (	new Integer(diffStats.totalcount) );
-				compare_diffcount.add ( diffcount );
-				compare_diffabsavg.add ( diffabsavg );
-				compare_diffavg.add ( diffavg );
-				if ( is_diff ) {
-					compare_diffmax.add (new Double(diffStats.diffmax) );
-					compare_diffmaxdate.add (new DateTime(diffStats.diffmax_DateTime) );
-				}
-				else {
-				    compare_diffmax.add (new Double(0.0) );
-					compare_diffmaxdate.add (null );
-				}
-			} // End time series matched.
-			else {
-				// Did not match a time series:
-				// - add it to the list to make sure that nothing falls through the cracks
-				// - save information for the report
-				// - treat as if different
-				compare_tslist.add ( ts1 );
-				matchedList.add ( "no" );
-				int ndata = ts1.getDataSize();
-				int [] idata = new int[Tolerance_count];
-				for ( int it = 0; it < Tolerance_count; it++ ) {
-					idata[it] = ndata;
-				}
-				double [] ddata = new double[Tolerance_count];
-				compare_numvalues.add (	new Integer(ndata) );
-				compare_diffcount.add ( diffcount );
-				compare_diffabsavg.add ( ddata );
-				compare_diffavg.add ( ddata );
-				compare_diffmax.add ( null );
-				compare_diffmaxdate.add ( null );
-				Message.printStatus(2,routine, "Did not find match for time series " + (i + 1) + " location=\"" + loc1 +
-					"\" and datatype=\"" + datatype1 + "\" - added as time series with differences (size=" + compare_tslist.size() + ").");
-			} // End no match.
-		} // End loop on time series.
-		Message.printStatus ( 2, routine, "" + tsdiff_count + " of " + size + " time series had differences." );
-		// else print a warning and throw an exception below.
+        	// Loop through the time series:
+           	// - for each time series, find its matching time series, by location, ignoring itself
+        	// - when a match is found, do the comparison
+        	TS ts1, ts2;
+		   	TS diffts = null; // Difference time series.
+		   	TSIterator tsi;
+		   	if ( do2Ts ) {
+			   	// Directly comparing so only need to process one comparison.
+			   	size = 1;
+		   	}
+		   	else {
+			   	// Must process all the time series and try to find match for each time series.
+			   	size = tslist.size();
+		   	}
+		   	double value1_orig; // Data values from each time series, rounded and original.
+		   	double value2_orig;
+		   	TSData tsdata1 = new TSData(), tsdata2 = new TSData(); // Data points for each time series.
+		   	String flag1, flag2; // Data flags for values in each time series.
+		   	DiffStats diffStats = new DiffStats();
+		   	DateTime date1 = null, date2 = null; // Dates for iteration.
+		   	int jts;
+		   	// Location, data type, and alias for the first time series in a matched time series pair.
+		   	String loc1, datatype1, alias1;
 
-		// Print a summary of the comparison.
-
-		List<String> problems = new ArrayList<>();
-		createReportFiles (
-			compare_tslist,
-			DifferenceFile_full,
-			SummaryFile_full,
-			MatchDataType_boolean,
-			matchedList,
-			Tolerance_count, Tolerance_tokens,
-			compare_diffcount, compare_numvalues,
-			compare_diffmax, compare_diffmaxdate,
-			compare_diffabsavg, compare_diffavg,
-			problems
-		);
-		for ( String problem : problems ) {
-			Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    problem, "Check the path to the file and permissions." ) );
-		}
-
-		if ( doCreateDiffTS && (difftsList.size() > 0) ) {
-			// Have difference time series to add to the processor.
-			try {
-			    Object o = processor.getPropContents ( "TSResultsList" );
-			    @SuppressWarnings("unchecked")
-				List<TS> tslist0 = (List<TS>)o;
-				tslist = tslist0;
-			}
-			catch ( Exception e ) {
-				// Not fatal, but of use to developers.
-				message = "Error requesting TSResultsList from processor - no data.";
-				Message.printWarning(3, routine, message );
-			}
-			// Add the difference time series.
-			tslist.addAll(difftsList);
-			try {
-				// TODO smalers 2021-08-27 need to use an append request.
-				// Reset the processor results.
-			    processor.setPropContents ( "TSResultsList", tslist );
-			}
-			catch ( Exception e ) {
-				message = "Error setting time series list appended with difference time series.";
-				Message.printWarning ( warning_level, 
-					MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
-				Message.printWarning ( 3, routine, e );
-                   status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-				throw new CommandException ( message );
-			}
-			Message.printStatus ( 2, "",
-				"Difference time series (second time series minus first) have been appended to results." );
-		}
+		   	// TODO smalers 2021-09-09 this is old logic that is fragile if more than 2 time series match
+		   	// Keep track of which time series pairs have already been matched:
+		   	// - the following three lists are populated when a match is made
+		   	// - only the criteria indicated by command parameter MatchLocation,
+		   	//   MatchDataType and MatchAlias are actually used to determine the match
+		   	//List<String> matchedLocList = new ArrayList<>();
+		   	//List<String> matchedDatatypeList = new ArrayList<>();
+		   	//List<String> matchedAliasList = new ArrayList<>();
 		
-		if ( tsComparisonsTried == 0 ) {
-		    message = "No time series comparisons were done based on the input parameters.";
-            Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the location, data type, etc. " +
-                    	"parameters result in pairs of time series to compare." ) );
-		}
-	    // Set the property indicating the number of rows in the table.
-        if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
-            int diffCountTotal = 0;
-            for ( int its = 0; its < diffcount.length; its++ ) {
-            	diffCountTotal += diffcount[its];
-            }
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", DiffCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(diffCountTotal) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + DiffCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
-        }
+		   	// New approach is to populate an integer array with count of matches:
+		   	// - match count of 1 is expected (one match for each time series)
+		   	// - otherwise will generate warnings
+		   	int [] matchCount = new int[size];
+		   	for ( int i = 0; i < size; i++ ) {
+			   	matchCount[i] = 0;
+		   	}
+		
+		   	// Loop through all time series.
+		   	for ( int its = 0; its < size; its++ ) {
+			   	diffts = null;
+			   	ts1 = tslist.get(its);
+			   	ts2 = null;
+			   	loc1 = ts1.getLocation();
+			   	datatype1 = ts1.getDataType();
+			   	alias1 = ts1.getAlias();
+			   	if ( do2Ts ) {
+				   	// Only have two time series so always a match.
+				   	foundMatch = true;
+				   	ts1 = tslist.get(0);
+				   	ts2 = tslist.get(1);
+				   	++matchCount[its];
+			   	}
+			   	else if ( do2Ensembles ) {
+				   	// Get one time series from each ensemble.
+				   	foundMatch = true;
+				   	ts1 = tslist.get(its);
+				   	ts2 = tslist2.get(its);
+				   	++matchCount[its];
+			   	}
+			   	else {
+				   	// Processing many time series.
+				   	// Try to pair up time series based on location and data type
+				   	// Make sure not to analyze the same combination more than once, based on the location ID and data type.
+				   	// TODO SAM 2005-05-25 Also need to check interval always.
+				   	foundMatch = false;
+				   	//boolean alreadyProcessed = false;
+				
+				   	// Determine if the time series has already been matched.
+				   	/*
+				   	for ( int iMatchedTs = 0; iMatchedTs < matchedLocList.size(); iMatchedTs++ ) {
+					   	// TODO SAM 2016-03-23 This needs review - is there a more robust way to deal with this?
+					   	// These checks are to see if the time series has already been processed.
+					   	// Check the parts individually.
+					   	foundLoc1 = false;
+					   	foundDatatype1 = false;
+					   	foundAlias1 = false;
+					   	if ( loc1.equalsIgnoreCase( matchedLocList.get(iMatchedTs)) ) {
+						   	foundLoc1 = true;
+					   	}
+					   	if ( datatype1.equalsIgnoreCase(matchedDatatypeList.get(iMatchedTs))) {
+						   	foundDatatype1 = true;
+					   	}
+					   	if ( alias1.equalsIgnoreCase(matchedAliasList.get(iMatchedTs))) {
+						   	foundAlias1 = true;
+					   	}
+					   	// Now reset found_loc1 depending on whether the location and datatype (one or both) are being matched.
+					   	if ( MatchLocation_boolean && MatchDataType_boolean ) {
+						   	// Need to check both.
+						   	if ( foundLoc1 && foundDatatype1 ) {
+							   	alreadyProcessed = true;
+							   	break;
+						   	}
+					   	}
+					   	else if ( MatchLocation_boolean && foundLoc1 ) {
+						   	alreadyProcessed = true;
+						   	break;
+					   	}
+					   	else if ( MatchDataType_boolean && foundDatatype1 ) {
+						   	alreadyProcessed = true;
+						   	break;
+					   	}
+				   	}
+				   	if ( alreadyProcessed ) {
+					   	// Have already processed this time series.
+					   	continue;
+				   	}
+				   	*/
+				   	// Try to find a matching location:
+				   	// - search the entire list to catch duplicate matches
+				   	for ( jts = 0; jts < size; jts++ ) {
+					   	if ( its == jts ) {
+						   	// Don't compare a time series with itself.
+						   	continue;
+					   	}
+					   	TS ts0 = tslist.get(jts);
+					   	// Make sure that the interval is the same.
+					   	if ( !((ts1.getDataIntervalBase() == ts0.getDataIntervalBase()) &&
+						   	(ts1.getDataIntervalMult() == ts0.getDataIntervalMult())) ) {
+						   	// Intervals do not match.
+						   	continue;
+					   	}
+					   	// Check the requested criteria for matches.
+					   	if ( MatchLocation_boolean && !loc1.equalsIgnoreCase(ts0.getLocation()) ) {
+						   	// Not a match.
+						   	continue;
+					   	}
+					   	if ( MatchDataType_boolean && !datatype1.equalsIgnoreCase(ts0.getDataType()) ) {
+						   	// Not a match.
+						   	continue;
+					   	}
+					   	if ( MatchAlias_boolean && !alias1.equalsIgnoreCase(ts0.getAlias()) ) {
+						   	// Not a match.
+						   	continue;
+					   	}
+					   	// If here, have a match based on the match criteria;
+					   	// - further handle cases of more than 2 matches (match criteria are not specific enough)
+					   	foundMatch = true;
+					   	// Last matching time series will be used:
+					   	// - if one match then analysis is done
+					   	// - if > 1 match, then no analysis is done
+					   	ts2 = ts0;
+					   	// Track the matched time series.
+					   	++matchCount[its];
+					   	/*
+				   		if ( matchedIndex[its] >= 0 ) {
+				   			// In the second time series group.
+				   			// Matched but do not want to add to the analysis because it will be a duplicate (ts2 and ts1).
+				   			Message.printStatus(2, routine, "Matched time series its=" + its + " matchedIndex=" + matchedIndex[its] +
+				   				" jts=" + jts + " matchedIndex=" + matchedIndex[jts] + " - ts1 already analyzed, tsid=" + ts1.getIdentifierString() );
+				   			doAnalysis = false;
+				   		}
+				   		else if ( (matchedIndex[its] < 0) && (matchedIndex[its] != -size) ) {
+				   			// The first time series has already been indicated has having more than one match.
+				   			// Matched but do not want to add to the analysis because it will be a duplicate.
+				   			// This probably should not happen since it is handled better in the next case.
+				   			Message.printStatus(2, routine, "Matched time series its=" + its + " matchedIndex=" + matchedIndex[its] +
+				   				" jts=" + jts + " matchedIndex=" + matchedIndex[jts] + " - ts1 already analyzed (duplicate), tsid=" + ts1.getIdentifierString() );
+				   			doAnalysis = false;
+				   		}
+				   		else if ( matchedIndex[jts] >= 0 ) {
+					   		// The time series is already involved in a match:
+				   			// - typically because in the first group of time series and the match criteria results in duplicates
+					   		// - set the match index to negative index of the match
+				   			// - this works for all cases except when the index is 0
+				   			// - don't add to the analysis results, but the negative index will cause a command warning
+				   			Message.printStatus(2, routine, "Matched time series its=" + its + " matchedIndex=" + matchedIndex[its] +
+				   				" jts=" + jts + " matchedIndex=" + matchedIndex[jts] + " - ts2 already analyzed (duplicate), tsid=" + ts1.getIdentifierString() );
+					   		matchedIndex[its] = -jts;
+					   	    doAnalysis = false;
+				   		}
+				   		else {
+					   		// First time a match was found so save the indices of each matched time series.
+				   			// This is the only case where an analysis is performed below.
+				   			Message.printStatus(2, routine, "Matched time series its=" + its + " matchedIndex=" + matchedIndex[its] +
+				   				" jts=" + jts + " matchedIndex=" + matchedIndex[jts] + " - new match so analyzing, tsid=" + ts1.getIdentifierString() );
+					   		matchedIndex[its] = jts;
+					   		matchedIndex[jts] = its;
+					   	    doAnalysis = true;
+				   		}
+				   		*/
+				   		// Break out of loop since have a match.
+				   		//if ( foundMatch ) {
+				   			//break;
+				   		//}
+				   	} // End jts search for match
+				   	
+			   	}
+			   	// Figure out if the time series has already been added.
+			   	if ( foundMatch ) {
+			   		hashKey.setLength(0);
+			   		if ( MatchLocation_boolean ) {
+			   			hashKey.append(ts1.getLocation());
+			   		}
+			   		if ( MatchDataType_boolean ) {
+			   			if ( hashKey.length() > 0 ) {
+			   				hashKey.append("-");
+			   			}
+			   			hashKey.append(ts1.getDataType());
+			   		}
+			   		if ( MatchAlias_boolean ) {
+			   			if ( hashKey.length() > 0 ) {
+			   				hashKey.append("-");
+			   			}
+			   			hashKey.append(ts1.getAlias());
+			   		}
+			   		if ( addedMap.get(hashKey.toString()) != null ) {
+			   			// Already added so don't do it again.
+			   			continue;
+			   		}
+			   		else {
+			   			// Have not added so add to the hash.
+			   			addedMap.put(hashKey.toString(), Boolean.TRUE);
+			   		}
+			   	}
+			   	// If here the time series may or may not have been a match:
+			   	// - add with analysis if a clean match
+			   	// - add with no analysis if no match
+			   	// - add with no analysis if > 1 time series matched
+			   	if ( foundMatch && (matchCount[its] == 1) ) {
+				   	// Have a match so do the comparison:
+				   	// - currently only compare the data values and flags but not the metadata
+			   		// - only add to outputTSList for ts1 in ts1/ts2 pair or ts1 no match (don't add ts2 as match when ts1 was already added)
 
-            // Save the output file name...
+				   	// TODO smalers 2021-09-09 old code, remove when checked out.
+				   	// Add locations and data types that have been processed so they are not found again.
+				   	//matchedLocList.add ( loc1 );
+				   	//matchedDatatypeList.add ( datatype1 );
+				   	//matchedAliasList.add ( alias1 );
+				   	// If the differences will be flagged, allocate the data flag space in both time series.
+				   	if ( DiffFlag != null ) {
+					   	ts1.allocateDataFlagSpace ( null, true ); // Retain previous.
+					   	ts2.allocateDataFlagSpace ( null, true ); // Retain previous.
+				   	}
+				   	// If a difference time series is to be created, do it up front:
+				   	// - this ensures that it is available when differences are detected
+				   	// - only add to the output list later if appropriate (discard if CreateDiffTS=IfDifferent and no differences)
+				   	// - unused time series will not be allocated memory and will be garbage collected
+				   	if ( doCreateDiffTS ) {
+					   	diffts = createDiffTimeSeries ( ts2 );
+				   	}
+				   	// Initialize for the comparison.
+				   	diffStats.totalcount = 0;
+				   	diffStats.diffmaxabs = -1.0e10;
+				   	// Reallocate in order to have unique references to save for the report.
+				   	diffcount = new int[Tolerance_count];
+				   	diffabsavg = new double[Tolerance_count];
+				   	diffavg = new double[Tolerance_count];
+				   	for ( int it = 0; it < Tolerance_count; it++ ) {
+					   	diffcount[it] = 0;
+					   	difftotal[it] = 0.0;
+					   	difftotalabs[it] = 0.0;
+				   	}
+				   	// Analysis period should encompass the period from both time series.
+				   	if ( AnalysisStart_DateTime == null ) {
+					   	date1 = new DateTime (ts1.getDate1());
+					   	if ( ts2.getDate1().lessThan(date1) ) {
+						   	date1 = new DateTime( ts2.getDate1());
+					   	}
+				   	}
+				   	else {
+				       	date1 = new DateTime ( AnalysisStart_DateTime);
+				   	}
+				   	if ( AnalysisEnd_DateTime == null ) {
+					   	date2 = new DateTime (ts1.getDate2());
+					   	if ( ts2.getDate2().greaterThan(date2)){
+						   	date2 = new DateTime(ts2.getDate2());
+					   	}
+				   	}
+				   	else {
+				       	date2 = new DateTime ( AnalysisEnd_DateTime);
+				   	}
+				   	Message.printStatus ( 2, routine, "TS1 = " + ts1.getIdentifier().toString(true) );
+				   	Message.printStatus ( 2, routine, "TS2 = " + ts2.getIdentifier().toString(true) );
+				   	Message.printStatus ( 2, routine, "Data differences TS2 - TS1 follow " +
+					   	"(Tolerance=" + Tolerance + ", Period="+ date1 + " to " + date2 + "):" );
+				   	// Increment counter indicating that a test was tried.
+				   	++tsComparisonsTried;
+				   	if ( !TimeInterval.isRegularInterval(ts1.getDataIntervalBase()) ||
+					   	!TimeInterval.isRegularInterval(ts2.getDataIntervalBase()) ) {
+					   	// One or both of the time series are irregular.
+					   	// It is difficult to iterate because timestamps may not align.
+					   	// Therefore, retrieve all the date/times from each time series,
+					   	// sort them, and iterate using the overall list of date/times.
+					   	List<TS> tempList = new ArrayList<>();
+					   	tempList.add(ts1);
+					   	tempList.add(ts2);
+					   	List<DateTime> dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
+					   	tsi = ts1.iterator(date1,date2);
+					   	for ( DateTime dt : dateTimeList ) {
+						   	tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
+						   	value1_orig = tsdata1.getDataValue ();
+						   	flag1 = tsdata1.getDataFlag().trim();
+						   	tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
+						   	value2_orig = tsdata2.getDataValue ();
+						   	flag2 = tsdata2.getDataFlag().trim();
+						   	compareTimeSeriesValues(
+							   	routine,
+							   	ts1, loc1, ts2,
+							   	compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							   	dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
+							   	diffcount, difftotal, difftotalabs,
+							   	doCreateDiffTS, doCreateDiffTSAlways, diffts,
+							   	doTable, table,
+							   	diffStats  );
+					   	}
+				   	} // End if irregular interval time series.
+				   	else {
+					   	// Both time series are regular interval and should align.
+					   	// Iterate using the first time series.
+					   	tsi = ts1.iterator(date1,date2);
+					   	DateTime dt = null;
+					   	for ( ; tsi.next() != null; ) {
+						   	dt = tsi.getDate();
+						   	// This is not overly efficient but currently the iterator does not have a way to set a data point.
+						   	tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
+						   	value1_orig = tsdata1.getDataValue ();
+						   	flag1 = tsdata1.getDataFlag().trim();
+						   	tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
+						   	value2_orig = tsdata2.getDataValue ();
+						   	flag2 = tsdata2.getDataFlag().trim();
+						   	compareTimeSeriesValues(
+							   	routine,
+							   	ts1, loc1, ts2,
+							   	compareFlags, DiffFlag, Precision, Precision_int, value_format, Tolerance_count, Tolerance_double,
+							   	dt, value1_orig, tsdata1, flag1, value2_orig, tsdata2, flag2,
+							   	diffcount, difftotal, difftotalabs,
+							   	doCreateDiffTS, doCreateDiffTSAlways, diffts,
+							   	doTable, table,
+							   	diffStats );
+					   	}
+				   	} // End if regular interval time series.
+				   	// Output status messages for summary of differences.
+				   	is_diff = false;
+				   	for ( int it = 0; it < Tolerance_count; it++ ) {
+					   	if ( diffcount[it] > 0 ) {
+						   	is_diff = true;
+						   	diffabsavg[it] = difftotalabs[it]/diffcount[it];
+						   	diffavg[it] = difftotal[it]/diffcount[it];
+						   	Message.printStatus ( 2, routine, loc1 + " (tolerance=" + Tolerance_double[it] +
+						   	") has " + diffcount[it] + " differences out of " + diffStats.totalcount + " values." );
+						   	Message.printStatus ( 2, routine, loc1 + " Average difference (tolerance=" +
+						   	Tolerance_double[it] + ")= " + StringUtil.formatString(diffavg[it],"%.6f") );
+						   	Message.printStatus ( 2, routine, loc1 + " Average absolute difference (tolerance=" +
+						   	Tolerance_double[it] + ")= " + StringUtil.formatString(diffabsavg[it],"%.6f") );
+					   	}
+				   	}
+				   	// Add the difference time series:
+				   	// - if always adding
+				   	// - if NOT always adding and there is a difference
+				   	if ( doCreateDiffTS ) {
+					   	if ( doCreateDiffTSAlways || (!doCreateDiffTSAlways && is_diff) ) {
+						   	difftsList.add ( diffts );
+					   	}
+				   	}
+				   	if ( is_diff ) {
+					   	Message.printStatus ( 2, routine, loc1 + " maximum difference = " +
+					   	StringUtil.formatString(diffStats.diffmax, value_format) +" earliest on "+ diffStats.diffmax_DateTime );
+					   	if ( IfDifferent.equalsIgnoreCase(_Warn) || IfDifferent.equalsIgnoreCase(_Fail) ) {
+						   	message = "Time series for " + ts1.getIdentifier() + " have differences.";
+						   	Message.printWarning (warning_level,
+						   	MessageUtil.formatMessageTag(command_tag,++warning_count),routine, message );
+					   	}
+					   	++tsdiff_count;
+				   	}
+				   	else {
+				       	Message.printStatus ( 2, routine, loc1 + " had no differences." );
+				   	}
+				   	// Save information for the report.
+				   	outputTSList.add ( ts1 );
+				   	matchedList.add ( "yes" );
+				   	compare_numvalues.add (	new Integer(diffStats.totalcount) );
+				   	compare_diffcount.add ( diffcount );
+				   	compare_diffabsavg.add ( diffabsavg );
+				   	compare_diffavg.add ( diffavg );
+				   	if ( is_diff ) {
+					   	compare_diffmax.add (new Double(diffStats.diffmax) );
+					   	compare_diffmaxdate.add (new DateTime(diffStats.diffmax_DateTime) );
+				   	}
+				   	else {
+				       	compare_diffmax.add (new Double(0.0) );
+					   	compare_diffmaxdate.add (null );
+				   	}
+			   	} // End time series matched.
+			   	else if ( ! foundMatch || (matchCount[its] > 1) ) {
+				   	// Did not match a time series:
+				   	// - add it to the list to make sure that nothing falls through the cracks
+				   	// - save information for the report
+				   	// - treat as if different
+				   	outputTSList.add ( ts1 );
+				   	if ( !foundMatch ) {
+				   		matchedList.add ( "no" );
+				   		Message.printStatus(2,routine, "Did not find match for time series " + (its + 1) + " location=\"" + loc1 +
+				   			"\" and datatype=\"" + datatype1 + "\" - added as time series with differences (size=" + outputTSList.size() + ").");
+				   	}
+				   	else if ( matchCount[its] > 1 ) {
+				   		matchedList.add ( "1+" );
+				   		Message.printStatus(2,routine, "Found " + matchCount[its] + " matches for time series " + (its + 1) + " location=\"" + loc1 +
+				   			"\" and datatype=\"" + datatype1 + "\" - added as time series with differences (size=" + outputTSList.size() + ").");
+				   	}
+				   	int ndata = ts1.getDataSize();
+				   	int [] idata = new int[Tolerance_count];
+				   	for ( int it = 0; it < Tolerance_count; it++ ) {
+					   	idata[it] = ndata;
+				   	}
+				   	double [] ddata = new double[Tolerance_count];
+				   	compare_numvalues.add (	new Integer(ndata) );
+				   	compare_diffcount.add ( diffcount );
+				   	compare_diffabsavg.add ( ddata );
+				   	compare_diffavg.add ( ddata );
+				   	compare_diffmax.add ( null );
+				   	compare_diffmaxdate.add ( null );
+			   	} // End no match.
+		   	} // End loop on time series.
+		   	Message.printStatus ( 2, routine, "" + tsdiff_count + " of " + size + " time series had differences." );
+		   	// else print a warning and throw an exception below.
+
+		   	// Print a summary of the comparison.
+
+		   	List<String> problems = new ArrayList<>();
+		   	createReportFiles (
+			   	outputTSList,
+			   	DifferenceFile_full,
+			   	SummaryFile_full,
+			   	MatchDataType_boolean,
+			   	matchedList,
+			   	Tolerance_count, Tolerance_tokens,
+			   	compare_diffcount, compare_numvalues,
+			   	compare_diffmax, compare_diffmaxdate,
+			   	compare_diffabsavg, compare_diffavg,
+			   	problems
+		   	);
+
+		   	// Output summary at the top of log messages.
+
+           	if ( commandPhase == CommandPhaseType.RUN ) {
+           		if ( tsdiff_count > 0 ) {
+			        CommandStatusType statusType = CommandStatusType.UNKNOWN;
+			        if ( IfDifferent.equalsIgnoreCase(_Warn) ) {
+				        statusType = CommandStatusType.WARNING;
+			        }
+			        else if ( IfDifferent.equalsIgnoreCase(_Fail) ) {
+				        statusType = CommandStatusType.FAILURE;
+			        }
+			        else {
+				        statusType = CommandStatusType.INFO;
+			        }
+			        message = "" + tsdiff_count + " time series had differences for " +
+				        outputTSList.size() +
+				        " analyzed time series (matches and unmatched time series from " +
+				        size + " input time series).";
+			        Message.printWarning ( warning_level,
+			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	       	        status.addToLog ( commandPhase,
+	           	        new CommandLogRecord(statusType,
+	               	        message, "Verify that time series differences are expected." ) );
+		        }
+		        if ( tsdiff_count == 0 ) {
+			        CommandStatusType statusType = CommandStatusType.UNKNOWN;
+			        if ( IfSame.equalsIgnoreCase(_Warn) ) {
+				        statusType = CommandStatusType.WARNING;
+			        }
+			        else if ( IfSame.equalsIgnoreCase(_Fail) ) {
+				        statusType = CommandStatusType.FAILURE;
+			        }
+			        else {
+				        statusType = CommandStatusType.INFO;
+			        }
+			        message = "All " + size + " time series are the same.";
+			        Message.printWarning ( warning_level,
+			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	       	                status.addToLog ( commandPhase,
+	           	                new CommandLogRecord(statusType,
+	               	        message, "Verify that all time seres being the same is OK." ) );
+		        }
+	        }
+
+           	// Another summary message.
+
+		   	if ( tsComparisonsTried == 0 ) {
+		       	message = "No time series comparisons were done based on the input parameters.";
+               	Message.printWarning ( warning_level, 
+                   	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+               	status.addToLog ( commandPhase,
+                   	new CommandLogRecord(CommandStatusType.FAILURE,
+                       	message, "Verify that the location, data type, etc. " +
+                    	"parameters result in pairs of time series to compare." ) );
+		   	}
+           	
+           	// Output detailed messages.
+
+		   	for ( String problem : problems ) {
+			   	Message.printWarning ( warning_level, 
+				   	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
+               	status.addToLog ( commandPhase,
+                   	new CommandLogRecord(CommandStatusType.WARNING,
+                       	problem, "Check the path to the file and permissions." ) );
+		   	}
+
+		   	if ( doCreateDiffTS && (difftsList.size() > 0) ) {
+			   	// Have difference time series to add to the processor.
+			   	try {
+			       	Object o = processor.getPropContents ( "TSResultsList" );
+			       	@SuppressWarnings("unchecked")
+				   	List<TS> tslist0 = (List<TS>)o;
+				   	tslist = tslist0;
+			   	}
+			   	catch ( Exception e ) {
+				   	// Not fatal, but of use to developers.
+				   	message = "Error requesting TSResultsList from processor - no data.";
+				   	Message.printWarning(3, routine, message );
+			   	}
+			   	// Add the difference time series.
+			   	tslist.addAll(difftsList);
+			   	try {
+				   	// TODO smalers 2021-08-27 need to use an append request.
+				   	// Reset the processor results.
+			       	processor.setPropContents ( "TSResultsList", tslist );
+			   	}
+			   	catch ( Exception e ) {
+				   	message = "Error setting time series list appended with difference time series.";
+				   	Message.printWarning ( warning_level, 
+					   	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+				   	Message.printWarning ( 3, routine, e );
+                      	status.addToLog ( commandPhase,
+                           	new CommandLogRecord(CommandStatusType.FAILURE,
+                               	message, "Report the problem to software support." ) );
+				   	throw new CommandException ( message );
+			   	}
+			   	Message.printStatus ( 2, "",
+				   	"Difference time series (second time series minus first) have been appended to results." );
+		   	}
+		
+	       	// Set the property indicating the number of rows in the table.
+           	if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
+               	int diffCountTotal = 0;
+               	for ( int its = 0; its < diffcount.length; its++ ) {
+            	   	diffCountTotal += diffcount[its];
+               	}
+               	PropList request_params = new PropList ( "" );
+               	request_params.setUsingObject ( "PropertyName", DiffCountProperty );
+               	request_params.setUsingObject ( "PropertyValue", new Integer(diffCountTotal) );
+               	try {
+                   	processor.processRequest( "SetProperty", request_params);
+               	}
+               	catch ( Exception e ) {
+                   	message = "Error requesting SetProperty(Property=\"" + DiffCountProperty + "\") from processor.";
+                   	Message.printWarning(log_level,
+                       	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                       	routine, message );
+                   	status.addToLog ( CommandPhaseType.RUN,
+                       	new CommandLogRecord(CommandStatusType.FAILURE,
+                           	message, "Report the problem to software support." ) );
+               	}
+           	}
+           	
+           	// Check the matched indices:
+           	// - may result in a large number of messages
+           	// - warn for cases where more than 2 time series in a match
+           	// - optionally warn if no match
+           	for ( int its = 0; its < matchCount.length; its++ ) {
+           		TS ts = tslist.get(its);
+           		if ( matchCount[its] == 0 ) {
+           			// No match.
+                   	message = "Time series " + (its + 1) + " had no match for criteria, TSID=" +
+                   		ts.getIdentifier() + " Alias=" + ts.getAlias();
+                   	Message.printWarning(log_level,
+                       	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                       	routine, message );
+                   	status.addToLog ( CommandPhaseType.RUN,
+                       	new CommandLogRecord(CommandStatusType.WARNING,
+                           	message, "Check time series input to ensure matched datasets." ) );
+           		}
+           		else if ( matchCount[its] > 1 ) {
+           			// More than 2 time series in a match.
+                   	message = "Time series " + (its + 1) + " had " + matchCount[its] +
+                   		" matches for criteria (1 match is expected), TSID=" +
+                   		ts.getIdentifier() + " Alias=" + ts.getAlias();
+                   	Message.printWarning(log_level,
+                       	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                       	routine, message );
+                   	status.addToLog ( CommandPhaseType.RUN,
+                       	new CommandLogRecord(CommandStatusType.WARNING,
+                           	message, "Check time series input to ensure matched datasets.  Add more specific match criteria to ensure unique identifiers." ) );
+           		}
+           	}
+
+            // Save the output file names.
         	if ( (DifferenceFile != null) && !DifferenceFile.isEmpty() ) {
         		this.__outputFileList.add ( new File(DifferenceFile_full));
         	}
@@ -1913,43 +2233,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message, "Report the problem to software support." ) );
 		throw new CommandException ( message );
 	}
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		if ( tsdiff_count > 0 ) {
-			CommandStatusType statusType = CommandStatusType.UNKNOWN;
-			if ( IfDifferent.equalsIgnoreCase(_Warn) ) {
-				statusType = CommandStatusType.WARNING;
-			}
-			else if ( IfDifferent.equalsIgnoreCase(_Fail) ) {
-				statusType = CommandStatusType.FAILURE;
-			}
-			if ( statusType != CommandStatusType.UNKNOWN ) {
-				message = "" + tsdiff_count + " of " + size + " time series had differences.";
-				Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-	        	status.addToLog ( commandPhase,
-	            	new CommandLogRecord(statusType,
-	                	message, "Verify that time series being different is OK." ) );
-			}
-		}
-		if ( tsdiff_count == 0 ) {
-			CommandStatusType statusType = CommandStatusType.UNKNOWN;
-			if ( IfSame.equalsIgnoreCase(_Warn) ) {
-				statusType = CommandStatusType.WARNING;
-			}
-			else if ( IfSame.equalsIgnoreCase(_Fail) ) {
-				statusType = CommandStatusType.FAILURE;
-			}
-			if ( statusType != CommandStatusType.UNKNOWN ) {
-				message = "All " + size + " time series are the same.";
-				Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-	        	status.addToLog ( commandPhase,
-	            	new CommandLogRecord(statusType,
-	                	message, "Verify that all time seres being the same is OK." ) );
-			}
-		}
-	}
-	
 	status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
@@ -2098,6 +2381,7 @@ public String toString ( PropList props )
 	String EnsembleID2 = props.getValue("EnsembleID2");
 	String MatchLocation = props.getValue("MatchLocation");
 	String MatchDataType = props.getValue("MatchDataType");
+	String MatchAlias = props.getValue("MatchAlias");
 	String Precision = props.getValue("Precision");
 	String Tolerance = props.getValue("Tolerance");
 	String CompareFlags = props.getValue("CompareFlags");
@@ -2149,6 +2433,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "MatchDataType=" + MatchDataType );
+	}
+	if ( (MatchAlias != null) && (MatchAlias.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "MatchAlias=" + MatchAlias );
 	}
 	if ( (Precision != null) && (Precision.length() > 0) ) {
 		if ( b.length() > 0 ) {

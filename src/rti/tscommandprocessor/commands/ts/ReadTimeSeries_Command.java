@@ -354,7 +354,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String ReadData = parameters.getValue("ReadData");

@@ -90,6 +90,7 @@ private SimpleJComboBox	__EnsembleID1_JComboBox = null;
 private SimpleJComboBox	__EnsembleID2_JComboBox = null;
 private SimpleJComboBox	__MatchLocation_JComboBox = null;
 private SimpleJComboBox	__MatchDataType_JComboBox = null;
+private SimpleJComboBox	__MatchAlias_JComboBox = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __Tolerance_JTextField = null;
 private SimpleJComboBox	__CompareFlags_JComboBox = null;
@@ -294,6 +295,7 @@ private void checkInput ()
 	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
+	String MatchAlias = __MatchAlias_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
 	String Tolerance = __Tolerance_JTextField.getText().trim();
 	String CompareFlags = __CompareFlags_JComboBox.getSelected();
@@ -327,6 +329,9 @@ private void checkInput ()
 	}
 	if ( MatchDataType.length() > 0 ) {
 		props.set ( "MatchDataType", MatchDataType );
+	}
+	if ( MatchAlias.length() > 0 ) {
+		props.set ( "MatchAlias", MatchAlias );
 	}
 	if ( Precision.length() > 0 ) {
 		props.set ( "Precision", Precision );
@@ -395,6 +400,7 @@ private void commitEdits ()
 	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
+	String MatchAlias = __MatchAlias_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
 	String Tolerance = __Tolerance_JTextField.getText().trim();
 	String CompareFlags = __CompareFlags_JComboBox.getSelected();
@@ -416,6 +422,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "EnsembleID2", EnsembleID2 );
 	__command.setCommandParameter ( "MatchLocation", MatchLocation );
 	__command.setCommandParameter ( "MatchDataType", MatchDataType );
+	__command.setCommandParameter ( "MatchAlias", MatchAlias );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "Tolerance", Tolerance );
 	__command.setCommandParameter ( "CompareFlags", CompareFlags );
@@ -564,7 +571,13 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	    "For example, compare time series from from two model runs to determine changes." ),
 	    0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
-		"Currently all available time series are evaluated, comparing time series that have the same time series identifier location and/or data type." ),
+		"Currently all available time series are evaluated, comparing time series that have the same" ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"time series identifier location and/or data type and/or alias." ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"The alias can be used to ensure unique identifiers, in which case the location and data type may be ignored." ),
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -572,6 +585,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match location:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
+	__MatchLocation_JComboBox.setToolTipText("Match the time series location identifier.");
 	List<String> matchChoices = new ArrayList<>();
 	matchChoices.add ( "" );	// Default
 	matchChoices.add ( __command._False );
@@ -588,6 +602,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match data type:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
+	__MatchDataType_JComboBox.setToolTipText("Match the time series data types.");
 	List<String> matchDataTypeChoices = new ArrayList<>();
 	matchDataTypeChoices.add ( "" );	// Default
 	matchDataTypeChoices.add ( __command._False );
@@ -599,6 +614,23 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
 		"Optional - match data type to find time series pair? (default=" + __command._False + ")."), 
+		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match alias:"),
+		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__MatchAlias_JComboBox = new SimpleJComboBox ( false );
+	__MatchAlias_JComboBox.setToolTipText("Match the time series aliases.");
+	List<String> matchAliasChoices = new ArrayList<>();
+	matchAliasChoices.add ( "" ); // Default
+	matchAliasChoices.add ( __command._False );
+	matchAliasChoices.add ( __command._True );
+	__MatchAlias_JComboBox.setData(matchAliasChoices);
+	__MatchAlias_JComboBox.select ( 0 );
+	__MatchAlias_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __MatchAlias_JComboBox,
+		1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+		"Optional - match alias to find time series pair? (default=" + __command._False + ")."), 
 		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel specifying analysis parameters
@@ -930,6 +962,7 @@ private void refresh ()
 	String EnsembleID2 = "";
 	String MatchLocation = "";
 	String MatchDataType = "";
+	String MatchAlias = "";
 	String Precision = "";
 	String Tolerance = "";
 	String CompareFlags = "";
@@ -954,6 +987,7 @@ private void refresh ()
 		EnsembleID2 = props.getValue ( "EnsembleID2" );
 		MatchLocation = props.getValue ( "MatchLocation" );
 		MatchDataType = props.getValue ( "MatchDataType" );
+		MatchAlias = props.getValue ( "Alias" );
 		Precision = props.getValue ( "Precision" );
 		Tolerance = props.getValue ( "Tolerance" );
 		CompareFlags = props.getValue ( "CompareFlags" );
@@ -1064,6 +1098,22 @@ private void refresh ()
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchDataType parameter \"" + MatchDataType +
+				"\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchAlias_JComboBox, MatchAlias, JGUIUtil.NONE, null, null ) ) {
+			__MatchAlias_JComboBox.select ( MatchAlias );
+		}
+		else {
+		    if ( (MatchAlias == null) || MatchAlias.equals("") ) {
+				// New command...select the default...
+				__MatchAlias_JComboBox.select ( 0 );
+			}
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"MatchAlias parameter \"" + MatchAlias +
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
@@ -1207,6 +1257,7 @@ private void refresh ()
 	EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	MatchLocation = __MatchLocation_JComboBox.getSelected();
 	MatchDataType = __MatchDataType_JComboBox.getSelected();
+	MatchAlias = __MatchAlias_JComboBox.getSelected();
 	Precision = __Precision_JTextField.getText().trim();
 	Tolerance = __Tolerance_JTextField.getText().trim();
 	CompareFlags = __CompareFlags_JComboBox.getSelected();
@@ -1229,6 +1280,7 @@ private void refresh ()
 	props.add ( "EnsembleID2=" + EnsembleID2 );
 	props.add ( "MatchLocation=" + MatchLocation );
 	props.add ( "MatchDataType=" + MatchDataType );
+	props.add ( "MatchAlias=" + MatchAlias );
 	props.add ( "Precision=" + Precision );
 	props.add ( "Tolerance=" + Tolerance );
 	props.add ( "CompareFlags=" + CompareFlags );

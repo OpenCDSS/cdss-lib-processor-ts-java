@@ -43,7 +43,6 @@ package rti.tscommandprocessor.commands.statemod;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -74,15 +73,21 @@ import RTi.Util.Time.DateTime;
 import DWR.StateMod.StateMod_BTS;
 
 /**
-<p>
 This class initializes, checks, and runs the ReadStateModB() command.
-</p>
 */
 public class ReadStateModB_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-// Indicates whether the TS Alias version of the command is being used...
+/**
+Data members used for parameter values.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
 
+/**
+ * Indicates whether the TS Alias version of the command is being used.
+ */
 protected boolean _use_alias = false;
 
 /**
@@ -114,6 +119,7 @@ throws InvalidCommandParameterException
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	String Version = parameters.getValue ( "Version" );
+	String IfFileNotFound = parameters.getValue ( "IfFileNotFound" );
 	String warning = "";
     String message;
 
@@ -214,9 +220,21 @@ throws InvalidCommandParameterException
 	        }
 	    }
 	}
+
+	if ( (IfFileNotFound != null) && !IfFileNotFound.isEmpty() ) {
+		if ( !IfFileNotFound.equalsIgnoreCase(_Ignore) && !IfFileNotFound.equalsIgnoreCase(_Warn)
+		    && !IfFileNotFound.equalsIgnoreCase(_Fail) ) {
+			message = "The IfFileNotFound parameter \"" + IfFileNotFound + "\" is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + ", " + _Warn + " (default), or " +
+					_Fail + "."));
+		}
+	}
     
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<>(8);
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(9);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
@@ -225,6 +243,7 @@ throws InvalidCommandParameterException
     validList.add ( "ExcludeDataTypes" );
     validList.add ( "Version" );
     validList.add ( "Alias" );
+    validList.add ( "IfFileNotFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -335,7 +354,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "readStateModB_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -348,9 +367,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && TSID.indexOf("${") >= 0 ) {
-        TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
-	}
+    TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
@@ -374,6 +391,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	String Version = parameters.getValue ( "Version" );
 	String Alias = parameters.getValue("Alias");
+	String IfFileNotFound = parameters.getValue ( "IfFileNotFound" );
+	if ( (IfFileNotFound == null) || IfFileNotFound.equals("")) {
+	    IfFileNotFound = _Warn; // Default
+	}
 
 	DateTime InputEnd_DateTime = null;
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
@@ -515,12 +536,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now try to read...
+	// Try to read.
 
     String InputFile_full = InputFile;
 	try {
 	    boolean readData = true;
-        if ( commandPhase == CommandPhaseType.DISCOVERY ){
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             readData = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
@@ -528,11 +549,33 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
         Message.printStatus ( 2, routine, "Reading StateMod binary file \"" + InputFile_full + "\"" );
 
-       	// Can only read if ${Property} is not used
+       	// Can only read if ${Property} is not used:
         // - TODO smalers 2020-06-06 figure out how to run discovery with properties
         // - this limits how time series are listed in discovery
-        if ( InputFile_full.indexOf("${") < 0 ) {
+        File f = new File(InputFile_full);
+        if ( (commandPhase == CommandPhaseType.RUN) && !f.exists() ) {
+        	message = "File to read \"" + InputFile_full + "\" does not exist.";
+        	if ( IfFileNotFound.equalsIgnoreCase(_Fail) ) {
+            	Message.printWarning ( warning_level,
+                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                   	message, "Verify that the file exists at the time the command is run."));
+        	}
+        	else if ( IfFileNotFound.equalsIgnoreCase(_Warn) ) {
+            	Message.printWarning ( warning_level,
+                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                   	message, "Verify that the file exists at the time the command is run."));
+        	}
+        	else {
+            	Message.printStatus( 2, routine, message + "  Ignoring.");
+            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.INFO,
+                   	message, "Verify that the file exists at the time the command is run."));
+        	}
+        }
+        else if ( f.exists() ) {
         	StateMod_BTS bts = null;
+        	// The following will throw IOException if the file does not exist.
 		    if ( (Version != null) && StringUtil.isDouble(Version) ) {
 			   	bts = new StateMod_BTS ( InputFile_full, Version );
 		    }
@@ -553,11 +596,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    	for (int i = 0; i < tscount; i++) {
 		    		ts = (TS)tslist.get(i);
 		    		if ( (Alias != null) && (Alias.length() > 0) ) {
-		    			// Set the alias to the desired string - this is impacted by the Location parameter
+		    			// Set the alias to the desired string - this is impacted by the Location parameter.
 		    			String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
 		    				processor, ts, Alias, status, commandPhase);
 		    			ts.setAlias ( alias );
-		    			// Search for duplicate alias and warn
+		    			// Search for duplicate alias and warn.
 		    			int aliasListSize = aliasList.size();
 		    			for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
 		    				if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
@@ -569,15 +612,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    						message, "Consider using a more specific alias to uniquely identify the time series." ) );
 		    				}
 		    			}
-		    			// Now add the new list to the alias...
+		    			// Add the new list to the alias.
 		    			aliasList.add ( alias );
 		    		}
 		    	}
 		    }
 		    if ( commandPhase == CommandPhaseType.RUN ) {
 	        	if ( tslist != null ) {
-	        		// Further process the time series...
-	        		// This makes sure the period is at least as long as the output period...
+	        		// Further process the time series.
+	        		// This makes sure the period is at least as long as the output period.
 	        		int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
 	        		if ( wc > 0 ) {
 	        			message = "Error post-processing time series after read.";
@@ -588,7 +631,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        			throw new CommandException ( message );
 	        		}
 	    
-	        		// Now add the list in the processor...
+	        		// Add the list in the processor.
 	            
 	        		int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
 	        		if ( wc2 > 0 ) {
@@ -652,6 +695,7 @@ public String toString ( PropList props )
 	String ExcludeDataTypes = props.getValue("ExcludeDataTypes");
 	String Version = props.getValue("Version");
 	String Alias = props.getValue("Alias");
+	String IfFileNotFound = props.getValue("IfFileNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -700,6 +744,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Alias=\"" + Alias + "\"");
+    }
+    if ((IfFileNotFound != null) && (IfFileNotFound.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("IfFileNotFound=\"" + IfFileNotFound + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -111,7 +111,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series product file." ) );
 	}
-	else {
+	else if ( TSProductFile.indexOf("${") < 0) {
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
@@ -179,7 +179,7 @@ throws InvalidCommandParameterException
                         message,
                         "Specify an output file for the product." ) );
 	}
-	else if ( (OutputFile != null) && !OutputFile.equals("") ) {
+	else if ( (OutputFile != null) && !OutputFile.equals("") && (OutputFile.indexOf("${") < 0) ) {
 		String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
@@ -250,7 +250,7 @@ throws InvalidCommandParameterException
         }
     }
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<>(7);
     validList.add ( "TSProductFile" );
     validList.add ( "RunMode" );
     validList.add ( "View" );
@@ -309,9 +309,9 @@ Time series are taken from the available list in memory, if available.  Otherwis
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
-	int warning_level = 2;
-	String command_tag = "" + command_number;
-	int warning_count = 0;
+	int warningLevel = 2;
+	String commandTag = "" + command_number;
+	int warningCount = 0;
     
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
@@ -360,10 +360,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Report problem to software support." ) );
 	}
 
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
+	if ( warningCount > 0 ) {
+		message = "There were " + warningCount + " warnings about command parameters.";
+		Message.printWarning ( warningLevel, 
+		MessageUtil.formatMessageTag(commandTag, ++warningCount),	routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
@@ -376,34 +376,63 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
 			VisibleStart_DateTime = TSCommandProcessorUtil.getDateTime ( VisibleStart, "VisibleStart", processor,
-				status, warning_level, command_tag );
+				status, warningLevel, commandTag );
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
-			++warning_count;
+			++warningCount;
 		}
 		try {
 			VisibleEnd_DateTime = TSCommandProcessorUtil.getDateTime ( VisibleEnd, "VisibleEnd", processor,
-				status, warning_level, command_tag );
+				status, warningLevel, commandTag );
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
-			++warning_count;
+			++warningCount;
 		}
     }
 
     String TSProductFile_full = TSProductFile;
     String OutputFile_full = OutputFile;
 	try {
+    	// Determine whether the command file is a template.
+    	// - although searches for ${Property} and <# Freemarker content> could be done, only search for @template
+		boolean isProductTemplate = false;
         PropList overrideProps = new PropList ("TSTool");
-		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
             OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 			overrideProps.set ( "OutputFile", OutputFile_full );
 		}
+		if ( (TSProductFile != null) && !TSProductFile.equals("") ) {
+            TSProductFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                	TSCommandProcessorUtil.expandParameterValue(processor,this,TSProductFile)) );
+		}
+		List<String> contents = IOUtil.fileToStringList(TSProductFile_full);
+		for ( String s : contents ) {
+			if ( s.trim().startsWith("#") && (s.toUpperCase().indexOf("@TEMPLATE") > 0) ) {
+				isProductTemplate = true;
+				break;
+			}
+		}
+    	if ( isProductTemplate ) {
+    		// Is a template so automatically expand to a temporary file and then pass that file to the graphing code
+    		// - this requires passing processor properties to the
+    		TSProductFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                	TSCommandProcessorUtil.expandParameterValue(processor,this,TSProductFile)) );
+    		boolean useTables = true;
+    		String tempFile = IOUtil.tempFileName();
+    		TSCommandProcessorUtil.expandTemplateFile(processor, TSProductFile_full, tempFile, useTables,
+    			status, commandTag, warningLevel, warningCount );
+    		// Reset the template filename to the temporary filename for processing below
+    		TSProductFile_full = tempFile;
+    	}
 		// TODO SAM 2013-01-28 Seems like the misplaced equals sign will cause a problem but
 		// need to evaluate whether fix will ALWAYS turn on current date/time vertical line
+		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		overrideProps.set ( "CurrentDateTime=", now.toString() );
 		if ( VisibleStart_DateTime != null ) {
 		    overrideProps.set ( "VisibleStart", "" + VisibleStart_DateTime );
@@ -428,7 +457,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				p.addTSViewWindowListener (	tsview_window_listener );
 			}
 			p.addTSSupplier ( (TSSupplier)processor );
-            TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
+            //TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
 			TSProduct tsp = new TSProduct ( TSProductFile_full, overrideProps );
 			// Specify annotation providers if available...
 			List<TSProductAnnotationProvider> ap_Vector = null;			
@@ -467,8 +496,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error processing TSProduct file \"" + TSProductFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+		Message.printWarning ( warningLevel, 
+		MessageUtil.formatMessageTag(commandTag, ++warningCount), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Check the log file." ) );

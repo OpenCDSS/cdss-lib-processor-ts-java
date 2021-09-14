@@ -52,12 +52,15 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -88,6 +91,7 @@ private JTextField __IncludeDataTypes_JTextField = null;
 private JTextField __ExcludeDataTypes_JTextField = null;
 private JTextField __Version_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
+private SimpleJComboBox	__IfFileNotFound_JComboBox =null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up or Cancel?
 private boolean __first_time = true;
 // TODO SAM 2007-02-18 Evaluate whether to support alias
@@ -186,6 +190,10 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else {
+		// Choices...
+		refresh();
+	}
 }
 
 // Start event handlers for DocumentListener...
@@ -234,6 +242,7 @@ private void checkInput ()
     String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -259,6 +268,9 @@ private void checkInput ()
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
     }
+    if (IfFileNotFound.length() > 0) {
+        props.set("IfFileNotFound", IfFileNotFound);
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -282,6 +294,7 @@ private void commitEdits ()
     String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "InputStart", InputStart );
@@ -290,6 +303,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcludeDataTypes", ExcludeDataTypes );
 	__command.setCommandParameter ( "Version", Version );
 	__command.setCommandParameter ( "Alias", Alias );
+	__command.setCommandParameter ( "IfFileNotFound", IfFileNotFound );
 }
 
 /**
@@ -325,9 +339,10 @@ private void initialize ( JFrame parent, ReadStateModB_Command command )
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( 
-               "The working directory is: " + __working_dir ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is:"),
+		    0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + __working_dir ),
+		    0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series identifier pattern, if specified, will filter the read." ),
@@ -441,6 +456,23 @@ private void initialize ( JFrame parent, ReadStateModB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "If file not found?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfFileNotFound_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfFileNotFound_JComboBox.setData(notFoundChoices);
+	__IfFileNotFound_JComboBox.select ( 0 );
+	__IfFileNotFound_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __IfFileNotFound_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - action if file not found (default=" + __command._Warn + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
@@ -509,7 +541,8 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String InputFile="";
+{	String routine = getClass().getSimpleName() + ".routine";
+	String InputFile="";
 	String TSID="";
 	String InputStart = "";
 	String InputEnd = "";
@@ -517,6 +550,7 @@ private void refresh ()
     String ExcludeDataTypes = "";
 	String Version="";
     String Alias = "";
+    String IfFileNotFound = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -530,6 +564,7 @@ private void refresh ()
 		ExcludeDataTypes = props.getValue ( "ExcludeDataTypes" );
 		Version = props.getValue ( "Version" );
         Alias = props.getValue("Alias");
+        IfFileNotFound = props.getValue("IfFileNotFound");
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText (InputFile);
 		}
@@ -554,6 +589,21 @@ private void refresh ()
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfFileNotFound_JComboBox, IfFileNotFound,JGUIUtil.NONE, null, null ) ) {
+			__IfFileNotFound_JComboBox.select ( IfFileNotFound );
+		}
+		else {
+            if ( (IfFileNotFound == null) ||	IfFileNotFound.equals("") ) {
+				// New command...select the default...
+				__IfFileNotFound_JComboBox.select ( 0 );
+			}
+			else {	// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IfFileNotFound parameter \"" +	IfFileNotFound +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
@@ -564,6 +614,7 @@ private void refresh ()
 	ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	Version = __Version_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+	IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "TSID=" + TSID );
@@ -573,6 +624,7 @@ private void refresh ()
 	props.add ( "ExcludeDataTypes=" + ExcludeDataTypes );
 	props.add ( "Version=" + Version );
 	props.add ( "Alias=" + Alias );
+	props.add ( "IfFileNotFound=" + IfFileNotFound );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

@@ -352,13 +352,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    TSList = "" + TSListType.ALL_TS; // Default
 	}
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
-		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
-	}
+	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
-		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
-	}
+	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
 	boolean DeselectAllFirst_boolean = false;  // Default
@@ -370,13 +366,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         IfNotFound = _Fail; // default
     }
 	String SelectCountProperty = parameters.getValue ( "SelectCountProperty" );
-	if ( (SelectCountProperty != null) && (SelectCountProperty.indexOf("${") >= 0) ) {
-		SelectCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectCountProperty);
-	}
+	SelectCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectCountProperty);
     String PropertyName = parameters.getValue ( "PropertyName" );
-	if ( (PropertyName != null) && (PropertyName.indexOf("${") >= 0) ) {
-		PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
-	}
+	PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     // TODO SAM 2010-09-21 Need to enable numeric property checks
     InputFilterStringCriterionType propertyStringConditionType = null;
@@ -384,21 +376,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         propertyStringConditionType = InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
     }
     String PropertyValue = parameters.getValue ( "PropertyValue" );
-	if ( (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
-		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
-	}
+	PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
     String NetworkID = parameters.getValue ( "NetworkID" );
-	if ( (NetworkID != null) && (NetworkID.indexOf("${") >= 0) ) {
-		NetworkID = TSCommandProcessorUtil.expandParameterValue(processor, this, NetworkID);
-	}
+	NetworkID = TSCommandProcessorUtil.expandParameterValue(processor, this, NetworkID);
     String DownstreamNodeID = parameters.getValue ( "DownstreamNodeID" );
-	if ( (DownstreamNodeID != null) && (DownstreamNodeID.indexOf("${") >= 0) ) {
-		DownstreamNodeID = TSCommandProcessorUtil.expandParameterValue(processor, this, DownstreamNodeID);
-	}
+	DownstreamNodeID = TSCommandProcessorUtil.expandParameterValue(processor, this, DownstreamNodeID);
     String UpstreamNodeIDs = parameters.getValue ( "UpstreamNodeIDs" );
-	if ( (UpstreamNodeIDs != null) && (UpstreamNodeIDs.indexOf("${") >= 0) ) {
-		UpstreamNodeIDs = TSCommandProcessorUtil.expandParameterValue(processor, this, UpstreamNodeIDs);
-	}
+	UpstreamNodeIDs = TSCommandProcessorUtil.expandParameterValue(processor, this, UpstreamNodeIDs);
 	List<String> upstreamNodeIds = null;
 	if ( (UpstreamNodeIDs != null) && !UpstreamNodeIDs.isEmpty() ) {
 		String [] parts = UpstreamNodeIDs.split(",");

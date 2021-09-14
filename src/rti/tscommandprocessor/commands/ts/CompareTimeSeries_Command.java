@@ -1082,7 +1082,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages.
-	int size = 0;
+	int tslistSize = 0;
 
 	// Clear the output file
 	
@@ -1632,11 +1632,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	TSIterator tsi;
 		   	if ( do2Ts ) {
 			   	// Directly comparing so only need to process one comparison.
-			   	size = 1;
+			   	tslistSize = 1;
 		   	}
 		   	else {
 			   	// Must process all the time series and try to find match for each time series.
-			   	size = tslist.size();
+			   	tslistSize = tslist.size();
 		   	}
 		   	double value1_orig; // Data values from each time series, rounded and original.
 		   	double value2_orig;
@@ -1646,7 +1646,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	DateTime date1 = null, date2 = null; // Dates for iteration.
 		   	int jts;
 		   	// Location, data type, and alias for the first time series in a matched time series pair.
-		   	String loc1, datatype1, alias1;
+		   	String loc1, loc1Upper, datatype1, datatype1Upper, alias1, alias1Upper;
 
 		   	// TODO smalers 2021-09-09 this is old logic that is fragile if more than 2 time series match
 		   	// Keep track of which time series pairs have already been matched:
@@ -1660,19 +1660,42 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	// New approach is to populate an integer array with count of matches:
 		   	// - match count of 1 is expected (one match for each time series)
 		   	// - otherwise will generate warnings
-		   	int [] matchCount = new int[size];
-		   	for ( int i = 0; i < size; i++ ) {
+		   	int [] matchCount = new int[tslistSize];
+		   	for ( int i = 0; i < tslistSize; i++ ) {
 			   	matchCount[i] = 0;
+		   	}
+		   	
+		   	// Prepare strings that are used to match time series:
+		   	// - create arrays of upper case strings so that 
+		   	String [] locUpperArray = new String[0];
+		   	String [] dataTypeUpperArray = new String[0];
+		   	String [] aliasUpperArray = new String[0];
+		   	if ( !do2Ts ) {
+		   		// Have a list of time series that is processed below.
+		   		locUpperArray = new String[tslistSize];
+		   		dataTypeUpperArray = new String[tslistSize];
+		   		aliasUpperArray = new String[tslistSize];
+		   		TS ts = null;
+		   		for ( int its = 0; its < tslistSize; its++ ) {
+		   			ts = tslist.get(its);
+		   			locUpperArray[its] = ts.getLocation().toUpperCase();
+		   			dataTypeUpperArray[its] = ts.getDataType().toUpperCase();
+		   			aliasUpperArray[its] = ts.getAlias();
+		   		}
 		   	}
 		
 		   	// Loop through all time series.
-		   	for ( int its = 0; its < size; its++ ) {
+		   	for ( int its = 0; its < tslistSize; its++ ) {
 			   	diffts = null;
 			   	ts1 = tslist.get(its);
 			   	ts2 = null;
+			   	// Get the upper case strings used for comparisons and normal strings for output.
 			   	loc1 = ts1.getLocation();
+			   	loc1Upper = locUpperArray[its];
 			   	datatype1 = ts1.getDataType();
+			   	datatype1Upper = dataTypeUpperArray[its];
 			   	alias1 = ts1.getAlias();
+			   	alias1Upper = aliasUpperArray[its];
 			   	if ( do2Ts ) {
 				   	// Only have two time series so always a match.
 				   	foundMatch = true;
@@ -1737,7 +1760,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	*/
 				   	// Try to find a matching location:
 				   	// - search the entire list to catch duplicate matches
-				   	for ( jts = 0; jts < size; jts++ ) {
+				   	for ( jts = 0; jts < tslistSize; jts++ ) {
 					   	if ( its == jts ) {
 						   	// Don't compare a time series with itself.
 						   	continue;
@@ -1750,15 +1773,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						   	continue;
 					   	}
 					   	// Check the requested criteria for matches.
-					   	if ( MatchLocation_boolean && !loc1.equalsIgnoreCase(ts0.getLocation()) ) {
+					   	if ( MatchLocation_boolean && !loc1Upper.equals(locUpperArray[jts]) ) {
 						   	// Not a match.
 						   	continue;
 					   	}
-					   	if ( MatchDataType_boolean && !datatype1.equalsIgnoreCase(ts0.getDataType()) ) {
+					   	if ( MatchDataType_boolean && !datatype1Upper.equals(dataTypeUpperArray[jts]) ) {
 						   	// Not a match.
 						   	continue;
 					   	}
-					   	if ( MatchAlias_boolean && !alias1.equalsIgnoreCase(ts0.getAlias()) ) {
+					   	if ( MatchAlias_boolean && !alias1Upper.equals(aliasUpperArray[jts]) ) {
 						   	// Not a match.
 						   	continue;
 					   	}
@@ -2041,7 +2064,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	compare_diffmaxdate.add ( null );
 			   	} // End no match.
 		   	} // End loop on time series.
-		   	Message.printStatus ( 2, routine, "" + tsdiff_count + " of " + size + " time series had differences." );
+		   	Message.printStatus ( 2, routine, "" + tsdiff_count + " of " + tslistSize + " time series had differences." );
 		   	// else print a warning and throw an exception below.
 
 		   	// Print a summary of the comparison.
@@ -2077,7 +2100,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			        message = "" + tsdiff_count + " time series had differences for " +
 				        outputTSList.size() +
 				        " analyzed time series (matches and unmatched time series from " +
-				        size + " input time series).";
+				        tslistSize + " input time series).";
 			        Message.printWarning ( warning_level,
 			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	       	        status.addToLog ( commandPhase,
@@ -2095,7 +2118,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			        else {
 				        statusType = CommandStatusType.INFO;
 			        }
-			        message = "All " + size + " time series are the same.";
+			        message = "All " + tslistSize + " time series are the same.";
 			        Message.printWarning ( warning_level,
 			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	       	                status.addToLog ( commandPhase,

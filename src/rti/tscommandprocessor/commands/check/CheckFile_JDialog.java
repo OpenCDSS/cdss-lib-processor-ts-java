@@ -382,7 +382,10 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "Currently, the minimum sample size and number of missing allowed cannot be specified."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
-        "For 'PatternMatchLineCount' specify * on each end to match a substring."),
+        "For 'PatternMatchLineCount' specify * on each end to match a substring"),
+        0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(stat_JPanel, new JLabel (
+        "and may need to escape with leading backslash characters that have regular expression meaning, such as:  ( ) * ^ $"),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

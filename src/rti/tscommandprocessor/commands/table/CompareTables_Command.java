@@ -36,7 +36,6 @@ import java.util.Vector;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -59,7 +58,7 @@ import RTi.Util.Table.DataTableComparer;
 This class initializes, checks, and runs the CompareTables() command.
 */
 public class CompareTables_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider, FileGenerator
+implements CommandDiscoverable, ObjectListProvider, FileGenerator
 {
     
 /**
@@ -317,7 +316,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector<File>();
+    List<File> list = new ArrayList<>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -388,7 +387,7 @@ CommandWarningException, CommandException
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
 	
-    // Clear the output file
+    // Clear the output file.
     setOutputFile ( null );
     
     CommandStatus status = getCommandStatus();
@@ -576,11 +575,11 @@ CommandWarningException, CommandException
 	        // If an output file is desired, write to it and save the name.
 	        if ( OutputFile != null ) {
 	            comparer.writeHtmlFile ( OutputFile_full );
-	            setOutputFile ( new File(OutputFile_full));
+	            setOutputFile ( new File(OutputFile_full) );
 	        }
             
             // Set the table in the processor if the user has specific a name (otherwise the table is used
-	        // internally, for example to create the HTML file)...
+	        // internally, for example to create the HTML file).
             
 	        if ( (comparisonTable != null) && (NewTableID != null) && !NewTableID.equals("") ) {
                 PropList request_params = new PropList ( "" );
@@ -601,7 +600,7 @@ CommandWarningException, CommandException
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             if ( (NewTableID != null) && !NewTableID.equals("") ) {
-                // Create an empty table and set the ID
+                // Create an empty table and set the ID.
                 DataTable comparisonTable = new DataTable();
                 comparisonTable.setTableID ( NewTableID );
                 setDiscoveryTable ( comparisonTable );
@@ -644,7 +643,6 @@ CommandWarningException, CommandException
            status.addToLog(CommandPhaseType.RUN,
                new CommandLogRecord(IfDifferent_CommandStatusType,
                    message, "Check files because difference is not expected.") );
-           throw new CommandException ( message );
         }
     }
 	else {
@@ -659,7 +657,6 @@ CommandWarningException, CommandException
            status.addToLog(CommandPhaseType.RUN,
                new CommandLogRecord(IfSame_CommandStatusType,
                    message, "Check files because match is not expected.") );
-           throw new CommandException ( message );
 	    }
     }
 	if ( warning_count > 0 ) {
@@ -681,7 +678,7 @@ private void setDiscoveryTable ( DataTable table )
 }
 
 /**
-Set the output file that is created by this command.  This is only used internally.
+Set the output file that is created by this command.
 */
 private void setOutputFile ( File file )
 {

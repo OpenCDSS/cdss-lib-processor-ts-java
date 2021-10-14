@@ -365,7 +365,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // obsolete command or testing handling of errors).
                     status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
                     	"Severity for RunCommands (" + maxSeverity +
-                    	") is max of commands in command file that was run - matches expected (" +
+                    	") is the maximum for the commands in the command file that was run - matches expected (" +
                     	ExpectedStatus + ") so RunCommands status=Success.",
                         "Additional status messages are omitted to allow test to be success - " +
                         "refer to log file if warning/failure."));
@@ -379,7 +379,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
                     status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
                         "Severity for RunCommands (" + maxSeverity +
-                        ") is max of commands in command file that was run - does not match expected (" +
+                        ") is the maximum for the commands in the command file that was run - does not match expected (" +
                         ExpectedStatus + ") so RunCommands status=Failure.",
                         "Check the command to confirm the expected status."));
                     // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
@@ -391,7 +391,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             else {
                 status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(maxSeverity,
-    				"Severity for RunCommands (" + maxSeverity + ") is max of commands in command file that was run.",
+    				"Severity for RunCommands (" + maxSeverity + ") is the maximum of the commands in the command file that was run.",
     				"Status messages from commands that were run are appended to RunCommand status messages."));
                 // Append the log records from the command file that was run.
                 // The status contains lists of CommandLogRecord for each run mode.

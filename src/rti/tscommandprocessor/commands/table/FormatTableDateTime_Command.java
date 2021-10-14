@@ -126,7 +126,7 @@ throws InvalidCommandParameterException
     }
     
     if ( (IncrementBaseUnit != null) && !IncrementBaseUnit.isEmpty() ) {
-    	List<String> units = TimeInterval.getTimeIntervalBaseChoices(TimeInterval.MINUTE, TimeInterval.YEAR, 1, false);
+    	List<String> units = TimeInterval.getTimeIntervalBaseChoices(TimeInterval.SECOND, TimeInterval.YEAR, 1, false);
     	boolean found = false;
     	for ( String unit: units ) {
     		if ( unit.equalsIgnoreCase(IncrementBaseUnit) ) {

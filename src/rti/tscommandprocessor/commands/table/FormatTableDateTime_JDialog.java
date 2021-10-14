@@ -351,7 +351,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(inc_JPanel, new JLabel ( "Increment time base unit:" ), 
         0, ++yInc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncrementBaseUnit_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices0 = TimeInterval.getTimeIntervalBaseChoices(TimeInterval.MINUTE, TimeInterval.YEAR, 1, false);
+    List<String> choices0 = TimeInterval.getTimeIntervalBaseChoices(TimeInterval.SECOND, TimeInterval.YEAR, 1, false);
     choices0.add(0,"");
     __IncrementBaseUnit_JComboBox.setData(choices0);
     __IncrementBaseUnit_JComboBox.addItemListener(this);

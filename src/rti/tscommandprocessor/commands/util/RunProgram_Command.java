@@ -173,6 +173,7 @@ throws InvalidCommandParameterException
 	validList.add ( "ExitStatusIndicator" );
 	validList.add ( "ExitCodeProperty" );
 	validList.add ( "StdoutFile" );
+	validList.add ( "StdoutProperty" );
 	validList.add ( "StderrFile" );
 	validList.add ( "OutputCheckTableID" );
 	validList.add ( "OutputCheckWarningCountProperty" );
@@ -320,17 +321,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	setStderrFile ( null );
 	
 	String CommandLine = parameters.getValue ( "CommandLine" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (CommandLine != null) && (CommandLine.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		CommandLine = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandLine);
 	}
 	String Program = parameters.getValue ( "Program" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (Program != null) && (Program.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Program = TSCommandProcessorUtil.expandParameterValue(processor, this, Program);
 	}
 	String [] ProgramArg = new String[_ProgramArg_SIZE];
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
 	    ProgramArg[i] = parameters.getValue ( "ProgramArg" + (i + 1) );
-		if ( (commandPhase == CommandPhaseType.RUN) && (ProgramArg[i] != null) && (ProgramArg[i].indexOf("${") >= 0) ) {
+		if ( commandPhase == CommandPhaseType.RUN ) {
 			ProgramArg[i] = TSCommandProcessorUtil.expandParameterValue(processor, this, ProgramArg[i]);
 		}
 	}
@@ -340,7 +341,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         UseCommandShell_boolean = false;
     }
     String CommandShell = parameters.getValue ( "CommandShell" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (CommandShell != null) && (CommandShell.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		CommandShell = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandShell);
 	}
 	// The ProcessManager wants to see the command shell as its parts so split by spaces
@@ -373,27 +374,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
     String ExitCodeProperty = parameters.getValue ( "ExitCodeProperty" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (ExitCodeProperty != null) && (ExitCodeProperty.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		ExitCodeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ExitCodeProperty);
 	}
     String StdoutFile = parameters.getValue ( "StdoutFile" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (StdoutFile != null) && (StdoutFile.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		StdoutFile = TSCommandProcessorUtil.expandParameterValue(processor, this, StdoutFile);
 	}
+    String StdoutProperty = parameters.getValue ( "StdoutProperty" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		StdoutProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, StdoutProperty);
+	}
     String StderrFile = parameters.getValue ( "StderrFile" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (StderrFile != null) && (StderrFile.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		StderrFile = TSCommandProcessorUtil.expandParameterValue(processor, this, StderrFile);
 	}
     String OutputCheckTableID = parameters.getValue ( "OutputCheckTableID" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckTableID != null) && (OutputCheckTableID.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		OutputCheckTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckTableID);
 	}
     String OutputCheckWarningCountProperty = parameters.getValue ( "OutputCheckWarningCountProperty" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckWarningCountProperty != null) && (OutputCheckWarningCountProperty.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		OutputCheckWarningCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckWarningCountProperty);
 	}
     String OutputCheckFailureCountProperty = parameters.getValue ( "OutputCheckFailureCountProperty" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckFailureCountProperty != null) && (OutputCheckFailureCountProperty.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		OutputCheckFailureCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckFailureCountProperty);
 	}
 	
@@ -490,7 +495,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (EnvVars != null) && !EnvVars.isEmpty() ) {
         	pm.setEnvironment(envVarsMap);
         }
-        pm.saveOutput ( true ); // Save output so it can be used in troubleshooting
+        // Save output so it can be used in troubleshooting, output file, and output property.
+        pm.saveOutput ( true );
         pm.run();
         Message.printStatus ( 2, routine, "Exit status from program = " + pm.getExitStatus() );
         if ( pm.getExitStatus() == 996 ) {
@@ -547,6 +553,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         for ( int i = 0; i < size; i++ ) {
             Message.printStatus(2, routine, "Program output:  " + output.get(i));
+        }
+        // Set the standard output to a property if requested.
+        if ( (StdoutProperty != null) && !StdoutProperty.isEmpty() ) {
+        	String outputString = "";
+        	if ( output.size() > 0 ) {
+        		outputString = StringUtil.toString(output, "\n").trim();
+        	}
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", StdoutProperty );
+            request_params.setUsingObject ( "PropertyValue", outputString );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + StdoutProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
         }
         // Write stdout and stderr from process to files, if requested.
         if ( (StdoutFile != null) && !StdoutFile.isEmpty() ) {
@@ -894,6 +922,7 @@ public String toString ( PropList parameters )
 	String ExitStatusIndicator = parameters.getValue("ExitStatusIndicator");
 	String ExitCodeProperty = parameters.getValue("ExitCodeProperty");
 	String StdoutFile = parameters.getValue("StdoutFile");
+	String StdoutProperty = parameters.getValue("StdoutProperty");
 	String StderrFile = parameters.getValue("StderrFile");
 	String OutputCheckTableID = parameters.getValue("OutputCheckTableID");
 	String OutputCheckWarningCountProperty = parameters.getValue("OutputCheckWarningCountProperty");
@@ -963,6 +992,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "StdoutFile=\"" + StdoutFile +"\"" );
+    }
+    if ( (StdoutProperty != null) && (StdoutProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StdoutProperty=\"" + StdoutProperty +"\"" );
     }
     if ( (StderrFile != null) && (StderrFile.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -920,13 +920,17 @@ private void createReportFiles ( List<TS> outputTSList, String DifferenceFile_fu
 		}
 	}
 	try {
-		IOUtil.writeFile ( DifferenceFile_full, diffBuilder.toString() );
+       	if ( (DifferenceFile_full != null) && !DifferenceFile_full.isEmpty() ) {
+			IOUtil.writeFile ( DifferenceFile_full, diffBuilder.toString() );
+		}
 	}
 	catch ( IOException e ) {
 		problems.add("Error writing difference file \"" + DifferenceFile_full + "\"");
 	}
 	try {
-		IOUtil.writeFile ( SummaryFile_full, summaryBuilder.toString() );
+       	if ( (SummaryFile_full != null) && !SummaryFile_full.isEmpty() ) {
+			IOUtil.writeFile ( SummaryFile_full, summaryBuilder.toString() );
+		}
 	}
 	catch ( IOException e ) {
 		problems.add("Error writing summary file \"" + SummaryFile_full + "\"");
@@ -1689,13 +1693,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			   	diffts = null;
 			   	ts1 = tslist.get(its);
 			   	ts2 = null;
-			   	// Get the upper case strings used for comparisons and normal strings for output.
 			   	loc1 = ts1.getLocation();
-			   	loc1Upper = locUpperArray[its];
 			   	datatype1 = ts1.getDataType();
-			   	datatype1Upper = dataTypeUpperArray[its];
 			   	alias1 = ts1.getAlias();
-			   	alias1Upper = aliasUpperArray[its];
 			   	if ( do2Ts ) {
 				   	// Only have two time series so always a match.
 				   	foundMatch = true;
@@ -1716,6 +1716,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	// Make sure not to analyze the same combination more than once, based on the location ID and data type.
 				   	// TODO SAM 2005-05-25 Also need to check interval always.
 				   	foundMatch = false;
+				   	// Get the upper case strings used for comparisons (use normal strings for output).
+				   	loc1Upper = locUpperArray[its];
+			   		datatype1Upper = dataTypeUpperArray[its];
+			   		alias1Upper = aliasUpperArray[its];
 				   	//boolean alreadyProcessed = false;
 				
 				   	// Determine if the time series has already been matched.
@@ -2238,10 +2242,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
            	}
 
             // Save the output file names.
-        	if ( (DifferenceFile != null) && !DifferenceFile.isEmpty() ) {
+        	if ( (DifferenceFile_full != null) && !DifferenceFile_full.isEmpty() ) {
         		this.__outputFileList.add ( new File(DifferenceFile_full));
         	}
-        	if ( (SummaryFile != null) && !SummaryFile.isEmpty() ) {
+        	if ( (SummaryFile_full != null) && !SummaryFile_full.isEmpty() ) {
         		this.__outputFileList.add ( new File(SummaryFile_full));
         	}
         }

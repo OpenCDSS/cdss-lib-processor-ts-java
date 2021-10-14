@@ -694,6 +694,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to include:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeTestSuite_JTextField = new JTextField ( "", 30 );
+    __IncludeTestSuite_JTextField.setToolTipText("Test suites to include, separated by commas.");
     __IncludeTestSuite_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeTestSuite_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -704,6 +705,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to exclude:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeTestSuite_JTextField = new JTextField ( "", 30 );
+    __ExcludeTestSuite_JTextField.setToolTipText("Test suites to exclude, separated by commas. Use 'nosuite' to exlude tests that don't have #@testSuite.");
     __ExcludeTestSuite_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcludeTestSuite_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -714,6 +716,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include tests for OS:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeOS_JTextField = new JTextField ( "", 30 );
+    __IncludeOS_JTextField.setToolTipText("Operating systems to include test: Windows, UNIX, Linux");
     __IncludeOS_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeOS_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -740,6 +743,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Test results table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TestResultsTableID_JTextField = new JTextField (10);
+    __TestResultsTableID_JTextField.setToolTipText("Table identifier to save test results.");
     __TestResultsTableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TestResultsTableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

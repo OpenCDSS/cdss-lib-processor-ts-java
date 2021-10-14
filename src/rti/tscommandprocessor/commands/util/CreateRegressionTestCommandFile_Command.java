@@ -365,10 +365,10 @@ throws IOException
     boolean needToCheckForUnixOS = false;
     boolean needToCheckForWindowsOS = false;
     for ( int i = 0; i < includedOS.length; i++ ) {
-        if ( includedOS[i].equalsIgnoreCase("UNIX") ) {
+        if ( includedOS[i].equalsIgnoreCase("UNIX") || includedOS[i].equalsIgnoreCase("linux")) {
             needToCheckForUnixOS = true;
   	    	if ( Message.isDebugOn ) {
-  	    		Message.printStatus ( 2, routine, "Will only include tests that are for UNIX." );
+  	    		Message.printStatus ( 2, routine, "Will only include tests that are for UNIX/Linux." );
   	    	}
         }
     }
@@ -448,44 +448,65 @@ throws IOException
         	    }
         	    // Check to see if the test suite has been specified and matches that in the file.
         	    boolean doAddForTestSuite = false;
-        	    if ( (includedTestSuites.length == 0) && (excludedTestSuites.length > 0) ) {
+        	    if ( (includedTestSuites.length == 0) && (excludedTestSuites.length == 0) ) {
         	    	// No filtering test suites have been specified so include all by default.
+                    Message.printStatus(2, routine, "Excluding test because no filters for included or excluded tests.");
         	        doAddForTestSuite = true;
         	    }
         	    else {
-        	        // Check to see if the test suites in the test match the requested test suites.
+        	        // Check to see if the test suites in the test match the requested test suites:
+        	    	// - first get comment tag values for #@testSuite
         	        List<Object> tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
-        	        if ( tagValues2.size() == 0 ) {
-        	            // Test case is not specified so it is always included.
+        	        if ( (tagValues2.size() == 0) && ((includedTestSuites.length == 0) || includedTestSuites[0].equals(".*")) ) {
+        	            // Test suite is not specified for the test so it is always included initially:
+        	        	// - use the Java regular expression ".*" rather than just "."
+        	        	Message.printStatus(2, routine, "Initially including test because test has no @testSuite and no included suites: " + path);
         	            doAddForTestSuite = true;
         	        }
-        	        else {
-        	            // Check each value in the file against requested test suites.
-        	            for ( int itag = 0; itag < tagValues2.size(); itag++ ) {
-        	                if ( !(tagValues2.get(itag) instanceof String) ) {
-        	                    continue;
-        	                }
-        	                String tagValue = (String)tagValues2.get(itag);
-        	                // First include test suites that are included (may use '*' to match all).
-        	                for ( String includedTestSuite : includedTestSuites ) {
-        	                    if ( tagValue.toUpperCase().matches(includedTestSuite.toUpperCase()) ) {
-        	                        doAddForTestSuite = true;
-        	                        // Matched a pattern so break.
-        	                        break;
-        	                    }
-        	                }
-        	                for ( String excludedTestSuite : excludedTestSuites ) {
-        	                    if ( tagValue.toUpperCase().matches(excludedTestSuite.toUpperCase()) ) {
-        	                        doAddForTestSuite = false;
-        	                        Message.printStatus(2, routine, "Excluding test because test suite '" + excludedTestSuite + "' is excluded.");
-        	                        // Matched a pattern so break.
-        	                        break;
-        	                    }
-        	                }
-        	                // Next remove test suites that are excluded.
-        	                if ( doAddForTestSuite ) {
+        	        // Check the tag values from the file against requested test suites:
+        	        // - a test can be in more than one suite
+        	        for ( Object tagValueObject : tagValues2 ) {
+        	            if ( !(tagValueObject instanceof String) ) {
+        	            	// Should not happen because suite name should always be a string.
+        	                continue;
+        	            }
+        	            String tagValue = (String)tagValueObject;
+        	            // First include test suites that are included (may use '*' to match all):
+        	            // - if no suite(s) to include are specified, include all tests (handled above)
+        	            // - if suite(s) to include are specified, only include if match below
+        	            for ( String includedTestSuite : includedTestSuites ) {
+        	                if ( tagValue.toUpperCase().matches(includedTestSuite.toUpperCase()) ) {
+        	                    doAddForTestSuite = true;
+        	                    Message.printStatus(2, routine, "Including test because included test suites matches @testSuite: " + path);
+        	                    // Matched a pattern so break.
         	                    break;
         	                }
+        	            }
+        	            // After including test suites, exclude:
+        	            // - first exclude specifically requested suites
+        	            // - also exclude if 'nosuite' was requested
+        	            for ( String excludedTestSuite : excludedTestSuites ) {
+        	                if ( tagValue.toUpperCase().matches(excludedTestSuite.toUpperCase()) ) {
+        	                    doAddForTestSuite = false;
+        	                    Message.printStatus(2, routine, "Excluding test because test suite '" + excludedTestSuite + "' is excluded: " + path);
+        	                    // Matched a pattern so break.
+        	                    break;
+        	                }
+        	                // More general test to exclude tests that are not in a suite:
+        	                // - this probably does not need to be used
+        	                /*
+        	                if ( (tagValues2.size() == 0) && excludedTestSuite.equalsIgnoreCase("nosuite") ) {
+        	                	// Test has no test suite and such tests are being excluded as 'nosuite'.
+        	                    Message.printStatus(2, routine, "Excluding test because test has no suite and 'nosuite' is excluded: " + path);
+        	                	doAddForTestSuite = false;
+        	                	break;
+        	                }
+        	                */
+        	            }
+        	            // Next remove test suites that are excluded.
+        	            if ( !doAddForTestSuite ) {
+        	            	// No need to keep searching since is excluded.
+        	                break;
         	            }
         	        }
         	    }

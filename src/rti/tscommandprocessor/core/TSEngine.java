@@ -2915,6 +2915,7 @@ throws Exception
     List<File> outputFileList = new ArrayList<File>();
     setOutputFileList ( outputFileList );
     boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing
+    boolean outputFilesAdded = false;
     // Run using the command list index because the index is modified below by For() commands
 	for ( i = 0; i < size; i++ ) {
 		// 1-offset command count for messages
@@ -2922,6 +2923,8 @@ throws Exception
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
 		// Reset each command
 		needToInterrupt = false;
+		// Output files have not been added for a command, allows check in exceptions.
+		outputFilesAdded = false;
 		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
 		// continue in loop, do it now)...
 		if ( !prev_command_complete_notified && (commandPrev != null) ) {
@@ -3383,10 +3386,8 @@ throws Exception
                             // If the command generated an output file, add it in the list of output files.
                             // This list is used by the TSTool UI to display results.
                             if ( command instanceof FileGenerator ) {
-                            	List<File> list = ((FileGenerator)command).getGeneratedFileList();
-                    			if ( list != null ) {
-                    				outputFileList.addAll(list);
-                    			}
+                            	processCommands_AddOutputFiles(outputFileList, command);
+                    			outputFilesAdded = true;
                             }
                             if ( command instanceof RunCommands_Command ) {
                             	// Also need to get the output files from the commands that were run
@@ -3585,6 +3586,10 @@ throws Exception
                     stopWatch.stop();
                     commandProfile.setEndTime(System.currentTimeMillis());
                     commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
+    				if ( command instanceof FileGenerator && !outputFilesAdded ) {
+    					// Need to check whether there are some output files that where not added due to exception.
+                       	processCommands_AddOutputFiles(outputFileList, command);
+    				}
                 }
     		}
 		} // Main catch
@@ -3699,6 +3704,19 @@ throws Exception
 		"There were warnings printed for obsolete commands.\n" +
 		"See the log file for information.  The output may be incomplete." );
 	}
+}
+
+/**
+ * Add output files from the command to the list for the process.
+ * This method should only be called for commands that implement FileGenerator.
+ * @param outputFileList list of output files from the command
+ * @param command command being run
+ */
+private void processCommands_AddOutputFiles ( List<File> outputFileList, Command command ) {
+    List<File> list = ((FileGenerator)command).getGeneratedFileList();
+   	if ( (list != null) && (list.size() > 0) ) {
+   		outputFileList.addAll(list);
+    }
 }
 
 /**

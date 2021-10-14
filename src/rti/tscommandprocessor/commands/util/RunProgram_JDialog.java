@@ -92,6 +92,7 @@ private SimpleJComboBox	__IfNonZeroExitCode_JComboBox =null;
 private JTextField __ExitStatusIndicator_JTextField = null;
 private JTextField __ExitCodeProperty_JTextField = null;
 private JTextField __StdoutFile_JTextField = null;
+private JTextField __StdoutProperty_JTextField = null;
 private JTextField __StderrFile_JTextField = null;
 private SimpleJComboBox __OutputCheckTableID_JComboBox = null;
 private JTextField __OutputCheckWarningCountProperty_JTextField = null;
@@ -278,6 +279,7 @@ private void checkInput ()
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
     String StdoutFile = __StdoutFile_JTextField.getText().trim();
+    String StdoutProperty = __StdoutProperty_JTextField.getText().trim();
     String StderrFile = __StderrFile_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
@@ -317,6 +319,9 @@ private void checkInput ()
     }
     if ( StdoutFile.length() > 0 ) {
         props.set ( "StdoutFile", StdoutFile );
+    }
+    if ( StdoutProperty.length() > 0 ) {
+        props.set ( "StdoutProperty", StdoutProperty );
     }
     if ( StderrFile.length() > 0 ) {
         props.set ( "StderrFile", StderrFile );
@@ -359,6 +364,7 @@ private void commitEdits ()
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
     String StdoutFile = __StdoutFile_JTextField.getText().trim();
+    String StdoutProperty = __StdoutProperty_JTextField.getText().trim();
     String StderrFile = __StderrFile_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
@@ -376,6 +382,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "ExitStatusIndicator", ExitStatusIndicator );
     __command.setCommandParameter ( "ExitCodeProperty", ExitCodeProperty );
     __command.setCommandParameter ( "StdoutFile", StdoutFile );
+    __command.setCommandParameter ( "StdoutProperty", StdoutProperty );
     __command.setCommandParameter ( "StderrFile", StderrFile );
     __command.setCommandParameter ( "OutputCheckTableID", OutputCheckTableID );
     __command.setCommandParameter ( "OutputCheckWarningCountProperty", OutputCheckWarningCountProperty );
@@ -678,7 +685,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard output file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__StdoutFile_JTextField = new JTextField ( 50 );
 	__StdoutFile_JTextField.setToolTipText("Optional - specify the filename for standard output, can use ${Property} notation");
 	__StdoutFile_JTextField.addKeyListener ( this );
@@ -698,10 +705,20 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(out_JPanel, StdoutFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel("Standard output property:"),
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StdoutProperty_JTextField = new JTextField ( "", 20 );
+    __StdoutProperty_JTextField.setToolTipText("Processor property to set to program standard output, can use ${Property} notation");
+    __StdoutProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __StdoutProperty_JTextField,
+        1, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Optional - processor property to set as program output." ),
+        3, yOut, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard error file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__StderrFile_JTextField = new JTextField ( 50 );
 	__StderrFile_JTextField.setToolTipText("Optional - specify the filename for standard error, can use ${Property} notation");
 	__StderrFile_JTextField.addKeyListener ( this );
@@ -721,7 +738,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(out_JPanel, StderrFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for output checks
     int yCheck = -1;
@@ -877,6 +894,7 @@ private void refresh ()
 	String ExitStatusIndicator = "";
 	String ExitCodeProperty = "";
 	String StdoutFile = "";
+	String StdoutProperty = "";
 	String StderrFile = "";
 	String OutputCheckTableID = "";
 	String OutputCheckWarningCountProperty = "";
@@ -898,6 +916,7 @@ private void refresh ()
         ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
         ExitCodeProperty = parameters.getValue ( "ExitCodeProperty" );
         StdoutFile = parameters.getValue ( "StdoutFile" );
+        StdoutProperty = parameters.getValue ( "StdoutProperty" );
         StderrFile = parameters.getValue ( "StderrFile" );
         OutputCheckTableID = parameters.getValue ( "OutputCheckTableID" );
         OutputCheckWarningCountProperty = parameters.getValue ( "OutputCheckWarningCountProperty" );
@@ -963,6 +982,9 @@ private void refresh ()
         if ( StdoutFile != null ) {
             __StdoutFile_JTextField.setText ( StdoutFile );
         }
+        if ( StdoutProperty != null ) {
+            __StdoutProperty_JTextField.setText ( StdoutProperty );
+        }
         if ( StderrFile != null ) {
             __StderrFile_JTextField.setText ( StderrFile );
         }
@@ -1002,6 +1024,7 @@ private void refresh ()
     ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText();
     ExitCodeProperty = __ExitCodeProperty_JTextField.getText();
     StdoutFile =__StdoutFile_JTextField.getText();
+    StdoutProperty =__StdoutProperty_JTextField.getText();
     StderrFile =__StderrFile_JTextField.getText();
     OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
     OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText();
@@ -1020,6 +1043,7 @@ private void refresh ()
     props.add ( "ExitStatusIndicator=" + ExitStatusIndicator );
     props.add ( "ExitCodeProperty=" + ExitCodeProperty );
     props.add ( "StdoutFile=" + StdoutFile );
+    props.add ( "StdoutProperty=" + StdoutProperty );
     props.add ( "StderrFile=" + StderrFile );
     props.add ( "OutputCheckTableID=" + OutputCheckTableID );
     props.add ( "OutputCheckWarningCountProperty=" + OutputCheckWarningCountProperty );

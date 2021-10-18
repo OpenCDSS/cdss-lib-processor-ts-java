@@ -304,8 +304,8 @@ CommandWarningException, CommandException
 				}
 				else {
 					int x = new ResponseJDialog ( Message.getTopLevel(), "Delete Output Folder?",
-						"Are you sure you want to delete the output folder ("
-						+ OutputFolder_full + ") before unzipping?",
+						"Are you sure you want to delete the output folder before unzipping?\n   "
+						+ OutputFolder_full,
 						ResponseJDialog.YES|ResponseJDialog.NO|ResponseJDialog.CANCEL).response();
 					if ( x == ResponseJDialog.YES ) {
 						doRemove = true;

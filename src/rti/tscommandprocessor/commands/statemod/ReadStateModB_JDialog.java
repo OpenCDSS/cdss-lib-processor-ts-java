@@ -74,7 +74,7 @@ implements ActionListener, DocumentListener, KeyListener, WindowListener
 	
 	private final String __AddWorkingDirectory = "Abs";
 	private final String __RemoveWorkingDirectory = "Rel";
-	
+
 private SimpleJButton __browse_JButton = null; // File browse button
 private SimpleJButton __cancel_JButton = null; // Cancel Button
 private SimpleJButton __ok_JButton = null; // Ok Button
@@ -90,6 +90,7 @@ private JTextField __TSID_JTextField = null;
 private JTextField __IncludeDataTypes_JTextField = null;
 private JTextField __ExcludeDataTypes_JTextField = null;
 private JTextField __Version_JTextField = null;
+private SimpleJComboBox __OutputVersion_JComboBox = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
 private SimpleJComboBox	__IfFileNotFound_JComboBox =null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up or Cancel?
@@ -241,6 +242,7 @@ private void checkInput ()
     String IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
     String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
+	String OutputVersion = __OutputVersion_JComboBox.getSelected();
 	String Alias = __Alias_JTextField.getText().trim();
 	String IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	__error_wait = false;
@@ -264,6 +266,9 @@ private void checkInput ()
     }
 	if ( Version.length() > 0 ) {
 		props.set ( "Version", Version );
+	}
+	if ( OutputVersion.length() > 0 ) {
+		props.set ( "OutputVersion", OutputVersion );
 	}
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
@@ -293,6 +298,7 @@ private void commitEdits ()
     String IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
     String ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
+	String OutputVersion = __OutputVersion_JComboBox.getSelected();
 	String Alias = __Alias_JTextField.getText().trim();
 	String IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -302,6 +308,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "IncludeDataTypes", IncludeDataTypes );
 	__command.setCommandParameter ( "ExcludeDataTypes", ExcludeDataTypes );
 	__command.setCommandParameter ( "Version", Version );
+	__command.setCommandParameter ( "OutputVersion", OutputVersion );
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "IfFileNotFound", IfFileNotFound );
 }
@@ -320,7 +327,7 @@ private void initialize ( JFrame parent, ReadStateModB_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -437,12 +444,30 @@ private void initialize ( JFrame parent, ReadStateModB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "StateMod version:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Version_JTextField = new JTextField ( 10 );
+	__Version_JTextField.setToolTipText("Version of the input file, for StateMod version <= 10 because cannot determine the version from file contents." );
 	__Version_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Version_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - NN.NN, for files prior to StateMod version 11 (default is current version)."), 
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output version:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputVersion_JComboBox = new SimpleJComboBox ( false );
+    __OutputVersion_JComboBox.setToolTipText("Version for output, used to translate to a specific version.");
+    List<String> versionChoices = new ArrayList<>();
+    versionChoices.add ( "" );
+    versionChoices.add ( __command._Original );
+    versionChoices.add ( __command._Latest );
+    __OutputVersion_JComboBox.setData(versionChoices);
+    __OutputVersion_JComboBox.select ( 0 );
+    __OutputVersion_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputVersion_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output version (default=" + __command._Original + ")"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -549,6 +574,7 @@ private void refresh ()
     String IncludeDataTypes = "";
     String ExcludeDataTypes = "";
 	String Version="";
+	String OutputVersion = "";
     String Alias = "";
     String IfFileNotFound = "";
 	PropList props = null;
@@ -563,6 +589,7 @@ private void refresh ()
 		IncludeDataTypes = props.getValue ( "IncludeDataTypes" );
 		ExcludeDataTypes = props.getValue ( "ExcludeDataTypes" );
 		Version = props.getValue ( "Version" );
+		OutputVersion = props.getValue ( "OutputVersion" );
         Alias = props.getValue("Alias");
         IfFileNotFound = props.getValue("IfFileNotFound");
 		if ( InputFile != null ) {
@@ -586,6 +613,20 @@ private void refresh ()
 		if ( Version != null ) {
 			__Version_JTextField.setText (Version);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__OutputVersion_JComboBox, OutputVersion, JGUIUtil.NONE, null, null ) ) {
+            __OutputVersion_JComboBox.select ( OutputVersion );
+        }
+        else {
+            if ( (OutputVersion == null) || OutputVersion.equals("") ) {
+                // New command...select the default...
+                __OutputVersion_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "OutputVersion parameter \"" + OutputVersion + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
@@ -613,6 +654,7 @@ private void refresh ()
 	IncludeDataTypes = __IncludeDataTypes_JTextField.getText().trim();
 	ExcludeDataTypes = __ExcludeDataTypes_JTextField.getText().trim();
 	Version = __Version_JTextField.getText().trim();
+	OutputVersion = __OutputVersion_JComboBox.getSelected();
 	Alias = __Alias_JTextField.getText().trim();
 	IfFileNotFound = __IfFileNotFound_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
@@ -623,6 +665,7 @@ private void refresh ()
 	props.add ( "IncludeDataTypes=" + IncludeDataTypes );
 	props.add ( "ExcludeDataTypes=" + ExcludeDataTypes );
 	props.add ( "Version=" + Version );
+	props.add ( "OutputVersion=" + OutputVersion );
 	props.add ( "Alias=" + Alias );
 	props.add ( "IfFileNotFound=" + IfFileNotFound );
 	__command_JTextArea.setText( __command.toString ( props ) );
@@ -652,16 +695,16 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

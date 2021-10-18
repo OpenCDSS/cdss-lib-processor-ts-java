@@ -86,6 +86,12 @@ protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
 
 /**
+ * Values for OutputVersion parameter.
+ */
+protected final String _Latest = "Latest";
+protected final String _Original = "Original";
+
+/**
  * Indicates whether the TS Alias version of the command is being used.
  */
 protected boolean _use_alias = false;
@@ -119,6 +125,7 @@ throws InvalidCommandParameterException
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	String Version = parameters.getValue ( "Version" );
+	String OutputVersion = parameters.getValue ( "OutputVersion" );
 	String IfFileNotFound = parameters.getValue ( "IfFileNotFound" );
 	String warning = "";
     String message;
@@ -221,6 +228,16 @@ throws InvalidCommandParameterException
 	    }
 	}
 
+	if ( (OutputVersion != null) && !OutputVersion.isEmpty() &&
+		!OutputVersion.equalsIgnoreCase(_Original) &&
+		!OutputVersion.equalsIgnoreCase(_Latest) ) {
+        message = "The OutputVersion \"" + OutputVersion + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Original + " (default) or " + _Latest + ".") );
+	}
+
 	if ( (IfFileNotFound != null) && !IfFileNotFound.isEmpty() ) {
 		if ( !IfFileNotFound.equalsIgnoreCase(_Ignore) && !IfFileNotFound.equalsIgnoreCase(_Warn)
 		    && !IfFileNotFound.equalsIgnoreCase(_Fail) ) {
@@ -234,7 +251,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(10);
     validList.add ( "InputFile" );
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
@@ -242,6 +259,7 @@ throws InvalidCommandParameterException
     validList.add ( "IncludeDataTypes" );
     validList.add ( "ExcludeDataTypes" );
     validList.add ( "Version" );
+    validList.add ( "OutputVersion" );
     validList.add ( "Alias" );
     validList.add ( "IfFileNotFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -390,6 +408,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
 	String Version = parameters.getValue ( "Version" );
+	String OutputVersion = parameters.getValue ( "OutputVersion" );
+	if ( (OutputVersion == null) || OutputVersion.isEmpty() ) {
+		OutputVersion = _Original; // Default.
+	}
 	String Alias = parameters.getValue("Alias");
 	String IfFileNotFound = parameters.getValue ( "IfFileNotFound" );
 	if ( (IfFileNotFound == null) || IfFileNotFound.equals("")) {
@@ -583,7 +605,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		       	bts = new StateMod_BTS ( InputFile_full );
 		    }
 		    List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime,
-			   	includeDataTypes, excludeDataTypes, null, readData );
+			   	includeDataTypes, excludeDataTypes, null, readData, OutputVersion );
 		    bts.close();
 		    bts = null;
 
@@ -694,6 +716,7 @@ public String toString ( PropList props )
 	String IncludeDataTypes = props.getValue("IncludeDataTypes");
 	String ExcludeDataTypes = props.getValue("ExcludeDataTypes");
 	String Version = props.getValue("Version");
+	String OutputVersion = props.getValue("OutputVersion");
 	String Alias = props.getValue("Alias");
 	String IfFileNotFound = props.getValue("IfFileNotFound");
 	StringBuffer b = new StringBuffer ();
@@ -738,6 +761,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Version=\"" + Version + "\"" );
+	}
+	if ( (OutputVersion != null) && (OutputVersion.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputVersion=\"" + OutputVersion + "\"" );
 	}
     if ((Alias != null) && (Alias.length() > 0)) {
         if (b.length() > 0) {

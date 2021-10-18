@@ -353,14 +353,14 @@ will be compare ignoring case
 should be excluded, indicated by "@testSuite ABC" tags in the comments of command files,
 will be compare ignoring case
 @param includedOS the operating systems for test cases that
-should be included, indicated by "@os Windows" and "@os UNIX" tags in the comments of command files.
+should be included, indicated by "@os Windows", "@os linux", and "@os UNIX" tags in the comments of command files.
 @throws IOException 
  */
 private void getMatchingFilenamesInTree ( List<String> commandFileList, File path, String[] patterns,
         String[] includedTestSuites, String[] excludedTestSuites, String[] includedOS ) 
 throws IOException
 {   String routine = getClass().getSimpleName() + ".getMatchingFilenamesInTree";
-    // Determine if UNIX and Windows tests have been requested.
+    // Determine if UNIX, linux, and Windows tests have been requested.
     // Check the OS only if the specific.
     boolean needToCheckForUnixOS = false;
     boolean needToCheckForWindowsOS = false;
@@ -419,7 +419,7 @@ throws IOException
         	            Object o = tagValues.get(ivalue);
         	            if ( o instanceof String ) {
         	                String s = (String)o;
-        	                if ( s.toUpperCase().matches("UNIX") ) {
+        	                if ( s.toUpperCase().matches("UNIX") || s.toUpperCase().matches("LINUX") ) {
         	                    tagHasUNIX = true;
         	                }
         	            }
@@ -484,7 +484,7 @@ throws IOException
         	            }
         	            // After including test suites, exclude:
         	            // - first exclude specifically requested suites
-        	            // - also exclude if 'nosuite' was requested
+        	            // - also exclude if 'nosuite' was requested (TODO smalers 2021-10-15 remove this code if not needed)
         	            for ( String excludedTestSuite : excludedTestSuites ) {
         	                if ( tagValue.toUpperCase().matches(excludedTestSuite.toUpperCase()) ) {
         	                    doAddForTestSuite = false;

@@ -705,7 +705,9 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to exclude:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeTestSuite_JTextField = new JTextField ( "", 30 );
-    __ExcludeTestSuite_JTextField.setToolTipText("Test suites to exclude, separated by commas. Use 'nosuite' to exlude tests that don't have #@testSuite.");
+    // TODO smalers 2021-10-15 'nosuite' is probably not needed so remove later.
+    //__ExcludeTestSuite_JTextField.setToolTipText("Test suites to exclude, separated by commas. Use 'nosuite' to exclude tests that don't have #@testSuite.");
+    __ExcludeTestSuite_JTextField.setToolTipText("Test suites to exclude, separated by commas.");
     __ExcludeTestSuite_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcludeTestSuite_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

@@ -43,6 +43,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -66,6 +67,7 @@ private SimpleJButton __help_JButton = null;
 private Message_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private JTextArea __Message_JTextArea = null;
+private JTextField __PromptActions_JTextField = null;
 private SimpleJComboBox __CommandStatus_JComboBox;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -111,9 +113,13 @@ private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
     String Message = __Message_JTextArea.getText().trim();
+    String PromptActions = __PromptActions_JTextField.getText().trim();
     String CommandStatus = __CommandStatus_JComboBox.getSelected();
     if ( Message.length() > 0 ) {
         props.set ( "Message", Message );
+    }
+    if ( PromptActions.length() > 0 ) {
+        props.set ( "PromptActions", PromptActions );
     }
     if ( CommandStatus.length() > 0 ) {
         props.set ( "CommandStatus", CommandStatus );
@@ -132,9 +138,14 @@ private void checkInput ()
 Commit the edits to the command.
 */
 private void commitEdits ()
-{   String Message = __Message_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+{  // Allow newlines in the dialog to be saved as escaped newlines.
+   //String Message = __Message_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+   String Message2 = __Message_JTextArea.getText().replace("\n", "\\n").replace('\t', ' ').trim();
+    String PromptActions = __PromptActions_JTextField.getText().trim();
+    // Newlines are allowed but are replaced with literal backslash in the command.
     String CommandStatus = __CommandStatus_JComboBox.getSelected();
-    __command.setCommandParameter ( "Message", Message );
+    __command.setCommandParameter ( "Message", Message2 );
+    __command.setCommandParameter ( "PromptActions", PromptActions );
     __command.setCommandParameter ( "CommandStatus", CommandStatus );
 }
 
@@ -169,22 +180,37 @@ private void initialize ( JFrame parent, Message_Command command )
         "Messages can contain ${Property} to output processor property values."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Use Enter to insert a new line, which will be shown as \\n in the message parameter."),
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Setting the command status to " + CommandStatusType.WARNING + " or " + CommandStatusType.FAILURE +
 		" will impact the command status indicator."),
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
+    // Message text area is resizable.
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Message:" ), 
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Message_JTextArea = new JTextArea (5,40);
+    __Message_JTextArea = new JTextArea (8,60);
     __Message_JTextArea.setLineWrap ( true );
     __Message_JTextArea.setWrapStyleWord ( true );
     __Message_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Message_JTextArea),
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 1, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Prompt actions:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__PromptActions_JTextField = new JTextField ( 40 );
+	__PromptActions_JTextField.setToolTipText("Specify actions separated by commas, which will display as buttons.  Possible values: Cancel, Continue");
+	__PromptActions_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PromptActions_JTextField,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional actions if message is a prompt."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Command status:"), 
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -201,7 +227,7 @@ private void initialize ( JFrame parent, Message_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __command_JTextArea = new JTextArea ( 4, 60 );
+    __command_JTextArea = new JTextArea ( 4, 80 );
     __command_JTextArea.setLineWrap ( true );
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
@@ -247,13 +273,19 @@ Respond to KeyEvents.
 public void keyPressed ( KeyEvent event )
 {	int code = event.getKeyCode();
 
-	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
-		checkInput();
-		if ( !__error_wait ) {
-			response ( false );
-		}
-	}
+    if ( event.getSource() == this.__Message_JTextArea ) {
+    	// Do not allow "Enter" in message because newlines in the message are allowed.
+    	return;
+    }
+    else {
+    	if ( code == KeyEvent.VK_ENTER ) {
+    		refresh ();
+		  		checkInput();
+		  		if ( !__error_wait ) {
+			  		response ( false );
+		  		}
+	  		}
+    }
 }
 
 public void keyReleased ( KeyEvent event )
@@ -275,15 +307,25 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "Message_Command.refresh";
     String Message0 = "";
+    String PromptActions = "";
 	String CommandStatus = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
 		Message0 = props.getValue( "Message" );
+		if ( Message0 != null ) {
+			// Replace escaped newline with actual newline so it will display on multiple lines.
+			Message.printStatus(2,routine,"First time - replacing escaped newline with actual newline.");
+			Message0 = Message0.replace("\\n","\n");
+		}
+		PromptActions = props.getValue( "PromptActions" );
 		CommandStatus = props.getValue( "CommandStatus" );
 		if ( Message0 != null ) {
 		    __Message_JTextArea.setText( Message0 );
+		}
+		if ( PromptActions != null ) {
+			__PromptActions_JTextField.setText ( PromptActions );
 		}
         if ( (CommandStatus == null) || (CommandStatus.length() == 0) ) {
             // Select default...
@@ -301,9 +343,16 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	Message0 = __Message_JTextArea.getText().trim();
+    if ( Message0 != null ) {
+    	// Replace internal newline with escaped string for command text.
+		Message.printStatus(2,routine,"Replacing actual newline with escaped newline in Message parameter value.");
+    	Message0 = Message0.replace("\n", "\\n");
+    }
+	PromptActions = __PromptActions_JTextField.getText().trim();
 	CommandStatus = __CommandStatus_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Message=" + Message0 );
+    props.add ( "PromptActions=" + PromptActions );
     props.add ( "CommandStatus=" + CommandStatus );
     __command_JTextArea.setText( __command.toString(props) );
 }

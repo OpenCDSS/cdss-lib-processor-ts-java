@@ -46,10 +46,8 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 import DWR.StateCU.StateCU_BTS;

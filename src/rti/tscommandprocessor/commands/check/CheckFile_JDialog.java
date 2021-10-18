@@ -385,7 +385,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "For 'PatternMatchLineCount' specify * on each end to match a substring"),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
-        "and may need to escape with leading backslash characters that have regular expression meaning, such as:  ( ) * ^ $"),
+        "and may need to escape with leading backslash characters that have regular expression meaning, such as:  [ ] ( ) * ^ $"),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

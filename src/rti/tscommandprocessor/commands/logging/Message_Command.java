@@ -28,7 +28,9 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.Util.GUI.ResponseJDialog;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -42,7 +44,6 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 
 /**
 This class initializes, checks, and runs the Message() command.
@@ -69,32 +70,54 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String routine = getCommandName() + "_checkCommandParameters";
-	String ScreenLevel = parameters.getValue ( "ScreenLevel" );
-	String LogFileLevel = parameters.getValue ( "LogFileLevel" );
+	String Message0 = parameters.getValue ( "Message" );
+	String PromptActions = parameters.getValue ( "PromptActions" );
+	String CommandStatus = parameters.getValue ( "CommandStatus" );
 	String warning = "";
 	String message;
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (ScreenLevel != null) && !ScreenLevel.isEmpty() && !StringUtil.isInteger(ScreenLevel) ) {
-        message = "The screen warning level \"" + ScreenLevel + "\" is not an integer.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Change the screen level to an integer." ) );
-    }
-    if ( (LogFileLevel != null) && !LogFileLevel.isEmpty() && !StringUtil.isInteger(LogFileLevel) ) {
-        message = "The log file warning level \"" + LogFileLevel + "\" is not an integer.";
+    if ( (Message0 == null) || Message0.isEmpty() ) {
+        message = "The message text has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Change the log file level to an integer." ) );
+                message, "Specify message text." ) );
+    }
+    if ( (CommandStatus != null) && !CommandStatus.isEmpty() &&
+    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.SUCCESS) &&
+    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.WARNING) &&
+    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.FAILURE) ) {
+        message = "The command status \"" + CommandStatus + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the command status as " + 
+                CommandStatusType.SUCCESS + " (default), " + CommandStatusType.WARNING +
+                ", or " + CommandStatusType.FAILURE ) );
+    }
+    if ( (PromptActions != null) && !PromptActions.isEmpty() ) {
+    	String[] parts = PromptActions.split(",");
+    	for ( String part : parts ) {
+    		part = part.trim();
+    		if ( !part.equalsIgnoreCase("CANCEL") && !part.equalsIgnoreCase("CONTINUE") ) {
+    			message = "The prompt actions \"" + PromptActions + "\" is invalid.";
+    			warning += "\n" + message;
+    			if ( !part.equalsIgnoreCase("Cancel") && !part.equalsIgnoreCase("Continue") ) {
+    				status.addToLog ( CommandPhaseType.INITIALIZATION,
+   						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify one or more prompt actions: Cancel, Continue" ));
+    			}
+    		}
+    	}
     }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(2);
+    List<String> validList = new ArrayList<>(3);
 	validList.add ( "Message" );
+	validList.add ( "PromptActions" );
 	validList.add ( "CommandStatus" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -150,23 +173,62 @@ throws CommandWarningException, CommandException
 	}
 	
 	String Message2 = parameters.getValue ( "Message" );
+	String PromptActions = parameters.getValue ( "PromptActions" );
+    PromptActions = TSCommandProcessorUtil.expandParameterValue(processor,this,PromptActions);
 	String CommandStatus = parameters.getValue ( "CommandStatus" );
-	CommandStatusType cst = null;
+	CommandStatusType commandStatusType = null;
 	if ( (CommandStatus != null) && !CommandStatus.equals("") ) {
-	    cst = CommandStatusType.parse(CommandStatus);
+	    commandStatusType = CommandStatusType.parse(CommandStatus);
 	}
 
 	try {
-	    // TODO SAM 2013-12-07 Evaluate whether to allow users to control debug/status/logging,
-	    // but perhaps move to standard logging first
-	    String messageExpanded = TSCommandProcessorUtil.expandParameterValue(
-	            this.getCommandProcessor(),this,Message2);
+	    String messageExpanded = TSCommandProcessorUtil.expandParameterValue(processor,this,Message2);
 	    Message.printStatus(2, routine, messageExpanded);
-	    if ( cst != null ) {
+	    if ( messageExpanded != null ) {
+	    	// Expand escaped newline to actual newline character.
+	    	Message.printStatus(2,routine,"Replacing escaped newline with actual newline.");
+	    	messageExpanded = messageExpanded.replace("\\n", "\n");
+	    }
+	    if ( commandStatusType != null ) {
 	        // Add a command record message to trigger the status level
 	        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(cst, messageExpanded, "Check the log file or command window for details." ) );
+                new CommandLogRecord(commandStatusType, messageExpanded, "Check the log file or command window for details." ) );
 	    }
+	    boolean doContinue = true;
+		if ( (PromptActions != null) && !PromptActions.isEmpty() ) {
+			// Prompt for confirmation:
+			// - this will interrupt the workflow
+			// - if the UI is not defined, always fail since no way to prompt and confirm
+			if ( Message.getTopLevel() == null ) {
+				message = "No UI and requesting prompt for message.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+				status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Only request prompt if running using the user interface."));
+				doContinue = false;
+			}
+			else {
+				int promptButtons = 0;
+				if ( PromptActions.toUpperCase().indexOf("CANCEL") >= 0 ) {
+					promptButtons = promptButtons|ResponseJDialog.CANCEL;
+				}
+				if ( PromptActions.toUpperCase().indexOf("CONTINUE") >= 0 ) {
+					promptButtons = promptButtons|ResponseJDialog.CONTINUE;
+				}
+				int x = new ResponseJDialog ( Message.getTopLevel(), "Provide Response",
+					messageExpanded,
+					ResponseJDialog.CONTINUE|ResponseJDialog.CANCEL).response();
+				if ( x == ResponseJDialog.CANCEL ) {
+				    Message.printStatus(2,routine,"Canceled.  Command processing will be canceled.");
+					doContinue = false;
+				}
+			}
+		}
+		if ( !doContinue ) {
+			// Answered "Cancel" to prompt:
+			// - indicate to processor to cancel processing
+			((TSCommandProcessor)processor).setCancelProcessingRequested(true);
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error printing message.";
@@ -189,10 +251,17 @@ public String toString ( PropList props )
         return getCommandName() + "()";
     }
     String Message = props.getValue( "Message" );
+    String PromptActions = props.getValue( "PromptActions" );
     String CommandStatus = props.getValue( "CommandStatus" );
     StringBuffer b = new StringBuffer ();
     if ( (Message != null) && (Message.length() > 0) ) {
         b.append ( "Message=\"" + Message + "\"" );
+    }
+    if ( (PromptActions != null) && (PromptActions.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PromptActions=\"" + PromptActions + "\"" );
     }
     if ( (CommandStatus != null) && (CommandStatus.length() > 0) ) {
         if ( b.length() > 0 ) {

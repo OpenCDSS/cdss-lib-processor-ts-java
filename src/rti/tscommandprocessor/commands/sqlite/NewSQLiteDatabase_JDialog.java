@@ -143,7 +143,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -167,11 +167,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String DataStore = __DataStore_JTextField.getText().trim();
     String DatabaseFile = __DatabaseFile_JTextField.getText().trim();
@@ -184,7 +184,7 @@ private void checkInput ()
         props.set ( "DatabaseFile", DatabaseFile );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -218,7 +218,7 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -233,14 +233,26 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
         "This command creates a new SQLite database, which is a database in a single file."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Alternatively, an in-memory SQLite temporary database can be created to process data."),
+        "A database file or in-memory SQLite temporary database can be created."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Specify the path to the database or " + __command._Memory + " to use an in-memory database."),
+        "File database:"),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    Specify the path to the database filename, with '.db' extension."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "In-memory database:"),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    Specify " + __command._Memory + " as the filename."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    The in-memory database can be saved to a file by creating a backup of the in-memory database."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
         JGUIUtil.addComponent(paragraph, new JLabel (
-        "    The working directory is: " + __working_dir ), 
+        "The working directory is: " + __working_dir ), 
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
@@ -262,7 +274,7 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DatabaseFile_JTextField = new JTextField ( 50 );
     __DatabaseFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel DatabaseFile_JPanel = new JPanel();
 	DatabaseFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(DatabaseFile_JPanel, __DatabaseFile_JTextField,
@@ -272,7 +284,7 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
     JGUIUtil.addComponent(DatabaseFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(DatabaseFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -289,7 +301,7 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
@@ -372,14 +384,14 @@ private void refresh ()
             __DatabaseFile_JTextField.setText ( DatabaseFile );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	DataStore = __DataStore_JTextField.getText().trim();
 	DatabaseFile = __DatabaseFile_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DatabaseFile=" + DatabaseFile );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (DatabaseFile != null) && !DatabaseFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -404,9 +416,9 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
@@ -426,7 +438,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
+// The following methods are all necessary because this class implements WindowListener.
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

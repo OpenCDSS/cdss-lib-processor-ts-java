@@ -107,6 +107,8 @@ throws InvalidCommandParameterException
     }
     int specCount = 0;
     if ( (Sql != null) && !Sql.equals("") ) {
+    	// Convert command file placeholder for newline into actual newline.
+    	Sql = Sql.replace("\\n", "\n");
         ++specCount;
     }
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
@@ -134,7 +136,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
+                // Working directory is available so use it.
                 if ( o != null ) {
                     working_dir = (String)o;
                 }
@@ -169,7 +171,7 @@ throws InvalidCommandParameterException
         }
     }
     
-	//  Check for invalid parameters...
+	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(6);
     validList.add ( "DataStore" );
     validList.add ( "Sql" );
@@ -189,17 +191,34 @@ throws InvalidCommandParameterException
 }
 
 /**
+TODO smalers 2021-10-24 Remove with other code tests out.
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
 not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new RunSql_JDialog ( parent, this )).ok();
+//public boolean editCommand ( JFrame parent )
+//{	// The command will be modified if changed.
+//	return (new RunSql_JDialog ( parent, this )).ok();
+//}
+
+/**
+Edit the command.
+@param parent The parent JFrame to which the command dialog will belong.
+@return true if the command was edited (e.g., "OK" was pressed), and false if
+not (e.g., "Cancel" was pressed).
+*/
+public boolean editCommand ( JFrame parent ) {
+	String routine = getClass().getSimpleName() + ".editCommand";
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
+	}
+	List<DatabaseDataStore> dataStoreList =
+		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
+	return (new RunSql_JDialog ( parent, this, dataStoreList )).ok();
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
@@ -219,13 +238,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     status.clearLog(commandPhase);
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
     String DataStore = parameters.getValue ( "DataStore" );
     String Sql = parameters.getValue ( "Sql" );
+    if ( Sql != null ) {
+    	// Expand escaped newline to actual newline character.
+    	Sql = Sql.replace("\\n", "\n");
+    }
     String SqlFile = parameters.getValue("SqlFile");
     String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String ProcedureParameters = parameters.getValue ( "ProcedureParameters" );
@@ -247,7 +270,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     else {
         DatabaseDataStore dbds = (DatabaseDataStore)dataStore;
-    	// Make sure database connection is open - may have timed out
+    	// Make sure database connection is open - may have timed out.
     	dbds.checkDatabaseConnection();
         dmi = ((DatabaseDataStore)dataStore).getDMI();
     }
@@ -261,16 +284,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
     String sqlString = "";
-    // Execute the query as appropriate depending on how the query was specified
+    // Execute the query as appropriate depending on how the query was specified.
     int nEffected = 0;
     ResultSet rs = null;
-   	DMIStoredProcedureData procedureData = null; // Used below if stored procedure
-   	DMISelectStatement q = null; // Used if stored procedure
+   	DMIStoredProcedureData procedureData = null; // Used below if stored procedure.
+   	DMISelectStatement q = null; // Used if stored procedure.
     try {
         if ( (Sql != null) && !Sql.equals("") ) {
-            // Query using the SQL string.  Expand first using ${Property} notation
+            // Query using the SQL string.  Expand first using ${Property} notation.
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
-            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier.
             if ( dmi.getDatabaseEngineType() == DMIDatabaseType.ACCESS ) {
                 sqlString = DMIUtil.removeCommentsFromSql(sqlString);
             }
@@ -278,7 +301,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }
         else if ( (SqlFile != null) && !SqlFile.equals("") ) {
-            // Query using the contents of the SQL file
+            // Query using the contents of the SQL file.
             String SqlFile_full = SqlFile;
             SqlFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -295,7 +318,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this,
                 StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
-            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier.
             if ( dmi.getDatabaseEngineType() == DMIDatabaseType.ACCESS ) {
                 sqlString = DMIUtil.removeCommentsFromSql(sqlString);
             }
@@ -303,8 +326,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }
         else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
-            // Run a stored procedure
-            // TODO SAM 2013-08-28 Figure out why this is run through the DMISelectStatement
+            // Run a stored procedure.
+            // TODO SAM 2013-08-28 Figure out why this is run through the DMISelectStatement.
             //x DMISelectStatement q = new DMISelectStatement(dmi);        
             //x q.setStoredProcedureData(new DMIStoredProcedureData(dmi,DataStoreProcedure));
             //x rs = q.executeStoredProcedure();
@@ -313,14 +336,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
            	Message.printStatus(2, routine, "Executing stored procedure \"" + DataStoreProcedure + "\"");
            	procedureData = new DMIStoredProcedureData(dmi,DataStoreProcedure);
            	q = new DMISelectStatement(dmi);
-           		// The following code is the same as ReadTableFromDataStore, with matching indentation
+           		// The following code is the same as ReadTableFromDataStore, with matching indentation.
                 q.setStoredProcedureData(procedureData);
-                // Iterate through the parameters
+                // Iterate through the parameters:
                 // - it is OK that the number of parameters is 0
                 // - parameter position in statement is 1+, 2+ if the procedure has a return code
                 int parameterNum = 0;
                 if (procedureData.hasReturnValue()) {
-                	// If the procedure has a return value, offset parameters by one
+                	// If the procedure has a return value, offset parameters by one:
                 	// - will have values 2+ below
                 	parameterNum = 1;
                 }
@@ -363,18 +386,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 		q.setValue(s,parameterNum);
                 	}
                 	else if ( parameterType == java.sql.Types.DATE ) {
-                		// Use DateTime to add a layer of parsing and error handling
+                		// Use DateTime to add a layer of parsing and error handling.
                 		String s = entry.getValue();
                 		DateTime dt = DateTime.parse(s);
                 		q.setValue(dt,parameterNum);
                 	}
                 	else if ( parameterType == java.sql.Types.TIMESTAMP ) {
-                		// Use DateTime to add a layer of parsing and error handling
+                		// Use DateTime to add a layer of parsing and error handling.
                 		String s = entry.getValue();
                 		//DateTime dt = DateTime.parse(s);
-                		// The time must be specified in a string that can be converted to timestamp
+                		// The time must be specified in a string that can be converted to timestamp.
                 		OffsetDateTime odt = OffsetDateTime.parse(s);
-                		// Timestamp is GMT able to hold precision to nanoseconds
+                		// Timestamp is GMT able to hold precision to nanoseconds.
                 		Timestamp sTimestamp = Timestamp.valueOf(odt.atZoneSameInstant(ZoneId.of("Z")).toLocalDateTime());
                 		q.setValue(sTimestamp,parameterNum);
                 	}
@@ -388,7 +411,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	}
                 }
                	String queryString = q.toString();
-               	// TODO smalers 2019-09-03 perhaps consolidate to one string for logging
+               	// TODO smalers 2019-09-03 perhaps consolidate to one string for logging.
                	sqlString = queryString;
                 if ( errorCount == 0 ) {
                 	boolean returnStatus = q.executeStoredProcedure();
@@ -401,15 +424,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 		Message.printStatus(2, routine, "Procedure return status is " + returnStatus + " (no resultset available).");
                 	}
                 }
-                // End code from ReadTableToDataStore
+                // End code from ReadTableToDataStore.
         }
 
-        // This code is the same as ReadTableFromDataStore, same indent
+        // This code is the same as ReadTableFromDataStore, same indent:
         // - the resultset is not processes
             	// Process the return status after processing the resultset as per JDBC documentation:
             	// https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
             	// - "a call's ResultSet objects and update counts should be processed prior to getting the values of output parameters"
-            	// - if the following code is run before processing the ResultSet, exceptions occur about closed resultset
+            	// - if the following code is run before processing the ResultSet, exceptions occur about closed result set
                	if ( (procedureData != null) && procedureData.hasReturnValue()) {
                		// The return value was registered with when the callable statement was set up.
                		// It could be any type and does not necessarily indicate an error code.
@@ -417,11 +440,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                		// The return value type is not needed here so use generic Object.
    	                Object returnObject = q.getReturnValue();
    	                Message.printStatus(2, routine, "Return value from stored procedure \"" + procedureData.getProcedureName() + "\" is:  " + returnObject);
-   	                // The above gets the return value out of the statement but need to also to get the resultset to continue  processing.
+   	                // The above gets the return value out of the statement but need to also to get the result set to continue  processing.
                	    if ( (ProcedureReturnProperty != null) && !ProcedureReturnProperty.isEmpty() ) {
                	    	// Want to set the return value to property, either to use as data or check the error status.
        	                String returnProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ProcedureReturnProperty);
-       	                // Return value can be of any type so get it as an object
+       	                // Return value can be of any type so get it as an object.
                         PropList request_params = new PropList ( "" );
                         request_params.setUsingObject ( "PropertyName", returnProperty );
                         request_params.setUsingObject ( "PropertyValue", returnObject );

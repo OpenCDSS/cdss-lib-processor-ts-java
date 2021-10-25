@@ -56,6 +56,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import RTi.DMI.DMI;
@@ -104,6 +105,7 @@ private RunSql_Command __command = null;
 private boolean __ok = false;
 private String __working_dir = null;
 private JFrame __parent = null;
+private List<DatabaseDataStore> datastores = new ArrayList<>();
 
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
@@ -114,10 +116,11 @@ private DMI __dmi = null; // DMI to do queries.
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param datastoreNames list of database datastore name
 */
-public RunSql_JDialog ( JFrame parent, RunSql_Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+public RunSql_JDialog ( JFrame parent, RunSql_Command command, List<DatabaseDataStore> datastores ) {
+	super(parent, true);
+	initialize ( parent, command, datastores );
 }
 
 /**
@@ -319,7 +322,8 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
-    String Sql = __Sql_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    // Allow newlines in the dialog to be saved as escaped newlines.
+    String Sql = __Sql_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String SqlFile = __SqlFile_JTextField.getText().trim();
     String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
 	String ProcedureParameters = __ProcedureParameters_JTextArea.getText().trim().replace("\n"," ");
@@ -340,9 +344,11 @@ private DMI getDMI ()
     return __dmi;
 }
 
+// TODO smalers 2021-10-23 remove code when tests out.
 /**
 Get the selected data store.
 */
+/*
 private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
@@ -359,15 +365,47 @@ private DatabaseDataStore getSelectedDataStore ()
     }
     return dataStore;
 }
+*/
+
+/**
+Get the selected datastore from the processor using the datastore name.
+If there is no datastore in the processor based on startup,
+it may be a dynamic datastore created with OpenDataStore,
+which will have a discovery datastore that is good enough for getting database metadata.
+*/
+private DatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getSimpleName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    DatabaseDataStore dataStore = null;
+   	dataStore = null;
+   	for ( DatabaseDataStore dataStore2 : this.datastores ) {
+   		if ( dataStore2.getName().equals(DataStore) ) {
+   			dataStore = dataStore2;
+   		}
+   	}
+   	if ( dataStore == null ) {
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
+       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+   	}
+    else {
+    	// Have an active datastore from software startup.
+        Message.printStatus(2, routine, "Selected datastore is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open.
+        dataStore.checkDatabaseConnection();
+    }
+    return dataStore;
+}
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
+@param datastores list of database datastores.
 */
-private void initialize ( JFrame parent, RunSql_Command command )
-{	__command = command;
-	__parent = parent;
+private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDataStore> datastores )
+{	this.__command = command;
+	this.__parent = parent;
+	this.datastores = datastores;
 	CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -414,13 +452,13 @@ private void initialize ( JFrame parent, RunSql_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
-    List<String>dataStoreChoices = new ArrayList<String>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	dataStoreChoices.add ( dataStore.getName() );
+    // Copy the list of datastore names to internal list.
+    List<String> dataStoreChoices = new ArrayList<>();
+    for ( DataStore dataStore : this.datastores ) {
+    	dataStoreChoices.add(dataStore.getName());
     }
-    if ( dataStoreList.size() == 0 ) {
+    Collections.sort(dataStoreChoices);
+    if ( dataStoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	dataStoreChoices.add ( "" );
     }
@@ -452,7 +490,7 @@ private void initialize ( JFrame parent, RunSql_Command command )
         "If special characters conflict with TSTool conventions, then save the SQL in a file and specify the file as input."),
         0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(sql_JPanel, new JLabel (
-        "Because the SQL statement is in a parameter, newlines are not allowed."),
+        "Use 'Enter' to insert a new line, which is shown as \\n in the command parameter."),
         0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"), 
@@ -620,11 +658,17 @@ public void keyPressed (KeyEvent event) {
 	int code = event.getKeyCode();
 
 	if (code == KeyEvent.VK_ENTER) {
-		refresh ();
-		checkInput();
-		if (!__error_wait) {
-			response ( true );
-		}
+   		if ( event.getSource() == this.__Sql_JTextArea ) {
+    		// Do not allow "Enter" in message because newlines in the message are allowed.
+    		return;
+    	}
+   		else {
+   			refresh ();
+		 	checkInput();
+		 	if (!__error_wait) {
+		 		response ( true );
+		 	}
+   		}
 	}
 }
 
@@ -700,6 +744,11 @@ try{
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
 		Sql = props.getValue ( "Sql" );
+		// Replace escaped newline with actual newline so it will display on multiple lines.
+		//Message.printStatus(2,routine,"First time - replacing escaped newline with actual newline.");
+		if ( (Sql != null) && !Sql.isEmpty() ) {
+			Sql = Sql.replace("\\n","\n");
+		}
 		SqlFile = props.getValue ( "SqlFile" );
 		DataStoreProcedure = props.getValue ( "DataStoreProcedure" );
 		ProcedureParameters = props.getValue ( "ProcedureParameters" );
@@ -762,6 +811,11 @@ try{
         DataStore = "";
     }
 	Sql = __Sql_JTextArea.getText().trim();
+    if ( Sql != null ) {
+    	// Replace internal newline with escaped string for command text.
+		//Message.printStatus(2,routine,"Replacing actual newline with escaped newline in Sql parameter value.");
+    	Sql = Sql.replace("\n", "\\n");
+    }
 	SqlFile = __SqlFile_JTextField.getText().trim();
     DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     if ( DataStoreProcedure == null ) {

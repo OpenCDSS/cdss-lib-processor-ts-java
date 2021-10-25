@@ -55,6 +55,7 @@ import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import RTi.DMI.DMI;
@@ -119,16 +120,19 @@ private boolean __ignoreItemEvents = false; // Used to ignore cascading events w
 
 private DatabaseDataStore __dataStore = null; // selected data store
 private DMI __dmi = null; // DMI to do queries.
+private List<DatabaseDataStore> datastores = new ArrayList<>();
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 @param tableIDChoices table identifiers that can be used for layout
+@param datastores list of database datastores
 */
-public CreateDataStoreDataDictionary_JDialog ( JFrame parent, CreateDataStoreDataDictionary_Command command, List<String> tableIDChoices )
+public CreateDataStoreDataDictionary_JDialog ( JFrame parent, CreateDataStoreDataDictionary_Command command,
+	List<String> tableIDChoices, List<DatabaseDataStore> datastores )
 {	super(parent, true);
-	initialize ( parent, command, tableIDChoices );
+	initialize ( parent, command, tableIDChoices, datastores );
 }
 
 /**
@@ -371,9 +375,11 @@ private DMI getDMI ()
     return __dmi;
 }
 
+// TODO smalers 2021-10-24 remove when tested out.
 /**
 Get the selected data store.
 */
+/*
 private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
@@ -388,15 +394,47 @@ private DatabaseDataStore getSelectedDataStore ()
     }
     return dataStore;
 }
+*/
+
+/**
+Get the selected datastore from the processor using the datastore name.
+If there is no datastore in the processor based on startup,
+it may be a dynamic datastore created with OpenDataStore,
+which will have a discovery datastore that is good enough for getting database metadata.
+*/
+private DatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getSimpleName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    DatabaseDataStore dataStore = null;
+   	dataStore = null;
+   	for ( DatabaseDataStore dataStore2 : this.datastores ) {
+   		if ( dataStore2.getName().equals(DataStore) ) {
+   			dataStore = dataStore2;
+   		}
+   	}
+   	if ( dataStore == null ) {
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
+       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+   	}
+    else {
+    	// Have an active datastore from software startup.
+        Message.printStatus(2, routine, "Selected datastore is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open.
+        dataStore.checkDatabaseConnection();
+    }
+    return dataStore;
+}
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 @param tableIDChoices table identifiers candidates for layout table
+@param datastores list of database datastores
 */
-private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command command, List<String> tableIDChoices, List<DatabaseDataStore> datastores )
+{	this.__command = command;
+	this.datastores = datastores;
 	CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -436,13 +474,13 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( true ); // Editable to allow properties to be specified
     __DataStore_JComboBox.setToolTipText("Select the datastore to use as input, can use ${Property}");
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
-    List<String> datastoreChoices = new ArrayList<String>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	datastoreChoices.add ( dataStore.getName() );
+    // Copy the list of datastore names to internal list.
+    List<String> datastoreChoices = new ArrayList<>();
+    for ( DataStore dataStore : this.datastores ) {
+    	datastoreChoices.add(dataStore.getName());
     }
-    if ( dataStoreList.size() == 0 ) {
+    Collections.sort(datastoreChoices);
+    if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	datastoreChoices.add ( "" );
     }

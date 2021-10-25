@@ -49,6 +49,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -59,7 +60,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -85,17 +85,19 @@ private boolean __ignoreItemEvents = false; // Used to ignore cascading events w
 
 private DatabaseDataStore __dataStore = null; // selected data store
 private DMI __dmi = null; // DMI to do queries.
+private List<DatabaseDataStore> datastores = new ArrayList<>();
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
+@param datastores list of databases
 */
 public DeleteDataStoreTableRows_JDialog ( JFrame parent, DeleteDataStoreTableRows_Command command,
-    List<String> tableIDChoices )
+    List<String> tableIDChoices, List<DatabaseDataStore> datastores )
 {	super(parent, true);
-	initialize ( parent, command, tableIDChoices );
+	initialize ( parent, command, tableIDChoices, datastores );
 }
 
 /**
@@ -210,9 +212,11 @@ private DMI getDMI ()
     return __dmi;
 }
 
+// TODO smalers 2021-10-24 remove when other code tests out.
 /**
 Get the selected data store.
 */
+/*
 private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
@@ -227,15 +231,47 @@ private DatabaseDataStore getSelectedDataStore ()
     }
     return dataStore;
 }
+*/
+
+/**
+Get the selected datastore from the processor using the datastore name.
+If there is no datastore in the processor based on startup,
+it may be a dynamic datastore created with OpenDataStore,
+which will have a discovery datastore that is good enough for getting database metadata.
+*/
+private DatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getSimpleName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    DatabaseDataStore dataStore = null;
+   	dataStore = null;
+   	for ( DatabaseDataStore dataStore2 : this.datastores ) {
+   		if ( dataStore2.getName().equals(DataStore) ) {
+   			dataStore = dataStore2;
+   		}
+   	}
+   	if ( dataStore == null ) {
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
+       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+   	}
+    else {
+    	// Have an active datastore from software startup.
+        Message.printStatus(2, routine, "Selected datastore is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open.
+        dataStore.checkDatabaseConnection();
+    }
+    return dataStore;
+}
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
+@param tableIDChoices list of table identifiers to provide as choices
+@param datastores list of database datastores
 */
-private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command command, List<String> tableIDChoices )
-{	__command = command;
-	CommandProcessor processor = __command.getCommandProcessor();
+private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command command, List<String> tableIDChoices, List<DatabaseDataStore> datastores )
+{	this.__command = command;
+    this.datastores = datastores;
 
 	addWindowListener(this);
 
@@ -273,13 +309,13 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
-    List<String> datastoreChoices = new ArrayList<String>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	datastoreChoices.add ( dataStore.getName() );
+    // Copy the list of datastore names to internal list.
+    List<String> datastoreChoices = new ArrayList<>();
+    for ( DataStore dataStore : this.datastores ) {
+    	datastoreChoices.add(dataStore.getName());
     }
-    if ( dataStoreList.size() == 0 ) {
+    Collections.sort(datastoreChoices);
+    if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	datastoreChoices.add ( "" );
     }
@@ -337,7 +373,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DeleteAllRows_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DeleteAllRows_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - remove all rows? (default=" + __command._False + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - remove all rows (default=" + __command._False + ")?"), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 

@@ -172,7 +172,7 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(3);
+    List<String> validList = new ArrayList<>(3);
     validList.add ( "WorkingDir" );
     validList.add ( "RunMode" );
     validList.add ( "RunOnOS" );
@@ -240,8 +240,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
-Time series are taken from the
-available list in memory, if available.  Otherwise the time series are re-read.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).

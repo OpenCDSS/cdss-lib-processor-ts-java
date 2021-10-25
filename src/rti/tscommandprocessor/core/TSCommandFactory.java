@@ -48,6 +48,9 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 // Datastore commands
 import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.OpenDataStore_Command;
+import rti.tscommandprocessor.commands.datastore.ReadTableFromDataStore_Command;
+import rti.tscommandprocessor.commands.datastore.WriteTableToDataStore_Command;
+
 // Datastream commands
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 // DateValue commands
@@ -190,7 +193,6 @@ import rti.tscommandprocessor.commands.table.JoinTables_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
-import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromXML_Command;
@@ -205,7 +207,6 @@ import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
-import rti.tscommandprocessor.commands.table.WriteTableToDataStore_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
 

@@ -248,10 +248,13 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
         "This command opens a database datastore connection."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command is used to manage datastores that are dynamically created, such as SQLite file databases."),
+        "This command is used to manage datastores that are dynamically created, such as SQLite in-memory and file databases."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Confirmation information can be provided via command parameters or by reading a datastore configuration file."),
+        "Datastore metadata are available for command editing but editing functionality may be limited."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Configuration information can be provided via command parameters or by reading a datastore configuration file."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The database connection will be active until modified further when other commands are run."),
@@ -356,7 +359,7 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
     __DatabaseName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(prop_JPanel, __DatabaseName_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Usually requred - database name."),
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Usually required - database name."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Login:"),

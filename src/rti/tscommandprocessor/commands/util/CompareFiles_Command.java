@@ -348,8 +348,7 @@ private int compareFileProperty(String inputFile1, String inputFile1Full,
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -357,6 +356,18 @@ public boolean editCommand ( JFrame parent )
 	String diffProgram = null;
 	if ( prop != null ) {
 		diffProgram = prop.getValue();
+	}
+	if ( IOUtil.isUNIXMachine() ) {
+		prop = IOUtil.getProp("DiffProgram.Linux");
+		if ( prop != null ) {
+			diffProgram = prop.getValue();
+		}
+	}
+	else {
+		prop = IOUtil.getProp("DiffProgram.Windows");
+		if ( prop != null ) {
+			diffProgram = prop.getValue();
+		}
 	}
 	return (new CompareFiles_JDialog ( parent, this, diffProgram )).ok();
 }

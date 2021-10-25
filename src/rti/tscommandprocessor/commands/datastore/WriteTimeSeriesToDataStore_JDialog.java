@@ -49,6 +49,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -64,7 +65,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -102,15 +102,17 @@ private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
 private DatabaseDataStore __dataStore = null; // selected data store
+private List<GenericDatabaseDataStore> datastores = new ArrayList<>();
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param datastores list of generic database datastores
 */
-public WriteTimeSeriesToDataStore_JDialog (	JFrame parent, WriteTimeSeriesToDataStore_Command command )
+public WriteTimeSeriesToDataStore_JDialog (	JFrame parent, WriteTimeSeriesToDataStore_Command command, List<GenericDatabaseDataStore> datastores )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, datastores );
 }
 
 /**
@@ -297,24 +299,11 @@ private void commitEdits ()
     __command.setCommandParameter ( "WriteMode", WriteMode );
 }
 
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
+// TODO smalers 2021-10-24 diable when code below tests out.
 /**
 Get the selected data store.
 */
+/*
 private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
@@ -328,15 +317,46 @@ private DatabaseDataStore getSelectedDataStore ()
     }
     return dataStore;
 }
+*/
+
+/**
+Get the selected datastore from the processor using the datastore name.
+If there is no datastore in the processor based on startup,
+it may be a dynamic datastore created with OpenDataStore,
+which will have a discovery datastore that is good enough for getting database metadata.
+*/
+private GenericDatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getSimpleName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    GenericDatabaseDataStore dataStore = null;
+   	dataStore = null;
+   	for ( GenericDatabaseDataStore dataStore2 : this.datastores ) {
+   		if ( dataStore2.getName().equals(DataStore) ) {
+   			dataStore = dataStore2;
+   		}
+   	}
+   	if ( dataStore == null ) {
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
+       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+   	}
+    else {
+    	// Have an active datastore from software startup.
+        Message.printStatus(2, routine, "Selected datastore is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open.
+        dataStore.checkDatabaseConnection();
+    }
+    return dataStore;
+}
 
 /**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
+@param datastores list of database datastores
 */
-private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command command )
-{	__command = command;
-    CommandProcessor processor = __command.getCommandProcessor();
+private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command command, List<GenericDatabaseDataStore> datastores )
+{	this.__command = command;
+	this.datastores = datastores;
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(1,2,1,2);
@@ -346,21 +366,33 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
 	
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-	List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( GenericDatabaseDataStore.class, true );
-    GenericDatabaseDataStore ds;
+    // Copy the list of datastore names to internal list:
+	// - only GenericDatabaseDataStore instances with time series configuration are added
+    List<String> datastoreChoices = new ArrayList<>();
     int dsWithTsCount = 0;
-    for ( DataStore dataStore: dataStoreList ) {
-        ds = (GenericDatabaseDataStore)dataStore;
-        if ( ds.hasTimeSeriesInterface(true) ) {
-            __DataStore_JComboBox.addItem ( dataStore.getName() );
-            ++dsWithTsCount;
+    int gdsCount = 0;
+    for ( DataStore dataStore : this.datastores ) {
+    	++gdsCount;
+    	if ( dataStore instanceof GenericDatabaseDataStore ) {
+    		GenericDatabaseDataStore ds = (GenericDatabaseDataStore)dataStore;
+    		if ( ds.hasTimeSeriesInterface(true) ) {
+    			datastoreChoices.add(dataStore.getName());
+    			++dsWithTsCount;
+    		}
         }
+    }
+    Collections.sort(datastoreChoices);
+    if ( datastoreChoices.size() == 0 ) {
+        // Add an empty item so users can at least bring up the editor.
+    	datastoreChoices.add ( "" );
     }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a database datastore," +
 		" where time series to database table mapping is defined in the datastore configuration." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This is useful when specific software has not been written to integrate with a database."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Currently the choices do not cascade.  In the future, cascading set of choices may be implemented to help with writing " +
@@ -369,14 +401,14 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	if ( dataStoreList.size() == 0 ) {
+   	if ( gdsCount == 0 ) {
    	   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-   	 		"<html><b>There are no Generic Database Datastores defined - choices below will not work.</b></html>"),
+   	 		"<html><b>There are no GenericDatabaseDatastore defined - this command cannot be used.</b></html>"),
    	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	}
    	else if ( dsWithTsCount == 0 ) {
    		JGUIUtil.addComponent(main_JPanel, new JLabel (
-   	 		"<html><b>There are no Generic Database Datastores that have time series properties defined - writing will not be functional.</b></html>"),
+   	 		"<html><b>There are no GenericDatabaseDataStore that have time series properties defined - this command cannot be used.</b></html>"),
    	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	}
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -445,14 +477,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    List<String> datastoreChoices = new ArrayList<String>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	datastoreChoices.add ( dataStore.getName() );
-    }
-    if ( dataStoreList.size() == 0 ) {
-        // Add an empty item so users can at least bring up the editor
-    	datastoreChoices.add ( "" );
-    }
     __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );

@@ -24,6 +24,7 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -48,6 +49,7 @@ import java.util.List;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.Help.HelpViewer;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 
 /**
@@ -179,7 +181,7 @@ private void initialize ( JFrame parent, List<String> comments )
         0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JTextArea ref_JTextArea = new JTextArea (2, 80);
-    // Add a string buffer with reference positions (similar to UltraEdit Editor)
+    // Add a string buffer with reference positions.
     //0        10        20
     //12345678901234567890...
     int n10 = 12; // number to repeat.  Want to make 20 but this causes layout issues.
@@ -195,6 +197,10 @@ private void initialize ( JFrame parent, List<String> comments )
     	b.append( "1234567890");
     }
     ref_JTextArea.setText( b.toString() );
+    if ( IOUtil.isUNIXMachine() ) {
+    	int fontSize = ref_JTextArea.getFont().getSize();
+    	ref_JTextArea.setFont(new Font("monospaced", Font.PLAIN, fontSize));
+    }
 	ref_JTextArea.setEditable (false);
 	ref_JTextArea.setEnabled ( false );
 	JGUIUtil.addComponent(main_JPanel, ref_JTextArea,
@@ -203,6 +209,10 @@ private void initialize ( JFrame parent, List<String> comments )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comments:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __command_JTextArea = new JTextArea ( 10, 80 );
+    if ( IOUtil.isUNIXMachine() ) {
+    	int fontSize = ref_JTextArea.getFont().getSize();
+    	__command_JTextArea.setFont(new Font("monospaced", Font.PLAIN, fontSize));
+    }
 	__command_JTextArea.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 1, insetsXLBR, GridBagConstraints.BOTH, GridBagConstraints.CENTER);

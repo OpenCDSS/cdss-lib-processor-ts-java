@@ -1055,18 +1055,18 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of name
 public static List<String> getDataStoreNamesFromCommandsBeforeCommand(
 	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices )
 {	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand";
-	// Get the position of the command in the list...
+	// Get the position of the command in the list.
 	int pos = processor.indexOf(command);
 	if ( Message.isDebugOn ) {
 	    Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
 	}
 	if ( pos < 0 ) {
-		// Just return a blank list...
+		// Just return an empty list.
 		return new ArrayList<String>();
 	}
-    // Find the commands above the position...
+    // Find the commands above the position.
 	List<Command> commands = getCommandsBeforeIndex ( processor, pos );
-	// Get the datastore names from the commands...
+	// Get the datastore names from the commands.
 	return getDataStoreNamesFromCommands ( commands, includeDatabases, includeWebServices, true );
 }
 
@@ -1085,26 +1085,21 @@ Datastore names are determined as follows:
 @return list of datastore names or an empty non-null list if nothing found.
 */
 protected static List<String> getDataStoreNamesFromCommands ( List<Command> commands,
-	boolean includeDatabases, boolean includeWebServices, boolean sort )
-{	if ( commands == null ) {
+	boolean includeDatabases, boolean includeWebServices, boolean sort ) {
+	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+	if ( commands == null ) {
 		return new ArrayList<String>();
 	}
 	List<String> namesFromCommands = new ArrayList<>(); // The DataStore names
-	List<DataStore> dsFromCommands = new ArrayList<>(); // The DataStores, used to store each TSIdent
+	List<DataStore> dsFromCommands = new ArrayList<>(); // The DataStores
 	int size = commands.size();
 	String commandString = null;
 	boolean in_comment = false;
 	Object command_o = null; // Command as object
-	Command command; // Command as Command instance
-	String commandName = null;
 	for ( int i = 0; i < size; i++ ) {
 		command_o = commands.get(i);
-		command = null;
-		commandName = ""; // Only care about instances of Free() commands below
 		if ( command_o instanceof Command ) {
 			commandString = command_o.toString().trim();
-			command = (Command)command_o;
-			commandName = command.getCommandName();
 		}
 		if ( (commandString == null) || commandString.startsWith("#") || (commandString.length() == 0) ) {
 			// Make sure comments are ignored...
@@ -1118,10 +1113,13 @@ protected static List<String> getDataStoreNamesFromCommands ( List<Command> comm
 			in_comment = false;
 			continue;
 		}
-		if ( in_comment ) {
+		else if ( in_comment ) {
 			continue;
 		}
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
+           	if ( Message.isDebugOn ) {
+           		Message.printDebug(1, routine, "Command is an ObjectListProvider: " + command_o );
+           	}
             // Try to get the list of identifiers using the interface method.
             // TODO SAM 2007-12-07 Evaluate the automatic use of the alias (takes priority over TSID) - probably good.
         	Object o = ((ObjectListProvider)command_o).getObjectList ( DataStore.class );
@@ -1131,31 +1129,55 @@ protected static List<String> getDataStoreNamesFromCommands ( List<Command> comm
 				List<DataStore> list0 = (List<DataStore>)o;
             	list = list0;
             }
-            if ( list != null ) {
+            if ( list == null ) {
+            	if ( Message.isDebugOn ) {
+            		Message.printDebug(1, routine, "  ObjectListProvider returned no objects." );
+            	}
+            }
+            else {
                 int dssize = list.size();
+            	if ( Message.isDebugOn ) {
+            		Message.printDebug(1, routine, "  ObjectListProvider returned " + dssize + " objects." );
+            	}
                 DataStore ds;
                 for ( int ids = 0; ids < dssize; ids++ ) {
                     ds = list.get(ids);
                     if ( ds == null ) {
                     	// This should not happen and is symptomatic of a command not fully handling a
-                    	// time series in discovery mode, more of an issue with ${property} use in parameters.
-                    	// Log a message so the issue can be tracked down
-                    	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+                    	// datastore in discovery mode, more of an issue with ${property} use in parameters.
+                    	// Log a message so the issue can be tracked down.
                     	Message.printWarning(3, routine,
                     		"Null datastore in discovery mode - need to check code for command to improve handling: " + commandString);
                     }
                     else {
                     	boolean doInclude = false;
-                    	if ( !includeWebServices && !includeWebServices ) {
-                    		// Default is to always include
+                    	if ( !includeDatabases && !includeWebServices ) {
+                    		// Default is to always include, otherwise would never return anything.
                     		doInclude = true;
                     	}
-                    	if ( includeDatabases && (ds instanceof DatabaseDataStore) ) {
-                    		doInclude = true;
+                    	if ( includeDatabases ) {
+                    		if ( ds instanceof DatabaseDataStore ) {
+                    			doInclude = true;
+                    		}
+                    		else {
+                    			if ( Message.isDebugOn ) {
+            		       			Message.printDebug(1, routine, "  Including databases but datastore \"" +
+            		       				ds.getName() + "\" is not a database so ignore." );
+            	       			}
+                    		}
                     	}
-                    	if ( includeWebServices && (ds instanceof WebServiceDataStore) ) {
-                    		doInclude = true;
+                    	if ( includeWebServices ) {
+                    		if ( ds instanceof WebServiceDataStore ) {
+                    			doInclude = true;
+                    		}
+                    		else {
+                    			if ( Message.isDebugOn ) {
+            		       			Message.printDebug(1, routine, "  Including web services but datastore \"" +
+            		       				ds.getName() + "\" is not a web service so ignore." );
+            	       			}
+                    		}
                     	}
+                    	// If a match occurred above, include the name in the returned list.
                     	if ( doInclude ) {
                     		// Use the name for the returned identifier.
                     		namesFromCommands.add ( ds.getName() );
@@ -1165,35 +1187,230 @@ protected static List<String> getDataStoreNamesFromCommands ( List<Command> comm
                 }
             }
         }
-        // TODO smalers 2020-10-04 need to figure out need to handle CloseDataStore
-        /*
-		else if ( commandName.equalsIgnoreCase("Free") ) {
-		    // Need to remove matching time series identifiers that are in the list
-		    // (otherwise editing commands will show extra time series as of that point in the workflow, which will
-		    // be confusing and may lead to errors, e.g., if consistent units are expected but the units are
-		    // not consistent).
-		    // First get the matching time series for the Free() command parameters
-		    Command commandInst = (Command)command_o;
-		    PropList parameters = commandInst.getCommandParameters();
-		    // TODO SAM 2011-04-04 Need to get ensembles above command
-		    List<TSEnsemble> ensemblesFromCommands = new ArrayList<TSEnsemble>();
-		    TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tsFromCommands, ensemblesFromCommands,
-	            parameters.getValue("TSList"), parameters.getValue("TSID"),
-	            parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
-		    // Loop through the list of matching time series and remove identifiers at the matching positions
-		    // (the time series list and identifier lists should match in position).
-		    int [] pos = tsToProcess.getTimeSeriesPositions();
-		    //Message.printStatus(2,"", "Detected Free() command, have " + pos.length + " time series to check." ); 
-		    // Loop backwards so that position values don't need to be adjusted.
-		    for ( int ipos = pos.length - 1; ipos >= 0; ipos--  ) {
-	            //Message.printStatus(2,"", "Removing time series " + pos[ipos] + ": " + tsidsFromCommands.get(pos[ipos]));
-		        dsFromCommands.remove(pos[ipos]);
-		        idsFromCommands.remove(pos[ipos]);
-		    }
-		}
-		*/
 	}
 	return namesFromCommands;
+}
+
+/**
+ * Get a list of datastores for command editors that need datastore instances.
+ * This includes datastores configured at startup in the processor,
+ * and datastores from discovery.
+ * @param tsProcessor TSCommandProcessor to use to retrieve the datastores
+ * @param command the command being edited
+ * @return the list of DatabaseDataStore that can be used in editors.
+ */
+public static List<DatabaseDataStore> getDatabaseDataStoresForEditors ( TSCommandProcessor tsProcessor, Command command ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDatabaseDataStoresForEditors";
+	// Get the list of database datastores, to list as choices and allow listing tables and procedures if necessary.
+    // Datastores could be those active at startup and opened with OpenDataStore commands:
+    // - since runtime datastores may not known when editing the command, merge the two lists
+    // - any datastores opened with OpenDataStore commands could be closed later with CloseDataStore,
+    //   in which case the corresponding discovery datastore can be used for editing
+    List<DataStore> dataStoreList0 = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
+    List<DatabaseDataStore> dataStoreList = new ArrayList<>();
+    for ( DataStore dataStore : dataStoreList0 ) {
+		if ( DatabaseDataStore.class.isInstance(dataStore) ) {
+			dataStoreList.add((DatabaseDataStore)dataStore);
+		}
+    }
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"There are " + dataStoreList.size() + " matching datastores that are active.");
+	}
+    // Get the datastores from discovery mode:
+    // - only get the database datastores, not web services
+	// - these are discovery datastores from OpenDataStore and NewSQLiteDatabase commands
+	List<DataStore> dataStoreList2 =
+        TSCommandProcessorUtil.getDataStoresFromCommandsBeforeCommand( tsProcessor, command, true, false);
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"There are " + dataStoreList2.size() + " datastores from discovery before checking for matches.");
+	}
+    // Merge the lists:
+	// - sort alphabetically in the editor
+	for ( DataStore dataStore2 : dataStoreList2 ) {
+		boolean found = false;
+		if ( DatabaseDataStore.class.isInstance(dataStore2) ) {
+			// Is a DatabaseDataStore so can continue processing below.
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1,routine,"  Datastore \"" + dataStore2.getName() + "\" is a DatabaseDataStore.");
+			}
+		}
+		else {
+			// Is not a DatabaseDataStore so skip processing below.
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1,routine,"  Datastore \"" + dataStore2.getName() + "\" is not a DatabaseDataStore - not checking.");
+			}
+			continue;
+		}
+		// Loop through the the list from active datastores and add if not already in the list.
+		for ( DataStore dataStore : dataStoreList ) {
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1,routine,"Comparing discovery datastore \"" + dataStore2.getName() +
+					"\" with active datastore \"" + dataStore.getName() + "\"");
+			}
+			if ( dataStore2.getName().equals(dataStore.getName()) ) {
+				if ( Message.isDebugOn ) {
+					Message.printDebug(1,routine,"  Datastore \"" + dataStore2.getName() +
+						"\" exists in active datastores list - don't add again.");
+				}
+				found = true;
+				break;
+			}
+		}
+		if ( !found ) {
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1,routine,"  Discovery datastore \"" + dataStore2.getName() +
+					"\" does not exist in active datastores list - adding to list, status=" + dataStore2.getStatus() );
+			}
+			dataStoreList.add((DatabaseDataStore)dataStore2);
+		}
+	}
+	return dataStoreList;
+}
+
+/**
+Get a list of datastores from a list of commands.
+The datastores are suitable for editors that need datastore metadata.
+Datastores are determined as follows:
+<ol>
+<li>    Commands that implement ObjectListProvider have their getObjectList(DataStore) method called.
+        The datastores from the datastore list are returned.</li>
+</ol>
+@param commands commands to search, in order of first command to process to last.
+@param includeDatabases indicate whether to include DatabaseDataStore instances.
+@param includeWebServices indicate whether to include WebServiceDataStore instances.
+@param sort Should output be sorted by names.
+@return list of datastores or an empty list if nothing found.
+*/
+public static List<DataStore> getDataStoresFromCommands ( List<Command> commands,
+	boolean includeDatabases, boolean includeWebServices, boolean sort ) {
+	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+	if ( commands == null ) {
+		return new ArrayList<DataStore>();
+	}
+	List<DataStore> dsFromCommands = new ArrayList<>(); // The DataStores
+	int size = commands.size();
+	String commandString = null;
+	boolean in_comment = false;
+	Object command_o = null; // Command as object
+	for ( int i = 0; i < size; i++ ) {
+		command_o = commands.get(i);
+		if ( command_o instanceof Command ) {
+			commandString = command_o.toString().trim();
+		}
+		if ( (commandString == null) || commandString.startsWith("#") || (commandString.length() == 0) ) {
+			// Make sure comments are ignored...
+			continue;
+		}
+		if ( commandString.startsWith("/*") ) {
+			in_comment = true;
+			continue;
+		}
+		else if ( commandString.startsWith("*/") ) {
+			in_comment = false;
+			continue;
+		}
+		else if ( in_comment ) {
+			continue;
+		}
+        if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
+           	if ( Message.isDebugOn ) {
+           		Message.printDebug(1, routine, "Command is an ObjectListProvider: " + command_o );
+           	}
+            // Try to get the list of identifiers using the interface method.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias (takes priority over TSID) - probably good.
+        	Object o = ((ObjectListProvider)command_o).getObjectList ( DataStore.class );
+            List<DataStore> list = null;
+            if ( o != null ) {
+            	@SuppressWarnings("unchecked")
+				List<DataStore> list0 = (List<DataStore>)o;
+            	list = list0;
+            }
+            if ( list == null ) {
+            	if ( Message.isDebugOn ) {
+            		Message.printDebug(1, routine, "  ObjectListProvider returned no objects." );
+            	}
+            }
+            else {
+                int dssize = list.size();
+            	if ( Message.isDebugOn ) {
+            		Message.printDebug(1, routine, "  ObjectListProvider returned " + dssize + " objects." );
+            	}
+                DataStore ds;
+                for ( int ids = 0; ids < dssize; ids++ ) {
+                    ds = list.get(ids);
+                    if ( ds == null ) {
+                    	// This should not happen and is symptomatic of a command not fully handling a
+                    	// datastore in discovery mode, more of an issue with ${property} use in parameters.
+                    	// Log a message so the issue can be tracked down.
+                    	Message.printWarning(3, routine,
+                    		"Null datastore in discovery mode - need to check code for command to improve handling: " + commandString);
+                    }
+                    else {
+                    	boolean doInclude = false;
+                    	if ( !includeDatabases && !includeWebServices ) {
+                    		// Default is to always include, otherwise would never return anything.
+                    		doInclude = true;
+                    	}
+                    	if ( includeDatabases ) {
+                    		if ( ds instanceof DatabaseDataStore ) {
+                    			doInclude = true;
+                    		}
+                    		else {
+                    			if ( Message.isDebugOn ) {
+            		       			Message.printDebug(1, routine, "  Including databases but datastore \"" +
+            		       				ds.getName() + "\" is not a database so ignore." );
+            	       			}
+                    		}
+                    	}
+                    	if ( includeWebServices ) {
+                    		if ( ds instanceof WebServiceDataStore ) {
+                    			doInclude = true;
+                    		}
+                    		else {
+                    			if ( Message.isDebugOn ) {
+            		       			Message.printDebug(1, routine, "  Including web services but datastore \"" +
+            		       				ds.getName() + "\" is not a web service so ignore." );
+            	       			}
+                    		}
+                    	}
+                    	// If a match occurred above, include the name in the returned list.
+                    	if ( doInclude ) {
+                    		// Use the name for the returned identifier.
+                    		dsFromCommands.add( ds );
+                    	}
+                    }
+                }
+            }
+        }
+	}
+	return dsFromCommands;
+}
+
+/**
+Return the datastores for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of names to editor dialogs and browse datastore metadata.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which datastore names are needed.
+@param includeDatabases indicate whether to include DatabaseDataStore names.
+@param includeWebServices indicate whether to include WebServiceDataStore names.
+@return a list of String containing the datastore names, or an empty list.
+*/
+public static List<DataStore> getDataStoresFromCommandsBeforeCommand(
+	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices )
+{	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommandsBeforeCommand";
+	// Get the position of the command in the list.
+	int pos = processor.indexOf(command);
+	if ( Message.isDebugOn ) {
+	    Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+	}
+	if ( pos < 0 ) {
+		// Just return an empty list.
+		return new ArrayList<DataStore>();
+	}
+    // Find the commands above the position.
+	List<Command> commands = getCommandsBeforeIndex ( processor, pos );
+	// Get the datastore names from the commands.
+	return getDataStoresFromCommands ( commands, includeDatabases, includeWebServices, true );
 }
 
 /**
@@ -2805,22 +3022,24 @@ public static String getWorkingDir ( CommandProcessor processor )
 
 /**
 Get the working directory for a command (e.g., for editing).
+This processes all SetWorkingDir commands prior to the command,
+in case the command file has moved through various folders using relative paths.
+TODO smalers 2021-10-24 this code may be phased out since SetWorkingDir is discouraged.
 @param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @return The working directory in effect for a command.
 */
 public static String getWorkingDirForCommand ( CommandProcessor processor, Command command )
-{	String routine = "TSCommandProcessorUtil.commandProcessor_GetWorkingDirForCommand";
+{	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getWorkingDirForCommand";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "Command", command );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetWorkingDirForCommand", request_params );
+	try {
+		bean = processor.processRequest( "GetWorkingDirForCommand", request_params );
 		return bean.getResultsPropList().getValue("WorkingDir");
 	}
 	catch ( Exception e ) {
-		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command +
-		"\" from processor).";
+		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command + "\" from processor).";
 		Message.printWarning(3, routine, e);
 		Message.printWarning(3, routine, message );
 	}

@@ -32,6 +32,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.RequirementCheck;
 import RTi.Util.IO.RequirementCheckList;
+import RTi.Util.IO.UserRequirementChecker;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import riverside.datastore.DataStore;
@@ -57,6 +58,7 @@ private TSCommandProcessor __processor = null;
  * processors have initial environment properties.
  * @param initProps initial properties for runner, from application command line properties
  */
+@SuppressWarnings("rawtypes")
 public TSCommandFileRunner ( PropList initProps, List<Class> pluginCommandClassList ) {
 	// Create a new processor that is used to run the commands.
 	this.__processor = new TSCommandProcessor(initProps);
@@ -65,13 +67,14 @@ public TSCommandFileRunner ( PropList initProps, List<Class> pluginCommandClassL
 
 /**
 Determine whether the command file requirements are met.
-This is used in the TSTool RunCommands() command to determine if a command file meets requirements
-to run, typically version compatibility.
+This is used in the TSTool RunCommands() command to determine if a command file meets requirements to run,
+typically version compatibility.
 This method is static because it is called for single commands and full command file.
 Syntax for command files is, for example:
 <pre>
 #@require application tstool version > x.y.z
 #@require datastore HydroBase version >= YYYYMMDD
+#@require user someuser == abc
 </pre>
 @param processor The command processor.
 @param commands list of commands to check.
@@ -103,7 +106,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    			// The following handles #@require and # @require (whitespace after comment).
    			pos = commandStringUpper.indexOf("@REQUIRE");
    			if ( pos > 0 ) {
-   				// Detected a @require annotation.
+   				// Detected a @require annotation:
    				// - check the token following @require
 
    				// Create a requirement check object, which will be further populated below.
@@ -112,7 +115,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    				Message.printStatus(2, routine, "Detected @REQUIRE: " + commandString);
    				if ( commandString.length() > (pos + 8) ) {
    					// Have trailing characters.
-   					// Split the comment starting with @.
+   					// Split the comment starting with @ (does not include # or any trailing spaces).
    					String [] parts = commandString.substring(pos).split(" ");
    					Message.printStatus(2, routine, "@REQUIRE comment has " + parts.length + " parts.");
    					if ( parts.length > 1 ) {
@@ -153,7 +156,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							// @require datastore HydroBase >= 20200720
    							Message.printStatus(2, routine, "Detected DATASTORE");
    							if ( parts.length < 5 ) {
-   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length;
+   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length + "): " + commandString;
 								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
    							}
@@ -186,9 +189,30 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    								}
    							}
    						}
+   						else if ( parts[1].trim().equalsIgnoreCase("USER") ) {
+   							// For example:
+   							// @require user == username
+   							Message.printStatus(2, routine, "Detected USER");
+   							if ( parts.length < 4 ) {
+   								message = "Error processing @require - expecting 4+ tokens (have " + parts.length + "): " + commandString;
+								check.setIsRequirementMet(false, message);
+   								Message.printWarning(3, routine, message);
+   							}
+   							else {
+   								// Evaluate the user.
+   								UserRequirementChecker userChecker = new UserRequirementChecker();
+   								// The following will handle reason for failure.
+   								userChecker.checkRequirement(check);
+   							}
+   						}
+   						else {
+   							message = "Error processing @require - unknown type: " + parts[1];
+							check.setIsRequirementMet(false, message);
+							Message.printWarning(3, routine, message);
+   						}
                     }
    					else {
-  						message = "Error processing @require - expecting 6+ tokens (have " + parts.length + ").";
+  						message = "Error processing @require - expecting 2+ tokens (have " + parts.length + ").";
 						check.setIsRequirementMet(false, message);
    						Message.printWarning(3, routine, message);
    					}

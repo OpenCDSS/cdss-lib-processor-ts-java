@@ -50,7 +50,6 @@ import javax.swing.SwingConstants;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JFileChooserFactory;
@@ -83,6 +82,8 @@ private WriteTableToDelimitedFile_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
+private JTextField __IncludeColumns_JTextField = null;
+private JTextField __ExcludeColumns_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private SimpleJComboBox __WriteColumnNames_JComboBox = null;
 private JTextField __Delimiter_JTextField = null;
@@ -102,8 +103,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit
 */
-public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command,
-    List<String> tableIDChoices )
+public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices )
 {	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
@@ -240,8 +240,10 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
-	String OutputFile = __OutputFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     String WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
     String Delimiter = __Delimiter_JTextField.getText().trim();
@@ -254,11 +256,17 @@ private void checkInput ()
 
 	__error_wait = false;
 	
+    if ( (TableID != null) && TableID.length() > 0 ) {
+        parameters.set ( "TableID", TableID );
+    }
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-    if ( (TableID != null) && TableID.length() > 0 ) {
-        parameters.set ( "TableID", TableID );
+    if ( IncludeColumns.length() > 0 ) {
+        parameters.set ( "IncludeColumns", IncludeColumns );
+    }
+    if ( ExcludeColumns.length() > 0 ) {
+        parameters.set ( "ExcludeColumns", ExcludeColumns );
     }
     if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
         parameters.set ( "WriteHeaderComments", WriteHeaderComments );
@@ -305,6 +313,8 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();   
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
 	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     String WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
     String Delimiter = __Delimiter_JTextField.getText().trim();
@@ -316,6 +326,8 @@ private void commitEdits ()
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+    __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+    __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 	__command.setCommandParameter ( "WriteColumnNames", WriteColumnNames );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
@@ -362,50 +374,70 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"The working directory is: " ), 
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "    " + __working_dir ), 
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 }
   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
+    __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
+    __TableID_JComboBox.setData(tableIDChoices);
+    __TableID_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
+    3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	 __OutputFile_JTextField = new JTextField ( 50 );
-	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
-	 __OutputFile_JTextField.addKeyListener ( this );
-	    // Output file layout fights back with other rows so put in its own panel
-		JPanel OutputFile_JPanel = new JPanel();
-		OutputFile_JPanel.setLayout(new GridBagLayout());
-	    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
-			0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-		__browse_JButton = new SimpleJButton ( "...", this );
-		__browse_JButton.setToolTipText("Browse for file");
-	    JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
-			1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		if ( __working_dir != null ) {
-			// Add the button to allow conversion to/from relative path...
-			__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
-			JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
-				2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		}
-		JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
-			1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
-         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
-     __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
-     __TableID_JComboBox.setData(tableIDChoices);
-     __TableID_JComboBox.addItemListener ( this );
-     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
-         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
-     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	__OutputFile_JTextField.addKeyListener ( this );
+    // Output file layout fights back with other rows so put in its own panel
+	JPanel OutputFile_JPanel = new JPanel();
+	OutputFile_JPanel.setLayout(new GridBagLayout());
+	JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+	JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to write:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeColumns_JTextField = new JTextField (30);
+    __IncludeColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=write all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to NOT write:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns_JTextField = new JTextField (30);
+    __ExcludeColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ExcludeColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=write all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
-     List<String> writeHeaderCommentsList = new Vector<String>();
+     List<String> writeHeaderCommentsList = new ArrayList<>();
      writeHeaderCommentsList.add("");
      writeHeaderCommentsList.add(__command._False);
      writeHeaderCommentsList.add(__command._True);
@@ -614,8 +646,10 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = getClass().getSimpleName() + "_JDialog.refresh";
-	String OutputFile = "";
     String TableID = "";
+	String OutputFile = "";
+    String IncludeColumns = "";
+    String ExcludeColumns = "";
     String WriteHeaderComments = "";
     String WriteColumnNames = "";
     String Delimiter = "";
@@ -631,8 +665,10 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
-		OutputFile = parameters.getValue ( "OutputFile" );
         TableID = parameters.getValue ( "TableID" );
+		OutputFile = parameters.getValue ( "OutputFile" );
+        IncludeColumns = parameters.getValue ( "IncludeColumns" );
+        ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
         WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
         WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
         Delimiter = parameters.getValue ( "Delimiter" );
@@ -642,9 +678,6 @@ private void refresh ()
         NaNValue = parameters.getValue ( "NaNValue" );
         OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
         OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
-		if ( OutputFile != null ) {
-			__OutputFile_JTextField.setText (OutputFile);
-		}
         if ( TableID == null ) {
             // Select default...
             if ( __TableID_JComboBox.getItemCount() > 0 ) {
@@ -661,6 +694,15 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+		if ( OutputFile != null ) {
+			__OutputFile_JTextField.setText (OutputFile);
+		}
+        if ( IncludeColumns != null ) {
+            __IncludeColumns_JTextField.setText ( IncludeColumns );
+        }
+        if ( ExcludeColumns != null ) {
+            __ExcludeColumns_JTextField.setText ( ExcludeColumns );
         }
         if ( JGUIUtil.isSimpleJComboBoxItem(__WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
             __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
@@ -740,8 +782,10 @@ private void refresh ()
 		}
 	}
 	// Regardless, reset the command from the fields...
-	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
+	OutputFile = __OutputFile_JTextField.getText().trim();
+	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     WriteColumnNames = __WriteColumnNames_JComboBox.getSelected();
     Delimiter = __Delimiter_JTextField.getText().trim();
@@ -752,10 +796,12 @@ private void refresh ()
     OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
-	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
 	    parameters.add ( "TableID=" + TableID );
 	}
+	parameters.add ( "OutputFile=" + OutputFile );
+    parameters.add ( "IncludeColumns=" + IncludeColumns );
+    parameters.add ( "ExcludeColumns=" + ExcludeColumns );
     if ( WriteHeaderComments != null ) {
         parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
     }

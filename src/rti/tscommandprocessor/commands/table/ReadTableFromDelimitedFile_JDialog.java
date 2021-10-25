@@ -387,12 +387,12 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Delimiter_JTextField = new JTextField (15);
-    __Delimiter_JTextField.setToolTipText("Specify the delimiter character between columns or use ${Property} notation");
+    __Delimiter_JTextField.setToolTipText("Specify the delimiter character between columns, \\s for space, \\t for tab, or use ${Property} notation");
     __Delimiter_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - delimiter, \\t=tab (default=comma ,)."),
+        "Optional - delimiter, \\s=space, \\t=tab (default=,)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File lines to skip:"),

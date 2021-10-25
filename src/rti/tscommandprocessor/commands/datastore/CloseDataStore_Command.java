@@ -130,9 +130,14 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
 not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new CloseDataStore_JDialog ( parent, this )).ok();
+public boolean editCommand ( JFrame parent ) {
+	String routine = getClass().getSimpleName() + ".editCommand";
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
+	}
+	List<DatabaseDataStore> dataStoreList =
+		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
+	return (new CloseDataStore_JDialog ( parent, this, dataStoreList )).ok();
 }
 
 // Use base class parseCommand()
@@ -202,15 +207,30 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-    // Close the datastore...
+    // Close the datastore.
 	
 	try {
-		if ( dmi != null ) {
-	        // Close the connection.
-	        dmi.close();
-	        // Set the status message on the datastore...
-	        dataStore.setStatus(2);
-	        dataStore.setStatusMessage(StatusMessage);
+		// Do not close if a discovery datastore:
+		// - commands like OpenDataStore provide a datastore in discovery mode,
+		//   which provide information for command editing
+		// - TODO smalers 2021-10-24 this may not be necessary if other code is managing datastores properly
+		//   but leave it here for now.
+		String propVal = dataStore.getProperty("Discovery");
+		if ( (propVal != null) && propVal.equalsIgnoreCase("true") ) {
+			// Discovery datastore so don't close.
+		}
+		else {
+			// Close the database connection and datastore.
+			if ( dmi != null ) {
+	        	// Close the connection.
+	        	dmi.close();
+			}
+	       	// Set the status message on the datastore:
+	       	// - 0 means OK
+	       	// - anything else means not active
+	       	// - 2 means closed
+	       	dataStore.setStatus(2);
+	       	dataStore.setStatusMessage(StatusMessage);
 		}
 	}
 	catch ( Exception e ) {

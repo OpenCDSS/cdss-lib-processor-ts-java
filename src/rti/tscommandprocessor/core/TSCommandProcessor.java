@@ -65,7 +65,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -123,6 +122,7 @@ import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListe
 // HEC-DSS I/O...
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 
 // HydroBase commands.
 
@@ -863,12 +863,25 @@ public Boolean getCreateOutput ()
 
 /**
 Return the data store for the requested name, or null if not found.
+The matching datastore is returned regardless of whether active (open) or not.
 @param name the data store name to match (case is ignored in the comparison)
 @param dataStoreClass the class of the data store to match, useful when ensuring that the data store
 is compatible with intended use - specify as null to not match class
 @return the data store for the requested name, or null if not found.
 */
-public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass )
+public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass ) {
+	return getDataStoreForName ( name, dataStoreClass, false );
+}
+
+/**
+Return the data store for the requested name, or null if not found.
+@param name the data store name to match (case is ignored in the comparison)
+@param dataStoreClass the class of the data store to match, useful when ensuring that the data store
+is compatible with intended use - specify as null to not match class
+@param activeOnly if true, only active datastores are returned (status = 0)
+@return the data store for the requested name, or null if not found.
+*/
+public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boolean activeOnly )
 {   // First see if there is a substitute for the datastore.
 	String substitute = this.__tsengine.getDataStoreSubstituteMap().get(name);
 	if ( substitute != null ) {
@@ -891,31 +904,40 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass )
                     dataStore = null;
                 }
             }
-            return dataStore;
+            if ( activeOnly ) {
+            	if ( dataStore.getStatus() == 0 ) {
+            		// Only want active datastores and it is active.
+            		return dataStore;
+            	}
+            	else {
+            		dataStore = null;
+            	}
+            }
+           	// Return 
+           	return dataStore;
         }
     }
     return null;
 }
 
 /**
-Return the list of all DataStore instances known to the processor.  These are named database
-connections that correspond to input type/name for time series.  Active and inactive datastores are returned.
+Return the list of all DataStore instances known to the processor.
+These are named database connections that correspond to input type/name for time series.
+Active and inactive datastores are returned.
 */
-public List<DataStore> getDataStores()
-{
+public List<DataStore> getDataStores() {
     return __tsengine.getDataStoreList();
 }
 
 /**
-Return the list of all DataStore instances known to the processor.  These are named database
-connections that correspond to input type/name for time series.
+Return the list of all DataStore instances known to the processor.
+These are named database connections that correspond to input type/name for time series.
 */
-public List<DataStore> getDataStores ( boolean activeOnly )
-{
-	// Get the list of all datastores...
+public List<DataStore> getDataStores ( boolean activeOnly ) {
+	// Get the list of all datastores.
 	List<DataStore> datastoreList = __tsengine.getDataStoreList();
 	if ( activeOnly ) {
-		// Loop through and remove datastores where status != 0
+		// Loop through and remove datastores where status != 0 (no error).
 		for ( int i = datastoreList.size() - 1; i >= 0; i-- ) {
 			DataStore ds = datastoreList.get(i);
 			if ( ds.getStatus() != 0 ) {
@@ -927,14 +949,13 @@ public List<DataStore> getDataStores ( boolean activeOnly )
 }
 
 /**
-Return the list of data stores for the requested type (e.g., RiversideDBDataStore).  A non-null list
-is guaranteed, but the list may be empty.  Only active datastores are returned, those that are enabled
-and status is 0 (Ok).
+Return the list of data stores for the requested type (e.g., RiversideDBDataStore).
+A non-null list is guaranteed, but the list may be empty.
+Only active datastores are returned, those that are enabled and status is 0 (Ok - no error).
 @param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass )
-{
+public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass ) {
 	return getDataStoresByType ( dataStoreClass, true );
 }
 
@@ -942,30 +963,34 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass )
 Return the list of data stores for the requested type (e.g., HydroBaseDataStore).  A non-null list
 is guaranteed, but the list may be empty.
 @param dataStoreClass the data store class to match (required).
+@param activeOnly if true, only return datastores that are active (open)
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly )
-{   List<DataStore> dataStoreList = new ArrayList<DataStore>();
+public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly ) {   
+	String routine = getClass().getSimpleName() + ".getDataStoresByType";
+	List<DataStore> dataStoreList = new ArrayList<DataStore>();
 	boolean debug = Message.isDebugOn;
 	if ( debug ) {
-		Message.printStatus(2, "getDataStoresByType",
-			"Getting datastores for class by checking " + getDataStores().size() + " datastores for:  " + dataStoreClass);
+		Message.printDebug(1, routine,
+			"Getting datastores for class by checking " + getDataStores().size() + " datastores for: " + dataStoreClass);
 	}
     for ( DataStore dataStore : getDataStores() ) {
-    	// If only active are requested, then status must be 0 (OK)
+   		if ( debug ) {
+   			Message.printDebug(1, routine, "Checking datastore " + dataStore.getName() + " class " + dataStore.getClass() );
+   		}
     	if ( activeOnly && (dataStore.getStatus() != 0) ) {
+    		// If only active are requested, then status must be 0 (OK).
     		if ( debug ) {
-    			Message.printStatus(2, "getDataStoresByType", "Datastore " + dataStore.getName() + " is not active - ignoring.");
+    			Message.printDebug(1, routine, "  Datastore " + dataStore.getName() +
+    				" is not active (status is " + dataStore.getStatus() + ") - not a match since ignoring.");
     		}
     		continue;
     	}
-        // Check for exact match on class
-   		if ( debug ) {
-   			Message.printStatus(2, "getDataStoresByType", "Checking datastore:  " + dataStore.getClass() );
-   		}
+        // Check for exact match on class.
         if ( dataStore.getClass() == dataStoreClass ) {
         	if ( debug ) {
-        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing class for datastore:  " + dataStore.getClass() );
+        		Message.printDebug(1, routine, "  Found a match because datastore " + dataStore.getClass() +
+        			" is the same as requested class " + dataStoreClass + " and status=" + dataStore.getStatus());
         	}
             dataStoreList.add(dataStore);
         }
@@ -975,31 +1000,30 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean ac
         /*
         else if ( ("" + dataStoreClass).equals("" + dataStore.getClass()) ) {
         	if ( debug ) {
-        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing class strings for datastore:  " + dataStore.getClass() );
+        		Message.printStatus(2, routine, "Found a match comparing class strings for datastore:  " + dataStore.getClass() );
         	}
             dataStoreList.add(dataStore);
         }
         */
-        // Also check for common base classes
+        // Also check for common base classes.
         // TODO SAM 2012-01-31 Why not just use instanceof all the time?
         else if ( (dataStoreClass == DatabaseDataStore.class) && dataStore instanceof DatabaseDataStore ) {
         	if ( debug ) {
-        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing base class DatabaseDataStore for datastore:  " +
-        			dataStore.getClass() );
+        		Message.printDebug(1, routine, "  Found a match because " + dataStoreClass + " == DatabaseDataStore class and " +
+        			dataStore.getClass() + " instanceof DatabaseDataStore and status=" + dataStore.getStatus());
         	}
             dataStoreList.add(dataStore);
         }
         else if ( (dataStoreClass == WebServiceDataStore.class) && dataStore instanceof WebServiceDataStore ) {
         	if ( debug ) {
-        		Message.printStatus(2, "getDataStoresByType", "Found a match comparing base class WebServiceDataStore for datastore:  " +
-        			dataStore.getClass() );
+        		Message.printDebug(1, routine, "  Found a match because " + dataStoreClass + " == WebServiceDataStore class and " +
+        			dataStore.getClass() + " instanceof WebServiceDataStore and status=" + dataStore.getStatus());
         	}
             dataStoreList.add(dataStore);
         }
         else {
         	if ( debug ) {
-        		Message.printStatus(2, "getDataStoresByType", "Datastore " + dataStore.getName() + " (" +
-    			  	dataStore.getClass() + ") is not a match.");
+        		Message.printDebug(1, routine, "  Datastore " + dataStore.getName() + " (" + dataStore.getClass() + ") is not a match.");
         	}
         }
     }
@@ -1851,16 +1875,29 @@ public void insertCommandAt ( String command_string, int index )
 }
 
 /**
-Return a setWorkingDir(xxx) command where xxx is the initial working directory.
-This command should be prepended to the list of setWorkingDir() commands that
+Return a SetWorkingDir(xxx) command where xxx is the initial working directory.
+This command should be prepended to the list of SetWorkingDir() commands that
 are processed when determining the working directory for an edit dialog or other command-context action.
 */
-private Command newInitialSetWorkingDirCommand()
-{	// For now put in a generic command since no specific Command class is available...
-	GenericCommand c = new GenericCommand ();
-	c.setCommandString( "SetWorkingDir(\"" + getInitialWorkingDir() + "\")" );
-	return c;
-	// TODO SAM 2007-08-22 Need to implement the command class
+private Command newInitialSetWorkingDirCommand() 
+throws InvalidCommandParameterException, InvalidCommandSyntaxException {
+	boolean doGeneric = false;
+	String commandString = "SetWorkingDir(WorkingDir=\"" + getInitialWorkingDir() + "\")";
+	if ( doGeneric ) {
+		// Older code used this.
+		// For now put in a generic command since no specific Command class is available.
+		GenericCommand c = new GenericCommand ();
+		c.setCommandName("SetWorkingDir");
+		c.setCommandString( commandString );
+		// TODO SAM 2007-08-22 Need to implement the command class.
+		return c;
+	}
+	else {
+		// Create a new command.
+		SetWorkingDir_Command c = new SetWorkingDir_Command();
+		c.initializeCommand ( commandString, this, true );	// Full initialization
+		return c;
+	}
 }
 
 /**
@@ -3072,39 +3109,37 @@ Do not set any internal "Posix" variations - retrieve those as needed by reforma
 private CommandProcessorRequestResultsBean processRequest_GetWorkingDirForCommand (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "Command" );
 	if ( o == null ) {
 			String warning = "Request GetWorkingDirForCommand() does not provide a Command parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Command command = (Command)o;
 	// Get the index of the requested command.
 	int index = indexOf ( command );
 	// Get the setWorkingDir() commands.
-	List<String> needed_commands_String_Vector = new Vector<>();
-	needed_commands_String_Vector.add ( "SetWorkingDir" );
-	List<Command> setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
+	List<String> needed_commands_String_List = new ArrayList<>();
+	needed_commands_String_List.add ( "SetWorkingDir" );
+	List<Command> setWorkingDir_CommandList = TSCommandProcessorUtil.getCommandsBeforeIndex (
 			index,
 			this,
-			needed_commands_String_Vector,
+			needed_commands_String_List,
 			false ); // Get all, not just last.
 	// Always add the starting working directory to the top to make sure an initial condition is set.
-	setWorkingDir_CommandVector.add ( 0, newInitialSetWorkingDirCommand() );
+	setWorkingDir_CommandList.add ( 0, newInitialSetWorkingDirCommand() );
 	// Create a local command processor:
     // - pass along the initial properties
 	TSCommandProcessor ts_processor = new TSCommandProcessor(this.initialProps);
 	Object workingDir = getPropContents("InitialWorkingDir");
 	ts_processor.setPropContents("InitialWorkingDir", workingDir);
-	int size = setWorkingDir_CommandVector.size();
+	int size = setWorkingDir_CommandList.size();
 	// Add all the commands (currently no method to add all because this is normally not done).
 	for ( int i = 0; i < size; i++ ) {
-		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.get(i));
+		ts_processor.addCommand ( (Command)setWorkingDir_CommandList.get(i));
 	}
 	// Run the commands to set the working directory in the temporary processor.
 	try {

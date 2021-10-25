@@ -270,9 +270,11 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(13);
 	validList.add ( "OutputFile" );
 	validList.add ( "TableID" );
+    validList.add ( "IncludeColumns" );
+    validList.add ( "ExcludeColumns" );
 	validList.add ( "Delimiter" );
 	validList.add ( "WriteHeaderComments" );
 	validList.add ( "WriteColumnNames" );
@@ -383,14 +385,42 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String OutputFile_full = null;
 
     // Get the table information  
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
     	// In discovery mode want lists of tables to include ${Property}
     	if ( TableID.indexOf("${") >= 0 ) {
     		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     	}
+    }
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    OutputFile_full = OutputFile;
+    String IncludeColumns = parameters.getValue ( "IncludeColumns" );
+    String [] includeColumns = null;
+    if ( IncludeColumns != null ) {
+        if ( IncludeColumns.indexOf(",") > 0 ) {
+            includeColumns = IncludeColumns.split(",");
+        }
+        else {
+            includeColumns = new String[1];
+            includeColumns[0] = IncludeColumns;
+        }
+        for ( int i = 0; i < includeColumns.length; i++ ) {
+            includeColumns[i] = includeColumns[i].trim();
+        }
+    }
+    String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
+    String [] excludeColumns = null;
+    if ( ExcludeColumns != null ) {
+        if ( ExcludeColumns.indexOf(",") > 0 ) {
+            excludeColumns = ExcludeColumns.split(",");
+        }
+        else {
+            excludeColumns = new String[1];
+            excludeColumns[0] = ExcludeColumns;
+        }
+        for ( int i = 0; i < excludeColumns.length; i++ ) {
+            excludeColumns[i] = excludeColumns[i].trim();
+        }
     }
     String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
     boolean WriteHeaderComments_boolean = true; // Default
@@ -476,12 +506,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputSchemaFile)) );
 		}
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
-		HashMap<String,String> writeProps = new HashMap<>();
+		HashMap<String,Object> writeProps = new HashMap<>();
 		writeProps.put("AlwaysQuoteDateTimes", AlwaysQuoteDateTimes);
 		writeProps.put("AlwaysQuoteStrings", AlwaysQuoteStrings);
+		writeProps.put("IncludeColumns", includeColumns);
+		writeProps.put("ExcludeColumns", excludeColumns);
 		writeProps.put("NaNValue", NaNValue);
 		writeProps.put("NewlineReplacement", StringUtil.literalToInternal(NewlineReplacement));
-		warning_count = writeTable ( table, OutputFile_full, Delimiter, WriteHeaderComments_boolean,
+		warning_count = writeTable ( table,
+			OutputFile_full, Delimiter, WriteHeaderComments_boolean,
 			WriteColumnNames_boolean, writeProps,
 		    outputSchemaFile, outputSchemaFormat,
 		    warning_level, command_tag, warning_count );
@@ -535,8 +568,10 @@ public String toString ( PropList parameters )
 {	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
+    String IncludeColumns = parameters.getValue( "IncludeColumns" );
+    String ExcludeColumns = parameters.getValue( "ExcludeColumns" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
@@ -559,6 +594,18 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
+    }
+    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
+    }
     if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -714,8 +761,9 @@ do not handle comments)
 @param writeProps properties to control the write, passed to library code
 @exception IOException if there is an error writing the file.
 */
-private int writeTable ( DataTable table, String OutputFile, String delimiter, boolean writeHeaderComments,
-	boolean writeColumnNames, HashMap<String,String> writeProps,
+private int writeTable ( DataTable table,
+	String OutputFile, String delimiter, boolean writeHeaderComments,
+	boolean writeColumnNames, HashMap<String,Object> writeProps,
 	String outputSchemaFile, String outputSchemaFormat,
 	int warning_level, String command_tag, int warning_count )
 throws IOException

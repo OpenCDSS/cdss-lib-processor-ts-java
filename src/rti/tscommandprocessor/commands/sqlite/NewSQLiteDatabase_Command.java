@@ -115,7 +115,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
+                // Working directory is available so use it.
                 if ( o != null ) {
                     working_dir = (String)o;
                 }
@@ -144,7 +144,7 @@ throws InvalidCommandParameterException
         }
     }
     
-	//  Check for invalid parameters...
+	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(2);
     validList.add ( "DataStore" );
     validList.add ( "DatabaseFile" );
@@ -167,7 +167,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if edits are saved.
 	return (new NewSQLiteDatabase_JDialog ( parent, this )).ok();
 }
 
@@ -185,10 +185,10 @@ This class only keeps a list of DataStore objects.
 Classes that can be requested:  DataStore or DatabaseDataStore or GenericDatabaseDataStore
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataStore ds = getDiscoveryDataStore();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataStore ds = getDiscoveryDataStore();
     List<T> v = null;
-    if ( (ds != null) && (c == ds.getClass()) ) {
+    if ( c.isInstance(ds) ) {
         v = new ArrayList<T>();
         v.add ( (T)ds );
     }
@@ -243,7 +243,7 @@ CommandWarningException, CommandException
         setDiscoveryDataStore ( null );
     }
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 	TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
@@ -259,32 +259,32 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-    // Query the table and set in the processor...
+    // Query the table and set in the processor.
     
     if ( commandPhase == CommandPhaseType.RUN ) {
         GenericDatabaseDataStore ds = null;
         try {
             if ( (DatabaseFile != null) && !DatabaseFile.isEmpty() ) {
-                // Use the parts and create the connection string on the fly
+                // Use the parts and create the connection string on the fly.
                 String systemLogin = null;
                 String systemPassword = null;
                 GenericDMI dmi = null;
                 if ( DatabaseFile.equalsIgnoreCase(_Memory) ) {
-                	// SQLite documentation shows lowercase
+                	// SQLite documentation shows lower case.
                 	dmi = new GenericDMI( "SQLite", "memory", DataStore, -1, systemLogin, systemPassword );
                 }
                 else {
-                	// Get file path
+                	// Get file path.
                 	String DatabaseFile_full = IOUtil.verifyPathForOS(
                     	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                         	TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseFile)));
                 	dmi = new GenericDMI( "SQLite", DatabaseFile_full, DataStore, -1, systemLogin, systemPassword );
                 }
-                // TODO SAM 2014-04-22 Define properties before opening
+                // TODO SAM 2014-04-22 Define properties before opening.
                 //ds.setProperties(props);
                 dmi.open();
                 ds = new GenericDatabaseDataStore( DataStore, DataStore, dmi );
-                // Set the datastore in the processor
+                // Set the datastore in the processor.
                 // TODO SAM 2014-04-22 How to turn off after the processor runs or reset?
                 processor.setPropContents ( "DataStore", ds );
             }
@@ -300,8 +300,9 @@ CommandWarningException, CommandException
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // TODO SAM 2014-04-22 Need to return new datastore name
+        // TODO SAM 2014-04-22 Need to return new datastore name:
     	// - for now use the identifier for name
+    	// - TODO smalers 2021-10-24 need to handle similar to OpenDataStore but needs to be read-only to not corrupt?
         DataStore ds = new GenericDatabaseDataStore (DataStore, DataStore, null);
         setDiscoveryDataStore ( ds );
     }

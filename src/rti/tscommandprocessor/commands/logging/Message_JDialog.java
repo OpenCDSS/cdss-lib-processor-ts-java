@@ -180,7 +180,7 @@ private void initialize ( JFrame parent, Message_Command command )
         "Messages can contain ${Property} to output processor property values."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use Enter to insert a new line, which will be shown as \\n in the message parameter."),
+        "Use 'Enter' to insert a new line, which will be shown as \\n in the message parameter."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Setting the command status to " + CommandStatusType.WARNING + " or " + CommandStatusType.FAILURE +
@@ -273,18 +273,18 @@ Respond to KeyEvents.
 public void keyPressed ( KeyEvent event )
 {	int code = event.getKeyCode();
 
-    if ( event.getSource() == this.__Message_JTextArea ) {
-    	// Do not allow "Enter" in message because newlines in the message are allowed.
-    	return;
-    }
-    else {
-    	if ( code == KeyEvent.VK_ENTER ) {
+   	if ( code == KeyEvent.VK_ENTER ) {
+   		if ( event.getSource() == this.__Message_JTextArea ) {
+    		// Do not allow "Enter" in message because newlines in the message are allowed.
+    		return;
+    	}
+   		else {
     		refresh ();
-		  		checkInput();
-		  		if ( !__error_wait ) {
-			  		response ( false );
-		  		}
+	  		checkInput();
+	  		if ( !__error_wait ) {
+		  		response ( false );
 	  		}
+		}
     }
 }
 

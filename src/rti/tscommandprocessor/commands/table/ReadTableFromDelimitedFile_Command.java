@@ -325,6 +325,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (Delimiter != null) && !Delimiter.isEmpty() ) {
 		delimiter = Delimiter;
 		delimiter = delimiter.replace("\\t", "\t");
+		delimiter = delimiter.replace("\\s", " ");
 	}
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
 	String SkipLines = parameters.getValue ( "SkipLines" );

@@ -141,18 +141,40 @@ throws InvalidCommandParameterException
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
+// TODO smalers 2021-10-24 delete code when tests out.
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
 not (e.g., "Cancel" was pressed).
 */
+/*
 public boolean editCommand ( JFrame parent )
 {	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed...
 	return (new DeleteDataStoreTableRows_JDialog ( parent, this, tableIDChoices )).ok();
+}
+*/
+
+/**
+Edit the command.
+@param parent The parent JFrame to which the command dialog will belong.
+@return true if the command was edited (e.g., "OK" was pressed), and false if
+not (e.g., "Cancel" was pressed).
+*/
+public boolean editCommand ( JFrame parent ) {
+	String routine = getClass().getSimpleName() + ".editCommand";
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
+	}
+	List<DatabaseDataStore> dataStoreList =
+		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
+	List<String> tableIDChoices =
+        TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	return (new DeleteDataStoreTableRows_JDialog ( parent, this, tableIDChoices, dataStoreList )).ok();
 }
 
 /**

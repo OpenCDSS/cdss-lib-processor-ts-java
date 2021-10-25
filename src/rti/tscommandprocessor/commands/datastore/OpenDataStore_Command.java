@@ -33,7 +33,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.GenericDMI;
 import RTi.Util.Message.Message;
@@ -118,7 +117,7 @@ throws InvalidCommandParameterException
 		}
 	}
     
-	//  Check for invalid parameters...
+	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(9);
     validList.add ( "DataStoreName" );
     validList.add ( "DataStoreDescription" );
@@ -147,11 +146,11 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new OpenDataStore_JDialog ( parent, this )).ok();
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Return the datastore that is read by this class when run in discovery mode.
@@ -167,10 +166,10 @@ This class only keeps a list of DataStore objects.
 Classes that can be requested:  DataStore or DatabaseDataStore or GenericDatabaseDataStore
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataStore ds = getDiscoveryDataStore();
+public <T> List<T> getObjectList ( Class<T> c ) {
+	DataStore ds = getDiscoveryDataStore();
     List<T> v = null;
-    if ( (ds != null) && (c == ds.getClass()) ) {
+    if ( c.isInstance(ds) ) {
         v = new ArrayList<T>();
         v.add ( (T)ds );
     }
@@ -235,10 +234,10 @@ CommandWarningException, CommandException
    		DataStoreDescription = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreDescription);
     }
     if ( (DataStoreDescription == null) || DataStoreDescription.isEmpty() ) {
-    	// Default
+    	// Default.
     	DataStoreDescription = DataStoreName;
     }
-    // TODO smalers 2020-10-18 it should be possible to list other than default datastore type
+    // TODO smalers 2020-10-18 it should be possible to list other than default datastore type.
     //String DataStoreType = parameters.getValue ( "DataStoreType" );
     String DatabaseEngine = parameters.getValue ( "DatabaseEngine" );
     String ServerName = parameters.getValue ( "ServerName" );
@@ -270,15 +269,15 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-    // Open the datastore...
+    // Open the datastore.
 	
 	try {
 		if ( commandPhase == CommandPhaseType.RUN ) {
-			// First see if a matching datastore name exists
-			// Find the data store to use...
+			// First see if a matching datastore name exists.
+			// Find the data store to use.
 			DataStore ds = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreName, DatabaseDataStore.class );
 			if ( ds != null ) {
-				// Have an existing datastore
+				// Have an existing datastore.
 				message = "Existing datastore \"" + DataStoreName + "\" was found.";
 				if ( IfFound.equalsIgnoreCase(_Fail) ) {
 					Message.printWarning ( warning_level,
@@ -293,15 +292,14 @@ CommandWarningException, CommandException
 						message, "Closing before reopening may prevent access to data."));
 				}
 				else {
-					// Default is to close the existing datastore
+					// Default is to close the existing datastore:
 					// - this is similar to the CloseDataStore command
 					/* TODO smalers 2020-10-18 not sure this is needed since it will automatically close in lower code
-					Message.printStatus( 2, routine, message +
-						"  Closing the existing datastore before creating new connection.");
+					Message.printStatus( 2, routine, message + "  Closing the existing datastore before creating new connection.");
 					// Close the connection.
 					DMI dmi = ((DatabaseDataStore)ds).getDMI();
 					dmi.close();
-					// Set the status message on the datastore...
+					// Set the status message on the datastore.
 					// - if the re-open is successful below, then a new message will be shown
 					ds.setStatus(2);
 					ds.setStatusMessage("Closed by OpenDataStore command before re-opening.");
@@ -309,21 +307,21 @@ CommandWarningException, CommandException
 				}
 			}
 
-			// Open the new datastore
+			// Open the new datastore.
 
 			GenericDatabaseDataStore gds = null;
 			try {
-				// Use the parts and create the connection string on the fly
+				// Use the parts and create the connection string on the fly.
 				String systemLogin = Login;
 				String systemPassword = Password;
 				GenericDMI dmi = null;
 				if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
 					if ( ServerName.equalsIgnoreCase("Memory") ) {
-						// SQLite documentation shows lowercase
+						// SQLite documentation shows lower case.
 						dmi = new GenericDMI( "SQLite", "memory", DatabaseName, -1, systemLogin, systemPassword );
 					}
 					else {
-						// Get file path
+						// Get file path.
 						String DatabaseFile_full = IOUtil.verifyPathForOS(
 							IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 								TSCommandProcessorUtil.expandParameterValue(processor,this,ServerName)));
@@ -331,16 +329,16 @@ CommandWarningException, CommandException
 					}
 				}
 				else {
-					// Database that does not use a file
+					// Database that does not use a file.
 					dmi = new GenericDMI( DatabaseEngine, ServerName, DatabaseName, -1, systemLogin, systemPassword );
 				}
-				// TODO SAM 2014-04-22 Define properties before opening
+				// TODO SAM 2014-04-22 Define properties before opening.
 				//ds.setProperties(props);
 				dmi.open();
 				gds = new GenericDatabaseDataStore( DataStoreName, DataStoreDescription, dmi );
 				// TODO smalers 2020-10-18 could add more information to the status message such as command file name.
 				gds.setStatusMessage("Opened by OpenDataStore command.");
-				// Set the datastore in the processor
+				// Set the datastore in the processor.
 				// TODO SAM 2014-04-22 How to turn off after the processor runs or reset?
 				processor.setPropContents ( "DataStore", gds );
 			}
@@ -355,10 +353,71 @@ CommandWarningException, CommandException
 			}
 		}
 		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-			// TODO SAM 2014-04-22 Need to return new datastore name
+			// TODO SAM 2014-04-22 Need to return new datastore name:
 			// - for now use the identifier for name
-			DataStore ds = new GenericDatabaseDataStore (DataStoreName, DataStoreDescription, null);
-			setDiscoveryDataStore ( ds );
+			// - TODO smalers 2021-10-23 problem is if in discovery, then other commands like ReadTableFromDataStore
+			//   do not have a working datastore/DMI to list tables - should it open the DMI so that
+			//   basic metadata queries can occur?
+			boolean simple = false;
+			if ( simple ) {
+				// This is s simple operation so do every time called.
+				DataStore ds = new GenericDatabaseDataStore (DataStoreName, DataStoreDescription, null);
+				setDiscoveryDataStore ( ds );
+			}
+			else {
+				// Open the datastore similar to run phase:
+				// - set an additional property Discovery=true
+				// - DO NOT add to the processor because it is used only for editing
+				// - close the resources before (re)opening.
+				// - might not need to reopen but could be changing configuration during troubleshooting without restarting TSTool
+				// - if resources are not closed beforehand, it is a resource leak
+				GenericDatabaseDataStore gds = null;
+				try {
+					String systemLogin = Login;
+					String systemPassword = Password;
+					GenericDMI dmi = null;
+					if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
+						// Special handling for SQLite because it can be an in-memory or on-disk database.
+						if ( ServerName.equalsIgnoreCase("Memory") ) {
+							// SQLite documentation shows lower case.
+							dmi = new GenericDMI( "SQLite", "memory", DatabaseName, -1, systemLogin, systemPassword );
+						}
+						else {
+							// Get file path.
+							String DatabaseFile_full = IOUtil.verifyPathForOS(
+									IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+									TSCommandProcessorUtil.expandParameterValue(processor,this,ServerName)));
+							dmi = new GenericDMI( "SQLite", DatabaseFile_full, DatabaseName, -1, systemLogin, systemPassword );
+						}
+					}
+					else {
+						// Database that does not use a file.
+						dmi = new GenericDMI( DatabaseEngine, ServerName, DatabaseName, -1, systemLogin, systemPassword );
+					}
+					// TODO SAM 2014-04-22 Define properties before opening.
+					//ds.setProperties(props);
+					dmi.open();
+					gds = new GenericDatabaseDataStore( DataStoreName, DataStoreDescription, dmi );
+					// TODO smalers 2020-10-18 could add more information to the status message such as command file name.
+					gds.setStatusMessage("Opened by OpenDataStore command to facilitate command editing in discovery mode.");
+					// Set the datastore in the processor.
+					// TODO SAM 2014-04-22 How to turn off after the processor runs or reset?
+					gds.getProperties().set("Discovery", "true");
+					setDiscoveryDataStore ( gds );
+				}
+				catch ( Exception e ) {
+					message = "Error creating discovery datastore \"" + DataStoreName + "\" (" + e + ").";
+					Message.printWarning ( 2, routine, message );
+					status.addToLog ( commandPhase,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Verify that the datastore \"" + DataStoreName +
+							"\" properties are appropriate." ) );
+					Message.printWarning ( 3, routine, e );
+					// Create a datastore instance without opening anything.
+					DataStore ds = new GenericDatabaseDataStore (DataStoreName, DataStoreDescription, null);
+					setDiscoveryDataStore ( ds );
+				}
+			}
 		}
 	}
 	catch ( Exception e ) {

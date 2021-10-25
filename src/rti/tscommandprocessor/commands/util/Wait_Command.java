@@ -77,13 +77,23 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (WaitTime == null) || WaitTime.equals("") ||
-    	((WaitTime.indexOf("${") < 0) && !StringUtil.isDouble(WaitTime)) ) {
-        message = "The wait time must be specified in seconds.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the wait time in seconds." ) );
+    if ( (WaitTime == null) || WaitTime.equals("") ) {
+   		if ( !StringUtil.isDouble(WaitTime) ) {
+   			message = "The wait time must be specified in seconds, can be a decimal.";
+   			warning += "\n" + message;
+   			status.addToLog ( CommandPhaseType.INITIALIZATION,
+   					new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the wait time in seconds." ) );
+   		}
     }
+    else if ( WaitTime.indexOf("${") < 0 ) {
+  		long waitTimeMs = (long)(Double.parseDouble(WaitTime)*1000);
+  		if ( waitTimeMs == 0 ) {
+  			message = "Wait time is < 1ms.";
+  			warning += "\n" + message;
+  			status.addToLog ( CommandPhaseType.INITIALIZATION,
+  				new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the wait time as >= .001" ) );
+  		}
+	}
     
     if ( (ProgressIncrement != null) && !ProgressIncrement.equals("") ) {
     	if ( (ProgressIncrement.indexOf("${") < 0) && !StringUtil.isDouble(ProgressIncrement)) {
@@ -165,6 +175,16 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		progressIncrementMs = (int)(Double.parseDouble(ProgressIncrement)*1000);
 	}
 	
+	// Do a runtime check in case the wait time was specified with a property.
+	if ( waitTimeMs == 0 ) {
+		message = "Wait time is < 1ms.";
+		Message.printWarning ( warning_level, 
+		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a wait time >= .001." ) );
+	}
+	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
@@ -179,7 +199,12 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		if ( progressIncrementMs > 0 ) {
 			waitDelta = progressIncrementMs;
 		}
-		int numSteps = (int)(waitTimeMs/waitDelta);
+		int numSteps = 1;
+		if ( waitDelta == 0 ) {
+			// Wait delta is too small so just do one increment of the full time.
+			waitDelta = waitTimeMs;
+		}
+		numSteps = (int)(waitTimeMs/waitDelta);
 		int i = 0;
 		for ( long wait = 0; wait < waitTimeMs; wait += waitDelta, i++ ) {
 			// Do a simple sleep

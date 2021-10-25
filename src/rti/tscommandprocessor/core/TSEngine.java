@@ -3005,6 +3005,7 @@ throws Exception
                 	try {
                 		List<Command> commentList = new ArrayList<>();
                 		commentList.add(command);
+                		// Single comment is added to the list to check.
         	        	RequirementCheckList checks = TSCommandFileRunner.checkRequirements(__ts_processor, commentList);
         	        	if ( checks.areRequirementsMet() ) {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
@@ -3017,6 +3018,18 @@ throws Exception
 			    			    new CommandLogRecord(CommandStatusType.FAILURE,
 				   			    "@require condition was NOT met: \n" + checks.formatResults(),
 				   			    "Check log file for details. Command file should not be run unless requirements are met.") );
+        	        		// Check whether a failure results in exiting processing.
+        	        		if ( checks.get(0).shouldExitIfRequirementNotMet() ) {
+        	        			// Similar to Exit() command.
+        	        			commandStatus.addToLog(CommandPhaseType.RUN,
+			    			    	new CommandLogRecord(CommandStatusType.FAILURE,
+				   			    	"@require condition was NOT met and exit processing is requested.  Exit processing.",
+				   			    	"Resolve the situation to enable processing past this command.") );
+        	        			Message.printStatus ( 1, routine, "Requirement not met - stop processing commands." );
+        	                 	commandProfile.setEndTime(System.currentTimeMillis());
+        	                 	commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
+        	    			 	break;
+        	        		}
         	        	}
                 	}
                 	catch ( Exception e ) {
@@ -3624,7 +3637,7 @@ throws Exception
 		finally {
 			// Always want to get to here for each command.
 		}
-		// Notify any listeners that the command is done running...
+		// Notify any listeners that the command is done running.
 		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 		if ( !inComment && ifStackOkToRun ) {
@@ -3634,7 +3647,9 @@ throws Exception
 		}
 		runtimeTotal += commandProfile.getRunTime();
 	}
-	// If necessary, do a final notify for the last command...
+
+	// If necessary, do a final notify for the last command:
+	// - this will also be called if Exit or other command broke out of processing
 	if ( !prev_command_complete_notified ) {
 		if ( i == size ) {
 			--i;
@@ -3642,7 +3657,7 @@ throws Exception
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 	}
 	
-	// Indicate that processing is done and now there is no need to worry about cancelling.
+	// Indicate that processing is done and now there is no need to handle canceling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
 		// Have gotten to here probably because the last command was processed

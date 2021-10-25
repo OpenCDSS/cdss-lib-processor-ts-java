@@ -100,7 +100,7 @@ private String __working_dir = null;
 private String __diffProgram = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private CompareFiles_Command __command = null; // Command to edit
+private CompareFiles_Command __command = null;
 private boolean __ok = false; // Indicates whether the user pressed OK to close the dialog.
 
 /**

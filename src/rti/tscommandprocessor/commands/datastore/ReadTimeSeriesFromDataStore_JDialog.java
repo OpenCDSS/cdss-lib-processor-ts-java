@@ -37,6 +37,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -56,14 +57,12 @@ import javax.swing.event.DocumentListener;
 import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
 import riverside.datastore.GenericDatabaseDataStore_TimeSeries_InputFilter_JPanel;
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -97,15 +96,18 @@ private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
 private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
+private List<GenericDatabaseDataStore> datastores = new ArrayList<>();
+
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param datastores list of generic database datastores
 */
-public ReadTimeSeriesFromDataStore_JDialog ( JFrame parent, ReadTimeSeriesFromDataStore_Command command )
+public ReadTimeSeriesFromDataStore_JDialog ( JFrame parent, ReadTimeSeriesFromDataStore_Command command, List<GenericDatabaseDataStore> datastores )
 {	super(parent, true);
 
-	initialize ( parent, command );
+	initialize ( parent, command, datastores );
 }
 
 /**
@@ -286,31 +288,30 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
+Get the selected datastore from the processor using the datastore name.
+If there is no datastore in the processor based on startup,
+it may be a dynamic datastore created with OpenDataStore,
+which will have a discovery datastore that is good enough for getting database metadata.
 */
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
-Get the selected data store.
-*/
-private GenericDatabaseDataStore getSelectedDataStore ()
-{   String routine = getClass().getName() + ".getSelectedDataStore";
+private GenericDatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getSimpleName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
-    GenericDatabaseDataStore dataStore = (GenericDatabaseDataStore)((TSCommandProcessor)
-        __command.getCommandProcessor()).getDataStoreForName(
-        DataStore, GenericDatabaseDataStore.class );
-    if ( dataStore == null ) {
-        Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
+    GenericDatabaseDataStore dataStore = null;
+   	dataStore = null;
+   	for ( GenericDatabaseDataStore dataStore2 : this.datastores ) {
+   		if ( dataStore2.getName().equals(DataStore) ) {
+   			dataStore = dataStore2;
+   		}
+   	}
+   	if ( dataStore == null ) {
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
+       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+   	}
+    else {
+    	// Have an active datastore from software startup.
+        Message.printStatus(2, routine, "Selected datastore is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open.
+        dataStore.checkDatabaseConnection();
     }
     return dataStore;
 }
@@ -332,11 +333,12 @@ private String getWhere ( int ifg )
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param datastores list of database datastores
 */
-private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command command )
+private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command command, List<GenericDatabaseDataStore> datastores )
 {	String routine = getClass().getSimpleName() + ".initialize";
-	__command = command;
-	CommandProcessor processor = __command.getCommandProcessor();
+	this.__command = command;
+	this.datastores = datastores;
 
 	addWindowListener( this );
 
@@ -347,16 +349,25 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
 
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-	List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( GenericDatabaseDataStore.class, true );
-	Message.printStatus(2, routine, "Have " + dataStoreList.size() + " datastores");
-    GenericDatabaseDataStore ds;
+    // Copy the list of datastore names to internal list:
+	// - only GenericDatabaseDataStore instances with time series configuration are added
+    List<String> datastoreChoices = new ArrayList<>();
     int dsWithTsCount = 0;
-    for ( DataStore dataStore: dataStoreList ) {
-        ds = (GenericDatabaseDataStore)dataStore;
-        if ( ds.hasTimeSeriesInterface(true) ) {
-            ++dsWithTsCount;
+    int gdsCount = 0;
+    for ( DataStore dataStore : this.datastores ) {
+    	if ( dataStore instanceof GenericDatabaseDataStore ) {
+    		++gdsCount;
+    		GenericDatabaseDataStore ds = (GenericDatabaseDataStore)dataStore;
+    		if ( ds.hasTimeSeriesInterface(true) ) {
+    			datastoreChoices.add(dataStore.getName());
+    			++dsWithTsCount;
+    		}
         }
+    }
+    Collections.sort(datastoreChoices);
+    if ( datastoreChoices.size() == 0 ) {
+        // Add an empty item so users can at least bring up the editor.
+    	datastoreChoices.add ( "" );
     }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -368,14 +379,14 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the global input period is used (see SetInputPeriod())."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	if ( dataStoreList.size() == 0 ) {
+   	if ( gdsCount == 0 ) {
    	   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-   	 		"<html><b>There are no Generic Database Datastores defined - choices below will not work.</b></html>"),
+   	 		"<html><b>There are no GenericDatabaseDatastore defined - this command cannot be used.</b></html>"),
    	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	}
    	else if ( dsWithTsCount == 0 ) {
    		JGUIUtil.addComponent(main_JPanel, new JLabel (
-   	 		"<html><b>There are no Generic Database Datastores that have time series properties defined - choices below will not work.</b></html>"),
+   	 		"<html><b>There are no GenericDatabaseDatastore that have time series properties defined - this command cannot be used.</b></html>"),
    	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	}
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -383,27 +394,20 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
    	
     __ignoreEvents = true; // So that a full pass of initialization can occur
    	
-   	// List available data stores of the correct type
+   	// List available data stores of the correct type.
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    for ( DataStore dataStore: dataStoreList ) {
-        ds = (GenericDatabaseDataStore)dataStore;
-        if ( ds.hasTimeSeriesInterface(true) ) {
-            __DataStore_JComboBox.addItem ( dataStore.getName() );
-        }
-    }
-    if ( __DataStore_JComboBox.getItemCount() > 0 ) {
-        __DataStore_JComboBox.select ( 0 );
-    }
+    __DataStore_JComboBox.setData(datastoreChoices);
+    __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing time series."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Data types are particular to the data store...
+    // Data types are particular to the data store.
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

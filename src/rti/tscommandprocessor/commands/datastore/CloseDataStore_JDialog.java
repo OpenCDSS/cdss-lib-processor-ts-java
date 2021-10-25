@@ -34,8 +34,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import riverside.datastore.DataStore;
-import rti.tscommandprocessor.core.TSCommandProcessor;
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -54,13 +52,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-//import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -85,15 +81,17 @@ private boolean __ignoreItemEvents = false; // Used to ignore cascading events w
 
 //private DatabaseDataStore __dataStore = null; // selected data store
 //private DMI __dmi = null; // DMI to do queries.
+private List<DatabaseDataStore> datastores = new ArrayList<>();
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param datastores list of database datastores
 */
-public CloseDataStore_JDialog ( JFrame parent, CloseDataStore_Command command )
+public CloseDataStore_JDialog ( JFrame parent, CloseDataStore_Command command, List<DatabaseDataStore> datastores )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, datastores );
 }
 
 /**
@@ -209,10 +207,11 @@ private DatabaseDataStore getSelectedDataStore ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
+@param datastores list of database datastores
 */
-private void initialize ( JFrame parent, CloseDataStore_Command command )
-{	__command = command;
-	CommandProcessor processor = __command.getCommandProcessor();
+private void initialize ( JFrame parent, CloseDataStore_Command command, List<DatabaseDataStore> datastores )
+{	this.__command = command;
+	this.datastores = datastores;
 
 	addWindowListener(this);
 
@@ -263,53 +262,18 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Allow editing to deal with dynamic databases like SQLite
     __DataStore_JComboBox = new SimpleJComboBox ( true );
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class, false );
-    List<String> dataStoreChoices = new ArrayList<String>();
-    boolean found = false;
-    String parameterDataStore = __command.getCommandParameters().getValue("DataStore");
-    if ( (parameterDataStore != null) && !parameterDataStore.isEmpty() ) {
-    	for ( DataStore dataStore: dataStoreList ) {
-    		dataStoreChoices.add ( dataStore.getName() );
-    		if ( dataStore.getName().equals(parameterDataStore) ) {
-    			found = true;
-    		}
-    	}
-    	if ( !found ) {
-    		dataStoreChoices.add(parameterDataStore);
-    		Collections.sort(dataStoreChoices);
-    	}
+    // Copy the list of datastore names to internal list.
+    List<String> datastoreChoices = new ArrayList<>();
+    for ( DataStore dataStore : this.datastores ) {
+    	datastoreChoices.add(dataStore.getName());
     }
-    /* TODO smalers 2020-10-04 don't need this.  Just add the datastore from this command
-     * because this command may be before any datastore is opened such as with NewSQLiteDatabase().
-    // Also get database datastore names from discovery
-    // - TODO smalers evaluate moving this to utility code once figure it out
-    List<String> dsnames = TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand(
-         (TSCommandProcessor)__command.getCommandProcessor(), __command, true, false );
-    for ( String dsname : dsnames ) {
-    	// Add to the active list
-    	boolean found = false;
-    	for ( String dataStoreChoice : dataStoreChoices ) {
-    		if ( dsname.equals(dataStoreChoice) ) {
-    			// Matches what is already in the list
-    			found = true;
-    			break;
-    		}
-     	}
-    	if ( !found ) {
-    		// Add to the choices
-    		dataStoreChoices.add(dsname);
-    	}
+    Collections.sort(datastoreChoices);
+    if ( datastoreChoices.size() == 0 ) {
+        // Add an empty item so users can at least bring up the editor.
+    	datastoreChoices.add ( "" );
     }
-    if ( dataStoreList.size() == 0 ) {
-        // Add an empty item so users can at least bring up the editor
-    	dataStoreChoices.add ( "" );
-    }
-    // Sort in case any were added above
-    Collections.sort(dataStoreChoices);
-    */
-    __DataStore_JComboBox.setData(dataStoreChoices);
-    if ( dataStoreChoices.size() > 0 ) {
+    __DataStore_JComboBox.setData(datastoreChoices);
+    if ( datastoreChoices.size() > 0 ) {
     	__DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );

@@ -249,11 +249,23 @@ private String checkDataStoreProperty(DatabaseMetaData dbMeta, String tableName,
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new WriteTimeSeriesToDataStore_JDialog ( parent, this )).ok();
+public boolean editCommand ( JFrame parent ) {
+	String routine = getClass().getSimpleName() + ".editCommand";
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
+	}
+	List<DatabaseDataStore> dataStoreList =
+		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
+	// Reading and writing time series requires GenericDatabaseDataStore so further filter.
+	List<GenericDatabaseDataStore> gdataStoreList = new ArrayList<>();
+	for ( DatabaseDataStore datastore : dataStoreList ) {
+		if ( datastore instanceof GenericDatabaseDataStore ) {
+			gdataStoreList.add((GenericDatabaseDataStore)datastore);
+		}
+	}
+	return (new WriteTimeSeriesToDataStore_JDialog ( parent, this, gdataStoreList )).ok();
 }
 
 /**

@@ -34,6 +34,7 @@ import riverside.datastore.GenericDatabaseDataStore_TimeSeries_InputFilter_JPane
 import riverside.datastore.TimeSeriesMeta;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.DMI.DatabaseDataStore;
 import RTi.TS.TS;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -167,7 +168,7 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(10+__numFilterGroups);
+    List<String> validList = new ArrayList<>(10+__numFilterGroups);
     validList.add ( "DataStore" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
@@ -193,18 +194,38 @@ throws InvalidCommandParameterException
 }
 
 /**
+Edit the command.
+@param parent The parent JFrame to which the command dialog will belong.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
+*/
+public boolean editCommand ( JFrame parent ) {
+	String routine = getClass().getSimpleName() + ".editCommand";
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
+	}
+	List<DatabaseDataStore> dataStoreList =
+		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
+	// Reading and writing time series requires GenericDatabaseDataStore so further filter.
+	List<GenericDatabaseDataStore> gdataStoreList = new ArrayList<>();
+	for ( DatabaseDataStore datastore : dataStoreList ) {
+		if ( datastore instanceof GenericDatabaseDataStore ) {
+			gdataStoreList.add((GenericDatabaseDataStore)datastore);
+		}
+	}
+	return (new ReadTimeSeriesFromDataStore_JDialog ( parent, this, gdataStoreList )).ok();
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discovery_TS_Vector;
 }
 
 /**
 Return the number of filter groups to display in the editor.
 */
-public int getNumFilterGroups ()
-{
+public int getNumFilterGroups () {
     return __numFilterGroups;
 }
 
@@ -213,8 +234,7 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
@@ -228,17 +248,6 @@ public <T> List<T> getObjectList ( Class<T> c )
     else {
         return null;
     }
-}
-
-/**
-Edit the command.
-@param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
-*/
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new ReadTimeSeriesFromDataStore_JDialog ( parent, this )).ok();
 }
 
 /**

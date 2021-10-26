@@ -640,19 +640,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ExcludeTestSuitePattern = StringUtil.replaceString(ExcludeTestSuite,"*",".*");
     String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
 
-	String SearchFolder_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-            TSCommandProcessorUtil.expandParameterValue(processor,this,SearchFolder)));
+    // Break the SearchFolder parameter into parts.
+    String [] searchFolderArray = StringUtil.toArray(StringUtil.breakStringList(SearchFolder,",",StringUtil.DELIM_DEFAULT),true);
+	String [] SearchFolder_full = new String[searchFolderArray.length];
+   	for ( int i = 0; i < searchFolderArray.length; i++ ) {
+   		SearchFolder_full[i] = IOUtil.verifyPathForOS(
+			IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,searchFolderArray[i])));
+   		if ( !IOUtil.fileExists(SearchFolder_full[i]) ) {
+			message = "The folder to search \"" + SearchFolder_full[i] + "\" does not exist.";
+			Message.printWarning ( warningLevel,
+			MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
+			status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+		 		"Verify that the folder exists at the time the command is run."));
+	  	}
+   	}
 	String OutputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-	if ( !IOUtil.fileExists(SearchFolder_full) ) {
-		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
-		Message.printWarning ( warningLevel,
-			MessageUtil.formatMessageTag(commandTag,++warningCount), routine, message );
-		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-			"Verify that the folder exists at the time the command is run."));
-	}
 	String SetupCommandFile_full = null;
 	if ( (SetupCommandFile != null) && !SetupCommandFile.equals("") ) {
 	    SetupCommandFile_full = IOUtil.verifyPathForOS(
@@ -696,18 +701,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-	    // Get the list of files to run as test cases.
+	    // Get the list of files to run as test cases:
+		// - multiple folders can be searched
 		List<String> files = new ArrayList<>();
 		List<CommandFile> commandFiles = new ArrayList<>();
-        String [] includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
-        String [] excludedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(ExcludeTestSuitePattern,",",0));
-        String [] includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
-        getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
-            includedTestSuitePatterns, excludedTestSuitePatterns, includedOSPatterns );
-        Message.printStatus(2, routine, "Found " + files.size() + " command files matching search criteria.");
-        // Sort the list because it may not be sorted, due to dates on files:
-        // - some reordering may occur if @order annotations are present
-        files = StringUtil.sortStringList(files);
+        String [] includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",StringUtil.DELIM_DEFAULT),true);
+        String [] excludedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(ExcludeTestSuitePattern,",",StringUtil.DELIM_DEFAULT),true);
+        String [] includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",StringUtil.DELIM_DEFAULT),true);
+        for ( String searchFolder : SearchFolder_full ) {
+        	List<String> files0 = new ArrayList<>();
+        	getMatchingFilenamesInTree ( files0, new File(searchFolder), FilenamePattern_Java,
+            	includedTestSuitePatterns, excludedTestSuitePatterns, includedOSPatterns );
+        	Message.printStatus(2, routine, "Found " + files.size() + " command files matching search criteria for folder: " + searchFolder);
+        	// Sort the list because it may not be sorted, due to dates on files:
+        	// - only sort within the search folder, not overall
+        	// - some reordering may occur if @order annotations are present
+        	files0 = StringUtil.sortStringList(files0);
+        	files.addAll(files0);
+        }
+       	Message.printStatus(2, routine, "Found " + files.size() + " command files matching all search folders and criteria.");
         // Transfer the filenames into CommandFile objects for further processing.
         int expectedStatusCount = 0;
         int idCount = 0;

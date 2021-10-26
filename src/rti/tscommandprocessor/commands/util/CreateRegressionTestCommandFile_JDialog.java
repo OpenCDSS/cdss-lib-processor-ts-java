@@ -145,12 +145,22 @@ public void actionPerformed( ActionEvent event )
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
-					__SearchFolder_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+					if ( __SearchFolder_JTextField.getText().trim().length() == 0 ) {
+						// Set the value.
+						__SearchFolder_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+					}
+					else {
+						// Append to the existing folder list with comma delimiter.
+						__SearchFolder_JTextField.setText(__SearchFolder_JTextField.getText() + "," + IOUtil.toRelativePath(__working_dir, path));
+					}
 				}
 				catch ( Exception e ) {
 					Message.printWarning ( 1,"CreateRegressionTestCommandFile_JDialog", "Error converting file to relative path." );
 				}
-				JGUIUtil.setLastFileDialogDirectory(path);
+				File pathFolder = new File(path);
+				if ( pathFolder.exists() ) {
+					JGUIUtil.setLastFileDialogDirectory(path);
+				}
 				refresh();
 			}
 		}
@@ -522,14 +532,14 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 		"Test command files should follow documented standards." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A top-level folder is specified and will be searched for command files matching the specified pattern(s)."),
+		"One or more top-level folders are specified and will be searched for command files matching the specified pattern(s)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"The resulting output command file will include RunCommands() commands for each matched file," +
     	" and can be independently loaded and run."),
     	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Command files are sorted alphabetically to facilitate review.  Use appropriate filenames or #@order comment to control run order."),
+		"Command files within top-level folder are sorted alphabetically to facilitate review.  Use appropriate filenames or #@order comment to control run order."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A \"setup\" command file can be inserted at the top of the generated command file, for example to initialize " +
@@ -550,12 +560,12 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Folder to search for TSTool command files:" ), 
+		"Folder(s) to search for TSTool command files:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SearchFolder_JTextField = new JTextField ( 50 );
-	__SearchFolder_JTextField.setToolTipText("Specify top-level folder to search for TSTool command files, can use ${Property} notation");
+	__SearchFolder_JTextField.setToolTipText("Specify one or more top-level folders separated by commas to search for TSTool command files, can use ${Property} notation");
 	__SearchFolder_JTextField.addKeyListener ( this );
-    // Search folder layout fights back with other rows so put in its own panel
+    // Search folder layout fights back with other rows so put in its own panel.
 	JPanel SearchFolder_JPanel = new JPanel();
 	SearchFolder_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(SearchFolder_JPanel, __SearchFolder_JTextField,
@@ -565,7 +575,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(SearchFolder_JPanel, __browseSearchFolder_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathSearchFolder_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(SearchFolder_JPanel, __pathSearchFolder_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -935,7 +945,7 @@ private void refresh ()
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be.
 	if ( __pathSearchFolder_JButton != null ) {
-		if ( (SearchFolder != null) && !SearchFolder.isEmpty() ) {
+		if ( (SearchFolder != null) && !SearchFolder.isEmpty() && (SearchFolder.indexOf(",") < 0) ) {
 			__pathSearchFolder_JButton.setEnabled ( true );
 			File f = new File ( SearchFolder );
 			if ( f.isAbsolute() ) {

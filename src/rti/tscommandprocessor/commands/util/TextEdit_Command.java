@@ -301,7 +301,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	// Read the file into a StringBuilder.
 	    	Message.printStatus(2,routine,"Reading file into StringBuilder.");
     		StringBuilder sb = IOUtil.fileToStringBuilder(InputFile_full);
-	    	Message.printStatus(2,routine,"Replacing string.");
+	    	Message.printStatus(2,routine,"Replacing string \"" + SearchFor + "\" with \"" + ReplaceWith + "\".");
 	    	replaceString ( sb, SearchFor, ReplaceWith );
 	    	// Write the output file.
 	    	Message.printStatus(2,routine,"Writing StringBuilder to file.");

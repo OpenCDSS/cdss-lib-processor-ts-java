@@ -351,22 +351,48 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	Prop prop = IOUtil.getProp("DiffProgram");
+{	// The command will be modified if edits are committed.
+	String routine = getClass().getSimpleName() + ".editCommand";
 	String diffProgram = null;
+	Prop prop = IOUtil.getProp("DiffProgram");
+	// Get the initial program to use for visual difference comparison.
 	if ( prop != null ) {
 		diffProgram = prop.getValue();
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2, routine, "Difference program from DiffProgram=\"" + diffProgram + "\"");
+		}
 	}
+	// If defined, use the property for the operating system.
 	if ( IOUtil.isUNIXMachine() ) {
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2, routine, "Is UNIX machine." );
+		}
 		prop = IOUtil.getProp("DiffProgram.Linux");
 		if ( prop != null ) {
 			diffProgram = prop.getValue();
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine, "Difference program from DiffProgram.Linux=\"" + diffProgram + "\"");
+			}
+		}
+		else {
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine, "No program DiffProgram.Linux=\"" + diffProgram + "\"");
+			}
 		}
 	}
 	else {
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2, routine, "Is Windows machine." );
+		}
 		prop = IOUtil.getProp("DiffProgram.Windows");
 		if ( prop != null ) {
 			diffProgram = prop.getValue();
+			if ( prop != null ) {
+				diffProgram = prop.getValue();
+				if ( Message.isDebugOn ) {
+					Message.printStatus(2, routine, "Difference program from DiffProgram.Windows=\"" + diffProgram + "\"");
+				}
+			}
 		}
 	}
 	return (new CompareFiles_JDialog ( parent, this, diffProgram )).ok();

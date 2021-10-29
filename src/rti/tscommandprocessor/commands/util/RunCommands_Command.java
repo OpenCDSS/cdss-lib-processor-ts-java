@@ -88,7 +88,7 @@ protected final String _Share = "Share";
 /**
 AppendResults parameter values.
 */
-// FIXME SAM 2007-12-13 Need to enable AppendResults
+// TODO SAM 2007-12-13 Need to enable AppendResults
 
 /**
 Constructor.
@@ -131,7 +131,7 @@ throws InvalidCommandParameterException
 	
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
-			// Working directory is available so use it...
+			// Working directory is available so use it.
 			if ( o != null ) {
 				working_dir = (String)o;
 			}
@@ -205,8 +205,8 @@ throws InvalidCommandParameterException
                 " (default if blank), " + ", or " + _Share) );
     }
 
-	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+	// Check for invalid parameters.
+    List<String> validList = new ArrayList<>(4);
 	validList.add ( "InputFile" );
     validList.add ( "ExpectedStatus" );
     validList.add ( "ShareProperties" );
@@ -228,7 +228,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if edits are saved.
 	return (new RunCommands_JDialog ( parent, this )).ok();
 }
 
@@ -247,7 +247,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -255,7 +255,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -305,7 +305,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // This will set the initial working directory of the runner to that of the command file.
 		runner.readCommandFile(InputFile_full, runDiscovery );
 		// If the command file is not enabled, don't need to initialize or process.
-		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case
+		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case.
 		boolean isEnabled = runner.isCommandFileEnabled();
         // Default expected status of running command file is success.
         String expectedStatus = CommandStatusType.SUCCESS.toString();
@@ -313,8 +313,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             expectedStatus = ExpectedStatus;
         }
 		if ( isEnabled ) {
-            // Set the database connection information...
-            // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
+            // Set the database connection information:
+            // - TODO SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
             TSCommandProcessor runnerProcessor = runner.getProcessor();
             if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
                 // All datastores are transferred.
@@ -328,7 +328,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
              * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
              * handled explicitly whereas user-defined properties are in a list that can be easily shared.
              * Also, some properties like the working directory receive special treatment.
-             * For now don't bite off the property issue
+             * For now don't bite off the property issue>
             if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
                 setProcessorProperties(processor,runnerProcessor,true);
             }
@@ -354,8 +354,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	    // Total runtime for the commands.
             long runTimeTotal = TSCommandProcessorUtil.getRunTimeTotal(runner.getProcessor().getCommands());
     		
-    		// Set the CommandStatus for this command to the most severe status of the
-    		// commands file that was just run.
+    		// Set the CommandStatus for this command:
+            // - if have "@expectedStatus", add an additional fail message if the expected status does not
+            //   agree with the actual status
+            // - if no "@expectedStatus, set to the most severe status of the commands file that was just run
     		CommandStatusType maxSeverity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
     		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity
     		if ( ExpectedStatus != null ) {
@@ -377,7 +379,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		    }
     		    else {
     		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
-                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
+                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
                         "Severity for RunCommands (" + maxSeverity +
                         ") is the maximum for the commands in the command file that was run - does not match expected (" +
                         ExpectedStatus + ") so RunCommands status=Failure.",
@@ -412,7 +414,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                  testPassFail,expectedStatus,maxSeverity,InputFile_full);
     
     		// If it was requested to append the results to the calling processor, get
-    		// the results from the runner and do so...
+    		// the results from the runner and do so.
     		
     		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
     			TSCommandProcessor processor2 = runner.getProcessor();
@@ -434,8 +436,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		Message.printStatus ( 2, routine,"...done processing commands from file." );
 	    }
         else {
-            // Add a record to the regression report (the isEnabled value is what is important for the report
-            // because the test is not actually run)...
+            // Add a record to the regression report:
+        	// - the isEnabled value is what is important for the report
+            //   because the test is not actually run
             TSCommandProcessorUtil.appendToRegressionTestReport(processor,isEnabled,0L,
                  "",expectedStatus,CommandStatusType.UNKNOWN,InputFile_full);
         }

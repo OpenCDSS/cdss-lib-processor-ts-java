@@ -1259,7 +1259,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     DataTable table = null;
     boolean doTable = false;
-    if ( (TableID != null) && TableID.isEmpty() ) {
+    if ( (TableID != null) && !TableID.isEmpty() ) {
         // Get the table to be used as input.
     	doTable = true;
     	PropList request_params = new PropList ( "" );

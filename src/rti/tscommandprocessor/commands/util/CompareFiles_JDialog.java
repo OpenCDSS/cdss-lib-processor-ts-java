@@ -236,7 +236,7 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __visualDiff_JButton ) {
 		// Run the diff program on the input and output files
-		// (they should have existed because the button will have been disabled if not)
+		// (they should have existed because the button will have been disabled if not).
 		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
 		String file1Path = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(__working_dir,
@@ -247,9 +247,9 @@ public void actionPerformed( ActionEvent event )
 		String [] programAndArgsList = { __diffProgram, file1Path, file2Path };
 		try {
 			ProcessManager pm = new ProcessManager ( programAndArgsList,
-					0, // No timeout
-	                null, // Exit status indicator
-	                false, // Use command shell
+					0, // No timeout.
+	                null, // Exit status indicator.
+	                false, // Use command shell.
 	                new File((String)__command.getCommandProcessor().getPropContents("WorkingDir")));
 			Thread t = new Thread ( pm );
             t.start();
@@ -269,7 +269,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
@@ -320,7 +320,8 @@ private void checkInput ()
 	if ( FilePropertyAction.length() > 0 ) {
 		props.set ( "FilePropertyAction", FilePropertyAction );
 	}
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -377,7 +378,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -403,7 +404,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__InputFile1_JTextField = new JTextField ( 50 );
 	__InputFile1_JTextField.setToolTipText("Name of the first file, can use ${Property} notation");
 	__InputFile1_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile1_JPanel = new JPanel();
 	InputFile1_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile1_JPanel, __InputFile1_JTextField,
@@ -413,7 +414,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(InputFile1_JPanel, __browse1_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path1_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile1_JPanel, __path1_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -426,7 +427,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__InputFile2_JTextField = new JTextField ( 50 );
 	__InputFile2_JTextField.setToolTipText("Name of the second file, can use ${Property} notation");
 	__InputFile2_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile2_JPanel = new JPanel();
 	InputFile2_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile2_JPanel, __InputFile2_JTextField,
@@ -448,7 +449,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    // Panel for file contents comparison
+    // Panel for file contents comparison.
     int yContent = -1;
     JPanel content_JPanel = new JPanel();
     content_JPanel.setLayout( new GridBagLayout() );
@@ -533,7 +534,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
 	List<String> diffChoices = new ArrayList<>();
-	diffChoices.add ( "" );	// Default
+	diffChoices.add ( "" );	// Default.
 	diffChoices.add ( __command._Ignore );
 	diffChoices.add ( __command._Warn );
 	diffChoices.add ( __command._Fail );
@@ -550,7 +551,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfSame_JComboBox = new SimpleJComboBox ( false );
 	List<String> sameChoices = new ArrayList<>();
-	sameChoices.add ( "" );	// Default
+	sameChoices.add ( "" );	// Default.
 	sameChoices.add ( __command._Ignore );
 	sameChoices.add ( __command._Warn );
 	sameChoices.add ( __command._Fail );
@@ -563,7 +564,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		"Optional - action if files are the same (default=" + __command._Ignore + ")"), 
 		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for file property comparison
+    // Panel for file property comparison.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
@@ -595,7 +596,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FileProperty_JComboBox = new SimpleJComboBox ( false );
 	List<String> propChoices = new ArrayList<>();
-	propChoices.add ( "" );	// Default
+	propChoices.add ( "" );	// Default.
 	propChoices.add ( __command._ModificationTime );
 	propChoices.add ( __command._Size );
 	__FileProperty_JComboBox.setData(propChoices);
@@ -604,14 +605,14 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FileProperty_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Required (for property comparison) - property"), 
+		"Required (for property comparison) - file property to compare."), 
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property comparison operator:"),
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FilePropertyOperator_JComboBox = new SimpleJComboBox ( false );
 	List<String> opChoices = new ArrayList<>();
-	opChoices.add ( "" ); // Default
+	opChoices.add ( "" ); // Default.
 	opChoices.add ( "<" );
 	opChoices.add ( "<=" );
 	opChoices.add ( "=" );
@@ -624,14 +625,14 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FilePropertyOperator_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Required (for property comparison) - how to compare"), 
+		"Required (for property comparison) - comparison operator."), 
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Action if met:"),
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FilePropertyAction_JComboBox = new SimpleJComboBox ( false );
 	List<String> actionChoices = new ArrayList<>();
-	actionChoices.add ( "" );	// Default
+	actionChoices.add ( "" ); // Default.
 	actionChoices.add ( __command._Warn );
 	actionChoices.add ( __command._Fail );
 	__FilePropertyAction_JComboBox.setData(actionChoices);
@@ -640,7 +641,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FilePropertyAction_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Optional - action if condition is met (default=" + __command._Warn + ")"), 
+		"Optional - action if condition is met (default=" + __command._Warn + ")."), 
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -668,14 +669,14 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
-	// Refresh the contents (put after buttons because want to enable/disable...
+	// Refresh the contents (put after buttons because want to enable/disable).
 	refresh ();
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -708,7 +709,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "CompareFiles_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";
@@ -751,11 +752,11 @@ private void refresh ()
         }
         else {
             if ( (MatchCase == null) || MatchCase.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __MatchCase_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                 "MatchCase parameter \"" + MatchCase + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -765,11 +766,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (IgnoreWhitespace == null) || IgnoreWhitespace.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IgnoreWhitespace_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IgnoreWhitespace parameter \"" + IgnoreWhitespace + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -786,11 +787,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfDifferent_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IfDifferent parameter \"" + IfDifferent + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -801,11 +802,11 @@ private void refresh ()
 		}
 		else {
 			if ( (IfSame == null) || IfSame.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfSame_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -818,7 +819,7 @@ private void refresh ()
 		}
 		else {
 			if ( (FileProperty == null) || FileProperty.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__FileProperty_JComboBox.select ( 0 );
 			}
 			else {
@@ -832,11 +833,11 @@ private void refresh ()
 		}
 		else {
 			if ( (FilePropertyOperator == null) || FilePropertyOperator.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__FilePropertyOperator_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"FilePropertyOperator parameter \"" + FilePropertyOperator + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -846,18 +847,18 @@ private void refresh ()
 		}
 		else {
 			if ( (FilePropertyAction == null) || FilePropertyAction.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__FilePropertyAction_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"FilePropertyAction parameter \"" + FilePropertyAction + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	InputFile1 = __InputFile1_JTextField.getText().trim();
 	InputFile2 = __InputFile2_JTextField.getText().trim();
 	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
@@ -885,7 +886,7 @@ private void refresh ()
 	props.set ( "FilePropertyOperator" , FilePropertyOperator );
 	props.add ( "FilePropertyAction=" + FilePropertyAction );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path1_JButton != null ) {
 		if ( (InputFile1 != null) && !InputFile1.isEmpty() ) {
 			__path1_JButton.setEnabled ( true );
@@ -956,14 +957,12 @@ React to the user response.
 public void response ( boolean ok )
 {	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
 	setVisible( false );
 	dispose();
 }

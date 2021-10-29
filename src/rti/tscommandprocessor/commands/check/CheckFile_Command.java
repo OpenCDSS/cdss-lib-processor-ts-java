@@ -136,7 +136,7 @@ throws InvalidCommandParameterException
             message, "Provide the statistic to calculate." ) );
     }
     else {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         List<String> statistics = getStatisticChoicesAsStrings();
         for ( String statistic : statistics ) {
@@ -152,7 +152,7 @@ throws InvalidCommandParameterException
                 message, "Select a supported statistic using the command editor." ) );
         }
        
-        // Additional checks that depend on the statistic
+        // Additional checks that depend on the statistic.
         
         if ( supported ) {
             if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) ) {
@@ -173,7 +173,7 @@ throws InvalidCommandParameterException
             message, "Provide the check criteria to evaluate." ) );
     }
     else {
-        // Make sure that it is in the supported list
+        // Make sure that it is in the supported list.
         CheckType checkType = CheckType.valueOfIgnoreCase(CheckCriteria);
         if ( checkType == null ) {
             message = "The check criteria (" + CheckCriteria + ") is not recognized.";
@@ -221,7 +221,7 @@ throws InvalidCommandParameterException
         }
     }
 
-    // Check for invalid parameters...
+    // Check for invalid parameters.
     List<String> validList = new ArrayList<>(15);
     validList.add ( "InputFile" );
     validList.add ( "IfNotFound" );
@@ -270,13 +270,13 @@ public boolean checkStatistic ( Object statisticValue,
     List<String> problems )
 {
     if ( statisticValue == null ) {
-        // Statistic was not computed so this is definitely an error
+        // Statistic was not computed so this is definitely an error.
         problems.add ( "Statistic was not computed - unable to check its value." );
         return false;
     }
     boolean meetsCriteria = false;
     if ( statisticValue instanceof Integer ) {
-        // Do comparisons on integers
+        // Do comparisons on integers.
         Integer statisticInteger = (Integer)statisticValue;
         if ( checkCriteria == CheckType.IN_RANGE ) {
             if ( (statisticInteger.intValue() >= checkValue1) && (statisticInteger <= checkValue2.intValue()) ) {
@@ -320,8 +320,8 @@ public boolean checkStatistic ( Object statisticValue,
         }
     }
     else {
-        // Don't know how to handle
-        problems.add ( "Statistic is not a floating point number or integer - unable to check its value." );
+        // Don't know how to handle.
+        problems.add ( "Statistic is not an integer - unable to check the statistic value." );
     }
     return meetsCriteria;
 }
@@ -403,7 +403,7 @@ public List<String> getStatisticChoicesAsStrings() {
 	return choices;
 }
 
-// Parse command is in the base class
+// Parse command is in the base class.
 
 /**
 Run the command.
@@ -450,7 +450,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     status.clearLog(CommandPhaseType.RUN);
     PropList parameters = getCommandParameters();
 
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -458,7 +458,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -467,12 +467,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         setDiscoveryTable ( null );
     }
     
-    // Get the input parameters...
+    // Get the input parameters.
 
 	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
-	    IfNotFound = _Warn; // Default
+	    IfNotFound = _Warn; // Default.
 	}
     String Statistic = parameters.getValue ( "Statistic" );
 	Statistic = TSCommandProcessorUtil.expandParameterValue(processor, this, Statistic);
@@ -495,12 +495,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String IfCriteriaMet = parameters.getValue ( "IfCriteriaMet" );
     if ( (IfCriteriaMet == null) || IfCriteriaMet.equals("") ) {
-        IfCriteriaMet = _Warn; // Default
+        IfCriteriaMet = _Warn; // Default.
     }
     String ProblemType = parameters.getValue ( "ProblemType" );
 	ProblemType = TSCommandProcessorUtil.expandParameterValue(processor, this, ProblemType);
     if ( (ProblemType == null) || ProblemType.equals("") ) {
-        ProblemType = Statistic + "-" + CheckCriteria; // Default
+        ProblemType = Statistic + "-" + CheckCriteria; // Default.
     }
     String CheckResultPropertyName = parameters.getValue ( "CheckResultPropertyName" );
 	CheckResultPropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckResultPropertyName);
@@ -533,7 +533,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     DataTable table = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -558,7 +558,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -566,11 +566,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     
-    // Now process...
+    // Now process.
     
     try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
+            // Create an empty table and set the ID.
             table = new DataTable();
             table.setTableID ( TableID );
             setDiscoveryTable ( table );
@@ -722,7 +722,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                    	   	CheckValue1_Integer, CheckValue2_Integer,
                    	   	IfCriteriaMet, ProblemType, problems );
                	   	if ( ifCriteriaMet ) {
-                       	// Generate a warning
+                       	// Generate a warning.
                        	CommandStatusType commandStatusType = CommandStatusType.WARNING;
                        	if ( IfCriteriaMet.equals(_Fail) ) {
                            	commandStatusType = CommandStatusType.FAILURE;
@@ -747,7 +747,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                	ProblemType, b.toString(), "File should be treated accordingly." ) );
                        	}
 
-                       	// Set the table in the processor...
+                       	// Set the table in the processor.
             
                        	if ( newTable ) {
                     	   	request_params = new PropList ( "" );
@@ -826,7 +826,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                        	message = problems.get(iprob);
                        	Message.printWarning ( warning_level,
                            	MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                   	   	// No recommendation since it is a user-defined check
+                   	   	// No recommendation since it is a user-defined check.
                        	// FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
                        	status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
                    	}

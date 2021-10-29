@@ -87,7 +87,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
 	String routine = TSCommandFileRunner.class.getSimpleName() + ".areRequirementsMet";
 	RequirementCheckList checkList = new RequirementCheckList();
 	String message;
-	//boolean requirementsMet = true; // Default until indicated otherwise
+	//boolean requirementsMet = true; // Default until indicated otherwise.
 	if ( (commands == null) || (commands.size() == 0) ) {
 		commands = processor.getCommands();
 	}
@@ -95,81 +95,109 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
     String commandStringUpper;
     int pos;
     //String appName;
-    //String appDataName;
+    String reqProperty;
     String datastoreName;
     String operator;
-    String version;
+    String reqVersion;
     for ( Command command : commands ) {
    		if ( command instanceof Comment_Command ) {
    			commandString = command.toString();
    			commandStringUpper = commandString.toUpperCase();
-   			// The following handles #@require and # @require (whitespace after comment).
+   			// The following handles #@require and # @require (whitespace after comment):
+   			// - get the string starting with @require for parsing below
    			pos = commandStringUpper.indexOf("@REQUIRE");
    			if ( pos > 0 ) {
    				// Detected a @require annotation:
    				// - check the token following @require
-
-   				// Create a requirement check object, which will be further populated below.
-   				RequirementCheck check = new RequirementCheck (commandString.substring(pos).trim());
+   				String reqString = commandString.substring(pos).trim();
+   				// Create a requirement check object:
+   				// - add here to make sure it is added
+   				// - further populate below
+   				RequirementCheck check = new RequirementCheck (reqString);
    				checkList.add(check);
    				Message.printStatus(2, routine, "Detected @REQUIRE: " + commandString);
    				if ( commandString.length() > (pos + 8) ) {
-   					// Have trailing characters.
-   					// Split the comment starting with @ (does not include # or any trailing spaces).
-   					String [] parts = commandString.substring(pos).split(" ");
-   					Message.printStatus(2, routine, "@REQUIRE comment has " + parts.length + " parts.");
-   					if ( parts.length > 1 ) {
-   						if ( parts[1].trim().toUpperCase().startsWith("APP") ) {
-   							Message.printStatus(2, routine, "Detected APP");
-   							if ( parts.length < 6 ) {
-   								message = "Error processing @require - expecting 6+ tokens (have " + parts.length + "): " + commandString;
+   					// Have trailing characters after @require so can continue processing:
+   					// - split the comment string
+   					// - does not include # or any trailing spaces
+   					// - part[0] is @require
+   					String [] requireParts = commandString.substring(pos).split(" ");
+   					Message.printStatus(2, routine, "@REQUIRE comment has " + requireParts.length + " parts.");
+   					if ( requireParts.length > 1 ) {
+   						// Have at least the requirement type.
+   						if ( requireParts[1].trim().toUpperCase().startsWith("APP") ) {
+   							String example = "\n  Example: #@require application TSTool version > 1.2.3";
+   							Message.printStatus(2, routine, "Detected application requirement.");
+   							if ( requireParts.length < 6 ) {
+   								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
    								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
-   								//appName = parts[2].trim(); // For example:  TSTool or StateDMI (for readability, ignored)
-   								//appDataName = parts[3].trim(); // For example:  version (for readability, ignored)
-   								operator = parts[4].trim(); // Operator to compare the data
-   								version = parts[5].trim(); // Version criteria to compare.
-   								// Get the version for the application, currently there is no more flexibility to check other application properties.
-   								//String appVersion = processor.getStateDmiVersionString();
-   								String appVersion = IOUtil.getProgramVersion();
-   								if ( (appVersion == null) || appVersion.isEmpty() ) {
-   									message = "Don't know how to determine application version for @require: " + commandString;
+   								//appName = parts[2].trim(); // For example:  TSTool or StateDMI (used for requirement readability, ignored in check)
+   								reqProperty = requireParts[3].trim();
+   								if ( reqProperty.equalsIgnoreCase("version") ) {
+   									// Checking the application version.
+   									operator = requireParts[4].trim(); // Operator to compare the data
+   									reqVersion = requireParts[5].trim(); // Version criteria to compare.
+   									// Get the version for the application, currently there is no more flexibility to check other application properties.
+   									//String appVersion = processor.getStateDmiVersionString();
+   									String appVersion = IOUtil.getProgramVersion();
+   									if ( (appVersion == null) || appVersion.isEmpty() ) {
+   										message = "Can't check application version for @require (application version is unknown): " + commandString + example;
+   										check.setIsRequirementMet(false, message);
+   										Message.printWarning(3, routine, message);
+   									}
+   									else if ( (reqVersion == null) || reqVersion.isEmpty() ) {
+   										message = "Don't know how to determine application version for @require (no version given): " + commandString + example;
+   										check.setIsRequirementMet(false, message);
+   										Message.printWarning(3, routine, message);
+   									}
+   									else {
+   										// If the application version contains a space such as '(x.x.x (YYYY-MM-DD)', only use the first part.
+   										if ( appVersion.indexOf(' ') > 0) {
+   											appVersion = appVersion.substring(0,appVersion.indexOf(' '));
+   										}
+   										// Check the app version against the requirement, using semantic version comparison.
+   										// - only compare the first 3 parts because modifier can cause issues comparing.
+   										if ( !StringUtil.compareSemanticVersions(appVersion, operator, reqVersion, 3) ) {
+   											message = "Application version (" + appVersion + ") does not meet requirement." + example;
+   											check.setIsRequirementMet(false, message);
+   										}
+   										else {
+   											// Must set the requirement as met because the default is false.
+   											check.setIsRequirementMet(true, "");
+   										}
+   									}
+   								}
+   								else {
+   									message = "@require application property (" + reqProperty + ") is not recognized: " + commandString + example;
    									check.setIsRequirementMet(false, message);
    									Message.printWarning(3, routine, message);
    								}
-   								// If the version contains a space such as '(x.x.x (YYYY-MM-DD)', only use the first part.
-   								if ( appVersion.indexOf(' ') > 0) {
-   									appVersion = appVersion.substring(0,appVersion.indexOf(' '));
-   								}
-   								// Check the app version against the requirement, using semantic version comparison.
-   								// - only compare the first 3 parts because modifier can cause issues comparing.
-   								if ( !StringUtil.compareSemanticVersions(appVersion, operator, version, 3) ) {
-   									message = "Application (" + appVersion + ") does not meet requirement.";
-   									check.setIsRequirementMet(false, message);
-   								}
    							}
                     	}
-   						else if ( parts[1].trim().equalsIgnoreCase("DATASTORE") ) {
+   						else if ( requireParts[1].trim().equalsIgnoreCase("DATASTORE") ) {
    							// For example:
-   							// @require datastore HydroBase >= 20200720
-   							Message.printStatus(2, routine, "Detected DATASTORE");
-   							if ( parts.length < 5 ) {
-   								message = "Error processing @require - expecting 5+ tokens (have " + parts.length + "): " + commandString;
+   							// @require datastore HydroBase version >= 20200720
+   							String example = "\n  Example: #@require datastore HydroBase version > 20200720";
+   							Message.printStatus(2, routine, "Detected datastore requirement.");
+   							if ( requireParts.length < 6 ) {
+   								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
 								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
-   								// datastoreName is needed to check whether it implements the DataStoreRequirementChecker interface.
-   								datastoreName = parts[2].trim();
-   								DataStore dataStore = processor.getDataStoreForName ( datastoreName, null );
-   								if ( dataStore == null ) {
+								// datastoreName is needed to check whether it implements the DataStoreRequirementChecker interface.
+								datastoreName = requireParts[2].trim();
+   								reqProperty = requireParts[3].trim();
+								DataStore dataStore = processor.getDataStoreForName ( datastoreName, null );
+								if ( dataStore == null ) {
    									message = "Unable to get datastore for name \"" + datastoreName + "\"";
    									check.setIsRequirementMet(false, message);
    									Message.printWarning(3, routine, message);
-   								}
-   								else {
+								}
+								else if ( reqProperty.equalsIgnoreCase("version") ) {
    									// Get the version for the processor
    									//String dbVersion = dataStore.getVersion();
    									//HydroBaseDMI dmi = (HydroBaseDMI)dataStore.getDMI();
@@ -178,7 +206,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    									//if ( !StringUtil.compareUsingOperator(versionType, dbVersion, operator, version) ) { }
    									if ( dataStore instanceof DataStoreRequirementChecker ) {
    										DataStoreRequirementChecker checker = (DataStoreRequirementChecker)dataStore;
-   										// The following will handle reason for failure.
+   										// The following will handle reason for failure and will set check to true if condition is met.
    										checker.checkRequirement(check);
    									}
    									else {
@@ -187,14 +215,20 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    										Message.printWarning(3, routine, message);
    									}
    								}
+   								else {
+   									message = "@require datastore property (" + reqProperty + ") is not recognized: " + commandString + example;
+   									check.setIsRequirementMet(false, message);
+   									Message.printWarning(3, routine, message);
+   								}
    							}
    						}
-   						else if ( parts[1].trim().equalsIgnoreCase("USER") ) {
+   						else if ( requireParts[1].trim().equalsIgnoreCase("USER") ) {
    							// For example:
    							// @require user == username
-   							Message.printStatus(2, routine, "Detected USER");
-   							if ( parts.length < 4 ) {
-   								message = "Error processing @require - expecting 4+ tokens (have " + parts.length + "): " + commandString;
+   							Message.printStatus(2, routine, "Detected user requirement.");
+   							String example = "\n  Example: #@require user != root";
+   							if ( requireParts.length < 4 ) {
+   								message = "Error processing @require - expecting 4+ tokens (have " + requireParts.length + "): " + commandString + example;
 								check.setIsRequirementMet(false, message);
    								Message.printWarning(3, routine, message);
    							}
@@ -206,21 +240,28 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							}
    						}
    						else {
-   							message = "Error processing @require - unknown type: " + parts[1];
+   							message = "Error processing @require - unknown type: " + requireParts[1];
+							check.setIsRequirementMet(false, message);
+							Message.printWarning(3, routine, message);
+   						}
+   						// If failure here and no message have a coding problem because message needs to be non-empty.
+   						if ( ! check.isRequirementMet() && check.getFailReason().isEmpty() ) {
+   							message = "@require was not met but have empty fail message - need to fix software.";
 							check.setIsRequirementMet(false, message);
 							Message.printWarning(3, routine, message);
    						}
                     }
    					else {
-  						message = "Error processing @require - expecting 2+ tokens (have " + parts.length + ").";
+  						message = "Error processing @require - expecting 2+ tokens (have " + requireParts.length + ").";
 						check.setIsRequirementMet(false, message);
    						Message.printWarning(3, routine, message);
    					}
                 }
    				else {
   					message = "Error processing @require - expecting at least 2+ tokens but line is too short: " + commandString;
+					check.setIsRequirementMet(false, message);
 					Message.printWarning(3, routine, message);
-   					Message.printWarning(3, routine, message);
+					// Throw an exception because bad syntax.
    					throw new RuntimeException (message);
    				}
             }

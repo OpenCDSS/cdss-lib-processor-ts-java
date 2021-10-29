@@ -444,7 +444,7 @@ CommandWarningException, CommandException
     String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
     String TableValueColumn = parameters.getValue ( "TableValueColumn" );
     String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
-    int tableValuePrecision = 4; // Default
+    int tableValuePrecision = 4; // Default.
     if ( (TableValuePrecision != null) && !TableValuePrecision.isEmpty() ) {
     	tableValuePrecision = Integer.parseInt(TableValuePrecision);
     }

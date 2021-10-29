@@ -175,14 +175,14 @@ throws InvalidCommandParameterException
 	if ( (IfDifferent != null) && (IfDifferent.equalsIgnoreCase(_Warn) || IfDifferent.equalsIgnoreCase(_Fail)) ) {
 		++diffCount;
 	}
-	if ( (sameCount + diffCount) == 0 ) {
-        message = "At lease one of IfDifferent or IfSame must be " + _Warn + " or + " + _Fail + ".";
+	if ( ((FileProperty == null) || FileProperty.isEmpty()) && (sameCount + diffCount) == 0 ) {
+        message = "At least one of IfDifferent or IfSame must be " + _Warn + " or " + _Fail + ".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Check the values of IfDifferent and IfSame." ) );
 	}
-	if ( (sameCount + diffCount) > 1 ) {
+	if ( ((FileProperty == null) || FileProperty.isEmpty()) && (sameCount + diffCount) > 1 ) {
         message = "Only one of IfDifferent or IfSame can be " + _Warn + " or + " + _Fail + ".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -223,7 +223,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(12);
 	validList.add ( "InputFile1" );
 	validList.add ( "InputFile2" );
@@ -421,7 +421,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 					message, "Report the problem to support."));
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	// Get the input needed to process the command...
+	// Get the input needed to process the command.
 	if ( tokens.size() > 1 ) {
 		try {
 		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine,"," ) );
@@ -435,9 +435,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
-	// Update old parameter names to new
-	// Change WarnIfDifferent=True to IfDifferent=Warn
-	// Change WarnIfSame=True to IfSame=Warn
+	// Update old parameter names to new:
+	// - change WarnIfDifferent=True to IfDifferent=Warn
+	// - change WarnIfSame=True to IfSame=Warn
 	PropList props = getCommandParameters();
 	String propValue = props.getValue ( "WarnIfDifferent" );
 	if ( propValue != null ) {
@@ -469,7 +469,7 @@ private String readLine ( BufferedReader in, String CommentLineChar, boolean ign
 	int commentCount = 0;
 	int excludeCount = 0;
 	while ( true ) {
-		// Read until a non-comment line is found
+		// Read until a non-comment line is found.
 		try {
 		    iline = in.readLine ();
 		}
@@ -479,13 +479,13 @@ private String readLine ( BufferedReader in, String CommentLineChar, boolean ign
 		if ( iline == null ) {
 			return null;
 		}
-		// check for comments
+		// Check for comments.
 		else if ( (iline.length() > 0) && (CommentLineChar.indexOf(iline.charAt(0)) >= 0) ) {
 			++commentCount;
 			continue;
 		}
 		else {
-			// Loop through to see if any excluded text matches
+			// Loop through to see if any excluded text matches.
 			boolean exclude = false;
 			for ( int iExclude = 0; iExclude < excludeText.length; iExclude++ ) {
 				if ( iline.matches(excludeText[iExclude]) ) {
@@ -530,7 +530,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -538,7 +538,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -548,21 +548,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
 	String MatchCase = parameters.getValue ( "MatchCase" );
-    boolean MatchCase_boolean = true; // Default
+    boolean MatchCase_boolean = true; // Default.
     if ( (MatchCase != null) && MatchCase.equalsIgnoreCase(_False)) {
         MatchCase_boolean = false;
     }
     String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
-	boolean IgnoreWhitespace_boolean = false; // Default
+	boolean IgnoreWhitespace_boolean = false; // Default.
 	if ( (IgnoreWhitespace != null) && IgnoreWhitespace.equalsIgnoreCase(_True)) {
 		IgnoreWhitespace_boolean = true;
 	}
     String ExcludeText = parameters.getValue ( "ExcludeText" );
-    String [] excludeText = {}; // list of regular expressions, glob-style
+    String [] excludeText = {}; // List of regular expressions, glob-style.
 	if ( (ExcludeText != null) && !ExcludeText.isEmpty()) {
-		// Split by comma first
+		// Split by comma first.
 		excludeText = ExcludeText.split(",");
-		// Convert to Java regular expressions
+		// Convert to Java regular expressions.
 		for ( int i = 0; i < excludeText.length; i++ ) {
 			excludeText[i] = excludeText[i].replace("*", ".*");
 		}
@@ -575,11 +575,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (CommentLineChar == null) || CommentLineChar.equals("") ) {
 	    CommentLineChar = "#";
 	}
-	boolean doCompareContent = false; // Whether to compare file content
+	boolean doCompareContent = false; // Whether to compare file content.
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	CommandStatusType IfDifferent_CommandStatusType = CommandStatusType.UNKNOWN;
 	if ( IfDifferent == null ) {
-		IfDifferent = _Ignore; // default
+		IfDifferent = _Ignore; // Default.
 	}
 	else {
 		if ( !IfDifferent.equalsIgnoreCase(_Ignore) ) {
@@ -590,7 +590,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String IfSame = parameters.getValue ( "IfSame" );
 	CommandStatusType IfSame_CommandStatusType = CommandStatusType.UNKNOWN;
 	if ( IfSame == null ) {
-		IfSame = _Ignore; // default
+		IfSame = _Ignore; // Default.
 	}
 	else {
 		if ( !IfSame.equalsIgnoreCase(_Ignore) ) {
@@ -603,13 +603,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
 	CommandStatusType FilePropertyAction_CommandStatusType = CommandStatusType.UNKNOWN;
 	if ( FilePropertyAction == null ) {
-		IfSame = _Warn; // default
+		IfSame = _Warn; // Default.
 	}
 	else {
 		FilePropertyAction_CommandStatusType = CommandStatusType.parse(FilePropertyAction);
 	}
 
-	int diff_count = 0; // Number of lines that are different
+	int diff_count = 0; // Number of lines that are different.
 
 	String InputFile1_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -647,15 +647,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 		if ( doCompareContent ) {
 			// Compare the file content.
-			// Open the files...
+			// Open the files.
 			BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
 			BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
-			// Loop through the files, comparing non-comment lines...
+			// Loop through the files, comparing non-comment lines.
 			String iline1 = null, iline2 = null;
 			boolean file1EndReached = false;
 			boolean file2EndReached = false;
 			while ( true ) {
-				// The following will discard comments and only return non-comment lines
+				// The following will discard comments and only return non-comment lines.
 				// Therefore comparisons are made on chunks of non-comment lines.
 				if ( !file1EndReached ) {
 					iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
@@ -664,25 +664,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
 				}
 				if ( (iline1 == null) && (iline2 == null) ) {
-					// both are done at the same time...
+					// Both are done at the same time.
 					break;
 				}
-				// TODO SAM 2006-04-20 The following needs to handle comments at the end...
+				// TODO SAM 2006-04-20 The following needs to handle comments at the end.
 				if ( (iline1 == null) && (iline2 != null) ) {
-					// First file is done (second is not) so files are different...
+					// First file is done (second is not) so files are different:
 					// - increment the count because a line exists in one file but not the other
 					file1EndReached = true;
 					++diff_count;
 				}
 				if ( (iline2 == null) && (iline1 != null) ) {
-					// Second file is done (first is not) so files are different...
+					// Second file is done (first is not) so files are different:
 					// - increment the count because a line exists in one file but not the other
 					file2EndReached = true;
 					++diff_count;
 				}
 				++lineCountCompared;
 				if ( (iline1 != null) && (iline2 != null) ) {
-					// Have lines from each file to compare
+					// Have lines from each file to compare.
 					if ( MatchCase_boolean ) {
     					if ( !iline1.equals(iline2) ) {
     						++diff_count;

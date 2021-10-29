@@ -42,8 +42,8 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 
 /**
-This class initializes, checks, and runs the * / (comment block end) command.
-Mainly it is used to uniquely identify this command instead of storing in GenericCommand.
+This class initializes, checks, and runs the # single line comment. 
+An instance is used to uniquely identify this command instead of storing in GenericCommand.
 */
 public class Comment_Command extends AbstractCommand
 implements Command
@@ -67,11 +67,11 @@ cross-reference to the original commands.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	// Currently nothing to check
+{	// Currently nothing to check.
     String warning = "";
     CommandStatus status = getCommandStatus();
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	//Vector valid_Vector = new Vector();
 	//valid_Vector.add ( "CommandLine" );
 	//warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -91,7 +91,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	List<String> v = new ArrayList<String>();
     v.add( getCommandString() );
 	return (new Comment_JDialog ( parent, v )).ok();
@@ -108,7 +108,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {
-    // No parameters
+    // No parameters.
 }
 
 /**
@@ -122,8 +122,8 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{   // This command does not do anything right now.  The processor detects it and
-    // starts a comment block
+{   // This command does not do anything right now.
+	// The processor detects it and starts a comment block.
     CommandStatus status = getCommandStatus();
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
@@ -132,7 +132,7 @@ CommandWarningException, CommandException
 Return the string representation of the command.
 */
 public String toString ( PropList parameters )
-{	// Return the entire string
+{	// Return the entire string.
     return getCommandString();
 }
 

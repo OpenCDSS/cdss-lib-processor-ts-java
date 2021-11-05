@@ -44,6 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -73,10 +74,15 @@ private SimpleJButton __pathMessage_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox __MailProgram_JComboBox = null;
 private JTextField __From_JTextField = null;
 private JTextField __To_JTextField = null;
 private JTextField __CC_JTextField = null;
 private JTextField __BCC_JTextField = null;
+private JTextField __SMTPServer_JTextField = null;
+private JTextField __SMTPAccount_JTextField = null;
+private JTextField __SMTPPassword_JTextField = null;
 private JTextField __Subject_JTextField = null;
 private JTextArea __Message_JTextArea = null;
 private JTextField __MessageFile_JTextField = null;
@@ -229,6 +235,7 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
+	String MailProgram = __MailProgram_JComboBox.getSelected();
 	String To = __To_JTextField.getText().trim();
 	String CC = __CC_JTextField.getText().trim();
 	String BCC = __BCC_JTextField.getText().trim();
@@ -237,6 +244,9 @@ private void checkInput ()
 	String MessageFile = __MessageFile_JTextField.getText().trim();
 	String AttachmentFiles = __AttachmentFiles_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
+	String SMTPServer = __SMTPServer_JTextField.getText().trim();
+	String SMTPAccount = __SMTPAccount_JTextField.getText().trim();
+	String SMTPPassword = __SMTPPassword_JTextField.getText().trim();
 	__error_wait = false;
     if ( To.length() > 0 ) {
         props.set ( "To", To );
@@ -262,6 +272,18 @@ private void checkInput ()
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
 	}
+	if ( SMTPServer.length() > 0 ) {
+		props.set( "SMTPServer", SMTPServer );
+	}
+	if ( MailProgram.length() > 0 ) {
+		props.set( "MailProgram", MailProgram );
+	}
+	if ( SMTPAccount.length() > 0 ) {
+		props.set( "SMTPAccount", SMTPAccount );
+	}
+	if ( SMTPPassword.length() > 0 ) {
+		props.set( "SMTPPassword", SMTPPassword );
+	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -276,7 +298,8 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String From = __From_JTextField.getText().trim();
+{	String MailProgram = __MailProgram_JComboBox.getSelected();
+	String From = __From_JTextField.getText().trim();
 	String To = __To_JTextField.getText().trim();
 	String CC = __CC_JTextField.getText().trim();
 	String BCC = __BCC_JTextField.getText().trim();
@@ -285,6 +308,10 @@ private void commitEdits ()
 	String MessageFile = __MessageFile_JTextField.getText().trim();
 	String AttachmentFiles = __AttachmentFiles_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
+	String SMTPServer = __SMTPServer_JTextField.getText().trim();
+	String SMTPAccount = __SMTPAccount_JTextField.getText().trim();
+	String SMTPPassword = __SMTPPassword_JTextField.getText().trim();
+	__command.setCommandParameter ( "MailProgram", MailProgram );
 	__command.setCommandParameter ( "From", From );
 	__command.setCommandParameter ( "To", To );
 	__command.setCommandParameter ( "CC", CC );
@@ -294,6 +321,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "MessageFile", MessageFile );
 	__command.setCommandParameter ( "AttachmentFiles", AttachmentFiles );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
+	__command.setCommandParameter ( "SMTPServer", SMTPServer );
+	__command.setCommandParameter ( "SMTPAccount", SMTPAccount );
+	__command.setCommandParameter ( "SMTPPassword", SMTPPassword );
 }
 
 /**
@@ -338,76 +368,103 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "From:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for Message
+    int yMessage = -1;
+    JPanel message_JPanel = new JPanel();
+    message_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Message", message_JPanel );
+    
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "Mail Program:"),
+		0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MailProgram_JComboBox = new SimpleJComboBox ( false );
+	List<String> mailProgramChoices = new ArrayList<String>();
+	mailProgramChoices.add ( "" );	// Default
+	mailProgramChoices.add ( __command._JavaAPI );
+	mailProgramChoices.add ( __command._Sendmail );
+	mailProgramChoices.add ( __command._WindowsMail );
+	__MailProgram_JComboBox.setData(mailProgramChoices);
+	__MailProgram_JComboBox.select ( 0 );
+	__MailProgram_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(message_JPanel, __MailProgram_JComboBox,
+		1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
+		"Required - method for sending the email message (default=" + __command._JavaAPI + ")"), 
+		3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "From:"),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __From_JTextField = new JTextField ( 40 );
     __From_JTextField.setToolTipText("Recipient email addresses, separated by commas, can include ${Property}");
     __From_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __From_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, __From_JTextField,
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Required - from email address"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "To:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "To:"),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __To_JTextField = new JTextField ( 40 );
     __To_JTextField.setToolTipText("Recipient email addresses, separated by commas, can include ${Property}");
     __To_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __To_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, __To_JTextField,
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Required - recipient email addresses"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "CC:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "CC:"),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CC_JTextField = new JTextField ( 40 );
     __CC_JTextField.setToolTipText("CC email addresses, separated by commas, can include ${Property}");
     __CC_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __CC_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, __CC_JTextField,
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Optional - CC email addresses"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "BCC:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "BCC:"),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BCC_JTextField = new JTextField ( 40 );
     __BCC_JTextField.setToolTipText("CC email addresses, separated by commas, can include ${Property}");
     __BCC_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __BCC_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, __BCC_JTextField,
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Optional - BCC email addresses"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "Subject:"),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Subject_JTextField = new JTextField ( 40 );
     __Subject_JTextField.setToolTipText("Subject for email, can include ${Property}");
     __Subject_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Subject_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, __Subject_JTextField,
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Required - email subject"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Message:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ( "Message:" ),
+        0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Message_JTextArea = new JTextArea ( 10, 80 );
     __Message_JTextArea.setToolTipText("Email message, can include ${Property}");
     __Message_JTextArea.setLineWrap ( true );
     __Message_JTextArea.setWrapStyleWord ( true );
     __Message_JTextArea.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Message_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(message_JPanel, new JScrollPane(__Message_JTextArea),
+        1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
         "Required - email message"), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Message file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ("Message file:" ), 
+		0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MessageFile_JTextField = new JTextField ( 50 );
 	__MessageFile_JTextField.setToolTipText("Specify the message file or use ${Property} notation");
 	__MessageFile_JTextField.addKeyListener ( this );
@@ -426,11 +483,11 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 		JGUIUtil.addComponent(MessageFile_JPanel, __pathMessage_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, MessageFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(message_JPanel, MessageFile_JPanel,
+		1, yMessage, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Attachment file(s):" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel ("Attachment file(s):" ), 
+		0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AttachmentFiles_JTextField = new JTextField ( 50 );
 	__AttachmentFiles_JTextField.setToolTipText("Specify the attachment file(s) or use ${Property} notation");
 	__AttachmentFiles_JTextField.addKeyListener ( this );
@@ -449,11 +506,11 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 		JGUIUtil.addComponent(AttachmentFiles_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, AttachmentFiles_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(message_JPanel, AttachmentFiles_JPanel,
+		1, yMessage, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-   JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+   JGUIUtil.addComponent(message_JPanel, new JLabel ( "If not found?:"),
+		0, ++yMessage, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
 	List<String> notFoundChoices = new ArrayList<String>();
 	notFoundChoices.add ( "" );	// Default
@@ -463,11 +520,86 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 	__IfNotFound_JComboBox.setData(notFoundChoices);
 	__IfNotFound_JComboBox.select ( 0 );
 	__IfNotFound_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+	JGUIUtil.addComponent(message_JPanel, __IfNotFound_JComboBox,
+		1, yMessage, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(message_JPanel, new JLabel(
 		"Optional - action if input file is not found (default=" + __command._Warn + ")"), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yMessage, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for JavaAPI
+    int yJavaAPI = -1;
+    JPanel javaAPI_JPanel = new JPanel();
+    javaAPI_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "JavaAPI", javaAPI_JPanel );
+    
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel (
+    		"<html><b>The JavaAPI functionality has not yet been fully implemented.</b></html>"),
+    		0, ++yJavaAPI, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel (
+    		"An SMTP server is needed along with the account through which to send the email. For example:"),
+    		0, ++yJavaAPI, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel (
+    		"    smtp.gmail.com          - Gmail"),
+    		0, ++yJavaAPI, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel (
+    		"    smtp.live.com             - Outlook"),
+    		0, ++yJavaAPI, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel (
+    		"    smtp.mail.yahoo.com - Yahoo"),
+    		0, ++yJavaAPI, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel ( "SMTP Server:" ), 
+        0, ++yJavaAPI, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SMTPServer_JTextField = new JTextField ( "", 40 );
+	__SMTPServer_JTextField.setToolTipText("Set the SMTP server to connect to.");
+	__SMTPServer_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(javaAPI_JPanel, __SMTPServer_JTextField,
+        1, yJavaAPI, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel(
+        "Required - the SMTP server to connect to"), 
+        3, yJavaAPI, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel ( "SMTP Account:" ), 
+        0, ++yJavaAPI, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SMTPAccount_JTextField = new JTextField ( "", 40 );
+    __SMTPAccount_JTextField.setToolTipText("Set the SMTP account username / ID.");
+    __SMTPAccount_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(javaAPI_JPanel, __SMTPAccount_JTextField,
+        1, yJavaAPI, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel(
+        "<html>Required - the SMTP account to connect to the server. <b>Not yet implemented.</b></html>"), 
+        3, yJavaAPI, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel ( "SMTP Password:" ), 
+        0, ++yJavaAPI, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SMTPPassword_JTextField = new JTextField ( "", 40 );
+    __SMTPPassword_JTextField.setToolTipText("Set the SMTP account password for authentication.");
+    __SMTPPassword_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(javaAPI_JPanel, __SMTPPassword_JTextField,
+        1, yJavaAPI, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(javaAPI_JPanel, new JLabel(
+        "Required - the SMTP password for authentication"), 
+        3, yJavaAPI, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // PANEL FOR WINDOWS MAIL
+    int yWindowsMail = -1;
+    JPanel windowsMail_JPanel = new JPanel();
+    windowsMail_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Windows Mail", windowsMail_JPanel );
+    
+    JGUIUtil.addComponent(windowsMail_JPanel, new JLabel (
+    		"<html><b>The Windows Mail functionality has not yet been fully implemented.</b></html>"),
+    		0, ++yWindowsMail, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for Sendmail
+    int ySendMail = -1;
+    JPanel sendMail_JPanel = new JPanel();
+    sendMail_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Sendmail", sendMail_JPanel );
+    
+    JGUIUtil.addComponent(sendMail_JPanel, new JLabel (
+    		"<html><b>The Sendmail functionality has not yet been fully implemented.</b></html>"),
+    		0, ++ySendMail, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -533,6 +665,7 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
+	String MailProgram = "";
 	String From = "";
 	String To = "";
 	String CC = "";
@@ -542,10 +675,14 @@ private void refresh ()
 	String MessageFile = "";
 	String AttachmentFiles = "";
 	String IfNotFound = "";
+	String SMTPServer = "";
+	String SMTPAccount = "";
+	String SMTPPassword = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
         parameters = __command.getCommandParameters();
+        MailProgram = parameters.getValue( "MailProgram" );
         From = parameters.getValue ( "From" );
 		To = parameters.getValue ( "To" );
 		CC = parameters.getValue ( "CC" );
@@ -555,6 +692,10 @@ private void refresh ()
 		MessageFile = parameters.getValue ( "MessageFile" );
 		AttachmentFiles = parameters.getValue ( "AttachmentFiles" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
+		SMTPServer = parameters.getValue ( "SMTPServer" );
+		SMTPAccount = parameters.getValue ( "SMTPAccount" );
+		SMTPPassword = parameters.getValue ( "SMTPPassword" );
+		
         if ( From != null ) {
             __From_JTextField.setText ( From );
         }
@@ -579,11 +720,11 @@ private void refresh ()
 		if ( AttachmentFiles != null ) {
 			__AttachmentFiles_JTextField.setText ( AttachmentFiles );
 		}
-		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound, JGUIUtil.NONE, null, null ) ) {
 			__IfNotFound_JComboBox.select ( IfNotFound );
 		}
 		else {
-            if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
+            if ( (IfNotFound == null) || IfNotFound.equals("") ) {
 				// New command...select the default...
 				__IfNotFound_JComboBox.select ( 0 );
 			}
@@ -594,9 +735,33 @@ private void refresh ()
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__MailProgram_JComboBox, MailProgram, JGUIUtil.NONE, null, null ) ) {
+			__MailProgram_JComboBox.select ( MailProgram );
+		}
+		else {
+            if ( (MailProgram == null) || MailProgram.equals("") ) {
+				// New command...select the default...
+            	__MailProgram_JComboBox.select ( 0 );
+			}
+			else {	// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"MailProgram parameter \"" + MailProgram +
+				"\". Select a\n value or Cancel." );
+			}
+		}
+		if ( SMTPServer != null ) {
+			__SMTPServer_JTextField.setText(SMTPServer);
+		}
+		if ( SMTPAccount != null ) {
+			__SMTPAccount_JTextField.setText(SMTPAccount);
+		}
+		if ( SMTPPassword != null ) {
+			__SMTPPassword_JTextField.setText(SMTPPassword);
+		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields. This is only visible information that has not been committed in the command.
+	MailProgram = __MailProgram_JComboBox.getSelected();
 	From = __From_JTextField.getText().trim();
 	To = __To_JTextField.getText().trim();
 	CC = __CC_JTextField.getText().trim();
@@ -606,7 +771,11 @@ private void refresh ()
 	MessageFile = __MessageFile_JTextField.getText().trim();
 	AttachmentFiles = __AttachmentFiles_JTextField.getText().trim();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
+	SMTPServer = __SMTPServer_JTextField.getText().trim();
+	SMTPAccount = __SMTPAccount_JTextField.getText().trim();
+	SMTPPassword = __SMTPPassword_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
+	props.add ( "MailProgram=" + MailProgram );
 	props.add ( "From=" + From );
 	props.add ( "To=" + To );
 	props.add ( "CC=" + CC );
@@ -616,6 +785,9 @@ private void refresh ()
 	props.add ( "MessageFile=" + MessageFile );
 	props.add ( "AttachmentFiles=" + AttachmentFiles );
 	props.add ( "IfNotFound=" + IfNotFound );
+	props.add ( "SMTPServer=" + SMTPServer );
+	props.add ( "SMTPAccount=" + SMTPAccount);
+	props.add ("SMTPPassword=" + SMTPPassword);
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __pathMessage_JButton != null ) {

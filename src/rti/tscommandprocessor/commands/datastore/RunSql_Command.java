@@ -36,6 +36,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -89,6 +90,7 @@ throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String Sql = parameters.getValue ( "Sql" );
     String SqlFile = parameters.getValue ( "SqlFile" );
+    String DataStoreFunction = parameters.getValue ( "DataStoreFunction" );
     String DataStoreProcedure = parameters.getValue ( "DataStoreProcedure" );
 
 	String warning = "";
@@ -114,22 +116,25 @@ throws InvalidCommandParameterException
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
         ++specCount;
     }
+    if ( ((DataStoreFunction != null) && (DataStoreFunction.length() != 0)) ) {
+        ++specCount;
+    }
     if ( ((DataStoreProcedure != null) && (DataStoreProcedure.length() != 0)) ) {
         ++specCount;
     }
     if ( specCount == 0 ) {
-        message = "The datastore table, SQL statement, SQL file, or procedure must be specified.";
+        message = "The SQL statement, SQL file, function, or procedure must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the datastore table, SQL statement, SQL file, or procedure." ) );
+                message, "Specify the SQL statement, SQL file, function, or procedure." ) );
     }
     if ( specCount > 1 ) {
-        message = "Onely one of the datastore table, SQL statement, SQL file, or procedure can be specified.";
+        message = "Only one of the SQL statement, SQL file, function, or procedure can be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the datastore table, SQL statement, or SQL file." ) );
+                message, "Specify the SQL statement, SQL file, function, or procedure." ) );
     }
     String SqlFile_full = null;
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
@@ -172,10 +177,12 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(6);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "DataStore" );
     validList.add ( "Sql" );
     validList.add ( "SqlFile" );
+    validList.add ( "DataStoreFunction" );
+    validList.add ( "FunctionParameters" );
     validList.add ( "DataStoreProcedure" );
     validList.add ( "ProcedureParameters" );
     validList.add ( "ProcedureReturnProperty" );
@@ -218,7 +225,70 @@ public boolean editCommand ( JFrame parent ) {
 	return (new RunSql_JDialog ( parent, this, dataStoreList )).ok();
 }
 
+/**
+ * Format the function parameters into the dictionary string.
+ * @param parameterNames list of parameter names
+ */
+protected String formatFunctionParameters ( List<String> parameterNames ) {
+	StringBuilder b = new StringBuilder();
+	int nparam = 0;
+	for ( String parameter : parameterNames ) {
+		++nparam;
+		if ( nparam > 1 ) {
+			b.append(",");
+		}
+		b.append ( parameter + ":");
+	}
+	return b.toString();
+}
+
 // Use base class parseCommand().
+
+/**
+ * Parse the parameter names from the full function or procedure signature:
+ *   function(param1 type1, param2 type2) -> return
+ * This will return 'param1', 'param2' in a list.
+ * @param function or procedure signature string
+ * @return list of parameter names
+ */
+protected List<String> parseFunctionParameterNames ( String routineSignature ) {
+	List<String> params = new ArrayList<>();
+	int pos1 = routineSignature.indexOf("(");
+	int pos2 = routineSignature.indexOf(")");
+	if ( routineSignature.length() > 0 ) {
+		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+		for ( String part : parts ) {
+			pos1 = part.indexOf(" ");
+			params.add(part.substring(0,pos1).trim());
+		}
+	}
+	return params;
+}
+
+/**
+ * Parse the parameter types from the full function or procedure signature:
+ *   function(param1 type1, param2 type2) -> return
+ * This will return 'type1', 'type2' in a list.
+ * @param function or procedure signature string
+ * @return LinkedHashMap with parameter name as key and type as value
+ */
+protected HashMap<String,String> parseFunctionParameterTypes ( String routineSignature ) {
+	HashMap<String,String> typeMap = new LinkedHashMap<>();
+	int pos1 = routineSignature.indexOf("(");
+	int pos2 = routineSignature.indexOf(")");
+	String name;
+	String value;
+	if ( routineSignature.length() > 0 ) {
+		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+		for ( String part : parts ) {
+			pos1 = part.indexOf(" ");
+			name = part.substring(0,pos1).trim();
+			value = part.substring((pos1+1)).trim();
+			typeMap.put(name, value);
+		}
+	}
+	return typeMap;
+}
 
 /**
 Run the command.
@@ -256,9 +326,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     HashMap<String,String> procedureParameters = StringUtil.parseDictionary(ProcedureParameters);
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );
     
-    // Find the datastore to use...
-    DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-        DataStore, DatabaseDataStore.class );
+    // Find the datastore to use.
+    DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, DatabaseDataStore.class );
     DMI dmi = null;
     if ( dataStore == null ) {
         message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
@@ -500,6 +569,8 @@ public String toString ( PropList props )
 	String DataStore = props.getValue( "DataStore" );
 	String Sql = props.getValue( "Sql" );
 	String SqlFile = props.getValue( "SqlFile" );
+	String DataStoreFunction = props.getValue( "DataStoreFunction" );
+	String FunctionParameters = props.getValue( "FunctionParameters" );
 	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
 	String ProcedureParameters = props.getValue( "ProcedureParameters" );
 	String ProcedureReturnProperty = props.getValue( "ProcedureReturnProperty" );
@@ -521,6 +592,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "SqlFile=\"" + SqlFile + "\"" );
+    }
+    if ( (DataStoreFunction != null) && (DataStoreFunction.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreFunction=\"" + DataStoreFunction + "\"" );
+    }
+    if ( (FunctionParameters != null) && (FunctionParameters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FunctionParameters=\"" + FunctionParameters + "\"" );
     }
     if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
         if ( b.length() > 0 ) {

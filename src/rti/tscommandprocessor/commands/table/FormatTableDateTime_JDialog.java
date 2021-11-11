@@ -358,7 +358,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(inc_JPanel, __IncrementBaseUnit_JComboBox,
         1, yInc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(inc_JPanel, new JLabel(
-        "Optional - increment time base unit (e.g. " + TimeInterval.getName(TimeInterval.HOUR,0) + "."), 
+        "Optional - increment time base unit (e.g. " + TimeInterval.getName(TimeInterval.HOUR,0) + ")."), 
         3, yInc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for format information

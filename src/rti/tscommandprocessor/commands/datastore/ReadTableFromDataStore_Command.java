@@ -65,7 +65,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.ResultSetToDataTableFactory;
 import RTi.Util.Table.TableField;
-import RTi.Util.Time.DateTime;
+//import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the ReadTableFromDataStore() command.
@@ -101,6 +101,7 @@ throws InvalidCommandParameterException
     String Top = parameters.getValue ( "Top" );
     String Sql = parameters.getValue ( "Sql" );
     String SqlFile = parameters.getValue ( "SqlFile" );
+    String DataStoreFunction = parameters.getValue ( "DataStoreFunction" );
     String DataStoreProcedure = parameters.getValue ( "DataStoreProcedure" );
     String TableID = parameters.getValue ( "TableID" );
 
@@ -130,22 +131,25 @@ throws InvalidCommandParameterException
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
         ++specCount;
     }
+    if ( ((DataStoreFunction != null) && (DataStoreFunction.length() != 0)) ) {
+        ++specCount;
+    }
     if ( ((DataStoreProcedure != null) && (DataStoreProcedure.length() != 0)) ) {
         ++specCount;
     }
     if ( specCount == 0 ) {
-        message = "The data store table, SQL statement, SQL file, or procedure must be specified.";
+        message = "The data store table, SQL statement, SQL file, function, or procedure must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table, SQL statement, SQL file, or procedure." ) );
+                message, "Specify the data store table, SQL statement, SQL file, function, or procedure." ) );
     }
     if ( specCount > 1 ) {
-        message = "Only one of the data store table, SQL statement, SQL file, or procedure can be specified.";
+        message = "Only one of the data store table, SQL statement, SQL file, function, or procedure can be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table, SQL statement, or SQL file." ) );
+                message, "Specify the data store table, SQL statement, SQL file, function, or procedure." ) );
     }
     // Remove comments.  In general /* */ are the main comments supported because they are used with SQL Server
     // and Oracle and generally easy to deal with.
@@ -215,7 +219,7 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(15);
+	List<String> validList = new ArrayList<>(17);
     validList.add ( "DataStore" );
     validList.add ( "DataStoreCatalog" );
     validList.add ( "DataStoreSchema" );
@@ -225,6 +229,8 @@ throws InvalidCommandParameterException
     validList.add ( "Top" );
     validList.add ( "Sql" );
     validList.add ( "SqlFile" );
+    validList.add ( "DataStoreFunction" );
+    validList.add ( "FunctionParameters" );
     validList.add ( "DataStoreProcedure" );
     validList.add ( "ProcedureParameters" );
     validList.add ( "ProcedureReturnProperty" );
@@ -316,6 +322,23 @@ public boolean x_editCommand ( JFrame parent ) {
 }
 
 /**
+ * Format the function parameters into the dictionary string.
+ * @param parameterNames list of parameter names
+ */
+protected String formatFunctionParameters ( List<String> parameterNames ) {
+	StringBuilder b = new StringBuilder();
+	int nparam = 0;
+	for ( String parameter : parameterNames ) {
+		++nparam;
+		if ( nparam > 1 ) {
+			b.append(",");
+		}
+		b.append ( parameter + ":");
+	}
+	return b.toString();
+}
+
+/**
 Return the table that is read by this class when run in discovery mode.
 */
 private DataTable getDiscoveryTable()
@@ -339,6 +362,74 @@ public <T> List<T> getObjectList ( Class<T> c )
 }
 
 // Use base class parseCommand()
+
+/**
+ * Parse the parameter names from the full function or procedure signature:
+ *   function(param1 type1, param2 type2) -> return
+ * This will return 'param1', 'param2' in a list.
+ * @param function or procedure signature string
+ * @return list of parameter names
+ */
+protected List<String> parseFunctionParameterNames ( String routineSignature ) {
+	List<String> params = new ArrayList<>();
+	int pos1 = routineSignature.indexOf("(");
+	int pos2 = routineSignature.indexOf(")");
+	if ( routineSignature.length() > 0 ) {
+		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+		for ( String part : parts ) {
+			pos1 = part.indexOf(" ");
+			params.add(part.substring(0,pos1).trim());
+		}
+	}
+	return params;
+}
+
+/**
+ * Parse the parameter types from the full function or procedure signature:
+ *   function(param1 type1, param2 type2) -> return
+ * This will return 'type1', 'type2' in a list.
+ * @param function or procedure signature string
+ * @return LinkedHashMap with parameter name as key and type as value
+ */
+protected HashMap<String,String> parseFunctionParameterTypes ( String routineSignature ) {
+	HashMap<String,String> typeMap = new LinkedHashMap<>();
+	int pos1 = routineSignature.indexOf("(");
+	int pos2 = routineSignature.indexOf(")");
+	String name;
+	String value;
+	if ( routineSignature.length() > 0 ) {
+		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+		for ( String part : parts ) {
+			pos1 = part.indexOf(" ");
+			name = part.substring(0,pos1).trim();
+			value = part.substring((pos1+1)).trim();
+			typeMap.put(name, value);
+		}
+	}
+	return typeMap;
+}
+
+/**
+ * Remove surrounding single quotes, needed if a string parameter value contains characters that need protection.
+ * @param paramValue a parameter string
+ * @return string without surrounding single quotes
+ */
+private String removeSurroundingQuotes ( String paramValue ) {
+	// Do simple checks to avoid constructing a StringBuilder.
+	if ( (paramValue.charAt(0) == '\'') && (paramValue.charAt(paramValue.length() - 1) == '\'') ) {
+		return paramValue.substring(1,paramValue.length() - 1);
+	}
+	else if ( (paramValue.charAt(0) == '\'') && (paramValue.charAt(paramValue.length() - 1) != '\'') ) {
+		return paramValue.substring(1);
+	}
+	else if ( (paramValue.charAt(0) != '\'') && (paramValue.charAt(paramValue.length() - 1) == '\'') ) {
+		return paramValue.substring(0,paramValue.length() - 1);
+	}
+	else {
+		// Just return the original string.
+		return paramValue;
+	}
+}
 
 /**
 Run the command.
@@ -429,28 +520,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	Sql = Sql.replace("\\n", "\n");
     }
     String SqlFile = parameters.getValue("SqlFile");
-    String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
-    String ProcedureParameters = parameters.getValue ( "ProcedureParameters" );
     // Use a LinkedHashMap to retain the parameter order.
-    HashMap<String,String> procedureParameters = new LinkedHashMap<String,String>();
+    HashMap<String,String> functionParameters = new LinkedHashMap<>();
+    HashMap<String,String> functionParameterTypes = new LinkedHashMap<>();
+    String DataStoreFunction = parameters.getValue("DataStoreFunction");
+    if ( (DataStoreFunction != null) && !DataStoreFunction.isEmpty() ) {
+    	// Get the parameter types from the function name, which has format:
+    	//   func(param1 type1, param2 type2, ...)
+    	functionParameterTypes = parseFunctionParameterTypes(DataStoreFunction);
+    }
+    String FunctionParameters = parameters.getValue ( "FunctionParameters" );
+    if ( (FunctionParameters != null) && (FunctionParameters.length() > 0) && (FunctionParameters.indexOf(":") > 0) ) {
+        // Parse the parameter string into a dictionary.
+    	functionParameters = StringUtil.parseDictionary(FunctionParameters);
+    }
+
+    // Use a LinkedHashMap to retain the parameter order.
+    HashMap<String,String> procedureParameters = new LinkedHashMap<>();
+    HashMap<String,String> procedureParameterTypes = new LinkedHashMap<>();
+    String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
+    if ( (DataStoreProcedure != null) && !DataStoreProcedure.isEmpty() ) {
+    	// Get the parameter types from the procedure name, which has format:
+    	//   proc(param1 type1, param2 type2, ...)
+    	procedureParameterTypes = parseFunctionParameterTypes(DataStoreProcedure);
+    }
+    String ProcedureParameters = parameters.getValue ( "ProcedureParameters" );
     if ( (ProcedureParameters != null) && (ProcedureParameters.length() > 0) && (ProcedureParameters.indexOf(":") > 0) ) {
-        // First break map pairs by comma.
-        List<String>pairs = StringUtil.breakStringList(ProcedureParameters, ",", 0 );
-        // Now break pairs and put in hashtable.
-        for ( String pair : pairs ) {
-        	if ( pair.endsWith(":") ) {
-        		// Second part is empty string.
-        		procedureParameters.put(pair.replace(":", ""), "" );
-        	}
-        	else {
-        		String [] parts = pair.split(":");
-        		procedureParameters.put(parts[0].trim(), parts[1].trim() );
-        	}
-        }
+        // Parse the parameter string into a dictionary.
+     	procedureParameters = StringUtil.parseDictionary(ProcedureParameters);
     }
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );
-    String OutputProperties = parameters.getValue ( "OutputProperties" );
     Hashtable<String,String> outputPropertiesMap = new Hashtable<>();
+    String OutputProperties = parameters.getValue ( "OutputProperties" );
     if ( (OutputProperties != null) && (OutputProperties.length() > 0) && (OutputProperties.indexOf(":") > 0) ) {
         // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(OutputProperties, ",", 0 );
@@ -600,6 +701,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         ResultSet rs = null;
         DMIStoredProcedureData procedureData = null; // Used below if stored procedure.
         int errorCount = 0; // Count of errors that will prevent further processing.
+       	String messageType = ""; // Used with messaging to indicate function or procedure.
         try {
             if ( DataStoreTable != null ) {
                 // Query using the statement that was built above.
@@ -642,28 +744,120 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 rs = dmi.dmiSelect(queryString);
                 Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }
-            else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
-                // Run a stored procedure:
+            else if ( ((DataStoreProcedure != null) && !DataStoreProcedure.equals("")) ||
+            		((DataStoreProcedure != null) && !DataStoreProcedure.equals("")) ) {
+                // Run a function or stored procedure:
             	// - declaring the procedure will fill its internal metadata
-            	Message.printStatus(2, routine, "Executing stored procedure \"" + DataStoreProcedure + "\"");
-            	procedureData = new DMIStoredProcedureData(dmi,DataStoreProcedure);
+            	HashMap<String,String> params = null;
+            	HashMap<String,String> paramTypes = null;
+            	String signature = null;
+            	if ( (DataStoreFunction != null) && !DataStoreFunction.equals("") ) {
+            		Message.printStatus(2, routine, "Executing function: " + DataStoreFunction );
+            		params = functionParameters;
+            		paramTypes = functionParameterTypes;
+            		signature = DataStoreFunction;
+            		messageType = "function";
+            	}
+            	else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
+            		Message.printStatus(2, routine, "Executing stored procedure: " + DataStoreProcedure );
+            		params = procedureParameters;
+            		paramTypes = procedureParameterTypes;
+            		signature = DataStoreProcedure;
+            		messageType = "procedure";
+            	}
+            	int pos = signature.indexOf("(");
+            	String callName = signature.substring(0,pos);
+            	procedureData = new DMIStoredProcedureData(dmi,callName);
                 q.setStoredProcedureData(procedureData);
                 // Iterate through the parameters:
                 // - it is OK that the number of parameters is 0
-                // - parameter position in statement is 1+, 2+ if the procedure has a return code
                 int parameterNum = 0;
-                if (procedureData.hasReturnValue()) {
-                	// If the procedure has a return value, offset parameters by one:
-                	// - will have values 2+ below
-                	parameterNum = 1;
-                }
-                int parameterNum0 = -1; // 0-offset index.
-                for ( Map.Entry<String,String> entry : procedureParameters.entrySet() ) {
-                	++parameterNum;
-                	++parameterNum0;
+                String paramName;
+                String paramType;
+                String paramTypeUpper;
+                String paramValue;
+                int i = 0;
+                float f = (float)0.0;
+                String s = "";
+                for ( Map.Entry<String,String> entry : params.entrySet() ) {
                 	// For the following only a few common core types are enabled in the q.setValue() methods.
                 	// Therefore, convert the SQL types into common types depending on data type precision.
+                	// SQL types are from getFunctionColumns() and getProcedureColumns() "TYPE_NAME",
+                	// which are user type names to ensure that types work with database features.
                 	// Issues that arise will have to be addressed by adding additional data types and overloaded methods.
+                	// In most cases, simple types will be used.
+                	++parameterNum;
+                	paramName = entry.getKey();
+                	paramValue = entry.getValue();
+                	paramType = paramTypes.get(paramName);
+                	paramTypeUpper = paramType.toUpperCase();
+                	if ( paramTypeUpper.equals("DECIMAL") ||
+                		paramTypeUpper.equals("FLOAT") ||
+                		paramTypeUpper.equals("FLOAT4") ||
+                		paramTypeUpper.equals("FLOAT8") ||
+                		paramTypeUpper.equals("REAL")
+                		) {
+                		// Float type.
+                		try {
+                			f = Float.parseFloat(paramValue);
+                		}
+                		catch ( NumberFormatException e ) {
+                			++errorCount;
+                			message = "Invalid " + messageType + " parameter value (" + paramValue + ") for parameter " + paramName +
+                				" type " + paramType + ", for " + messageType + ": " + signature;
+                			Message.printWarning ( 2, routine, message );
+                			status.addToLog ( commandPhase,
+                    			new CommandLogRecord(CommandStatusType.FAILURE,
+                        		message, "Check that the parameter value is correct.") );
+                			continue;
+                		}
+               			q.setValue(f,parameterNum);
+                	}
+                	else if ( paramTypeUpper.equals("INT") ||
+                		paramTypeUpper.equals("INTEGER") ||
+                		paramTypeUpper.equals("INT2") ||
+                		paramTypeUpper.equals("INT4")
+                		) {
+                		// Integer type.
+                		try {
+                			i = Integer.parseInt(paramValue);
+                		}
+                		catch ( NumberFormatException e ) {
+                			++errorCount;
+                			message = "Invalid " + messageType + " parameter value (" + paramValue + ") for parameter " + paramName +
+                				" type " + paramType + ", for " + messageType + ": " + signature;
+                			Message.printWarning ( 2, routine, message );
+                			status.addToLog ( commandPhase,
+                    			new CommandLogRecord(CommandStatusType.FAILURE,
+                        		message, "Check that the parameter value is correct.") );
+                			continue;
+                		}
+                		q.setValue(i,parameterNum);
+                	}
+                	else if ( paramTypeUpper.equals("LONGVARCHAR") ||
+                		paramTypeUpper.equals("TEXT") ||
+                		paramTypeUpper.equals("VARCHAR")
+                		) {
+                		// String type.
+                		q.setValue(removeSurroundingQuotes(s),parameterNum);
+                	}
+                	else if ( paramTypeUpper.equals("TIMESTAMP") ) {
+                		// PostgreSQL expects strings in format 'YYYY-MM-DD hh:mm:ss'
+                		q.setValue(removeSurroundingQuotes(s),parameterNum);
+                	}
+                	else {
+                		++errorCount;
+                		message = "Don't know how to handle parameter type " + paramType + ", for " + messageType + ": " + signature;
+                		Message.printWarning ( 2, routine, message );
+                		status.addToLog ( commandPhase,
+                    		new CommandLogRecord(CommandStatusType.FAILURE,
+                        		message, "Need to update the software to handle the type.") );
+                	}
+                	// TODO smalers 2021-11-07 evaluate host best to handle UDT from signatures:
+                	// - the UDT may or may not be standardized
+                	// - how to handle custom UDT?
+                	// - for now try using with common databases and their types so can at least implement support for primitives
+                	/*
                 	int parameterType = procedureData.getParameterType(parameterNum0);
                 	if ( (parameterType == java.sql.Types.BOOLEAN) ) {
                 		boolean b = Boolean.parseBoolean(entry.getValue());
@@ -717,19 +911,42 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     		new CommandLogRecord(CommandStatusType.FAILURE,
                         		message, "Need to update the software.") );
                 	}
+                	*/
                 }
                 if ( errorCount == 0 ) {
                 	rs = q.executeStoredProcedureQuery();
                 	// Query string is formatted as procedure call:  procedureName(param1,param2,...)
                 	queryString = q.toString();
-                	Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
+                	Message.printStatus(2, routine, "Ran " + messageType + ": " + queryString);
                 }
             }
             if ( errorCount == 0 ) {
             	// Continue processing the table (otherwise errors above will likely cause issues).
-            	ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
-            	String tableID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableID);
-            	table = factory.createDataTable(dmi.getDatabaseEngineType(), rs, tableID);
+            	if ( rs == null ) {
+   	                Message.printStatus(2, routine, "ResultSet is null, not adding table.");
+            	}
+            	else {
+            		ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
+            		String tableID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableID);
+            		table = factory.createDataTable(dmi.getDatabaseEngineType(), rs, tableID);
+
+            		// Set the table in the processor.
+            
+            		PropList request_params = new PropList ( "" );
+            		request_params.setUsingObject ( "Table", table );
+            		try {
+                		processor.processRequest( "SetTable", request_params);
+            		}
+            		catch ( Exception e ) {
+                		message = "Error requesting SetTable(Table=...) from processor.";
+                		Message.printWarning(warning_level,
+                        		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        		routine, message );
+                		status.addToLog ( commandPhase,
+                        		new CommandLogRecord(CommandStatusType.FAILURE,
+                           		message, "Report problem to software support." ) );
+            		}
+            	}
 
             	// Process the return status after processing the result set as per JDBC documentation:
             	// https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
@@ -741,7 +958,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                		// Log the return value and then set as a property if requested.
                		// The return value type is not needed here so use generic Object.
    	                Object returnObject = q.getReturnValue();
-   	                Message.printStatus(2, routine, "Return value from stored procedure \"" + procedureData.getProcedureName() + "\" is:  " + returnObject);
+   	                Message.printStatus(2, routine, "Return value from " + messageType + "\"" + procedureData.getProcedureName() + "\" is:  " + returnObject);
    	                // The above gets the return value out of the statement but need to also to get the resultset to continue  processing.
    	                // - TODO this is not needed
    	                //rs = q.getCallableStatement().getResultSet();
@@ -766,22 +983,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                	}
             
-            	// Set the table in the processor.
-            
-            	PropList request_params = new PropList ( "" );
-            	request_params.setUsingObject ( "Table", table );
-            	try {
-                	processor.processRequest( "SetTable", request_params);
-            	}
-            	catch ( Exception e ) {
-                	message = "Error requesting SetTable(Table=...) from processor.";
-                	Message.printWarning(warning_level,
-                        	MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        	routine, message );
-                	status.addToLog ( commandPhase,
-                        	new CommandLogRecord(CommandStatusType.FAILURE,
-                           	message, "Report problem to software support." ) );
-            	}
         	}
         }
         catch ( Exception e ) {
@@ -923,6 +1124,8 @@ public String toString ( PropList props )
 	String Top = props.getValue( "Top" );
 	String Sql = props.getValue( "Sql" );
 	String SqlFile = props.getValue( "SqlFile" );
+	String DataStoreFunction = props.getValue( "DataStoreFunction" );
+	String FunctionParameters = props.getValue( "FunctionParameters" );
 	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
 	String ProcedureParameters = props.getValue( "ProcedureParameters" );
 	String ProcedureReturnProperty = props.getValue( "ProcedureReturnProperty" );
@@ -983,6 +1186,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "SqlFile=\"" + SqlFile + "\"" );
+    }
+    if ( (DataStoreFunction != null) && (DataStoreFunction.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreFunction=\"" + DataStoreFunction + "\"" );
+    }
+    if ( (FunctionParameters != null) && (FunctionParameters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FunctionParameters=\"" + FunctionParameters + "\"" );
     }
     if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
         if ( b.length() > 0 ) {

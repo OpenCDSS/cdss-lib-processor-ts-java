@@ -35,6 +35,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -55,13 +57,15 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import RTi.DMI.DMI;
-import RTi.DMI.DMIStatement;
-import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.DictionaryJDialog;
@@ -70,7 +74,6 @@ import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -80,7 +83,7 @@ Command parameter editor.
 */
 @SuppressWarnings("serial")
 public class RunSql_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, ChangeListener, ItemListener, KeyListener, WindowListener
 {
     
 private final String __RemoveWorkingDirectory = "Rel";
@@ -95,6 +98,8 @@ private SimpleJComboBox __DataStore_JComboBox = null;
 private JTabbedPane __sql_JTabbedPane = null;
 private JTextArea __Sql_JTextArea = null;
 private JTextField __SqlFile_JTextField = null;
+private SimpleJComboBox __DataStoreFunction_JComboBox = null;
+private JTextArea __FunctionParameters_JTextArea = null;
 private SimpleJComboBox __DataStoreProcedure_JComboBox = null;
 private JTextArea __ProcedureParameters_JTextArea = null;
 private JTextField __ProcedureReturnProperty_JTextField = null;
@@ -107,10 +112,15 @@ private String __working_dir = null;
 private JFrame __parent = null;
 private List<DatabaseDataStore> datastores = new ArrayList<>();
 
-private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices.
 
-private DatabaseDataStore __dataStore = null; // selected data store
+private DatabaseDataStore __dataStore = null; // Selected datastore.
 private DMI __dmi = null; // DMI to do queries.
+
+// Last datastore for which procedures were populated, so can avoid repopulating the procedures.
+private String lastDataStoreForProcedures = "";
+// Last datastore for which functions were populated, so can avoid repopulating the functions.
+private String lastDataStoreForFunctions = "";
 
 /**
 Command dialog constructor.
@@ -128,7 +138,7 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed(ActionEvent event)
-{	String routine = getClass().getSimpleName() + ".actionPerformed";
+{	//String routine = getClass().getSimpleName() + ".actionPerformed";
 	Object o = event.getSource();
 
     if ( o == __browse_JButton ) {
@@ -177,7 +187,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -195,76 +205,98 @@ public void actionPerformed(ActionEvent event)
         }
         refresh ();
     }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditFunctionParameters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String FunctionParameters = __FunctionParameters_JTextArea.getText().trim();
+        List<String> notesList = new ArrayList<>();
+        String functionName = __DataStoreFunction_JComboBox.getSelected();
+        int nparams = 10; // Will be reset below.
+        if ( (functionName == null) || functionName.isEmpty() ) {
+        	notesList.add("Function to run:  NOT SPECIFIED" );
+        }
+        else {
+        	notesList.add("Function to run:  " + functionName );
+        	// Parse the parameter names from the function name.
+        	List<String> parameterNames = this.__command.parseFunctionParameterNames(functionName);
+        	nparams = parameterNames.size();
+        	if ( nparams > 0 ) {
+        		notesList.add("Function has " + nparams + " parameters.");
+        		notesList.add("Specify function parameter values using appropriate type.");
+        		notesList.add("The parameter names that are listed are based on the function declaration.");
+        		notesList.add("The parameter order and data type must be correct.");
+        		notesList.add("For example, make sure to provide properly-formatted numbers if type indicates numeric input.");
+        		notesList.add("Format date/times using syntax YYYY-MM-DD hh:mm:ss to appropriate precision for date and date/time.");
+        	}
+        	else {
+        		notesList.add("The function does not have any input parameters.");
+        		notesList.add("Therefore this command parameter (FunctionParameters) is not used.");
+        	}
+        }
+        String [] notes = notesList.toArray(new String[0]);
+        String dict = (new DictionaryJDialog ( __parent, true, FunctionParameters,
+            "Edit FunctionParameters parameter", notes, "Parameter Name", "Parameter Value", -nparams)).response();
+        if ( dict != null ) {
+            __FunctionParameters_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
     else if ( event.getActionCommand().equalsIgnoreCase("EditProcedureParameters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ProcedureParameters = __ProcedureParameters_JTextArea.getText().trim();
         List<String> notesList = new ArrayList<>();
         String procedureName = __DataStoreProcedure_JComboBox.getSelected();
+        int nparams = 10; // Will be reset below.
         if ( (procedureName == null) || procedureName.isEmpty() ) {
         	notesList.add("Procedure to run:  NOT SPECIFIED" );
         }
         else {
         	notesList.add("Procedure to run:  " + procedureName );
-        	// Get the parameter names and types for the procedure
-        	// - Need to declare a procedure
-        	// - Use a generic statement that can handle any type of statement
-        	DMIStatement q = new DMIStatement(__dmi);
-        	DMIStoredProcedureData procedureData = null;
-        	try {
-    	    	procedureData = new DMIStoredProcedureData(__dmi,procedureName);
-    	    	q.setStoredProcedureData(procedureData);
-    	    	if ( procedureData.hasReturnValue() ) {
-    	    		notesList.add("Procedure has return value of type: " + procedureData.getReturnTypeString() );
-    	    	}
-    	    	else {
-    	    		notesList.add("Procedure does not return a value." );
-    	    	}
-        		int nParams = procedureData.getNumParameters();
-        		if ( nParams > 0 ) {
-        			notesList.add("Procedure has " + nParams + " parameters.");
-        			notesList.add("Specify procedure parameter name and values, with parameter values that match the type, as follows:");
-    	    		// Get the procedure information
-        			for ( int i = 0; i < nParams; i++ ) {
-    	    			notesList.add("    Parameter " + (i + 1) + ": name = \"" + procedureData.getParameterName(i) + "\", type=\"" + procedureData.getParameterTypeString(i) + "\"");
-        			}
-        			notesList.add("The parameter names provided to the command are for information.");
-        			notesList.add("The parameter order and data type when calling the procedure are critical.");
-        			notesList.add("For example, make sure to provide properly-formatted numbers if type indicates numeric input.");
-        			notesList.add("Format date/times using syntax YYYY-MM-DD hh:mm:ss to appropriate precision for date and date/time.");
-        		}
-        		else {
-        			notesList.add("The procedure does not have any input parameters.");
-        			notesList.add("Therefore this command parameter (ProcedureParameters) is not used.");
-        		}
+        	// Parse the parameter names from the function name.
+        	List<String> parameterNames = this.__command.parseFunctionParameterNames(procedureName);
+        	nparams = parameterNames.size();
+        	if ( nparams > 0 ) {
+        		notesList.add("Procedure has " + nparams + " parameters.");
+        		notesList.add("Specify procedure parameter values using appropriate type.");
+        		notesList.add("The parameter names that are listed are based on the procedure declaration.");
+        		notesList.add("The parameter order and data type must be correct.");
+        		notesList.add("For example, make sure to provide properly-formatted numbers if type indicates numeric input.");
+        		notesList.add("Format date/times using syntax YYYY-MM-DD hh:mm:ss to appropriate precision for date and date/time.");
         	}
-        	catch ( Exception e ) {
-    	    	Message.printWarning(3, routine, "Unable to created procedure object for \"" + procedureName + "\"" );
-    	    	notesList.add("Unable to determine procedure metadata.  Check log file for errors.");
+        	else {
+        		notesList.add("The procedure does not have any input parameters.");
+        		notesList.add("Therefore this command parameter (ProcedureParameters) is not used.");
         	}
         }
         String [] notes = notesList.toArray(new String[0]);
         String dict = (new DictionaryJDialog ( __parent, true, ProcedureParameters,
-            "Edit ProcedureParameters parameter", notes, "Parameter Name", "Parameter Value",10)).response();
+            "Edit ProcedureParameters parameter", notes, "Parameter Name", "Parameter Value", -nparams)).response();
         if ( dict != null ) {
             __ProcedureParameters_JTextArea.setText ( dict );
             refresh();
         }
+    }
+    else {
+    	// A JComboBox.
+    	refresh();
     }
 }
 
 /**
 Refresh the database choices in response to the currently selected datastore.
 */
-private void actionPerformedDataStoreSelected ( )
-{
+private void actionPerformedDataStoreSelected ( ) {
     if ( __DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization.
         return;
     }
     __dataStore = getSelectedDataStore();
     __dmi = ((DatabaseDataStore)__dataStore).getDMI();
-    // Update list of procedures
-    populateDataStoreProcedureChoices(getDMI() );
+    // Update list of procedures:
+    // - only do this when the tab is shown or procedure is selected in existing command
+    //populateDataStoreProcedureChoices(getDMI() );
+    // Update list of functions:
+    // - only do this when the tab is shown or functions is selected in existing command
+    //populateDataStoreFunctionChoices(getDMI() );
 }
 
 /**
@@ -272,7 +304,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
     if ( (DataStore != null) && DataStore.length() > 0 ) {
@@ -285,6 +317,8 @@ private void checkInput ()
     }
 	String Sql = __Sql_JTextArea.getText().trim();
 	String SqlFile = __SqlFile_JTextField.getText().trim();
+	String DataStoreFunction = __DataStoreFunction_JComboBox.getSelected();
+	String FunctionParameters = __FunctionParameters_JTextArea.getText().trim().replace("\n"," ");
 	String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
 	String ProcedureParameters = __ProcedureParameters_JTextArea.getText().trim().replace("\n"," ");
 	String ProcedureReturnProperty = __ProcedureReturnProperty_JTextField.getText().trim();
@@ -296,7 +330,13 @@ private void checkInput ()
     if ( SqlFile.length() > 0 ) {
         props.set ( "SqlFile", SqlFile );
     }
-    if ( DataStoreProcedure.length() > 0 ) {
+    if ( (DataStoreFunction != null) && (DataStoreFunction.length() > 0) ) {
+        props.set ( "DataStoreFunction", DataStoreFunction );
+    }
+    if ( FunctionParameters.length() > 0 ) {
+        props.set ( "FunctionParameters", FunctionParameters );
+    }
+    if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
         props.set ( "DataStoreProcedure", DataStoreProcedure );
     }
     if ( ProcedureParameters.length() > 0 ) {
@@ -306,7 +346,7 @@ private void checkInput ()
         props.set ( "ProcedureReturnProperty", ProcedureReturnProperty );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -325,12 +365,16 @@ private void commitEdits ()
     // Allow newlines in the dialog to be saved as escaped newlines.
     String Sql = __Sql_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String SqlFile = __SqlFile_JTextField.getText().trim();
+    String DataStoreFunction = __DataStoreFunction_JComboBox.getSelected();
+	String FunctionParameters = __FunctionParameters_JTextArea.getText().trim().replace("\n"," ");
     String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
 	String ProcedureParameters = __ProcedureParameters_JTextArea.getText().trim().replace("\n"," ");
 	String ProcedureReturnProperty = __ProcedureReturnProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "Sql", Sql );
 	__command.setCommandParameter ( "SqlFile", SqlFile );
+	__command.setCommandParameter ( "DataStoreFunction", DataStoreFunction );
+	__command.setCommandParameter ( "FunctionParameters", FunctionParameters );
 	__command.setCommandParameter ( "DataStoreProcedure", DataStoreProcedure );
 	__command.setCommandParameter ( "ProcedureParameters", ProcedureParameters );
 	__command.setCommandParameter ( "ProcedureReturnProperty", ProcedureReturnProperty );
@@ -339,8 +383,7 @@ private void commitEdits ()
 /**
 Return the DMI that is currently being used for database interaction, based on the selected data store.
 */
-private DMI getDMI ()
-{
+private DMI getDMI () {
     return __dmi;
 }
 
@@ -406,14 +449,14 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 {	this.__command = command;
 	this.__parent = parent;
 	this.datastores = datastores;
-	CommandProcessor processor = __command.getCommandProcessor();
-    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -425,7 +468,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command runs an SQL statement, procedure, or function on the specified database datastore."),
+        "This command runs an SQL statement, function, or procedure on the specified database datastore."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The SQL statement can be specified in one of three ways - use the tabs below to do so."),
@@ -434,11 +477,34 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         "An SQL statement specified with ${property} notation will be updated to use processor property values before executing the SQL statement."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "SQL syntax may vary between database engines.  See http://www.w3schools.com/sql for an SQL reference."),
+        "SQL syntax may vary between database software.  See http://www.w3schools.com/sql for an SQL reference."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Use the ReadTableFromDataStore(Top=...) command to view table columns.  " +
         "Right click on the table ID in the TSTool results to display table properties."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    1a) Specify a free form SQL select statement (allows joins and other SQL constructs " +
+        "supported by the database software)."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    1b) Similar to 2a; however, the SQL statement is read from a file, " +
+        "which can be specified relative to the working directory."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    if ( __working_dir != null ) {
+        JGUIUtil.addComponent(paragraph, new JLabel (
+        "        The working directory is: " + __working_dir ), 
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    2) Specify a database function to run (NOTE: embedding the function in an SQL SELECT is often easier)."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    3) Specify a database procedure to run."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "<html><b>The function and procedure tabs may require a few seconds to display while database metadata are processed.</b></html>"),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -447,22 +513,37 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
-    // List available data stores of the correct type
+    // List available data stores of the correct type.
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     // Copy the list of datastore names to internal list.
-    List<String> dataStoreChoices = new ArrayList<>();
+    List<String> datastoreChoices = new ArrayList<>();
     for ( DataStore dataStore : this.datastores ) {
-    	dataStoreChoices.add(dataStore.getName());
+    	datastoreChoices.add(dataStore.getName());
     }
-    Collections.sort(dataStoreChoices);
-    if ( dataStoreChoices.size() == 0 ) {
-        // Add an empty item so users can at least bring up the editor
-    	dataStoreChoices.add ( "" );
+    // Also list any substitute datastore names so the original or substitute can be used.
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(set.getKey()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(set.getValue());
+    	}
     }
-    __DataStore_JComboBox.setData(dataStoreChoices);
+    Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
+    if ( datastoreChoices.size() == 0 ) {
+        // Add an empty item so users can at least bring up the editor.
+    	datastoreChoices.add ( "" );
+    }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -471,13 +552,14 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __sql_JTabbedPane = new JTabbedPane ();
+    __sql_JTabbedPane.addChangeListener(this);
     __sql_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
         "Specify SQL" ));
     JGUIUtil.addComponent(main_JPanel, __sql_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for SQL via SQL statement
+    // Panel for SQL via SQL statement.
     int ySql = -1;
     JPanel sql_JPanel = new JPanel();
     sql_JPanel.setLayout( new GridBagLayout() );
@@ -502,7 +584,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(sql_JPanel, new JScrollPane(__Sql_JTextArea),
         1, ySql, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel for SQL via SQL file
+    // Panel for SQL via SQL file.
     int yFile = -1;
     JPanel file_JPanel = new JPanel();
     file_JPanel.setLayout( new GridBagLayout() );
@@ -523,7 +605,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SqlFile_JTextField = new JTextField ( 50 );
     __SqlFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel SqlFile_JPanel = new JPanel();
 	SqlFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(SqlFile_JPanel, __SqlFile_JTextField,
@@ -533,7 +615,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(SqlFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(SqlFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -541,25 +623,94 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 	JGUIUtil.addComponent(file_JPanel, SqlFile_JPanel,
 		1, yFile, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
-    // Panel for procedure
+    // Panel for functions.
+
+    int yFunc = -1;
+    JPanel func_JPanel = new JPanel();
+    func_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "Function", func_JPanel );
+
+    JGUIUtil.addComponent(func_JPanel, new JLabel ("<html><b>Under development</b> - run a function.</html>"),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Use the Edit button to enter parameter values for the function."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Databases vary in how they implement functions and procedures."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Functions return 1+ values and parameters are only input - use the ReadTableFromDataStore command to save output to a table."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel (
+        "Function calls can be embedded in SQL SELECT statements with parameters in parentheses."),
+        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(func_JPanel, new JLabel ( "Datastore function:"),
+        0, ++yFunc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreFunction_JComboBox = new SimpleJComboBox ( false );
+    // Set large so that new function list from selected datastore does not foul up layout.
+    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreFunction_JComboBox.setPrototypeDisplayValue(longest);
+    __DataStoreFunction_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(func_JPanel, __DataStoreFunction_JComboBox,
+        1, yFunc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel("Optional - database function to run."), 
+        3, yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(func_JPanel, new JLabel ("Function parameters:"),
+        0, ++yFunc, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FunctionParameters_JTextArea = new JTextArea (6,35);
+    __FunctionParameters_JTextArea.setLineWrap ( true );
+    __FunctionParameters_JTextArea.setWrapStyleWord ( true );
+    __FunctionParameters_JTextArea.setToolTipText("ParameterName1:ParameterValue1,ParameterName2:ParameterValue2");
+    __FunctionParameters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(func_JPanel, new JScrollPane(__FunctionParameters_JTextArea),
+        1, yFunc, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(func_JPanel, new JLabel ("Required - if function has parameters."),
+        3, yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(func_JPanel, new SimpleJButton ("Edit","EditFunctionParameters",this),
+        3, ++yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__command_JTextArea = new JTextArea (6,50);
+	__command_JTextArea.setLineWrap ( true );
+	__command_JTextArea.setWrapStyleWord ( true );
+	__command_JTextArea.setEditable (false);
+	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for procedures.
     int yProc = -1;
     JPanel proc_JPanel = new JPanel();
     proc_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
 
-    JGUIUtil.addComponent(proc_JPanel, new JLabel ("Run a stored procedure)."),
+    JGUIUtil.addComponent(proc_JPanel, new JLabel ("<html><b>Under development</b> - run a procedure.</html>"),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel (
-        "Under development - use the Edit button to see return value and parameters for procedures."),
+        "Use the Edit button to enter parameter values for the procedure."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel (
+        "Databases vary in how they implement functions and procedures."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel (
+        "Procedures MAY return 0 or more values and parameters may be input and/or output."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel (
+        "Procedures calls CANNOT be embedded in SELECT statements - use procedures to perform database maintenance and manipulation tasks."),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(proc_JPanel, new JLabel ( "Datastore procedure:"),
         0, ++yProc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreProcedure_JComboBox = new SimpleJComboBox ( false );
+    // Set large so that new procedure list from selected datastore does not foul up layout.
+    longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreProcedure_JComboBox.setPrototypeDisplayValue(longest);
     __DataStoreProcedure_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(proc_JPanel, __DataStoreProcedure_JComboBox,
         1, yProc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(proc_JPanel, new JLabel("Optional - database procedure to run to generate results."), 
+    JGUIUtil.addComponent(proc_JPanel, new JLabel("Optional - database procedure to run."), 
         3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("Procedure parameters:"),
@@ -585,32 +736,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("Optional - property to set to return value."),
         3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    // Panel for function
-
-    int yFunc = -1;
-    JPanel func_JPanel = new JPanel();
-    func_JPanel.setLayout( new GridBagLayout() );
-    __sql_JTabbedPane.addTab ( "Function", func_JPanel );
-
-    JGUIUtil.addComponent(func_JPanel, new JLabel ("Run a function."),
-        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(func_JPanel, new JLabel (
-        "Under development - databases vary in how they define functions and procedures.  They may be equivalent."),
-        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(func_JPanel, new JLabel (
-        "Additional features will be added to run functions, as necessary."),
-        0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea (6,50);
-	__command_JTextArea.setLineWrap ( true );
-	__command_JTextArea.setWrapStyleWord ( true );
-	__command_JTextArea.setEditable (false);
-	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
@@ -632,7 +758,8 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     pack();
     JGUIUtil.center(this);
 	refresh();
-	setResizable (false);
+	//setResizable (false);
+	setResizable (true);
     super.setVisible(true);
 }
 
@@ -646,6 +773,18 @@ public void itemStateChanged (ItemEvent event)
         if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
             // User has selected a datastore.
             actionPerformedDataStoreSelected ();
+        }
+        else if ( (event.getSource() == __DataStoreFunction_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+        	// Selected a new datastore function:
+        	// - populate the 'FunctionParameters' parameter with parameter names and no values
+        	List<String> parameterNames = this.__command.parseFunctionParameterNames(__DataStoreFunction_JComboBox.getSelected());
+        	__FunctionParameters_JTextArea.setText(this.__command.formatFunctionParameters(parameterNames));
+        }
+        else if ( (event.getSource() == __DataStoreProcedure_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+        	// Selected a new datastore procedure:
+        	// - populate the 'ProcedureParameters' parameter with parameter names and no values
+        	List<String> parameterNames = this.__command.parseFunctionParameterNames(__DataStoreProcedure_JComboBox.getSelected());
+        	__ProcedureParameters_JTextArea.setText(this.__command.formatFunctionParameters(parameterNames));
         }
     }
     refresh();
@@ -687,20 +826,263 @@ public boolean ok ()
 }
 
 /**
+Populate the function list based on the selected database.
+@param dmi DMI to use when selecting procedure list
+*/
+private void populateDataStoreFunctionChoices ( DMI dmi )
+{   String routine = getClass().getSimpleName() + ".populateDataStoreFunctionChoices";
+	if ( lastDataStoreForFunctions.equals(__DataStore_JComboBox.getSelected()) ) {
+		// Already populated so don't need to do again (it is a bit slow).
+		return;
+	}
+    List<String> funcList = new ArrayList<>();
+    //List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system procedures.
+    if ( dmi != null ) {
+        try {
+        	DatabaseMetaData metadata = dmi.getConnection().getMetaData();
+        	// The following will return duplicates for overloaded functions.
+            ResultSet rs = DMIUtil.getDatabaseFunctions (dmi);
+            // Iterate through the ResultSet and add procedures:
+            // - see note below about how function specific name must be used to manage the data
+            StringBuilder funcBuilder = null;
+            short columnType = 0;
+            int pos = 0;
+            String typeName = null;
+            String specificName = null;
+            String columnName = null;
+            String funcNamePrev = "";
+            while (rs.next()) {
+            	String funcName = rs.getString("FUNCTION_NAME");
+            	//Message.printStatus(2, routine, "Processing function: " + funcName );
+            	if ( funcName.equals(funcNamePrev) ) {
+            		// Same function name is being processed:
+            		// - this will be the case for overloaded functions
+            		// - skip because it will result in redundant processing
+            		continue;
+            	}
+            	// Save the function name so is used in the next loop iteration.
+            	funcNamePrev = funcName;
+            	// Format the function signature as including the parameter names and type.
+            	String returnString = "";
+            	// Get the metadata for the function:
+            	// - because functions may be overloaded, must format the function string first and then
+            	//   add only if not already in the list
+            	boolean supportsFunctions = true; // All databases have in metadata?
+            	if ( supportsFunctions ) {
+            		// If overloaded, duplicate entries can occur:
+            		// - the following resultset is the total of columns for all overloaded functions
+            		// - therefore, must group by the same "SPECIFIC_NAME"
+            		// - use a hashmap with key being the specific name
+            		HashMap<String,StringBuilder> funcMap = new HashMap<>();
+            		ResultSet rs2 = metadata.getFunctionColumns(dmi.getConnection().getSchema(), null, funcName, null);
+            		while (rs2.next()) {
+            			// Format the column:
+            			// - only list parameters that are passed to the function
+            			// - return type does not seem to always be set so also check position
+            			columnType = rs2.getShort("COLUMN_TYPE");
+            			pos = rs2.getShort("ORDINAL_POSITION");
+            			typeName = rs2.getString("TYPE_NAME");
+            			specificName = rs2.getString("SPECIFIC_NAME");
+            			columnName = rs2.getString("COLUMN_NAME");
+            			//Message.printStatus(2, routine, "  Processing " + specificName + " " + funcName + " " + columnName + " " + columnType);
+            			funcBuilder = funcMap.get(specificName);
+            			if ( funcBuilder == null ) {
+            				// Need to create a new StringBuilder:
+            				// - save the StringBuilder so it can be used for matching records
+            				funcBuilder = new StringBuilder();
+            				funcMap.put(specificName, funcBuilder);
+            				//Message.printStatus(2, routine, "  Adding HashMap function for " + specificName + " " + funcName);
+            			}
+            			else {
+            				// Else, previously added the builder so use it.
+            			}
+            			if ( funcBuilder.length() == 0 ) {
+            				// First time the function is encountered so add the function name at the beginning.
+            				funcBuilder.append( funcName );
+           					funcBuilder.append("(");
+            			}
+            			if ( (columnType == DatabaseMetaData.functionColumnResult) || (pos == 0) ) {
+            				// Only want to show columns that need to be provided as parameters to the function:
+            				// - save the return type string for later use
+            				// - multiple result columns may be skipped
+            				returnString = " -> " + typeName;
+            				continue;
+            			}
+            			// Added parameters.
+            			if ( funcBuilder.charAt(funcBuilder.length() - 1) != '(' ) {
+            				// 2nd or greater parameter so need a comma to separate.
+            				funcBuilder.append(",");
+            			}
+            			// Append the column name and type.
+            			funcBuilder.append(columnName);
+           				funcBuilder.append(" ");
+            			funcBuilder.append(typeName);
+           				//Message.printStatus(2, routine, "    Processing column name: " + columnName + " " + typeName + " " + columnType);
+            		}
+            		// Done with ResultSet of columns for the function.
+            		rs2.close();
+            		// Add all of the functions in the HashMap if not already added.
+            		StringBuilder b;
+            		for ( Map.Entry<String,StringBuilder> set : funcMap.entrySet() ) {
+            			b = set.getValue();
+            			b.append(")" + returnString);
+            			// Search for the function signature in the list.
+            			boolean found = false;
+            			String funcSigString = b.toString();
+            			for ( String func : funcList ) {
+            				if ( func.equals(b) ) {
+            					found = true;
+            					break;
+            				}
+            			}
+            			if ( !found ) {
+            				// Have not already added the function, so add.
+            				funcList.add(funcSigString);
+            				//Message.printStatus(2, routine, "  Adding final list function: " + funcSigString);
+            			}
+            		}
+            	}
+            }
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 1, routine, "Error getting function list (" + e + ")." );
+            Message.printWarning ( 3, routine, e );
+            funcList = null;
+        }
+    }
+    if ( funcList == null ) {
+        funcList = new ArrayList<>();
+    }
+    // Sort the functions.
+    Collections.sort(funcList, String.CASE_INSENSITIVE_ORDER);
+    // Always add a blank option at the start to help with initialization.
+    funcList.add ( 0, "" );
+    __DataStoreFunction_JComboBox.removeAll();
+    for ( String func : funcList ) {
+    	__DataStoreFunction_JComboBox.add( func );
+    }
+    // Select first choice (may get reset from existing parameter values).
+    __DataStoreFunction_JComboBox.select ( null );
+    if ( __DataStoreFunction_JComboBox.getItemCount() > 0 ) {
+        __DataStoreFunction_JComboBox.select ( 0 );
+    }
+    // Set the datastore for which functions were populated so don't do it unnecessarily.
+    lastDataStoreForFunctions = __DataStore_JComboBox.getSelected();
+}
+
+/*
 Populate the procedure list based on the selected database.
 @param dmi DMI to use when selecting procedure list
 */
-private void populateDataStoreProcedureChoices ( DMI dmi )
-{   String routine = getClass().getSimpleName() + "populateDataStoreProcedureChoices";
-    List<String> procList = null;
-    List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system procedures
-    if ( dmi == null ) {
-        procList = new ArrayList<>();
-    }
-    else {
+private void populateDataStoreProcedureChoices ( DMI dmi ) {
+    String routine = getClass().getSimpleName() + ".populateDataStoreProcedureChoices";
+	if ( lastDataStoreForProcedures.equals(__DataStore_JComboBox.getSelected()) ) {
+		// Already populated so don't need to do again (it is a bit slow).
+		return;
+	}
+    List<String> procList = new ArrayList<>();
+    //List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system procedures.
+    if ( dmi != null ) {
         try {
-        	boolean returnSpecificName = true; // Needed for overloaded functions
-            procList = DMIUtil.getDatabaseProcedureNames(dmi, true, notIncluded, returnSpecificName );
+        	DatabaseMetaData metadata = dmi.getConnection().getMetaData();
+        	// The following will return duplicates for overloaded procedures.
+            ResultSet rs = DMIUtil.getDatabaseProcedures (dmi);
+            // Iterate through the ResultSet and add procedures:
+            // - see note below about how procedure specific name must be used to manage the data
+            StringBuilder procBuilder = null;
+            short columnType = 0;
+            int pos = 0;
+            String typeName = null;
+            String specificName = null;
+            String columnName = null;
+            String procNamePrev = "";
+            while (rs.next()) {
+            	String procName = rs.getString("PROCEDURE_NAME");
+            	if ( procName.equals(procNamePrev) ) {
+            		// Same procedure name is being processed:
+            		// - this will be the case for overloaded procedures
+            		// - skip because it will result in redundant processing
+            		continue;
+            	}
+            	// Save the procedure name so is used in the next loop iteration.
+            	procNamePrev = procName;
+            	// Format the procedure signature as including the parameter names and type.
+            	String returnString = "";
+            	// Get the metadata for the procedure:
+            	// - because procedures may be overloaded, must format the procedure string first and then
+            	//   add only if not already in the list
+            	if ( metadata.supportsStoredProcedures() ) {
+            		// If overloaded, duplicate entries can occur:
+            		// - the following resultset is the total of columns for all overloaded procedures
+            		// - therefore, must group by the same "SPECIFIC_NAME"
+            		// - use a hashmap with key being the specific name
+            		HashMap<String,StringBuilder> procMap = new HashMap<>();
+            		ResultSet rs2 = metadata.getProcedureColumns(dmi.getConnection().getSchema(), null, procName, null);
+            		while (rs2.next()) {
+            			// Format the column:
+            			// - only list parameters that are passed to the procedure
+            			// - return type does not seem to always be set so also check position
+            			columnType = rs2.getShort("COLUMN_TYPE");
+            			pos = rs2.getShort("ORDINAL_POSITION");
+            			typeName = rs2.getString("TYPE_NAME");
+            			specificName = rs2.getString("SPECIFIC_NAME");
+            			columnName = rs2.getString("COLUMN_NAME");
+            			procBuilder = procMap.get(specificName);
+            			if ( procBuilder == null ) {
+            				// Need to create a new StringBuilder:
+            				// - save the StringBuilder so it can be used for matching records
+            				procBuilder = new StringBuilder();
+            				procMap.put(specificName, procBuilder);
+            			}
+            			else {
+            				// Else, previously added the builder so use it.
+            			}
+            			if ( procBuilder.length() == 0 ) {
+            				// First time the procedure is encountered so add the procedure name at the beginning.
+            				procBuilder.append( procName );
+           					procBuilder.append("(");
+            			}
+            			if ( (columnType == DatabaseMetaData.procedureColumnResult) || (pos == 0) ) {
+            				// Only want to show columns that need to be provided as parameters to the procedure:
+            				// - save the return type string for later use
+            				// - multiple result columns may be skipped
+            				returnString = " -> " + typeName;
+            				continue;
+            			}
+            			// Added parameters.
+            			if ( procBuilder.charAt(procBuilder.length() - 1) != '(' ) {
+            				// 2nd or greater parameter so need a comma to separate.
+            				procBuilder.append(",");
+            			}
+            			// Append the column name and type.
+            			procBuilder.append(columnName);
+           				procBuilder.append(" ");
+            			procBuilder.append(typeName);
+           				//Message.printStatus(2, routine, "    Processing column name: " + columnName + " " + typeName + " " + columnType);
+            		}
+            		// Done with ResultSet of columns for the procedure.
+            		rs2.close();
+            		// Add all of the procedures in the HashMap if not already added.
+            		StringBuilder b;
+            		for ( Map.Entry<String,StringBuilder> set : procMap.entrySet() ) {
+            			b = set.getValue();
+            			b.append(")" + returnString);
+            			// Search for the procedure signature in the list.
+            			boolean found = false;
+            			String procSigString = b.toString();
+            			for ( String proc : procList ) {
+            				if ( proc.equals(b) ) {
+            					found = true;
+            					break;
+            				}
+            			}
+            			if ( !found ) {
+            				// Have not already added the procedure, so add.
+            				procList.add(procSigString);
+            			}
+            		}
+            	}
+            }
         }
         catch ( Exception e ) {
             Message.printWarning ( 1, routine, "Error getting procedure list (" + e + ")." );
@@ -709,22 +1091,23 @@ private void populateDataStoreProcedureChoices ( DMI dmi )
         }
     }
     if ( procList == null ) {
-        procList = new ArrayList<String>();
+        procList = new ArrayList<>();
     }
-    // Always add a blank option at the start to help with initialization
+    // Sort the procedures.
+    Collections.sort(procList, String.CASE_INSENSITIVE_ORDER);
+    // Always add a blank option at the start to help with initialization.
     procList.add ( 0, "" );
     __DataStoreProcedure_JComboBox.removeAll();
-    for ( String proc : procList ) {
-        __DataStoreProcedure_JComboBox.add( proc );
+    for ( String func : procList ) {
+    	__DataStoreProcedure_JComboBox.add( func );
     }
-    // Set large so that new procedure list from selected datastore does not foul up layout
-    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    __DataStoreProcedure_JComboBox.setPrototypeDisplayValue(longest);
     // Select first choice (may get reset from existing parameter values).
     __DataStoreProcedure_JComboBox.select ( null );
     if ( __DataStoreProcedure_JComboBox.getItemCount() > 0 ) {
         __DataStoreProcedure_JComboBox.select ( 0 );
     }
+    // Set the datastore for which procedures were populated so don't do it unnecessarily.
+    lastDataStoreForProcedures = __DataStore_JComboBox.getSelected();
 }
 
 /**
@@ -736,6 +1119,8 @@ try{
     String DataStore = "";
     String Sql = "";
     String SqlFile = "";
+    String DataStoreFunction = "";
+    String FunctionParameters = "";
     String DataStoreProcedure = "";
     String ProcedureParameters = "";
     String ProcedureReturnProperty = "";
@@ -750,22 +1135,24 @@ try{
 			Sql = Sql.replace("\\n","\n");
 		}
 		SqlFile = props.getValue ( "SqlFile" );
+		DataStoreFunction = props.getValue ( "DataStoreFunction" );
+		FunctionParameters = props.getValue ( "FunctionParameters" );
 		DataStoreProcedure = props.getValue ( "DataStoreProcedure" );
 		ProcedureParameters = props.getValue ( "ProcedureParameters" );
 		ProcedureReturnProperty = props.getValue ( "ProcedureReturnProperty" );
-        // The data store list is set up in initialize() but is selected here
+        // The data store list is set up in initialize() but is selected here.
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
-            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
-            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor
+            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor.
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
-                // New command...select the default...
-                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
+                // New command, select the default.
+                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
                 __DataStore_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -778,24 +1165,53 @@ try{
             __SqlFile_JTextField.setText(SqlFile);
             __sql_JTabbedPane.setSelectedIndex(1);
         }
-        // First populate the procedure choices...
-        populateDataStoreProcedureChoices(getDMI() );
-        // Now select what the command had previously (if specified)...
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreProcedure_JComboBox, DataStoreProcedure, JGUIUtil.NONE, null, null ) ) {
-            __DataStoreProcedure_JComboBox.select ( DataStoreProcedure );
-            if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
-                __sql_JTabbedPane.setSelectedIndex(2);
+        // First populate the function choices:
+        // - lazy load since can be slow
+        if ( (DataStoreFunction != null) && !DataStoreFunction.isEmpty() ) {
+        	populateDataStoreFunctionChoices(getDMI());
+        	// Now select what the command had previously (if specified).
+        	if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreFunction_JComboBox, DataStoreFunction, JGUIUtil.NONE, null, null ) ) {
+        		__DataStoreFunction_JComboBox.select ( DataStoreFunction );
+            	if ( (DataStoreFunction != null) && !DataStoreFunction.equals("") ) {
+            		__sql_JTabbedPane.setSelectedIndex(2);
+            	}
+        	}
+        	else {
+        		if ( (DataStoreFunction == null) || DataStoreFunction.equals("") ) {
+        			// New command, select the default.
+        			__DataStoreFunction_JComboBox.select ( 0 );
+        		}
+        		else {
+        			// Bad user command.
+        			Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+       					"DataStoreFunction parameter \"" + DataStoreFunction + "\".  Select a\ndifferent value or Cancel." );
+        		}
             }
         }
-        else {
-            if ( (DataStoreProcedure == null) || DataStoreProcedure.equals("") ) {
-                // New command...select the default...
-                __DataStoreProcedure_JComboBox.select ( 0 );
-            }
-            else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStoreProcedure parameter \"" + DataStoreProcedure + "\".  Select a\ndifferent value or Cancel." );
+        if ( FunctionParameters != null ) {
+            __FunctionParameters_JTextArea.setText ( FunctionParameters );
+        }
+        // First populate the procedure choices:
+        // - lazy load since can be slow
+        if ( (DataStoreProcedure != null) && !DataStoreProcedure.isEmpty() ) {
+        	populateDataStoreProcedureChoices(getDMI());
+        	// Now select what the command had previously (if specified).
+        	if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreProcedure_JComboBox, DataStoreProcedure, JGUIUtil.NONE, null, null ) ) {
+        		__DataStoreProcedure_JComboBox.select ( DataStoreProcedure );
+            	if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
+            		__sql_JTabbedPane.setSelectedIndex(3);
+            	}
+        	}
+        	else {
+        		if ( (DataStoreProcedure == null) || DataStoreProcedure.equals("") ) {
+        			// New command, select the default.
+        			__DataStoreProcedure_JComboBox.select ( 0 );
+        		}
+        		else {
+        			// Bad user command.
+        			Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+       					"DataStoreProcedure parameter \"" + DataStoreProcedure + "\".  Select a\ndifferent value or Cancel." );
+        		}
             }
         }
         if ( ProcedureParameters != null ) {
@@ -805,7 +1221,7 @@ try{
             __ProcedureReturnProperty_JTextField.setText ( ProcedureReturnProperty );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     DataStore = __DataStore_JComboBox.getSelected();
     if ( DataStore == null ) {
         DataStore = "";
@@ -817,6 +1233,11 @@ try{
     	Sql = Sql.replace("\n", "\\n");
     }
 	SqlFile = __SqlFile_JTextField.getText().trim();
+    DataStoreFunction = __DataStoreFunction_JComboBox.getSelected();
+    if ( DataStoreFunction == null ) {
+        DataStoreFunction = "";
+    }
+	FunctionParameters = __FunctionParameters_JTextArea.getText().trim().replace("\n"," ");
     DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     if ( DataStoreProcedure == null ) {
         DataStoreProcedure = "";
@@ -827,11 +1248,13 @@ try{
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "Sql=" + Sql );
 	props.add ( "SqlFile=" + SqlFile);
-	props.add ( "DataStoreProcedure=" + DataStoreProcedure );
+	props.add ( "DataStoreFunction=" + DataStoreFunction );
+	props.add ( "FunctionParameters=" + FunctionParameters );
 	props.add ( "DataStoreProcedure=" + DataStoreProcedure );
 	props.add ( "ProcedureParameters=" + ProcedureParameters );
+	props.add ( "ProcedureReturnProperty=" + ProcedureReturnProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (SqlFile != null) && !SqlFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -860,18 +1283,38 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
+}
+
+/**
+ * Handle JTabbedPane changes.
+ */
+public void stateChanged ( ChangeEvent event ) {
+	JTabbedPane sourceTabbedPane = (JTabbedPane)event.getSource();
+	int index = sourceTabbedPane.getSelectedIndex();
+	if ( index == 2 ) {
+		// Populate the function list if not done already:
+		// - set the index first because otherwise there is a pause
+        __sql_JTabbedPane.setSelectedIndex(2);
+		populateDataStoreFunctionChoices(getDMI());
+	}
+	else if ( index == 3 ) {
+		// Populate the procedure list if not done already:
+		// - set the index first because otherwise there is a pause
+        __sql_JTabbedPane.setSelectedIndex(3);
+		populateDataStoreProcedureChoices(getDMI());
+	}
 }
 
 /**
@@ -882,7 +1325,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
+// The following methods are all necessary because this class implements WindowListener.
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

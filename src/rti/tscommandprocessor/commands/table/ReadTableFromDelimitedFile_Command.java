@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -90,10 +91,6 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	// If the input file does not exist, warn the user...
-
-	String working_dir = null;
-	
 	CommandProcessor processor = getCommandProcessor();
 	
     if ( (TableID == null) || TableID.isEmpty() ) {
@@ -103,12 +100,9 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the table identifier." ) );
     }
+    // Don't check WorkingDir here because it may be created dynamically but make sure property is available.
 	try {
-	    Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			working_dir = (String)o;
-		}
+	    processor.getPropContents ( "WorkingDir" );
 	}
 	catch ( Exception e ) {
         message = "Error requesting WorkingDir from processor.";
@@ -167,7 +161,7 @@ throws InvalidCommandParameterException
 	int paramCount = 0;
     if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
     	++paramCount;
-    	/* TODO smalers 2020-09-12 need to check that header lines are valid
+    	/* TODO smalers 2020-09-12 need to check that header lines are valid.
         message = ".";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -186,9 +180,7 @@ throws InvalidCommandParameterException
                 message, "Specify HeaderLines or ColumnNames, but not both." ) );
     }
  
-	// TODO SAM 2005-11-18 Check the format.
-    
-	//  Check for invalid parameters...
+	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(13);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
@@ -217,11 +209,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new ReadTableFromDelimitedFile_JDialog ( parent, this )).ok();
 }
 
@@ -291,7 +282,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -299,7 +290,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -308,20 +299,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
-	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
 	String Delimiter = parameters.getValue ( "Delimiter" );
-	if ( (Delimiter != null) && (Delimiter.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Delimiter = TSCommandProcessorUtil.expandParameterValue(processor, this, Delimiter);
 	}
-	String delimiter = ","; // default
+	String delimiter = ","; // Default.
 	if ( (Delimiter != null) && !Delimiter.isEmpty() ) {
 		delimiter = Delimiter;
 		delimiter = delimiter.replace("\\t", "\t");
@@ -333,32 +324,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
 	String ColumnNames = parameters.getValue ( "ColumnNames" );
-	if ( (ColumnNames != null) && (ColumnNames.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		ColumnNames = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnNames);
 	}
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
-	if ( (DateTimeColumns != null) && (DateTimeColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
 	}
 	String DoubleColumns = parameters.getValue ( "DoubleColumns" );
-	if ( (DoubleColumns != null) && (DoubleColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
 	}
 	String IntegerColumns = parameters.getValue ( "IntegerColumns" );
-	if ( (IntegerColumns != null) && (IntegerColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
 	}
 	String TextColumns = parameters.getValue ( "TextColumns" );
-	if ( (TextColumns != null) && (TextColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
 	}
 	String Top = parameters.getValue ( "Top" );
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
-    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
     }
 
-    /* FIXME enable the code
+    /* FIXME enable the code.
  	if ((__Columns_intArray == null) || (__Columns_intArray.length == 0)) {
 		message += "\nOne or more columns must be specified";
 		++warning_count;
@@ -420,108 +411,163 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now process the file...
+	// Now process the file.
 
     if ( commandPhase == CommandPhaseType.RUN ) {
-    	String InputFile_full = IOUtil.verifyPathForOS(
-	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
-		if ( !IOUtil.fileExists(InputFile_full) ) {
-			message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
-			++warning_count;
-	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-	            message, "Verify that the delimited table file exists." ) );
+    	String InputFile_full = InputFile;
+    	boolean canRead = true;
+    	// Match a file if * wildcard is used:
+    	// - can only use the wildcard in the filename part
+    	// - must match a single file
+    	if ( InputFile_full.indexOf("*") > 0 ) {
+    		InputFile_full = IOUtil.verifyPathForOS(
+	        	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        		TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+    	    File inputFile = new File( InputFile_full );
+    	    String parent = inputFile.getParent();
+    	    // The pattern to match is glob-style, so turn into Java pattern.
+    	    String filePattern = inputFile.getName().replace("*", ".*");
+    	    if ( parent.indexOf("*") >= 0 ) {
+    	    	message += "The delimited file can only contain * in the filename part.";
+			 	++warning_count;
+	          	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	               	message, "Verify that the delimited file contains * only in the filename (not folder)." ) );
+	         	canRead = false;
+    	    }
+    	    else {
+    	    	File [] filePathList = new File(parent).listFiles();
+    	    	List<String> matchingFiles = new ArrayList<>();
+    	    	for ( File filePath : filePathList ) {
+    	    		String file = filePath.getName();
+    	    		//Message.printStatus(2, routine, "Checking file: \"" + file + "\" against pattern \"" + filePattern + "\"");
+    	    		if ( file.matches(filePattern) ) {
+    	    			matchingFiles.add(filePath.getPath());
+    	    		}
+    	    	}
+    	    	if ( matchingFiles.size() == 0 ) {
+    	    		++warning_count;
+	          		status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	               		"No files matched: " + InputFile_full, "Check whether the wildcard pattern is too specific or in error.") );
+	         		canRead = false;
+    	    	}
+    	    	else if ( matchingFiles.size() > 1 ) {
+    	    		++warning_count;
+	          		status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	               		"" + matchingFiles.size() + " files matched, expecting 1 match for: " + InputFile_full,
+	          			"Check whether the wildcard pattern needs to be more specific.") );
+	         		canRead = false;
+    	    	}
+    	    	else {
+    	    		// Matched a single file so can read.
+    	    		InputFile_full = matchingFiles.get(0);
+    	    		canRead = true;
+    	    	}
+    	    }
+    	}
+    	else {
+    		// Filename does not include * so just expand as usual.
+    		InputFile_full = IOUtil.verifyPathForOS(
+	        	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        		TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+    		if ( !IOUtil.fileExists(InputFile_full) ) {
+			  		message = "The delimited file \"" + InputFile_full + "\" does not exist.";
+			  		++warning_count;
+	          		status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	              		message, "Verify that the delimited table file exists." ) );
+	          		canRead = false;
+    		}
 		}
-    	DataTable table = null;
-    	PropList props = new PropList ( "DataTable" );
-    	props.set ( "Delimiter", delimiter );
-    	props.set ( "CommentLineIndicator=#" );	// Skip comment lines
-    	props.set ( "TrimInput=True" ); // Trim strings before parsing.
-    	props.set ( "TrimStrings=True" ); // Trim strings after parsing
-    	//props.set ( "ColumnDataTypes=Auto" ); // Automatically determine column data types
-    	if ( (SkipLines != null) && !SkipLines.isEmpty() ) {
-    	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
-    	}
-        if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
-            props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
-        }
-        if ( (ColumnNames != null) && !ColumnNames.isEmpty() ) {
-            props.set ( "ColumnNames=" + ColumnNames);
-        }
-        if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
-            props.set ( "DateTimeColumns=" + DateTimeColumns);
-        }
-        if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
-            props.set ( "DoubleColumns=" + DoubleColumns);
-        }
-        if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
-            props.set ( "IntegerColumns=" + IntegerColumns);
-        }
-        if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
-            props.set ( "TextColumns=" + TextColumns);
-        }
-        if ( (Top != null) && !Top.isEmpty() ) {
-            props.set ( "Top=" + Top);
-        }
-        Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
-        Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
-    	try {
-    	    // Always try to read object data types
-    	    props.set("ColumnDataTypes=Auto");
-            table = DataTable.parseFile ( InputFile_full, props );
-            
-            // Set the table identifier...
-            
-            table.setTableID ( TableID );
-    	}
-    	catch ( Exception e ) {
-    		Message.printWarning ( 3, routine, e );
-    		message = "Unexpected error reading table from delimited file \"" + InputFile_full + "\" (" + e + ").";
-    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the file exists and is properly formatted - see the log file." ) );
-    		throw new CommandWarningException ( message );
-    	}
-    	
-        // Set the table in the processor...
+		if ( canRead ) {
+			DataTable table = null;
+			PropList props = new PropList ( "DataTable" );
+			props.set ( "Delimiter", delimiter );
+			props.set ( "CommentLineIndicator=#" );	// Skip comment lines.
+			props.set ( "TrimInput=True" ); // Trim strings before parsing.
+			props.set ( "TrimStrings=True" ); // Trim strings after parsing.
+			//props.set ( "ColumnDataTypes=Auto" ); // Automatically determine column data types.
+			if ( (SkipLines != null) && !SkipLines.isEmpty() ) {
+				props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
+			}
+			if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
+				props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
+			}
+			if ( (ColumnNames != null) && !ColumnNames.isEmpty() ) {
+				props.set ( "ColumnNames=" + ColumnNames);
+			}
+			if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
+				props.set ( "DateTimeColumns=" + DateTimeColumns);
+			}
+			if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
+				props.set ( "DoubleColumns=" + DoubleColumns);
+			}
+			if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
+				props.set ( "IntegerColumns=" + IntegerColumns);
+			}
+			if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
+				props.set ( "TextColumns=" + TextColumns);
+			}
+			if ( (Top != null) && !Top.isEmpty() ) {
+				props.set ( "Top=" + Top);
+			}
+			Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
+			Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
+			try {
+				// Always try to read object data types.
+				props.set("ColumnDataTypes=Auto");
+				table = DataTable.parseFile ( InputFile_full, props );
 
-        PropList request_params = new PropList ( "" );
-        request_params.setUsingObject ( "Table", table );
-        try {
-            processor.processRequest( "SetTable", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting SetTable(Table=...) from processor.";
-            Message.printWarning(warning_level,
+				// Set the table identifier.
+				table.setTableID ( TableID );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 3, routine, e );
+				message = "Unexpected error reading table from delimited file \"" + InputFile_full + "\" (" + e + ").";
+				Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+				status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that the file exists and is properly formatted - see the log file." ) );
+				throw new CommandWarningException ( message );
+			}
+    	
+			// Set the table in the processor.
+
+			PropList request_params = new PropList ( "" );
+			request_params.setUsingObject ( "Table", table );
+			try {
+				processor.processRequest( "SetTable", request_params);
+			}
+			catch ( Exception e ) {
+				message = "Error requesting SetTable(Table=...) from processor.";
+				Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( commandPhase,
+				status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
-        }
+			}
         
-	    // Set the property indicating the number of rows in the table
-        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
-            int rowCount = table.getNumberOfRecords();
-            request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", RowCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
-                Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
+			// Set the property indicating the number of rows in the table.
+			if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
+				int rowCount = table.getNumberOfRecords();
+				request_params = new PropList ( "" );
+				request_params.setUsingObject ( "PropertyName", RowCountProperty );
+				request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+				try {
+					processor.processRequest( "SetProperty", request_params);
+				}
+				catch ( Exception e ) {
+					message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+					Message.printWarning(warning_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+					status.addToLog ( commandPhase,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Report the problem to software support." ) );
+				}
+			}
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Create an empty table and set the ID
+        // Create an empty table and set the ID.
         DataTable table = new DataTable();
         table.setTableID ( TableID );
         setDiscoveryTable ( table );

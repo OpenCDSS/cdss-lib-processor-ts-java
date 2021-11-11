@@ -50,7 +50,9 @@ import javax.swing.SwingConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import riverside.datastore.DataStore;
@@ -358,6 +360,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
 {	this.__command = command;
 	this.datastores = datastores;
 	addWindowListener( this );
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
 
     Insets insetsTLBR = new Insets(1,2,1,2);
 
@@ -381,7 +384,22 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     		}
         }
     }
-    Collections.sort(datastoreChoices);
+    // Also list any substitute datastore names so the original or substitute can be used.
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(set.getKey()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(set.getValue());
+    	}
+    }
+    Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
     if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor.
     	datastoreChoices.add ( "" );

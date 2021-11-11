@@ -678,6 +678,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -951,7 +952,7 @@ private PropList __processor_PropList = null;
 Data store list, to generically manage database connections.  This list is guaranteed to be
 non-null, although the individual data stores may not be opened and need to be handled appropriately.
 */
-private List<DataStore> __dataStoreList = new Vector<DataStore>();
+private List<DataStore> __dataStoreList = new Vector<>();
 
 /**
  * Map that allows a requested datastore to substitute another datastore.
@@ -1922,7 +1923,7 @@ protected List<DataStore> getDataStoreList()
 
 /**
  * Get the datastore substitute map.
- * @return the datastore substitute map.
+ * @return the datastore substitute map (original datastore name is key, and value is the substitute).
  */
 protected HashMap<String,String> getDataStoreSubstituteMap() {
 	return this.__dataStoreSubstituteMap;
@@ -1947,21 +1948,21 @@ throws Exception
 		dtString = dtString.trim();
 	}
 	if ( (dtString == null) || dtString.isEmpty() || dtString.equals("*") ) {
-		// Want to use all available...
+		// Want to use all available.
 		return null;
 	}
 
-	// Check for user DateTime instances (legacy InputStart, OutputStart, etc.)...
+	// Check for user DateTime instances (legacy InputStart, OutputStart, etc.).
 
 	DateTime date = (DateTime)__datetime_Hashtable.get ( dtString );
 	if ( date != null ) {
-		// Found date in the hash table so use it...
+		// Found date in the hash table so use it.
 		return date;
 	}
 	
-	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively
-	// Handle built-in property ${InputStart} etc. below so that nulls don't cause an issue (nulls are OK for full period)
-	// Check for named DateTime instances...
+	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively.
+	// Handle built-in property ${InputStart} etc. below so that nulls don't cause an issue (nulls are OK for full period).
+	// Check for named DateTime instances.
 
 	if ( dtString.equalsIgnoreCase("OutputEnd") || dtString.equalsIgnoreCase("${OutputEnd}") || dtString.equalsIgnoreCase("OutputPeriodEnd") ) {
 		return __OutputEnd_DateTime;
@@ -1978,7 +1979,7 @@ throws Exception
 		return __InputStart_DateTime;
 	}
 	
-	// Check for requested user-defined property
+	// Check for requested user-defined property.
 	if ( dtString.startsWith("${") && dtString.endsWith("}") ) {
 		String propName = dtString.substring(2,dtString.length() - 1);
 		Object o = __ts_processor.getPropContents(propName);
@@ -1987,13 +1988,13 @@ throws Exception
 				return (DateTime)o;
 			}
 			else if ( o instanceof String ) {
-				// Reset the string and try parsing below
+				// Reset the string and try parsing below.
 				dtString = (String)o;
 			}
 		}
 	}
 
-	// Else did not find a date time so try parse the string (OK to throw an exception)...
+	// Else did not find a date time so try parse the string (OK to throw an exception).
 
 	return DateTime.parse ( dtString );
 }
@@ -2505,12 +2506,23 @@ private int indexOf ( String string, String traceID )
 
 /**
 Return the data store that matches the requested name.
+If a datastore substitute name is used, look up the original datastore.
 @param dataStoreName name for the data store to find.
 @return the data store that matches the given name (will return null if not matched).
 */
 protected DataStore lookupDataStore ( String dataStoreName )
 {   //String routine = "TSEngine.lookupDataStore";
     //Message.printStatus(2, routine, "Getting data store for \"" + dataStoreID + "\"" );
+	
+	// If the datastore name is a substitute, use the original datastore name.
+    for ( Map.Entry<String,String> set : this.__dataStoreSubstituteMap.entrySet() ) {
+   		if ( dataStoreName.equals(set.getValue()) ) {
+   			// The name matches a datastore substitute name so use the original name.
+   			dataStoreName = set.getKey();
+   		}
+    }
+	
+	// Look up the matching datastore from the name.
     for ( DataStore ds : __dataStoreList ) {
         if ( ds.getName().equalsIgnoreCase(dataStoreName) ) {
             return ds;
@@ -2758,9 +2770,9 @@ protected void processCommands ( List<Command> commandList, PropList appPropList
 throws Exception
 {	String message, routine = getClass().getSimpleName() + ".processCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
-	int error_count = 0; // For errors during time series retrieval
-	int update_count = 0; // For warnings about command updates
-	int popup_warning_level = 2; // For serious warning levels - currently go to log and not popup
+	int error_count = 0; // For errors during time series retrieval.
+	int update_count = 0; // For warnings about command updates.
+	int popup_warning_level = 2; // For serious warning levels - currently go to log and not popup.
 	if ( commandList == null ) {
 		// Process all commands if a subset has not been provided.
 		commandList = __ts_processor.getCommands();
@@ -2775,10 +2787,9 @@ throws Exception
 	// Save class version...
 	__processor_PropList = appPropList;
 
-	// Initialize the working directory to the initial directory that is
-	// passed in.  Do this because software may request the working directory that
-	// is the result of processing and the initial directory may never have
-	// been changed dynamically.
+	// Initialize the working directory to the initial directory that is passed in.
+	// Do this because software may request the working directory that
+	// is the result of processing and the initial directory may never have been changed dynamically.
 	
 	// FIXME SAM 2008-07-09 Need to reset global properties to defaults before running
 	// This includes output period, etc.  Otherwise, the settings will be those of the
@@ -2787,7 +2798,7 @@ throws Exception
 	// This is done in the TSCommandProcessor instance before calling this method.
 	
 	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
-	// FIXME SAM 2008-07-31 Remove redundant location of properties in TSEngine and TSCommandProcessor
+	// FIXME SAM 2008-07-31 Remove redundant location of properties in TSEngine and TSCommandProcessor.
 	if ( InitialWorkingDir != null ) {
 	    __processor_PropList.set ( "InitialWorkingDir", InitialWorkingDir );
 		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
@@ -4003,11 +4014,11 @@ The indices do not have to be in order.
 */
 protected void processTimeSeries ( int ts_indices[], PropList proplist )
 throws IOException
-{	String message = null; // Message string
+{	String message = null;
 	String routine = "TSEngine.processTimeSeries";
 
     // List of time series to output, determined from the time series in memory
-    // and a list of selected array positions (e.g., from a GUI.
+    // and a list of selected array positions (e.g., from a UI).
 
     List<TS> tslist_output = null;
 
@@ -4019,19 +4030,18 @@ throws IOException
 	Message.printStatus ( 1, routine, "Creating output from previously queried time series..." );
 
 	// Put together the list of time series to process/output, given the requested ts_indices.
-	// Need to do more work if BinaryTS, but hopefully if BinaryTS
-	// batch mode will be used?!  Use a member __tslist_output so we can
-	// manage memory and not leave used if an exception occurs (clean up the next time).
+	// Need to do more work if BinaryTS, but hopefully if BinaryTS batch mode will be used?!
+	// Use a member __tslist_output so can manage memory and not leave used if an exception occurs (clean up the next time).
 
 	int nts = __tslist.size();
 	if ( ts_indices == null ) {
-		// Use the entire list...
+		// Use the entire list.
 		tslist_output = __tslist;
 	}
 	else {
         int ts_indices_size = ts_indices.length;
 		if ( tslist_output == null ) {
-			tslist_output = new Vector<TS> ( ts_indices_size );
+			tslist_output = new Vector<> ( ts_indices_size );
 		}
 		for ( int i = 0; i < ts_indices_size; i++ ) {
 			if ( (ts_indices[i] >= 0) && (ts_indices[i] < nts) ) {
@@ -4039,7 +4049,7 @@ throws IOException
 			}
 		}
 	}
-	// Now call the overloaded method that takes a list of time series
+	// Now call the overloaded method that takes a list of time series.
 	processTimeSeries ( tslist_output, proplist );
 }
 
@@ -4049,23 +4059,22 @@ The time series are typically generated from a previous call to
 processCommands() or processTimeSeriesCommands().
 However, the list of time series may also originate in an application like TSTool,
 for example when a single time series is converted to a time series ensemble
-on the fly and is then processed here, independent of time series maintained with
-the processor.
+on the fly and is then processed here, independent of time series maintained with the processor.
 */
 protected void processTimeSeries ( List<TS> tslist_output, PropList proplist )
 throws IOException {
-	String message = null; // Message string
+	String message = null;
 	String routine = "TSEngine.processTimeSeries";
 
-	// Define a local proplist to better deal with null...
+	// Define a local proplist to better deal with null.
 	PropList props = proplist;
 	if ( props == null ) {
 		props = new PropList ( "" );
 	}
 
 	// Figure out the output.  This method is going to be called with
-	// legacy -o options (batch mode) as well as new PropList syntax.  Make
-	// sure to support legacy first and then phase in new approach...
+	// legacy -o options (batch mode) as well as new PropList syntax.
+	// Make sure to support legacy first and then phase in new approach.
 
 	int output_format = OUTPUT_NONE;
 	String precision_string = "*";
@@ -4098,7 +4107,7 @@ throws IOException {
 			}
 		}
 
-		// Time series file output...
+		// Time series file output.
 
 		else if ( prop_value.equalsIgnoreCase("-odatevalue") ) {
 			output_format = OUTPUT_DATEVALUE;
@@ -4128,7 +4137,7 @@ throws IOException {
 			output_format = OUTPUT_TABLE;
 		}
 
-		// Graph output...
+		// Graph output.
 
 		else if ( prop_value.equalsIgnoreCase("-oannual_traces_graph")){
 			output_format = OUTPUT_ANNUAL_TRACES_GRAPH;
@@ -4223,14 +4232,14 @@ throws IOException {
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
-		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
 		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
 		if ( uiComponent != null ) {
 			reportProps.setUsingObject("ParentUIComponent", uiComponent);
 		}
 
 		try {
-		    // For now, put the code in here at the bottom of this file...
+		    // For now, put the code in here at the bottom of this file.
 			List<String> report = createDataCoverageReport ( tslist_output );
 			new ReportJFrame ( report, reportProps );
 		}
@@ -4253,14 +4262,14 @@ throws IOException {
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
-		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
 		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
 		if ( uiComponent != null ) {
 			reportProps.setUsingObject("ParentUIComponent", uiComponent);
 		}
 
 		try {
-		    // For now, put the code in here at the bottom of this file...
+		    // For now, put the code in here at the bottom of this file.
 			List<String> report = createDataLimitsReport(tslist_output);
 			new ReportJFrame ( report, reportProps );
 		}
@@ -4281,10 +4290,10 @@ throws IOException {
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
     
-    		// Format the comments to add to the top of the file.  In this
-    		// case, add the commands used to generate the file...
+    		// Format the comments to add to the top of the file.
+    		// In this case, add the commands used to generate the file.
     		if ( TSUtil.intervalsMatch ( tslist_output )) {
-    			// Need date precision to be day...
+    			// Need date precision to be day.
     			//DateTime date1 = _date1;
     			// Why was this set here????
     			// SAM - 2001-08-27
@@ -4352,7 +4361,7 @@ throws IOException {
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
-		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
 		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
 		if ( uiComponent != null ) {
 			reportProps.setUsingObject("ParentUIComponent", uiComponent);
@@ -4363,7 +4372,7 @@ throws IOException {
 		sumprops.set ( "CalendarType", "" + getOutputYearType() );
 
 		try {
-		    // For now, put the code in here at the bottom of this file...
+		    // For now, put the code in here at the bottom of this file.
 			List<String> report = createMonthSummaryReport ( tslist_output, sumprops );
 			new ReportJFrame ( report, reportProps );
 		}
@@ -4381,7 +4390,7 @@ throws IOException {
     			tspt = (TS)tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
-    		// NWS Card files can only contain one time series...
+    		// NWS Card files can only contain one time series.
     		if ( list_size != 1 ) {
     			message = "Only 1 time series can be written to a NWS Card file";
     			Message.printWarning ( 1, routine, message );
@@ -4393,8 +4402,8 @@ throws IOException {
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
     
-    		// Format the comments to add to the top of the file.  In this
-    		// case, add the commands used to generate the file...
+    		// Format the comments to add to the top of the file.
+    		// In this case, add the commands used to generate the file.
     		int interval_mult = 1;
     		interval_mult = ((TS)tslist_output.get(0)).getDataIntervalMult();
     		// Need date precision to be hour and NWS uses hour 1 - 24 so adjust dates accordingly.
@@ -4430,7 +4439,7 @@ throws IOException {
     			tspt = (TS)tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
-    		// RiverWare files can only contain one time series...
+    		// RiverWare files can only contain one time series.
     		if ( list_size != 1 ) {
     			message = "Only 1 time series can be written to a RiverWare file";
     			Message.printWarning ( 1, routine, message );
@@ -4442,8 +4451,8 @@ throws IOException {
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
     
-    		// Format the comments to add to the top of the file.  In this
-    		// case, add the commands used to generate the file...
+    		// Format the comments to add to the top of the file.
+    		// In this case, add the commands used to generate the file.
     		RiverWareTS.writeTimeSeries ( (TS)tslist_output.get(0),
     			__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, 1.0, null, -1.0, true );
 		} catch ( Exception e ) {
@@ -4476,15 +4485,15 @@ throws IOException {
 	}
 	else if ( output_format == OUTPUT_SUMMARY ) {
 		try {
-    		// First need to get the summary strings...
+    		// First need to get the summary strings.
     		PropList sumprops = new PropList ( "Summary" );
     		sumprops.set ( "Format", "Summary" );
     		sumprops.set ( "CalendarType", "" + getOutputYearType() );
-    		// Check the first time series.  If NWSCARD or DateValue, don't use comments for header...
+    		// Check the first time series.  If NWSCARD or DateValue, don't use comments for header.
     		sumprops.set ( "PrintHeader", "true" );
     		sumprops.set ( "PrintComments", "true" );
     		if ( output_format == OUTPUT_SUMMARY ) {
-    			// Get the statistics...
+    			// Get the statistics.
     			sumprops.set ( "PrintMinStats", "true" );
     			sumprops.set ( "PrintMaxStats", "true" );
     			sumprops.set ( "PrintMeanStats", "true" );
@@ -4494,7 +4503,7 @@ throws IOException {
     		if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
     			try {
     				List<String> summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
-    				// Just write the summary to the given file...
+    				// Just write the summary to the given file.
     				IOUtil.printStringList ( __output_file, summary);
     			}
     			catch ( Exception e ) {
@@ -4515,7 +4524,7 @@ throws IOException {
     			reportProps.set ( "PrintSize", "7" );
     			//reportProps.set ( "PageLength", "100" );
     			reportProps.set ( "PageLength", "100000" );
-    			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+    			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
     			Object uiComponent = props.getContents( "TSViewParentUIComponent" );
     			if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
     				reportProps.setUsingObject("ParentUIComponent", uiComponent);
@@ -4550,7 +4559,7 @@ throws IOException {
             if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
                 PrintWriter ofp = null;
                 try {
-                    // Just write the summary to the given file...
+                    // Just write the summary to the given file.
                     ofp = new PrintWriter ( new FileOutputStream(__output_file) );
                     ofp.print ( html );
                 }
@@ -4567,16 +4576,16 @@ throws IOException {
             else {
                 PrintWriter ofp = null;
                 try {
-                    // Write the content to a temporary file and then view
+                    // Write the content to a temporary file and then view.
                     String tempfile = IOUtil.tempFileName("ts", "html");
-                    // Tell VM to delete this file when the application is exited
+                    // Tell VM to delete this file when the application is exited.
                     File file = new File(tempfile);
                     file.deleteOnExit();
                     ofp = new PrintWriter ( new FileOutputStream(tempfile) );
                     ofp.print ( html );
                     ofp.close();
-                    ofp = null; // To avoid closing again below
-                    // The following uses the Desktop class to select the browser
+                    ofp = null; // To avoid closing again below.
+                    // The following uses the Desktop class to select the browser.
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open ( new File(tempfile) );
@@ -4608,7 +4617,7 @@ throws IOException {
 		// A table output.  Just copy the graph code and change for table.  At some point,
         // need to initialize all the view data at the same time in case the user changes
         // views interactively after the initial view.
-		// Temporary copy of data...
+		// Temporary copy of data.
 		List<TS> tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
@@ -4617,21 +4626,21 @@ throws IOException {
     		}
     
     		PropList graphprops = new PropList ( "Table" );
-    		// Set graph properties for a simple graph...
+    		// Set graph properties for a simple graph.
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
     		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
     		graphprops.set ( "YAxisLabelString", ((TS)tslist.get(0)).getDataUnits() );
     		graphprops.set ( "CalendarType", "" + getOutputYearType() );
-    		// Set the total size of the graph window...
+    		// Set the total size of the graph window.
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
     
-    		// Default properties...
+    		// Default properties.
     		graphprops.set("GraphType=Line");
     
     		graphprops.set ( "InitialView", "Table" );
-    		// Summary properties for secondary displays (copy from summary output)...
+    		// Summary properties for secondary displays (copy from summary output).
     		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -4641,7 +4650,7 @@ throws IOException {
     		graphprops.set ( "PrintFont", "Courier" );
     		graphprops.set ( "PrintSize", "7" );
     		graphprops.set ( "PageLength", "100" );
-			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
 			Object uiComponent = props.getContents( "TSViewParentUIComponent" );
 			if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
 				graphprops.setUsingObject("TSViewParentUIComponent", uiComponent);
@@ -4671,7 +4680,7 @@ throws IOException {
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
-		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
 		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
 		if ( uiComponent != null ) {
 			reportProps.setUsingObject("ParentUIComponent", uiComponent);
@@ -4720,9 +4729,9 @@ throws IOException {
     		graphprops.set ( "TotalHeight", "400" );
     
     		if ( (tslist != null) && (output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
-    /* Currently disabled...
+    /* Currently disabled.
     			// Go through each time series in the list and break
-    			// into annual traces, and then plot those results...
+    			// into annual traces, and then plot those results.
     			Message.printStatus ( 1, routine, "Splitting time series into traces..." );
     			int size = tslist.size();
     			Vector new_tslist = new Vector ( size );
@@ -4793,7 +4802,7 @@ throws IOException {
             }
     		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
     			graphprops.set("YAxisType=Log");
-    			// Handle flags...
+    			// Handle flags.
     			/* TODO SAM 2006-05-22
     			Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
@@ -4806,7 +4815,7 @@ throws IOException {
     		}
     		else if ( output_format == OUTPUT_POINT_GRAPH ) {
     			graphprops.set("GraphType=Point");
-    			// Handle flags...
+    			// Handle flags.
     			/* TODO SAM 2006-05-22
     			Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
@@ -4831,18 +4840,18 @@ throws IOException {
     			graphprops.set("GraphType=XY-Scatter");
     		}
     		else {
-    		    // Default properties...
+    		    // Default properties.
     			graphprops.set("GraphType=Line");
-    			// Handle flags...
+    			// Handle flags.
     			/* TODO SAM 2006-05-22
     			Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
     			*/
     		}
     
-    		// For now always use new graph...
+    		// For now always use new graph.
     		graphprops.set ( "InitialView", "Graph" );
-    		// Summary properties for secondary displays (copy from summary output)...
+    		// Summary properties for secondary displays (copy from summary output).
     		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -4852,13 +4861,13 @@ throws IOException {
     		graphprops.set ( "PrintFont", "Courier" );
     		graphprops.set ( "PrintSize", "7" );
     		graphprops.set ( "PageLength", "100" );
-    		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+    		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
     		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
     		if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
     			graphprops.setUsingObject("TSViewParentUIComponent", uiComponent);
     		}
     		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
-    		// Connect dynamic data objects...
+    		// Connect dynamic data objects.
     		addTSViewTSProductDMIs ( view );
     		addTSViewTSProductAnnotationProviders ( view );
 		}
@@ -4916,16 +4925,16 @@ throws Exception
 {	TS ts = null;
 	String routine = "TSEngine.readTimeSeries";
 	
-	// Figure out what dates to use for the query...
+	// Figure out what dates to use for the query.
 
-	DateTime inputStart = null;	// Default is to read all data
+	DateTime inputStart = null;	// Default is to read all data.
 	DateTime inputEnd = null;
 	if ( (__InputStart_DateTime != null) && (__InputStart_DateTime.getYear() != 0) ) {
-		// Use the query start...
+		// Use the query start.
 		inputStart = __InputStart_DateTime;
 	}
 	if ( (__InputEnd_DateTime != null) && (__InputEnd_DateTime.getYear() != 0) ) {
-		// Use the query start...
+		// Use the query start.
 		inputEnd = __InputEnd_DateTime;
 	}
 
@@ -4945,20 +4954,20 @@ throws Exception
 		if ( getIncludeMissingTS() && (start != null) && (end != null) ) {
 			// Even if time series is missing, create an empty one for output.
 			ts = TSUtil.newTimeSeries ( tsidentString, true );
-			// else leave null and ignore
+			// else leave null and ignore.
 			if ( ts != null ) {
 				ts.setDate1 ( start );
 				ts.setDate2 ( end );
-				// Leave original dates as is.  The following will fill with missing...
+				// Leave original dates as is.  The following will fill with missing.
 				if ( readData ) {
 				    ts.allocateDataSpace();
 				}
 				List<String> v = StringUtil.breakStringList ( tsidentString, "~", 0 );
-				// Version without the input...
+				// Version without the input.
 				String tsident_string2;
 				tsident_string2 = (String)v.get(0);
 				ts.setIdentifier ( tsident_string2 );
-				// Set a property indicating that a default time series was initialized
+				// Set a property indicating that a default time series was initialized.
 				ts.setProperty("DefaultTimeSeriesRead",new Boolean(true));
 				ts.addToGenesis("Created empty time series - not in data source and SetIncludeMissingTS(true) or similar is requested.");
 				Message.printStatus ( 2, routine, "Created empty time series for \"" +
@@ -4966,7 +4975,7 @@ throws Exception
 			}
 		}
 		else {
-		    // Not able to query the time series and we are not supposed to create empty time series...
+		    // Not able to query the time series and requested to not create empty time series.
 			String message = "Null TS from read and not creating blank - unable to" +
 				" process command:\n\""+ tsidentString +"\".\nYou must correct the command.  " +
 				"Make sure that the data are in the database or input file.";
@@ -4982,7 +4991,7 @@ throws Exception
 		}
 		// Now do the second set of processing on the time series (e.g.,
 		// to guarantee a period that is at least as long as the output period.
-		// TODO SAM - passing tsident_string2 causes problems - the input is lost...
+		// TODO SAM - passing tsident_string2 causes problems - the input is lost.
         readTimeSeries2 ( ts, tsidentString, fullPeriod, readData );
 	}
 	return ts;
@@ -5010,14 +5019,14 @@ throws Exception
 		Message.printDebug ( 10, routine, "Getting time series \"" + tsidentString + "\"" );
 	}
 
-	// Separate out the input from the TSID...
+	// Separate out the input from the TSID.
 
 	List<String> v = StringUtil.breakStringList ( tsidentString, "~", 0 );
-	String tsidentString2;	// Version without the input...
+	String tsidentString2;	// Version without the input.
 	String inputType = null;
 	String inputName = null;
-	String inputTypeAndName = null; // used with data store approach
-    String inputNameFull = null;  // input name with full path
+	String inputTypeAndName = null; // Used with data store approach.
+    String inputNameFull = null;  // Input name with full path.
 	tsidentString2 = v.get(0);
 	if ( v.size() == 2 ) {
 		inputType = v.get(1);
@@ -5038,19 +5047,18 @@ throws Exception
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
-	// TSIdent uses only the first part of the identifier...
-	// TODO SAM 2005-05-22 (why? to avoid confusing the following code?)
+	// TSIdent uses only the first part of the identifier.
+	// TODO SAM 2005-05-22 (why? to avoid confusing the following code?).
 
 	TSIdent tsident = new TSIdent ( tsidentString2 );
 	String source = tsident.getSource();
 
-	// Now make a decision about which code to call to read the time
-	// series.  Always check the new convention first.
+	// Now make a decision about which code to call to read the time series.  Always check the new convention first.
 
 	TS ts = null;
 	try {
 	if ((dataStore != null) && (dataStore instanceof ColoradoHydroBaseRestDataStore) ) {
-        // New style TSID~dataStore
+        // New style TSID~dataStore.
 		ColoradoHydroBaseRestDataStore ds = (ColoradoHydroBaseRestDataStore)dataStore;
         if ( Message.isDebugOn ) {
             Message.printDebug ( 10, routine, "Reading time series..." +
@@ -5064,7 +5072,7 @@ throws Exception
             }
             // Update the header comments.
             if ( ts != null ) {
-                //FIXME SAM 2010-08-15 Need to implement for web services
+                //FIXME SAM 2010-08-15 Need to implement for web services.
                 //updateHydroBaseComments(ts);
             }
         }
@@ -5075,7 +5083,7 @@ throws Exception
         }
     }
 	else if ( (inputType != null) && inputType.equalsIgnoreCase("DateValue") ) {
-		// New style TSID~input_type~input_name
+		// New style TSID~input_type~input_name.
 		try {
 		    ts = DateValueTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
@@ -5086,7 +5094,7 @@ throws Exception
 		}
 	}
 	else if ( source.equalsIgnoreCase("DateValue") ) {
-		// Old style (scenario may or may not be used to find the file)...
+		// Old style (scenario may or may not be used to find the file).
 		try {
 		    ts = DateValueTS.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
 		}
@@ -5096,7 +5104,7 @@ throws Exception
 			ts = null;
 		}
 	}
-	/* TODO SAM Re-enable services code
+	/* TODO SAM Re-enable services code.
 	else if (	(input_type != null) &&
 		input_type.equalsIgnoreCase(PersistenceType.DATE_VALUES.getTSIdentString()) ) {
 		// Test new data services for DateValue file...
@@ -5117,7 +5125,7 @@ throws Exception
 	}
 */
 	else if ( (inputType != null) && inputType.equalsIgnoreCase("DIADvisor") ) {
-		// New style TSID~input_type~input_name for DIADvisor...
+		// New style TSID~input_type~input_name for DIADvisor.
 		try {
 		    ts = __DIADvisor_dmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
 		}
@@ -5128,7 +5136,7 @@ throws Exception
 			Message.printWarning ( 3, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
 			ts = null;
 		}
-		// For now, if the time series does not have data, set it to null...
+		// For now, if the time series does not have data, set it to null.
 		if ( ts != null ) {
 			if ( !ts.hasData() ) {
 				Message.printWarning ( 2, routine,
@@ -5159,7 +5167,7 @@ throws Exception
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
     	int arch = IOUtil.getJreArchBits();
         if ( IOUtil.isUNIXMachine() ) {
-            // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux
+            // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux.
             String message = "HEC-DSS input type is not supported on UNIX/Linux - cannot read time series \"" + tsidentString + "\".";
             Message.printWarning ( 2, routine, message );
             ts = null;
@@ -5172,7 +5180,7 @@ throws Exception
         }
         else {
             try {
-                // Pass the full path to the read meethod.  The TSID string may still have a relative path.
+                // Pass the full path to the read method.  The TSID string may still have a relative path.
                 ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units, readData );
             }
             catch ( Exception e ) {
@@ -5183,8 +5191,8 @@ throws Exception
         }
     }
     else if ((dataStore != null) && (dataStore instanceof HydroBaseDataStore) ) {
-        // New style TSID~dataStore
-        // Check this first before input type because datastore should take precedence if both are named "HydroBase"
+        // New style:  TSID~dataStore
+        // Check this first before input type because datastore should take precedence if both are named "HydroBase".
         HydroBaseDataStore hbds = (HydroBaseDataStore)dataStore;
         try {
             HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();
@@ -5194,7 +5202,7 @@ throws Exception
                 ts = null;
             }
             else {
-                // Do need to fill daily diversion records with carry forward
+                // Do need to fill daily diversion records with carry forward.
                 // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
             	PropList readProps = null;
                 ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, readProps );
@@ -5214,7 +5222,7 @@ throws Exception
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("HydroBase") ) {
-	    // Legacy DMI (not datastore)
+	    // Legacy DMI (not datastore).
 		if ( Message.isDebugOn ) {
 			Message.printDebug ( 10, routine, "Reading time series..." +
 			tsidentString + "," + readStart + "," + readEnd);
@@ -5227,8 +5235,8 @@ throws Exception
 				ts = null;
 			}
 			else {
-			    // Do need to fill daily diversion records with carry forward
-			    // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
+			    // Do need to fill daily diversion records with carry forward.
+			    // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default.
                 ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, null );
 			}
 			if ( Message.isDebugOn ) {
@@ -5246,7 +5254,7 @@ throws Exception
 		}
 	}
 	else if ((inputType != null) && inputType.equalsIgnoreCase("MODSIM") ) {
-		// New style TSID~input_type~input_name
+		// New style: TSID~input_type~input_name
 		try {
             ts = ModsimTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
@@ -5257,7 +5265,7 @@ throws Exception
 		}
 	}
     else if ((dataStore != null) && (dataStore instanceof NrcsAwdbDataStore) ) {
-        // New style TSID~dataStoreName for NRCS AWDB...
+        // New style: TSID~dataStoreName
         NrcsAwdbDataStore ds = (NrcsAwdbDataStore)dataStore;
         try {
             ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
@@ -5270,29 +5278,29 @@ throws Exception
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("NWSCARD") ) {
-		// New style TSID~input_type~input_name for NWSCardTS...
+		// New style: TSID~input_type~input_name
 		//Message.printStatus ( 1, routine, "Trying to read \"" + tsident_string2 + "\" \"" + input_name + "\"" );
 		ts = NWSCardTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		//Message.printStatus ( 1, "", "SAMX TSEngine TS id = \"" + ts.getIdentifier().toString(true) + "\"" );
 	}
 	else if ((inputType != null) && inputType.equalsIgnoreCase("NWSRFS_ESPTraceEnsemble") ) {
-		// Binary ESP Trace Ensemble file...
+		// Binary ESP Trace Ensemble file.
 		try {
-            // For now read the file for each trace...
-			// TODO SAM 2004-11-29 need to optimize so the file does not need to get reread...
+            // For now read the file for each trace.
+			// TODO SAM 2004-11-29 need to optimize so the file does not need to get reread.
 			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( inputNameFull, readData );
 			List<TS> tslist = ensemble.getTimeSeriesList ();
-			// Loop through and find a matching time series...
+			// Loop through and find a matching time series.
 			int size = 0;
 			boolean found = false;
 			TS ts2 = null;
-			ts = null;		// Value if not found.
+			ts = null; // Value if not found.
 			if ( tslist != null ) {
 				size = tslist.size();
 				for ( int i = 0; i < size; i++ ) {
 					ts2 = tslist.get(i);
 					// This compares the sequence number but does not include the input
-					// type/name since that was already used to read the file...
+					// type/name since that was already used to read the file.
 					if ( tsident.matches( ts2.getIdentifier().toString())){
 						found = true;
 						break;
@@ -5315,16 +5323,17 @@ throws Exception
 		ts = nwsrfs_dmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
 	}
     else if ((dataStore != null) && (dataStore instanceof PluginDataStore) ) {
-        // New style TSID~dataStore
+        // New style: TSID~dataStore
         PluginDataStore pds = (PluginDataStore)dataStore;
         if ( Message.isDebugOn ) {
-        	Message.printDebug(1, routine, "Reading time series using plugin datastore \"" + dataStore.getName() + "\"" );
+        	Message.printDebug(1, routine, "Reading time series using plugin datastore \"" + dataStore.getName() +
+        		"\" for readStart=" + readStart + " readEnd=" + readEnd + " readData=" + readData);
         }
         try {
             ts = pds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
         }
         catch ( Exception te ) {
-        	// If there is an issue with plugin jars, a NoClassDefFoundError may be thrown, which will be caught outside this
+        	// If there is an issue with plugin jars, a NoClassDefFoundError may be thrown, which will be caught outside this.
             Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
                 "\" from plugin data store \"" + dataStore.getName() + "\" (" + te + ")." );
             Message.printWarning ( 3, routine, te );
@@ -5332,7 +5341,7 @@ throws Exception
         }
     }
 	else if ((dataStore != null) && (dataStore instanceof ReclamationHDBDataStore) ) {
-        // New style TSID~dataStoreName for ReclamationHDB...
+        // New style:  TSID~dataStoreName
         // Check the connection in case the connection timed out.
     	ReclamationHDBDataStore ds = (ReclamationHDBDataStore)dataStore;
     	ds.checkDatabaseConnection();
@@ -5377,7 +5386,7 @@ throws Exception
         }
     }
     else if ((dataStore != null) && (dataStore instanceof RccAcisDataStore) ) {
-        // New style TSID~dataStoreName for RCC ACIS...
+        // New style: TSID~dataStoreName
         RccAcisDataStore rccAcisDataStore = (RccAcisDataStore)dataStore;
         try {
             ts = rccAcisDataStore.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
@@ -5390,7 +5399,7 @@ throws Exception
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("RiverWare") ) {
-		// New style TSID~input_type~input_name for RiverWare...
+		// New style: TSID~input_type~input_name
 		try {
             ts = RiverWareTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
@@ -5401,7 +5410,7 @@ throws Exception
 		}
 	}
 	else if ((inputType != null) && inputType.equalsIgnoreCase("StateCU") ) {
-		// New style TSID~input_type~input_name for StateCU...
+		// New style: TSID~input_type~input_name
 		try {
 			List<String> ipyTypes = StateCU_IrrigationPracticeTS.getTimeSeriesDataTypes(true, false);
             boolean isIpyType = false;
@@ -5423,8 +5432,7 @@ throws Exception
 					tsidentString2, inputNameFull,readStart, readEnd, units, readData );
 			}
 			else {
-                // Funnel through one class - the following will read StateCU output report and frost dates
-				// input files...
+                // Funnel through one class - the following will read StateCU output report and frost dates input files.
 				ts = StateCU_TS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 			}
 		}
@@ -5435,7 +5443,7 @@ throws Exception
 		}
 	}
     else if ((inputType != null) && inputType.equalsIgnoreCase("StateCUB") ) {
-        // New style TSID~input_type~input_name for StateCUB...
+        // New style: TSID~input_type~input_name
         try {
             ts = StateCU_BTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
         }
@@ -5446,7 +5454,7 @@ throws Exception
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("StateMod") ) {
-		// New style TSID~input_type~input_name for StateMod...
+		// New style: TSID~input_type~input_name
 		try {
             ts = StateMod_TS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
@@ -5457,7 +5465,7 @@ throws Exception
 		}
 	}
 	else if ((inputType != null) && inputType.equalsIgnoreCase("StateModB") ) {
-		// New style TSID~input_type~input_name for StateModB...
+		// New style: TSID~input_type~input_name
 		try {
             ts = StateMod_BTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
@@ -5468,7 +5476,7 @@ throws Exception
 		}
 	}
     else if ((dataStore != null) && (dataStore instanceof UsgsNwisDailyDataStore) ) {
-        // New style TSID~dataStoreName for USGS NWIS daily value...
+        // New style: TSID~dataStoreName
         UsgsNwisDailyDataStore ds = (UsgsNwisDailyDataStore)dataStore;
         try {
             ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
@@ -5481,7 +5489,7 @@ throws Exception
         }
     }
     else if ((dataStore != null) && (dataStore instanceof UsgsNwisGroundwaterDataStore) ) {
-        // New style TSID~dataStoreName for USGS NWIS groundwater values...
+        // New style: TSID~dataStoreName
         UsgsNwisGroundwaterDataStore ds = (UsgsNwisGroundwaterDataStore)dataStore;
         try {
             ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
@@ -5494,7 +5502,7 @@ throws Exception
         }
     }
     else if ((dataStore != null) && (dataStore instanceof UsgsNwisInstantaneousDataStore) ) {
-        // New style TSID~dataStoreName for USGS NWIS instantaneous values...
+        // New style: TSID~dataStoreName
         UsgsNwisInstantaneousDataStore ds = (UsgsNwisInstantaneousDataStore)dataStore;
         try {
             ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
@@ -5507,9 +5515,9 @@ throws Exception
         }
     }
 	else if ((inputType != null) &&
-	    (inputType.equalsIgnoreCase("USGSNWIS") || // Legacy input type, replaced with the following...
-	    inputType.equalsIgnoreCase("UsgsNwisRdb")) ) { // Current input type
-		// New style TSID~input_type
+	    (inputType.equalsIgnoreCase("USGSNWIS") || // Legacy input type, replaced with the following.
+	    inputType.equalsIgnoreCase("UsgsNwisRdb")) ) { // Current input type.
+		// New style: TSID~input_type
 		try {
             ts = UsgsNwisRdbTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}

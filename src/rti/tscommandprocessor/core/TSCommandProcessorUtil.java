@@ -1436,7 +1436,7 @@ throws InvalidCommandParameterException
 {   String routine = "TSCommandProcessorUtil.getDateTime", message;
     DateTime dt = null;
     int logLevel = 3;
-    int warningCount = 0; // only has local scope and limited meaning
+    int warningCount = 0; // Only has local scope and limited meaning.
     if ( (dtString == null) || dtString.equals("") ) {
         return null;
     }
@@ -1457,12 +1457,13 @@ throws InvalidCommandParameterException
             throw new InvalidCommandParameterException ( message );
         }
 
+        // Requesting a "DateTime" will check processor properties matching the name.
         PropList bean_PropList = bean.getResultsPropList();
         Object prop_contents = bean_PropList.getContents ( "DateTime" );
         if ( prop_contents == null ) {
-        	// Have to take special care for built-in properties that are allowed to be null
-        	// See the similar handling in TSEngine.getDateTime()
-        	// Newer code will focus on ${Property} whereas legacy uses the version without ${}
+        	// Have to take special care for built-in properties that are allowed to be null.
+        	// See the similar handling in TSEngine.getDateTime().
+        	// Newer code will focus on ${Property} whereas legacy uses the version without ${}.
         	if ( dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("OutputEnd") ||
         		dtString.equalsIgnoreCase("${OutputStart}") || dtString.equalsIgnoreCase("${OutputEnd}") ||
         		dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("InputEnd") ||

@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -163,7 +164,7 @@ public final int	INSERT_TS = 1,
 /**
 The list of commands managed by this command processor, guaranteed to be non-null.
 */
-private List<Command> __CommandList = new Vector<>(); // Use vector for thread-safe
+private List<Command> __CommandList = new Vector<>(); // Use vector for thread-safe.
 
 /**
 List of plugin command classes, which allow third-party commands to be recognized and run.
@@ -171,7 +172,7 @@ These are created in the TSTool main program.
 There is no need to have data in TSEngine because by the time TSEngine is used,
 commands are already created.
 */
-private List<Class> pluginCommandClassList = new Vector<>(); // Use vector for thread-safe
+private List<Class> pluginCommandClassList = new Vector<>(); // Use vector for thread-safe.
 
 /**
 The name of the file to which the commands are saved, or null if not saved.
@@ -882,11 +883,16 @@ is compatible with intended use - specify as null to not match class
 @return the data store for the requested name, or null if not found.
 */
 public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boolean activeOnly )
-{   // First see if there is a substitute for the datastore.
-	String substitute = this.__tsengine.getDataStoreSubstituteMap().get(name);
-	if ( substitute != null ) {
-		name = substitute;
-	}
+{   // First see if there is a substitute for the datastore:
+	// - the requested name could be a substitute name
+	// - therefore match the returned value from entries in the map and use the original key value
+    HashMap<String,String> datastoreSubstituteMap = this.__tsengine.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	if ( set.getValue().equals(name) ) {
+   			name = set.getKey();
+   			break;
+    	}
+    }
 	// Search the datastores for the requested name.
 	for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
@@ -2669,7 +2675,7 @@ matching property name is used to determine the date/time using the following ru
 private CommandProcessorRequestResultsBean processRequest_DateTime ( String request, PropList request_params )
 throws Exception
 {	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-	// Get the necessary parameters...
+	// Get the necessary parameters.
 	Object o = request_params.getContents ( "DateTime" );
 	if ( o == null ) {
 		String warning = "Request DateTime() does not provide a DateTime parameter.";
@@ -2680,7 +2686,7 @@ throws Exception
 	String DateTime = (String)o;
 	DateTime dt = __tsengine.getDateTime ( DateTime );
 	PropList results = bean.getResultsPropList();
-	// This will be set in the bean because the PropList is a reference...
+	// This will be set in the bean because the PropList is a reference.
 	results.setUsingObject("DateTime", dt );
 	return bean;
 }

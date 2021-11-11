@@ -418,17 +418,17 @@ This is useful for code that is being migrated to the full command class design.
 */
 public Command newCommand ( String commandString, boolean createUnknownCommandIfNotRecognized )
 throws UnknownCommandException
-{	commandString = commandString.trim(); // Full command string, with no surrounding white space
-    String commandName = ""; // Command name without "(...parameters...)"
+{	commandString = commandString.trim(); // Full command string, with no surrounding white space.
+    String commandName = ""; // Command name without "(...parameters...)".
     String routine = "TSCommandFactory.newCommand";
 
-	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
+	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here.
 
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
 	//String commandStringUpper = commandString.toUpperCase();
 
 	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
-		// This allows aliases with spaces...
+		// This allows aliases with spaces.
 		commandName = StringUtil.getToken(commandString,"(=",StringUtil.DELIM_SKIP_BLANKS,1);
 		if ( commandName == null ) {
 		    commandName = "";
@@ -438,15 +438,15 @@ throws UnknownCommandException
 		}
 	}
 	else {
-	    // Get the potential command name, which is the text prior to the (
+	    // Get the potential command name, which is the text prior to the (.
 	    // However, it could be that a TSID string contains () so if the command name
-	    // is not matched below and it fits the TSID pattern, treat as a TSID
+	    // is not matched below and it fits the TSID pattern, treat as a TSID.
 	    int pos = commandString.indexOf("(");
 	    if ( pos > 0 ) {
 	        commandName = commandString.substring(0,pos).trim();
 	    }
 	    else {
-	        // The command name is the entire string (e.g., new commands will not have the ())
+	        // The command name is the entire string (e.g., new commands will not have the ()).
 	        commandName = commandString;
 	    }
 	}
@@ -458,7 +458,7 @@ throws UnknownCommandException
 	// command instance is created and returned.  If nothing is matched and the command string is a TSID,
 	// a TSID command instance will be returned.
 	
-	// Comment commands...
+	// Comment commands.
 	
 	if ( commandString.startsWith("#") ) {
         return new Comment_Command ();
@@ -470,9 +470,9 @@ throws UnknownCommandException
         return new CommentBlockEnd_Command ();
     }
 
-	// "A" commands...
+	// "A" commands.
 
-    // Put the following before "Add"
+    // Put the following before "Add".
     else if ( commandName.equalsIgnoreCase("AddConstant") ) {
         return new AddConstant_Command ();
     }
@@ -498,7 +498,7 @@ throws UnknownCommandException
         return new ARMA_Command ();
     }
     
-    // "B" commands...
+    // "B" commands.
     
     else if ( commandName.equalsIgnoreCase("Blend") ) {
         return new Blend_Command ();
@@ -507,7 +507,7 @@ throws UnknownCommandException
         return new Break_Command ();
     }
 
-	// "C" commands...
+	// "C" commands.
 
     else if ( commandName.equalsIgnoreCase("CalculateTimeSeriesStatistic") ) {
         return new CalculateTimeSeriesStatistic_Command ();
@@ -592,7 +592,7 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("CreateEnsembleFromOneTimeSeries") ||
         commandName.equalsIgnoreCase("CreateEnsemble")) {
-        // The command name changed...
+        // The command name changed.
         return new CreateEnsembleFromOneTimeSeries_Command ();
     }
     else if ( commandName.equalsIgnoreCase("CreateFolder") ) {
@@ -614,7 +614,7 @@ throws UnknownCommandException
 		return new Cumulate_Command ();
 	}
     
-    // "D" commands...
+    // "D" commands.
 
     else if ( commandName.equalsIgnoreCase("DeleteDataStoreTableRows") ) {
         return new DeleteDataStoreTableRows_Command ();
@@ -637,8 +637,8 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("Divide") ) {
         return new Divide_Command ();
     }
-	
-	// "E" commands...
+
+	// "E" commands.
 
     else if ( commandName.equalsIgnoreCase("EndFor") ) {
         return new EndFor_Command ();
@@ -654,7 +654,7 @@ throws UnknownCommandException
         return new ExpandTemplateFile_Command ();
     }
 
-	// "F" commands...
+	// "F" commands.
 
 	else if ( commandName.equalsIgnoreCase("FillConstant") ) {
 		return new FillConstant_Command ();
@@ -731,7 +731,7 @@ throws UnknownCommandException
     }
     */
     
-    // "I" commands...
+    // "I" commands.
 
     else if ( commandName.equalsIgnoreCase("If") ) {
         return new If_Command ();
@@ -746,13 +746,13 @@ throws UnknownCommandException
         return new InsertTimeSeriesIntoEnsemble_Command ();
     }
     
-    // "J" commands...
+    // "J" commands.
 
     else if ( commandName.equalsIgnoreCase("JoinTables") ) {
         return new JoinTables_Command ();
     }
 	
-	// "L" commands...
+	// "L" commands.
 
 	else if ( commandName.equalsIgnoreCase("LagK") ) {
 		return new LagK_Command ();
@@ -764,7 +764,7 @@ throws UnknownCommandException
         return new LookupTimeSeriesFromTable_Command ();
     }
 	
-	// "M" commands...
+	// "M" commands.
 	
     else if ( commandName.equalsIgnoreCase("ManipulateTableString") ) {
         return new ManipulateTableString_Command ();
@@ -779,7 +779,7 @@ throws UnknownCommandException
         return new Multiply_Command ();
     }
 
-	// "N" commands...
+	// "N" commands.
 
     else if ( commandName.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
         return new NewDayTSFromMonthAndDayTS_Command ();
@@ -830,7 +830,7 @@ throws UnknownCommandException
         return new Normalize_Command ();
     }
 
-	// "O" commands...
+	// "O" commands.
 
 	else if ( commandName.equalsIgnoreCase("OpenDataStore") ) {
 		return new OpenDataStore_Command ();
@@ -839,7 +839,7 @@ throws UnknownCommandException
 		return new OpenHydroBase_Command ();
 	}
 
-	// "P" commands...
+	// "P" commands.
 
     else if ( commandName.equalsIgnoreCase("PrintTextFile") ) {
         return new PrintTextFile_Command ();
@@ -854,7 +854,7 @@ throws UnknownCommandException
         return new ProfileCommands_Command ();
     }
 
-	// "R" commands...
+	// "R" commands.
 
 	else if ( commandName.equalsIgnoreCase("ReadColoradoHydroBaseRest") ) {
 		return new ReadColoradoHydroBaseRest_Command ();
@@ -919,14 +919,14 @@ throws UnknownCommandException
     //else if ( commandName.equalsIgnoreCase("ReadSocrata") ) {
     //    return new ReadSocrata_Command ();
     //}
-    // Put before shorter command name...
+    // Put before shorter command name.
     else if ( commandName.equalsIgnoreCase("ReadStateCUB") ) {
         return new ReadStateCUB_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("ReadStateCU") ) {
 		return new ReadStateCU_Command ();
 	}
-    // Put before shorter command name...
+    // Put before shorter command name.
     else if ( commandName.equalsIgnoreCase("ReadStateModB") ) {
         return new ReadStateModB_Command ();
     }
@@ -967,7 +967,7 @@ throws UnknownCommandException
         return new ReadTimeSeriesList_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadUsgsNwis") || commandName.equalsIgnoreCase("ReadUsgsNwisRdb")) {
-        // Automatically convert legacy command to new name
+        // Automatically convert legacy command to new name.
         return new ReadUsgsNwisRdb_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadUsgsNwisDaily") ) {
@@ -995,11 +995,11 @@ throws UnknownCommandException
         return new RemoveFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RemoveDataStoreTableRows") ) {
-        // Automatically change the name
+        // Automatically change the name.
         return new DeleteDataStoreTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
-        // Automatically change the name
+        // Automatically change the name.
         return new DeleteDataStoreTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RenameTableColumns") ) {
@@ -1036,7 +1036,7 @@ throws UnknownCommandException
         return new RunSql_Command ();
     }
 
-	// "S" commands...
+	// "S" commands.
 
 	else if ( commandName.equalsIgnoreCase("Scale") ) {
 		return new Scale_Command ();
@@ -1091,7 +1091,7 @@ throws UnknownCommandException
         return new SetOutputYearType_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetPatternFile") ) {
-        // Automatically convert to ReadPatternFile
+        // Automatically convert to ReadPatternFile.
         return new ReadPatternFile_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
@@ -1112,7 +1112,7 @@ throws UnknownCommandException
         return new SetProperty_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("SetQueryPeriod") ) {
-		// Phasing into new syntax...
+		// Phasing into new syntax.
 		return new SetInputPeriod_Command ();
 	}
     else if ( commandName.equalsIgnoreCase("SetTableValues") ) {
@@ -1171,7 +1171,7 @@ throws UnknownCommandException
         return new Subtract_Command ();
     }
 	
-	// "T" commands...
+	// "T" commands.
 
     else if ( commandName.equalsIgnoreCase("TableMath") ) {
         return new TableMath_Command ();
@@ -1321,24 +1321,24 @@ throws UnknownCommandException
         return new WriteWaterML2_Command ();
     }
     
-    // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name
-    // Check for plugin commands - for now brute force based on naming convention
+    // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name.
+    // Check for plugin commands - for now brute force based on naming convention.
     
    	Message.printStatus(2,routine,"Did not match built-in command, checking plugin command classes.");
     if ( this.pluginCommandClassList.size() > 0 ) {
     	Message.printStatus(2,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
     	for ( @SuppressWarnings("rawtypes") Class c : this.pluginCommandClassList ) {
-	    	String nameFromClass = c.getSimpleName(); // Should be like CommandName_Command
+	    	String nameFromClass = c.getSimpleName(); // Should be like:  CommandName_Command
 	    	int pos = nameFromClass.indexOf("_Command");
 	    	if ( pos > 0 ) {
 	    		nameFromClass = nameFromClass.substring(0,pos);
 	    		Message.printStatus(2,routine,"Checking plugin command \"" + nameFromClass + "\" against command name \"" + commandName + "\"");
-	    		if ( nameFromClass.equalsIgnoreCase(commandName) ) {
-	    	    	// Construct the command instance
+	    		if ( nameFromClass.equals(commandName) ) {
+	    	    	// Construct the command instance.
 	    	    	try {
 	    	    		Constructor<?> constructor = c.getConstructor();
 	    	    		Object command = constructor.newInstance();
-	    	    		// The object must be a Command if it follows implementation requirements
+	    	    		// The object must be a Command if it follows implementation requirements.
 	    	    		return (Command)command;
 	    	    	}
 	    	    	catch ( NoSuchMethodException e ) {
@@ -1353,9 +1353,9 @@ throws UnknownCommandException
 	    	    	catch ( InvocationTargetException e ) {
 	    	    		Message.printWarning(2,routine,"Error creating instance of command for plugin command class \"" + nameFromClass + "\"");
 	    	    	}
+	    	    	// No need to keep searching.
+    	    		break;
 	    		}
-    	    	// No need to keep searching
-    	    	break;
 	    	}
     	}
     }
@@ -1363,23 +1363,23 @@ throws UnknownCommandException
     	Message.printStatus(2,routine,"Plugin class list size is 0.");
     }
     
-    // Check for time series identifier
-    // This is the fall through if no command was matched above but the string matches a TSID pattern
+    // Check for time series identifier:
+    // - this is the fall through if no command was matched above but the string matches a TSID pattern
     
 	if ( TSCommandProcessorUtil.isTSID(commandString) ) {
 	    return new TSID_Command ();
 	}
 
-	// Check for blank line, which will result in Empty command
+	// Check for blank line, which will result in Empty command.
 	
     if ( commandName.equalsIgnoreCase("") ) {
         return new Empty_Command ();
     }
 
-	// Did not match a command or TSID...
+	// Did not match a command or TSID.
 
 	if ( createUnknownCommandIfNotRecognized ) {
-		// Create an unknown command...
+		// Create an unknown command.
 		Command c = new UnknownCommand ();
 		c.setCommandString( commandString );
         Message.printStatus ( 2, routine, "Creating UnknownCommand for unknown command \"" + commandString + "\"" );

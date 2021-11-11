@@ -38,7 +38,9 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -57,6 +59,7 @@ import javax.swing.event.DocumentListener;
 import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
 import riverside.datastore.GenericDatabaseDataStore_TimeSeries_InputFilter_JPanel;
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
@@ -339,6 +342,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
 {	String routine = getClass().getSimpleName() + ".initialize";
 	this.__command = command;
 	this.datastores = datastores;
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
 
 	addWindowListener( this );
 
@@ -364,7 +368,22 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
     		}
         }
     }
-    Collections.sort(datastoreChoices);
+    // Also list any substitute datastore names so the original or substitute can be used.
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(set.getKey()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(set.getValue());
+    	}
+    }
+    Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
     if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor.
     	datastoreChoices.add ( "" );

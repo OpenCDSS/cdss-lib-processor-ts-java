@@ -30,7 +30,9 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import RTi.DMI.DMI;
@@ -321,6 +323,7 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
 {	this.__command = command;
     this.__parent = parent;
     this.datastores = datastores;
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
 
 	addWindowListener(this);
 
@@ -385,7 +388,7 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=write all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
-    // List available data stores of the correct type
+    // List available datastores of the correct type.
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -396,7 +399,22 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     for ( DataStore dataStore : this.datastores ) {
     	datastoreChoices.add(dataStore.getName());
     }
-    Collections.sort(datastoreChoices);
+    // Also list any substitute datastore names so the original or substitute can be used.
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(set.getKey()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(set.getValue());
+    	}
+    }
+    Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
     if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	datastoreChoices.add ( "" );

@@ -50,7 +50,9 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import RTi.DMI.DMI;
@@ -272,6 +274,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command command, List<String> tableIDChoices, List<DatabaseDataStore> datastores )
 {	this.__command = command;
     this.datastores = datastores;
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
 
 	addWindowListener(this);
 
@@ -314,7 +317,22 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     for ( DataStore dataStore : this.datastores ) {
     	datastoreChoices.add(dataStore.getName());
     }
-    Collections.sort(datastoreChoices);
+    // Also list any substitute datastore names so the original or substitute can be used.
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(set.getKey()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(set.getValue());
+    	}
+    }
+    Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
     if ( datastoreChoices.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
     	datastoreChoices.add ( "" );

@@ -320,15 +320,23 @@ will not be able to populate anything from database metadata.
 */
 private void actionPerformedDataStoreSelected ( ) {
     if ( this.__DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization.
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
         return;
     }
     this.__dataStore = getSelectedDataStore();
+    if ( this.__dataStore == null ) {
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
+        return;
+    }
     if ( this.__dataStore == null ) {
     	__dmi = null;
     }
     else {
     	__dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    }
+    if ( __dmi == null ) {
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
+        return;
     }
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Populate the database choices corresponding to the datastore.
@@ -502,8 +510,17 @@ which will have a discovery datastore that is good enough for getting database m
 private DatabaseDataStore getSelectedDataStore () {
     String routine = getClass().getSimpleName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
+   	// If a substitute is defined that matches the datastore, use it.
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	if ( DataStore.equals(set.getValue()) ) {
+    		// The substitute original name matches a datastore name so use the original datastore.
+    		DataStore = set.getKey();
+    		break;
+    	}
+    }
     DatabaseDataStore dataStore = null;
-   	dataStore = null;
    	for ( DatabaseDataStore dataStore2 : this.datastores ) {
    		if ( dataStore2.getName().equals(DataStore) ) {
    			dataStore = dataStore2;
@@ -511,7 +528,7 @@ private DatabaseDataStore getSelectedDataStore () {
    	}
    	if ( dataStore == null ) {
        	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
-       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+       		"\".  Can read with SQL but cannot choose from list of tables, functions, or procedures." );
    	}
     else {
     	// Have an active datastore from software startup.
@@ -825,15 +842,6 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
         3, yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(func_JPanel, new SimpleJButton ("Edit","EditFunctionParameters",this),
         3, ++yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea (6,50);
-	__command_JTextArea.setLineWrap ( true );
-	__command_JTextArea.setWrapStyleWord ( true );
-	__command_JTextArea.setEditable (false);
-	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Panel for procedure.
     int yProc = -1;

@@ -214,7 +214,8 @@ public void actionPerformed( ActionEvent event )
         }
         refresh ();
     }
-	else {	// Choices...
+	else {
+		// Choices.
 		refresh();
 	}
 }
@@ -224,7 +225,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -251,7 +252,8 @@ private void checkInput ()
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
 	}
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -294,7 +296,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -324,9 +326,9 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file(s):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
-	__InputFile_JTextField.setToolTipText("Specify the input file(s) or use ${Property} notation");
+	__InputFile_JTextField.setToolTipText("Specify the input file(s) using a single file, *, or *.ext pattern, can use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -336,7 +338,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(InputFile_JPanel, __browseInput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathInput_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -344,12 +346,12 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file(s):" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the file(s) to output or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the file to output or use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -359,7 +361,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(OutputFile_JPanel, __browseOutput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathOutput_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -370,24 +372,26 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeText_JTextField = new JTextField ( 20 );
+    __IncludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard.");
     __IncludeText_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeText_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - include lines matching regular expression (default=include all)"), 
+        "Optional - include lines matching regular expression (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
+    __ExcludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard.");
     __ExcludeText_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcludeText_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - exclude lines matching regular expression (default=include all)"), 
+        "Optional - exclude lines matching regular expression (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Newline character(s)"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Newline character(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Newline_JTextField = new JTextField ( 5 );
     __Newline_JTextField.setToolTipText("Operationg system uses \\n for Linux, \\r for Mac, \\r\\n for Windows.");
@@ -395,14 +399,14 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, __Newline_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - newline character(s) for end of line: \\n or \\r or \\r\\n (default=as per operating system)"), 
+        "Optional - newline character(s) for end of line: \\n or \\r or \\r\\n (default=as per operating system)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	List<String> ifNotFoundChoices = new ArrayList<String>();
-	ifNotFoundChoices.add ( "" );	// Default
+	List<String> ifNotFoundChoices = new ArrayList<>();
+	ifNotFoundChoices.add ( "" ); // Default.
 	ifNotFoundChoices.add ( __command._Ignore );
 	ifNotFoundChoices.add ( __command._Warn );
 	ifNotFoundChoices.add ( __command._Fail );
@@ -412,7 +416,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if input file is not found (default=" + __command._Warn + ")"), 
+		"Optional - action if input file is not found (default=" + __command._Warn + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -440,12 +444,12 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
-	// Refresh the contents...
+	// Refresh the contents.
     refresh ();
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -515,10 +519,11 @@ private void refresh ()
 		}
 		else {
             if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfNotFound_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfNotFound parameter \"" +	IfNotFound +
@@ -526,8 +531,8 @@ private void refresh ()
 			}
 		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeText = __IncludeText_JTextField.getText().trim();
@@ -542,7 +547,7 @@ private void refresh ()
 	props.add ( "Newline=" + Newline );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __pathInput_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__pathInput_JButton.setEnabled ( true );
@@ -586,14 +591,14 @@ React to the user response.
 public void response ( boolean ok )
 {	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

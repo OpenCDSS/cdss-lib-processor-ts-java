@@ -124,8 +124,8 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(6);
 	validList.add ( "InputFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IncludeText" );
@@ -148,7 +148,7 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new AppendFile_JDialog ( parent, this )).ok();
 }
 
@@ -157,7 +157,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new ArrayList<File>(1);
+    List<File> list = new ArrayList<>(1);
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -190,7 +190,7 @@ CommandWarningException, CommandException
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -198,58 +198,64 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
 	
-    // Clear the output file
+    // Clear the output file.
     setOutputFile ( null );
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String IncludeText = parameters.getValue ( "IncludeText" );
+    String includePattern = null;
 	boolean doIncludeText = false;
-	if ( (IncludeText != null) && !IncludeText.equals("") ) {
+	if ( (IncludeText != null) && !IncludeText.isEmpty() ) {
 	    doIncludeText = true;
+        // Create Java regular expression string.
+        includePattern = IncludeText.replace("*", ".*");
 	}
     String ExcludeText = parameters.getValue ( "ExcludeText" );
+    String excludePattern = null;
     boolean doExcludeText = false;
-    if ( (ExcludeText != null) && !ExcludeText.equals("") ) {
+    if ( (ExcludeText != null) && !ExcludeText.isEmpty() ) {
         doExcludeText = true;
+        // Create Java regular expression string.
+        excludePattern = ExcludeText.replace("*", ".*");
     }
     String Newline = parameters.getValue ( "Newline" );
-    String nl = System.getProperty("line.separator"); // Default is native computer newline
+    String nl = System.getProperty("line.separator"); // Default is native computer newline.
     if ( (Newline != null) && !Newline.isEmpty() ) {
-    	// Replace literal string with internal representation
+    	// Replace literal string with internal representation.
     	nl = nl.replace("\\r", "\r" );
     	nl = nl.replace("\\n", "\n" );
     }
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
-	    IfNotFound = _Warn; // Default
+	    IfNotFound = _Warn; // Default.
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
         	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile) ) );
-	// Expand to a list of files...
+	// Expand to a list of files.
 	File f = new File(InputFile_full);
 	String ext = null;
-	List<File> fileList = new ArrayList<File>();
+	List<File> fileList = new ArrayList<>();
 	if ( InputFile_full.indexOf("*") < 0 ) {
-	    // Processing a single file
+	    // Processing a single file.
 	    fileList.add(new File(InputFile_full));
 	}
 	else if ( f.getName().equals("*") ) {
-	    // Process all files in folder
+	    // Process all files in folder.
 	    fileList = Arrays.asList(f.getParentFile().listFiles());
 	}
 	else if ( f.getName().startsWith("*.") ) {
-	    // Process all files in the folder with the matching extension
+	    // Process all files in the folder with the matching extension.
 	    ext = IOUtil.getFileExtension(f.getName());
-	    // TODO SAM 2016-02-08 Need to enable parameter for case
+	    // TODO SAM 2016-02-08 Need to enable parameter for case.
 	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext,false);
 	}
 	if ( fileList.size() == 0 ) {
@@ -321,12 +327,12 @@ CommandWarningException, CommandException
 	    notifyCommandProgressListeners ( fileCount++, fileList.size(), (float)-1.0, message );
 	    try {
 	        in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
-	        // Read lines and check against the pattern to match.  Default is regex syntax
+	        // Read lines and check against the pattern to match.  Default is regex syntax.
 	        while( (line = in.readLine()) != null ) {
 	            includeLine = true;
 	            if ( doIncludeText ) {
-	                if ( line.matches(IncludeText) ) {
-	                    // OK to append to output
+	                if ( line.matches(includePattern) ) {
+	                    // OK to append to output.
 	                    includeLine = true;
 	                }
 	                else {
@@ -334,8 +340,8 @@ CommandWarningException, CommandException
 	                }
 	            }
                 if ( doExcludeText ) {
-                    if ( line.matches(ExcludeText) ) {
-                        // Skip
+                    if ( line.matches(excludePattern) ) {
+                        // Skip.
                         includeLine = false;
                     }
                     else {
@@ -363,14 +369,14 @@ CommandWarningException, CommandException
                 in.close();
             }
             catch ( Exception e ) {
-                // Should not happen
+                // Should not happen.
             }
         }
 	}
 	
-	// Close the output file
+	// Close the output file.
 	fout.close();
-    // Save the output file name...
+    // Save the output file name.
     setOutputFile ( new File(OutputFile_full));
 	
     if ( warning_count > 0 ) {

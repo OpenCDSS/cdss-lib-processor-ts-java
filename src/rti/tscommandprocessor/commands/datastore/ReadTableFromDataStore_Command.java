@@ -986,7 +986,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	}
         }
         catch ( Exception e ) {
-            message = "Error querying datastore \"" + DataStore + "\" using SQL \"" + queryString + " (" + e + ").";
+            message = "Error querying datastore \"" + DataStore + "\" using SQL:\n" + queryString + "\nException:\n" + e + "";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,

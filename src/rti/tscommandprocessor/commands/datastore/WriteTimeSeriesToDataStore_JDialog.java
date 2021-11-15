@@ -144,13 +144,16 @@ Refresh the data type choices in response to the currently selected RiversideDB 
 @param value if non-null, then the selection is from the command initialization, in which case the
 specified data type should be selected
 */
-private void actionPerformedDataStoreSelected ( )
-{
+private void actionPerformedDataStoreSelected ( ) {
     if ( __DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
         return;
     }
     __dataStore = getSelectedDataStore();
+    if ( __dataStore == null ) {
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
+        return;
+    }
 }
 
 /**
@@ -330,16 +333,24 @@ which will have a discovery datastore that is good enough for getting database m
 private GenericDatabaseDataStore getSelectedDataStore () {
     String routine = getClass().getSimpleName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
+   	// If a substitute is defined that matches the datastore, use it.
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	if ( DataStore.equals(set.getValue()) ) {
+    		// The substitute original name matches a datastore name so use the original datastore.
+    		DataStore = set.getKey();
+    		break;
+    	}
+    }
     GenericDatabaseDataStore dataStore = null;
-   	dataStore = null;
    	for ( GenericDatabaseDataStore dataStore2 : this.datastores ) {
    		if ( dataStore2.getName().equals(DataStore) ) {
    			dataStore = dataStore2;
    		}
    	}
    	if ( dataStore == null ) {
-       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
-       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore + "\"." );
    	}
     else {
     	// Have an active datastore from software startup.

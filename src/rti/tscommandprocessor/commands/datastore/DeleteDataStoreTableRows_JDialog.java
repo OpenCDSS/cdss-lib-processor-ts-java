@@ -133,11 +133,19 @@ specified data type should be selected
 private void actionPerformedDataStoreSelected ( )
 {
     if ( __DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
         return;
     }
     __dataStore = getSelectedDataStore();
+    if ( __dataStore == null ) {
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
+        return;
+    }
     __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    if ( __dmi == null ) {
+        // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
+        return;
+    }
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateDataStoreTableChoices ( __dmi );
@@ -244,16 +252,24 @@ which will have a discovery datastore that is good enough for getting database m
 private DatabaseDataStore getSelectedDataStore () {
     String routine = getClass().getSimpleName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
+   	// If a substitute is defined that matches the datastore, use it.
+	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
+    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    	if ( DataStore.equals(set.getValue()) ) {
+    		// The substitute original name matches a datastore name so use the original datastore.
+    		DataStore = set.getKey();
+    		break;
+    	}
+    }
     DatabaseDataStore dataStore = null;
-   	dataStore = null;
    	for ( DatabaseDataStore dataStore2 : this.datastores ) {
    		if ( dataStore2.getName().equals(DataStore) ) {
    			dataStore = dataStore2;
    		}
    	}
    	if ( dataStore == null ) {
-       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore +
-       		"\".  Can read with SQL but cannot choose from list of tables or procedures." );
+       	Message.printStatus(2, routine, "Cannot get datastore for \"" + DataStore + "\"");
    	}
     else {
     	// Have an active datastore from software startup.

@@ -536,7 +536,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	message = "Error running procedure on datastore \"" + DataStore + "\" using procedure \"" + sqlString + " (" + e + ").";
         }
         else {
-        	message = "Error running SQL on datastore \"" + DataStore + "\" using SQL \"" + sqlString + " (" + e + ").";
+        	message = "Error running SQL on datastore \"" + DataStore + "\" using SQL:\n" + sqlString + "\nException:\n" + e + "";
         }
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,

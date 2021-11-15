@@ -120,7 +120,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing input file." ) );
 	}
 
-    /* FIXME add checks for columns
+    /* FIXME add checks for columns.
 	if ( (Columns == null) || (Columns.length() == 0) ) {
         message = "One or more columns must be specified";
 		warning += "\n" + message;
@@ -239,7 +239,7 @@ public <T> List<T> getObjectList ( Class<T> c )
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
@@ -358,7 +358,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Specify columns to merge." ) );
 	}
 
-    // FIXME SAM 2007-11-29 Need to move the checks to checkCommandParameters()
+    // FIXME SAM 2007-11-29 Need to move the checks to checkCommandParameters().
 	String token;
 	String SimpleMergeFormat2 = "";	// Initial value.
 	if (	(SimpleMergeFormat == null) ||
@@ -509,8 +509,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			if ( (Top != null) && !Top.isEmpty() ) {
 				props.set ( "Top=" + Top);
 			}
-			Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
-			Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
+			Message.printStatus( 2, routine, "Parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
+			Message.printStatus( 2, routine, "Parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
 			try {
 				// Always try to read object data types.
 				props.set("ColumnDataTypes=Auto");

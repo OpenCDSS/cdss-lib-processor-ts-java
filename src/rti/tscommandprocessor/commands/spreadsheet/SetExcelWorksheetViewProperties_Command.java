@@ -177,7 +177,7 @@ CommandWarningException, CommandException
 	String Worksheet = parameters.getValue ( "Worksheet" );
     List<String> worksheetList = new ArrayList<String>();
     if ( (Worksheet != null) && !Worksheet.isEmpty() ) {
-    	if ( (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
     		Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
     	}
     	String [] parts = Worksheet.split(",");

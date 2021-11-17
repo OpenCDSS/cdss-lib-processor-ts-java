@@ -469,7 +469,7 @@ throws InvalidCommandParameterException, CommandWarningException
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
@@ -492,7 +492,7 @@ throws InvalidCommandParameterException, CommandWarningException
     }
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Worksheet = parameters.getValue ( "Worksheet" );
-    if ( (Worksheet != null) && !Worksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
     }
 	String ExcelAddress = parameters.getValue ( "ExcelAddress" );
@@ -550,17 +550,17 @@ throws InvalidCommandParameterException, CommandWarningException
     String ColumnDecimalPlaces = parameters.getValue ( "ColumnDecimalPlaces" );
     StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
     String ConditionTableID = parameters.getValue ( "ConditionTableID" );
-    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ConditionTableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	ConditionTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ConditionTableID);
     }
     String StyleTableID = parameters.getValue ( "StyleTableID" );
-    if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
     }
     // Don't expand because ${Property} is expected to be internal
     String LegendAddress = parameters.getValue ( "LegendAddress" );
     String LegendWorksheet = parameters.getValue ( "LegendWorksheet" );
-    if ( (LegendWorksheet != null) && !LegendWorksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && LegendWorksheet.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
     }
 	

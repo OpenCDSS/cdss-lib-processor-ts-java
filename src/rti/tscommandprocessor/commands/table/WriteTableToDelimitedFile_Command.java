@@ -148,7 +148,7 @@ throws InvalidCommandParameterException
 				message, "Specify an output file." ) );
 	}
 	else if ( OutputFile.indexOf("${") < 0 ) {
-		// Can't check if output file is specified with ${Property}
+		// Can't check if output file is specified with ${Property}.
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
@@ -269,7 +269,7 @@ throws InvalidCommandParameterException
                 message, "Specify the parameter as " + _False + " or " + _True + "."));
     }
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(13);
 	validList.add ( "OutputFile" );
 	validList.add ( "TableID" );
@@ -301,7 +301,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
     List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
@@ -352,12 +352,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
-	// Clear the output file
+	// Clear the output file.
 	
 	setOutputFile ( null );
 	setOutputSchemaFile ( null );
 	
-	// Check whether the processor wants output files to be created...
+	// Check whether the processor wants output files to be created.
 
 	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
@@ -368,7 +368,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -376,7 +376,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -384,15 +384,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	String OutputFile_full = null;
 
-    // Get the table information  
+    // Get the table information.
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
-    	if ( TableID.indexOf("${") >= 0 ) {
-    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    	}
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	// In discovery mode want lists of tables to include ${Property}.
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
-    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
     OutputFile_full = OutputFile;
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
@@ -423,18 +421,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
-    boolean WriteHeaderComments_boolean = true; // Default
+    boolean WriteHeaderComments_boolean = true; // Default.
     if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
         WriteHeaderComments_boolean = false;
     }
     String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
-    boolean WriteColumnNames_boolean = true; // Default
+    boolean WriteColumnNames_boolean = true; // Default.
     if ( (WriteColumnNames != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
         WriteColumnNames_boolean = false;
     }
     String Delimiter = parameters.getValue ( "Delimiter" );
     if ( (Delimiter == null) || Delimiter.isEmpty() ) {
-    	Delimiter = ","; // Default
+    	Delimiter = ","; // Default.
     }
     String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
     String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
@@ -442,7 +440,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String NaNValue = parameters.getValue ( "NaNValue" );
     if ( NaNValue != null ) {
         if ( NaNValue.equals("") ) {
-            NaNValue = null; // Will result in "NaN" in output
+            NaNValue = null; // Will result in "NaN" in output.
         }
         else if ( NaNValue.equals(_Blank) ) {
             NaNValue = "";
@@ -491,11 +489,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
         
     try {
-    	// Now try to write...
+    	// Now try to write.
     
         OutputFile_full = OutputFile;
     
-		// Convert to an absolute path...
+		// Convert to an absolute path.
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
@@ -518,7 +516,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			WriteColumnNames_boolean, writeProps,
 		    outputSchemaFile, outputSchemaFormat,
 		    warning_level, command_tag, warning_count );
-		// Save the output file name...
+		// Save the output file name.
 		setOutputFile ( new File(OutputFile_full));
 		if ( (outputSchemaFile != null) && !outputSchemaFile.isEmpty() ) {
 			setOutputSchemaFile ( new File(outputSchemaFile));
@@ -672,7 +670,7 @@ public String toString ( PropList parameters )
 private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSchemaFile ) throws IOException {
 	PrintWriter out = new PrintWriter( new BufferedWriter(new FileWriter(outputSchemaFile)));
 	// Brute force the output.
-	// TODO SAM 2017-01-18 move to a general class later
+	// TODO SAM 2017-01-18 move to a general class later.
 	String nl = System.getProperty("line.separator");
 	String i1 = "  ", i2 = "    ", i3 = "      ", i4 = "        ";
 	out.print ( "{" + nl );
@@ -684,10 +682,10 @@ private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSche
 	int irow;
 	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
 		colName = table.getFieldName(icol);
-		// TODO sam 2017-01-18 need to enable
+		// TODO sam 2017-01-18 need to enable.
 		//colDescription = table.getFieldDescription(icol);
 		colType = table.getFieldDataType(icol);
-		dataTypeSchema = "STRING"; // default
+		dataTypeSchema = "STRING"; // Default.
 		if ( colType == TableField.DATA_TYPE_BOOLEAN ) {
 			dataTypeSchema = "BOOLEAN";
 		}
@@ -695,7 +693,7 @@ private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSche
 			dataTypeSchema = "DATETIME";
 		}
 		else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-			// Figure out the most precise date/time
+			// Figure out the most precise date/time.
 			int precMin = DateTime.PRECISION_YEAR;
 			Object o;
 			DateTime dt;
@@ -710,15 +708,15 @@ private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSche
 					}
 				}
 				catch ( Exception e ) {
-					// Ignore
+					// Ignore.
 				}
 			}
 			if ( precMin >= DateTime.PRECISION_YEAR ) {
-				// Only date
+				// Only date.
 				dataTypeSchema = "DATE";
 			}
 			else {
-				// Date/time
+				// Date/time.
 				dataTypeSchema = "DATETIME";
 			}
 		}
@@ -770,12 +768,12 @@ throws IOException
 {	String routine = getClass().getSimpleName() + ".writeTable";
 	String message;
 
-	// Clear the output file
+	// Clear the output file.
 
 	setOutputFile ( null );
 	setOutputSchemaFile ( null );
 
-	// Check whether the processor wants output files to be created...
+	// Check whether the processor wants output files to be created.
 
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
@@ -784,13 +782,13 @@ throws IOException
 
     List<String> outputCommentsList = new ArrayList<String>();
     if ( writeHeaderComments ) {
-        // Get the comments to be written at the top of the file
-        // Put the standard header at the top of the file
+        // Get the comments to be written at the top of the file.
+        // Put the standard header at the top of the file.
         outputCommentsList = IOUtil.formatCreatorHeader ( "", 80, false );
-        // Additional comments to add
+        // Additional comments to add.
         try {
             Object o = processor.getPropContents ( "OutputComments" );
-            // Comments are available so use them...
+            // Comments are available so use them.
             if ( o != null ) {
             	@SuppressWarnings("unchecked")
 				List<String> o2 = (List<String>)o;
@@ -839,7 +837,7 @@ throws IOException
 private void writeJSONTableSchema ( DataTable table, String outputSchemaFile ) throws IOException {
 	PrintWriter out = new PrintWriter( new BufferedWriter(new FileWriter(outputSchemaFile)));
 	// Brute force the output.
-	// TODO SAM 2017-01-18 move to a general class later
+	// TODO SAM 2017-01-18 move to a general class later.
 	String nl = System.getProperty("line.separator");
 	String i1 = "  ", i2 = "    ", i3 = "      ";
 	out.print ( "{" + nl );
@@ -862,7 +860,7 @@ private void writeJSONTableSchema ( DataTable table, String outputSchemaFile ) t
 			dataTypeSchema = "datetime";
 		}
 		else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-			// Figure out the most precise date/time
+			// Figure out the most precise date/time.
 			int precMin = DateTime.PRECISION_YEAR;
 			Object o;
 			DateTime dt;
@@ -877,23 +875,23 @@ private void writeJSONTableSchema ( DataTable table, String outputSchemaFile ) t
 					}
 				}
 				catch ( Exception e ) {
-					// Ignore
+					// Ignore.
 				}
 			}
 			if ( precMin == DateTime.PRECISION_YEAR ) {
-				// Only date
+				// Only date.
 				dataTypeSchema = "gyear";
 			}
 			else if ( precMin == DateTime.PRECISION_MONTH ) {
-				// Only date
+				// Only date.
 				dataTypeSchema = "gyearmonth";
 			}
 			else if ( precMin == DateTime.PRECISION_DAY ) {
-				// Only date
+				// Only date.
 				dataTypeSchema = "date";
 			}
 			else {
-				// Includes time
+				// Includes time.
 				dataTypeSchema = "datetime";
 			}
 		}

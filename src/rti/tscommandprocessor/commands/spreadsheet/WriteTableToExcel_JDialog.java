@@ -601,7 +601,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
-	__OutputFile_JTextField.setToolTipText("Specify the path to the Excel file or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the path to the Excel file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener (this);
     // Output file layout fights back with other rows so put in its own panel
 	JPanel OutputFile_JPanel = new JPanel();

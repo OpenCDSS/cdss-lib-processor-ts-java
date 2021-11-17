@@ -26,7 +26,6 @@ package rti.tscommandprocessor.commands.util;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -96,7 +95,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
+		// Working directory is available so use it.
 		if ( o != null ) {
 			working_dir = (String)o;
 			if ( working_dir.equals("") ) {
@@ -131,8 +130,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	catch ( Exception e ) {
-		// Print a stack trace so the output shows up somewhere because the log file
-		// may not be used.
+		// Print a stack trace so the output shows up somewhere because the log file may not be used.
 		if ( Message.isDebugOn ) {
 			e.printStackTrace();
 		}
@@ -145,8 +143,8 @@ throws InvalidCommandParameterException
 						message, "Verify that the path information is consistent." ) );
 	}
 	
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>();
 	validList.add ( "Outputfile" );
 	validList.add ( "TestResultsTableID" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -168,7 +166,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new StartRegressionTestResultsReport_JDialog ( parent, this )).ok();
 }
 
@@ -185,7 +183,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector<File>();
+	List<File> list = new ArrayList<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -201,7 +199,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<T>();
         v.add ( (T)table );
     }
     return v;
@@ -218,8 +216,7 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -249,7 +246,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -274,15 +271,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
     
-    // Now start the report file
+    // Now start the report file.
     
     String OutputFile_full = OutputFile;
 	DataTable table = null;
 	try {
-		// Create the table for output.  Make sure the columns agree with lookups in TSCommandProcessor.appendToRegressionTestReport()
+		// Create the table for output.  Make sure the columns agree with lookups in TSCommandProcessor.appendToRegressionTestReport().
 		if ( (TestResultsTableID != null) && !TestResultsTableID.isEmpty() ) {
 	        if ( commandPhase == CommandPhaseType.RUN ) {
-	            // Create the table of appropriate type
+	            // Create the table of appropriate type.
 	        	String [] columnNames = {
 	        		"Num",
 	        		"Enabled",
@@ -303,13 +300,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        	};
 	        	List<TableField> columnList = new ArrayList<TableField>();
                 for ( int i = 0; i < columnNames.length; i++ ) {
-                    // No precision is necessary and specify the field width as -1 meaning it can grow
+                    // No precision is necessary and specify the field width as -1 meaning it can grow.
                     columnList.add ( new TableField(columnTypes[i], columnNames[i], -1) );
                 }
 	            table = new DataTable( columnList );
 	            table.setTableID ( TestResultsTableID );
 	            
-	            // Set the table in the processor...
+	            // Set the table in the processor.
 	            
 	            PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "Table", table );
@@ -327,15 +324,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            }
 	        }
 	        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	            // Create an empty table and set the ID
+	            // Create an empty table and set the ID.
 	            table = new DataTable();
 	            table.setTableID ( TestResultsTableID );
 	            setDiscoveryTable ( table );
 	        }
 		}
-		// Now process the report file and optionally the table
+		// Now process the report file and optionally the table.
 		if ( commandPhase == CommandPhaseType.RUN ) {
-			OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+			OutputFile_full = IOUtil.verifyPathForOS(
+				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+					TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
 			TSCommandProcessorUtil.openNewRegressionTestReportFile ( OutputFile_full, table, false );
 			setOutputFile ( new File(OutputFile_full));
 		}

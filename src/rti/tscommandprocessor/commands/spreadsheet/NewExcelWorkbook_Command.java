@@ -219,7 +219,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Worksheets = parameters.getValue ( "Worksheets" );
 	String [] worksheets = null;
 	if ( (Worksheets != null) && !Worksheets.isEmpty() ) {
-	    if ( (Worksheets != null) && !Worksheets.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheets.indexOf("${") >= 0 ) {
+	    if ( commandPhase == CommandPhaseType.RUN ) {
 	    	Worksheets = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheets);
 	    }
 	    worksheets = Worksheets.trim().split(",");

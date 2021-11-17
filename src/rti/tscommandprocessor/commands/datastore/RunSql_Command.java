@@ -254,12 +254,14 @@ protected String formatFunctionParameters ( List<String> parameterNames ) {
 protected List<String> parseFunctionParameterNames ( String routineSignature ) {
 	List<String> params = new ArrayList<>();
 	int pos1 = routineSignature.indexOf("(");
-	int pos2 = routineSignature.indexOf(")");
-	if ( routineSignature.length() > 0 ) {
-		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
-		for ( String part : parts ) {
-			pos1 = part.indexOf(" ");
-			params.add(part.substring(0,pos1).trim());
+	if ( pos1 > 0 ) {
+		int pos2 = routineSignature.indexOf(")");
+		if ( routineSignature.length() > 0 ) {
+			List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+			for ( String part : parts ) {
+				pos1 = part.indexOf(" ");
+				params.add(part.substring(0,pos1).trim());
+			}
 		}
 	}
 	return params;
@@ -275,16 +277,18 @@ protected List<String> parseFunctionParameterNames ( String routineSignature ) {
 protected HashMap<String,String> parseFunctionParameterTypes ( String routineSignature ) {
 	HashMap<String,String> typeMap = new LinkedHashMap<>();
 	int pos1 = routineSignature.indexOf("(");
-	int pos2 = routineSignature.indexOf(")");
-	String name;
-	String value;
-	if ( routineSignature.length() > 0 ) {
-		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
-		for ( String part : parts ) {
-			pos1 = part.indexOf(" ");
-			name = part.substring(0,pos1).trim();
-			value = part.substring((pos1+1)).trim();
-			typeMap.put(name, value);
+	if ( pos1 > 0 ) {
+		int pos2 = routineSignature.indexOf(")");
+		String name;
+		String value;
+		if ( routineSignature.length() > 0 ) {
+			List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
+			for ( String part : parts ) {
+				pos1 = part.indexOf(" ");
+				name = part.substring(0,pos1).trim();
+				value = part.substring((pos1+1)).trim();
+				typeMap.put(name, value);
+			}
 		}
 	}
 	return typeMap;

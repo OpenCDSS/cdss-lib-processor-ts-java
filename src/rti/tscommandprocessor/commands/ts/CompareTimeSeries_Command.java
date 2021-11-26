@@ -117,7 +117,6 @@ public CompareTimeSeries_Command ()
 	setCommandName ( "CompareTimeSeries" );
 }
 
-
 /**
 Add a table record for output difference.
 */
@@ -197,6 +196,8 @@ throws InvalidCommandParameterException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String DiffFlag = parameters.getValue ( "DiffFlag" );
 	String CreateDiffTS = parameters.getValue ( "CreateDiffTS" );
+	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
+	//String AllowedDiffPerTS = parameters.getValue ( "AllowedDiffPerTS" );
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	String IfSame = parameters.getValue ( "IfSame" );
 	//String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
@@ -319,6 +320,22 @@ throws InvalidCommandParameterException
                     message, "Specify " + _False + " (default), " + _True + " or " + _IfDifferent ) );
 		}
 	}
+    if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
+        message = "The number of allowed differences (all time series) \"" + AllowedDiff + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the parameter as an integer."));
+    }
+    /*
+    if ( (AllowedDiffPerTS != null) && !AllowedDiffPerTS.equals("") && !StringUtil.isInteger(AllowedDiffPerTS) ) {
+        message = "The number of allowed differences (per time series) \"" + AllowedDiffPerTS + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the parameter as an integer."));
+    }
+    */
 	if ( (IfDifferent != null) && !IfDifferent.equals("") && !IfDifferent.equalsIgnoreCase(_Ignore) &&
 		!IfDifferent.equalsIgnoreCase(_Warn) && !IfDifferent.equalsIgnoreCase(_Fail) ) {
 			message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";
@@ -396,7 +413,7 @@ throws InvalidCommandParameterException
 	*/
     
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(20);
+	List<String> validList = new ArrayList<>(22);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
 	validList.add ( "EnsembleID1" );
@@ -409,6 +426,8 @@ throws InvalidCommandParameterException
 	validList.add ( "CompareFlags" );
 	validList.add ( "AnalysisStart" );
 	validList.add ( "AnalysisEnd" );
+	validList.add ( "AllowedDiff" );
+	//validList.add ( "AllowedDiffPerTS" );
 	validList.add ( "DiffFlag" );
 	validList.add ( "CreateDiffTS" );
     validList.add ( "DifferenceFile" );
@@ -1165,6 +1184,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
 	String DiffCountProperty = parameters.getValue ( "DiffCountProperty" );
+	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
+	int AllowedDiff_int = 0;
+	if ( StringUtil.isInteger(AllowedDiff) ) {
+	    AllowedDiff_int = Integer.parseInt(AllowedDiff);
+	}
+	//String AllowedDiffPerTS = parameters.getValue ( "AllowedDiffPerTS" );
+	//int AllowedDiffPerTS_int = 0;
+	//if ( StringUtil.isInteger(AllowedDiffPerTS) ) {
+	//    AllowedDiffPerTS_int = Integer.parseInt(AllowedDiffPerTS);
+	//}
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	if ( (IfDifferent == null) || IfDifferent.isEmpty() ) {
 		IfDifferent = _Ignore; // Default.
@@ -1228,7 +1257,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Tolerance_count = 1;
 		Tolerance_double = new double[1];
 		Tolerance_double[0] = 0.0;
-		Tolerance_tokens = new ArrayList<String>(1);
+		Tolerance_tokens = new ArrayList<>(1);
 		Tolerance_tokens.add ("0");
 	}
 
@@ -1313,39 +1342,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 
 		if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
+			// Comparing 2 time series.
 			do2Ts = true;
 			TS ts = null;
-			try {	PropList request_params = new PropList ( "" );
-					request_params.set ( "CommandTag", command_tag );
-					request_params.set ( "TSID", TSID1 );
-					CommandProcessorRequestResultsBean bean = null;
-					try {
-					    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-					}
-					catch ( Exception e ) {
-						message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
-						Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-						Message.printWarning(log_level, routine, e );
-		                status.addToLog ( commandPhase,
-		                        new CommandLogRecord(CommandStatusType.FAILURE,
-		                                message, "Report the problem to software support." ) );
-					}
-					PropList bean_PropList = bean.getResultsPropList();
-					Object o_TS = bean_PropList.getContents ( "TS");
-					if ( o_TS == null ) {
-						message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
-						Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-		                status.addToLog ( commandPhase,
-		                    new CommandLogRecord(CommandStatusType.FAILURE,
-		                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-					}
-					else {
-						ts = (TS)o_TS;
-					}
+			try {
+				PropList request_params = new PropList ( "" );
+				request_params.set ( "CommandTag", command_tag );
+				request_params.set ( "TSID", TSID1 );
+				CommandProcessorRequestResultsBean bean = null;
+				try {
+				    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+				}
+				catch ( Exception e ) {
+					message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
+					Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+					Message.printWarning(log_level, routine, e );
+		               status.addToLog ( commandPhase,
+		                   new CommandLogRecord(CommandStatusType.FAILURE,
+		                       message, "Report the problem to software support." ) );
+				}
+				PropList bean_PropList = bean.getResultsPropList();
+				Object o_TS = bean_PropList.getContents ( "TS");
+				if ( o_TS == null ) {
+					message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
+					Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+		               status.addToLog ( commandPhase,
+		                   new CommandLogRecord(CommandStatusType.FAILURE,
+		                       message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+				}
+				else {
+					ts = (TS)o_TS;
+				}
 			}
 			catch ( Exception e ) {
 				ts = null;
@@ -1366,36 +1397,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Get the second time series.
 			try {
 				PropList request_params = new PropList ( "" );
-					request_params.set ( "CommandTag", command_tag );
-					request_params.set ( "TSID", TSID2 );
-					CommandProcessorRequestResultsBean bean = null;
-					try {
-					    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-					}
-					catch ( Exception e ) {
-						message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
-						Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-						Message.printWarning(log_level, routine, e );
-			            status.addToLog ( commandPhase,
-			                    new CommandLogRecord(CommandStatusType.FAILURE,
-			                            message, "Report the problem to software support." ) );
-					}
-					PropList bean_PropList = bean.getResultsPropList();
-					Object o_TS = bean_PropList.getContents ( "TS");
-					if ( o_TS == null ) {
-						message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
-						Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-			            status.addToLog ( commandPhase,
-			                new CommandLogRecord(CommandStatusType.FAILURE,
-			                    message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-					}
-					else {
-						ts = (TS)o_TS;
-					}
+				request_params.set ( "CommandTag", command_tag );
+				request_params.set ( "TSID", TSID2 );
+				CommandProcessorRequestResultsBean bean = null;
+				try {
+				    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+				}
+				catch ( Exception e ) {
+					message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
+					Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+					Message.printWarning(log_level, routine, e );
+			           status.addToLog ( commandPhase,
+			               new CommandLogRecord(CommandStatusType.FAILURE,
+			                    message, "Report the problem to software support." ) );
+				}
+				PropList bean_PropList = bean.getResultsPropList();
+				Object o_TS = bean_PropList.getContents ( "TS");
+				if ( o_TS == null ) {
+					message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
+					Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+			        status.addToLog ( commandPhase,
+			            new CommandLogRecord(CommandStatusType.FAILURE,
+			               message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+				}
+				else {
+					ts = (TS)o_TS;
+				}
 			}
 			catch ( Exception e ) {
 				ts = null;
@@ -1415,7 +1446,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 		else if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() && (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) {
-			// Get the two ensembles.
+			// Comparing the time series in two ensembles.
 			TSEnsemble tsensemble1 = null, tsensemble2 = null;
 	        PropList request_params = new PropList ( "" );
 	        request_params.set ( "CommandTag", command_tag );
@@ -1515,7 +1546,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			do2Ensembles = true;
 		}
 		else {
-			// Get all the time series.
+			// Comparing all the time series by matching time series with the same identifiers.
 			try {
 			    Object o = processor.getPropContents( "TSResultsList" );
 				@SuppressWarnings("unchecked")
@@ -1533,7 +1564,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		
 		if ( (tslist == null) || (tslist.size() < 2) ) {
-			message = "Number of matched time series is < 2.  Not comparing.";
+			message = "Number of time series determined for comparison is < 2.  Not comparing.";
 			Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),
 			routine, message );
@@ -1546,6 +1577,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		List<TS> tslist2Check = new ArrayList<>();
 		tslist2Check.addAll(tslist);
 		if ( do2Ensembles ) {
+			// Also add the list from the second ensemble.
 			tslist2Check.addAll(tslist2);
 		}
 		if ( !TSUtil.areIntervalsSame(tslist2Check) ) {
@@ -1583,11 +1615,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<String> matchedList = new ArrayList<>();
 	List<Integer> compare_numvalues = new ArrayList<>();
 	List<Double> compare_diffmax = new ArrayList<>();
-	List<double []> compare_diffabsavg = new ArrayList<double []>();
-	List<double []> compare_diffavg = new ArrayList<double []>();
-	List<int []> compare_diffcount = new ArrayList<int []>();
+	List<double []> compare_diffabsavg = new ArrayList<>();
+	List<double []> compare_diffavg = new ArrayList<>();
+	List<int []> compare_diffcount = new ArrayList<>();
 	List<DateTime> compare_diffmaxdate = new ArrayList<>();
-	List<TS> difftsList = new ArrayList<TS>(); // List of difference time series if CreateDiffTS=True|IfDifferent.
+	List<TS> difftsList = new ArrayList<>(); // List of difference time series if CreateDiffTS=True|IfDifferent.
 	int tsComparisonsTried = 0; // Count of the number of comparisons tried - warn if 0.
 	try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -1926,12 +1958,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	else {
 				       	date2 = new DateTime ( AnalysisEnd_DateTime);
 				   	}
-				   	Message.printStatus ( 2, routine, "TS1 = " + ts1.getIdentifier().toString(true) );
-				   	Message.printStatus ( 2, routine, "TS2 = " + ts2.getIdentifier().toString(true) );
+				   	ts1.getIdentifierString();
+				   	Message.printStatus ( 2, routine, "TS1 = " + ts1.getIdentifier().toString(true) + ", alias = " + ts1.getAlias() );
+				   	Message.printStatus ( 2, routine, "TS2 = " + ts2.getIdentifier().toString(true) + ", alias = " + ts2.getAlias() );
 				   	Message.printStatus ( 2, routine, "Data differences TS2 - TS1 follow " +
 					   	"(Tolerance=" + Tolerance + ", Period="+ date1 + " to " + date2 + "):" );
 				   	// Increment counter indicating that a test was tried.
 				   	++tsComparisonsTried;
+				   	boolean doSetTz1 = false;
+				   	boolean doSetTz2 = false;
 				   	if ( !TimeInterval.isRegularInterval(ts1.getDataIntervalBase()) ||
 					   	!TimeInterval.isRegularInterval(ts2.getDataIntervalBase()) ) {
 					   	// One or both of the time series are irregular.
@@ -1941,15 +1976,43 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	List<TS> tempList = new ArrayList<>();
 					   	tempList.add(ts1);
 					   	tempList.add(ts2);
+					   	// Time zone is not included in the following list.
 					   	List<DateTime> dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
-					   	tsi = ts1.iterator(date1,date2);
+					   	// Because value lookups do a time comparison, the time zone in the iterator must be ignored in each time series
+					   	// do this by making sure the lookup time zone is the same as in the time series.
+					   	String tz1 = ts1.getDate1().getTimeZoneAbbreviation();
+					   	String tz2 = ts2.getDate1().getTimeZoneAbbreviation();
+					   	if ( dateTimeList.size() > 0 ) {
+					   		if ( dateTimeList.get(0).getTimeZoneAbbreviation().isEmpty() ) {
+					   			if ( !ts1.getDate1().getTimeZoneAbbreviation().isEmpty() ) {
+					   				doSetTz1 = true;
+					   			}
+					   			if ( !ts2.getDate1().getTimeZoneAbbreviation().isEmpty() ) {
+					   				doSetTz2 = true;
+					   			}
+					   		}
+					   	}
 					   	for ( DateTime dt : dateTimeList ) {
+						   	if ( doSetTz1 ) {
+						   		// Make sure time zone matches the time one so lookup will find data.
+						   		dt.setTimeZone(ts1.getDate1().getTimeZoneAbbreviation());
+						   	}
 						   	tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
 						   	value1_orig = tsdata1.getDataValue ();
 						   	flag1 = tsdata1.getDataFlag().trim();
+						   	if ( Message.isDebugOn ) {
+						   		Message.printStatus(2,routine,"DateTime=" + dt + " value1=" + value1_orig);
+						   	}
+						   	if ( doSetTz2 ) {
+						   		// Make sure time zone matches the time zone so lookup will find data.
+						   		dt.setTimeZone(ts2.getDate2().getTimeZoneAbbreviation());
+						   	}
 						   	tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
 						   	value2_orig = tsdata2.getDataValue ();
 						   	flag2 = tsdata2.getDataFlag().trim();
+						   	if ( Message.isDebugOn ) {
+						   		Message.printStatus(2,routine,"DateTime=" + dt + " value2=" + value2_orig);
+						   	}
 						   	compareTimeSeriesValues(
 							   	routine,
 							   	ts1, loc1, ts2,
@@ -1965,16 +2028,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	// Both time series are regular interval and should align.
 					   	// Iterate using the first time series.
 					   	tsi = ts1.iterator(date1,date2);
+					   	// Because value lookups do a time comparison, the time zone in the iterator must be ignored in each time series
+					   	// do this by making sure the lookup time zone is the same as in the time series.
+					   	String tz1 = ts1.getDate1().getTimeZoneAbbreviation();
+					   	String tz2 = ts2.getDate1().getTimeZoneAbbreviation();
+					   	if ( !ts1.getDate1().getTimeZoneAbbreviation().equals(ts2.getDate1().getTimeZoneAbbreviation()) ) {
+					   		// Time zones don't match so will need to set in second time series.
+					   		doSetTz2 = true;
+					   	}
 					   	DateTime dt = null;
 					   	for ( ; tsi.next() != null; ) {
 						   	dt = tsi.getDate();
 						   	// This is not overly efficient but currently the iterator does not have a way to set a data point.
+						   	if ( doSetTz2 ) {
+						   		// Set the time zone of the iterator to that in the time series to ensure match.
+						   		dt.setTimeZone(ts1.getDate1().getTimeZoneAbbreviation());
+						   	}
 						   	tsdata1 = ts1.getDataPoint ( dt, tsdata1 );
 						   	value1_orig = tsdata1.getDataValue ();
 						   	flag1 = tsdata1.getDataFlag().trim();
+						   	if ( Message.isDebugOn ) {
+						   		Message.printStatus(2,routine,"DateTime=" + dt + " value1=" + value1_orig);
+						   	}
+						   	if ( doSetTz2 ) {
+						   		// Set the time zone of the iterator to that in the time series to ensure match.
+						   		dt.setTimeZone(ts2.getDate1().getTimeZoneAbbreviation());
+						   	}
 						   	tsdata2 = ts2.getDataPoint ( dt, tsdata2 );
 						   	value2_orig = tsdata2.getDataValue ();
 						   	flag2 = tsdata2.getDataFlag().trim();
+						   	if ( Message.isDebugOn ) {
+						   		Message.printStatus(2,routine,"DateTime=" + dt + " value2=" + value2_orig);
+						   	}
 						   	compareTimeSeriesValues(
 							   	routine,
 							   	ts1, loc1, ts2,
@@ -2068,6 +2153,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	compare_diffmaxdate.add ( null );
 			   	} // End no match.
 		   	} // End loop on time series.
+
 		   	Message.printStatus ( 2, routine, "" + tsdiff_count + " of " + tslistSize + " time series had differences." );
 		   	// else print a warning and throw an exception below.
 
@@ -2087,54 +2173,74 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			   	problems
 		   	);
 
+		   	// Do the calculation so it can be used in output.
+            int diffCountTotal = 0;
+            for ( int its = 0; its < diffcount.length; its++ ) {
+              	diffCountTotal += diffcount[its];
+            }
+
 		   	// Output summary at the top of log messages.
 
-           	if ( commandPhase == CommandPhaseType.RUN ) {
-           		if ( tsdiff_count > 0 ) {
-			        CommandStatusType statusType = CommandStatusType.UNKNOWN;
-			        if ( IfDifferent.equalsIgnoreCase(_Warn) ) {
-				        statusType = CommandStatusType.WARNING;
-			        }
-			        else if ( IfDifferent.equalsIgnoreCase(_Fail) ) {
-				        statusType = CommandStatusType.FAILURE;
-			        }
-			        else {
-				        statusType = CommandStatusType.INFO;
-			        }
-			        message = "" + tsdiff_count + " time series had differences for " +
-				        outputTSList.size() +
-				        " analyzed time series (matches and unmatched time series from " +
-				        tslistSize + " input time series).";
-			        Message.printWarning ( warning_level,
-			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-	       	        status.addToLog ( commandPhase,
-	           	        new CommandLogRecord(statusType,
-	               	        message, "Verify that time series differences are expected." ) );
-		        }
-		        if ( tsdiff_count == 0 ) {
-			        CommandStatusType statusType = CommandStatusType.UNKNOWN;
-			        if ( IfSame.equalsIgnoreCase(_Warn) ) {
-				        statusType = CommandStatusType.WARNING;
-			        }
-			        else if ( IfSame.equalsIgnoreCase(_Fail) ) {
-				        statusType = CommandStatusType.FAILURE;
-			        }
-			        else {
-				        statusType = CommandStatusType.INFO;
-			        }
-			        message = "All " + tslistSize + " time series are the same.";
-			        Message.printWarning ( warning_level,
-			        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-	       	                status.addToLog ( commandPhase,
-	           	                new CommandLogRecord(statusType,
-	               	        message, "Verify that all time seres being the same is OK." ) );
-		        }
-	        }
+          	// The AllowedDiff value impacts the status.
+          	if ( (tsdiff_count > 0) && (diffCountTotal > AllowedDiff_int) ) {
+			    CommandStatusType statusType = CommandStatusType.UNKNOWN;
+			    if ( IfDifferent.equalsIgnoreCase(_Warn) ) {
+			        statusType = CommandStatusType.WARNING;
+			    }
+			    else if ( IfDifferent.equalsIgnoreCase(_Fail) ) {
+			        statusType = CommandStatusType.FAILURE;
+			    }
+			    else {
+			        statusType = CommandStatusType.INFO;
+			    }
+           	    if ( diffCountTotal <= AllowedDiff_int ) {
+           	    	// Allow the difference without errors:
+           	    	// - reset to INFO
+           	    	message = "" + tsdiff_count + " time series had differences for " +
+			        	outputTSList.size() +
+			        	" analyzed time series (matches and unmatched time series from " +
+			        	tslistSize + " input time series) - not using " + statusType +
+			        	" because total number of differences (" + diffCountTotal +
+			        	") is <= AllowedDiff (" + AllowedDiff_int + ").";
+			        statusType = CommandStatusType.INFO;
+           	    }
+           	    else {
+           	    	message = "" + tsdiff_count + " time series had differences for " +
+			        	outputTSList.size() +
+			        	" analyzed time series (matches and unmatched time series from " +
+			        	tslistSize + " input time series).  Total number of differences = " + diffCountTotal + ".";
+           	    }
+			    Message.printWarning ( warning_level,
+			    MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	       	    status.addToLog ( commandPhase,
+	                new CommandLogRecord(statusType,
+	           	        message, "Verify that time series differences are expected." ) );
+		    }
+		    if ( tsdiff_count == 0 ) {
+			    CommandStatusType statusType = CommandStatusType.UNKNOWN;
+			    if ( IfSame.equalsIgnoreCase(_Warn) ) {
+			       statusType = CommandStatusType.WARNING;
+			    }
+			    else if ( IfSame.equalsIgnoreCase(_Fail) ) {
+			        statusType = CommandStatusType.FAILURE;
+			    }
+			    else {
+			        statusType = CommandStatusType.INFO;
+			    }
+			    if ( statusType != CommandStatusType.INFO ) {
+			       	message = "All " + tslistSize + " time series are the same.";
+			      	Message.printWarning ( warning_level,
+			       	MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	       	       	status.addToLog ( commandPhase,
+	                   	new CommandLogRecord(statusType,
+	                   		message, "Verify that all time seres being the same is OK." ) );
+			    }
+		    }
 
            	// Another summary message.
 
 		   	if ( tsComparisonsTried == 0 ) {
-		       	message = "No time series comparisons were done based on the input parameters.";
+		       	message = "No time series comparisons occurred based on the input parameters.";
                	Message.printWarning ( warning_level, 
                    	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
                	status.addToLog ( commandPhase,
@@ -2185,14 +2291,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			   	}
 			   	Message.printStatus ( 2, "",
 				   	"Difference time series (second time series minus first) have been appended to results." );
-		   	}
-		
+		   	} // doCreateDiffTS
+
 	       	// Set the property indicating the number of rows in the table.
            	if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
-               	int diffCountTotal = 0;
-               	for ( int its = 0; its < diffcount.length; its++ ) {
-            	   	diffCountTotal += diffcount[its];
-               	}
                	PropList request_params = new PropList ( "" );
                	request_params.setUsingObject ( "PropertyName", DiffCountProperty );
                	request_params.setUsingObject ( "PropertyValue", new Integer(diffCountTotal) );
@@ -2211,7 +2313,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
            	}
            	
            	// Check the matched indices:
-           	// - may result in a large number of messages
+           	// - may result in a large number of messages if paired time series were not analyzed
            	// - warn for cases where more than 2 time series in a match
            	// - optionally warn if no match
            	for ( int its = 0; its < matchCount.length; its++ ) {
@@ -2248,7 +2350,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	if ( (SummaryFile_full != null) && !SummaryFile_full.isEmpty() ) {
         		this.__outputFileList.add ( new File(SummaryFile_full));
         	}
-        }
+        } // If commandPhaseType is RUN.
     }
 	catch ( Exception e ) {
 		message = "Unexpected error comparing time series (" + e + ").";
@@ -2420,6 +2522,8 @@ public String toString ( PropList props )
 	String SummaryFile = props.getValue ( "SummaryFile" );
 	String TableID = props.getValue ( "TableID" );
 	String DiffCountProperty = props.getValue ( "DiffCountProperty" );
+	String AllowedDiff = props.getValue("AllowedDiff");
+	//String AllowedDiffPerTS = props.getValue("AllowedDiffPerTS");
 	String IfDifferent = props.getValue("IfDifferent");
 	String IfSame = props.getValue("IfSame");
 	//String WarnIfDifferent = props.getValue("WarnIfDifferent");
@@ -2533,6 +2637,20 @@ public String toString ( PropList props )
         }
         b.append ( "DiffCountProperty=\"" + DiffCountProperty + "\"" );
     }
+    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
+    }
+    /*
+    if ( (AllowedDiffPerTS != null) && (AllowedDiffPerTS.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowedDiffPerTS=\"" + AllowedDiffPerTS + "\"" );
+    }
+    */
 	if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

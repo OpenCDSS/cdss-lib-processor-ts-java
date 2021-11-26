@@ -436,7 +436,7 @@ throws InvalidCommandParameterException
                 message, "Specify WriteProcedure as " + _OLD_WRITE_TO_HDB + " or " + _WRITE_DATA + " (default)." ) );
     }
     
-    if ( (Agency == null) || Agency.equals("") && ((WriteProcedure == null) ||
+    if ( ((Agency == null) || Agency.equals("")) && ((WriteProcedure == null) ||
     	WriteProcedure.isEmpty() || WriteProcedure.equalsIgnoreCase(_WRITE_DATA))) {
         message = "The agency must be specified when using WriteProcedure=" + _WRITE_DATA + ".";
         warning += "\n" + message;

@@ -236,7 +236,7 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(21+__numFilterGroups);
+    List<String> validList = new ArrayList<>(21+__numFilterGroups);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "NHourIntervalOffset" );
@@ -320,7 +320,7 @@ public <T> List<T> getObjectList ( Class<T> c )
             return null;
         }
         else {
-            List<T> v = new ArrayList<T>();
+            List<T> v = new ArrayList<>();
             v.add ( (T)ensemble );
             return v;
         }
@@ -453,9 +453,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Properties = parameters.getValue ( "Properties" );
     Hashtable<String,String> properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
-        properties = new Hashtable<String,String>();
+        properties = new Hashtable<>();
         // First break map pairs by comma
-        List<String> pairs = new ArrayList<String>();
+        List<String> pairs = new ArrayList<>();
         if ( Properties.indexOf(",") > 0 ) {
             pairs = StringUtil.breakStringList(Properties, ",", 0 );
         }
@@ -584,14 +584,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now try to read based on the combination of parameters...
 
-	List<TS> tslist = new ArrayList<TS>();	// Time series results.
+	List<TS> tslist = new ArrayList<>();	// Time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	TSEnsemble ensemble = null;
 	try {
-	    // Find the data store to use...
-        DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-            DataStore, ReclamationHDBDataStore.class );
+	    // Find the data store to use.
+        DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, ReclamationHDBDataStore.class );
         if ( dataStore == null ) {
             message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
             Message.printWarning ( 2, routine, message );
@@ -617,19 +616,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	    if ( (DataType != null) && !DataType.equals("") ) {
 	        Message.printStatus(2,routine,"Reading time series using input filters.");
-            // Input filter parameters have been specified so read 1+ time series...
-    		// Get the input needed to process the file...
+            // Input filter parameters have been specified so read 1+ time series.
+    		// Get the input needed to process the file.
     		//String InputName = parameters.getValue ( "InputName" );
     		//if ( InputName == null ) {
     		//	InputName = "";
     		//}
-    		List<String> whereNList = new ArrayList<String> ( 6 );
+    		List<String> whereNList = new ArrayList<> ( 6 );
     		String WhereN;
-    		int nfg = 0;	// Used below.
+    		int nfg = 0; // Used below.
     		for ( nfg = 0; nfg < 100; nfg++ ) {
     			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
     			if ( WhereN == null ) {
-    				break;	// No more where clauses
+    				break; // No more where clauses.
     			}
     			whereNList.add ( WhereN );
     		}

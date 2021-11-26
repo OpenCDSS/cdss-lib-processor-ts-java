@@ -102,6 +102,9 @@ private JTextField __DifferenceFile_JTextField = null;
 private JTextField __SummaryFile_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DiffCountProperty_JTextField = null;
+private JTextField __AllowedDiff_JTextField = null;
+// TODO smalers 2021-11-23 add later
+//private JTextField __AllowedDiffPerTS_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox = null;
 private SimpleJComboBox __IfSame_JComboBox = null;
 // TODO smalers 2021-08-26 old properties
@@ -307,6 +310,8 @@ private void checkInput ()
 	String SummaryFile = __SummaryFile_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
 	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
+	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
+	//String AllowedDiffPerTS = __AllowedDiffPerTS_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
 	//String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
@@ -366,6 +371,12 @@ private void checkInput ()
     if ( DiffCountProperty.length() > 0 ) {
     	props.set ( "DiffCountProperty", DiffCountProperty );
     }
+    if ( AllowedDiff.length() > 0 ) {
+        props.set ( "AllowedDiff", AllowedDiff );
+    }
+    //if ( AllowedDiffPerTS.length() > 0 ) {
+    //    props.set ( "AllowedDiffPerTS", AllowedDiffPerTS );
+    //}
 	if ( IfDifferent.length() > 0 ) {
 		props.set ( "IfDifferent", IfDifferent );
 	}
@@ -412,6 +423,8 @@ private void commitEdits ()
 	String SummaryFile = __SummaryFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
 	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
+	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
+	//String AllowedDiffPerTS = __AllowedDiffPerTS_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
 	//String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
@@ -434,6 +447,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "SummaryFile", SummaryFile );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DiffCountProperty", DiffCountProperty );
+	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
+	//__command.setCommandParameter ( "AllowedDiffPerTS", AllowedDiffPerTS );
 	__command.setCommandParameter ( "IfDifferent", IfDifferent );
 	__command.setCommandParameter ( "IfSame", IfSame );
 	//__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
@@ -714,6 +729,28 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		"Optional - 1-character flag to use for values that are different."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Allowed # of differences (total):"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowedDiff_JTextField = new JTextField ( 5 );
+    __AllowedDiff_JTextField.setToolTipText("Number of differences allowed for all time series.");
+    __AllowedDiff_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AllowedDiff_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+        3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    /*
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Allowed # of differences (per TS):"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowedDiffPerTS_JTextField = new JTextField ( 5 );
+    __AllowedDiffPerTS_JTextField.setToolTipText("Number of differences allowed per time series.");
+    __AllowedDiffPerTS_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AllowedDiffPerTS_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+        3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Action if different:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
@@ -974,6 +1011,8 @@ private void refresh ()
 	String SummaryFile = "";
 	String TableID = "";
 	String DiffCountProperty = "";
+	String AllowedDiff = "";
+	//String AllowedDiffPerTS = "";
 	String IfDifferent = "";
 	String IfSame = "";
 	//String WarnIfDifferent = "";
@@ -999,6 +1038,8 @@ private void refresh ()
         SummaryFile = props.getValue ( "SummaryFile" );
         TableID = props.getValue ( "TableID" );
         DiffCountProperty = props.getValue ( "DiffCountProperty" );
+		AllowedDiff = props.getValue ( "AllowedDiff" );
+		//AllowedDiffPerTS = props.getValue ( "AllowedDiffPerTS" );
 		IfDifferent = props.getValue ( "IfDifferent" );
 		IfSame = props.getValue ( "IfSame" );
 		//WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
@@ -1188,6 +1229,12 @@ private void refresh ()
 		if ( DiffCountProperty != null ) {
 			__DiffCountProperty_JTextField.setText ( DiffCountProperty );
 		}
+        if ( AllowedDiff != null ) {
+            __AllowedDiff_JTextField.setText ( AllowedDiff );
+        }
+        //if ( AllowedDiffPerTS != null ) {
+        //    __AllowedDiffPerTS_JTextField.setText ( AllowedDiffPerTS );
+        //}
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfDifferent_JComboBox, IfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__IfDifferent_JComboBox.select ( IfDifferent );
 		}
@@ -1269,6 +1316,8 @@ private void refresh ()
 	SummaryFile = __SummaryFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
+	AllowedDiff = __AllowedDiff_JTextField.getText().trim();
+	//AllowedDiffPerTS = __AllowedDiffPerTS_JTextField.getText().trim();
 	IfDifferent = __IfDifferent_JComboBox.getSelected();
 	IfSame = __IfSame_JComboBox.getSelected();
 	//WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
@@ -1292,6 +1341,8 @@ private void refresh ()
     props.add ( "SummaryFile=" + SummaryFile );
     props.add ( "TableID=" + TableID );
     props.add ( "DiffCountProperty=" + DiffCountProperty );
+	props.add ( "AllowedDiff=" + AllowedDiff );
+	//props.add ( "AllowedDiffPerTS=" + AllowedDiffPerTS );
 	props.add ( "IfDifferent=" + IfDifferent );
 	props.add ( "IfSame=" + IfSame );
 	//props.add ( "WarnIfDifferent=" + WarnIfDifferent );

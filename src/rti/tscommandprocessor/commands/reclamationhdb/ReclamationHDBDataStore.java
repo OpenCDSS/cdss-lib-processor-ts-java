@@ -65,34 +65,39 @@ public boolean checkDatabaseConnection ()
 		DMI dmi = getDMI();
 		try {
 			if ( dmi == null ) {
-				// Datastore was never initialized properly when software started.
-				// This is a bigger problem than can be fixed here.
+				// Datastore was never initialized properly when software started:
+				// - this is a bigger problem than can be fixed here.
+				// - can't set status on DMI since null instance
 				return false;
 			}
-			ReclamationHDB_DMI rdmi = (ReclamationHDB_DMI)dmi;
-			rdmi.dmiSelect("SELECT * from HDB_STATE");
-			// If here the connection is in place and the query was successful
-			return true;
+			else {
+				ReclamationHDB_DMI rdmi = (ReclamationHDB_DMI)dmi;
+				// Will throw an exception if there is an error.
+				rdmi.dmiSelect("SELECT * from HDB_STATE");
+				// If here the connection is in place and the query was successful.
+				return true;
+			}
 		}
 		catch ( Exception e ) {
-			// Error running query so try to open the dmi
+			// Error running query so try to open the DMI.
 			Message.printWarning(3, "", e);
 			try {
 				dmi.open();
-				// If no exception it was successful, but make sure query is OK so go to the top of the loop again
+				// If no exception it was successful, but make sure query is OK so go to the top of the loop again.
 				setStatus(0);
 				DateTime now = new DateTime(DateTime.DATE_CURRENT);
 				setStatusMessage("Database connection automatically reopened at " + now );
 				continue;
 			}
 			catch ( Exception e2 ) {
-				// Failed to open - try again until max retries is over
+				// Failed to open - try again until max retries is over.
 				Message.printWarning(3, "", e);
 				continue;
 			}
 		}
 	}
 	// Could not establish the connection even with retries.
+	setStatusMessage("Unable to open database connection after " + retries + " retries.");
 	return false;
 }
     

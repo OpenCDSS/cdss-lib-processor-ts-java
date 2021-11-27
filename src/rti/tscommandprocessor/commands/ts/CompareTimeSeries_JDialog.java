@@ -736,7 +736,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     __AllowedDiff_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __AllowedDiff_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel( "Optional - when checking for differences (default=0)."), 
         3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*

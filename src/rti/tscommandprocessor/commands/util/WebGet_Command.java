@@ -448,6 +448,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			Message.printStatus(2,routine,"Reading URI \"" + URI + "\" (try " + iRetry + ")." );
     			URL url = new URL(URI);
     			urlConnection = (HttpURLConnection)url.openConnection();
+    			
+    			// Check for redirects.  Different technologies have maximum on redirects but loop for 100, which is unlikely to be reached.
+    			int redirectMax = 100;
+    			for ( int iRedirect = 1; iRedirect <= redirectMax; iRedirect++ ) {
+    				int status0 = urlConnection.getResponseCode();
+    				if ( (status0 == HttpURLConnection.HTTP_MOVED_TEMP) ||
+    					(status0 == HttpURLConnection.HTTP_MOVED_PERM) ||
+    					(status0 == HttpURLConnection.HTTP_SEE_OTHER) ) {
+    					// URL is a redirect so need to reopen the connection with the redirect.
+    					if ( urlConnection != null ) {
+    						// First close the old connection.
+    						urlConnection.disconnect();
+    					}
+    					String newUrl = urlConnection.getHeaderField("Location");
+    					Message.printStatus(2,routine,"Reading redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
+    					url = new URL(newUrl);
+    					urlConnection = (HttpURLConnection)url.openConnection();
+    				}
+    				else {
+    					break;
+    				}
+    			}
+
    				Message.printStatus(2,routine,"Connect timeout default is: " + urlConnection.getConnectTimeout() );
    				Message.printStatus(2,routine,"Read timeout default is: " + urlConnection.getReadTimeout() );
     			if ( connectTimeout > 0 ) {

@@ -34,7 +34,7 @@
 	<classpathentry kind="lib" path="/cdss-lib-common-java/lib/Jackson/jackson-core-2.9.10.jar"/>
 	<classpathentry kind="lib" path="/cdss-lib-common-java/lib/Jackson/jackson-databind-2.9.10.jar"/>
 	<classpathentry kind="lib" path="/cdss-lib-common-java/lib/Jackson/jackson-datatype-jsr310-2.9.10.jar"/>
-	<classpathentry kind="lib" path="lib/apache-poi/log4j-api-2.17.0.jar"/>
-	<classpathentry kind="lib" path="lib/apache-poi/log4j-core-2.17.0.jar"/>
+	<classpathentry kind="lib" path="lib/apache-poi/log4j-api-2.17.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-poi/log4j-core-2.17.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

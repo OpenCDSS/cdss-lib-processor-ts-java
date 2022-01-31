@@ -44,6 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -65,12 +66,17 @@ implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowLi
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private FormatStringProperty_Command __command = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea = null;
 private JTextField __InputProperties_JTextField = null;
 private StringFormatterSpecifiersJPanel __Format_JPanel = null;
+private SimpleJComboBox __IntegerFormat_JComboBox = null;
+private SimpleJComboBox __Endianness_JComboBox = null;
+private JTextField __Delimiter_JTextField = null;
+private JTextField __NumBytes_JTextField = null;
 private JTextField __OutputProperty_JTextField = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
+private FormatStringProperty_Command __command = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -153,6 +159,10 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
     String InputProperties = __InputProperties_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
+    String IntegerFormat = __IntegerFormat_JComboBox.getSelected();
+    String Endianness = __Endianness_JComboBox.getSelected();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
+    String NumBytes = __NumBytes_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	String PropertyType = __PropertyType_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
@@ -164,6 +174,18 @@ private void checkInput ()
     }
     if ( Format.length() > 0 ) {
         parameters.set ( "Format", Format );
+    }
+    if ( IntegerFormat.length() > 0 ) {
+        parameters.set ( "IntegerFormat", IntegerFormat );
+    }
+    if ( Endianness.length() > 0 ) {
+        parameters.set ( "Endianness", Endianness );
+    }
+    if ( Delimiter.length() > 0 ) {
+        parameters.set ( "Delimiter", Delimiter );
+    }
+    if ( NumBytes.length() > 0 ) {
+        parameters.set ( "NumBytes", NumBytes );
     }
     if ( OutputProperty.length() > 0 ) {
         parameters.set ( "OutputProperty", OutputProperty );
@@ -189,10 +211,18 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputProperties = __InputProperties_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
+	String IntegerFormat = __IntegerFormat_JComboBox.getSelected();
+    String Endianness = __Endianness_JComboBox.getSelected();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
+    String NumBytes = __NumBytes_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	String PropertyType = __PropertyType_JComboBox.getSelected();
     __command.setCommandParameter ( "InputProperties", InputProperties );
     __command.setCommandParameter ( "Format", Format );
+    __command.setCommandParameter ( "IntegerFormat", IntegerFormat );
+    __command.setCommandParameter ( "Endianness", Endianness );
+    __command.setCommandParameter ( "Delimiter", Delimiter );
+    __command.setCommandParameter ( "NumBytes", NumBytes );
     __command.setCommandParameter ( "OutputProperty", OutputProperty );
     __command.setCommandParameter ( "PropertyType", PropertyType );
 }
@@ -218,26 +248,6 @@ private void initialize ( JFrame parent, FormatStringProperty_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Format processor properties to set the value of another processor property." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Formatting uses C-style format specifiers, including literal strings and format specifiers:" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %% - literal percent character" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %c - single character" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %s, %-20.20s - include entire string, fit to 20 characters left-justified" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %d, %4d, %04d, %-04d - include integer, pad with spaces for 4 digits, pad with zeros for 4 digits, left-justify" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %f, %8.2f, %#8.2f, %-8.0f, %08.1f - include float, use width of 8 and 2 decimals, force decimal point, left-justify, pad with zeros on left" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ("  \\n - newline" ), 
-	    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -249,19 +259,124 @@ private void initialize ( JFrame parent, FormatStringProperty_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - name(s) of properties to process, separated by commas, no ${ }."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for general choices.
+    int yGeneral = -1;
+    JPanel general_JPanel = new JPanel();
+    general_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "General", general_JPanel );
+
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+        "The following properties are used to format a list one or more of properties into a string." ), 
+        0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+        "The resulting string can optionally be converted to a different data type."),
+        0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+        "General formatting uses C-style format specifiers, including literal strings and format specifiers:" ), 
+        0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+       "  %% - literal percent character" ), 
+       0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+       "  %c - single character" ), 
+       0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+       "  %s, %-20.20s - include entire string, fit to 20 characters left-justified" ), 
+       0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+       "  %d, %4d, %04d, %-04d - include integer, pad with spaces for 4 digits, pad with zeros for 4 digits, left-justify" ), 
+       0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel (
+       "  %f, %8.2f, %#8.2f, %-8.0f, %08.1f - include float, use width of 8 and 2 decimals, force decimal point, left-justify, pad with zeros on left" ), 
+       0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JLabel ("  \\n - newline" ), 
+	    0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(general_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
     // is supported by the panel
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Format:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Format_JPanel = new StringFormatterSpecifiersJPanel ( 20, true, true, null );
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Format:" ), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Format_JPanel = new StringFormatterSpecifiersJPanel ( 35, true, true, null );
     __Format_JPanel.addKeyListener ( this );
     __Format_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __Format_JPanel.getDocument().addDocumentListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Format_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, __Format_JPanel,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Required if no IntegerFormat - format for string."),
+        3, yGeneral, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for integer choices.
+    int yInteger = -1;
+    JPanel integer_JPanel = new JPanel();
+    integer_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Integer", integer_JPanel );
+
+	JGUIUtil.addComponent(integer_JPanel, new JLabel (
+        "The following properties are used to format integer input properties, which formats each byte." ), 
+        0, ++yInteger, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(integer_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yInteger, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(integer_JPanel, new JLabel ( "Integer format:" ), 
+        0, ++yInteger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IntegerFormat_JComboBox = new SimpleJComboBox ( false );
+    __IntegerFormat_JComboBox.setToolTipText("Format to use for integer input - all input must be integers.");
+    List<String> formatChoices = new ArrayList<>();
+    formatChoices.add ( "" ); // Default is to not do special integer formatting
+    // TODO smalers 2022-01-30 - enable when have time
+    //formatChoices.add ( __command._Binary );
+    formatChoices.add ( __command._HexBytes );
+    formatChoices.add ( __command._HexBytesUpperCase );
+    __IntegerFormat_JComboBox.setData(formatChoices);
+    __IntegerFormat_JComboBox.select ( __command._String );
+    __IntegerFormat_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(integer_JPanel, __IntegerFormat_JComboBox,
+        1, yInteger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(integer_JPanel, new JLabel(
+        "Optional - format for integer input."), 
+        3, yInteger, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(integer_JPanel, new JLabel ( "Endianness:" ), 
+        0, ++yInteger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Endianness_JComboBox = new SimpleJComboBox ( false );
+    __Endianness_JComboBox.setToolTipText("Format to use for integer input - all input must be integers.");
+    List<String> endChoices = new ArrayList<>();
+    endChoices.add ( "" ); // Default is to not do special integer formatting
+    endChoices.add ( __command._Big );
+    endChoices.add ( __command._Little );
+    __Endianness_JComboBox.setData(endChoices);
+    __Endianness_JComboBox.select ( __command._String );
+    __Endianness_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(integer_JPanel, __Endianness_JComboBox,
+        1, yInteger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(integer_JPanel, new JLabel(
+        "Optional - endianness (default=" + __command._Big + ")."), 
+        3, yInteger, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(integer_JPanel, new JLabel ( "Delimiter:" ), 
+        0, ++yInteger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Delimiter_JTextField = new JTextField ( 10 );
+    __Delimiter_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(integer_JPanel, __Delimiter_JTextField,
+        1, yInteger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(integer_JPanel, new JLabel("Optional - delimiter between bytes, \\s for space."), 
+        3, yInteger, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(integer_JPanel, new JLabel ( "Number of bytes:" ), 
+        0, ++yInteger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NumBytes_JTextField = new JTextField ( 10 );
+    __NumBytes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(integer_JPanel, __NumBytes_JTextField,
+        1, yInteger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(integer_JPanel, new JLabel("Optional - number of bytes per integer to output."), 
+        3, yInteger, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output property:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -275,7 +390,7 @@ private void initialize ( JFrame parent, FormatStringProperty_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output property type:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    List<String> typeChoices = new ArrayList<String>();
+    List<String> typeChoices = new ArrayList<>();
     typeChoices.add ( "" ); // Default is string
     typeChoices.add ( __command._DateTime );
     typeChoices.add ( __command._Double );
@@ -372,6 +487,10 @@ private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String InputProperties = "";
     String Format = "";
+    String IntegerFormat = "";
+    String Endianness = "";
+    String Delimiter = "";
+    String NumBytes = "";
     String OutputProperty = "";
     String PropertyType = "";
 
@@ -381,6 +500,10 @@ private void refresh ()
 		// Get the parameters from the command...
         InputProperties = props.getValue ( "InputProperties" );
         Format = props.getValue ( "Format" );
+		IntegerFormat = props.getValue ( "IntegerFormat" );
+		Endianness = props.getValue ( "Endianness" );
+		Delimiter = props.getValue ( "Delimiter" );
+		NumBytes = props.getValue ( "NumBytes" );
 		OutputProperty = props.getValue ( "OutputProperty" );
 		PropertyType = props.getValue ( "PropertyType" );
         if ( InputProperties != null ) {
@@ -388,6 +511,44 @@ private void refresh ()
         }
         if ( Format != null ) {
             __Format_JPanel.setText ( Format );
+            __main_JTabbedPane.setSelectedIndex(0);
+        }
+        if ( IntegerFormat == null ) {
+            // Select default...
+            __IntegerFormat_JComboBox.select ( 0 );
+        }
+        else {
+            __main_JTabbedPane.setSelectedIndex(1);
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IntegerFormat_JComboBox,IntegerFormat, JGUIUtil.NONE, null, null ) ) {
+                __IntegerFormat_JComboBox.select ( IntegerFormat );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIntegerFormat value \"" + IntegerFormat +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( Endianness == null ) {
+            // Select default...
+            __Endianness_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Endianness_JComboBox,Endianness, JGUIUtil.NONE, null, null ) ) {
+                __Endianness_JComboBox.select ( Endianness );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEndianness value \"" + Endianness +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( Delimiter != null ) {
+            __Delimiter_JTextField.setText ( Delimiter );
+        }
+        if ( NumBytes != null ) {
+            __NumBytes_JTextField.setText ( NumBytes );
         }
         if ( OutputProperty != null ) {
             __OutputProperty_JTextField.setText ( OutputProperty );
@@ -411,11 +572,19 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	InputProperties = __InputProperties_JTextField.getText();
 	Format = __Format_JPanel.getText().trim();
+    IntegerFormat = __IntegerFormat_JComboBox.getSelected();
+    Endianness = __Endianness_JComboBox.getSelected();
+    Delimiter = __Delimiter_JTextField.getText();
+    NumBytes = __NumBytes_JTextField.getText();
     OutputProperty = __OutputProperty_JTextField.getText();
     PropertyType = __PropertyType_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "InputProperties=" + InputProperties );
     props.add ( "Format=" + Format );
+    props.add ( "IntegerFormat=" + IntegerFormat );
+    props.add ( "Endianness=" + Endianness );
+    props.add ( "Delimiter=" + Delimiter );
+    props.add ( "NumBytes=" + NumBytes );
     props.add ( "OutputProperty=" + OutputProperty );
     props.add ( "PropertyType=" + PropertyType );
 	__command_JTextArea.setText( __command.toString ( props ) );

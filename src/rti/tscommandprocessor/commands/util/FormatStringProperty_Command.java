@@ -28,6 +28,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -55,6 +56,19 @@ This class initializes, checks, and runs the FormatStringProperty() command.
 */
 public class FormatStringProperty_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Possible value for IntegerFormat.
+*/
+protected final String _Binary = "Binary";
+protected final String _HexBytes = "HexBytes";
+protected final String _HexBytesUpperCase = "HexBytesUpperCase";
+
+/**
+Possible value for Endianness.
+*/
+protected final String _Big = "Big";
+protected final String _Little = "Little";
 	
 /**
 Possible value for PropertyType.
@@ -88,6 +102,9 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String Format = parameters.getValue ( "Format" );
+    String IntegerFormat = parameters.getValue ( "IntegerFormat" );
+    String Endianness = parameters.getValue ( "Endianness" );
+    String NumBytes = parameters.getValue ( "NumBytes" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
     String PropertyType = parameters.getValue ( "PropertyType" );
     String warning = "";
@@ -96,11 +113,54 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (Format == null) || Format.equals("") ) {
-        message = "The format must be specified.";
+    if ( ((Format == null) || Format.isEmpty()) && ((IntegerFormat == null) || IntegerFormat.isEmpty()) ) {
+        message = "The Format or IntegerFormat must be specified.";
+        // TODO smalers 2022-01-30 could implement more complex checks to make sure that integer values are only
+        // allowed to use IntegerFormat.
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a format to process input." ) );
+    }
+
+    if ( (IntegerFormat != null) && !IntegerFormat.isEmpty() ) {
+    	if ( !IntegerFormat.equalsIgnoreCase(_Binary) &&
+    		!IntegerFormat.equalsIgnoreCase(_HexBytes) &&
+    		!IntegerFormat.equalsIgnoreCase(_HexBytesUpperCase)
+    		//&&
+    		//!IntegerFormat.equalsIgnoreCase(_Hex0x) &&
+    		//!IntegerFormat.equalsIgnoreCase(_Hex0xWithSpace)
+    		) {
+    		message = "The property type is invalid.";
+        	warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+           		new CommandLogRecord(CommandStatusType.FAILURE,
+               		message, "Specify the integer format as " + _Binary + ", " + _HexBytes +
+              	  		", or " + _HexBytesUpperCase + " (default)." ) );
+    	}
+    	// Output property type must be a string.
+    	if ( (PropertyType != null) && !PropertyType.equalsIgnoreCase(_String) ) { 
+			message = "The property type must be " + _String + " when IntegerFormat is specified.";
+        	warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+            	new CommandLogRecord(CommandStatusType.FAILURE,
+                	message, "Specify the property type as " + _String + " (default if not specified)." ) );
+    	}
+    }
+
+    if ( (Endianness != null) && !Endianness.isEmpty() && !Endianness.equalsIgnoreCase(_Big) &&
+    	!_Little.equalsIgnoreCase(_Little) ) {
+		message = "The endianness is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the property type as " + _Big + " (default) or " + _Little + "." ) );
+    }
+
+    if ( (NumBytes != null) && !NumBytes.isEmpty() && !StringUtil.isInteger(NumBytes) ) {
+        message = "The number of bytes is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the number of bytes as an integer." ) );
     }
 
     if ( (OutputProperty == null) || OutputProperty.equals("") ) {
@@ -109,6 +169,7 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a property name for output." ) );
     }
+
     if ( (PropertyType != null) && !PropertyType.isEmpty() && !PropertyType.equalsIgnoreCase(_DateTime) &&
     	!PropertyType.equalsIgnoreCase(_Double) && !PropertyType.equalsIgnoreCase(_Integer) && !PropertyType.equalsIgnoreCase(_String) ) {
 		message = "The property type is invalid.";
@@ -120,9 +181,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+    List<String> validList = new ArrayList<>(8);
     validList.add ( "InputProperties" );
     validList.add ( "Format" );
+    validList.add ( "IntegerFormat" );
+    validList.add ( "Endianness" );
+    validList.add ( "Delimiter" );
+    validList.add ( "NumBytes" );
     validList.add ( "OutputProperty" );
     validList.add ( "PropertyType" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -149,7 +214,7 @@ public boolean editCommand ( JFrame parent )
 Format a string property using input from other properties.
 @param processor command processor from which to get input property values
 @param inputProperties the name of the first column to use as input
-@param format the operator to execute for processing data
+@param format the format to use
 @param outputProperty the name of the output column
 @param problems a list of strings indicating problems during processing
 @return the formatted string property
@@ -160,7 +225,7 @@ public String format ( TSCommandProcessor processor, String [] inputProperties, 
 
     // Loop through the records, get the input column objects, and format for output
     String outputVal = null;
-    List<Object> values = new ArrayList<Object>();
+    List<Object> values = new ArrayList<>();
     // Get the input values
     values.clear();
     for ( int iProp = 0; iProp < inputProperties.length; iProp++ ) {
@@ -190,10 +255,147 @@ public String format ( TSCommandProcessor processor, String [] inputProperties, 
 }
 
 /**
+Format a string property using a list of integers and input from other properties.
+@param processor command processor from which to get input property values
+@param inputProperties the name of the first column to use as input
+@param integerFormat the format to use
+@param endianness endianness parameter
+@param delimiter delimiter between bytes
+@param numBytes number of bytes to output (if 0 default from integer size)
+@param outputProperty the name of the output column
+@param problems a list of strings indicating problems during processing
+@return the formatted string property
+*/
+public String formatIntegers ( TSCommandProcessor processor, String [] inputProperties,
+	String integerFormat, String endianness, String delimiter, int numBytes,
+	String outputProperty, List<String> problems )
+{   //String routine = getClass().getSimpleName() + ".format" ;
+
+    // Loop through the records, get the input column objects, and format for output
+    List<Object> values = new ArrayList<>();
+    // Get the input values
+    values.clear();
+    for ( int iProp = 0; iProp < inputProperties.length; iProp++ ) {
+    	Object value = null;
+        try {
+            value = processor.getPropContents(inputProperties[iProp]);
+            if ( value instanceof Integer ) {
+        	    // OK.
+            	values.add(value);
+            }
+            else if ( value instanceof Long ) {
+            	// TODO smalers 2022-01-30 enable in the future.
+        	    // OK.
+            	values.add(value);
+            }
+            else if ( value instanceof String ) {
+        	    if ( StringUtil.isInteger((String)value) ) {
+        	    	// OK.
+        	    }
+        	    else {
+        	    	problems.add ( "Input property \"" + inputProperties[iProp] + " is a string but cannot be converted to an integer." );
+        	    	values.clear();
+        	    	break;
+        	    }
+            }
+            else {
+            	problems.add ( "Input property \"" + inputProperties[iProp] + " is not an integer or string that can be converted to an integer." );
+            	values.clear();
+            	break;
+            }
+        }
+        catch ( Exception e ) {
+            problems.add ( "Error getting property value for \"" + inputProperties[iProp] + "\" (" + e + ")." );
+            values.clear();
+            break;
+        }
+    }
+    // Format 1+ integers according to the format.
+    StringBuilder s = new StringBuilder();
+    ByteBuffer bb = null;
+    byte[] bytes;
+    int numBytesOutput = 0;
+    int numBytesValue = 0;
+    // Java is big endian with bits ordered most significant to least significant.
+    // Therefore big ending output is in the same order as in-memory byte order.
+    for ( int ivalue = 0; ivalue < values.size(); ivalue++ ) {
+    	Object value = values.get(ivalue);
+   		if ( delimiter != null ) {
+    		if ( ivalue > 0 ) {
+    			// Append a space to separate the integers.
+    			s.append(delimiter);
+    		}
+   		}
+   		// Format the value.
+    	if ( value instanceof Integer ) {
+    		numBytesValue = 4;
+    		numBytesOutput = numBytesValue; // Default.
+    		// Allocate memory for the actual size.
+    		bb = ByteBuffer.allocate(numBytesOutput);
+    		// Adjust output for the requested number of bytes, but only to less than the memory size.
+    		if ( (numBytes > 0) && (numBytes <= numBytesValue) ) {
+    			numBytesOutput = numBytes;
+    		}
+    		bb.putInt((Integer)value );
+    	}
+    	else if ( value instanceof Long ) {
+    		numBytesValue = 8;
+    		numBytesOutput = numBytesValue; // Default.
+    		// Allocate memory for the actual size.
+    		bb = ByteBuffer.allocate(numBytesOutput);
+    		// Adjust output for the requested number of bytes, but only to less than the memory size.
+    		if ( (numBytes > 0) && (numBytes <= numBytesValue) ) {
+    			numBytesOutput = numBytes;
+    		}
+    		bb.putLong((Integer)value );
+    	}
+    	// Get the bytes from the array.
+    	bytes = bb.array();
+    	if ( endianness.equalsIgnoreCase(_Big) ) {
+    		// Big endian:
+    		// - same as Java so loop in the normal order
+    		// - output to include least significant bytes when less than full number of bytes
+    		for ( int i = (numBytesValue - numBytesOutput); i < numBytesValue; i++ ) {
+    			if ( delimiter != null ) {
+    				if ( i > 0 ) {
+    					// Append a space to separate the hex byte values within an integer.
+    					s.append(" ");
+    				}
+    			}
+    			if ( integerFormat.equalsIgnoreCase(_HexBytes) ) {
+    				s.append(String.format("%02x", bytes[i]));
+    			}
+    			else if ( integerFormat.equalsIgnoreCase(_HexBytesUpperCase) ) {
+    				s.append(String.format("%02X", bytes[i]));
+    			}
+    		}
+    	}
+    	else {
+    		// Little endian:
+    		// - output in reverse order from memory when less than full number of bytes
+    		for ( int i = (numBytesValue - 1); i >= (numBytesValue - numBytesOutput); i-- ) {
+    			if ( delimiter != null ) {
+    				if ( i != (numBytesOutput - 1) ) {
+    					// Append a space to separate the hex byte values within an integer.
+    					s.append(" ");
+    				}
+    			}
+    			if ( integerFormat.equalsIgnoreCase(_HexBytes) ) {
+    				s.append(String.format("%02x", bytes[i]));
+    			}
+    			else if ( integerFormat.equalsIgnoreCase(_HexBytesUpperCase) ) {
+    				s.append(String.format("%02X", bytes[i]));
+    			}
+    		}
+    	}
+    }
+    return s.toString();
+}
+
+/**
 Return the property defined in discovery phase.
 */
-private Prop getDiscoveryProp ()
-{
+private Prop getDiscoveryProp () {
     return __discovery_Prop;
 }
 
@@ -202,8 +404,7 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
         return null;
@@ -300,8 +501,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 inputPropertyNames[i] = inputPropertyNames[i].trim();
             }
         }
+        // Strip ${ } from properties since not used by this command:
+        // - otherwise, looking up a property value during parsing will cause issues
+        for ( int i = 0; i < inputPropertyNames.length; i++ ) {
+        	if ( inputPropertyNames[i].startsWith("$")) {
+        		inputPropertyNames[i] = inputPropertyNames[i].substring(2);
+        	}
+        	if ( inputPropertyNames[i].endsWith("}")) {
+        		inputPropertyNames[i] = inputPropertyNames[i].substring(0,(inputPropertyNames[i].length() - 1));
+        	}
+        }
     }
     String Format = parameters.getValue ( "Format" );
+    String IntegerFormat = parameters.getValue ( "IntegerFormat" );
+    String Endianness = parameters.getValue ( "Endianness" );
+    if ( (Endianness == null) || Endianness.isEmpty() ) {
+    	Endianness = _Big; // Default.
+    }
+    String Delimiter = parameters.getValue ( "Delimiter" );
+    String delimiter = null; // Default - no delimiter
+    if ( (Delimiter != null)  && !Delimiter.isEmpty() ) {
+    	delimiter = Delimiter;
+    	// Replace \s with space.
+    	delimiter = delimiter.replace("\\s", " ");
+    }
+    String NumBytes = parameters.getValue ( "NumBytes" );
+    int numBytes = 0; // Default - determine from integer being formatted
+    if ( (NumBytes != null) && !NumBytes.isEmpty() ) {
+    	numBytes = Integer.parseInt(NumBytes);
+    }
     String OutputProperty = parameters.getValue ( "OutputProperty" );
     String PropertyType = parameters.getValue ( "PropertyType" );
     String propertyType = _String; // default
@@ -310,7 +538,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient input to run command.";
         status.addToLog ( CommandPhaseType.RUN,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -318,17 +546,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     
-    // Now process...
+    // Now process.
 
-    List<String> problems = new ArrayList<String>();
+    List<String> problems = new ArrayList<>();
     try {
     	if ( commandPhase == CommandPhaseType.RUN ) {
-    		String stringProp = format ( (TSCommandProcessor)processor, inputPropertyNames, Format, OutputProperty, problems );
-    		// Replace "\n" in format with actual newline
+    		String stringProp = null;
+    		if ( (IntegerFormat != null) && !IntegerFormat.isEmpty() ) {
+    			// Process one or more integers.
+    			stringProp = formatIntegers ( (TSCommandProcessor)processor, inputPropertyNames,
+    				IntegerFormat, Endianness, delimiter, numBytes, OutputProperty, problems );
+    		}
+    		else {
+    			// Not using IntegerFormat.
+    			stringProp = format ( (TSCommandProcessor)processor, inputPropertyNames, Format, OutputProperty, problems );
+    		}
+    		// Replace "\n" in format with actual newline.
     		if ( stringProp != null ) {
     			stringProp = stringProp.replace("\\n","\n");
     		}
-    		// Create an output property of the requested type
+    		// Create an output property of the requested type.
     		Object propObject = null;
     		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
     			propObject = DateTime.parse(stringProp);
@@ -340,10 +577,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			propObject = new Integer(stringProp);
     		}
     		else {
-    			// Default
+    			// Default.
     			propObject = stringProp;
     		}
-	    	// Set the new property in the processor
+	    	// Set the new property in the processor.
     	    PropList request_params = new PropList ( "" );
 	    	request_params.setUsingObject ( "PropertyName", OutputProperty );
 	    	request_params.setUsingObject ( "PropertyValue", propObject );
@@ -361,7 +598,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	}
     	}
 		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-			// Set a property that will be listed for choices
+			// Set a property that will be listed for choices.
 			Object propertyObject = null;
     		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
     			propertyObject = new DateTime(DateTime.DATE_CURRENT);
@@ -390,19 +627,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     finally {
-	    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload
+	    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload.
 	    int problemsSize = problems.size();
 	    int problemsSizeOutput = problemsSize;
 	    String ProblemType = "FormatTableString";
 	    if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
-	        // Limit the warnings to the maximum
+	        // Limit the warnings to the maximum.
 	        problemsSizeOutput = MaxWarnings_int;
 	    }
 	    if ( problemsSizeOutput < problemsSize ) {
 	        message = "Performing string formatting had " + problemsSize + " warnings - only " + problemsSizeOutput + " are listed.";
 	        Message.printWarning ( warning_level,
 	            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	        // No recommendation since it is a user-defined check
+	        // No recommendation since it is a user-defined check.
 	        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
 	        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
 	    }
@@ -410,7 +647,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        message = problems.get(iprob);
 	        Message.printWarning ( warning_level,
 	            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	        // No recommendation since it is a user-defined check
+	        // No recommendation since it is a user-defined check.
 	        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
 	        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
 	    }
@@ -447,6 +684,10 @@ public String toString ( PropList parameters )
     
     String InputProperties = parameters.getValue( "InputProperties" );
     String Format = parameters.getValue( "Format" );
+    String IntegerFormat = parameters.getValue( "IntegerFormat" );
+    String Endianness = parameters.getValue( "Endianness" );
+    String Delimiter = parameters.getValue( "Delimiter" );
+    String NumBytes = parameters.getValue( "NumBytes" );
     String OutputProperty = parameters.getValue( "OutputProperty" );
     String PropertyType = parameters.getValue( "PropertyType" );
         
@@ -463,6 +704,30 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Format=\"" + Format + "\"" );
+    }
+    if ( (IntegerFormat != null) && (IntegerFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IntegerFormat=" + IntegerFormat );
+    }
+    if ( (Endianness != null) && (Endianness.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Endianness=" + Endianness );
+    }
+    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Delimiter=\"" + Delimiter + "\"" );
+    }
+    if ( (NumBytes != null) && (NumBytes.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NumBytes=" + NumBytes );
     }
     if ( (OutputProperty != null) && (OutputProperty.length() > 0) ) {
         if ( b.length() > 0 ) {

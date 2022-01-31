@@ -491,7 +491,7 @@ throws FileNotFoundException, IOException
     DateTime datetime = null;
     try {
         if ( Message.isDebugOn ) {
-            Message.printDebug( 2, routine, "Got end date/time string \"" + dateTimeString + "\" from line \"" + string + "\"" );
+            Message.printDebug( 2, routine, "Got end date/time string \"" + dateTimeString + "\" from line: " + string );
         }
         if ( dateTimeParser == null ) {
             datetime = DateTime.parse(dateTimeString);

@@ -240,13 +240,17 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 	Object value;
 	for (Map.Entry<?, ?> entry : map.entrySet() ) {
 		name = (String)entry.getKey();
-		Message.printStatus(2, routine, "Map entry has name \"" + name + "\".");
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2, routine, "Map entry has name \"" + name + "\".");
+		}
 		value = entry.getValue();
 		// If the requested array name is empty, use the first array found.
 		if ( name.equals(arrayName) || arrayName.isEmpty() ) {
 			if ( value instanceof List ) {
 				arrays.add((List<?>)value);
-				Message.printStatus(2, routine, "Found array name \"" + name + "\".");
+				if ( Message.isDebugOn ) {
+					Message.printStatus(2, routine, "Found array name \"" + name + "\".");
+				}
 				if ( arrayName.isEmpty() ) {
 					// Return because only want to match the top array.
 					return arrays;
@@ -258,12 +262,16 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 	for (Map.Entry<?, ?> entry : map.entrySet() ) {
 		value = entry.getValue();
 		if ( value instanceof Map ) {
-			Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
+		    if ( Message.isDebugOn ) {
+		    	Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
+		    }
 			// The following will add to the "arrays" list.
 			int sizeBefore = arrays.size();
 			List<List<?>> arrays2 = getJsonArraysByName ( (Map<?,?>)value, arrayName, appendArrays, arrays );
 			if ( sizeBefore != arrays2.size() ) {
-				Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
+				if ( Message.isDebugOn ) {
+					Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
+				}
 				if ( !appendArrays ) {
 					// Only want the first match.
 					return arrays;
@@ -275,14 +283,20 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 			// - loop through list items.
 			// - maps and lists are the two collection types so don't need to navigate any other object types
 			List<?> objectList = (List<?>) value;
-			Message.printStatus(2, routine, "Searching list for map objects.");
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine, "Searching list for map objects.");
+			}
 			for ( Object o : objectList ) {
 				if ( o instanceof Map ) {
-					Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
+					if ( Message.isDebugOn ) {
+						Message.printStatus(2, routine, "Recursively looking for array name \"" + arrayName + "\" in map object.");
+					}
 					int sizeBefore = arrays.size();
 					List<List<?>> arrays2 = getJsonArraysByName ( (Map<?,?>)o, arrayName, appendArrays, arrays );
 					if ( sizeBefore != arrays2.size() ) {
-						Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
+						if ( Message.isDebugOn ) {
+							Message.printStatus(2, routine, "Recursively found array name \"" + arrayName + "\".");
+						}
 						if ( !appendArrays ) {
 							// Only want the first match.
 							return arrays;
@@ -1253,8 +1267,10 @@ throws FileNotFoundException, IOException
 			// Create a top-level map with black name:
 			// - use a LinkedHashMap to preserve element order
 			//map = new LinkedHashMap<>();
-			Message.printStatus(2, routine,
-				"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine,
+					"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+			}
 			responseJson.insert(0, "{ \"toparray\" : ");
 			responseJson.append("}");
 			map = mapper.readValue(responseJson.toString(), Map.class);
@@ -1268,7 +1284,9 @@ throws FileNotFoundException, IOException
         	++warningCount;
         	return warningCount;
 		}
-		Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
+		}
 
 		// Find the array of interest, which is actually a Java List:
 		// - create the list up front

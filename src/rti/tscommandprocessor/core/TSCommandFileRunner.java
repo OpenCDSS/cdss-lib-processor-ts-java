@@ -99,6 +99,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
     String datastoreName;
     String operator;
     String reqVersion;
+    String checkerName = "TSCommandFileRunner"; // Default value - specific checker will supply scope-specific name.
     for ( Command command : commands ) {
    		if ( command instanceof Comment_Command ) {
    			commandString = command.toString();
@@ -130,7 +131,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							Message.printStatus(2, routine, "Detected application requirement.");
    							if ( requireParts.length < 6 ) {
    								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
-   								check.setIsRequirementMet(false, message);
+   								check.setIsRequirementMet(checkerName,false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
@@ -145,12 +146,12 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    									String appVersion = IOUtil.getProgramVersion();
    									if ( (appVersion == null) || appVersion.isEmpty() ) {
    										message = "Can't check application version for @require (application version is unknown): " + commandString + example;
-   										check.setIsRequirementMet(false, message);
+   										check.setIsRequirementMet(checkerName,false, message);
    										Message.printWarning(3, routine, message);
    									}
    									else if ( (reqVersion == null) || reqVersion.isEmpty() ) {
    										message = "Don't know how to determine application version for @require (no version given): " + commandString + example;
-   										check.setIsRequirementMet(false, message);
+   										check.setIsRequirementMet(checkerName,false, message);
    										Message.printWarning(3, routine, message);
    									}
    									else {
@@ -162,17 +163,17 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    										// - only compare the first 3 parts because modifier can cause issues comparing.
    										if ( !StringUtil.compareSemanticVersions(appVersion, operator, reqVersion, 3) ) {
    											message = "Application version (" + appVersion + ") does not meet requirement." + example;
-   											check.setIsRequirementMet(false, message);
+   											check.setIsRequirementMet(checkerName,false, message);
    										}
    										else {
    											// Must set the requirement as met because the default is false.
-   											check.setIsRequirementMet(true, "");
+   											check.setIsRequirementMet(checkerName,true, "");
    										}
    									}
    								}
    								else {
    									message = "@require application property (" + reqProperty + ") is not recognized: " + commandString + example;
-   									check.setIsRequirementMet(false, message);
+   									check.setIsRequirementMet(checkerName,false, message);
    									Message.printWarning(3, routine, message);
    								}
    							}
@@ -184,41 +185,37 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							Message.printStatus(2, routine, "Detected datastore requirement.");
    							if ( requireParts.length < 6 ) {
    								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
-								check.setIsRequirementMet(false, message);
+  								// Let the datastore fill in its checker name to override the initial value.
+								check.setIsRequirementMet(checkerName,false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
 								// datastoreName is needed to check whether it implements the DataStoreRequirementChecker interface.
 								datastoreName = requireParts[2].trim();
    								reqProperty = requireParts[3].trim();
+   								// The following handles datastore name substitution.
 								DataStore dataStore = processor.getDataStoreForName ( datastoreName, null );
 								if ( dataStore == null ) {
    									message = "Unable to get datastore for name \"" + datastoreName + "\"";
-   									check.setIsRequirementMet(false, message);
+   									// Let the datastore fill in its checker name to override the initial value.
+   									check.setIsRequirementMet(checkerName, false, message);
    									Message.printWarning(3, routine, message);
 								}
-								else if ( reqProperty.equalsIgnoreCase("version") ) {
-   									// Get the version for the processor
-   									//String dbVersion = dataStore.getVersion();
-   									//HydroBaseDMI dmi = (HydroBaseDMI)dataStore.getDMI();
-   									//String dbVersion = dmi.getDatabaseVersionFromName();
-   									// Check the datastore version against the requirement, using string comparison since no delimiters.
-   									//if ( !StringUtil.compareUsingOperator(versionType, dbVersion, operator, version) ) { }
-   									if ( dataStore instanceof DataStoreRequirementChecker ) {
+								else {
+									// Have found the datastore of interest.
+									Message.printStatus(2, routine, "Requested datastore name = '" + datastoreName + "' actual datastore name = '" + dataStore.getName() + "'");
+									if ( dataStore instanceof DataStoreRequirementChecker ) {
+										// The datastore implements a requirement checker so use it.
    										DataStoreRequirementChecker checker = (DataStoreRequirementChecker)dataStore;
    										// The following will handle reason for failure and will set check to true if condition is met.
    										checker.checkRequirement(check);
    									}
    									else {
-   										message = "Datastore code DOES NOT implement requirement checker.";
-   										check.setIsRequirementMet(false, message);
+   										// The datastore does not implement a requirement checker so fail by default.
+   										message = "Datastore code DOES NOT implement requirement checker - can't check requirement.";
+   										check.setIsRequirementMet(checkerName,false, message);
    										Message.printWarning(3, routine, message);
    									}
-   								}
-   								else {
-   									message = "@require datastore property (" + reqProperty + ") is not recognized: " + commandString + example;
-   									check.setIsRequirementMet(false, message);
-   									Message.printWarning(3, routine, message);
    								}
    							}
    						}
@@ -229,7 +226,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							String example = "\n  Example: #@require user != root";
    							if ( requireParts.length < 4 ) {
    								message = "Error processing @require - expecting 4+ tokens (have " + requireParts.length + "): " + commandString + example;
-								check.setIsRequirementMet(false, message);
+								check.setIsRequirementMet(checkerName,false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
@@ -241,25 +238,25 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    						}
    						else {
    							message = "Error processing @require - unknown type: " + requireParts[1];
-							check.setIsRequirementMet(false, message);
+							check.setIsRequirementMet(checkerName,false, message);
 							Message.printWarning(3, routine, message);
    						}
    						// If failure here and no message have a coding problem because message needs to be non-empty.
    						if ( ! check.isRequirementMet() && check.getFailReason().isEmpty() ) {
    							message = "@require was not met but have empty fail message - need to fix software.";
-							check.setIsRequirementMet(false, message);
+							check.setIsRequirementMet(checkerName,false, message);
 							Message.printWarning(3, routine, message);
    						}
                     }
    					else {
   						message = "Error processing @require - expecting 2+ tokens (have " + requireParts.length + ").";
-						check.setIsRequirementMet(false, message);
+						check.setIsRequirementMet(checkerName,false, message);
    						Message.printWarning(3, routine, message);
    					}
                 }
    				else {
   					message = "Error processing @require - expecting at least 2+ tokens but line is too short: " + commandString;
-					check.setIsRequirementMet(false, message);
+					check.setIsRequirementMet(checkerName,false, message);
 					Message.printWarning(3, routine, message);
 					// Throw an exception because bad syntax.
    					throw new RuntimeException (message);

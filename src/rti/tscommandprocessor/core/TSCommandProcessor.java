@@ -863,8 +863,9 @@ public Boolean getCreateOutput ()
 }
 
 /**
-Return the data store for the requested name, or null if not found.
+Return the datastore for the requested name, or null if not found.
 The matching datastore is returned regardless of whether active (open) or not.
+If the requested name matches a substitute, the substitute is returned.
 @param name the data store name to match (case is ignored in the comparison)
 @param dataStoreClass the class of the data store to match, useful when ensuring that the data store
 is compatible with intended use - specify as null to not match class
@@ -875,7 +876,8 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass ) {
 }
 
 /**
-Return the data store for the requested name, or null if not found.
+Return the datastore for the requested name, or null if not found.
+If the requested name matches a substitute, the substitute is returned.
 @param name the data store name to match (case is ignored in the comparison)
 @param dataStoreClass the class of the data store to match, useful when ensuring that the data store
 is compatible with intended use - specify as null to not match class
@@ -885,11 +887,11 @@ is compatible with intended use - specify as null to not match class
 public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boolean activeOnly )
 {   // First see if there is a substitute for the datastore:
 	// - the requested name could be a substitute name
-	// - therefore match the returned value from entries in the map and use the original key value
+	// - the name is the key in the map, and the substitute is the value
     HashMap<String,String> datastoreSubstituteMap = this.__tsengine.getDataStoreSubstituteMap();
     for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
-    	if ( set.getValue().equals(name) ) {
-   			name = set.getKey();
+    	if ( set.getKey().equals(name) ) {
+   			name = set.getValue();
    			break;
     	}
     }

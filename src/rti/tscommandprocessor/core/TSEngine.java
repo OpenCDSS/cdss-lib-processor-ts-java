@@ -958,6 +958,7 @@ private List<DataStore> __dataStoreList = new Vector<>();
  * Map that allows a requested datastore to substitute another datastore.
  * This is used, for example, when running test suites that use one datastore name but
  * another datastore needs to be used for the test.
+ * The key is the original datastore name and the value is the substitute datastore name.
  */
 private HashMap<String,String> __dataStoreSubstituteMap = new HashMap<>();
 
@@ -3027,14 +3028,14 @@ throws Exception
         	        	else {
         	        		commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    new CommandLogRecord(CommandStatusType.FAILURE,
-				   			    "@require condition was NOT met: \n" + checks.formatResults(),
+				   			    checks.formatResults(),
 				   			    "Check log file for details. Command file should not be run unless requirements are met.") );
         	        		// Check whether a failure results in exiting processing.
         	        		if ( checks.get(0).shouldExitIfRequirementNotMet() ) {
         	        			// Similar to Exit() command.
         	        			commandStatus.addToLog(CommandPhaseType.RUN,
 			    			    	new CommandLogRecord(CommandStatusType.FAILURE,
-				   			    	"@require condition was NOT met and exit processing is requested.  Exit processing.",
+				   			    	"@require condition is NOT met and exit processing is requested.  Exit processing.",
 				   			    	"Resolve the situation to enable processing past this command.") );
         	        			Message.printStatus ( 1, routine, "Requirement not met - stop processing commands." );
         	                 	commandProfile.setEndTime(System.currentTimeMillis());
@@ -5965,6 +5966,7 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
 
 /**
  * Set the datastore substitute map.
+ * This is usually handled by TSTool --datastore-substitute command parameter.
  * @param dsmap the datastore substitute map, which allows datastores referenced in command
  * files to use another datastore.
  */

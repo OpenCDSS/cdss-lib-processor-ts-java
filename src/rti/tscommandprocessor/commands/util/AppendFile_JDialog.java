@@ -74,6 +74,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextField __InputFile_JTextField = null;
+private JTextArea __AppendText_JTextArea = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __IncludeText_JTextField = null;
 private JTextField __ExcludeText_JTextField = null;
@@ -228,6 +229,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String AppendText = __AppendText_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeText = __IncludeText_JTextField.getText().trim();
 	String ExcludeText = __ExcludeText_JTextField.getText().trim();
@@ -237,6 +239,9 @@ private void checkInput ()
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( AppendText.length() > 0 ) {
+        props.set ( "AppendText", AppendText );
+    }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
     }
@@ -268,12 +273,14 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
+    String AppendText = __AppendText_JTextArea.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
     String ExcludeText = __ExcludeText_JTextField.getText().trim();
     String Newline = __Newline_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
+    __command.setCommandParameter ( "AppendText", AppendText );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "IncludeText", IncludeText );
 	__command.setCommandParameter ( "ExcludeText", ExcludeText );
@@ -294,6 +301,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 
 	addWindowListener( this );
 
+    Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel.
@@ -304,17 +312,20 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Append the contents of one or more files to another file." ),
+		"Append the contents of one or more files to another file, or append text to the input file." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The input file can be a single file, all files in a folder (*), or all files matching an extension (*.csv)." ),
+        "The input file can be a single file, all files in a folder (*), or all files matching an extension (*.csv), or a list of file patterns separated by commas." ),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "A list of input files or append text can be specified, but not both."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use the IncludeText and ExcludeText parameters to filter the lines that are appended, using Java regular expressions." ),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the file name be relative to the working directory, which is:"),
+		"It is recommended that the file name is specified relative to the working directory, which is:"),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
@@ -345,11 +356,26 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Append text area is resizable.
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append text:" ), 
+        0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AppendText_JTextArea = new JTextArea (8,60);
+    __AppendText_JTextArea.setToolTipText("Optional text to append, OK to include line breaks.");
+    __AppendText_JTextArea.setLineWrap ( true );
+    __AppendText_JTextArea.setWrapStyleWord ( true );
+    __AppendText_JTextArea.addKeyListener(this);
+    //JGUIUtil.addComponent(main_JPanel, new JScrollPane(__AppendText_JTextArea),
+    //    1, y, 1, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(main_JPanel, new JLabel("Optional."), 
+    //    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__AppendText_JTextArea),
+        1, y, 7, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the file to output or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the output file, can be the same as an input file, can use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
@@ -482,8 +508,9 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
+	String AppendText = "";
 	String OutputFile = "";
 	String IncludeText = "";
 	String ExcludeText = "";
@@ -494,6 +521,12 @@ private void refresh ()
 		__first_time = false;
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
+		AppendText = parameters.getValue( "AppendText" );
+		if ( AppendText != null ) {
+			// Replace escaped newline with actual newline so it will display on multiple lines.
+			Message.printStatus(2,routine,"First time - replacing escaped newline with actual newline.");
+			AppendText = AppendText.replace("\\n","\n");
+		}
 		OutputFile = parameters.getValue ( "OutputFile" );
 		IncludeText = parameters.getValue ( "IncludeText" );
 		ExcludeText = parameters.getValue ( "ExcludeText" );
@@ -501,6 +534,9 @@ private void refresh ()
 		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
+		}
+		if ( AppendText != null ) {
+		    __AppendText_JTextArea.setText( AppendText );
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
@@ -534,6 +570,12 @@ private void refresh ()
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
+	AppendText = __AppendText_JTextArea.getText().trim();
+    if ( AppendText != null ) {
+    	// Replace internal newline with escaped string for command text.
+		Message.printStatus(2,routine,"Replacing actual newline with escaped newline in AppendText parameter value.");
+    	AppendText = AppendText.replace("\n", "\\n");
+    }
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeText = __IncludeText_JTextField.getText().trim();
 	ExcludeText = __ExcludeText_JTextField.getText().trim();
@@ -541,6 +583,7 @@ private void refresh ()
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "AppendText=" + AppendText );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "IncludeText=" + IncludeText );
 	props.add ( "ExcludeText=" + ExcludeText );

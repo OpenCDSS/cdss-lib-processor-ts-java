@@ -107,8 +107,8 @@ throws InvalidCommandParameterException
                 message, "Specify the property name." ) );
     }
  
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(6);
     validList.add ( "TableID" );
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
@@ -136,11 +136,11 @@ public boolean editCommand ( JFrame parent )
 {	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new SetPropertyFromTable_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// TODO SAM 2015-02-25 may include this in utility code at some point
+// TODO SAM 2015-02-25 may include this in utility code at some point.
 /**
 Find the table rows that match the include and exclude filters.
 @param columnIncludeFilters include filters to match column values
@@ -150,7 +150,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
 	StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
 	List<String>errors )
 {
-    // Get include filter columns and glob-style regular expressions
+    // Get include filter columns and glob-style regular expressions.
     int [] columnIncludeFiltersNumbers = new int[0];
     String [] columnIncludeFiltersGlobs = null;
     if ( columnIncludeFilters != null ) {
@@ -166,7 +166,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
                 key = entry.getKey();
                 columnIncludeFiltersNumbers[ikey] = table.getFieldIndex(key);
                 columnIncludeFiltersGlobs[ikey] = map.get(key);
-                // Turn default globbing notation into internal Java regex notation
+                // Turn default globbing notation into internal Java regex notation.
                 columnIncludeFiltersGlobs[ikey] = columnIncludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
             }
             catch ( Exception e ) {
@@ -174,7 +174,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
             }
         }
     }
-    // Get exclude filter columns and glob-style regular expressions
+    // Get exclude filter columns and glob-style regular expressions.
     int [] columnExcludeFiltersNumbers = new int[0];
     String [] columnExcludeFiltersGlobs = null;
     if ( columnExcludeFilters != null ) {
@@ -190,7 +190,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
                 key = entry.getKey();
                 columnExcludeFiltersNumbers[ikey] = table.getFieldIndex(key);
                 columnExcludeFiltersGlobs[ikey] = map.get(key);
-                // Turn default globbing notation into internal Java regex notation
+                // Turn default globbing notation into internal Java regex notation.
                 columnExcludeFiltersGlobs[ikey] = columnExcludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
                 Message.printStatus(2,"","Exclude filter column \"" + key + "\" [" +
                 	columnExcludeFiltersNumbers[ikey] + "] glob \"" + columnExcludeFiltersGlobs[ikey] + "\"" );
@@ -200,20 +200,20 @@ private List<TableRecord> findTableRecords ( DataTable table,
             }
         }
     }
-    // Loop through the table and match rows
-    List<TableRecord> matchedRows = new ArrayList<TableRecord>();
+    // Loop through the table and match rows.
+    List<TableRecord> matchedRows = new ArrayList<>();
     boolean filterMatches;
     int icol;
     Object o;
     String s;
-    boolean debug = false; // Set to true when troubleshooting code
+    boolean debug = true; // Set to true when troubleshooting code.
     for ( int irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
-        filterMatches = true; // Default is match all
+        filterMatches = true; // Default is match all.
         if ( debug ) {
             Message.printStatus(2,"","columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
         }
         if ( columnIncludeFiltersNumbers.length > 0 ) {
-            // Filters can be done on any columns so loop through to see if row matches
+            // Filters can be done on any columns so loop through to see if row matches.
             for ( icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
                 if ( columnIncludeFiltersNumbers[icol] < 0 ) {
                 	if ( debug ) {
@@ -229,14 +229,15 @@ private List<TableRecord> findTableRecords ( DataTable table,
                         if ( debug ) {
                     	     Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] object is null" );
                	        }
-                        break; // Don't include nulls when checking values
+                        break; // Don't include nulls when checking values.
                     }
                     s = ("" + o).toUpperCase();
                     if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
-                        // A filter did not match so don't include the record
+                        // A filter did not match so don't include the record.
                         filterMatches = false;
                         if ( debug ) {
-                    	     Message.printStatus(2,"","Skipping filter because value \"" + s + "\" does not match columnIncludeFiltersGlobs[" + icol + "]" );
+                    	     Message.printStatus(2,"","Skipping filter because value \"" + s +
+                    	    	"\" does not match columnIncludeFiltersGlobs[" + icol + "] = " + columnIncludeFiltersGlobs[icol] );
                	        }
                         break;
                     }
@@ -250,9 +251,14 @@ private List<TableRecord> findTableRecords ( DataTable table,
             if ( !filterMatches ) {
                 // Skip the record.
             	if ( debug ) {
-                	Message.printStatus(2,"","Filters do not match row [" + irow + "] ... skipping." );
+                	Message.printStatus(2,"","Filter(s) do not match row [" + irow + "] ... skipping." );
             	}
                 continue;
+            }
+            else {
+            	if ( debug ) {
+                	Message.printStatus(2,"","Filter(s) not match row [" + irow + "] ... not skipping." );
+            	}
             }
         }
         if ( debug ) {
@@ -260,10 +266,10 @@ private List<TableRecord> findTableRecords ( DataTable table,
         }
         if ( columnExcludeFiltersNumbers.length > 0 ) {
             int matchesCount = 0;
-            // Filters can be done on any columns so loop through to see if row matches
+            // Filters can be done on any columns so loop through to see if row matches.
             for ( icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
                 if ( columnExcludeFiltersNumbers[icol] < 0 ) {
-                    // Can't do filter so don't try
+                    // Can't do filter so don't try.
                     break;
                 }
                 try {
@@ -273,11 +279,11 @@ private List<TableRecord> findTableRecords ( DataTable table,
                     }
                     if ( o == null ) {
                     	if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
-                    		// Trying to match blank cells
+                    		// Trying to match blank cells.
                     		++matchesCount;
                     	}
                     	else {
-                    		// Don't include nulls when checking values
+                    		// Don't include nulls when checking values.
                     		break;
                     	}
                     }
@@ -286,9 +292,9 @@ private List<TableRecord> findTableRecords ( DataTable table,
                     	Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
                     }
                     if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
-                        // A filter matched so don't copy the record
+                        // A filter matched so don't copy the record.
                     	if ( debug ) {
-                    		Message.printStatus(2,"","Exclude filter matches");
+                    		Message.printStatus(2,"","Exclude filter matches.");
                     	}
                         ++matchesCount;
                     }
@@ -302,14 +308,14 @@ private List<TableRecord> findTableRecords ( DataTable table,
             	Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
             }
             if ( matchesCount == columnExcludeFiltersNumbers.length ) {
-                // Skip the record since all exclude filters were matched
+                // Skip the record since all exclude filters were matched.
             	if ( debug ) {
-            		Message.printStatus(2,"","Skipping since all exclude filters matched");
+            		Message.printStatus(2,"","Skipping since all exclude filters matched.");
             	}
                 continue;
             }
         }
-        // If here then the row should be included
+        // If here then the row should be included.
         try {
         	if ( debug ) {
         		Message.printStatus(2,"","Matched table row [" + irow + "]");
@@ -344,9 +350,9 @@ public <T> List<T> getObjectList ( Class<T> c )
         return null;
     }
     Prop prop = new Prop();
-    // Check for TS request or class that matches the data...
+    // Check for TS request or class that matches the data.
     if ( c == prop.getClass() ) {
-        List<T> v = new ArrayList<T>(1);
+        List<T> v = new ArrayList<>(1);
         v.add ( (T)discovery_Prop );
         return v;
     }
@@ -355,7 +361,7 @@ public <T> List<T> getObjectList ( Class<T> c )
     }
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
@@ -398,7 +404,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
 	CommandProcessor processor = getCommandProcessor();
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -407,7 +413,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -428,16 +434,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
     StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
-    // Expand the filter information
+    // Expand the filter information.
     if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) {
         LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
             key = entry.getKey();
-            // Expand the key and the value (from original key)
+            // Expand the key and the value (from original key).
             String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
-            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
-            // Remove the original unexpanded entry if a different key
+            // Since the property value might contain ., have to escape:
+            // - TODO smalers 2022-02-11 there may be other patterns that need to be escaped - comment out for now, need to evaluate.
+            String value = map.get(key);
+            //if ( value != null ) {
+            //	value = value.replace(".","\\.");
+            //}
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,value));
+            // Remove the original unexpanded entry if a different key.
             if ( !key.equals(key2) ) {
             	map.remove(key);
             }
@@ -450,10 +462,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
             key = entry.getKey();
-            // Expand the key and the value (from original key)
+            // Expand the key and the value (from original key).
             String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
-            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
-            // Remove the original unexpanded entry if a different key
+            // Since the property value might contain ., have to escape:
+            // - TODO smalers 2022-02-11 there may be other patterns that need to be escaped - comment out for now, need to evaluate.
+            String value = map.get(key);
+            //if ( value != null ) {
+            //	value = value.replace(".","\\.");
+            //}
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,value));
+            // Remove the original unexpanded entry if a different key.
             if ( !key.equals(key2) ) {
             	map.remove(key);
             }
@@ -475,7 +493,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
+            // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
             try {
@@ -515,7 +533,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    Prop prop = null;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
-	    	// Match 1+ rows so first match can be used 
+	    	// Match 1+ rows so first match can be used.
 	    	List<String> errors = new ArrayList<>();
 	        List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, errors );
 	        for ( String error : errors ) {
@@ -523,10 +541,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        }
 	        Message.printStatus(2, routine, "Found " + records.size() + " matching records.");
 	        if ( records.size() <= 0 ) {
-	        	// Set to the default value if specified
+	        	// Set to the default value if specified.
 	        	String propValue = null;
 	        	if ( (DefaultValue == null) || DefaultValue.isEmpty() ) {
-	        		// Unset the property by setting to null
+	        		// Unset the property by setting to null.
 	        		propValue = null;
 	        	}
 	        	else if ( DefaultValue.equalsIgnoreCase("Blank") ) {
@@ -546,7 +564,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        	}
 	        }
 	        else {
-	        	// Have a matching record so set the property based on the column value
+	        	// Have a matching record so set the property based on the column value.
 	        	int col = table.getFieldIndex(Column);
 	        	if ( col < 0 ) {
 		        	message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" +
@@ -568,7 +586,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		        	}
 	        	}
 	        }
-	    	// Set the property in the processor
+	    	// Set the property in the processor.
 	        
 	    	PropList request_params = new PropList ( "" );
 	    	request_params.set ( "PropertyName", propertyName );
@@ -594,7 +612,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty property
             prop = new Prop();
-            prop.setKey ( PropertyName ); // OK if property name includes ${} in discovery mode
+            prop.setKey ( PropertyName ); // OK if property name includes ${} in discovery mode.
             prop.setHowSet(Prop.SET_UNKNOWN);
             setDiscoveryProp ( prop );
         }

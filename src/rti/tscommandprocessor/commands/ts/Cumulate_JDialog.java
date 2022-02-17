@@ -298,7 +298,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ();
-	List<String> missingChoices = new ArrayList<String>();
+	List<String> missingChoices = new ArrayList<>();
 	missingChoices.add ( "" );
 	missingChoices.add ( __command._CarryForwardIfMissing );
 	missingChoices.add ( __command._SetMissingIfMissing );
@@ -321,7 +321,8 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset date/time:" ), 
 		0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Reset_JComboBox = new SimpleJComboBox (true); // Editable
-	List<String> resetChoices = new ArrayList<String>();
+	__Reset_JComboBox.setToolTipText("Reset in format MM, MM-DD, etc. consistent with time series precision, can use ${Property}.");
+	List<String> resetChoices = new ArrayList<>();
 	resetChoices.add ( "" );  // No reset
     /*
     for ( int i = 1; i <= 12; i++ ) {
@@ -348,7 +349,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset value:" ), 
         0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ResetValue_JComboBox = new SimpleJComboBox (true); // Allow edit
-    List<String> resetValueChoices = new ArrayList<String>();
+    List<String> resetValueChoices = new ArrayList<>();
     resetValueChoices.add ( "" );
     resetValueChoices.add ( __command._DataValue );
     resetValueChoices.add ( __command._Zero );

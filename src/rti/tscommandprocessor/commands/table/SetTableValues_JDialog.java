@@ -248,7 +248,7 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to modify."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filter(s):"),

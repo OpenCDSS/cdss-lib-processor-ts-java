@@ -73,13 +73,9 @@ protected final String _DataValue = "DataValue";
 
 /**
 Year to prepend to reset string (because Reset parameter does not include year).
+Use a leap year so that February 29 is valid.
 */
 private String __resetYear = "2000";
-
-/**
-The Reset parameter value as a DateTime.
-*/
-private DateTime __resetDateTime = null;
 
 /**
 Constructor.
@@ -130,10 +126,10 @@ throws InvalidCommandParameterException
                     CumulateMissingType.CARRY_FORWARD + " or " + CumulateMissingType.SET_MISSING ) );
 	    }
 	}
-	__resetDateTime = null;
-    if ( (Reset != null) && !Reset.equals("") ){
+    if ( (Reset != null) && !Reset.equals("") && (Reset.indexOf("${") < 0) ) {
+    	// Can only check if not a property.
         try {
-            __resetDateTime = DateTime.parse(__resetYear + "-" + Reset);
+            DateTime.parse(__resetYear + "-" + Reset);
         }
         catch ( Exception e ) {
             message = "The reset date/time \"" + Reset + "\" (prepended with " +
@@ -351,6 +347,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
 	CumulateMissingType handleMissingHow = CumulateMissingType.valueOfIgnoreCase(HandleMissingHow);
+    String Reset = parameters.getValue ( "Reset" );
+	Reset = TSCommandProcessorUtil.expandParameterValue(processor, this, Reset);
+    DateTime resetDateTime = null;
+    if ( Reset != null ) {
+    	// Reset uses a property.
+        try {
+            resetDateTime = DateTime.parse(__resetYear + "-" + Reset);
+        }
+        catch ( Exception e ) {
+            message = "The reset date/time \"" + Reset + "\" (prepended with " +
+                __resetYear + "-) is not a valid date/time.";
+            Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the reset as MM, MM-DD, for example." ) );
+        }
+    }
     String ResetValue = parameters.getValue ( "ResetValue" );
     boolean resetValueToDataValue = false;
     Double ResetValue_Double = null;
@@ -502,9 +517,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Do the processing...
             notifyCommandProgressListeners ( its, nts, (float)-1.0, "Cumulating time series " +
                 ts.getIdentifier().toStringAliasAndTSID() );
-			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\"." );
+			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\", Reset=" + resetDateTime +
+				", ResetValue=" + ResetValue);
 			TSUtil_CumulateTimeSeries u = new TSUtil_CumulateTimeSeries( ts, analysisStart, analysisEnd,
-			    handleMissingHow, __resetDateTime, ResetValue_Double, resetValueToDataValue, AllowMissingCount_Integer,
+			    handleMissingHow, resetDateTime, ResetValue_Double, resetValueToDataValue, AllowMissingCount_Integer,
 			    MinimumSampleSize_Integer );
             u.cumulate ();
 		}

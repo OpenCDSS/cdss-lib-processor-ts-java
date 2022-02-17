@@ -24,10 +24,12 @@ NoticeEnd */
 package rti.tscommandprocessor.core;
 
 import java.awt.Desktop;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.lang.StringBuffer;
@@ -86,21 +88,30 @@ public abstract class TSCommandProcessorUtil
 {
 
 /**
+Output file for regression test results report.
+*/
+private static String __regression_test_file = null;
+
+/**
 PrintWriter for regression test results report.
 */
 private static PrintWriter __regression_test_fp = null;
+
 /**
 Count of regression tests that fail (does not include disabled tests).
 */
 private static int __regressionTestFailCount = 0;
+
 /**
 Count of regression tests that pass (does not include disabled tests).
 */
 private static int __regressionTestPassCount = 0;
+
 /**
 Count of regression tests that are disabled (not included in pass/fail tests).
 */
 private static int __regressionTestDisabledCount = 0;
+
 /**
 Table to contain regression test results.
 */
@@ -286,9 +297,11 @@ public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Co
 
 /**
 Close the regression test report file.
+Also create a file that is the same but with name including '.nonum' a the end that
+does not have test numbers, which facilitates comparing the results, for example in KDiff3.
 */
-public static void closeRegressionTestReportFile ()
-{
+public static void closeRegressionTestReportFile () {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".closeRegressionTestReportFile";
     if ( __regression_test_fp == null ) {
         return;
     }
@@ -305,6 +318,54 @@ public static void closeRegressionTestReportFile ()
     __regression_test_fp.println ( "Total          = " + StringUtil.formatString(totalCount, "%5d") );
     
     __regression_test_fp.close();
+    
+    // Create the report file with no test numbers.  The 'sed' command that works is as follows but is cumbersome because
+    // have to determine a bash shell to run and the report file is not closed and therefore the following output is incomplete:
+    //   RunProgram(CommandLine="C:\Users\${UserName}\AppData\Local\Programs\Git\
+    //     usr\bin\bash.exe --login -c \"sed 's/^ [ 0-9][ 0-9][ 0-9][ 0-9]/     /'
+    //     ${WorkingDirPosix}/Results/RunRegressionTest_commands_general_Windows_out_${NowString}.txt >
+    //     ${WorkingDirPosix}/Results/RunRegressionTest_commands_general_Windows_out_${NowString}.nonum.txt\"")
+    //
+    // Need to replace numbers in lines like the following with spaces:
+    //     1|
+    
+    // Create a filename that has extension: .nonum.ext
+    String ext = IOUtil.getFileExtension(__regression_test_file);
+    String outputFile = null;
+    if ( ext == null ) {
+    	outputFile = __regression_test_file + ".nonum.txt";
+    }
+    else {
+    	outputFile = __regression_test_file.substring(0,__regression_test_file.length() - ext.length( )) + "nonum." + ext;
+    }
+   	PrintWriter ofp = null;
+   	BufferedReader ifp = null;
+    try {
+    	// Read the normal report file.
+	    ifp = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream( __regression_test_file) ));
+    	// Open a second report file for 'nonum' output.
+    	ofp = new PrintWriter ( new FileOutputStream ( outputFile, false ) );
+    	String line = null;
+		while ( true ) {
+			line = ifp.readLine();
+			if ( line == null ) {
+				break;
+			}
+    		line = line.replaceAll("^[ 0-9][ 0-9][ 0-9][ 0-9][ 0-9]", "     ");
+    		ofp.println(line);
+    	}
+    }
+    catch ( IOException e ) {
+    	Message.printWarning(2, routine, "Error creating 'nonum' report file: " + outputFile );
+    }
+    finally {
+    	if ( ifp != null ) {
+    		ofp.close();
+    	}
+    	if ( ofp != null ) {
+    		ofp.close();
+    	}
+    }
 }
 
 /**
@@ -3144,7 +3205,8 @@ throws FileNotFoundException
     // Save the table to be used for the regression summary
     __regressionTestTable = table;
     // Print the report headers.
-    __regression_test_fp = new PrintWriter ( new FileOutputStream ( outputFile, append ) );
+    __regression_test_file = outputFile;
+    __regression_test_fp = new PrintWriter ( new FileOutputStream ( __regression_test_file, append ) );
     IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
     __regression_test_fp.println ( "#" );
     __regression_test_fp.println ( "# Command file regression test report from StartRegressionTestResultsReport() and RunCommands()" );

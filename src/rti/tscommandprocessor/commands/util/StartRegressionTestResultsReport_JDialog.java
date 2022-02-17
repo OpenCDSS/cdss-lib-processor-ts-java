@@ -235,16 +235,20 @@ private void initialize ( JFrame parent, StartRegressionTestResultsReport_Comman
 		"The report file can be specified using a full or relative path (relative to the working directory)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        	"The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is:" ), 
+        	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + __working_dir ), 
         	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The text report is formatted to allow comparison with previous runs to see if problems are being resolved."),
+		"The output file includes numbers for each test."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"An output file with 'nonum' in the name is automatically created and is formatted to allow comparison with previous runs."),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Report (output) file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

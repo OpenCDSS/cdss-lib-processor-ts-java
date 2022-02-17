@@ -114,7 +114,7 @@ throws InvalidCommandParameterException
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the input file."));
-		if ( (AppendText == null) || AppendText.isEmpty() ) {
+		if ( (AppendText != null) && !AppendText.isEmpty() ) {
 			// Do not allow InputFile to be a list since can only append text to one file.
 			if ( (InputFile.indexOf("*") >= 0) || (InputFile.indexOf(",") >= 0) ) {
 				message = "Append text can only be specified if a single input file is specified.";

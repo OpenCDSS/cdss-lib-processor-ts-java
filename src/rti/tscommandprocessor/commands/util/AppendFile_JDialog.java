@@ -273,7 +273,7 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
-    String AppendText = __AppendText_JTextArea.getText().trim();
+    String AppendText = __AppendText_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
     String ExcludeText = __ExcludeText_JTextField.getText().trim();

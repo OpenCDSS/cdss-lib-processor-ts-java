@@ -24,6 +24,9 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.util;
 
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -81,7 +84,7 @@ Data members used for OutputType parameter.
 */
 protected final String _Cgi = "Cgi";
 protected final String _Html = "Html";
-//protected final String _Text = "Text";  // Defined above
+//protected final String _Text = "Text";  // Defined above.
 
 /**
 Output file that is created by this command.
@@ -104,7 +107,7 @@ public FormatFile_Command ()
  */
 private void addAutoAppendLines(PrintWriter fout, String contentType, String outputType ) {
 	if ( outputType.equalsIgnoreCase(_Cgi) ) {
-		// Format for CGI
+		// Format for CGI:
 		// - don't need to do anything
 	}
 	else if ( outputType.equalsIgnoreCase(_Html) ) {
@@ -118,7 +121,7 @@ private void addAutoAppendLines(PrintWriter fout, String contentType, String out
 		fout.println("</html>");
 	}
 	else {
-		// Default is text, nothing to be done
+		// Default is text, nothing to be done.
 	}
 }
 
@@ -131,12 +134,12 @@ private void addAutoAppendLines(PrintWriter fout, String contentType, String out
  */
 private void addAutoPrependLines(PrintWriter fout, String inputFile, String contentType, String outputType ) {
 	if ( outputType.equalsIgnoreCase(_Cgi) ) {
-		// Format for CGI
+		// Format for CGI.
 		fout.println("Content-type: " + lookupMimeType(contentType, inputFile) );
 		fout.println("");
 	}
 	else if ( outputType.equalsIgnoreCase(_Html) ) {
-		// The HTML format is very basic, just enough to view the content
+		// The HTML format is very basic, just enough to view the content:
 		// - better formatting requires using prepend and append files
 		fout.println("<!DOCTYPE html>");
 		fout.println("<html>");
@@ -144,17 +147,17 @@ private void addAutoPrependLines(PrintWriter fout, String inputFile, String cont
 		fout.println("</head>");
 		fout.println("<body>");
 		if ( contentType.equalsIgnoreCase(_Image) ) {
-			// TODO smalers 2019-10-19 Need to figure out how to reference another file
+			// TODO smalers 2019-10-19 Need to figure out how to reference another file:
 			// - for now use the path but it probably won't work
 			fout.println("<img src=" + inputFile + ">");
 		}
 		else {
-			// Text - format as is without line wrapping
+			// Text - format as is without line wrapping.
 			fout.println("<pre>");
 		}
 	}
 	else {
-		// Default is text, nothing to be done
+		// Default is text, nothing to be done.
 	}
 }
 
@@ -228,7 +231,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the output file name."));
 	}
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(7);
 	validList.add ( "InputFile" );
 	validList.add ( "PrependFile" );
@@ -254,7 +257,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	Prop prop = IOUtil.getProp("DiffProgram");
 	String diffProgram = null;
 	if ( prop != null ) {
@@ -267,8 +270,7 @@ public boolean editCommand ( JFrame parent )
 Return the list of files that were created by this command.
 @return the list of files that were created by this command.
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
     List<File> list = new ArrayList<>(1);
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
@@ -284,7 +286,7 @@ private File getOutputFile ()
     return __OutputFile_File;
 }
 
-// Use parent parseCommmand
+// Use parent parseCommmand.
 
 /**
  * Lookup the mime type to use for the header.
@@ -346,13 +348,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
 
-    // Clear the output file
+    // Clear the output file.
     setOutputFile ( null );
 	
 	String InputFile = parameters.getValue ( "InputFile" );
@@ -417,7 +419,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 	if ( (OutputFile != null) && !OutputFile.isEmpty() && !OutputFile.equalsIgnoreCase("stdout") ) {
-		// Only expand the filename if not "stdout"
+		// Only expand the filename if not "stdout".
 		OutputFile_full = IOUtil.verifyPathForOS(
        		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
            		TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
@@ -430,15 +432,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
+	// Output file.
+	PrintWriter fout = null;
 	try {
 		// Open the output file.
-		PrintWriter fout = null;
+		String temporaryFile = null;
 		try {
 			if ( OutputFile.equalsIgnoreCase("stdout") ) {
 				fout = new PrintWriter ( System.out );
 			}
 			else {
-				fout = new PrintWriter ( new FileOutputStream( OutputFile_full, false ) );
+				if ( OutputFile_full.equals(InputFile_full) ) {
+					// Output file is the same as the input file so use a temporary output file and rename later. 
+					temporaryFile = IOUtil.tempFileName();
+					fout = new PrintWriter ( new FileOutputStream( temporaryFile, false ) );
+				}
+				else {
+					// Output file is different from input file so just open.
+					fout = new PrintWriter ( new FileOutputStream( OutputFile_full, false ) );
+				}
 			}
 		}
 		catch ( Exception e ) {
@@ -449,7 +461,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	routine,message);
         	throw new CommandException ( message );
 		}
-		// Process the content before the body of the file
+		// Process the content before the body of the file:
 		// - the following indicates whether the content needs including below,
 		//   some formats must handle with the prepend content
 		if ( AutoFormat_boolean ) {
@@ -457,21 +469,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			addAutoPrependLines ( fout, InputFile, ContentType, OutputType );
 		}
 		else if ( (PrependFile != null) && !PrependFile.isEmpty() ) {
-			// Prepend file is provided
+			// Prepend file is provided.
             List<String> prependFileLines = IOUtil.fileToStringList(PrependFile_full);
             for ( String s : prependFileLines ) {
             	s = TSCommandProcessorUtil.expandParameterValue(processor,this,s);
             	fout.println(s);
             }
 		}
-		// Process the content of the body of the file
+		// Process the content of the body of the file:
 		// - currently just transfer without processing
 		// - may also expand properties
 		if ( ContentType.equalsIgnoreCase(_Image) ) {
 			// Image will have been handled in prepend content if HTML,
-			// and otherwise needs to be output in binary form for CGI
+			// and otherwise needs to be output in binary form for CGI.
 			if ( OutputType.equalsIgnoreCase(_Cgi) ) {
-				// Print the contents of the image file
+				// Print the contents of the image file:
 				// - TODO smalers 2019-10-18 not sure if this is correct, need to test
 				//   probably need to use FileOutputStream and convert everything to bytes
 				InputStream bis = new BufferedInputStream(new FileInputStream(InputFile_full));
@@ -484,7 +496,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 		else {
-			// All text content is printed
+			// All text content is printed:
 			// - TODO smalers 2019-10-19 evaluate if some formats should rendered
 			//   nicely by default, for example JSON using a JavaScript package to pretty print,
 			//   CSV displaying nicely in a table,
@@ -495,22 +507,33 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				fout.println(s);
 			}
 		}
-		// Process the content after the body of the file
+		// Process the content after the body of the file.
 		if ( AutoFormat_boolean ) {
-			// Auto-formatting the append content
+			// Auto-formatting the append content.
 			addAutoAppendLines ( fout, ContentType, OutputType );
 		}
 		else if ( (AppendFile != null) && !AppendFile.isEmpty() ) {
-			// Append file is provided
+			// Append file is provided.
             List<String> appendFileLines = IOUtil.fileToStringList(AppendFile_full);
             for ( String s : appendFileLines ) {
             	s = TSCommandProcessorUtil.expandParameterValue(processor,this,s);
             	fout.println(s);
             }
 		}
-		// Close the output file.
-		fout.close();
-    	// Save the output file name...
+		// If a temporary file was used, rename the temporary file to output file.
+		if ( (temporaryFile != null) && IOUtil.fileExists(temporaryFile) ) {
+			fout.close();
+			fout = null; // Will be checked in 'finally'.
+			Path source = Paths.get(temporaryFile);
+			Path target = Paths.get(OutputFile_full);
+			// Remove the target first because move expects it to not exist.
+			if ( Files.exists(target) ) {
+				Files.delete(target);
+			}
+			// Move the file.
+			Files.move(source, target);
+		}
+    	// Save the output file name.
     	setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
@@ -523,6 +546,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "See the log file for details."));
 		throw new CommandException ( message );
+	}
+	finally {
+		if ( fout != null ) {
+			fout.close();
+		}
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }

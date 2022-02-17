@@ -593,7 +593,7 @@ private void initialize ( JFrame parent, FormatFile_Command command, String diff
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the output filename, can use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the output filename, can be the same as the input file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel
 	JPanel OutputFile_JPanel = new JPanel();

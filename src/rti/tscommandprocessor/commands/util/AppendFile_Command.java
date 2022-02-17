@@ -26,8 +26,15 @@ package rti.tscommandprocessor.commands.util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +57,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 
 /**
 This class initializes, checks, and runs the AppendFile() command.
@@ -88,6 +96,7 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
+	String AppendText = parameters.getValue ( "AppendText" );
     String OutputFile = parameters.getValue ( "OutputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
@@ -105,6 +114,16 @@ throws InvalidCommandParameterException
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the input file."));
+		if ( (AppendText == null) || AppendText.isEmpty() ) {
+			// Do not allow InputFile to be a list since can only append text to one file.
+			if ( (InputFile.indexOf("*") >= 0) || (InputFile.indexOf(",") >= 0) ) {
+				message = "Append text can only be specified if a single input file is specified.";
+				warning += "\n" + message;
+				status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Reconfigure the workflow to properly handle appending text."));
+			}
+		}
 	}
     if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The output file must be specified.";
@@ -125,8 +144,9 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(6);
+	List<String> validList = new ArrayList<>(7);
 	validList.add ( "InputFile" );
+	validList.add ( "AppendText" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IncludeText" );
 	validList.add ( "ExcludeText" );
@@ -208,6 +228,13 @@ CommandWarningException, CommandException
     setOutputFile ( null );
 	
 	String InputFile = parameters.getValue ( "InputFile" );
+	String AppendText = parameters.getValue ( "AppendText" );
+    AppendText = TSCommandProcessorUtil.expandParameterValue(processor,this,AppendText);
+    if ( AppendText != null ) {
+    	// Expand escaped newline to actual newline character.
+    	Message.printStatus(2,routine,"Replacing escaped newline with actual newline.");
+    	AppendText = AppendText.replace("\\n", "\n");
+    }
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String IncludeText = parameters.getValue ( "IncludeText" );
     String includePattern = null;
@@ -237,28 +264,53 @@ CommandWarningException, CommandException
 	    IfNotFound = _Warn; // Default.
 	}
 
-	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile) ) );
 	// Expand to a list of files.
-	File f = new File(InputFile_full);
-	String ext = null;
+	// First handle list of file patterns separated by commas.
+	String [] parts = new String[0];
+	if ( InputFile.indexOf(",") >= 0 ) {
+		// Matching a list of files or patterns in a folder.
+		parts = InputFile.split(",");
+	}
+	else {
+		// Single file pattern.
+		parts = new String[1];
+		parts[0] = InputFile;
+	}
+	
+	// Loop through the parts to create the final list of files.
 	List<File> fileList = new ArrayList<>();
-	if ( InputFile_full.indexOf("*") < 0 ) {
-	    // Processing a single file.
-	    fileList.add(new File(InputFile_full));
+	for ( String part : parts ) {
+		part = part.trim();
+		Message.printStatus(2,routine,"Getting files for pattern: " + part);
+		// Always use Linux path separator because it simplifies glob evaluation.
+		String part_full = IOUtil.verifyPathForOS(
+       		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+       			TSCommandProcessorUtil.expandParameterValue(processor,this,part) ) ).replace("\\", "/");
+		if ( !StringUtil.containsAny(part_full, "*{?[", false) ) {
+	    	// Processing a single file so don't need to deal with glob wildcards.
+	    	fileList.add(Paths.get(part_full).toFile());
+		}
+		else {
+	    	// TODO SAM 2016-02-08 Need to enable parameter for ignore case.
+			String pattern = "glob:" + part_full;
+			try {
+				List<File> partFileList = IOUtil.getFilesMatchingPattern(pattern);
+				fileList.addAll(partFileList);
+			}
+			catch ( IOException e ) {
+				message = "Error getting list of files for pattern: " + pattern;
+				if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+					status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Contact software support."));
+				}
+			}
+		}
 	}
-	else if ( f.getName().equals("*") ) {
-	    // Process all files in folder.
-	    fileList = Arrays.asList(f.getParentFile().listFiles());
-	}
-	else if ( f.getName().startsWith("*.") ) {
-	    // Process all files in the folder with the matching extension.
-	    ext = IOUtil.getFileExtension(f.getName());
-	    // TODO SAM 2016-02-08 Need to enable parameter for case.
-	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext,false);
-	}
-	if ( fileList.size() == 0 ) {
+
+	if ( ((AppendText == null) || (AppendText.length() == 0)) && (fileList.size() == 0) ) {
+		// No text and no files.
 	    message = "Unable to match any files using InputFile=\"" + InputFile + "\"";
 	    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
@@ -273,6 +325,9 @@ CommandWarningException, CommandException
                 message, "Verify that the input file(s) exist(s) at the time the command is run."));
         }
 	}
+
+	// Append the files if any were given.
+
 	for ( File file : fileList ) {
     	if ( !file.exists() ) {
             message = "Input file to append \"" + file + "\" does not exist.";
@@ -293,6 +348,7 @@ CommandWarningException, CommandException
             }
     	}
 	}
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
@@ -300,84 +356,124 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in append mode.
+	// Process the files and append text.  Each input file is opened to scan the file.  The output file is opened once in append mode.
 
-	String OutputFile_full = IOUtil.verifyPathForOS(
-	    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-	        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile) ) );
+	String OutputFile_full = OutputFile;
 	PrintWriter fout = null;
 	try {
-	    fout = new PrintWriter ( new FileOutputStream( OutputFile_full, true ) );
+		OutputFile_full = IOUtil.verifyPathForOS(
+	    	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile) ) );
+		String temporaryFile = null;
+		try {
+			// Always use a temporary file for output in case one of the output files matches the input file:
+			// - do this because it would be difficult to check input files if a list
+			temporaryFile = IOUtil.tempFileName();
+			fout = new PrintWriter ( new FileOutputStream( temporaryFile, false ) );
+		}
+		catch ( Exception e ) {
+	    	message = "Error opening the output file (" + e + ").";
+        	Message.printWarning ( warning_level,
+            	MessageUtil.formatMessageTag(
+            	command_tag, ++warning_count),
+            	routine,message);
+        	throw new CommandException ( message );
+		}
+
+    	String line;
+    	boolean includeLine;
+    	int fileCount = 0;
+		for ( File file : fileList ) {
+	    	BufferedReader in = null;
+	    	message = "Processing file \"" + file.getName() + "\"";
+	    	notifyCommandProgressListeners ( fileCount++, fileList.size(), (float)-1.0, message );
+	    	try {
+	        	in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
+	        	// Read lines and check against the pattern to match.  Default is regex syntax.
+	        	while( (line = in.readLine()) != null ) {
+	            	includeLine = true;
+	            	if ( doIncludeText ) {
+	                	if ( line.matches(includePattern) ) {
+	                    	// OK to append to output.
+	                    	includeLine = true;
+	                	}
+	                	else {
+	                    	includeLine = false;
+	                	}
+	            	}
+                	if ( doExcludeText ) {
+                    	if ( line.matches(excludePattern) ) {
+                        	// Skip.
+                        	includeLine = false;
+                    	}
+                    	else {
+                        	includeLine = true;
+                    	}
+                	}
+	            	if ( includeLine ) {
+	                	fout.write(line + nl);
+	            	}
+	        	}
+	    	}
+        	catch ( Exception e ) {
+    			message = "Unexpected error appending file \"" + file.getPath() + "\" to \"" +
+    		    	OutputFile_full + "\" (" + e + ").";
+    			Message.printWarning ( warning_level, 
+    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "See the log file for details."));
+    			throw new CommandException ( message );
+    		}
+        	finally {
+            	try {
+                	in.close();
+            	}
+            	catch ( Exception e ) {
+                	// Should not happen.
+            	}
+        	}
+		}
+		
+		// Process text if given.
+		
+		if ( (AppendText != null) && (AppendText.length() > 0) ) {
+			// Newlines will already be present.
+			fout.write(AppendText);
+		}
+	
+		// Close the output file.
+		fout.close();
+		fout = null; // If not null will be closed in 'finally'.
+		// Rename the temporary output file to final output file name.
+		if ( temporaryFile != null ) {
+			Path source = Paths.get(temporaryFile);
+			Path target = Paths.get(OutputFile_full);
+			// Remove the target first because move expects it to not exist.
+			if ( Files.exists(target) ) {
+				Files.delete(target);
+			}
+			// Move the file.
+			Files.move(source, target);
+		}
+    	// Save the output file name.
+    	setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-	    message = "Error opening the output file (" + e + ").";
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag, ++warning_count),
-            routine,message);
-        throw new CommandException ( message );
+		message = "Unexpected error appending file(s) to \"" + OutputFile_full + "\" (" + e + ").";
+		Message.printWarning ( warning_level, 
+  			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+		Message.printWarning ( 3, routine, e );
+		status.addToLog(CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "See the log file for details."));
 	}
-
-    String line;
-    boolean includeLine;
-    int fileCount = 0;
-	for ( File file : fileList ) {
-	    BufferedReader in = null;
-	    message = "Processing file \"" + file.getName() + "\"";
-	    notifyCommandProgressListeners ( fileCount++, fileList.size(), (float)-1.0, message );
-	    try {
-	        in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
-	        // Read lines and check against the pattern to match.  Default is regex syntax.
-	        while( (line = in.readLine()) != null ) {
-	            includeLine = true;
-	            if ( doIncludeText ) {
-	                if ( line.matches(includePattern) ) {
-	                    // OK to append to output.
-	                    includeLine = true;
-	                }
-	                else {
-	                    includeLine = false;
-	                }
-	            }
-                if ( doExcludeText ) {
-                    if ( line.matches(excludePattern) ) {
-                        // Skip.
-                        includeLine = false;
-                    }
-                    else {
-                        includeLine = true;
-                    }
-                }
-	            if ( includeLine ) {
-	                fout.write(line + nl);
-	            }
-	        }
-	    }
-        catch ( Exception e ) {
-    		message = "Unexpected error appending file \"" + InputFile_full + "\" to \"" +
-    		    OutputFile_full + "\" (" + e + ").";
-    		Message.printWarning ( warning_level, 
-    		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-    		Message.printWarning ( 3, routine, e );
-    		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "See the log file for details."));
-    		throw new CommandException ( message );
-    	}
-        finally {
-            try {
-                in.close();
-            }
-            catch ( Exception e ) {
-                // Should not happen.
-            }
-        }
+	finally {
+		if ( fout != null ) {
+			fout.close();
+		}
 	}
-	
-	// Close the output file.
-	fout.close();
-    // Save the output file name.
-    setOutputFile ( new File(OutputFile_full));
 	
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
@@ -407,6 +503,7 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String InputFile = parameters.getValue("InputFile");
+	String AppendText = parameters.getValue("AppendText");
 	String OutputFile = parameters.getValue("OutputFile");
 	String IncludeText = parameters.getValue("IncludeText");
 	String ExcludeText = parameters.getValue("ExcludeText");
@@ -416,6 +513,12 @@ public String toString ( PropList parameters )
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+    if ( (AppendText != null) && (AppendText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AppendText=\"" + AppendText + "\"" );
+    }
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

@@ -110,7 +110,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{   // Put together a list of parameters to check...
+{   // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String Message = __Message_JTextArea.getText().trim();
     String PromptActions = __PromptActions_JTextField.getText().trim();
@@ -125,7 +125,7 @@ private void checkInput ()
         props.set ( "CommandStatus", CommandStatus );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -163,7 +163,7 @@ private void initialize ( JFrame parent, Message_Command command )
     Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -234,7 +234,7 @@ private void initialize ( JFrame parent, Message_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
@@ -305,7 +305,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "Message_Command.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String Message0 = "";
     String PromptActions = "";
 	String CommandStatus = "";
@@ -328,7 +328,7 @@ private void refresh ()
 			__PromptActions_JTextField.setText ( PromptActions );
 		}
         if ( (CommandStatus == null) || (CommandStatus.length() == 0) ) {
-            // Select default...
+            // Select default.
             __CommandStatus_JComboBox.select ( 0 );
         }
         else {
@@ -341,7 +341,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Message0 = __Message_JTextArea.getText().trim();
     if ( Message0 != null ) {
     	// Replace internal newline with escaped string for command text.
@@ -364,14 +364,14 @@ React to the user response.
 public void response ( boolean ok )
 {   __ok = ok;
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
             // Not ready to close out!
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }

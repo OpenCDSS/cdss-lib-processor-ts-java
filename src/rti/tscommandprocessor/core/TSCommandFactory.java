@@ -198,6 +198,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Comman
 import rti.tscommandprocessor.commands.table.ReadTableFromXML_Command;
 import rti.tscommandprocessor.commands.table.RenameTableColumns_Command;
 import rti.tscommandprocessor.commands.table.SetPropertyFromTable_Command;
+import rti.tscommandprocessor.commands.table.SetTableColumnProperties_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.SortTable_Command;
@@ -209,7 +210,7 @@ import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
-
+import rti.tscommandprocessor.commands.table.WriteTableToMarkdown_Command;
 // Template commands
 import rti.tscommandprocessor.commands.template.ExpandTemplateFile_Command;
 
@@ -1115,6 +1116,9 @@ throws UnknownCommandException
 		// Phasing into new syntax.
 		return new SetInputPeriod_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("SetTableColumnProperties") ) {
+        return new SetTableColumnProperties_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("SetTableValues") ) {
         return new SetTableValues_Command ();
     }
@@ -1277,6 +1281,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
         return new WriteTableToHTML_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableToMarkdown") ) {
+        return new WriteTableToMarkdown_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToKml") ) {
         return new WriteTableToKml_Command ();

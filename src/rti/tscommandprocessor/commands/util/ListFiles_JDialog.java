@@ -460,7 +460,7 @@ private void refresh ()
 			else {	// Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
-				"IfNotFound parameter \"" +	Append +
+				"Append parameter \"" + Append +
 				"\".  Select a\n value or Cancel." );
 			}
 		}

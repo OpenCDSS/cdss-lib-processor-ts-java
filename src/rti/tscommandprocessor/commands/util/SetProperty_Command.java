@@ -102,7 +102,7 @@ throws InvalidCommandParameterException
 {	String PropertyName = parameters.getValue ( "PropertyName" );
 	String PropertyType = parameters.getValue ( "PropertyType" );
     if ( PropertyType == null ) {
-	    // Set to blank to be able to do checks below
+	    // Set to blank to be able to do checks below.
 	    PropertyType = "";
     }
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
@@ -131,7 +131,7 @@ throws InvalidCommandParameterException
                         message, "Provide a property name." ) );
     }
     else {
-        // Check for allowed characters...
+        // Check for allowed characters.
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
             message = "The property name contains invalid characters.";
             warning += "\n" + message;
@@ -141,7 +141,7 @@ throws InvalidCommandParameterException
         }
     }
     if ( (PropertyType == null) || PropertyType.equals("") ) {
-		// The property type is not required for some special values that are independent of type
+		// The property type is not required for some special values that are independent of type.
 		if ( ((SetNull == null) || SetNull.isEmpty()) &&
 			((RemoveProperty == null) || RemoveProperty.isEmpty()) ) {
 			message = "The property type must be specified unless setting to null or property is being removed.";
@@ -210,7 +210,7 @@ throws InvalidCommandParameterException
 	    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
 	        // Try parsing because the parse method recognizes the special values CurrentToHour, etc.
 	        try {
-	            // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
+	            // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 	            DateTime.parse(PropertyValue, null );
 	        }
 	        catch ( Exception e ) {
@@ -349,7 +349,7 @@ throws InvalidCommandParameterException
 		}
 	}
     
-    // Check for invalid parameters...
+    // Check for invalid parameters.
 	List<String> validList = new ArrayList<>(14);
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
@@ -406,7 +406,7 @@ public <T> List<T> getObjectList ( Class<T> c )
         return null;
     }
     Prop prop = new Prop();
-    // Check for TS request or class that matches the data...
+    // Check for TS request or class that matches the data.
     if ( c == prop.getClass() ) {
         List<T> v = new Vector<T>(1);
         v.add ( (T)discovery_Prop );
@@ -417,7 +417,7 @@ public <T> List<T> getObjectList ( Class<T> c )
     }
 }
 
-// Use the base class parseCommand()
+// Use the base class parseCommand().
 
 /**
 Run the command.
@@ -469,7 +469,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -515,7 +515,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (RemoveProperty != null) && RemoveProperty.equalsIgnoreCase(_True) ) {
 		removeProperty = true;
 	}
-	// Treat as strings until the math operation is executed and type is handled
+	// Treat as strings until the math operation is executed and type is handled.
 	String Add = parameters.getValue ( "Add" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (Add != null) && (Add.indexOf("${") >= 0) ) {
 		Add = TSCommandProcessorUtil.expandParameterValue(processor, this, Add);
@@ -534,11 +534,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-	    Object Property_Object = null; // Important to initialize to null because may be using setNull
+	    Object Property_Object = null; // Important to initialize to null because may be using setNull.
 	    if ( removeProperty ) {
-	    	// Unset/remove property from the processor
-	    	// Only do in run mode for now because not sure of implications in discovery mode
-	    	// TODO SAM 2016-09-18 Evaluate whether a warning should be given if the property is not found
+	    	// Unset/remove property from the processor.
+	    	// Only do in run mode for now because not sure of implications in discovery mode.
+	    	// TODO SAM 2016-09-18 Evaluate whether a warning should be given if the property is not found.
 		    if ( commandPhase == CommandPhaseType.RUN ) {
 		    	PropList request_params = new PropList ( "" );
 		    	request_params.setUsingObject ( "PropertyName", PropertyName );
@@ -612,8 +612,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
 			        // This handles special strings like CurrentToHour.
-			        // Have to specify a PropList to ensure the special syntax is handled
-			    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties
+			        // Have to specify a PropList to ensure the special syntax is handled.
+			    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties.
 			    	if ( !setNull ) {
 			    		Property_Object = DateTime.parse(propertyValue,(PropList)null);
 			    		if ( (Add != null) && !Add.isEmpty() ) {
@@ -634,9 +634,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    		Property_Object = new Double(Double.NaN);
 			    	}
 			    	else if ( !setNull ) {
-			    		// Set a number value
+			    		// Set a number value.
 			    		Property_Object = Double.valueOf(propertyValue);
-			    		// Do math operations if specified
+			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
 			    			Property_Object = new Double(d.doubleValue() + Double.parseDouble(Add));
@@ -664,7 +664,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
 			    	if ( !setNull ) {
 			    		Property_Object = Integer.valueOf(propertyValue);
-			    		// Do math operations if specified
+			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
 			    			Property_Object = new Integer(i.intValue() + Integer.parseInt(Add));
@@ -681,7 +681,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    			Integer i = (Integer)Property_Object;
 			    			if ( i == 0 ) {
 			    				Property_Object = null;
-			    				// TODO sam 2017-03-25 evaluate whether to throw an exception
+			    				// TODO sam 2017-03-25 evaluate whether to throw an exception.
 			    			}
 			    			else {
 			    				Property_Object = new Integer(i.intValue()/Integer.parseInt(Divide));
@@ -695,9 +695,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    	}
 			    	else if ( !setNull ) {
 			    		Property_Object = propertyValue;
-			    		// Do math operations if specified
+			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
-			    			// Concatenate
+			    			// Concatenate.
 			    			String s = (String)Property_Object;
 			    			Property_Object = s + Add;
 			    		}
@@ -720,7 +720,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    	Message.printStatus(2,routine,"Setting string property to \"" + Property_Object + "\"");
 			    }
 		    
-		    	// Set the property in the processor
+		    	// Set the property in the processor.
 		    
 		    	PropList request_params = new PropList ( "" );
 		    	request_params.setUsingObject ( "PropertyName", PropertyName );
@@ -743,11 +743,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    	}
 	    	}
 	    	else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	    		// TODO sam 2017-03-18 evaluate whether this is appropriate for discovery mode
+	    		// TODO sam 2017-03-18 evaluate whether this is appropriate for discovery mode:
 	    		// -the problem is ${Property} notation breaks conversions above
 	    		//setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-	    		// Set the property type according to the request so that code that asks for discovery
-	    		// objects and then filters on type will have the correct type
+	    		// Set the property type according to the request so that code that asks for discovery.
+	    		// objects and then filters on type will have the correct type.
 	    		if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
 	    			Property_Object = new Boolean(true);
 	    		}

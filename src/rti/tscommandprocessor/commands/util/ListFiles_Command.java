@@ -293,7 +293,7 @@ CommandWarningException, CommandException
 	        int absPathCol = -1;
     	    if ( (table == null) || !append ) {
     	        // The table needs to be created
-    	        List<TableField> columnList = new ArrayList<TableField>();
+    	        List<TableField> columnList = new ArrayList<>();
     	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "FileName", -1) );
     	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1) );
     	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1) );

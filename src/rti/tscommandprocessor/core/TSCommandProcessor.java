@@ -888,10 +888,17 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
 {   // First see if there is a substitute for the datastore:
 	// - the requested name could be a substitute name
 	// - the name is the key in the map, and the substitute is the value
+	// - need to get the original datastore name, which is what is actually stored in the processor
     HashMap<String,String> datastoreSubstituteMap = this.__tsengine.getDataStoreSubstituteMap();
     for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
-    	if ( set.getKey().equals(name) ) {
-   			name = set.getValue();
+    	if ( set.getValue().equals(name) ) {
+    		// Matched the substitute name.
+    		if ( Message.isDebugOn ) {
+    			String routine = getClass().getSimpleName() + ".getDataStoreForName";
+    			Message.printStatus(2, routine, "Matched datastore substitute \"" + name +
+    				"\", looking up datastore for actual datastore name \"" + set.getKey() + "\"");
+    		}
+   			name = set.getKey();
    			break;
     	}
     }

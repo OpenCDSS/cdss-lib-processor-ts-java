@@ -34,6 +34,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import riverside.datastore.DataStore;
+import riverside.datastore.DataStoreSubstitute;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 
 import java.awt.FlowLayout;
@@ -51,9 +52,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.JGUIUtil;
@@ -272,18 +271,18 @@ private void initialize ( JFrame parent, CloseDataStore_Command command, List<Da
     	datastoreChoices.add(dataStore.getName());
     }
     // Also list any substitute datastore names so the original or substitute can be used.
-    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
-    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    List<DataStoreSubstitute> datastoreSubstituteList = processor.getDataStoreSubstituteList();
+    for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
     	boolean found = false;
     	for ( String choice : datastoreChoices ) {
-    		if ( choice.equals(set.getKey()) ) {
+    		if ( choice.equals(dssub.getDatastoreNameToUse()) ) {
     			// The substitute original name matches a datastore name so also add the alias.
     			found = true;
     			break;
     		}
     	}
     	if ( found ) {
-    		datastoreChoices.add(set.getValue());
+    		datastoreChoices.add(dssub.getDatastoreNameInCommands());
     	}
     }
     Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);

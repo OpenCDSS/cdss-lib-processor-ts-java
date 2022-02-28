@@ -65,7 +65,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -113,6 +112,7 @@ import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
 import riverside.datastore.DataStore;
+import riverside.datastore.DataStoreSubstitute;
 import riverside.datastore.WebServiceDataStore;
 import rti.tscommandprocessor.core.TimeSeriesView;
 
@@ -877,29 +877,29 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass ) {
 
 /**
 Return the datastore for the requested name, or null if not found.
-If the requested name matches a substitute, the substitute is returned.
 @param name the data store name to match (case is ignored in the comparison)
 @param dataStoreClass the class of the data store to match, useful when ensuring that the data store
 is compatible with intended use - specify as null to not match class
 @param activeOnly if true, only active datastores are returned (status = 0)
 @return the data store for the requested name, or null if not found.
 */
-public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boolean activeOnly )
-{   // First see if there is a substitute for the datastore:
+public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boolean activeOnly ) {
+	// First see if there is a substitute for the datastore:
 	// - the requested name could be a substitute name
-	// - the name is the key in the map, and the substitute is the value
 	// - need to get the original datastore name, which is what is actually stored in the processor
-    HashMap<String,String> datastoreSubstituteMap = this.__tsengine.getDataStoreSubstituteMap();
-    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
-    	if ( set.getValue().equals(name) ) {
-    		// Matched the substitute name.
+	List<DataStoreSubstitute> datastoreSubstituteList = this.__tsengine.getDataStoreSubstituteList();
+    for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
+    	String nameInCommands = dssub.getDatastoreNameInCommands();
+    	if ( nameInCommands.equals(name) ) {
+    		// Matched the "name in commands" substitute name.
+    		String nameToUse = dssub.getDatastoreNameToUse();
     		if ( Message.isDebugOn ) {
     			String routine = getClass().getSimpleName() + ".getDataStoreForName";
-    			Message.printStatus(2, routine, "Matched datastore substitute \"" + name +
-    				"\", looking up datastore for actual datastore name \"" + set.getKey() + "\"");
+    			Message.printStatus(2, routine, "Requested datastore name matches substitute name used in commands \"" + nameInCommands +
+    				"\", will use datastore name \"" + nameToUse + "\"");
     		}
-   			name = set.getKey();
-   			break;
+    		name = nameToUse;
+    		break;
     	}
     }
 	// Search the datastores for the requested name.
@@ -1046,10 +1046,11 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean ac
 }
 
 /**
-Return the map of DataStore substitutions.
+Return the list of DataStore substitutions.
+@return the list of DataStore substitutions.
 */
-public HashMap<String,String> getDataStoreSubstituteMap() {
-    return __tsengine.getDataStoreSubstituteMap();
+public List<DataStoreSubstitute> getDataStoreSubstituteList() {
+    return __tsengine.getDataStoreSubstituteList();
 }
 
 /**
@@ -4482,11 +4483,12 @@ public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld )
 }
 
 /**
- * Set the datastore substitute map.
+ * Set the datastore substitute list.
  * Requests for a specific datastore will return a different datastore if matched.
+ * @param dssubList datastore substitute list
  */
-public void setDatastoreSubstituteMap ( HashMap<String,String> dsmap ) {
-	__tsengine.setDatastoreSubstituteMap(dsmap);
+public void setDatastoreSubstituteList ( List<DataStoreSubstitute> dssubList ) {
+	__tsengine.setDatastoreSubstituteList(dssubList);
 }
 
 /**

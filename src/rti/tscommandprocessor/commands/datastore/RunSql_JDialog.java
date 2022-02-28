@@ -39,6 +39,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import riverside.datastore.DataStore;
+import riverside.datastore.DataStoreSubstitute;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -431,11 +432,11 @@ private DatabaseDataStore getSelectedDataStore () {
     String DataStore = __DataStore_JComboBox.getSelected();
    	// If a substitute is defined that matches the datastore, use it.
 	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
-    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
-    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
-    	if ( DataStore.equals(set.getValue()) ) {
+    List<DataStoreSubstitute> datastoreSubstituteList = processor.getDataStoreSubstituteList();
+    for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
+    	if ( DataStore.equals(dssub.getDatastoreNameInCommands()) ) {
     		// The substitute original name matches a datastore name so use the original datastore.
-    		DataStore = set.getKey();
+    		DataStore = dssub.getDatastoreNameToUse();
     		break;
     	}
     }
@@ -543,18 +544,18 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     	datastoreChoices.add(dataStore.getName());
     }
     // Also list any substitute datastore names so the original or substitute can be used.
-    HashMap<String,String> datastoreSubstituteMap = processor.getDataStoreSubstituteMap();
-    for ( Map.Entry<String,String> set : datastoreSubstituteMap.entrySet() ) {
+    List<DataStoreSubstitute> datastoreSubstituteList = processor.getDataStoreSubstituteList();
+    for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
     	boolean found = false;
     	for ( String choice : datastoreChoices ) {
-    		if ( choice.equals(set.getKey()) ) {
+    		if ( choice.equals(dssub.getDatastoreNameToUse()) ) {
     			// The substitute original name matches a datastore name so also add the alias.
     			found = true;
     			break;
     		}
     	}
     	if ( found ) {
-    		datastoreChoices.add(set.getValue());
+    		datastoreChoices.add(dssub.getDatastoreNameInCommands());
     	}
     }
     Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);

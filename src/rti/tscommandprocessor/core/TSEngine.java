@@ -675,15 +675,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 import riverside.datastore.DataStore;
+import riverside.datastore.DataStoreSubstitute;
 import riverside.datastore.GenericDatabaseDataStore;
 import riverside.datastore.PluginDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
@@ -863,7 +862,7 @@ private int	_fatal_error_count = 0;
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
 TODO SAM 2012-09-25 Phase this out once legacy HydroBase login dialog is restructured.
 */
-private List<HydroBaseDMI> __hbdmi_Vector = new Vector<HydroBaseDMI>();
+private List<HydroBaseDMI> __hbdmi_Vector = new Vector<>();
 
 /**
 Indicates whether values <= 0 should be treated as missing when calculating historical averages.
@@ -902,12 +901,12 @@ private DateTime __InputEnd_DateTime = null;
 /**
 List of time series identifiers that are not found.
 */
-private List<String> __missing_ts = new Vector<String>();
+private List<String> __missing_ts = new Vector<>();
 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
 */
-private List<NWSRFS_DMI> __nwsrfs_dmi_Vector = new Vector<NWSRFS_DMI>();
+private List<NWSRFS_DMI> __nwsrfs_dmi_Vector = new Vector<>();
 
 /**
 Default output file name.
@@ -955,12 +954,13 @@ non-null, although the individual data stores may not be opened and need to be h
 private List<DataStore> __dataStoreList = new Vector<>();
 
 /**
- * Map that allows a requested datastore to substitute another datastore.
+ * List of datastore substitutes.
  * This is used, for example, when running test suites that use one datastore name but
  * another datastore needs to be used for the test.
- * The key is the original datastore name and the value is the substitute datastore name.
+ * For example, the TSTool parameter would contain:
+ *   --datastore-substitute=DatastoreNameToUse,CommandFileDatastoreName
  */
-private HashMap<String,String> __dataStoreSubstituteMap = new HashMap<>();
+private List<DataStoreSubstitute> __dataStoreSubstituteList = new ArrayList<>();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -976,7 +976,7 @@ private TSCommandProcessor __ts_processor = null;
 /**
 List of time series vector that is the result of processing.  This will always be non-null.
 */
-private List<TS> __tslist = new Vector<TS>(50,50);
+private List<TS> __tslist = new Vector<>(50,50);
 
 /**
 WindowListener for TSViewJFrame objects, used when calling application wants to listen for
@@ -1217,7 +1217,7 @@ period for the time series (it does not check the output period).
 */
 private List<String> createDataLimitsReport ( List<TS> tslist )
 {	int size = tslist.size();
-	List<String> report = new ArrayList<String> ();
+	List<String> report = new ArrayList<> ();
 
 	report.add ( "" );
 	report.add ( "DATA LIMITS REPORT" );
@@ -1266,7 +1266,7 @@ available period for the time series (it does not check the output period).
 */
 private List<String> createMonthSummaryReport ( List<TS> tslist, PropList props )
 {	int size = tslist.size();
-	List<String> report = new ArrayList<String> ();
+	List<String> report = new ArrayList<> ();
 	String routine = "TSEngine.createMonthSummaryReport";
 
 	String prop_val = props.getValue ( "DayType" );
@@ -1333,7 +1333,7 @@ each year to the specified date.  Handle real-time and historic.  But only CFS u
 */
 private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date, PropList props )
 {	int size = tslist.size();
-	List<String> report = new ArrayList<String> ();
+	List<String> report = new ArrayList<> ();
 
 	report.add ( "" );
 	report.add ( "Annual totals to date ending on " +
@@ -1564,7 +1564,7 @@ throws Exception
 	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
 
 	int nts = getTimeSeriesSize();
-	List<TS> yts_Vector = new ArrayList<TS>(nts);
+	List<TS> yts_Vector = new ArrayList<>(nts);
 	YearTS yts = null;
 	TS ts = null;
 	TSIdent tsident = null;
@@ -1926,8 +1926,8 @@ protected List<DataStore> getDataStoreList()
  * Get the datastore substitute map.
  * @return the datastore substitute map (original datastore name is key, and value is the substitute).
  */
-protected HashMap<String,String> getDataStoreSubstituteMap() {
-	return this.__dataStoreSubstituteMap;
+protected List<DataStoreSubstitute> getDataStoreSubstituteList() {
+	return this.__dataStoreSubstituteList;
 }
 
 /**
@@ -2243,7 +2243,7 @@ protected List<TS> getTimeSeriesList ( int [] indices )
 	}
 	else {
 	    // Return only the requested indices...
-		List<TS> v = new Vector<TS> ();
+		List<TS> v = new Vector<> ();
 		int size = 0;
 		if ( __tslist != null ) {
 			size = __tslist.size();
@@ -2326,9 +2326,9 @@ These strings are suitable for drop-down lists, etc.
 */
 protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands, boolean sort )
 {	if ( commands == null ) {
-		return new ArrayList<String>();
+		return new ArrayList<>();
 	}
-	List<String> v = new ArrayList<String>();
+	List<String> v = new ArrayList<>();
 	int size = commands.size();
 	String command = null, string = null;
 	List<String> tokens = null;
@@ -2363,7 +2363,7 @@ TSProductAnnotationProvider. This is a helper method for other methods.
 @return a non-null list of TSProductAnnotationProviders.
 */
 protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
-{	List<TSProductAnnotationProvider> apList = new ArrayList<TSProductAnnotationProvider>();
+{	List<TSProductAnnotationProvider> apList = new ArrayList<>();
 	// Check the HydroBase instances...
     // First do the new datastores
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
@@ -2516,10 +2516,10 @@ protected DataStore lookupDataStore ( String dataStoreName )
     //Message.printStatus(2, routine, "Getting data store for \"" + dataStoreID + "\"" );
 	
 	// If the datastore name is a substitute, use the original datastore name.
-    for ( Map.Entry<String,String> set : this.__dataStoreSubstituteMap.entrySet() ) {
-   		if ( dataStoreName.equals(set.getValue()) ) {
+    for ( DataStoreSubstitute dsSubstitute : this.__dataStoreSubstituteList ) {
+   		if ( dataStoreName.equals(dsSubstitute.getDatastoreNameInCommands()) ) {
    			// The name matches a datastore substitute name so use the original name.
-   			dataStoreName = set.getKey();
+   			dataStoreName = dsSubstitute.getDatastoreNameToUse();
    		}
     }
 	
@@ -2885,9 +2885,9 @@ throws Exception
 	Command commandPrev = null; // previous command in loop
 	// Initialize the If() command stack that is in effect, needed to "and" the if conditions
 	// - all tested If blocks are evaluated and if all evaluate to true, the command can be run
-	List<If_Command> ifCommandStack = new ArrayList<If_Command>();
+	List<If_Command> ifCommandStack = new ArrayList<>();
 	// Initialize the For() command stack that is in effect, needed to handle command logging
-	List<For_Command> forCommandStack = new ArrayList<For_Command>();
+	List<For_Command> forCommandStack = new ArrayList<>();
 	boolean ifStackOkToRun = true; // Used in loop to indicate if command in If() blocks is OK to run
 	// Indicate the state of the processor...
 	__ts_processor.setIsRunning ( true );
@@ -2924,7 +2924,7 @@ throws Exception
     // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate
     __ts_processor.setPropContents("CommandsShouldClearRunStatus",new Boolean(false));
     // Create a list for output files.  This is now needed because with For() a command may generate multiple output files
-    List<File> outputFileList = new ArrayList<File>();
+    List<File> outputFileList = new ArrayList<>();
     setOutputFileList ( outputFileList );
     boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing
     boolean outputFilesAdded = false;
@@ -3696,7 +3696,7 @@ throws Exception
 
 	int ml = 2;	// Message level for cleanup warnings
 
-	List<CommandStatusProvider> cspList = new ArrayList<CommandStatusProvider>();
+	List<CommandStatusProvider> cspList = new ArrayList<>();
 	for ( Command c : commandList ) {
 		if ( c instanceof CommandStatusProvider ) {
 			cspList.add((CommandStatusProvider)c);
@@ -5786,7 +5786,7 @@ throws Exception
 	// a change interval is needed...
 
 	if ( haveOutputPeriod() && getAutoExtendPeriod() ) {
-		List<TSLimits> v = new Vector<TSLimits> ( 2 );
+		List<TSLimits> v = new Vector<> ( 2 );
 		TSLimits limits = new TSLimits();
 		limits.setDate1 ( ts.getDate1() );
 		limits.setDate2 ( ts.getDate2() );
@@ -5967,11 +5967,11 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
 /**
  * Set the datastore substitute map.
  * This is usually handled by TSTool --datastore-substitute command parameter.
- * @param dsmap the datastore substitute map, which allows datastores referenced in command
+ * @param substituteList the datastore substitute list, which allows datastores referenced in command
  * files to use another datastore.
  */
-protected void setDatastoreSubstituteMap ( HashMap<String,String> dsmap ) {
-	this.__dataStoreSubstituteMap = dsmap;
+protected void setDatastoreSubstituteList ( List<DataStoreSubstitute> substituteList ) {
+	this.__dataStoreSubstituteList = substituteList;
 }
 
 /**
@@ -6187,7 +6187,7 @@ throws Exception
 
     if ( __tslist == null ) {
 		// Create a new Vector.
-		__tslist = new Vector<TS> ( 50, 50 );
+		__tslist = new Vector<> ( 50, 50 );
 	}
 	// Position is zero index...
 	if ( position >= __tslist.size() ) {

@@ -321,7 +321,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 runnerProcessor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
                 runnerProcessor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
                 // Also share the datastore substitution map.
-                runnerProcessor.setDatastoreSubstituteMap(((TSCommandProcessor)processor).getDataStoreSubstituteMap());
+                runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
             }
             
             /*

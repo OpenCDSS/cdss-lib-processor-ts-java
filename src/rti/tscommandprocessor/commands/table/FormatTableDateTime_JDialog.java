@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
@@ -157,11 +157,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String InputColumn = __InputColumn_JTextField.getText().trim();
@@ -208,7 +208,7 @@ private void checkInput ()
     }
 
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -276,7 +276,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for input
+    // Panel for input.
     int yIn = -1;
     JPanel in_JPanel = new JPanel();
     in_JPanel.setLayout( new GridBagLayout() );
@@ -289,7 +289,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 		"If a string, several standard formats are automatically recognized such as ISO YYYY-MM-DD hh:mm:ss and MM/DD/YYYY hh:mm:ss." ), 
 		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(in_JPanel, new JLabel (
-		"The input column may also contain an integer offset from a starting date/time (see the Increment tab)." ), 
+		"The input column may also contain an offset from a starting date/time (see the Increment tab)." ), 
 		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(in_JPanel, new JLabel (
 		"Once parsed, the date/time parts are used to reformat into the output column (see Format and Output tabs)." ), 
@@ -299,9 +299,9 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     
     JGUIUtil.addComponent(in_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID to process or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -320,27 +320,33 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(in_JPanel, new JLabel("Required - name of date/time column to process."), 
         3, yIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for increment
+    // Panel for increment.
     int yInc = -1;
     JPanel inc_JPanel = new JPanel();
     inc_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Increment", inc_JPanel );
     
 	JGUIUtil.addComponent(inc_JPanel, new JLabel (
-		"If the input column contains date/time increments, the input column must contain integers (e.g., number of hours since start)." ), 
+		"If the input column contains incremental date/time such as for an event recorded over a time period, the input column may contain:"),
 		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(inc_JPanel, new JLabel (
-		"Also specify the start date/time for time 0." ), 
+		"  - integer multiplier of the base time unit (e.g., 0, 1, 2, 3 hours), can be used for all date/time base intervals"),
 		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(inc_JPanel, new JLabel (
-		"Increments will be added to the starting date/time using the increment base unit to define the magnitude of the increment." ), 
+		"  - floating point multiplier of the base time unit (e.g., 0.0, 0.1, 0.2, 0.3 minutes), can be used for second through day base intervals"),
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inc_JPanel, new JLabel (
+		"Also specify the starting date/time that is the datum for the incremental date/time." ), 
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inc_JPanel, new JLabel (
+		"The date/time values will be added to the starting date/time to determine the time series date/time."),
 		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(inc_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
 		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(inc_JPanel, new JLabel ( "Increment start:" ), 
         0, ++yInc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __IncrementStart_JTextField = new JTextField ( 15 );
+    __IncrementStart_JTextField = new JTextField ( 30 );
     __IncrementStart_JTextField.setToolTipText("Specify the starting date/time or use ${Property} notation");
     __IncrementStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(inc_JPanel, __IncrementStart_JTextField,
@@ -361,7 +367,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
         "Optional - increment time base unit (e.g. " + TimeInterval.getName(TimeInterval.HOUR,0) + ")."), 
         3, yInc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for format information
+    // Panel for format information.
     int yFormat = -1;
     JPanel format_JPanel = new JPanel();
     format_JPanel.setLayout( new GridBagLayout() );
@@ -394,15 +400,15 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null,true,true);
     __DateTimeFormat_JPanel.getTextField().setToolTipText("Specify the date/time format or use ${Property} notation");
     __DateTimeFormat_JPanel.addKeyListener (this);
-    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
-    __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice.
+    __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents.
     JGUIUtil.addComponent(format_JPanel, __DateTimeFormat_JPanel,
         1, yFormat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(format_JPanel, new JLabel (
         "Required - to specify output format."),
         3, yFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for output
+    // Panel for output.
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
@@ -444,11 +450,11 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output column:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
-    List<String> outputChoices = new ArrayList<String>();
+    List<String> outputChoices = new ArrayList<>();
     outputChoices.add("");
-    __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __OutputColumn_JComboBox.addItemListener ( this );
     __OutputColumn_JComboBox.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __OutputColumn_JComboBox,
@@ -459,7 +465,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output type:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputType_JComboBox = new SimpleJComboBox ( false );
-    List<String> typeChoices = new ArrayList<String>();
+    List<String> typeChoices = new ArrayList<>();
     typeChoices.add ( "" );
     typeChoices.add ( __command._DateTime );
     typeChoices.add ( __command._Double );
@@ -493,7 +499,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -540,7 +546,7 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
@@ -578,7 +584,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 	    TableID = props.getValue ( "TableID" );
         InputColumn = props.getValue ( "InputColumn" );
         IncrementStart = props.getValue ( "IncrementStart" );
@@ -590,7 +596,7 @@ private void refresh ()
 		OutputType = props.getValue ( "OutputType" );
 		InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -611,7 +617,7 @@ private void refresh ()
             __IncrementStart_JTextField.setText ( IncrementStart );
         }
         if ( IncrementBaseUnit == null ) {
-            // Select default...
+            // Select default.
             __IncrementBaseUnit_JComboBox.select ( 0 );
         }
         else {
@@ -626,7 +632,7 @@ private void refresh ()
             }
         }
         if ( (FormatterType == null) || FormatterType.equals("") ) {
-            // Select default...
+            // Select default.
             __DateTimeFormat_JPanel.selectFormatterType(null);
         }
         else {
@@ -662,7 +668,7 @@ private void refresh ()
             }
         }
         if ( OutputYearType == null ) {
-            // Select default...
+            // Select default.
             __OutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -677,7 +683,7 @@ private void refresh ()
             }
         }
         if ( OutputColumn == null ) {
-            // Select default...
+            // Select default.
             __OutputColumn_JComboBox.select ( 0 );
         }
         else {
@@ -690,7 +696,7 @@ private void refresh ()
             }
         }
         if ( OutputType == null ) {
-            // Select default...
+            // Select default.
             __OutputType_JComboBox.select ( 0 );
         }
         else {
@@ -708,7 +714,7 @@ private void refresh ()
             __InsertBeforeColumn_JTextField.setText ( InsertBeforeColumn );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	InputColumn = __InputColumn_JTextField.getText();
 	IncrementStart = __IncrementStart_JTextField.getText();
@@ -738,16 +744,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

@@ -714,7 +714,6 @@ import DWR.StateMod.StateMod_TS;
 import DWR.StateMod.StateMod_BTS;
 import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
-import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
@@ -841,16 +840,6 @@ private DateTime __AverageEnd_DateTime = null;
 List of DateTime initialized from commands.
 */
 private Hashtable<String,DateTime> __datetime_Hashtable = new Hashtable<String,DateTime> ();
-
-/**
-DMI for DIADvisor operational database.
-*/
-private DIADvisorDMI __DIADvisor_dmi = null;
-
-/**
-DMI for DIADvisor archive database.
-*/
-private DIADvisorDMI __DIADvisor_archive_dmi = null;
 
 // TODO 2007-11-16 - why can't this be local in the method that uses it?
 /**
@@ -1943,8 +1932,7 @@ matching property name is used to determine the date/time using the following ru
 @exception if the date/time cannot be determined using the defined procedure.
 */
 protected DateTime getDateTime ( String dtString )
-throws Exception
-{
+throws Exception {
 	if ( dtString != null ) {
 		dtString = dtString.trim();
 	}
@@ -5125,27 +5113,6 @@ throws Exception
 		}
 	}
 */
-	else if ( (inputType != null) && inputType.equalsIgnoreCase("DIADvisor") ) {
-		// New style TSID~input_type~input_name for DIADvisor.
-		try {
-		    ts = __DIADvisor_dmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
-		}
-		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading time series \"" + tsidentString2 + "\" from DIADvisor (" + te + ")." );
-			Message.printWarning ( 3, routine, te );
-			Message.printWarning ( 3, routine, "Op:" +__DIADvisor_dmi.getLastSQLString() );
-			Message.printWarning ( 3, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
-			ts = null;
-		}
-		// For now, if the time series does not have data, set it to null.
-		if ( ts != null ) {
-			if ( !ts.hasData() ) {
-				Message.printWarning ( 2, routine,
-				"Time series \"" + tsidentString2 + "\" does not have data.  Treating as null." );
-				ts = null;
-			}
-		}
-	}
     else if ((dataStore != null) && (dataStore instanceof GenericDatabaseDataStore) ) {
         GenericDatabaseDataStore ds = (GenericDatabaseDataStore)dataStore;
         if ( ds.getDMI() == null ) {

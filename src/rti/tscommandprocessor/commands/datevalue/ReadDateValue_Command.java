@@ -199,7 +199,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+	List<String> validList = new ArrayList<>(5);
     validList.add ( "Alias" );
     validList.add ( "InputFile" );
     validList.add ( "InputStart" );
@@ -573,10 +573,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the list of time series read in discovery phase.
+@param discovery_TS_List discovery time series list
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 {
-    __discoveryTSList = discovery_TS_Vector;
+    __discoveryTSList = discovery_TS_List;
 }
 
 /**

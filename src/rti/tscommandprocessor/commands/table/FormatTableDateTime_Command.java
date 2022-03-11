@@ -183,8 +183,8 @@ throws InvalidCommandParameterException
             message, "Provide a column name for output." ) );
     }
     
-    // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(10);
+    // Check for invalid parameters.
+    List<String> validList = new ArrayList<>(10);
     validList.add ( "TableID" );
     validList.add ( "InputColumn" );
     validList.add ( "IncrementStart" );
@@ -218,7 +218,7 @@ public boolean editCommand ( JFrame parent )
     return (new FormatTableDateTime_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// Parse command is in the base class
+// Parse command is in the base class.
 
 /**
 Method to execute the command.
@@ -236,7 +236,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -244,14 +244,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
     PropList parameters = getCommandParameters();
     
-    // Get the input parameters...
+    // Get the input parameters.
     
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
@@ -293,7 +293,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -320,19 +320,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     
-    // Get the increment start at runtime
+    // Get the increment start at runtime.
     DateTime IncrementStart_DateTime = null;
 	try {
 		IncrementStart_DateTime = TSCommandProcessorUtil.getDateTime ( IncrementStart, "IncrementStart", processor,
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
     
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( CommandPhaseType.RUN,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -340,7 +340,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     
-    // Now process...
+    // Now process.
 
     List<String> problems = new ArrayList<>();
     try {
@@ -348,7 +348,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TableRecord rec;
         Object o = null;
         DateTime dt;
-        // The insert before column goes first because it may be used as the position when inserting the output column
+        // The insert before column goes first because it may be used as the position when inserting the output column.
         int insertBeforeColumnNum = -1;
         if ( (InsertBeforeColumn != null) && !InsertBeforeColumn.equals("") ) {
             try {
@@ -362,13 +362,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Verify that table includes requested column \"" + InsertBeforeColumn + "\"." ) );
             }
         }
-        // If wrong output column name is specified, a new one will be added - user will need to notice
+        // If wrong output column name is specified, a new one will be added - user will need to notice.
         int outputColumnNum = -1;
         try {
             outputColumnNum = table.getFieldIndex(OutputColumn);
         }
         catch ( Exception e ) {
-            // Output column was not matched so add the column (use insert position to indicate where to add)
+            // Output column was not matched so add the column (use insert position to indicate where to add).
             if ( OutputType.equalsIgnoreCase(_DateTime) ) {
                 outputColumnNum = table.addField(insertBeforeColumnNum,
                     new TableField(TableField.DATA_TYPE_DATETIME, OutputColumn, -1, -1), null);
@@ -386,7 +386,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     new TableField(TableField.DATA_TYPE_STRING, OutputColumn, -1, -1), null);
             }
         }
-        // Get the input column after getting the output column because the above may insert a column
+        // Get the input column after getting the output column because the above may insert a column.
         int inputColumnNum = -1;
         boolean fatalError = false;
         try {
@@ -401,23 +401,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             fatalError = true;
         }
         if ( !fatalError ) {
-	        // Loop through the table records
-        	boolean doIncrement = false; // Whether increment is being processed
+	        // Loop through the table records.
+        	boolean doIncrement = false; // Whether increment is being processed.
         	DateTime incrementDateTime = null;
         	int incrementBase = 0;
         	if ( (IncrementStart_DateTime != null) && (incrementBaseUnit != null) ) {
         		doIncrement = true;
-        		incrementDateTime = new DateTime(IncrementStart_DateTime); // Copy will be reset and incremented below
+        		// This date/time will be reset and incremented below:
+        		// - use the highest precision because increment may be fractions of seconds
+        		// - the resulting DateTime will be reformatted into the final output using the DateTimeFormat specifier
+        		incrementDateTime = new DateTime(IncrementStart_DateTime,DateTime.PRECISION_NANOSECOND);
         		incrementBase = incrementBaseUnit.getBase();
-        		Message.printStatus(2, routine, "Processing increment using start " + incrementDateTime + " and increment base unit " + incrementBaseUnit );
+        		Message.printStatus(2, routine, "Processing incremental time using start " + incrementDateTime +
+        			" and increment base unit " + incrementBaseUnit );
         	}
-        	int increment = 0;
+        	int incrementInteger = 0;
+        	double incrementDouble = 0;
 	        int n = table.getNumberOfRecords();
 	        String dtString;
 	        for ( int irec = 0; irec < n; irec++ ) {
 		        output = null;
 	            try {
-	                // Get the date/time...
+	                // Get the date/time.
 	                rec = table.getRecord(irec);
 	                o = rec.getFieldValue(inputColumnNum);
 	                dt = null;
@@ -426,29 +431,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                    continue;
 	                }
 	                if ( doIncrement ) {
-	                	// IncrementStart will have the value corresponding to the first row
-	                	// To optimize performance, reset a copy of the start and then increment
-	                	dt = incrementDateTime; // dt is used below in generic code
+	                	// IncrementStart will have the value corresponding to the first row.
+	                	// To optimize performance, reset a copy of the start and then increment.
+	                	dt = incrementDateTime; // dt is used below in generic code.
 	                	incrementDateTime.setDate(IncrementStart_DateTime);
 	                	if ( o instanceof Integer ) {
-	                		increment = (Integer)o;
+	                		incrementInteger = (Integer)o;
 	                		// TODO SAM 2016-02-01
-	                		// Need to see how well this performs since it has to increment a lot of time
-	                		// However, computing an increment from previous value may be more difficult to handle if nulls, etc.
-	                		incrementDateTime.addInterval(incrementBase, increment);
-	                		//Message.printStatus(2, routine, "Processing increment at " + incrementDateTime );
+	                		// Need to see how well this performs since it has to increment a lot of time.
+	                		// However, computing an increment from previous value may be more difficult to handle if gaps, nulls, etc.
+	                		incrementDateTime.addInterval(incrementBase, incrementInteger);
+	                		if ( Message.isDebugOn ) {
+	                			Message.printStatus(2, routine, "Row=" + (irec + 1) + " date/time=" + incrementDateTime +
+	                				" DateTime precision=" + incrementDateTime.getPrecision());
+	                		}
+	                	}
+	                	else if ( o instanceof Double ) {
+	                		incrementDouble = (Double)o;
+	                		incrementDateTime.addInterval(incrementBase, incrementDouble);
+	                		if ( Message.isDebugOn ) {
+	                			Message.printStatus(2, routine, "Row=" + (irec + 1) + " increment=" + incrementDouble +
+	                				" incrementBase=" + incrementBase + " date/time=" + incrementDateTime +
+	                				" DateTime precision=" + incrementDateTime.getPrecision());
+	                		}
 	                	}
 	                	else {
-	                		problems.add("Increment value type is not handled.  Verify that increment value is an integer.");
+	                		problems.add("Increment value type is not handled.  Verify that incremental value is an integer or a floating point number.");
 	                	}
 	                }
 	                else {
-	                	// Not doing increment so need to parse input column and then reformat in output
-		                // Handle input that is a String, Integer (year) or a DateTime
+	                	// Not doing increment so need to parse input column and then reformat in output.
+		                // Handle input that is a String, Integer (year) or a DateTime.
 		                if ( o instanceof String ) {
-		                	// Try to parse the string into DateTime - handle exception in main loop
+		                	// Try to parse the string into DateTime - handle exception in main loop.
+		                	//Message.printStatus(2, routine, "Parsing string to DateTime \"" + o + "\"");
 		                	dt = DateTime.parse((String)o);
-		                	Message.printStatus(2, routine, "Parsing string to DateTime \"" + o + "\"");
 		                }
 		                else if ( o instanceof Integer ) {
 		                	dt = new DateTime(DateTime.PRECISION_YEAR);
@@ -457,23 +474,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		                else if ( o instanceof DateTime ) {
 		                	dt = (DateTime)o;
 		                }
+	                	//Message.printStatus(2, routine, "After parsing DateTime \"" + dt + "\"");
 	                }
-	                // Now format the date/time object into the output column
+	                // Now format the date/time object into the output column.
 	                if ( dt == null ) {
 	                	output = null;
 	                }
 	                else {
-	                    // First format as a string
+	                    // First format as a string.
 	                    if ( formatterType == DateTimeFormatterType.C ) {
+	                    	//Message.printStatus(2, routine, "Internal DateTime before formatting=\"" + dt + "\"");
 	                        dtString = TimeUtil.formatDateTime(dt, yearType, DateTimeFormat);
+	                    	//Message.printStatus(2, routine, "Internal DateTime string after formatting=\"" + dtString + "\"");
 	                    }
 	                    else {
-	                        // Should not happen...
+	                        // Should not happen.
 	                        dtString = null;
 	                    }
-	                    // Then cast to another object type if requested and set in the table
+	                    // Then cast to another object type if requested and set in the table:
+	                    // - a new output object is always created
 	                    if ( OutputType.equalsIgnoreCase(_DateTime) ) {
 	                        output = DateTime.parse(dtString);
+	                    	//Message.printStatus(2, routine, "Output DateTime after parsing=\"" + output + "\"");
 	                    }
 	                    else if ( OutputType.equalsIgnoreCase(_Double) ) {
 	                        output = Double.parseDouble(dtString);
@@ -485,7 +507,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                        output = dtString;
 	                    }
 	                }
+                	//Message.printStatus(2, routine, "Setting table cell to \"" + output + "\"");
 	                rec.setFieldValue(outputColumnNum, output);
+                	//Message.printStatus(2, routine, "Table cell after set = \"" + rec.getFieldValueString(outputColumnNum) + "\"");
 	            }
 	            catch ( Exception e2 ) {
 	                problems.add("Error formatting table row " + (irec + 1) + " column \"" + InputColumn + "\" date/time \"" + o + "\" (" + e2 + ").");
@@ -504,19 +528,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     
-    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload
+    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload.
     int problemsSize = problems.size();
     int problemsSizeOutput = problemsSize;
     String ProblemType = "FormatTableString";
     if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
-        // Limit the warnings to the maximum
+        // Limit the warnings to the maximum.
         problemsSizeOutput = MaxWarnings_int;
     }
     if ( problemsSizeOutput < problemsSize ) {
         message = "Performing date/time formatting had " + problemsSize + " warnings - only " + problemsSizeOutput + " are listed.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-        // No recommendation since it is a user-defined check
+        // No recommendation since it is a user-defined check.
         // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
         status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
     }

@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
     __columnNames = null;
     __columnTypes = null;
 	if ( (Columns != null) && !Columns.isEmpty() ) {
-        // Check column definitions (Column name,Type;...)...
+        // Check column definitions (Column name,Type;...).
 		List<String> v = StringUtil.breakStringList ( Columns, ",;", 0 );
 		if ( v == null ) {
             message = "One or more columns must be specified";
@@ -117,7 +117,7 @@ throws InvalidCommandParameterException
                     message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
 		}
 		else {
-			// Get data type choices without note
+			// Get data type choices without note.
 		    List<String>dataTypeChoices = TableField.getDataTypeChoices(false);
 		    List<String>dataTypeArrayChoices = new ArrayList<>();
 		    for ( String dataType : dataTypeChoices ) {
@@ -132,14 +132,14 @@ throws InvalidCommandParameterException
                         message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
 		    }
 		    else {
-    			__columnNames = new String[size/2]; // Data in pairs
+    			__columnNames = new String[size/2]; // Data in pairs.
     			__columnTypes = new String[size/2];
-    			int columnCount = -1; // Will increment to zero on first loop below
+    			int columnCount = -1; // Will increment to zero on first loop below.
     			for ( int i = 0; i < size; i++ ) {
     			    ++columnCount;
     				__columnNames[columnCount] = v.get(i).trim();
-    				__columnTypes[columnCount] = v.get(++i).trim(); // Increment i to handle pairs
-    				// Make sure that the data type is recognized
+    				__columnTypes[columnCount] = v.get(++i).trim(); // Increment i to handle pairs.
+    				// Make sure that the data type is recognized:
     				// - check simple type and [type]
     				int posType = StringUtil.indexOfIgnoreCase(dataTypeChoices, __columnTypes[columnCount]);
     				int posArrayType = StringUtil.indexOfIgnoreCase(dataTypeArrayChoices, __columnTypes[columnCount]);
@@ -156,7 +156,7 @@ throws InvalidCommandParameterException
 		}
 	}
  
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(2);
     validList.add ( "TableID" );
     validList.add ( "Columns" );
@@ -177,15 +177,14 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new NewTable_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
@@ -198,13 +197,13 @@ public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
@@ -213,8 +212,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -225,8 +223,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -247,7 +244,7 @@ CommandWarningException, CommandException
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -255,7 +252,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -264,7 +261,7 @@ CommandWarningException, CommandException
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 
@@ -282,38 +279,38 @@ CommandWarningException, CommandException
 	}
 
 	try {
-    	// Create the table...
+    	// Create the table.
     
-	    List<TableField> columnList = new ArrayList<TableField>();
+	    List<TableField> columnList = new ArrayList<>();
 	    DataTable table = null;
         
         if ( commandPhase == CommandPhaseType.RUN ) {
-            // Create the table with column data that was created in checkCommandParameters()
+            // Create the table with column data that was created in checkCommandParameters().
             if ( __columnNames != null ) {
                 for ( int i = 0; i < __columnNames.length; i++ ) {
                 	if ( __columnTypes[i].charAt(0) == '[' ) {
-                		// Column type is an array, which will be the main type
+                		// Column type is an array, which will be the main type:
                 		// - also set the precision based on the type in the array
                 		String arrayType = __columnTypes[i].substring(1,(__columnTypes[i].length() - 1));
                 		if ( (TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_DOUBLE) ||
                         	(TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_FLOAT) ) {
-                        	// Set the precision to 2 (width to 12), which should be reasonable for many data types
+                        	// Set the precision to 2 (width to 12), which should be reasonable for many data types:
                 			// - since an array, the data type includes a base offset
                         	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], 12, 2) );
                     	}
                     	else {
-                        	// No precision is necessary and specify the field width as -1 meaning it can grow
+                        	// No precision is necessary and specify the field width as -1 meaning it can grow:
                 			// - since an array, the data type includes a base offset
                         	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], -1) );
                     	}
                 	}
                 	else if ( (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
                         (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_FLOAT) ) {
-                        // Set the precision to 2 (width to 12), which should be reasonable for many data types
+                        // Set the precision to 2 (width to 12), which should be reasonable for many data types.
                         columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], 12, 2) );
                     }
                     else {
-                        // No precision is necessary and specify the field width as -1 meaning it can grow
+                        // No precision is necessary and specify the field width as -1 meaning it can grow.
                         columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], -1) );
                     }
                 }
@@ -321,7 +318,7 @@ CommandWarningException, CommandException
             table = new DataTable( columnList );
             table.setTableID ( TableID );
             
-            // Set the table in the processor...
+            // Set the table in the processor.
             
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", table );
@@ -339,7 +336,7 @@ CommandWarningException, CommandException
             }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
+            // Create an empty table and set the ID.
             table = new DataTable();
             table.setTableID ( TableID );
             setDiscoveryTable ( table );
@@ -367,8 +364,7 @@ CommandWarningException, CommandException
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 

@@ -86,8 +86,9 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
 private JTabbedPane __props_JTabbedPane = null;
-private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers
+private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers.
 private JTextField __Units_JTextField = null;
+private JTextField __Precision_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
@@ -198,6 +199,7 @@ private void checkInput ()
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
@@ -222,6 +224,9 @@ private void checkInput ()
     }
     if ( Units.length() > 0 ) {
         parameters.set ( "Units", Units );
+    }
+    if ( Precision.length() > 0 ) {
+        parameters.set ( "Precision", Precision );
     }
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
@@ -257,6 +262,7 @@ private void commitEdits ()
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
@@ -267,6 +273,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Editable", Editable );
     __command.setCommandParameter ( "Description", Description );
     __command.setCommandParameter ( "Units", Units );
+    __command.setCommandParameter ( "Precision", Precision );
     __command.setCommandParameter ( "MissingValue", MissingValue );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "PropertyType", PropertyType );
@@ -360,6 +367,17 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
         "Optional - data units (does not change data values)."),
         3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel("Precision of data:"),
+		0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Precision_JTextField = new JTextField ( "", 10 );
+	__Precision_JTextField.setToolTipText("Number of digits after the decimal point for output.");
+	__Precision_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(builtIn_JPanel, __Precision_JTextField,
+		1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
+        "Optional - data precision for output (default=from units)."),
+        3, yBuiltIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Missing value:" ),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -524,6 +542,7 @@ private void refresh ()
     String EnsembleID = "";
     String Description = "";
     String Units = "";
+    String Precision = "";
     String MissingValue = "";
     String Editable = "";
     String PropertyName = "";
@@ -540,6 +559,7 @@ private void refresh ()
         EnsembleID = parameters.getValue ( "EnsembleID" );
         Description = parameters.getValue ( "Description" );
         Units = parameters.getValue ( "Units" );
+        Precision = parameters.getValue ( "Precision" );
         MissingValue = parameters.getValue("MissingValue");
         Editable = parameters.getValue ( "Editable" );
         PropertyName = parameters.getValue ( "PropertyName" );
@@ -596,6 +616,9 @@ private void refresh ()
         if ( Units != null ) {
             __Units_JTextField.setText(Units);
         }
+        if ( Precision != null ) {
+            __Precision_JTextField.setText(Precision);
+        }
         if ( MissingValue != null ) {
             __MissingValue_JTextField.setText ( MissingValue );
         }
@@ -647,6 +670,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     Description = __Description_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
+    Precision = __Precision_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     Editable = __Editable_JComboBox.getSelected();
     PropertyName = __PropertyName_JTextField.getText().trim();
@@ -658,6 +682,7 @@ private void refresh ()
     parameters.add ( "EnsembleID=" + EnsembleID );
     parameters.add ( "Description=" + Description );
     parameters.add ( "Units=" + Units );
+    parameters.add ( "Precision=" + Precision );
     parameters.add ( "MissingValue=" + MissingValue );
     parameters.add ( "Editable=" + Editable );
     parameters.add ( "PropertyName=" + PropertyName );

@@ -179,6 +179,11 @@ Data units for each time series being processed.
 private List<String> __units = new ArrayList<>();
 
 /**
+Precision for each time series being processed.
+*/
+private List<String> __precision = new ArrayList<>();
+
+/**
 Column names for data values, for each time series being processed, expanded for runtime.
 */
 private List<String> __valueColumnsRuntime = new ArrayList<>();
@@ -208,8 +213,7 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{
+throws InvalidCommandParameterException {
     String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String warning = "";
     String message;
@@ -246,6 +250,7 @@ throws InvalidCommandParameterException
     String Scenario = parameters.getValue("Scenario" );
     String SequenceID = parameters.getValue("SequenceID" );
     String Units = parameters.getValue("Units" );
+    String Precision = parameters.getValue("Precision" );
     String MissingValue = parameters.getValue("MissingValue" );
     String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow" );
     String Alias = parameters.getValue("Alias" );
@@ -773,7 +778,7 @@ throws InvalidCommandParameterException
             interval = TimeInterval.parseInterval(Interval);
         }
         catch ( Exception e ) {
-            message = "The time series data interval is invalid.";
+            message = "The time series data interval (" + Interval + ") is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -784,10 +789,16 @@ throws InvalidCommandParameterException
     
     if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
         try {
-            TimeInterval.parseInterval(IrregularIntervalPrecision);
+            TimeInterval irregPrecision = TimeInterval.parseInterval(IrregularIntervalPrecision);
+            // Set the precision on the main interval since the command currently has that split into a separate parameter:
+            // - interval was parsed in 'checkCommandParameters'
+            if ( (this.__interval != null) && this.__interval.isIrregularInterval() ) {
+            	interval.setIrregularIntervalPrecision(irregPrecision.getIrregularIntervalPrecision());
+            	Message.printStatus(2, routine, "Set the irregular interval precision to " + this.__interval.getIrregularIntervalPrecision());
+            }
         }
         catch ( Exception e ) {
-            message = "The irregular interval precision is invalid.";
+            message = "The irregular interval precision (" + IrregularIntervalPrecision + ") is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -881,11 +892,28 @@ throws InvalidCommandParameterException
     }
     setUnits ( units );
     */
+
+    setPrecision ( new ArrayList<>() );
+    if ( (Precision != null) && !Precision.equals("") ) {
+        // Can have one or more values that should be interpreted as the precision.
+        List<String> tokens = StringUtil.breakStringList(Precision, ",", 0);
+        for ( String token : tokens ) {
+        	token = token.trim();
+        	if ( token.isEmpty() || !StringUtil.isInteger(token) ) {
+        		message = "The Precision value \"" + token + "\" is not valid.";
+        		warning += "\n" + message;
+        		status.addToLog ( CommandPhaseType.INITIALIZATION,
+            		new CommandLogRecord(CommandStatusType.FAILURE,
+                		message, "Specify a precision value as an integer." ) );
+        	}
+        }
+        setPrecision ( tokens );
+    }
     
     setMissingValue ( new ArrayList<>() );
     if ( (MissingValue != null) && !MissingValue.equals("") ) {
         // Can have one or more values that should be interpreted as missing.
-        List<String>tokens = StringUtil.breakStringList(MissingValue, ",", 0);
+        List<String> tokens = StringUtil.breakStringList(MissingValue, ",", 0);
         setMissingValue ( tokens );
     }
     if ( (HandleDuplicatesHow != null) && !HandleDuplicatesHow.equals("") &&
@@ -977,9 +1005,9 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(27);
+    List<String> validList = new ArrayList<>(28);
     validList.add ( "TableID" );
-    //valid_Vector.add ( "SkipRows" );
+    //validList.add ( "SkipRows" );
     validList.add ( "DateTimeColumn" );
     validList.add ( "DateTimeFormat" );
     validList.add ( "DateColumn" );
@@ -1002,6 +1030,7 @@ throws InvalidCommandParameterException
     validList.add ( "Scenario" );
     validList.add ( "SequenceID" );
     validList.add ( "Units" );
+    validList.add ( "Precision" );
     validList.add ( "MissingValue" );
     validList.add ( "HandleDuplicatesHow" );
     validList.add ( "Alias" );
@@ -1024,8 +1053,8 @@ throws InvalidCommandParameterException
 }
 
 /**
-Create a list of metadata for time series for use at runtime considering all of the command parameter
-and dynamic input.  For example, this creates the list of data source strings that should be used for each time series.
+Create a list of metadata for time series for use at runtime considering all of the command parameter and dynamic input.
+For example, this creates the list of data source strings that should be used for each time series.
 @param singleColumn indicates whether single column values are being processed
 @param nMetadata the number of time series being processed, and therefore the number of metadata values
 @param metadataFromTable the list of metadata values determined from the table (one metadata value per location ID).
@@ -1041,7 +1070,7 @@ private List<String> createMetadataRuntime ( boolean singleColumn,
     // Initialize.
     int nMetadata = numTS;
     for ( int i = 0; i < nMetadata; i++ ) {
-        if ( singleColumn && (metadataFromTable.size() > 0) ) {
+        if ( singleColumn && (metadataFromTable != null) && (metadataFromTable.size() > 0) ) {
             // Single column output and data sources were determined from the table.
             metadataForTS.add(metadataFromTable.get(i));
         }
@@ -1203,40 +1232,35 @@ private List<String> getColumnNamesFromNotation ( DataTable table, String column
 Return the runtime column names list.
 */
 @SuppressWarnings("unused")
-private List<String> getColumnNamesRuntime()
-{
+private List<String> getColumnNamesRuntime() {
     return __columnNamesRuntime;
 }
 
 /**
 Return the data source constant.
 */
-private List<String> getDataSource()
-{
+private List<String> getDataSource() {
     return __dataSource;
 }
 
 /**
 Return the data type constant.
 */
-private List<String> getDataType()
-{
+private List<String> getDataType() {
     return __dataType;
 }
 
 /**
 Return the date column name expanded for runtime.
 */
-private String getDateColumnRuntime ()
-{
+private String getDateColumnRuntime () {
     return __dateColumnRuntime;
 }
 
 /**
 Return the date/time column name expanded for runtime.
 */
-private String getDateTimeColumnRuntime ()
-{
+private String getDateTimeColumnRuntime () {
     return __dateTimeColumnRuntime;
 }
 
@@ -1289,8 +1313,7 @@ more efficient when iterating through raw data
 @param errorMessages if not null, add parse messages to the list
 */
 private DateTime getDateTimeFromRecord ( TableRecord rec, int row, int dateTimePos, int datePos, int timePos,
-    DateTime dateTime, DateTimeParser dateTimeParser, List<String> errorMessages )
-{
+    DateTime dateTime, DateTimeParser dateTimeParser, List<String> errorMessages ) {
     String dateTimeString = null, dateString, timeString;
     Object dateTimeObject, dateObject, timeObject;
     // Determine the date/time.
@@ -1388,48 +1411,42 @@ private DateTime getDateTimeFromRecord ( TableRecord rec, int row, int dateTimeP
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discovery_TS_List;
 }
 
 /**
 Return the flag column list, expanded for runtime.
 */
-private List<String> getFlagColumnsRuntime()
-{
+private List<String> getFlagColumnsRuntime() {
     return __flagColumnsRuntime;
 }
 
 /**
 Return the data interval.
 */
-private TimeInterval getInterval()
-{
+private TimeInterval getInterval() {
     return __interval;
 }
 
 /**
 Return the location ID list, expanded for runtime.
 */
-private List<String> getLocationIDRuntime()
-{
+private List<String> getLocationIDRuntime() {
     return __locationIDRuntime;
 }
 
 /**
 Return the location type list.
 */
-private List<String> getLocationType()
-{
+private List<String> getLocationType() {
     return __locationType;
 }
 
 /**
 Return the missing value string(s).
 */
-private List<String> getMissingValue()
-{
+private List<String> getMissingValue() {
     return __missingValue;
 }
 
@@ -1437,8 +1454,7 @@ private List<String> getMissingValue()
 Return the list of data objects read by this object in discovery mode.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
@@ -1455,50 +1471,51 @@ public <T> List<T> getObjectList ( Class<T> c )
 }
 
 /**
+Return the data precision.
+*/
+private List<String> getPrecision() {
+    return __precision;
+}
+
+/**
 Return the scenario constant.
 */
-private List<String> getScenario()
-{
+private List<String> getScenario() {
     return __scenario;
 }
 
 /**
 Return the sequence ID constant.
 */
-private List<String> getSequenceID()
-{
+private List<String> getSequenceID() {
     return __sequenceID;
 }
 
 /**
 Return the number of rows to skip (ranges).
 */
-private int[][] getSkipRows()
-{
+private int[][] getSkipRows() {
     return __skipRows;
 }
 
 /**
 Return the time column name expanded for runtime.
 */
-private String getTimeColumnRuntime ()
-{
+private String getTimeColumnRuntime () {
     return __timeColumnRuntime;
 }
 
 /**
 Return the data units constant.
 */
-private List<String> getUnits()
-{
+private List<String> getUnits() {
     return __units;
 }
 
 /**
 Return the value column list, expanded for runtime.
 */
-private List<String> getValueColumnsRuntime()
-{
+private List<String> getValueColumnsRuntime() {
     return __valueColumnsRuntime;
 }
 
@@ -1528,13 +1545,14 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	int layoutColumns, int layoutRows, YearType yearType,
 	String dateTimeColumn,
 	// The following are when parameters provide the values.
-	String locationType, String locationID, String dataSource, String dataType, TimeInterval interval, String scenario, String sequenceID, String units, String missing,
+	String locationType, String locationID, String dataSource, String dataType, TimeInterval interval,
+	String scenario, String sequenceID, String units, String precision, String missing,
 	// The following are when columns provide the values.
 	String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String sequenceIDColumn, String unitsColumn, String valueColumn,
 	boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 {	String routine = getClass().getSimpleName() + ".readTimeSeriesListBlock";
-	List<TS> tslist = new ArrayList<TS>();
+	List<TS> tslist = new ArrayList<>();
     // Translate column names to integer values to speed up processing below:
 	// - these have been expanded for runtime
     // - any operations on table will fail if in discovery mode
@@ -1651,7 +1669,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
     DateTime dtMaxFromTable = null;
 	// Use a hashmap for a unique list of time series identifiers from the table to facilitate lookups.
     String tsidFromTable = null;
-    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<String,String>();
+    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<>();
     // Need to determine the TSID to allocate the time series whether reading data or not.
     // Only need to loop through the table if reading data or TSIDs come from table columns.
     if ( locationPos < 0 ) {
@@ -1732,6 +1750,9 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 		        ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
 		        ts.setDataUnits ( "" );//unitsFromTableList.get(its) );
 		        //ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
+                if ( !precision.isEmpty() ) {
+                	ts.setDataPrecision ( Short.parseShort(precision) );
+                }
 		        if ( (missing != null) && !missing.isEmpty() ) {
 		        	if ( missing.equalsIgnoreCase("nan") ) {
 		        		ts.setMissing ( Double.NaN );
@@ -1891,6 +1912,7 @@ Read a list of time series from a multiple column data table.
 @param interval the data interval
 @param scenarios list of scenarios to use for time series
 @param units data list of data units to use for time series
+@param precision data list of data precision to use for time series
 @param missing list of missing values to use for time series
 @param handleDuplicatesHow indicate how to handle duplicate date/times
 @param inputStartReq requested start of data (null to return all).
@@ -1905,7 +1927,7 @@ private List<TS> readTimeSeriesListMultiple ( DataTable table,
     String dataTypeColumn, String scenarioColumn, String unitsColumn,
     List<String> locationTypes, List<String> locationIds, List<String> dataSources, List<String> dataTypes, TimeInterval interval,
     TimeInterval irregularIntervalPrecision,
-    List<String> scenarios, List<String> units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
+    List<String> scenarios, List<String> units, List<String> precision, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 throws IOException
@@ -1918,7 +1940,7 @@ throws IOException
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime.
     // Any operations on table will fail if in discovery mode.
     int dateTimePos = -1;
-    if ( (dateTimeColumn != null) && !dateTimeColumn.equals("") ) {
+    if ( (dateTimeColumn != null) && !dateTimeColumn.isEmpty() ) {
         try {
             dateTimePos = table.getFieldIndex(dateTimeColumn);
         }
@@ -1929,12 +1951,12 @@ throws IOException
         }
     }
     DateTimeParser dateTimeParser = null;
-    if ( (dateTimeFormat != null) && !dateTimeFormat.trim().equals("") ) {
+    if ( (dateTimeFormat != null) && !dateTimeFormat.trim().isEmpty() ) {
         // Set to null to simplify logic below.
         dateTimeParser = new DateTimeParser ( dateTimeFormat );
     }
     int datePos = -1;
-    if ( (dateColumn != null) && !dateColumn.equals("") ) {
+    if ( (dateColumn != null) && !dateColumn.isEmpty() ) {
         try {
             datePos = table.getFieldIndex(dateColumn);
         }
@@ -1945,7 +1967,7 @@ throws IOException
         }
     }
     int timePos = -1;
-    if ( (timeColumn != null) && !timeColumn.equals("") ) {
+    if ( (timeColumn != null) && !timeColumn.isEmpty() ) {
         try {
             timePos = table.getFieldIndex(timeColumn);
         }
@@ -1956,7 +1978,7 @@ throws IOException
         }
     }
     int locationPos = -1;
-    if ( (locationColumn != null) && !locationColumn.equals("") ) {
+    if ( (locationColumn != null) && !locationColumn.isEmpty() ) {
         try {
             locationPos = table.getFieldIndex(locationColumn);
         }
@@ -2047,21 +2069,22 @@ throws IOException
     else {
         dataTypesForTS = createMetadataRuntime ( singleColumnFalse, dataTypesFromTable, valueColumns.size(), dataTypes);
     }
-    List<String> locationIdsForTS = createMetadataRuntime ( singleColumnFalse, locationIdsFromTable,
-        valueColumns.size(), locationIds );
+    List<String> locationIdsForTS = createMetadataRuntime ( singleColumnFalse, locationIdsFromTable, valueColumns.size(), locationIds );
     // Create scenarios for each time series.
-    List<String>scenariosForTS = createMetadataRuntime ( singleColumnFalse,
-        scenariosFromTable, valueColumns.size(), scenarios);
+    List<String>scenariosForTS = createMetadataRuntime ( singleColumnFalse, scenariosFromTable, valueColumns.size(), scenarios);
     // Create units for each time series.
-    List<String>unitsForTS = createMetadataRuntime ( singleColumnFalse, unitsFromTable,
-        valueColumns.size(), units );
+    List<String>unitsForTS = createMetadataRuntime ( singleColumnFalse, unitsFromTable, valueColumns.size(), units );
+    // Create precision for each time series:
+    // - don't have precision from the table, only the command parameter
+    List<String>precisionForTS = createMetadataRuntime ( singleColumnFalse, null, valueColumns.size(), precision );
     Message.printStatus(2,routine,"Sizes:" +
         " locationTypesForTS=" + locationTypesForTS.size() +
         " locationIdsForTS=" + locationIdsForTS.size() +
         " dataTypesForTS=" + dataTypesForTS.size() +
         " scenariosForTS=" + scenariosForTS.size() +
         " dataSourcesForTS=" + dataSourcesForTS.size() +
-        " unitsForTS=" + unitsForTS.size());
+        " unitsForTS=" + unitsForTS.size() +
+        " precisionForTS=" + precisionForTS.size() );
     // Create the time series.  If single column, the count corresponds to the individual location identifiers.
     // If multiple column, the count corresponds to the number of value columns.
     int nTS = 0;
@@ -2074,13 +2097,13 @@ throws IOException
         String tsidentstr = null;
         String locType = null;
         String scenario = null;
-        if ( locationTypesForTS.get(its).equals("") ) {
+        if ( locationTypesForTS.get(its).isEmpty() ) {
             locType = "";
         }
         else {
             locType = locationTypesForTS.get(its) + TSIdent.LOC_TYPE_SEPARATOR;
         }
-        if ( scenariosForTS.get(its).equals("") ) {
+        if ( scenariosForTS.get(its).isEmpty() ) {
             scenario = "";
         }
         else {
@@ -2089,7 +2112,7 @@ throws IOException
         tsidentstr = locType + locationIdsForTS.get(its) + "." + dataSourcesForTS.get(its) + "." +
             dataTypesForTS.get(its) + "." + interval + scenario;
         Message.printStatus(2, routine, "Creating time series for TSID=\"" + tsidentstr + "\", units=\"" +
-            unitsForTS.get(its) + "\"" );
+            unitsForTS.get(its) + "\", precision=" + precisionForTS.get(its) );
         valueColumnForTS = valueColumns.get(its);
         valuePosForTS = valuePos[its];
         if ( valuePosForTS < 0 ) {
@@ -2103,8 +2126,7 @@ throws IOException
             }
             catch ( Exception e ) {
                 tsident = null;
-                errorMessages.add ( "Error initializing time series \"" + tsidentstr +
-                    "\" (" + e + ") - will not read.");
+                errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
                 Message.printWarning(3, routine, e);
             }
             if ( tsident != null ) {
@@ -2114,6 +2136,9 @@ throws IOException
                     ts.setIdentifier ( tsident );
                     ts.setDescription ( locationIdsForTS.get(its) + " " + dataTypesForTS.get(its) );
                     ts.setDataUnits ( unitsForTS.get(its) );
+                    if ( !precisionForTS.get(its).isEmpty() ) {
+                    	ts.setDataPrecision ( Short.parseShort(precisionForTS.get(its)) );
+                    }
                     ts.setDataUnitsOriginal ( unitsForTS.get(its) );
                     ts.setMissing ( Double.NaN );
                     ts.setInputName ( table.getTableID() );
@@ -2131,11 +2156,17 @@ throws IOException
                     }
                     ts.setDate1Original(dtMinFromTable);
                     ts.setDate2Original(dtMaxFromTable);
-                    if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
-                    	ts.setDate1(ts.getDate1().setPrecision(irregularIntervalPrecision.getBase()));
-                    	ts.setDate2(ts.getDate2().setPrecision(irregularIntervalPrecision.getBase()));
-                    	ts.setDate1Original(ts.getDate1Original().setPrecision(irregularIntervalPrecision.getBase()));
-                    	ts.setDate2Original(ts.getDate2Original().setPrecision(irregularIntervalPrecision.getBase()));
+                    if ( irregularIntervalPrecision != null ) {
+                    	Message.printStatus(2, routine, "Irregular interval precision = " + irregularIntervalPrecision.getBase());
+                    	if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
+                    		ts.setDate1(ts.getDate1().setPrecision(irregularIntervalPrecision.getBase()));
+                    		ts.setDate2(ts.getDate2().setPrecision(irregularIntervalPrecision.getBase()));
+                    		ts.setDate1Original(ts.getDate1Original().setPrecision(irregularIntervalPrecision.getBase()));
+                    		ts.setDate2Original(ts.getDate2Original().setPrecision(irregularIntervalPrecision.getBase()));
+                    	}
+                    }
+                    if ( Message.isDebugOn ) {
+                    	Message.printStatus(2, routine, "Allocated time series with period " + ts.getDate1() + " to " + ts.getDate2() );
                     }
                 }
                 catch ( Exception e ) {
@@ -2173,6 +2204,8 @@ throws IOException
             if ( dt == null ) {
                 continue;
             }
+            // Create a copy so the original in the table is not changed.
+            dt = new DateTime (dt);
             if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
             	// Set the precision on the date/time.
             	dt.setPrecision(irregularIntervalPrecision.getBase());
@@ -2332,20 +2365,20 @@ private List<TS> readTimeSeriesListSingle ( DataTable table,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String sequenceIDColumn, String unitsColumn, String locationType,
     String dataSource, String dataType, TimeInterval interval, TimeInterval irregularIntervalPrecision,
-    String scenario, String sequenceID, String units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
+    String scenario, String sequenceID, String units, String precision, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 throws IOException
 {   String routine = getClass().getSimpleName() + ".readTimeSeriesListSingle";
     // Allocate the list.
-    List<TS> tslist = new ArrayList<TS>();
+    List<TS> tslist = new ArrayList<>();
     if ( handleDuplicatesHow == null ) {
         handleDuplicatesHow = HandleDuplicatesHowType.USE_LAST; // Default.
     }
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime.
     // Any operations on table will fail if in discovery mode.
     int dateTimePos = -1;
-    if ( (dateTimeColumn != null) && !dateTimeColumn.equals("") ) {
+    if ( (dateTimeColumn != null) && !dateTimeColumn.isEmpty() ) {
         try {
             dateTimePos = table.getFieldIndex(dateTimeColumn);
         }
@@ -2356,12 +2389,12 @@ throws IOException
         }
     }
     DateTimeParser dateTimeParser = null;
-    if ( (dateTimeFormat != null) && !dateTimeFormat.trim().equals("") ) {
+    if ( (dateTimeFormat != null) && !dateTimeFormat.trim().isEmpty() ) {
         // Set to null to simplify logic below.
         dateTimeParser = new DateTimeParser ( dateTimeFormat );
     }
     int datePos = -1;
-    if ( (dateColumn != null) && !dateColumn.equals("") ) {
+    if ( (dateColumn != null) && !dateColumn.isEmpty() ) {
         try {
             datePos = table.getFieldIndex(dateColumn);
         }
@@ -2372,7 +2405,7 @@ throws IOException
         }
     }
     int timePos = -1;
-    if ( (timeColumn != null) && !timeColumn.equals("") ) {
+    if ( (timeColumn != null) && !timeColumn.isEmpty() ) {
         try {
             timePos = table.getFieldIndex(timeColumn);
         }
@@ -2383,7 +2416,7 @@ throws IOException
         }
     }
     int locationPos = -1;
-    if ( (locationColumn != null) && !locationColumn.equals("") ) {
+    if ( (locationColumn != null) && !locationColumn.isEmpty() ) {
         try {
             locationPos = table.getFieldIndex(locationColumn);
         }
@@ -2405,7 +2438,7 @@ throws IOException
         }
     }
     int flagPos = -1;
-    if ( (flagColumn != null) && !flagColumn.equals("") ) {
+    if ( (flagColumn != null) && !flagColumn.isEmpty() ) {
         try {
             flagPos = table.getFieldIndex(flagColumn);
         }
@@ -2422,7 +2455,7 @@ throws IOException
     int sequenceIDPos = -1;
     int unitsPos = -1;
     // Determine column positions for metadata columns.
-    if ( (locationTypeColumn != null) && !locationTypeColumn.equals("") ) {
+    if ( (locationTypeColumn != null) && !locationTypeColumn.isEmpty() ) {
         try {
             locationTypePos = table.getFieldIndex(locationTypeColumn);
         }
@@ -2432,7 +2465,7 @@ throws IOException
             }
         }
     }
-    if ( (dataSourceColumn != null) && !dataSourceColumn.equals("") ) {
+    if ( (dataSourceColumn != null) && !dataSourceColumn.isEmpty() ) {
         try {
             dataSourcePos = table.getFieldIndex(dataSourceColumn);
         }
@@ -2442,7 +2475,7 @@ throws IOException
             }
         }
     }
-    if ( (dataTypeColumn != null) && !dataTypeColumn.equals("") ) {
+    if ( (dataTypeColumn != null) && !dataTypeColumn.isEmpty() ) {
         try {
             dataTypePos = table.getFieldIndex(dataTypeColumn);
         }
@@ -2452,7 +2485,7 @@ throws IOException
             }
         }
     }
-    if ( (scenarioColumn != null) && !scenarioColumn.equals("") ) {
+    if ( (scenarioColumn != null) && !scenarioColumn.isEmpty() ) {
         try {
             scenarioPos = table.getFieldIndex(scenarioColumn);
         }
@@ -2462,7 +2495,7 @@ throws IOException
             }
         }
     }
-    if ( (sequenceIDColumn != null) && !sequenceIDColumn.equals("") ) {
+    if ( (sequenceIDColumn != null) && !sequenceIDColumn.isEmpty() ) {
         try {
         	sequenceIDPos = table.getFieldIndex(sequenceIDColumn);
         }
@@ -2472,7 +2505,7 @@ throws IOException
             }
         }
     }
-    if ( (unitsColumn != null) && !unitsColumn.equals("") ) {
+    if ( (unitsColumn != null) && !unitsColumn.isEmpty() ) {
         try {
             unitsPos = table.getFieldIndex(unitsColumn);
         }
@@ -2498,7 +2531,7 @@ throws IOException
     // A hashmap is used to track the TSIDs, where the key is the TSID string and the object is initially the same
     // TSID string but will be set to the TS when initialized.
     String unitsFromTable;
-    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<String,String>(); // Will retain insert order.
+    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<>(); // Will retain insert order.
     List<String> unitsFromTableList = new ArrayList<>();
     Object o;
     String tsidFromTable;
@@ -2507,6 +2540,7 @@ throws IOException
             rec = table.getRecord(iRec);
             // Consider whether single field, etc.
             dt = getDateTimeFromRecord(rec,(iRec + 1),dateTimePos,datePos,timePos,null,dateTimeParser,null);
+            // TODO smalers 2022-03-06 make a copy if the 'dt' object is going to be changed in any way.
             if ( dt == null ) {
                 continue;
             }
@@ -2579,6 +2613,9 @@ throws IOException
                 ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
                 ts.setDataUnits ( unitsFromTableList.get(its) );
                 ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
+                if ( !precision.isEmpty() ) {
+                	ts.setDataPrecision ( Short.parseShort(precision) );
+                }
                 ts.setMissing ( Double.NaN );
                 ts.setInputName ( table.getTableID() );
                 if ( inputStartReq != null ) {
@@ -2624,7 +2661,7 @@ throws IOException
     }
     Message.printStatus(2, routine, "Number of time series including null =" + tslist.size());
     // Create an ordered hash map to simplify lookup of time series based on the TSID information.
-    LinkedHashMap<String,TS> tsHash = new LinkedHashMap<String,TS>();
+    LinkedHashMap<String,TS> tsHash = new LinkedHashMap<>();
     its = -1;
     for ( Map.Entry<String,String> tsid: tsidsFromTable.entrySet() ) {
         ++its;
@@ -2864,10 +2901,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
 	}
+	// Because the irregular interval precision is a separate parameter, the "base" is used for precision.
+	// TODO smalers 2022-03-04 enable "IrregSecond", etc. as the "Interval".
 	String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision");
 	TimeInterval irregularIntervalPrecision = null;
 	if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
 		irregularIntervalPrecision = TimeInterval.parseInterval(IrregularIntervalPrecision);
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2,routine,"IrregularIntervalPrecision after parsing \"" +
+				IrregularIntervalPrecision + "\" = " +
+				irregularIntervalPrecision.getBase() + " (" +
+				TimeInterval.getName(irregularIntervalPrecision.getBase(),0) + ")");
+		}
 	}
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -3088,6 +3133,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 (getScenario().size() == 1 ? getScenario().get(0) : null),
                 (getSequenceID().size() == 1 ? getSequenceID().get(0) : null),
                 (getUnits().size() == 1 ? getUnits().get(0) : null),
+                (getPrecision().size() == 1 ? getPrecision().get(0) : null),
                 (getMissingValue().size() == 1 ? getMissingValue().get(0) : null),
         		// Metadata provided in columns.
         		LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, SequenceIDColumn, UnitsColumn,
@@ -3109,7 +3155,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                dataType, getInterval(), irregularIntervalPrecision,
 	                (getScenario().size() == 1 ? getScenario().get(0) : null),
 	                (getSequenceID().size() == 1 ? getSequenceID().get(0) : null),
-	                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
+	                (getUnits().size() == 1 ? getUnits().get(0) : null),
+	                (getPrecision().size() == 1 ? getPrecision().get(0) : null),
+	                getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }
 	        else {
@@ -3127,7 +3175,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
 	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
 	                getLocationType(), getLocationIDRuntime(), getDataSource(), dataType, getInterval(), irregularIntervalPrecision, getScenario(),
-	                getUnits(), getMissingValue(), handleDuplicatesHow,
+	                getUnits(), getPrecision(), getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }
         }
@@ -3229,96 +3277,91 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the data type strings for each time series.
 */
-private void setDataType ( List<String> dataType )
-{
+private void setDataType ( List<String> dataType ) {
     __dataType = dataType;
 }
 
 /**
 Set date column expanded for runtime.
 */
-private void setDateColumnRuntime ( String dateColumnRuntime )
-{
+private void setDateColumnRuntime ( String dateColumnRuntime ) {
     __dateColumnRuntime = dateColumnRuntime;
 }
 
 /**
 Set the data source strings for each time series.
 */
-private void setDataSource ( List<String> dataSource )
-{
+private void setDataSource ( List<String> dataSource ) {
     __dataSource = dataSource;
 }
 
 /**
 Set date/time column expanded for runtime.
 */
-private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
-{
+private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime ) {
     __dateTimeColumnRuntime = dateTimeColumnRuntime;
 }
 
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_List )
-{
+private void setDiscoveryTSList ( List<TS> discovery_TS_List ) {
     __discovery_TS_List = discovery_TS_List;
 }
 
 /**
 Set the flag column names for each time series, expanded for runtime.
 */
-private void setFlagColumnsRuntime ( List<String> flagColumnsRuntime )
-{
+private void setFlagColumnsRuntime ( List<String> flagColumnsRuntime ) {
     __flagColumnsRuntime = flagColumnsRuntime;
 }
 
 /**
 Set the data interval for the time series.
 */
-private void setInterval ( TimeInterval interval )
-{
+private void setInterval ( TimeInterval interval ) {
     __interval = interval;
 }
 
 /**
 Set the location ID strings for each time series, expanded for runtime.
 */
-private void setLocationIDRuntime ( List<String> locationIDRuntime )
-{
+private void setLocationIDRuntime ( List<String> locationIDRuntime ) {
     __locationIDRuntime = locationIDRuntime;
 }
 
 /**
 Set the location type strings for each time series.
 */
-private void setLocationType ( List<String> locationType )
-{
+private void setLocationType ( List<String> locationType ) {
     __locationType = locationType;
 }
 
 /**
 Set the missing value strings.
 */
-private void setMissingValue ( List<String> missingValue )
-{
+private void setMissingValue ( List<String> missingValue ) {
     __missingValue = missingValue;
+}
+
+/**
+Set the precision strings for each time series.
+*/
+private void setPrecision ( List<String> precision ) {
+    __precision = precision;
 }
 
 /**
 Set the scenario strings for each time series.
 */
-private void setScenario ( List<String> scenario )
-{
+private void setScenario ( List<String> scenario ) {
     __scenario = scenario;
 }
 
 /**
 Set the sequence ID strings for each time series.
 */
-private void setSequenceID ( List<String> sequenceID )
-{
+private void setSequenceID ( List<String> sequenceID ) {
     __sequenceID = sequenceID;
 }
 
@@ -3326,40 +3369,35 @@ private void setSequenceID ( List<String> sequenceID )
 Set the rows to skip (integer ranges).
 */
 @SuppressWarnings("unused")
-private void setSkipRows ( int[][] skipRows )
-{
+private void setSkipRows ( int[][] skipRows ) {
     __skipRows = skipRows;
 }
 
 /**
 Set time column expanded for runtime.
 */
-private void setTimeColumnRuntime ( String timeColumnRuntime )
-{
+private void setTimeColumnRuntime ( String timeColumnRuntime ) {
     __timeColumnRuntime = timeColumnRuntime;
 }
 
 /**
 Set the data units strings for each time series.
 */
-private void setUnits ( List<String> units )
-{
+private void setUnits ( List<String> units ) {
     __units = units;
 }
 
 /**
 Set the value column names for each time series, expanded for runtime.
 */
-private void setValueColumnsRuntime ( List<String> valueColumnsRuntime )
-{
+private void setValueColumnsRuntime ( List<String> valueColumnsRuntime ) {
     __valueColumnsRuntime = valueColumnsRuntime;
 }
 
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
 	if ( props == null ) {
 		return getCommandName() + "()";
 	}
@@ -3388,6 +3426,7 @@ public String toString ( PropList props )
     String Scenario = props.getValue("Scenario" );
     String SequenceID = props.getValue("SequenceID" );
     String Units = props.getValue("Units" );
+    String Precision = props.getValue("Precision" );
     String MissingValue = props.getValue("MissingValue" );
     String HandleDuplicatesHow = props.getValue("HandleDuplicatesHow" );
     String Alias = props.getValue("Alias" );
@@ -3541,6 +3580,12 @@ public String toString ( PropList props )
 			b.append(",");
 		}
 		b.append("Units=\"" + Units + "\"");
+	}
+	if ((Precision != null) && (Precision.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("Precision=" + Precision );
 	}
     if ((MissingValue != null) && (MissingValue.length() > 0)) {
         if (b.length() > 0) {

@@ -91,6 +91,7 @@ throws InvalidCommandParameterException
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
     String PropertyValue = parameters.getValue ( "PropertyValue" );
+    String Precision = parameters.getValue("Precision" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -104,6 +105,16 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                  message, "Specify the missing value as a number." ) );
+    }
+
+    if ( (Precision != null) && !Precision.isEmpty() ) {
+        if ( Precision.isEmpty() || !StringUtil.isInteger(Precision) ) {
+        	message = "The Precision value \"" + Precision + "\" is not valid.";
+        	warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+           		new CommandLogRecord(CommandStatusType.FAILURE,
+               		message, "Specify a precision value as an integer." ) );
+        }
     }
 	
 	if ( (Editable != null) && (Editable.length() != 0) &&
@@ -170,12 +181,13 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(10);
+	List<String> validList = new ArrayList<>(11);
     validList.add ( "TSList" );
 	validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
 	validList.add ( "Description" );
     validList.add ( "Units" );
+    validList.add ( "Precision" );
     validList.add ( "MissingValue" );
 	validList.add ( "Editable" );
     validList.add ( "PropertyName" );
@@ -239,22 +251,20 @@ CommandWarningException, CommandException
 		TSList = TSListType.ALL_TS.toString();
 	}
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
-		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
-	}
+	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
-		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
-	}
+	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
     String Description = parameters.getValue ( "Description" ); // Expanded below
     String Units = parameters.getValue ( "Units" );
-	if ( (Units != null) && (Units.indexOf("${") >= 0) ) {
-		Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
+	Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
+    String Precision = parameters.getValue ( "Precision" );
+	Precision = TSCommandProcessorUtil.expandParameterValue(processor, this, Precision);
+	short precision = -1;
+	if ( (Precision != null) && !Precision.isEmpty() ) {
+		precision = Short.parseShort(Precision);
 	}
     String MissingValue = parameters.getValue ( "MissingValue" );
-	if ( (MissingValue != null) && (MissingValue.indexOf("${") >= 0) ) {
-		MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
-	}
+	MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
     boolean Editable_boolean = false; // Default
     String Editable = parameters.getValue ( "Editable" );
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
@@ -327,6 +337,10 @@ CommandWarningException, CommandException
                 ts.setDataUnits ( Units );
                 ts.addToGenesis ( "Set data units to \"" + ts.getDataUnits() + "\"" );
             }
+            if ( (Precision != null) && !Precision.isEmpty() ) {
+                ts.setDataPrecision ( precision );
+                ts.addToGenesis ( "Set data precision to " + precision );
+            }
             if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
                 ts.setMissing ( Double.parseDouble(MissingValue) );
                 ts.addToGenesis ( "Set missing data value to " + MissingValue );
@@ -394,6 +408,7 @@ public String toString ( PropList parameters )
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Description = parameters.getValue ( "Description" );
     String Units = parameters.getValue ( "Units" );
+    String Precision = parameters.getValue ( "Precision" );
     String MissingValue = parameters.getValue("MissingValue");
     String Editable = parameters.getValue ( "Editable" );
     String PropertyName = parameters.getValue( "PropertyName" );
@@ -426,6 +441,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Units=\"" + Units + "\"" );
+    }
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Precision=" + Precision );
     }
     if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
         if ( b.length() > 0 ) {

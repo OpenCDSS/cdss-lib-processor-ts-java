@@ -103,6 +103,7 @@ private SimpleJComboBox __IrregularIntervalPrecision_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
 private JTextField __SequenceID_JTextField = null;
 private JTextField __Units_JTextField = null;
+private JTextField __Precision_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __HandleDuplicatesHow_JComboBox = null;
 private SimpleJComboBox __BlockLayout_JComboBox = null;
@@ -224,6 +225,7 @@ private void checkInput () {
 	String Scenario = __Scenario_JTextField.getText().trim();
 	String SequenceID = __SequenceID_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
 	String Alias = __Alias_JTextField.getText().trim();
@@ -308,6 +310,9 @@ private void checkInput () {
     if (Units.length() > 0) {
         props.set("Units", Units);
     }
+    if (Precision.length() > 0) {
+        props.set("Precision", Precision);
+    }
     if (MissingValue.length() > 0) {
         props.set("MissingValue", MissingValue);
     }
@@ -375,6 +380,7 @@ private void commitEdits() {
     String Scenario = __Scenario_JTextField.getText().trim();
     String SequenceID = __SequenceID_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
     String Alias = __Alias_JTextField.getText().trim();
@@ -409,6 +415,7 @@ private void commitEdits() {
 	__command.setCommandParameter("Scenario", Scenario);
 	__command.setCommandParameter("SequenceID", SequenceID);
 	__command.setCommandParameter("Units", Units);
+	__command.setCommandParameter("Precision", Precision);
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("HandleDuplicatesHow", HandleDuplicatesHow);
 	__command.setCommandParameter("Alias", Alias);
@@ -480,7 +487,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeColumn_JTextField = new JTextField (10);
+    __DateTimeColumn_JTextField = new JTextField (25);
     __DateTimeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -503,7 +510,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateColumn_JTextField = new JTextField (10);
+    __DateColumn_JTextField = new JTextField (25);
     __DateColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DateColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -513,7 +520,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Time column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TimeColumn_JTextField = new JTextField (10);
+    __TimeColumn_JTextField = new JTextField (25);
     __TimeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -715,6 +722,14 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     List<String> intervals = TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1);
     TimeInterval irreg = new TimeInterval ( TimeInterval.IRREGULAR, 0 );
     intervals.add("" + irreg);
+    // TODO smalers 2022-03-04 currently set in IrregularIntervalPrecision.
+    //intervals.add("IrregYear");
+    //intervals.add("IrregMonth");
+    //intervals.add("IrregDay");
+    //intervals.add("IrregHour");
+    //intervals.add("IrregMinute");
+    //intervals.add("IrregSecond");
+    //intervals.add("IrregHsecond");
     __Interval_JComboBox.setData ( intervals );
     // Select a default...
     __Interval_JComboBox.select ( 0 );
@@ -727,7 +742,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel( "Irregular interval precision:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularIntervalPrecision_JComboBox = new SimpleJComboBox ( false );
-    List<String> intervals2 = new ArrayList<String>();
+    List<String> intervals2 = new ArrayList<>();
     intervals2.add("");
     intervals2.add("" + TimeInterval.getName(TimeInterval.YEAR, 0));
     intervals2.add("" + TimeInterval.getName(TimeInterval.MONTH, 0));
@@ -735,6 +750,10 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     intervals2.add("" + TimeInterval.getName(TimeInterval.HOUR, 0));
     intervals2.add("" + TimeInterval.getName(TimeInterval.MINUTE, 0));
     intervals2.add("" + TimeInterval.getName(TimeInterval.SECOND, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.HSECOND, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.MILLISECOND, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.MICROSECOND, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.NANOSECOND, 0));
     __IrregularIntervalPrecision_JComboBox.setData ( intervals2 );
     // Select a default...
     __IrregularIntervalPrecision_JComboBox.select ( 0 );
@@ -815,11 +834,22 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	JGUIUtil.addComponent(data_JPanel, __Units_JTextField,
 		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "Optional - data units, comma-separated (default=blank)."),
+        "Optional - data units, comma-separated (default=blank, no units)."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
+    JGUIUtil.addComponent(data_JPanel, new JLabel("Precision of data:"),
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Precision_JTextField = new JTextField ( "", 10 );
+	__Precision_JTextField.setToolTipText("Number of digits after the decimal point for output.");
+	__Precision_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(data_JPanel, __Precision_JTextField,
+		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Optional - data precision for output, comma-separated (default=from units)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Missing value(s):"),
-        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField (10);
     __MissingValue_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __MissingValue_JTextField,
@@ -831,7 +861,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Handle duplicates how?:" ), 
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HandleDuplicatesHow_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    List<String> choices = new ArrayList<String>(5);
+    List<String> choices = new ArrayList<>(5);
     choices.add(""); // Add blank to ignore table
     choices.add("" + HandleDuplicatesHowType.ADD);
     choices.add("" + HandleDuplicatesHowType.USE_FIRST_NONMISSING);
@@ -1054,6 +1084,7 @@ private void refresh()
     String Scenario = "";
     String SequenceID = "";
     String Units = "";
+    String Precision = "";
     String MissingValue = "";
     String HandleDuplicatesHow = "";
     String Alias = "";
@@ -1095,6 +1126,7 @@ private void refresh()
 	    Scenario = props.getValue("Scenario");
 	    SequenceID = props.getValue("SequenceID");
 	    Units = props.getValue("Units");
+	    Precision = props.getValue("Precision");
 	    MissingValue = props.getValue("MissingValue");
 	    HandleDuplicatesHow = props.getValue("HandleDuplicatesHow");
 	    Alias = props.getValue("Alias");
@@ -1237,6 +1269,9 @@ private void refresh()
         if (Units != null) {
             __Units_JTextField.setText(Units);
         }
+        if (Precision != null) {
+            __Precision_JTextField.setText(Precision);
+        }
         if (MissingValue != null) {
             __MissingValue_JTextField.setText(MissingValue);
         }
@@ -1352,6 +1387,7 @@ private void refresh()
     Scenario = __Scenario_JTextField.getText().trim();
     SequenceID = __SequenceID_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
+    Precision = __Precision_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
     Alias = __Alias_JTextField.getText().trim();
@@ -1387,6 +1423,7 @@ private void refresh()
     props.add("Scenario=" + Scenario );
     props.add("SequenceID=" + SequenceID );
     props.add("Units=" + Units );
+    props.add("Precision=" + Precision );
     props.add("MissingValue=" + MissingValue );
     props.add("HandleDuplicatesHow=" + HandleDuplicatesHow );
     props.add("Alias=" + Alias );

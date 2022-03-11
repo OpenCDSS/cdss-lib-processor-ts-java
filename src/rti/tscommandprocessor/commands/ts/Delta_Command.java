@@ -188,7 +188,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(10);
+	List<String> validList = new ArrayList<>(10);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );

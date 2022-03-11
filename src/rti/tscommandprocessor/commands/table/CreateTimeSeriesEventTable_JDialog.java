@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,9 +29,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -69,8 +71,8 @@ public class CreateTimeSeriesEventTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -91,7 +93,7 @@ private JTextArea __InputTableEventLocationColumns_JTextArea = null;
 private JTextField __InputTableEventLabelColumn_JTextField = null;
 private JTextField __InputTableEventDescriptionColumn_JTextField = null;
 private JTextField __OutputTableTSIDColumn_JTextField = null;
-private TSFormatSpecifiersJPanel __OutputTableTSIDFormat_JTextField = null; // Format for time series identifiers
+private TSFormatSpecifiersJPanel __OutputTableTSIDFormat_JTextField = null; // Format for time series identifiers.
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -167,8 +169,7 @@ public void actionPerformed(ActionEvent event)
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -195,7 +196,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -268,7 +269,7 @@ private void checkInput ()
         props.set ( "OutputTableTSIDFormat", OutputTableTSIDFormat );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -332,39 +333,41 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = 0;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command creates a new time series event table, which associates time series with events " +
+        "This command creates a new time series event table, which contains time series events " +
         "that have temporal and spatial properties."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Events may be based on data extremes (e.g., drought, flood) or other data (e.g., political, legal events and decisions)."),
+        "Events may be based on analysis of the time series or historical event data (such as regional floods and droughts)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits.
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -376,12 +379,48 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         "Specify how to create the time series event table" ));
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for creating the event table by analyzing time series.
+    int yAnalysis = -1;
+    JPanel analysis_JPanel = new JPanel();
+    analysis_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Analyze time series", analysis_JPanel );
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Analyze the time series data to detect events, by evaluating data trends, peaks, and valleys."),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "<html>This is experimental functionality.</html>"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Currently, only peaks are analyzed (high value with lower value on each side)."),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "The following table columns are automatically added:"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "  EventStartDateTime, EventStartValue"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "  EventExtremeDateTime, EventExtremeValue"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "  EventEndDateTime, EventEndValue"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(analysis_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel for separate options for creating the event table
+    // Panel for creating the event table from an input table.
     int yTable = -1;
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Create from existing table", table_JPanel );
+    __main_JTabbedPane.addTab ( "Create events from existing table", table_JPanel );
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Generate events by associating input table events with time series, for example by matching time series location."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Time series location type and ID:"),
         0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -399,8 +438,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -533,7 +572,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -563,8 +602,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e)
-{
+public void itemStateChanged (ItemEvent e) {
     checkGUIState();
 	refresh();
 }
@@ -588,7 +626,9 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+	
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -641,7 +681,7 @@ private void refresh ()
         OutputTableTSIDColumn = props.getValue ( "OutputTableTSIDColumn" );
         OutputTableTSIDFormat = props.getValue ( "OutputTableTSIDFormat" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -658,19 +698,19 @@ private void refresh ()
             __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -688,10 +728,12 @@ private void refresh ()
             __TimeSeriesLocations_JTextArea.setText ( TimeSeriesLocations );
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
+            __main_JTabbedPane.setSelectedIndex(0);
         }
         else {
+            __main_JTabbedPane.setSelectedIndex(1);
             if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
                 __TableID_JComboBox.select ( TableID );
             }
@@ -739,7 +781,7 @@ private void refresh ()
             __OutputTableTSIDFormat_JTextField.setText(OutputTableTSIDFormat.trim());
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	checkGUIState();
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
@@ -784,16 +826,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -806,7 +848,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
+// The following methods are all necessary because this class implements WindowListener.
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

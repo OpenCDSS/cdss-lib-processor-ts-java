@@ -26,7 +26,6 @@ package rti.tscommandprocessor.commands.datevalue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -282,7 +281,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector<File>();
+	List<File> list = new ArrayList<>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -513,15 +512,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Get the comments to add to the top of the file.
 
-    List<String> OutputComments_Vector = null;
+    List<String> OutputComments_List = null;
     try {
         Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
         	@SuppressWarnings("unchecked")
-			List<String> OutputComments_Vector0 = (List<String>)o;
-            OutputComments_Vector = OutputComments_Vector0;
-            props.setUsingObject("OutputComments",OutputComments_Vector);
+			List<String> OutputComments_List0 = (List<String>)o;
+            OutputComments_List = OutputComments_List0;
+            props.setUsingObject("OutputComments",OutputComments_List);
         }
     }
     catch ( Exception e ) {

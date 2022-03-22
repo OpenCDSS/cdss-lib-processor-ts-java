@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,11 +103,11 @@ private JTextField __SummaryFile_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DiffCountProperty_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
-// TODO smalers 2021-11-23 add later
+// TODO smalers 2021-11-23 add later.
 //private JTextField __AllowedDiffPerTS_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox = null;
 private SimpleJComboBox __IfSame_JComboBox = null;
-// TODO smalers 2021-08-26 old properties
+// TODO smalers 2021-08-26 old properties.
 //private SimpleJComboBox __WarnIfDifferent_JComboBox = null;
 //private SimpleJComboBox __WarnIfSame_JComboBox = null;
 private JTextArea __command_JTextArea = null;
@@ -249,12 +249,12 @@ public void actionPerformed( ActionEvent event )
 		refresh ();
 	}
 	else {
-		// Choices...
+		// Choices.
 		refresh();
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
@@ -283,14 +283,14 @@ public void removeUpdate ( DocumentEvent e )
 	refresh();
 }
 
-//...End event handlers for DocumentListener
+//...end event handlers for DocumentListener.
 
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSID1 = __TSID1_JComboBox.getSelected();
 	String TSID2 = __TSID2_JComboBox.getSelected();
@@ -470,7 +470,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -487,7 +487,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel specifying two time series
+    // Panel specifying two time series.
     int yts2 = -1;
     JPanel ts2_JPanel = new JPanel();
     ts2_JPanel.setLayout( new GridBagLayout() );
@@ -530,7 +530,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts2_JPanel, __TSID2_JComboBox,
         1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel specifying two ensembles
+    // Panel specifying two ensembles.
     int yEnsemble = -1;
     JPanel ensemble_JPanel = new JPanel();
     ensemble_JPanel.setLayout( new GridBagLayout() );
@@ -555,7 +555,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     __EnsembleID1_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> ensembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    ensembleIDs.add(0,""); // Always add default
+    ensembleIDs.add(0,""); // Always add default.
     __EnsembleID1_JComboBox.setData ( ensembleIDs );
     __EnsembleID1_JComboBox.addItemListener ( this );
     __EnsembleID1_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
@@ -565,7 +565,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JLabel ensemble2Label = new JLabel ( "Second ensemble to compare:" );
     JGUIUtil.addComponent(ensemble_JPanel, ensemble2Label, 
 		0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleID2_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID2_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID2_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     __EnsembleID2_JComboBox.setData ( ensembleIDs );
     __EnsembleID2_JComboBox.addItemListener ( this );
@@ -573,7 +573,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleID2_JComboBox,
         1, yEnsemble, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel specifying many time series
+    // Panel specifying many time series.
     int yts = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
@@ -602,7 +602,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
 	__MatchLocation_JComboBox.setToolTipText("Match the time series location identifier.");
 	List<String> matchChoices = new ArrayList<>();
-	matchChoices.add ( "" );	// Default
+	matchChoices.add ( "" );	// Default.
 	matchChoices.add ( __command._False );
 	matchChoices.add ( __command._True );
 	__MatchLocation_JComboBox.setData(matchChoices);
@@ -619,7 +619,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
 	__MatchDataType_JComboBox.setToolTipText("Match the time series data types.");
 	List<String> matchDataTypeChoices = new ArrayList<>();
-	matchDataTypeChoices.add ( "" );	// Default
+	matchDataTypeChoices.add ( "" );	// Default.
 	matchDataTypeChoices.add ( __command._False );
 	matchDataTypeChoices.add ( __command._True );
 	__MatchDataType_JComboBox.setData(matchDataTypeChoices);
@@ -636,7 +636,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__MatchAlias_JComboBox = new SimpleJComboBox ( false );
 	__MatchAlias_JComboBox.setToolTipText("Match the time series aliases.");
 	List<String> matchAliasChoices = new ArrayList<>();
-	matchAliasChoices.add ( "" ); // Default
+	matchAliasChoices.add ( "" ); // Default.
 	matchAliasChoices.add ( __command._False );
 	matchAliasChoices.add ( __command._True );
 	__MatchAlias_JComboBox.setData(matchAliasChoices);
@@ -648,7 +648,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		"Optional - match alias to find time series pair? (default=" + __command._False + ")."), 
 		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel specifying analysis parameters
+    // Panel specifying analysis parameters.
     int yAnalysis = -1;
     JPanel analysis_JPanel = new JPanel();
     analysis_JPanel.setLayout( new GridBagLayout() );
@@ -685,7 +685,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__CompareFlags_JComboBox = new SimpleJComboBox ( false );
 	__CompareFlags_JComboBox.setToolTipText("Should data value flags be compared?  The comparison is case-specific.");
 	List<String> flagChoices = new ArrayList<>();
-	flagChoices.add ( "" );	// Default
+	flagChoices.add ( "" );	// Default.
 	flagChoices.add ( __command._False );
 	flagChoices.add ( __command._True );
 	__CompareFlags_JComboBox.setData(flagChoices);
@@ -755,7 +755,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
 	List<String> diffChoices = new ArrayList<>();
-	diffChoices.add ( "" );	// Default
+	diffChoices.add ( "" );	// Default.
 	diffChoices.add ( __command._Ignore );
 	diffChoices.add ( __command._Warn );
 	diffChoices.add ( __command._Fail );
@@ -772,7 +772,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfSame_JComboBox = new SimpleJComboBox ( false );
 	List<String> sameChoices = new ArrayList<>();
-	sameChoices.add ( "" );	// Default
+	sameChoices.add ( "" );	// Default.
 	sameChoices.add ( __command._Ignore );
 	sameChoices.add ( __command._Warn );
 	sameChoices.add ( __command._Fail );
@@ -819,7 +819,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	*/
     
-    // Panel specifying output parameters
+    // Panel specifying output parameters.
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
@@ -838,7 +838,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
   	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
   	List<String> createChoices = new ArrayList<>();
-  	createChoices.add ( "" );	// Default
+  	createChoices.add ( "" );	// Default.
   	createChoices.add ( __command._False );
   	createChoices.add ( __command._True );
   	createChoices.add ( __command._IfDifferent );
@@ -856,7 +856,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__DifferenceFile_JTextField = new JTextField ( 50 );
 	__DifferenceFile_JTextField.setToolTipText("Specify the path to the difference file for all time series, can use ${Property} notation");
 	__DifferenceFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel DifferenceFile_JPanel = new JPanel();
 	DifferenceFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(DifferenceFile_JPanel, __DifferenceFile_JTextField,
@@ -866,7 +866,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(DifferenceFile_JPanel, __browseDiff_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathDiff_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(DifferenceFile_JPanel, __pathDiff_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -879,7 +879,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	__SummaryFile_JTextField = new JTextField ( 50 );
 	__SummaryFile_JTextField.setToolTipText("Specify the path to the summary file for differences, can use ${Property} notation");
 	__SummaryFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel SummaryFile_JPanel = new JPanel();
 	SummaryFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(SummaryFile_JPanel, __SummaryFile_JTextField,
@@ -889,7 +889,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(SummaryFile_JPanel, __browseSummary_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathSummary_JButton = new SimpleJButton( __RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(SummaryFile_JPanel, __pathSummary_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -899,9 +899,9 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID for comparison output or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -931,7 +931,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
@@ -951,7 +951,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -1044,19 +1044,22 @@ private void refresh ()
 		IfSame = props.getValue ( "IfSame" );
 		//WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
 		//WarnIfSame = props.getValue ( "WarnIfSame" );
+		// Default the tab to multiple time series, which is appropriate if no parameters for first 3 tabs are specified.
+         __main_JTabbedPane.setSelectedIndex(2);
         // Select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID1_JComboBox, TSID1, JGUIUtil.NONE, null, null ) ) {
             __TSID1_JComboBox.select ( TSID1 );
+            __main_JTabbedPane.setSelectedIndex(0);
         }
         else {
-            // Automatically add to the list...
+            // Automatically add to the list.
             if ( (TSID1 != null) && (TSID1.length() > 0) ) {
                 __TSID1_JComboBox.insertItemAt ( TSID1, 0 );
                 // Select...
                 __TSID1_JComboBox.select ( TSID1 );
             }
             else {
-                // Select the first choice...
+                // Select the first choice.
                 if ( __TSID1_JComboBox.getItemCount() > 0 ) {
                     __TSID1_JComboBox.select ( 0 );
                 }
@@ -1065,28 +1068,30 @@ private void refresh ()
         // Select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID2_JComboBox, TSID2, JGUIUtil.NONE, null, null ) ) {
             __TSID2_JComboBox.select ( TSID2 );
+            __main_JTabbedPane.setSelectedIndex(0);
         }
         else {
-            // Automatically add to the list...
+            // Automatically add to the list.
             if ( (TSID2 != null) && (TSID2.length() > 0) ) {
                 __TSID2_JComboBox.insertItemAt ( TSID2, 0 );
                 // Select...
                 __TSID2_JComboBox.select ( TSID2 );
             }
             else {
-                // Select the first choice...
+                // Select the first choice.
                 if ( __TSID2_JComboBox.getItemCount() > 0 ) {
                     __TSID2_JComboBox.select ( 0 );
                 }
             }
         }
         if ( EnsembleID1 == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID1_JComboBox.select ( 0 );
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID1_JComboBox, EnsembleID1, JGUIUtil.NONE, null, null ) ) {
                 __EnsembleID1_JComboBox.select ( EnsembleID1 );
+                __main_JTabbedPane.setSelectedIndex(1);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -1096,12 +1101,13 @@ private void refresh ()
             }
         }
         if ( EnsembleID2 == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID2_JComboBox.select ( 0 );
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID2_JComboBox, EnsembleID2, JGUIUtil.NONE, null, null ) ) {
                 __EnsembleID2_JComboBox.select ( EnsembleID2 );
+                __main_JTabbedPane.setSelectedIndex(1);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -1112,14 +1118,15 @@ private void refresh ()
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
 			__MatchLocation_JComboBox.select ( MatchLocation );
+			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchLocation == null) || MatchLocation.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__MatchLocation_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchLocation parameter \"" + MatchLocation +
@@ -1128,14 +1135,15 @@ private void refresh ()
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchDataType_JComboBox, MatchDataType, JGUIUtil.NONE, null, null ) ) {
 			__MatchDataType_JComboBox.select ( MatchDataType );
+			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchDataType == null) || MatchDataType.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__MatchDataType_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchDataType parameter \"" + MatchDataType +
@@ -1144,14 +1152,15 @@ private void refresh ()
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchAlias_JComboBox, MatchAlias, JGUIUtil.NONE, null, null ) ) {
 			__MatchAlias_JComboBox.select ( MatchAlias );
+			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchAlias == null) || MatchAlias.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__MatchAlias_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchAlias parameter \"" + MatchAlias +
@@ -1169,11 +1178,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (CompareFlags == null) || CompareFlags.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__CompareFlags_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"CompareFlags parameter \"" + CompareFlags + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -1192,11 +1201,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (CreateDiffTS == null) || CreateDiffTS.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__CreateDiffTS_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"CreateDiffTS parameter \"" + CreateDiffTS +
 				"\".  Select a\ndifferent value or Cancel." );
@@ -1209,7 +1218,7 @@ private void refresh ()
 			__SummaryFile_JTextField.setText (SummaryFile);
 		}
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -1217,7 +1226,7 @@ private void refresh ()
                 __TableID_JComboBox.select ( TableID );
             }
             else {
-            	// OK to add to list since does not need to exist
+            	// OK to add to list since does not need to exist.
             	__TableID_JComboBox.add(TableID);
             	__TableID_JComboBox.select(TableID);
                 //Message.printWarning ( 1, routine,
@@ -1240,11 +1249,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfDifferent_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IfDifferent parameter \"" +
 				IfDifferent + "\".  Select a\ndifferent value or Cancel." );
@@ -1255,11 +1264,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (IfSame == null) || IfSame.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfSame_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -1296,8 +1305,8 @@ private void refresh ()
 		}
 		*/
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only visible information that has not been committed in the command.
 	TSID1 = __TSID1_JComboBox.getSelected();
 	TSID2 = __TSID2_JComboBox.getSelected();
 	EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
@@ -1348,7 +1357,7 @@ private void refresh ()
 	//props.add ( "WarnIfDifferent=" + WarnIfDifferent );
 	//props.add ( "WarnIfSame=" + WarnIfSame );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __pathDiff_JButton != null ) {
 		if ( (DifferenceFile != null) && !DifferenceFile.isEmpty() ) {
 			__pathDiff_JButton.setEnabled ( true );
@@ -1387,20 +1396,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

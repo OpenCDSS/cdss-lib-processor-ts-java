@@ -1750,7 +1750,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 		        ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
 		        ts.setDataUnits ( "" );//unitsFromTableList.get(its) );
 		        //ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
-                if ( !precision.isEmpty() ) {
+                if ( (precision != null) && !precision.isEmpty() ) {
                 	ts.setDataPrecision ( Short.parseShort(precision) );
                 }
 		        if ( (missing != null) && !missing.isEmpty() ) {
@@ -2613,7 +2613,7 @@ throws IOException
                 ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
                 ts.setDataUnits ( unitsFromTableList.get(its) );
                 ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
-                if ( !precision.isEmpty() ) {
+                if ( (precision != null) && !precision.isEmpty() ) {
                 	ts.setDataPrecision ( Short.parseShort(precision) );
                 }
                 ts.setMissing ( Double.NaN );

@@ -124,7 +124,7 @@ private SimpleJComboBox __IfMissing_JComboBox;
 private JTextArea __command_JTextArea = null;
 // Contains all input filter panels.  Use the HydroBaseDataStore name/description and data type for each to
 // figure out which panel is active at any time.
-private List<InputFilter_JPanel> __inputFilterJPanelList = new ArrayList<InputFilter_JPanel>();
+private List<InputFilter_JPanel> __inputFilterJPanelList = new ArrayList<>();
 private HydroBaseDataStore __dataStore = null; // selected HydroBaseDataStore
 private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
@@ -181,8 +181,7 @@ Refresh the data type choices in response to the currently selected HydroBase da
 @param value if non-null, then the selection is from the command initialization, in which case the
 specified data type should be selected
 */
-private void actionPerformedDataStoreSelected ( )
-{
+private void actionPerformedDataStoreSelected ( ) {
     if ( __DataStore_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
@@ -198,8 +197,7 @@ Refresh the query choices for the currently selected HydroBase data store.
 @param value if non-null, then the selection is from the command initialization, in which case the
 specified data type should be selected
 */
-private void actionPerformedDataTypeSelected ( )
-{
+private void actionPerformedDataTypeSelected ( ) {
     if ( __DataType_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
@@ -213,8 +211,7 @@ Refresh the data type choices in response to the currently selected HydroBase in
 @param value if non-null, then the selection is from the command initialization, in which case the
 specified data type should be selected
 */
-private void actionPerformedInputNameSelected ( )
-{
+private void actionPerformedInputNameSelected ( ) {
     if ( __InputName_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
@@ -228,8 +225,7 @@ private void actionPerformedInputNameSelected ( )
 /**
 Set visible the appropriate input filter, based on the interval and other previous selections.
 */
-private void actionPerformedIntervalSelected ( )
-{
+private void actionPerformedIntervalSelected ( ) {
     if ( __Interval_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
@@ -462,16 +458,14 @@ private void commitEdits ()
 /**
 Return the datastore that is in effect.
 */
-private HydroBaseDataStore getDataStore()
-{
+private HydroBaseDataStore getDataStore() {
     return __dataStore;
 }
 
 /**
 Return the DMI that is in effect.
 */
-private HydroBaseDMI getDMI()
-{
+private HydroBaseDMI getDMI() {
     if ( __dataStore == null ) {
         return null;
     }
@@ -483,16 +477,14 @@ private HydroBaseDMI getDMI()
 /**
 Get the input filter list.
 */
-private List<InputFilter_JPanel> getInputFilterJPanelList ()
-{
+private List<InputFilter_JPanel> getInputFilterJPanelList () {
     return __inputFilterJPanelList;
 }
 
 /**
 Get the input name to use for the TSID.
 */
-private String getInputNameForTSID()
-{
+private String getInputNameForTSID() {
     // Use the data store name if specified
     String DataStore = __DataStore_JComboBox.getSelected();
     if ( (DataStore != null) && !DataStore.equals("") ) {
@@ -529,8 +521,7 @@ private HydroBaseDataStore getSelectedDataStore ()
 /**
 Return the selected data type, omitting the leading "group - dataType".
 */
-private String getSelectedDataType()
-{
+private String getSelectedDataType() {
     if ( __DataType_JComboBox == null ) {
         return null;
     }
@@ -587,8 +578,7 @@ private HydroBaseDataStore getSelectedDataStoreFromInputName ()
 /**
 Return the visible input filter panel, or null if none visible.
 */
-private InputFilter_JPanel getVisibleInputFilterPanel()
-{
+private InputFilter_JPanel getVisibleInputFilterPanel() {
     List<InputFilter_JPanel> panelList = getInputFilterJPanelList();
     String panelName;
     for ( InputFilter_JPanel panel : panelList ) {
@@ -610,8 +600,7 @@ Return the "WhereN" parameter for the requested input filter.
 @return the "WhereN" parameter for the requested input filter.
 @param ifg the Input filter to process (zero index).
 */
-private String getWhere ( int ifg )
-{
+private String getWhere ( int ifg ) {
 	String delim = ";";	// To separate input filter parts
 	InputFilter_JPanel filter_panel = getVisibleInputFilterPanel();
     String where = "";
@@ -687,7 +676,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
         0, ++ydb, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputName_JComboBox = new SimpleJComboBox ( false );
     // Add a blank because the input type/name is not required
-    List<String> nameChoices = new ArrayList<String>();
+    List<String> nameChoices = new ArrayList<>();
     nameChoices.add ( "" );
     for ( HydroBaseDMI hbdmi: legacyDmiList ) {
         String inputName = hbdmi.getInputName();
@@ -711,7 +700,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( HydroBaseDataStore.class );
     // Add a blank because the data store is not required
-    List<String> datastoreChoices = new ArrayList<String>();
+    List<String> datastoreChoices = new ArrayList<>();
     datastoreChoices.add ( "" );
     for ( DataStore dataStore: dataStoreList ) {
     	datastoreChoices.add ( dataStore.getName() );
@@ -850,7 +839,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 
     JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill daily diversion records using carry forward:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> FillDivRecordsCarryForward_List = new ArrayList<String>( 3 );
+    List<String> FillDivRecordsCarryForward_List = new ArrayList<>( 3 );
 	FillDivRecordsCarryForward_List.add ( "" );
 	FillDivRecordsCarryForward_List.add ( __command._False );
 	FillDivRecordsCarryForward_List.add ( __command._True );
@@ -984,8 +973,7 @@ other visible selections.
 @param dataStoreList the list of available HydroBaseDataStore
 */
 private void initializeInputFilters ( JPanel parent_JPanel, int y, List<HydroBaseDMI> legacyDMIList,
-    List<DataStore> dataStoreList )
-{   
+    List<DataStore> dataStoreList ) {   
     // Loop through data stores and add filters for all data groups
     for ( DataStore ds : dataStoreList ) {
         initializeInputFilters_OneFilter ( parent_JPanel, y, (HydroBaseDataStore)ds);
@@ -1207,8 +1195,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
 /**
 Respond to ItemEvents.
 */
-public void itemStateChanged ( ItemEvent event )
-{
+public void itemStateChanged ( ItemEvent event ) {
     if ( __ignoreEvents ) {
         return; // Startup
     }
@@ -1262,8 +1249,7 @@ public boolean ok ()
 Set the data type choices in response to a new data store being selected.
 This should match the main TSTool interface
 */
-private void populateDataTypeChoices ( HydroBaseDMI dmi )
-{
+private void populateDataTypeChoices ( HydroBaseDMI dmi ) {
     List<String> dataTypes =
         HydroBase_Util.getTimeSeriesDataTypes (dmi,
         HydroBase_Util.DATA_TYPE_AGRICULTURE |

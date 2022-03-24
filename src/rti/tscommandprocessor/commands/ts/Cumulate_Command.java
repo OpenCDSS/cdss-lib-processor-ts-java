@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ Strings used with the command.
 protected final String _CarryForwardIfMissing = "CarryForwardIfMissing";
 protected final String _SetMissingIfMissing = "SetMissingIfMissing";
 
-// TODO SAM 2012-07-25 Maybe need a "DataValueOrZero" option in case the data value is missing
+// TODO SAM 2012-07-25 Maybe need a "DataValueOrZero" option in case the data value is missing.
 /**
 Possible values for the ResetValue parameter.
 */
@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    /* TODO SAM 2008-01-03 Evaluate combination with TSList
+    /* TODO SAM 2008-01-03 Evaluate combination with TSList.
 	if ( (TSID == null) || TSID.equals("") ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
@@ -126,7 +126,7 @@ throws InvalidCommandParameterException
                     CumulateMissingType.CARRY_FORWARD + " or " + CumulateMissingType.SET_MISSING ) );
 	    }
 	}
-    if ( (Reset != null) && !Reset.equals("") && (Reset.indexOf("${") < 0) ) {
+    if ( (Reset != null) && !Reset.isEmpty() && (Reset.indexOf("${") < 0) ) {
     	// Can only check if not a property.
         try {
             DateTime.parse(__resetYear + "-" + Reset);
@@ -160,7 +160,7 @@ throws InvalidCommandParameterException
                     message, "Specify an integer for AllowMissingCount." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(AllowMissingCount);
             if ( i < 0 ) {
                 message = "The AllowMissingCount value (" + AllowMissingCount + ") must be >= 0.";
@@ -181,7 +181,7 @@ throws InvalidCommandParameterException
                     message, "Specify an integer for MinimumSampleSize." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(MinimumSampleSize);
             if ( i <= 0 ) {
                 message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be >= 1.";
@@ -193,7 +193,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    // Check for invalid parameters...
+    // Check for invalid parameters.
     List<String> validList = new ArrayList<String>(8);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -218,11 +218,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new Cumulate_JDialog ( parent, this )).ok();
 }
 
@@ -238,18 +237,18 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String TSID = parameters.getValue ( "TSID");
-        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
-                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-            // Assume old-style where TSList was not specified but TSID was...
+        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified,
+                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified.
+            // Assume old-style where TSList was not specified but TSID was.
             if ( TSID.equals("*") ) {
                 parameters.set ( "TSList", TSListType.ALL_TS.toString() );
-                // TSID is not needed
+                // TSID is not needed.
                 parameters.unSet( "TSID" );
             }
             else {
@@ -267,13 +266,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String TSID = "";
 		String HandleMissingHow = "";
 		if ( (v != null) && (v.size() == 3) ) {
-			// Second field is identifier...
+			// Second field is identifier.
 			TSID = ((String)v.get(1)).trim();
-			// Third field has missing data type...
+			// Third field has missing data type.
 			HandleMissingHow = ((String)v.get(2)).trim();
 		}
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -283,7 +282,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		    }
 		    else {
 		        parameters.set ( "TSID", TSID );
-		        // Old style was to match the TSID
+		        // Old style was to match the TSID.
 		        parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		    }
 		}
@@ -298,8 +297,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
@@ -312,7 +310,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_count = 0;
 	int log_level = 3;	// Warning level for non-user messages.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
@@ -325,7 +323,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -350,7 +348,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Reset = parameters.getValue ( "Reset" );
 	Reset = TSCommandProcessorUtil.expandParameterValue(processor, this, Reset);
     DateTime resetDateTime = null;
-    if ( Reset != null ) {
+    if ( (Reset != null) && !Reset.isEmpty() ) {
     	// Reset uses a property.
         try {
             resetDateTime = DateTime.parse(__resetYear + "-" + Reset);
@@ -388,7 +386,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
     }
 
-	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -464,7 +462,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -472,7 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// It is OK if no time series.
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
 	int nts = 0;
 	if ( tslist != null ) {
@@ -509,12 +507,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {	ts = (TS)prop_contents;
 		}
 		
-		// TODO SAM 2007-02-17 Evaluate whether to print warning if null TS
+		// TODO SAM 2007-02-17 Evaluate whether to print warning if null TS.
 		
-		DateTime analysisStart = null; // Not yet supported
+		DateTime analysisStart = null; // Not yet supported.
 		DateTime analysisEnd = null;
 		try {
-            // Do the processing...
+            // Do the processing.
             notifyCommandProgressListeners ( its, nts, (float)-1.0, "Cumulating time series " +
                 ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\", Reset=" + resetDateTime +
@@ -536,7 +534,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 
-	// Resave the data to the processor so that appropriate actions are taken...
+	// Resave the data to the processor so that appropriate actions are taken.
 	// TODO SAM 2005-08-25 Is this needed?
 	//_processor.setPropContents ( "TSResultsList", TSResultsList );
 

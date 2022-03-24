@@ -43,7 +43,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -213,9 +215,10 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(11);
 	validList.add ( "URI" );
 	validList.add ( "EncodeURI" );
+	validList.add ( "HttpHeaders" );
 	validList.add ( "ConnectTimeout" );
 	validList.add ( "ReadTimeout" );
 	validList.add ( "RetryMax" );
@@ -358,6 +361,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			encodeUri = false;
 		}
 	}
+    String HttpHeaders = parameters.getValue ( "HttpHeaders" );
+    HashMap<String,String> httpHeaders = new HashMap<>();
+    if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) && (HttpHeaders.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(HttpHeaders, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            httpHeaders.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     int connectTimeout = 60000;
 	if ( (ConnectTimeout != null) && StringUtil.isInteger(ConnectTimeout) ) {
@@ -448,7 +462,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			Message.printStatus(2,routine,"Reading URI \"" + URI + "\" (try " + iRetry + ")." );
     			URL url = new URL(URI);
     			urlConnection = (HttpURLConnection)url.openConnection();
-    			
+    			// Add headers.
+    			for ( String headerKey : httpHeaders.keySet() ) {
+    				urlConnection.setRequestProperty(headerKey, httpHeaders.get(headerKey));
+    			}
+
     			// Check for redirects.  Different technologies have maximum on redirects but loop for 100, which is unlikely to be reached.
     			int redirectMax = 100;
     			for ( int iRedirect = 1; iRedirect <= redirectMax; iRedirect++ ) {
@@ -465,6 +483,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					Message.printStatus(2,routine,"Reading redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
     					url = new URL(newUrl);
     					urlConnection = (HttpURLConnection)url.openConnection();
+    					// Add headers.
+    					for ( String headerKey : httpHeaders.keySet() ) {
+    						urlConnection.setRequestProperty(headerKey, httpHeaders.get(headerKey));
+    					}
     				}
     				else {
     					break;
@@ -688,6 +710,7 @@ public String toString ( PropList parameters )
 	}
     String URI = parameters.getValue ( "URI" );
     String EncodeURI = parameters.getValue ( "EncodeURI" );
+    String HttpHeaders = parameters.getValue ( "HttpHeaders" );
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     String ReadTimeout = parameters.getValue ( "ReadTimeout" );
     String RetryMax = parameters.getValue ( "RetryMax" );
@@ -705,6 +728,12 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "EncodeURI=" + EncodeURI );
+	}
+	if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "HttpHeaders=\"" + HttpHeaders + "\"" );
 	}
 	if ( (ConnectTimeout != null) && (ConnectTimeout.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -48,6 +48,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -75,6 +76,7 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextArea __URI_JTextArea = null;
 private SimpleJComboBox	__EncodeURI_JComboBox =null;
+private JTextArea __HttpHeaders_JTextArea = null;
 private JTextField __ConnectTimeout_JTextField = null;
 private JTextField __ReadTimeout_JTextField = null;
 private JTextField __RetryMax_JTextField = null;
@@ -88,6 +90,7 @@ private String __working_dir = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private WebGet_Command __command = null;
+private JFrame __parent = null;
 private boolean __ok = false; // Indicates whether OK pressed to close the dialog.
 
 /**
@@ -150,6 +153,19 @@ public void actionPerformed( ActionEvent event )
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "WebGet");
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditHttpHeaders") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String HttpHeaders = __HttpHeaders_JTextArea.getText().trim();
+        String [] notes = {
+            "HTTP header properties can be set for the request."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, HttpHeaders,
+            "Edit HttpHeaders Parameter", notes, "Property Name", "Property Value",10)).response();
+        if ( dict != null ) {
+            __HttpHeaders_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput();
@@ -187,6 +203,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
+	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -201,6 +218,9 @@ private void checkInput ()
 	}
 	if ( EncodeURI.length() > 0 ) {
 		props.set ( "EncodeURI", EncodeURI );
+	}
+	if ( HttpHeaders.length() > 0 ) {
+		props.set ( "HttpHeaders", HttpHeaders );
 	}
 	if ( ConnectTimeout.length() > 0 ) {
 		props.set ( "ConnectTimeout", ConnectTimeout );
@@ -243,6 +263,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
+	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -253,6 +274,7 @@ private void commitEdits ()
     String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
 	__command.setCommandParameter ( "EncodeURI", EncodeURI );
+	__command.setCommandParameter ( "HttpHeaders", HttpHeaders );
 	__command.setCommandParameter ( "ConnectTimeout", ConnectTimeout );
 	__command.setCommandParameter ( "ReadTimeout", ReadTimeout );
 	__command.setCommandParameter ( "RetryMax", RetryMax );
@@ -269,7 +291,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, WebGet_Command command )
-{	__command = command;
+{	this.__command = command;
+	this.__parent = parent;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -330,6 +353,20 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - encode the URI? (default=" + __command._True + ")."), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("HTTP headers:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HttpHeaders_JTextArea = new JTextArea (6,35);
+    __HttpHeaders_JTextArea.setLineWrap ( true );
+    __HttpHeaders_JTextArea.setWrapStyleWord ( true );
+    __HttpHeaders_JTextArea.setToolTipText("PropertyName1:PropertyValue1,PropertyName2:PropertyValue2,...");
+    __HttpHeaders_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__HttpHeaders_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - HTTP headers."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditHttpHeaders",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Connection timeout:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -499,6 +536,7 @@ private void refresh ()
 {	String routine = "WebGet_JDialog.refresh";
     String URI = "";
     String EncodeURI = "";
+    String HttpHeaders = "";
     String ConnectTimeout = "";
     String ReadTimeout = "";
     String RetryMax = "";
@@ -513,6 +551,7 @@ private void refresh ()
         parameters = __command.getCommandParameters();
         URI = parameters.getValue ( "URI" );
         EncodeURI = parameters.getValue ( "EncodeURI" );
+        HttpHeaders = parameters.getValue ( "HttpHeaders" );
         ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
         ReadTimeout = parameters.getValue ( "ReadTimeout" );
         RetryMax = parameters.getValue ( "RetryMax" );
@@ -540,6 +579,9 @@ private void refresh ()
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+        if ( HttpHeaders != null ) {
+            __HttpHeaders_JTextArea.setText ( HttpHeaders );
+        }
 		if ( ConnectTimeout != null ) {
 			__ConnectTimeout_JTextField.setText ( ConnectTimeout );
 		}
@@ -582,6 +624,7 @@ private void refresh ()
 	// information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
 	EncodeURI = __EncodeURI_JComboBox.getSelected();
+	HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	RetryMax = __RetryMax_JTextField.getText().trim();
@@ -593,6 +636,7 @@ private void refresh ()
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "URI=" + URI );
 	props.add ( "EncodeURI=" + EncodeURI );
+	props.add ( "HttpHeaders=" + HttpHeaders );
 	props.add ( "ConnectTimeout=" + ConnectTimeout );
 	props.add ( "ReadTimeout=" + ReadTimeout );
 	props.add ( "RetryMax=" + RetryMax );

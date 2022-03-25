@@ -633,7 +633,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
 						periodPos = s.lastIndexOf('.');
 						if ( periodPos > 0 ) {
 							precisionString[iColumn] = Math.max(precisionString[iColumn], (len - periodPos - 1));
-							Message.printStatus(2, routine, "precisonString for " + name + " is " + precisionString[iColumn]);
+							//Message.printStatus(2, routine, "precisonString for " + name + " is " + precisionString[iColumn]);
 						}
 						else {
 							// Rely on precision from other strings.

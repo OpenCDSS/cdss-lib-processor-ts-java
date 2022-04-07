@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSStatisticType;
@@ -66,8 +65,8 @@ implements Command, CommandDiscoverable, ObjectListProvider
 {
     
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.
+These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
     
@@ -127,8 +126,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series identifier." ) );
 	}
-	// TODO SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support wildcards.
+	// TODO SAM 2005-08-29 Need to decide whether to check NewTSID - it might need to support wildcards.
 	
     TSStatisticType statisticType = null;
 	if ( (Statistic == null) || Statistic.equals("") ) {
@@ -139,7 +137,7 @@ throws InvalidCommandParameterException
                         message, "Specify a statistic." ) );
 	}
 	else {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         try {
             statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
@@ -152,7 +150,7 @@ throws InvalidCommandParameterException
                 message, "Select a supported statistic using the command editor." ) );
         }
         
-        // Make sure that it is in the supported list
+        // Make sure that it is in the supported list.
         
         if ( supported ) {
             supported = false;
@@ -171,7 +169,7 @@ throws InvalidCommandParameterException
             }
         }
 	}
-	// Either TestValue or MonthTestValues are required for some statistics
+	// Either TestValue or MonthTestValues are required for some statistics.
 	if ( TSUtil_NewStatisticMonthTimeSeries.isTestValueNeeded(statisticType) ) {
     	if ( ((TestValue == null) || TestValue.equals("")) && ((MonthTestValues == null) || MonthTestValues.equals("")) ) {
     	    message = "Single or monthly test values must be specified.";
@@ -189,9 +187,8 @@ throws InvalidCommandParameterException
         }
     	else {
         	if ( (TestValue != null) && !TestValue.equals("") ) {
-        		// If a test value is specified, for now make sure it is a
-        		// number.  It is possible that in the future it could be a
-        		// special value (date, etc.) but for now focus on numbers.
+        		// If a test value is specified, for now make sure it is a number.
+        		// It is possible that in the future it could be a special value (date, etc.) but for now focus on numbers.
         		if ( !StringUtil.isDouble(TestValue) ) {
                     message = "The test value (" + TestValue + ") is not a number.";
         			warning += "\n" + message;
@@ -233,7 +230,7 @@ throws InvalidCommandParameterException
                             message, "Specify the AllowMissingCount value as an integer." ) );
 		}
 		else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
 			if ( StringUtil.atoi(AllowMissingCount) < 0 ) {
                 message = "The AllowMissingCount value (" + AllowMissingCount + ") must be >= 0.";
 				warning += "\n" + message;
@@ -253,7 +250,7 @@ throws InvalidCommandParameterException
                             message, "Specify an integer for MinimumSampleSize." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(MinimumSampleSize);
             if ( i <= 0 ) {
                 message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be >= 1.";
@@ -339,8 +336,8 @@ throws InvalidCommandParameterException
         }
     }
     
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(13);
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(13);
     validList.add ( "Alias" );
     validList.add ( "TSID" );
     validList.add ( "NewTSID" );
@@ -372,15 +369,14 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new NewStatisticMonthTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discoveryTSList;
 }
 
@@ -389,15 +385,14 @@ Return the list of data objects created by this object in discovery mode.
 Classes that can be requested:  TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS).
     TS datats = discoveryTSList.get(0);
-    // Use the most generic for the base class...
+    // Use the most generic for the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return (List<T>)discoveryTSList;
     }
@@ -414,8 +409,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -428,8 +422,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{
+CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -446,9 +439,9 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Non-user warning level
+	int log_level = 3;	// Non-user warning level.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
@@ -463,7 +456,7 @@ CommandWarningException, CommandException
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
 	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-	Double testValue = null; // Default
+	Double testValue = null; // Default.
 	String TestValue = parameters.getValue ( "TestValue" );
     if ( (TestValue != null) && !TestValue.equals("") ) {
         testValue = new Double(TestValue);
@@ -478,11 +471,11 @@ CommandWarningException, CommandException
         }
     }
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
-	Integer AllowMissingCount_Integer = new Integer(-1); // Default
+	Integer AllowMissingCount_Integer = new Integer(-1); // Default.
 	if ( StringUtil.isInteger(AllowMissingCount) ) {
 	    AllowMissingCount_Integer = new Integer(AllowMissingCount);
 	}
-	Integer MinimumSampleSize_Integer = null; // Default - no minimum
+	Integer MinimumSampleSize_Integer = null; // Default - no minimum.
 	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     if ( StringUtil.isInteger(MinimumSampleSize) ) {
         MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
@@ -493,7 +486,7 @@ CommandWarningException, CommandException
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis.
 
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
@@ -597,7 +590,7 @@ CommandWarningException, CommandException
 	DateTime AnalysisWindowStart_DateTime = null;
 	if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
 		try {
-		    // The following works with ISO formats...
+		    // The following works with ISO formats.
 		    AnalysisWindowStart_DateTime =
 		        DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
 		}
@@ -613,7 +606,7 @@ CommandWarningException, CommandException
     DateTime AnalysisWindowEnd_DateTime = null;
     if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             AnalysisWindowEnd_DateTime =
                 DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
         }
@@ -629,7 +622,7 @@ CommandWarningException, CommandException
     DateTime SearchStart_DateTime = null;
     if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             SearchStart_DateTime = DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + SearchStart );
         }
         catch ( Exception e ) {
@@ -642,10 +635,10 @@ CommandWarningException, CommandException
         }
     }
 
-	// Get the time series to process.  The time series list is searched backwards until the first match...
+	// Get the time series to process.  The time series list is searched backwards until the first match.
     TS ts = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
+        // Get the discovery time series list from all time series above this command.
         String TSList = "" + TSListType.LAST_MATCHING_TSID;
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, null );
@@ -700,7 +693,7 @@ CommandWarningException, CommandException
 	}
 	
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog (commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -708,13 +701,13 @@ CommandWarningException, CommandException
         throw new CommandException ( message );
     }
 
-	// Now process the time series...
+	// Now process the time series.
     boolean createData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         createData = false;
     }
     else if ( commandPhase == CommandPhaseType.RUN ){
-        // Currently only support daily time series as input
+        // Currently only support daily time series as input.
         if ( ts.getDataIntervalBase() != TimeInterval.DAY ) {
             message = "Only daily interval for input time series is currently supported (time series is " +
                 ts.getIdentifier().getInterval() + ").";
@@ -746,10 +739,10 @@ CommandWarningException, CommandException
                 processor, stats_ts, Alias, status, commandPhase);
     		stats_ts.setAlias ( alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
     
-    		// Update the data to the processor so that appropriate actions are taken...
+    		// Update the data to the processor so that appropriate actions are taken.
     	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-    	        // Just want time series headers initialized
-    	        List<TS> discoveryTSList = new Vector<TS>();
+    	        // Just want time series headers initialized.
+    	        List<TS> discoveryTSList = new ArrayList<>();
     	        discoveryTSList.add ( stats_ts );
     	        setDiscoveryTSList ( discoveryTSList );
     	    }
@@ -786,8 +779,7 @@ CommandWarningException, CommandException
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 

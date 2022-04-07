@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import RTi.TS.RunningAverageType;
 import RTi.TS.TS;
@@ -71,10 +70,10 @@ implements Command, CommandDiscoverable, ObjectListProvider
 {
     
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.
+These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discovery_TS_List = null;
 
 /**
 Constructor.
@@ -121,7 +120,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    /* TODO SAM 2008-01-03 Evaluate combination with TSList
+    /* TODO SAM 2008-01-03 Evaluate combination with TSList.
 	if ( (TSID == null) || TSID.equals("") ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
@@ -140,7 +139,7 @@ throws InvalidCommandParameterException
                         message, "Specify a Statistic." ) );
     }
     else {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         try {
             statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
@@ -153,7 +152,7 @@ throws InvalidCommandParameterException
                 message, "Select a supported statistic using the command editor." ) );
         }
         
-        // Make sure that it is in the supported list
+        // Make sure that it is in the supported list.
         
         if ( supported ) {
             supported = false;
@@ -241,14 +240,14 @@ throws InvalidCommandParameterException
         for ( RunningAverageType type : TSUtil_RunningStatistic.getRunningAverageTypeChoices() ) {
             b.append ( "" + type + ", ");
         }
-        // Remove the extra comma at end
+        // Remove the extra comma at end.
         b.delete(b.length() - 2, b.length());
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "SampleMethod must be one of: " + b ) );
 	}
 	if ( sampleMethod == RunningAverageType.CUSTOM ) {
-		// TODO SAM 2015-05-12 Add check
+		// TODO SAM 2015-05-12 Add check.
 		if ( (CustomBracketByMonth == null) || CustomBracketByMonth.isEmpty() ) {
             message = "The CustomBracketByMonth parameter must be specified.";
             warning += "\n" + message;
@@ -281,7 +280,7 @@ throws InvalidCommandParameterException
         }
         if ( (BracketByMonth != null) && !BracketByMonth.isEmpty() ) {
             List<String> v = StringUtil.breakStringList ( BracketByMonth,",", 0 );
-        	// breakStringList will not add value if delimiter at end so count commas
+        	// breakStringList will not add value if delimiter at end so count commas.
             if ( v == null ) {
                 message = "12 bracket values must be specified.";
                 warning += "\n" + message;
@@ -291,7 +290,7 @@ throws InvalidCommandParameterException
             }
             else {
             	 if ( v.size() != 12 ) {
-            		 // Add empty values at end
+            		 // Add empty values at end.
             		 for ( int i = v.size(); i < 12; i++ ) {
             			 v.add("");
             		 }
@@ -300,7 +299,7 @@ throws InvalidCommandParameterException
             if ( v != null ) {
                 String val;
                 for ( int i = 0; i < 12; i++ ) {
-                	// Values can be missing - will indicate to NOT compute the statistic for the month
+                	// Values can be missing - will indicate to NOT compute the statistic for the month.
                     val = v.get(i).trim();
                     if ( !val.isEmpty() && !StringUtil.isInteger(val) ) {
                         message = "Monthly bracket value for month " + (i + 1) + " \"" + val + "\" is not an integer.";
@@ -314,7 +313,7 @@ throws InvalidCommandParameterException
         }
     }
 	
-	// Additional combinations to check
+	// Additional combinations to check.
 
 	if ( (statisticType != null) && (sampleMethod != null) ) {
 		if ( ((statisticType == TSStatisticType.NEW_MAX) || (statisticType == TSStatisticType.NEW_MIN)) &&
@@ -346,7 +345,7 @@ throws InvalidCommandParameterException
                             message, "Specify an integer for AllowMissingCount." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(AllowMissingCount);
             if ( i < 0 ) {
                 message = "The AllowMissingCount value (" + AllowMissingCount + ") must be >= 0.";
@@ -367,7 +366,7 @@ throws InvalidCommandParameterException
                             message, "Specify an integer for MinimumSampleSize." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(MinimumSampleSize);
             if ( i <= 0 ) {
                 message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be > 0.";
@@ -405,7 +404,7 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time." ) );
         }
     }
-    // Normal period causes results in statistic over all years
+    // Normal period causes results in statistic over all years.
     if ( (NormalStart_DateTime != null) && (NormalEnd_DateTime != null) ) {
         if ( sampleMethod != RunningAverageType.ALL_YEARS ) {
             message = "If the normal period is specified, the sample method must be " + RunningAverageType.ALL_YEARS;
@@ -449,7 +448,7 @@ throws InvalidCommandParameterException
         }
     }
       
-    // Check for invalid parameters...
+    // Check for invalid parameters.
     List<String> validList = new ArrayList<>(24);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -494,16 +493,15 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new RunningStatisticTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
-    return __discovery_TS_Vector;
+private List<TS> getDiscoveryTSList () {
+    return __discovery_TS_List;
 }
 
 /**
@@ -513,13 +511,13 @@ The following classes can be requested:  TS
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c )
 {
-    List<T> matchingDiscoveryTS = new Vector<T>();
-    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+    List<T> matchingDiscoveryTS = new ArrayList<>();
+    List<TS> discovery_TS_List = getDiscoveryTSList ();
+    if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return matchingDiscoveryTS;
     }
-    for ( TS datats : discovery_TS_Vector ) {
-        // Use the most generic for the base class...
+    for ( TS datats : discovery_TS_List ) {
+        // Use the most generic for the base class.
         if ( (c == TS.class) || (c == datats.getClass()) ) {
             matchingDiscoveryTS.add((T)datats);
         }
@@ -538,8 +536,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{
+CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -551,8 +548,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -617,15 +613,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     Hashtable<String,String> distParams = null;
     if ( (DistributionParameters != null) && (DistributionParameters.length() > 0) && (DistributionParameters.indexOf(":") > 0) ) {
         distParams = new Hashtable<String,String>();
-        // First break map pairs by comma
-        List<String> pairs = new ArrayList<String>();
+        // First break map pairs by comma.
+        List<String> pairs = new ArrayList<>();
         if ( DistributionParameters.indexOf(",") > 0 ) {
             pairs = StringUtil.breakStringList(DistributionParameters, ",", 0 );
         }
         else {
             pairs.add(DistributionParameters);
         }
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             distParams.put(parts[0].trim(), parts[1].trim() );
@@ -633,7 +629,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
     String SortOrder = parameters.getValue ( "SortOrder" );
-    SortOrderType sortOrderType = SortOrderType.HIGH_TO_LOW; // default
+    SortOrderType sortOrderType = SortOrderType.HIGH_TO_LOW; // Default.
     if ( (SortOrder != null) && !SortOrder.equals("") ) {
         sortOrderType = SortOrderType.valueOfIgnoreCase(SortOrder);
     }
@@ -651,7 +647,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (BracketByMonth != null) && (BracketByMonth.length() > 0) ) {
         bracketByMonth = new Integer[12];
         List<String> v = StringUtil.breakStringList ( BracketByMonth,",", 0 );
-        // If less than 12 values are returned, add blanks at end
+        // If less than 12 values are returned, add blanks at end.
         String val;
         for ( int i = 0; i < 12; i++ ) {
         	if ( i >= v.size() ) {
@@ -673,7 +669,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (CustomBracketByMonth != null) && (CustomBracketByMonth.length() > 0) ) {
         customBracketByMonth = new Integer[12][2];
         List<String> v = StringUtil.breakStringList ( CustomBracketByMonth,",", 0 );
-        // If less than 12 values are returned, add nulls at end
+        // If less than 12 values are returned, add nulls at end.
         String val;
         for ( int i = 0; i < 12; i++ ) {
         	if ( i >= v.size() ) {
@@ -683,7 +679,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		val = v.get(i);
         	}
             if ( (val != null) && !val.isEmpty() ) {
-            	// Value should be like 1-2
+            	// Value should be like 1-2.
             	String [] parts = val.split("-");
            		customBracketByMonth[i][0] = Integer.parseInt(parts[0].trim());
            		customBracketByMonth[i][1] = Integer.parseInt(parts[1].trim());
@@ -713,16 +709,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Properties = parameters.getValue ( "Properties" );
     Hashtable<String,String> properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
-        properties = new Hashtable<String,String>();
-        // First break map pairs by comma
-        List<String> pairs = new ArrayList<String>();
+        properties = new Hashtable<>();
+        // First break map pairs by comma.
+        List<String> pairs = new ArrayList<>();
         if ( Properties.indexOf(",") > 0 ) {
             pairs = StringUtil.breakStringList(Properties, ",", 0 );
         }
         else {
             pairs.add(Properties);
         }
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             properties.put(parts[0].trim(), parts[1].trim() );
@@ -744,7 +740,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -752,7 +748,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
@@ -767,7 +763,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -775,7 +771,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
@@ -790,7 +786,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -798,7 +794,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
@@ -806,10 +802,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get the time series to process.
 
     List<TS> tslist = null;
-    boolean createData = true; // Whether to fill in the data array
+    boolean createData = true; // Whether to fill in the data array.
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
-        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        // Get the discovery time series list from all time series above this command.
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request.
         tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
         createData = false;
@@ -869,7 +865,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( nts == 0 ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	if ( TSID.indexOf("${") < 0 ) {
-        		// Only show if properties are not used
+        		// Only show if properties are not used.
 	            message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
 	                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are created at run time.";
 	            Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
@@ -889,7 +885,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     
     if ( warning_count > 0 ) {
-        // Input error (e.g., missing time series)...
+        // Input error (e.g., missing time series).
         message = "Insufficient data to run command.";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
@@ -897,15 +893,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // It is OK if no time series.
     }
 
-	// Now process the time series...
+	// Now process the time series.
 
-	TS ts = null; // Time series to process
-    TS newts = null; // Running statistic time series
+	TS ts = null; // Time series to process.
+    TS newts = null; // Running statistic time series.
     List<TS> discoveryTSList = new ArrayList<TS>();
 	for ( int its = 0; its < nts; its++ ) {
 	    ts = tslist.get(its);
 		try {
-            // Do the processing...
+            // Do the processing.
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Running statistic for " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Calculating running statistic for: \"" + ts.getIdentifier() + "\"." );
@@ -915,11 +911,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			        minimumSampleSize, distributionType, distParams, ProbabilityUnits, sortOrderType,
 			        NormalStart_DateTime, NormalEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime );
 			newts = tsu.runningStatistic(createData);
-	        // Append problems in the low-level code to command status log
+	        // Append problems in the low-level code to command status log.
             for ( String problem : tsu.getProblems() ) {
                 Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,++warning_count),routine,problem );
-                // No recommendation since it is a user-defined check
+                // No recommendation since it is a user-defined check.
                 // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
                 status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.WARNING,
                     problem, "" ) );
@@ -929,7 +925,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             else if ( commandPhase == CommandPhaseType.RUN ) {
                 if ( properties != null ) {
-                    // Assign properties
+                    // Assign properties.
                     Enumeration<String> keys = properties.keys();
                     String key = null;
                     while ( keys.hasMoreElements() ) {
@@ -939,7 +935,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                 }
                 if ( copyProperties != null ) {
-                    // Copy properties from input time series to output
+                    // Copy properties from input time series to output.
                     LinkedHashMap<String, String> map = copyProperties.getLinkedHashMap();
                     String key, newProp;
                     Object o;
@@ -949,7 +945,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             newProp = map.get(key);
                             o = ts.getProperty(key);
                             if ( newProp.equals("*") || newProp.equals("") ) {
-                                // Reset to the original
+                                // Reset to the original.
                                 newProp = key;
                             }
                             if ( o != null ) {
@@ -957,12 +953,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             }
                         }
                         catch ( Exception e ) {
-                            // This should not happen
+                            // This should not happen.
                         }
                     }
                 }
             }
-            // Set the alias in discovery and run mode after properties have been set so that it can use them
+            // Set the alias in discovery and run mode after properties have been set so that it can use them.
 	        if ( (Alias != null) && !Alias.isEmpty() ) {
 	            String alias = Alias;
 	            if ( commandPhase == CommandPhaseType.RUN ) {
@@ -988,7 +984,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 		
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Just want time series headers initialized
+        // Just want time series headers initialized.
         setDiscoveryTSList ( discoveryTSList );
     }
 
@@ -1007,9 +1003,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
-{
-    __discovery_TS_Vector = discovery_TS_Vector;
+private void setDiscoveryTSList ( List<TS> discovery_TS_List ) {
+    __discovery_TS_List = discovery_TS_List;
 }
 
 /**

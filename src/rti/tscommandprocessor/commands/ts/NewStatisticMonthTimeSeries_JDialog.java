@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -81,21 +81,21 @@ private JFrame __parent_JFrame = null;
 private NewStatisticMonthTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
+private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate.
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
 private SimpleJComboBox	__Statistic_JComboBox = null; // Statistic to analyze.
 private JTextField __TestValue_JTextField = null; // Test value for the statistic.
 private JTextField __MonthTestValues_JTextField = null; // Monthly test values for the statistic.
 private JTextField __AllowMissingCount_JTextField = null; // Missing data count allowed in analysis interval.
 private JTextField __MinimumSampleSize_JTextField = null;
-private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period)
+private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period).
 private JTextField __AnalysisEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
-private DateTime_JPanel __AnalysisWindowStart_JPanel = null; // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null; // Fields for analysis window within a year.
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private JTextField __SearchStart_JTextField = null;
-private SimpleJButton __edit_JButton = null; // Edit TSID button
-private SimpleJButton __clear_JButton = null; // Clear NewTSID button
+private SimpleJButton __edit_JButton = null; // Edit TSID button.
+private SimpleJButton __clear_JButton = null; // Clear NewTSID button.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -131,7 +131,7 @@ public void actionPerformed( ActionEvent event )
 		try {
 		    if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
-				// Set some defaults to guide the user
+				// Set some defaults to guide the user.
 				tsident.setInterval(TimeInterval.MONTH, 1);
 				tsident.setScenario(__Statistic_JComboBox.getSelected());
 			}
@@ -198,10 +198,9 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	
+private void checkGUIState() {	
     if ( __AnalysisWindow_JCheckBox.isSelected() ) {
-        // Checked so enable the date panels
+        // Checked so enable the date panels.
         __AnalysisWindowStart_JPanel.setEnabled ( true );
         __AnalysisWindowEnd_JPanel.setEnabled ( true );
     }
@@ -212,11 +211,11 @@ private void checkGUIState()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -275,7 +274,7 @@ private void checkInput ()
         }
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -354,7 +353,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit.
 	
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -386,7 +385,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
@@ -470,21 +469,21 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	__AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
-	__AnalysisWindow_JCheckBox.setVisible(false);// TODO SAM 2014-04-03 Enable later
+	__AnalysisWindow_JCheckBox.setVisible(false);// TODO SAM 2014-04-03 Enable later.
 	__AnalysisWindow_JCheckBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisWindow_JCheckBox, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel analysisWindow_JPanel = new JPanel();
-    analysisWindow_JPanel.setVisible(false); // TODO SAM 2014-04-03 enable later
+    analysisWindow_JPanel.setVisible(false); // TODO SAM 2014-04-03 enable later.
     analysisWindow_JPanel.setLayout(new GridBagLayout());
     __AnalysisWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
     __AnalysisWindowStart_JPanel.addActionListener(this);
     __AnalysisWindowStart_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowStart_JPanel,
         1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval.
     __AnalysisWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
-    __AnalysisWindowEnd_JPanel.setVisible(false); // TODO SAM 2014-04-03 enable later
+    __AnalysisWindowEnd_JPanel.setVisible(false); // TODO SAM 2014-04-03 enable later.
     __AnalysisWindowEnd_JPanel.addActionListener(this);
     __AnalysisWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowEnd_JPanel,
@@ -498,7 +497,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
     //JGUIUtil.addComponent(main_JPanel, new JLabel ("Search start:"),
     //    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SearchStart_JTextField = new JTextField (10);
-    __SearchStart_JTextField.setVisible(false);// TODO 2014-04-03 enable later
+    __SearchStart_JTextField.setVisible(false);// TODO 2014-04-03 enable later.
     __SearchStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SearchStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -515,7 +514,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
 	// South Panel: North
@@ -622,21 +621,21 @@ private void refresh ()
 		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,	JGUIUtil.NONE, null, null ) ) {
 				__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {	// Automatically add to the list after the blank.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
+				// Select.
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {
-			    // Do not select anything...
+			    // Do not select anything.
 			}
 		}
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
 		if ( Statistic == null ) {
-			// Select default...
+			// Select default.
 			__Statistic_JComboBox.select ( 0 );
 		}
 		else {
@@ -670,7 +669,7 @@ private void refresh ()
 		}
         if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
             try {
-                // Add year because it is not part of the parameter value...
+                // Add year because it is not part of the parameter value.
                 DateTime AnalysisWindowStart_DateTime = DateTime.parse ( "0000-" + AnalysisWindowStart );
                 Message.printStatus(2, routine, "Setting window start to " + AnalysisWindowStart_DateTime );
                 __AnalysisWindowStart_JPanel.setDateTime ( AnalysisWindowStart_DateTime );
@@ -682,7 +681,7 @@ private void refresh ()
         }
         if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
             try {
-                // Add year because it is not part of the parameter value...
+                // Add year because it is not part of the parameter value.
                 DateTime AnalysisWindowEnd_DateTime = DateTime.parse ( "0000-" + AnalysisWindowEnd );
                 Message.printStatus(2, routine, "Setting window end to " + AnalysisWindowEnd_DateTime );
                 __AnalysisWindowEnd_JPanel.setDateTime ( AnalysisWindowEnd_DateTime );
@@ -703,7 +702,7 @@ private void refresh ()
             __SearchStart_JTextField.setText( SearchStart );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	checkGUIState();
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
@@ -742,16 +741,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

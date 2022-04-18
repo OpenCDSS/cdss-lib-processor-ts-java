@@ -1977,17 +1977,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	tempList.add(ts1);
 					   	tempList.add(ts2);
 					   	// Time zone is not included in the following list.
-					   	List<DateTime> dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
+					   	List<DateTime> dateTimeList = new ArrayList<>();
+					   	if ( (date1 != null) && (date2 != null) ) {
+					   		TSUtil.createTSDateTimeList ( tempList, date1, date2 );
+					   	}
 					   	// Because value lookups do a time comparison, the time zone in the iterator must be ignored in each time series
 					   	// do this by making sure the lookup time zone is the same as in the time series.
-					   	String tz1 = ts1.getDate1().getTimeZoneAbbreviation();
-					   	String tz2 = ts2.getDate1().getTimeZoneAbbreviation();
+					   	String tz1 = "";
+					   	if ( ts1.getDate1() != null ) {
+					   		tz1 = ts1.getDate1().getTimeZoneAbbreviation();
+					   	}
+					   	String tz2 = "";
+					   	if ( ts2.getDate1() != null ) {
+					   		tz2 = ts2.getDate1().getTimeZoneAbbreviation();
+					   	}
 					   	if ( dateTimeList.size() > 0 ) {
 					   		if ( dateTimeList.get(0).getTimeZoneAbbreviation().isEmpty() ) {
-					   			if ( !ts1.getDate1().getTimeZoneAbbreviation().isEmpty() ) {
+					   			if ( !tz1.isEmpty() ) {
 					   				doSetTz1 = true;
 					   			}
-					   			if ( !ts2.getDate1().getTimeZoneAbbreviation().isEmpty() ) {
+					   			if ( !tz2.isEmpty() ) {
 					   				doSetTz2 = true;
 					   			}
 					   		}
@@ -2030,9 +2039,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	tsi = ts1.iterator(date1,date2);
 					   	// Because value lookups do a time comparison, the time zone in the iterator must be ignored in each time series
 					   	// do this by making sure the lookup time zone is the same as in the time series.
-					   	String tz1 = ts1.getDate1().getTimeZoneAbbreviation();
-					   	String tz2 = ts2.getDate1().getTimeZoneAbbreviation();
-					   	if ( !ts1.getDate1().getTimeZoneAbbreviation().equals(ts2.getDate1().getTimeZoneAbbreviation()) ) {
+					   	String tz1 = "";
+					   	if ( ts1.getDate1() != null ) {
+					   		tz1 = ts1.getDate1().getTimeZoneAbbreviation();
+					   	}
+					   	String tz2 = "";
+					   	if ( ts2.getDate1() != null ) {
+					   		tz2 = ts2.getDate1().getTimeZoneAbbreviation();
+					   	}
+					   	if ( !tz1.equals(tz2) ) {
 					   		// Time zones don't match so will need to set in second time series.
 					   		doSetTz2 = true;
 					   	}

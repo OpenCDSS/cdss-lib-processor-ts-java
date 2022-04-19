@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -328,8 +328,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
@@ -591,11 +590,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(commandPhase);
 	}
 	
-	String SearchFolder = parameters.getValue ( "SearchFolder" ); // Expanded below
-    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
-    String SetupCommandFile = parameters.getValue ( "SetupCommandFile" ); // Expanded below
-    String TestResultsFile = parameters.getValue ( "TestResultsFile" ); // Expanded below
-    String EndCommandFile = parameters.getValue ( "EndCommandFile" ); // Expanded below
+	String SearchFolder = parameters.getValue ( "SearchFolder" ); // Expanded below.
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
+    String SetupCommandFile = parameters.getValue ( "SetupCommandFile" ); // Expanded below.
+    String TestResultsFile = parameters.getValue ( "TestResultsFile" ); // Expanded below.
+    String EndCommandFile = parameters.getValue ( "EndCommandFile" ); // Expanded below.
 	String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String [] FilenamePattern_Java = new String[0];
 	if ( FilenamePattern == null ) {

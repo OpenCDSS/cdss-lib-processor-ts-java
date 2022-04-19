@@ -977,8 +977,7 @@ private WindowListener _tsview_window_listener = null;
 Construct a TSEngine to work in parallel with a TSCommandProcessor.
 @param ts_processor TSCommandProcessor instance that is controlling processing.
 */
-protected TSEngine ( TSCommandProcessor ts_processor )
-{
+protected TSEngine ( TSCommandProcessor ts_processor ) {
 	__ts_processor = ts_processor;
 }
 
@@ -1906,9 +1905,8 @@ private boolean getCommandsShouldClearRunStatus ()
 /**
 Return the list of data stores known to the TSEngine.
 */
-protected List<DataStore> getDataStoreList()
-{
-    return __dataStoreList;
+protected List<DataStore> getDataStoreList() {
+    return this.__dataStoreList;
 }
 
 /**

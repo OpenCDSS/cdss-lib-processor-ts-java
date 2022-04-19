@@ -295,7 +295,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
 		Message.printStatus ( 2, routine,
-		"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
+			"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 		
 		// Create a runner for the commands, which will create a new command processor:
 		// - the initial application properties from the current processor are passed to the new processor
@@ -304,9 +304,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			((TSCommandProcessor)processor).getPluginCommandClasses());
         // This will set the initial working directory of the runner to that of the command file.
 		runner.readCommandFile(InputFile_full, runDiscovery );
+
+		// Must set the datastores regardless of whether enabled because they are used by "@enabledif".
+        TSCommandProcessor runnerProcessor = runner.getProcessor();
+        if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
+            // All datastores are transferred.
+            runnerProcessor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+            runnerProcessor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+            // Also share the datastore substitution map.
+            runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
+        }
+
 		// If the command file is not enabled, don't need to initialize or process.
 		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case.
+		Message.printStatus ( 2, routine,
+			"  Checking whether the command file is enabled: " + InputFile_full );
 		boolean isEnabled = runner.isCommandFileEnabled();
+		Message.printStatus ( 2, routine, "  Command file is enabled? " + isEnabled);
         // Default expected status of running command file is success.
         String expectedStatus = CommandStatusType.SUCCESS.toString();
         if ( ExpectedStatus != null ) {
@@ -315,6 +329,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		if ( isEnabled ) {
             // Set the database connection information:
             // - TODO SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
+			/* TODO SAM 2022-04-19 moved to above because datastores are needed for "@enabledif" checks:
+			 * - remove when tested
             TSCommandProcessor runnerProcessor = runner.getProcessor();
             if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
                 // All datastores are transferred.
@@ -323,6 +339,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 // Also share the datastore substitution map.
                 runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
             }
+            */
             
             /*
              * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are

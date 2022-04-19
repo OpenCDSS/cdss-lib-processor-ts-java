@@ -25,6 +25,7 @@ package rti.tscommandprocessor.core;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.IO.Command;
@@ -66,7 +67,29 @@ public TSCommandFileRunner ( PropList initProps, List<Class> pluginCommandClassL
 }
 
 /**
-Determine whether the command file requirements are met.
+Determine whether the command file "@enabledif" requirements are met.
+This is used in the TSTool RunCommands() command to determine if a command file meets requirements to be enabled,
+typically version compatibility.
+This method is static because it is called for single commands and full command file.
+Syntax for command files is, for example:
+<pre>
+#@enabledif application tstool version > x.y.z
+#@enabledif datastore HydroBase version >= YYYYMMDD
+#@enabledif user someuser == abc
+</pre>
+@param processor The command processor.
+@param commands list of commands to check.
+If null or empty, process all the commands for the processor, such as when called from RunCommands command.
+If a single command, then checking syntax errors in a comment from the command processor.
+@return RequirementCheckList object that contains check criteria, result, and justification of the result.
+If ANY comments have "@enabledif" statements that evaluate to false, the overall check result will be false, and otherwise true.
+*/
+public static RequirementCheckList checkEnabled ( TSCommandProcessor processor, List<Command> commands ) {
+	return checkRequirementsForAnnotation ( processor, commands, "@enabledif");
+}
+
+/**
+Determine whether the command file "@require" requirements are met.
 This is used in the TSTool RunCommands() command to determine if a command file meets requirements to run,
 typically version compatibility.
 This method is static because it is called for single commands and full command file.
@@ -81,12 +104,37 @@ Syntax for command files is, for example:
 If null or empty, process all the commands for the processor, such as when called from RunCommands command.
 If a single command, then checking syntax errors in a comment from the command processor.
 @return RequirementCheckList object that contains check criteria, result, and justification of the result.
-If any comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
+If ANY comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
 */
 public static RequirementCheckList checkRequirements ( TSCommandProcessor processor, List<Command> commands ) {
-	String routine = TSCommandFileRunner.class.getSimpleName() + ".areRequirementsMet";
+	return checkRequirementsForAnnotation ( processor, commands, "@require");
+}
+
+/**
+Determine whether the command file requirements are met.
+This is used in the TSTool RunCommands() command to determine if a command file meets requirements to run,
+typically version compatibility.
+This method is static because it is called for single commands and full command file.
+Syntax for command files is, for example:
+<pre>
+#@require application tstool version > x.y.z
+#@require datastore HydroBase version >= YYYYMMDD
+#@require user someuser == abc
+</pre>
+@param processor The command processor.
+@param commands list of commands to check.
+If null or empty, process all the commands for the processor, such as when called from RunCommands command.
+If a single command, then checking syntax errors in a comment from the command processor.
+@param annotation annotation to check, either "@require" or "@enabledif"
+@return RequirementCheckList object that contains check criteria, result, and justification of the result.
+If any comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
+*/
+private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandProcessor processor, List<Command> commands, String annotation ) {
+	String routine = TSCommandFileRunner.class.getSimpleName() + ".checkRequirementsForAnnotation";
 	RequirementCheckList checkList = new RequirementCheckList();
 	String message;
+	// Use upper case annotation for string comparisons.
+	String annotationUpper = annotation.toUpperCase();
 	//boolean requirementsMet = true; // Default until indicated otherwise.
 	if ( (commands == null) || (commands.size() == 0) ) {
 		commands = processor.getCommands();
@@ -106,74 +154,81 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    			commandStringUpper = commandString.toUpperCase();
    			// The following handles #@require and # @require (whitespace after comment):
    			// - get the string starting with @require for parsing below
-   			pos = commandStringUpper.indexOf("@REQUIRE");
+   			pos = commandStringUpper.indexOf(annotationUpper);
    			if ( pos > 0 ) {
-   				// Detected a @require annotation:
-   				// - check the token following @require
-   				String reqString = commandString.substring(pos).trim();
+   				// Detected a @require or @enabledif annotation based on the passed in 'annotation':
+   				// - check the token following @require or @enabledif
+   				// - 'reqString' includes @ but not leading #
+   				String reqString = commandString.substring(pos - 1).trim();
    				// Create a requirement check object:
    				// - add here to make sure it is added
    				// - further populate below
    				RequirementCheck check = new RequirementCheck (reqString);
    				checkList.add(check);
-   				Message.printStatus(2, routine, "Detected @REQUIRE: " + commandString);
-   				if ( commandString.length() > (pos + 8) ) {
-   					// Have trailing characters after @require so can continue processing:
+   				Message.printStatus(2, routine, "Detected " + annotation + ": " + commandString);
+   				if ( commandString.length() > (pos + annotationUpper.length()) ) {
+   					// Have trailing characters after @require or @enabledif so can continue processing:
    					// - split the comment string
    					// - does not include # or any trailing spaces
-   					// - part[0] is @require
+   					// - part[0] is @require or @enabledif
    					String [] requireParts = commandString.substring(pos).split(" ");
-   					Message.printStatus(2, routine, "@REQUIRE comment has " + requireParts.length + " parts.");
+   					Message.printStatus(2, routine, annotation + " comment has " + requireParts.length + " parts.");
    					if ( requireParts.length > 1 ) {
    						// Have at least the requirement type.
    						if ( requireParts[1].trim().toUpperCase().startsWith("APP") ) {
-   							String example = "\n  Example: #@require application TSTool version > 1.2.3";
+   							String example = "\n  Example: #" + annotation + " application TSTool version > 1.2.3";
    							Message.printStatus(2, routine, "Detected application requirement.");
    							if ( requireParts.length < 6 ) {
-   								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
-   								check.setIsRequirementMet(checkerName,false, message);
+   								message = "Error processing " + annotation + " - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
+   								check.setIsRequirementMet(checkerName, false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
    								//appName = parts[2].trim(); // For example:  TSTool or StateDMI (used for requirement readability, ignored in check)
    								reqProperty = requireParts[3].trim();
+   								Message.printStatus(2, routine, annotation + " requirement property: " + reqProperty);
    								if ( reqProperty.equalsIgnoreCase("version") ) {
    									// Checking the application version.
-   									operator = requireParts[4].trim(); // Operator to compare the data
+   									operator = requireParts[4].trim(); // Operator to compare the data.
    									reqVersion = requireParts[5].trim(); // Version criteria to compare.
    									// Get the version for the application, currently there is no more flexibility to check other application properties.
    									//String appVersion = processor.getStateDmiVersionString();
    									String appVersion = IOUtil.getProgramVersion();
+   									Message.printStatus(2, routine, annotation + " application version: " + appVersion);
    									if ( (appVersion == null) || appVersion.isEmpty() ) {
-   										message = "Can't check application version for @require (application version is unknown): " + commandString + example;
-   										check.setIsRequirementMet(checkerName,false, message);
+   										message = "Can't check application version for " + annotation + " (application version is unknown): " + commandString + example;
+   										check.setIsRequirementMet(checkerName, false, message);
    										Message.printWarning(3, routine, message);
    									}
    									else if ( (reqVersion == null) || reqVersion.isEmpty() ) {
-   										message = "Don't know how to determine application version for @require (no version given): " + commandString + example;
-   										check.setIsRequirementMet(checkerName,false, message);
+   										message = "Don't know how to determine application version for " + annotation + " (no version given): " + commandString + example;
+   										check.setIsRequirementMet(checkerName, false, message);
    										Message.printWarning(3, routine, message);
    									}
    									else {
    										// If the application version contains a space such as '(x.x.x (YYYY-MM-DD)', only use the first part.
    										if ( appVersion.indexOf(' ') > 0) {
    											appVersion = appVersion.substring(0,appVersion.indexOf(' '));
+   											Message.printStatus(2, routine, annotation + " application version after parsing: " + appVersion);
    										}
-   										// Check the app version against the requirement, using semantic version comparison.
+   										// Check the application version against the requirement, using semantic version comparison.
    										// - only compare the first 3 parts because modifier can cause issues comparing.
    										if ( !StringUtil.compareSemanticVersions(appVersion, operator, reqVersion, 3) ) {
    											message = "Application version (" + appVersion + ") does not meet requirement." + example;
-   											check.setIsRequirementMet(checkerName,false, message);
+   											Message.printStatus(2, routine, message );
+   											check.setIsRequirementMet(checkerName, false, message);
    										}
    										else {
    											// Must set the requirement as met because the default is false.
-   											check.setIsRequirementMet(checkerName,true, "");
+   											check.setIsRequirementMet(checkerName, true, "");
+   											message = "Application version (" + appVersion + ") does meet requirement.";
+   											Message.printStatus(2, routine, message );
    										}
    									}
    								}
    								else {
-   									message = "@require application property (" + reqProperty + ") is not recognized: " + commandString + example;
-   									check.setIsRequirementMet(checkerName,false, message);
+   									message = annotation + " application property (" + reqProperty + ") is not recognized: " + commandString + example;
+   									check.setIsRequirementMet(checkerName, false, message);
    									Message.printWarning(3, routine, message);
    								}
    							}
@@ -181,12 +236,12 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    						else if ( requireParts[1].trim().equalsIgnoreCase("DATASTORE") ) {
    							// For example:
    							// @require datastore HydroBase version >= 20200720
-   							String example = "\n  Example: #@require datastore HydroBase version > 20200720";
+   							String example = "\n  Example: #" + annotation + " datastore HydroBase version > 20200720";
    							Message.printStatus(2, routine, "Detected datastore requirement.");
    							if ( requireParts.length < 6 ) {
-   								message = "Error processing @require - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
+   								message = "Error processing " + annotation + " - expecting 6+ tokens (have " + requireParts.length + "): " + commandString + example;
   								// Let the datastore fill in its checker name to override the initial value.
-								check.setIsRequirementMet(checkerName,false, message);
+								check.setIsRequirementMet(checkerName, false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
@@ -213,7 +268,7 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    									else {
    										// The datastore does not implement a requirement checker so fail by default.
    										message = "Datastore code DOES NOT implement requirement checker - can't check requirement.";
-   										check.setIsRequirementMet(checkerName,false, message);
+   										check.setIsRequirementMet(checkerName, false, message);
    										Message.printWarning(3, routine, message);
    									}
    								}
@@ -223,10 +278,10 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							// For example:
    							// @require user == username
    							Message.printStatus(2, routine, "Detected user requirement.");
-   							String example = "\n  Example: #@require user != root";
+   							String example = "\n  Example: #" + annotation + " user != root";
    							if ( requireParts.length < 4 ) {
-   								message = "Error processing @require - expecting 4+ tokens (have " + requireParts.length + "): " + commandString + example;
-								check.setIsRequirementMet(checkerName,false, message);
+   								message = "Error processing " + annotation + " - expecting 4+ tokens (have " + requireParts.length + "): " + commandString + example;
+								check.setIsRequirementMet(checkerName, false, message);
    								Message.printWarning(3, routine, message);
    							}
    							else {
@@ -237,26 +292,26 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
    							}
    						}
    						else {
-   							message = "Error processing @require - unknown type: " + requireParts[1];
-							check.setIsRequirementMet(checkerName,false, message);
+   							message = "Error processing " + annotation + " - unknown type: " + requireParts[1];
+							check.setIsRequirementMet(checkerName, false, message);
 							Message.printWarning(3, routine, message);
    						}
    						// If failure here and no message have a coding problem because message needs to be non-empty.
    						if ( ! check.isRequirementMet() && check.getFailReason().isEmpty() ) {
-   							message = "@require was not met but have empty fail message - need to fix software.";
-							check.setIsRequirementMet(checkerName,false, message);
+   							message = annotation + " was not met but have empty fail message - need to fix software.";
+							check.setIsRequirementMet(checkerName, false, message);
 							Message.printWarning(3, routine, message);
    						}
                     }
    					else {
-  						message = "Error processing @require - expecting 2+ tokens (have " + requireParts.length + ").";
-						check.setIsRequirementMet(checkerName,false, message);
+  						message = "Error processing " + annotation + " - expecting 2+ tokens (have " + requireParts.length + ").";
+						check.setIsRequirementMet(checkerName, false, message);
    						Message.printWarning(3, routine, message);
    					}
                 }
    				else {
-  					message = "Error processing @require - expecting at least 2+ tokens but line is too short: " + commandString;
-					check.setIsRequirementMet(checkerName,false, message);
+  					message = "Error processing " + annotation + " - expecting at least 2+ tokens but line is too short: " + commandString;
+					check.setIsRequirementMet(checkerName, false, message);
 					Message.printWarning(3, routine, message);
 					// Throw an exception because bad syntax.
    					throw new RuntimeException (message);
@@ -271,32 +326,78 @@ public static RequirementCheckList checkRequirements ( TSCommandProcessor proces
 /**
 Determine whether the command file is enabled.
 This is used in the TSTool RunCommands() command to determine if a command file is enabled.
-@return false if any comments have "@enabled False", otherwise true
+@return false if any comments have "@enabled False" or "@enabledif" conditions that fail,
+otherwise return true
 */
 public boolean isCommandFileEnabled () {
+	String routine = getClass().getSimpleName() + ".isCommandFileEnabled";
     List<Command> commands = __processor.getCommands();
-    String C;
-    int pos;
+    // Position of @annotation.
+    int posEnabled;
+    int posEnabledIf;
+    // Default is enabled:
+    // - will be set to false if requirements are defined that are not met
+    boolean enabledOverall = true;
     for ( Command command : commands ) {
-        C = command.toString().toUpperCase();
-        pos = C.indexOf("@ENABLED");
-        if ( pos >= 0 ) {
+        String commandStringUpper = command.toString().toUpperCase();
+        posEnabledIf = commandStringUpper.indexOf("@ENABLEDIF");
+        posEnabled = commandStringUpper.indexOf("@ENABLED");
+        // Check the longer string first because the first part of the annotation is the same.
+        if ( posEnabledIf > 0 ) {
+           	// Check @enabledif comments for syntax errors:
+            // - need to be correct to ensure that tests run properly
+            // - when running automated tests with RunCommands, these conditions are checked for the entire command file
+            //   before even attempting to run so FAILURE will not occur in test (it won't even be run)
+            // - TODO smalers 2021-01-03 evaluate whether this can be put in Comment_Command.runCommand(),
+            //   but currently the logic depends on the processor.
+
+        	// Currently only allow the annotations at the front of a comment, otherwise could get confused.
+        	String lead = commandStringUpper.substring(0,posEnabledIf);
+        	if ( !lead.matches("^[# ]+$") ) {
+        		// Don't check the annotation because it is not an expected annotation.
+        		continue;
+        	}
+            try {
+            	List<Command> commentList = new ArrayList<>();
+                commentList.add(command);
+                // Single comment is added to the list to check.
+        	    RequirementCheckList checks = TSCommandFileRunner.checkEnabled(__processor, commentList);
+        	    if ( !checks.areRequirementsMet() ) {
+        	    	// @enabledif requirements were not met, so the command file is NOT enabled.
+        	    	enabledOverall = false;
+        	    }
+            }
+            catch ( Exception e ) {
+        	    // Syntax error:
+                // - mark the command with an error
+                // - set the command status information
+				Message.printWarning(3, routine, e);
+           	}
+        }
+        else if ( posEnabled > 0 ) {
             //Message.printStatus(2, "", "Detected tag: " + C);
             // Check the token following @enabled
-            if ( C.length() > (pos + 8) ) {
-                // Have trailing characters
-                String [] parts = C.substring(pos).split(" ");
+
+        	// Currently only allow the annotations at the front of a comment, otherwise could get confused.
+        	String lead = commandStringUpper.substring(0,posEnabled);
+        	if ( !lead.matches("^[# ]+$") ) {
+        		// Don't check the annotation because it is not an expected annotation.
+        		continue;
+        	}
+            if ( commandStringUpper.length() > (posEnabled + 8) ) {
+                // Have trailing characters so can check for True/False.
+                String [] parts = commandStringUpper.substring(posEnabled).split(" ");
                 if ( parts.length > 1 ) {
                     if ( parts[1].trim().equals("FALSE") ) {
                         //Message.printStatus(2, "", "Detected false");
-                        return false;
+                    	enabledOverall = false;
                     }
                 }
             }
         }
     }
     //Message.printStatus(2, "", "Did not detect false");
-    return true;
+    return enabledOverall;
 }
 
 /**

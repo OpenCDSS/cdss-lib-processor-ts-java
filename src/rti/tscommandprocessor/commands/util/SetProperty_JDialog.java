@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
-private SetProperty_Command	__command = null; // Command to edit
+private SetProperty_Command	__command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
@@ -115,7 +115,7 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else {
-		// Choices...
+		// Choices.
 		refresh();
 	}
 }
@@ -133,7 +133,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
@@ -196,7 +196,7 @@ private void checkInput ()
 	}
 
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -281,7 +281,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for setting
+    // Panel for setting.
     int ySet = -1;
     JPanel set_JPanel = new JPanel();
     set_JPanel.setLayout( new GridBagLayout() );
@@ -331,7 +331,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
     List<String> typeChoices = new ArrayList<>();
-    typeChoices.add ( "" ); // Use when setting special values or removing
+    typeChoices.add ( "" ); // Use when setting special values or removing.
     typeChoices.add ( __command._Boolean );
     typeChoices.add ( __command._DateTime );
     typeChoices.add ( __command._Double );
@@ -406,8 +406,8 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(java_JPanel, new JLabel ( "If Java property is undefined?:"),
 		0, ++yJava, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfJavaPropertyUndefined_JComboBox = new SimpleJComboBox ( false );
-	List<String> notFoundChoices = new ArrayList<String>();
-	notFoundChoices.add ( "" );	// Default
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -420,7 +420,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Optional - action if property undefined (default=" + __command._Warn + ")."), 
 		3, yJava, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for special values
+    // Panel for special values.
     int ySpecial = -1;
     JPanel special_JPanel = new JPanel();
     special_JPanel.setLayout( new GridBagLayout() );
@@ -448,7 +448,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEmpty_JComboBox = new SimpleJComboBox ( false );
 	List<String> emptyChoices = new ArrayList<>();
-	emptyChoices.add ( "" );	// Default
+	emptyChoices.add ( "" );	// Default.
 	emptyChoices.add ( __command._True );
 	__SetEmpty_JComboBox.setData(emptyChoices);
 	__SetEmpty_JComboBox.select ( 0 );
@@ -463,7 +463,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNaN_JComboBox = new SimpleJComboBox ( false );
 	List<String> nanChoices = new ArrayList<>();
-	nanChoices.add ( "" );	// Default
+	nanChoices.add ( "" );	// Default.
 	nanChoices.add ( __command._True );
 	__SetNaN_JComboBox.setData(nanChoices);
 	__SetNaN_JComboBox.select ( 0 );
@@ -478,7 +478,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNull_JComboBox = new SimpleJComboBox ( false );
 	List<String> nullChoices = new ArrayList<>();
-	nullChoices.add ( "" );	// Default
+	nullChoices.add ( "" );	// Default.
 	nullChoices.add ( __command._True );
 	__SetNull_JComboBox.setData(nullChoices);
 	__SetNull_JComboBox.select ( 0 );
@@ -490,7 +490,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 
-    // Panel for unset/remove
+    // Panel for unset/remove.
     int yUnset = -1;
     JPanel unset_JPanel = new JPanel();
     unset_JPanel.setLayout( new GridBagLayout() );
@@ -512,7 +512,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		0, ++yUnset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RemoveProperty_JComboBox = new SimpleJComboBox ( false );
 	List<String> removeChoices = new ArrayList<>();
-	removeChoices.add ( "" );	// Default
+	removeChoices.add ( "" );	// Default.
 	removeChoices.add ( __command._True );
 	__RemoveProperty_JComboBox.setData(removeChoices);
 	__RemoveProperty_JComboBox.select ( 0 );
@@ -523,7 +523,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Optional - remove/unset the property"), 
 		3, yUnset, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for math
+    // Panel for math.
     int yMath = -1;
     JPanel math_JPanel = new JPanel();
     math_JPanel.setLayout( new GridBagLayout() );
@@ -602,7 +602,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -649,7 +649,7 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
@@ -690,7 +690,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		PropertyName = props.getValue ( "PropertyName" );
         PropertyType = props.getValue ( "PropertyType" );
 		PropertyValue = props.getValue ( "PropertyValue" );
@@ -709,7 +709,7 @@ private void refresh ()
 	         __PropertyName_JTextField.setText ( PropertyName );
 	    }
         if ( PropertyType == null ) {
-            // Select default...
+            // Select default.
             __PropertyType_JComboBox.select ( 0 );
         }
         else {
@@ -737,10 +737,11 @@ private void refresh ()
 		}
 		else {
             if ( (IfJavaPropertyUndefined == null) || IfJavaPropertyUndefined.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfJavaPropertyUndefined_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfJavaPropertyUndefined parameter \"" + IfJavaPropertyUndefined +
@@ -748,7 +749,7 @@ private void refresh ()
 			}
 		}
         if ( (SetEmpty == null) || SetEmpty.isEmpty() ) {
-            // Select default...
+            // Select default.
             __SetEmpty_JComboBox.select ( 0 );
         }
         else {
@@ -764,7 +765,7 @@ private void refresh ()
             }
         }
         if ( (SetNaN == null) || SetNaN.isEmpty() ) {
-            // Select default...
+            // Select default.
             __SetNull_JComboBox.select ( 0 );
         }
         else {
@@ -780,7 +781,7 @@ private void refresh ()
             }
         }
         if ( (SetNull == null) || SetNull.isEmpty() ) {
-            // Select default...
+            // Select default.
             __SetNull_JComboBox.select ( 0 );
         }
         else {
@@ -796,7 +797,7 @@ private void refresh ()
             }
         }
         if ( (RemoveProperty == null) || RemoveProperty.isEmpty() ) {
-            // Select default...
+            // Select default.
             __RemoveProperty_JComboBox.select ( 0 );
         }
         else {
@@ -824,7 +825,7 @@ private void refresh ()
 		    __Divide_JTextField.setText ( Divide );
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyType = __PropertyType_JComboBox.getSelected();
 	PropertyValue = __PropertyValue_JTextField.getText().trim();
@@ -865,14 +866,14 @@ and the dialog is closed.
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

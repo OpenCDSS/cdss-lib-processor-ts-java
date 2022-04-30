@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	// If the input file does not exist, warn the user...
+	// If the input file does not exist, warn the user.
 
 	//String working_dir = null;
 	
@@ -122,7 +122,7 @@ throws InvalidCommandParameterException
     }
 	try {
 	    Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
+		// Working directory is available so use it.
 		if ( o != null ) {
 			//working_dir = (String)o;
 		}
@@ -143,8 +143,8 @@ throws InvalidCommandParameterException
                         message, "Specify an existing input file." ) );
 	}
 	else if ( InputFile.indexOf("${") < 0 ) {
-		// Can only check if no property in path
-		/* Allow since might be dynamically created - TODO SAM 2015-12-06 Add warning in run code
+		// Can only check if no property in path.
+		/* Allow since might be dynamically created - TODO SAM 2015-12-06 Add warning in run code.
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -170,7 +170,7 @@ throws InvalidCommandParameterException
 		*/
 	}
     
-	//  Check for invalid parameters...
+	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(12);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
@@ -202,15 +202,14 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new ReadTableFromJSON_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
@@ -280,7 +279,7 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 		}
 		else if ( value instanceof List ) {
 			// Have to dig a bit deeper:
-			// - loop through list items.
+			// - loop through list items
 			// - maps and lists are the two collection types so don't need to navigate any other object types
 			List<?> objectList = (List<?>) value;
 			if ( Message.isDebugOn ) {
@@ -313,14 +312,13 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 The following classes can be requested:  DataTable
-
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new Vector<>();
         v.add ( (T)table );
     }
     return v;
@@ -432,7 +430,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
     int [] countString = new int[numColumns];
     int [] lenmaxString = new int[numColumns];
     int [] precision = new int[numColumns];
-    int [] precisionString = new int[numColumns]; // If a string but contains period, the precision based on the string
+    int [] precisionString = new int[numColumns]; // If a string but contains period, the precision based on the string.
 
     // Additional granularity for array columns.
     boolean [] isArray = new boolean[numColumns];
@@ -811,7 +809,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
         	tableFieldType[icol] = TableField.DATA_TYPE_STRING;
         	if ( lenmaxString[icol] <= 0 ) {
             	// Likely that the entire column of numbers is empty so set the width to the field name
-            	// width if available)
+            	// width if available).
             	tableField.setWidth (tableFields.get(icol).getName().length() );
         	}
         	else {
@@ -835,8 +833,8 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
     	else if ( (countInt[icol] > 0) && (countString[icol] == 0) &&
     	    ((countDouble[icol] == 0) || (countInt[icol] == countDouble[icol])) ) {
     	    // All data are integers so assume column type is integer.
-    	    // Note that integers also meet the criteria of double, hence the extra check above
-    	    // TODO SAM 2013-02-17 Need to handle DATA_TYPE_LONG
+    	    // Note that integers also meet the criteria of double, hence the extra check above.
+    	    // TODO SAM 2013-02-17 Need to handle DATA_TYPE_LONG.
     	    tableField.setDataType(TableField.DATA_TYPE_INT);
     	    tableFieldType[icol] = TableField.DATA_TYPE_INT;
     	    tableField.setWidth (lenmaxString[icol] );
@@ -876,7 +874,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
             tableFieldType[icol] = TableField.DATA_TYPE_STRING;
             if ( lenmaxString[icol] <= 0 ) {
                 // Likely that the entire column of numbers is empty so set the width to the field name
-                // width if available)
+                // width if available).
                 tableField.setWidth (tableFields.get(icol).getName().length() );
             }
             else {
@@ -909,9 +907,9 @@ private boolean isArrayColumn ( String name, String [] arrayColumns ) {
 	return false;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand() method.
 
-// TODO SAM 2015-12-05 Need to evaluate how best to flatten arrays embedded in objects
+// TODO SAM 2015-12-05 Need to evaluate how best to flatten arrays embedded in objects.
 /**
 Read a JSON file into a table object.
 */
@@ -928,55 +926,55 @@ throws FileNotFoundException, IOException
     	Message.printDebug(2, routine, "Begin main array");
     }
     jsonReader.beginArray();
-    // Read until there are no more objects in the array
-    // If the first object, set up the table columns
+    // Read until there are no more objects in the array.
+    // If the first object, set up the table columns.
     boolean tableInitialized = false;
-    int tableColumnAdded = 0; // Used to handle table initialization
-    int row = -1; // Row in table
-    int col = 0; // Column in table
-    int colType = 0; // Column type when adding/using table
-    int objectCount = 0; // Count of objects processed, used with "top"
-    double dvalue = 0; // Number value for token
-    String svalue = ""; // String value for token
-    boolean bvalue = false; // Boolean value for token
-    int arrayRowStart = -1, arrayRowEnd = -1, arrayColStart = -1; // Used to repeat array rows for columns not in embedded array
-    int objectArrayCount = 0; // Count of arrays embedded in top-level object - only allow 1 active for flattening
-    boolean excludeName = false; // Whether or not to exclude a name
-    // Loop through top-level objects in array
+    int tableColumnAdded = 0; // Used to handle table initialization.
+    int row = -1; // Row in table.
+    int col = 0; // Column in table.
+    int colType = 0; // Column type when adding/using table.
+    int objectCount = 0; // Count of objects processed, used with "top".
+    double dvalue = 0; // Number value for token.
+    String svalue = ""; // String value for token.
+    boolean bvalue = false; // Boolean value for token.
+    int arrayRowStart = -1, arrayRowEnd = -1, arrayColStart = -1; // Used to repeat array rows for columns not in embedded array.
+    int objectArrayCount = 0; // Count of arrays embedded in top-level object - only allow 1 active for flattening.
+    boolean excludeName = false; // Whether or not to exclude a name.
+    // Loop through top-level objects in array:
     // - may have simple name/value pairs but some names may correspond to arrays
     // - currently only allow one array value and handle flattening
     while (jsonReader.hasNext()) {
-    	// Table row is the object count, which is zero-indexed and only incremented at end of this loop
-    	// Process the objects in the top-level array
+    	// Table row is the object count, which is zero-indexed and only incremented at end of this loop.
+    	// Process the objects in the top-level array.
     	arrayRowStart = -1;
     	arrayRowEnd = -1;
     	arrayColStart = -1;
-    	objectArrayCount = 0; // Within the object
-    	++row; // Goes to 0 on first iteration
-    	// In the array so get the next object
+    	objectArrayCount = 0; // Within the object.
+    	++row; // Goes to 0 on first iteration.
+    	// In the array so get the next object.
         if ( Message.isDebugOn ) {
         	Message.printDebug(2, routine, "Begin object");
         }
         jsonReader.beginObject();
         while (jsonReader.hasNext()) {
-	    	// Process name/value pairs until exhausted
-        	// Always get the name
+	    	// Process name/value pairs until exhausted.
+        	// Always get the name.
 	    	String name = jsonReader.nextName();
 	    	excludeName = readJSON_ExcludeName(name,excludeNames);
-	    	// Peek ahead to determine the value type of the next value so that it can be handled below
+	    	// Peek ahead to determine the value type of the next value so that it can be handled below.
 	    	JsonToken token = jsonReader.peek();
-	    	// List token types in likely order of occurrence to improve performance
+	    	// List token types in likely order of occurrence to improve performance.
 	    	if ( token == JsonToken.STRING ) {
 	    		svalue = jsonReader.nextString();
 	    		if ( !tableInitialized ) {
-	    			colType = TableField.DATA_TYPE_STRING; // Default
-	    			// Check for column type override
+	    			colType = TableField.DATA_TYPE_STRING; // Default.
+	    			// Check for column type override.
 	    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
 	    			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
 	    				++tableColumnAdded;
 	    			}
 	    		}
-	    		// Set the table cell value
+	    		// Set the table cell value.
 	    		if ( !excludeName ) {
 		    		try {
 		    			col = table.getFieldIndex(name);
@@ -988,7 +986,7 @@ throws FileNotFoundException, IOException
 		    		if ( col >= 0 ) {
 		    			try {
 			    			if ( colType == TableField.DATA_TYPE_STRING ) {
-			    				// Simple set
+			    				// Simple set.
 			    				table.setFieldValue(row, col, svalue, true);
 			    			}
 			    			else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
@@ -1000,13 +998,13 @@ throws FileNotFoundException, IOException
 		    					table.setFieldValue(row, col, i, true);
 			    			}
 			    			else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-			    				// Parse the date/time
+			    				// Parse the date/time.
 			    				table.setFieldValue(row,col,DateTime.parse(svalue));
 			    			}
 		    			}
 		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages
-		    				// Leave as initial null value in table
+		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
+		    				// Leave as initial null value in table.
 		    			}
 		    		}
 	    		}
@@ -1015,8 +1013,8 @@ throws FileNotFoundException, IOException
 	    		dvalue = jsonReader.nextDouble();
 	    		svalue = "" + dvalue;
 	    		if ( !tableInitialized ) {
-	    			// Check for column type override, may be double or integer
-	    			colType = TableField.DATA_TYPE_DOUBLE; // Default
+	    			// Check for column type override, may be double or integer.
+	    			colType = TableField.DATA_TYPE_DOUBLE; // Default.
 	    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
 	    			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
 	    				++tableColumnAdded;
@@ -1043,7 +1041,7 @@ throws FileNotFoundException, IOException
 			    			}
 		    			}
 		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages
+		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
 		    			}
 		    		}
 	    		}
@@ -1051,7 +1049,7 @@ throws FileNotFoundException, IOException
 	    	else if ( token == JsonToken.BOOLEAN ) {
 	    		bvalue = jsonReader.nextBoolean();
 	    		svalue = "" + bvalue;
-    			colType = TableField.DATA_TYPE_BOOLEAN; // Default
+    			colType = TableField.DATA_TYPE_BOOLEAN; // Default.
     			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
     			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
     				++tableColumnAdded;
@@ -1069,7 +1067,7 @@ throws FileNotFoundException, IOException
 		    				table.setFieldValue(row, col, bvalue, true);
 		    			}
 		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages
+		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
 		    			}
 		    		}
     			}
@@ -1086,38 +1084,38 @@ throws FileNotFoundException, IOException
 	    		else {
 		    		// Expand the array and add columns to the table.
 		    		// For array position [0] add to current row.
-		    		// For array position [1+] repeat the other column values
-		    		// This could be made recursive with some additional effort
+		    		// For array position [1+] repeat the other column values.
+		    		// This could be made recursive with some additional effort.
 	    			++objectArrayCount;
 		    		jsonReader.beginArray();
-		    		arrayRowStart = row; // Used to flatten other columns by repeating values
+		    		arrayRowStart = row; // Used to flatten other columns by repeating values.
 		    		arrayRowEnd = arrayRowStart;
 		    		arrayColStart = -1;
 		    		int arrayIndex = -1;
-		    		int arrayObjectCount = 0; // Number of objects in the array
+		    		int arrayObjectCount = 0; // Number of objects in the array.
 		    		while (jsonReader.hasNext()) {
 		    			// Iterate through objects in the array.
 		    			++arrayIndex;
 		    			jsonReader.beginObject();
 		    			++arrayObjectCount;
 		    	        while (jsonReader.hasNext()) {
-		    		    	// Process name/value pairs until exhausted
-		    	        	// Always get the name
+		    		    	// Process name/value pairs until exhausted.
+		    	        	// Always get the name.
 		    		    	name = jsonReader.nextName();
 		    		    	token = jsonReader.peek();
-		    		    	// List token types in likely order of occurrence to improve performance
+		    		    	// List token types in likely order of occurrence to improve performance.
 		    		    	if ( token == JsonToken.STRING ) {
 		    		    		svalue = jsonReader.nextString();
 		    		    		if ( !tableInitialized && (arrayIndex == 0) ) {
 			    		    		// Only add columns if the first array index.
-		    		    			colType = TableField.DATA_TYPE_STRING; // Default
-		    		    			// Check for column type override
+		    		    			colType = TableField.DATA_TYPE_STRING; // Default.
+		    		    			// Check for column type override.
 		    		    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
 		    		    			if ( readJSON_AddTableColumn(table,name,colType) >= 0 ) {
 		    		    				++tableColumnAdded;
 		    		    			}
 		    		    		}
-		    		    		// Set the table cell value
+		    		    		// Set the table cell value.
 		    		    		try {
 		    		    			col = table.getFieldIndex(name);
 		    		    			if ( arrayColStart < 0 ) {
@@ -1131,7 +1129,7 @@ throws FileNotFoundException, IOException
 		    		    		if ( col >= 0 ) {
 		    		    			try {
 		    			    			if ( colType == TableField.DATA_TYPE_STRING ) {
-		    			    				// Simple set
+		    			    				// Simple set.
 		    			    				table.setFieldValue(row, col, svalue, true);
 		    			    			}
 		    			    			else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
@@ -1143,43 +1141,43 @@ throws FileNotFoundException, IOException
 		    		    					table.setFieldValue(row, col, i, true);
 		    			    			}
 		    			    			else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-		    			    				// Parse the date/time
+		    			    				// Parse the date/time.
 		    			    				table.setFieldValue(row,col,DateTime.parse(svalue));
 		    			    			}
 		    		    			}
 		    		    			catch ( Exception e ) {
-		    		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages
-		    		    				// Leave as initial null value in table
+		    		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
+		    		    				// Leave as initial null value in table.
 		    		    			}
 		    		    		}
 		    		    	}
 			    	    	else if ( token == JsonToken.BEGIN_ARRAY ) {
-			    	    		// Only go one level deep on hierarchy until figure out recursion
+			    	    		// Only go one level deep on hierarchy until figure out recursion.
 			    	    		jsonReader.skipValue();
 			    	    	}
 		    	        }
 		    	        jsonReader.endObject();
-		    			// Increment the row because each object in the array will be in a different row
+		    			// Increment the row because each object in the array will be in a different row.
 		    			++row;
 		    			++arrayRowEnd;
 		    		}
-		    		// Decrement the row because want the next name/value in the object to occur on the same row as the last array object
-		    		// Columns will be filled in as necessary to fill the row
-		    		// Only do this if the array actually had elements
+		    		// Decrement the row because want the next name/value in the object to occur on the same row as the last array object.
+		    		// Columns will be filled in as necessary to fill the row.
+		    		// Only do this if the array actually had elements.
 		    		if ( arrayObjectCount > 0 ) {
 		    			--row;
 		    		}
 		    		jsonReader.endArray();
-		    		// Fill out the columns prior to those added by the array by repeating rows
+		    		// Fill out the columns prior to those added by the array by repeating rows.
 		    		//Message.printStatus(2, routine, "Filling in content before array columns arrayRowStart="+arrayRowStart+", arrayRowEnd="+arrayRowEnd+", arrayColStart="+arrayColStart);
 		    		for ( int iArrayRow = (arrayRowStart + 1); iArrayRow <= arrayRowEnd; iArrayRow++ ) {
 		    			for ( int iArrayCol = 0; iArrayCol < arrayColStart; iArrayCol++ ) {
-		    				// Duplicate each columns values from the first row of the array to other rows introduced by array
+		    				// Duplicate each columns values from the first row of the array to other rows introduced by array.
 		    				try {
 		    					table.setFieldValue(iArrayRow, iArrayCol, table.getFieldValue(arrayRowStart, iArrayCol));
 		    				}
 		    				catch ( Exception e ) {
-		    					// Just leave the value null - should not happen
+		    					// Just leave the value null - should not happen.
 		    				}
 		    			}
 		    		}
@@ -1189,7 +1187,7 @@ throws FileNotFoundException, IOException
 	    		// TODO SAM 2015-12-05 need to consume array
 	    		// Should not need to do anything if skipValue() or above code handles?
 	    	}
-	    	// For debugging
+	    	// For debugging.
 	        if ( Message.isDebugOn ) {
 	        	Message.printDebug(2, routine, "Read name=\"" + name + "\" value=\"" + svalue + "\", set at row="+row+ ", col="+col);
 	        }
@@ -1198,15 +1196,15 @@ throws FileNotFoundException, IOException
 				if ( Message.isDebugOn ) {
 					Message.printDebug(2, routine, "Filling in content before array columns arrayRowStart="+arrayRowStart+", arrayRowEnd="+arrayRowEnd+", arrayColStart="+arrayColStart);
 				}
-				// Fill out the rows for current column prior to those added by the array by repeating rows
-				// Handle generically without caring about the column type
+				// Fill out the rows for current column prior to those added by the array by repeating rows.
+				// Handle generically without caring about the column type.
 	    		for ( int iArrayRow = arrayRowStart; iArrayRow < row; iArrayRow++ ) {
-    				// Duplicate column' value to other rows introduced by array (start of array to previous row)
+    				// Duplicate column' value to other rows introduced by array (start of array to previous row).
     				try {
     					table.setFieldValue(iArrayRow, col, table.getFieldValue(row, col));
     				}
     				catch ( Exception e ) {
-    					// Just leave the value null - should not happen
+    					// Just leave the value null - should not happen.
     				}
 	    		}
 			}
@@ -1216,11 +1214,11 @@ throws FileNotFoundException, IOException
         }
         jsonReader.endObject();
         ++objectCount;
-        // If any columns have been added indicate that the table has been initialized
+        // If any columns have been added indicate that the table has been initialized.
         if ( tableColumnAdded > 0 ) {
         	tableInitialized = true;
         }
-        // Exit reading if top has been exceeded
+        // Exit reading if top has been exceeded.
         if ( objectCount == top ) {
         	break;
         }
@@ -1228,7 +1226,7 @@ throws FileNotFoundException, IOException
     if ( Message.isDebugOn ) {
     	Message.printDebug(2, routine, "End main array");
     }
-    // Don't need the following and it may throw exception if "top" is used
+    // Don't need the following and it may throw exception if "top" is used.
     //jsonReader.endArray();
     jsonReader.close();
 	return table;
@@ -1368,8 +1366,7 @@ throws FileNotFoundException, IOException
 		*/
 	}
 	else {
-		// Other options
-		
+		// Other options.
 	}
 	
 	return warningCount;
@@ -1378,8 +1375,7 @@ throws FileNotFoundException, IOException
 /**
 Add a column to the table for the column type.
 */
-private int readJSON_AddTableColumn (DataTable table, String name, int colType)
-{
+private int readJSON_AddTableColumn (DataTable table, String name, int colType) {
 	if ( colType == TableField.DATA_TYPE_STRING ) {
 		return table.addField(new TableField(colType, name, -1, -1), null);
 	}
@@ -1475,6 +1471,8 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 	int iColumn = 0;
 	int columnType = 0;
 	boolean excludeNameFound = false;
+	// Whether to ensure that column types match object types (can help with casting issues later).
+	boolean doTypeChecks = true;
 	// Loop through the list of lists.
 	for ( List<?> listItem : objectList ) {
 	// Loop through the objects in each list.
@@ -1551,6 +1549,7 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 					continue;
 				}
 				else {
+					// Primitive values.
 					// Exclude names.
 					excludeNameFound = false;
 					for ( String excludeName : excludeNames ) {
@@ -1643,13 +1642,63 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							}
 						}
 					}
+					// Below here whatever value was determined is set, but check for conversions:
+					// - only need to JSON check types that are expected from Jackson since JSON has a limited number of primitive types
+					// - only need to check internal data types that are specified by command parameters (double, integer, boolean)
+					// - conversion from string to other types was handled above so only need to check number and boolean mismatch
+					// - TODO smalers 2022-04-29 evaluate whether the checks should be part of the following method,
+					//   perhaps as optional "strict" mode
+					if ( (value != null) && doTypeChecks ) {
+						int tableFieldType = table.getFieldDataType(iColumn);
+						if ( (tableFieldType == TableField.DATA_TYPE_BOOLEAN) && !(value instanceof Boolean) ) {
+							// Would be a case of number in boolean column.
+							problems.add("Attempting to set value in column that is type " +
+								TableField.getDataTypeAsString(tableFieldType) +
+								" and can't convert from " + value.getClass().getSimpleName() +
+								", for \"" + name + "\" object [" + (iObject + 1) + "]: " + value );
+						}
+						else if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) && !(value instanceof Double) ) {
+							// Expecting a Double but value is something else.
+							if ( value instanceof Integer ) {
+								// Simple conversion.
+								value = new Double(((Integer)value).doubleValue());
+							}
+							else {
+								problems.add("Attempting to set double in column that is type " +
+									TableField.getDataTypeAsString(tableFieldType) +
+								" and can't convert from " + value.getClass().getSimpleName() +
+								", for \"" + name + "\" object [" + (iObject + 1) + "]: " + value );
+							}
+						}
+						else if ( (tableFieldType == TableField.DATA_TYPE_INT) && !(value instanceof Integer) ) {
+							if ( value instanceof Double ) {
+								// Simple conversion.
+								value = new Integer(((Double)value).intValue());
+							}
+							else {
+								problems.add("Attempting to set integer in column that is type " +
+									TableField.getDataTypeAsString(tableFieldType) +
+									" and can't convert from " + value.getClass().getSimpleName() +
+									", for \"" + name + "\" object [" + (iObject + 1) + "]: " + value );
+							}
+						}
+						else if ( (tableFieldType == TableField.DATA_TYPE_FLOAT) && !(value instanceof Float) ) {
+							// TODO smalers 2022-04-29 probably don't need to check this - take out later.
+							problems.add("Attempting to set integer in column that is type " +
+								TableField.getDataTypeAsString(tableFieldType) +
+								" and can't convert from " + value.getClass().getSimpleName() +
+								", for \"" + name + "\" object [" + (iObject + 1) + "]: " + value );
+						}
+					} // End type checks.
 				}
-				// Below here whatever value was determined is set.
 				try {
+					// Go ahead and set the value but may have had problems above converting.
+					// Null values can be set.
 					rec.setFieldValue(iColumn, value);
 				}
 				catch ( Exception e ) {
-					problems.add("Error setting table record value for \"" + name + "\" object [" + (iObject + 1) + "]." );
+					problems.add("Error setting table record value for \"" + name + "\" object [" + (iObject + 1) + "]: " + value );
+					Message.printWarning(3, routine, e);
 				}
 			}
 		}
@@ -1665,8 +1714,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -1677,8 +1725,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -1707,7 +1754,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -1716,7 +1763,7 @@ CommandWarningException, CommandException
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 
@@ -1877,7 +1924,7 @@ CommandWarningException, CommandException
     			// Use GSON.
     			table = readJSONUsingGson ( InputFile_full, excludeNames, dateTimeColumns, doubleColumns, integerColumns, textColumns, top );
     		}
-            // Set the table identifier...
+            // Set the table identifier.
             table.setTableID ( TableID );
     	}
     	catch ( Exception e ) {
@@ -1896,7 +1943,7 @@ CommandWarningException, CommandException
     		throw new CommandWarningException ( message );
     	}
         
-        // Set the table in the processor...
+        // Set the table in the processor.
 
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "Table", table );
@@ -1914,7 +1961,7 @@ CommandWarningException, CommandException
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Create an empty table and set the ID
+        // Create an empty table and set the ID.
         DataTable table = new DataTable();
         table.setTableID ( TableID );
         setDiscoveryTable ( table );
@@ -1926,8 +1973,7 @@ CommandWarningException, CommandException
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 

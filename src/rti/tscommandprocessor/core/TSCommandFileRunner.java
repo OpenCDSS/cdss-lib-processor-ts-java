@@ -133,7 +133,9 @@ private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandPr
 	String routine = TSCommandFileRunner.class.getSimpleName() + ".checkRequirementsForAnnotation";
 	RequirementCheckList checkList = new RequirementCheckList();
 	String message;
-	// Use upper case annotation for string comparisons.
+	// Use upper case annotation for string comparisons:
+	// - @REQUIRE
+	// - @ENABLEDIF
 	String annotationUpper = annotation.toUpperCase();
 	//boolean requirementsMet = true; // Default until indicated otherwise.
 	if ( (commands == null) || (commands.size() == 0) ) {
@@ -147,7 +149,7 @@ private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandPr
     String datastoreName;
     String operator;
     String reqVersion;
-    String checkerName = "TSCommandFileRunner"; // Default value - specific checker will supply scope-specific name.
+    String checkerName = "TSCommandFileRunner"; // Default value - specific checker will supply scope-specific name such as 'HydroBaseDataStore'.
     for ( Command command : commands ) {
    		if ( command instanceof Comment_Command ) {
    			commandString = command.toString();
@@ -158,8 +160,8 @@ private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandPr
    			if ( pos > 0 ) {
    				// Detected a @require or @enabledif annotation based on the passed in 'annotation':
    				// - check the token following @require or @enabledif
-   				// - 'reqString' includes @ but not leading #
-   				String reqString = commandString.substring(pos - 1).trim();
+   				// - 'reqString' includes @ but not leading # or whitespace
+   				String reqString = commandString.substring(pos).trim();
    				// Create a requirement check object:
    				// - add here to make sure it is added
    				// - further populate below

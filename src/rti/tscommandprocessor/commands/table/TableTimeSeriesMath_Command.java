@@ -223,9 +223,8 @@ public boolean editCommand ( JFrame parent )
 /**
 Get the list of operators that can be used.
 */
-public List<DataTableMathOperatorType> getOperatorChoices()
-{
-    List<DataTableMathOperatorType> choices = new Vector<DataTableMathOperatorType>();
+public List<DataTableMathOperatorType> getOperatorChoices() {
+    List<DataTableMathOperatorType> choices = new ArrayList<>();
     choices.add ( DataTableMathOperatorType.ASSIGN );
     choices.add ( DataTableMathOperatorType.ADD );
     choices.add ( DataTableMathOperatorType.SUBTRACT );
@@ -238,10 +237,9 @@ public List<DataTableMathOperatorType> getOperatorChoices()
 Get the list of operators that can be performed.
 @return the operator display names as strings.
 */
-public List<String> getOperatorChoicesAsStrings()
-{
+public List<String> getOperatorChoicesAsStrings() {
     List<DataTableMathOperatorType> choices = getOperatorChoices();
-    List<String> stringChoices = new Vector<String>();
+    List<String> stringChoices = new ArrayList<>();
     for ( int i = 0; i < choices.size(); i++ ) {
         stringChoices.add ( "" + choices.get(i) );
     }

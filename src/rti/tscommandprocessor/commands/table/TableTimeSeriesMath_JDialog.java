@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -79,7 +79,7 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Operator_JComboBox = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
-private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
+private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null;
 private JTextField __TableInputColumn_JTextField = null;
 private SimpleJComboBox __IfTableInputIsBlank_JComboBox = null;
 private SimpleJComboBox __IfTSListIsEmpty_JComboBox = null;
@@ -154,8 +154,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -182,7 +181,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -228,7 +227,7 @@ private void checkInput ()
         parameters.set ( "IfTSListIsEmpty", IfTSListIsEmpty );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -238,8 +237,8 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
@@ -303,14 +302,14 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify using ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -319,7 +318,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Math operator:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
+    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit.
     __Operator_JComboBox.setData ( __command.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
@@ -331,9 +330,9 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Select a table identifier from the list or specify using ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -377,12 +376,12 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If table input is blank:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> ifTableInputIsBlankChoices = new Vector<String>();
+    List<String> ifTableInputIsBlankChoices = new ArrayList<>();
     ifTableInputIsBlankChoices.add ( "" );
     ifTableInputIsBlankChoices.add ( __command._Warn );
     ifTableInputIsBlankChoices.add ( __command._Ignore );
     ifTableInputIsBlankChoices.add ( __command._Fail );
-    __IfTableInputIsBlank_JComboBox = new SimpleJComboBox ( false );// Do not allow edit
+    __IfTableInputIsBlank_JComboBox = new SimpleJComboBox ( false );// Do not allow edit.
     __IfTableInputIsBlank_JComboBox.setData ( ifTableInputIsBlankChoices );
     __IfTableInputIsBlank_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
@@ -394,12 +393,12 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list is empty:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> ifTSListIsEmptyChoices = new Vector<String>();
+    List<String> ifTSListIsEmptyChoices = new ArrayList<>();
     ifTSListIsEmptyChoices.add ( "" );
     ifTSListIsEmptyChoices.add ( __command._Warn );
     ifTSListIsEmptyChoices.add ( __command._Ignore );
     ifTSListIsEmptyChoices.add ( __command._Fail );
-    __IfTSListIsEmpty_JComboBox = new SimpleJComboBox ( false );// Do not allow edit
+    __IfTSListIsEmpty_JComboBox = new SimpleJComboBox ( false );// Do not allow edit.
     __IfTSListIsEmpty_JComboBox.setData ( ifTSListIsEmptyChoices );
     __IfTSListIsEmpty_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
@@ -418,7 +417,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -465,7 +464,7 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
@@ -503,7 +502,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
@@ -515,7 +514,7 @@ private void refresh ()
         IfTableInputIsBlank = props.getValue ( "IfTableInputIsBlank" );
         IfTSListIsEmpty = props.getValue ( "IfTSListIsEmpty" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -532,19 +531,19 @@ private void refresh ()
             __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -559,7 +558,7 @@ private void refresh ()
             }
         }
         if ( Operator == null ) {
-            // Select default...
+            // Select default.
             __Operator_JComboBox.select ( 0 );
         }
         else {
@@ -574,7 +573,7 @@ private void refresh ()
             }
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -598,7 +597,7 @@ private void refresh ()
             __TableInputColumn_JTextField.setText ( TableInputColumn );
         }
         if ( IfTableInputIsBlank == null ) {
-            // Select default...
+            // Select default.
             __IfTableInputIsBlank_JComboBox.select ( 0 );
         }
         else {
@@ -614,7 +613,7 @@ private void refresh ()
             }
         }
         if ( IfTSListIsEmpty == null ) {
-            // Select default...
+            // Select default.
             __IfTSListIsEmpty_JComboBox.select ( 0 );
         }
         else {
@@ -630,7 +629,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -657,20 +656,20 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

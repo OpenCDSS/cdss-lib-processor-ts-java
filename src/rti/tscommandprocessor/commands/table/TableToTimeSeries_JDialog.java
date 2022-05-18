@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -123,8 +123,7 @@ Command editor constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public TableToTimeSeries_JDialog ( JFrame parent, TableToTimeSeries_Command command, List<String> tableIDChoices )
-{
+public TableToTimeSeries_JDialog ( JFrame parent, TableToTimeSeries_Command command, List<String> tableIDChoices ) {
 	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
@@ -188,9 +187,8 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
-    // Add to this as more functionality is added
+private void checkGUIState () {
+    // Add to this as more functionality is added.
 }
 
 /**
@@ -198,8 +196,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	
-	// Put together a list of parameters to check...
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 //	String SkipRows = __SkipRows_JTextField.getText().trim();
@@ -341,7 +338,7 @@ private void checkInput () {
 		props.set("InputEnd", InputEnd);
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
@@ -462,9 +459,9 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -500,8 +497,8 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null,false,false);
     __DateTimeFormat_JPanel.addKeyListener (this);
-    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
-    __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice.
+    __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents.
     JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -897,7 +894,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __BlockLayout_JComboBox = new SimpleJComboBox ( false );
     __BlockLayout_JComboBox.add("");
     __BlockLayout_JComboBox.add(__command._Period);
-    //__BlockLayout_JComboBox.add(__command._Year); // TODO SAM 2015-03-10 Need to enable
+    //__BlockLayout_JComboBox.add(__command._Year); // TODO SAM 2015-03-10 Need to enable.
     __BlockLayout_JComboBox.select ( 0 );
     __BlockLayout_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(blockData_JPanel, __BlockLayout_JComboBox,
@@ -909,7 +906,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BlockLayoutColumns_JComboBox = new SimpleJComboBox ( false );
     __BlockLayoutColumns_JComboBox.add("");
-    //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable
+    //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable.
     //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
     __BlockLayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH,1));
     __BlockLayoutColumns_JComboBox.select ( 0 );
@@ -934,8 +931,8 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Block output year type:" ), 
 		0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__BlockOutputYearType_JComboBox = new SimpleJComboBox ( false );
-	// Only include types that have been tested for all output.  More specific types may be included in
-	// some commands where local handling is enabled.
+	// Only include types that have been tested for all output.
+	// More specific types may be included in some commands where local handling is enabled.
 	__BlockOutputYearType_JComboBox.add ( "" );
 	__BlockOutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
 	__BlockOutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
@@ -986,7 +983,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
@@ -1100,7 +1097,7 @@ private void refresh()
 	if (__first_time) {
 		__first_time = false;
 
-		// Get the properties from the command
+		// Get the properties from the command.
 		props = __command.getCommandParameters();
 		TableID = props.getValue ( "TableID" );
 //		SkipRows = props.getValue("SkipRows");
@@ -1136,9 +1133,9 @@ private void refresh()
 		BlockOutputYearType = props.getValue ( "BlockOutputYearType" );
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
-		// Set the control fields
+		// Set the control fields.
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -1231,11 +1228,11 @@ private void refresh()
             __DataType_JTextField.setText(DataType);
         }
         if ( Interval == null || Interval.equals("") ) {
-            // Select a default...
+            // Select a default.
             __Interval_JComboBox.select ( 0 );
         } 
         else {
-        	// Select case-independent
+        	// Select case-independent.
             if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, -1, null, true ) ) {
                 __Interval_JComboBox.select ( Interval );
             }
@@ -1246,11 +1243,11 @@ private void refresh()
             }
         }
         if ( IrregularIntervalPrecision == null || IrregularIntervalPrecision.equals("") ) {
-            // Select a default...
+            // Select a default.
             __IrregularIntervalPrecision_JComboBox.select ( 0 );
         } 
         else {
-        	// Select case-independent
+        	// Select case-independent.
             if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularIntervalPrecision_JComboBox, IrregularIntervalPrecision, JGUIUtil.NONE, null, -1, null, true ) ) {
                 __IrregularIntervalPrecision_JComboBox.select ( IrregularIntervalPrecision );
             }
@@ -1276,7 +1273,7 @@ private void refresh()
             __MissingValue_JTextField.setText(MissingValue);
         }
         if ( HandleDuplicatesHow == null ) {
-            // Select default...
+            // Select default.
             __HandleDuplicatesHow_JComboBox.select ( 0 );
         }
         else {
@@ -1294,7 +1291,7 @@ private void refresh()
             __Alias_JTextField.setText(Alias.trim());
         }
         if ( BlockLayout == null ) {
-            // Select default...
+            // Select default.
             __BlockLayout_JComboBox.select ( 0 );
         }
         else {
@@ -1309,7 +1306,7 @@ private void refresh()
             }
         }
         if ( BlockLayoutColumns == null ) {
-            // Select default...
+            // Select default.
             __BlockLayoutColumns_JComboBox.select ( 0 );
         }
         else {
@@ -1324,7 +1321,7 @@ private void refresh()
             }
         }
         if ( BlockLayoutRows == null ) {
-            // Select default...
+            // Select default.
             __BlockLayoutRows_JComboBox.select ( 0 );
         }
         else {
@@ -1339,7 +1336,7 @@ private void refresh()
             }
         }
         if ( BlockOutputYearType == null ) {
-            // Select default...
+            // Select default.
             __BlockOutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -1361,8 +1358,8 @@ private void refresh()
 		}
 	}
 
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	TableID = __TableID_JComboBox.getSelected();
 //    SkipRows = __SkipRows_JTextField.getText().trim();
     DateColumn = __DateColumn_JTextField.getText().trim();
@@ -1445,14 +1442,14 @@ and the dialog is closed.
 public void response ( boolean ok ) {
 	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1461,32 +1458,26 @@ public void response ( boolean ok ) {
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response(false);
+public void windowClosing( WindowEvent event ) {
+	response(false);
 }
 
-public void windowActivated( WindowEvent evt )
-{
+public void windowActivated( WindowEvent evt ) {
 }
 
-public void windowClosed( WindowEvent evt )
-{
+public void windowClosed( WindowEvent evt ) {
 }
 
-public void windowDeactivated( WindowEvent evt )
-{
+public void windowDeactivated( WindowEvent evt ) {
 }
 
-public void windowDeiconified( WindowEvent evt )
-{
+public void windowDeiconified( WindowEvent evt ) {
 }
 
-public void windowIconified( WindowEvent evt )
-{
+public void windowIconified( WindowEvent evt ) {
 }
 
-public void windowOpened( WindowEvent evt )
-{
+public void windowOpened( WindowEvent evt ) {
 }
 
 }

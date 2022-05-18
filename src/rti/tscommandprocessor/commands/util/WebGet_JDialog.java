@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -189,7 +189,7 @@ public void actionPerformed( ActionEvent event )
 		refresh ();
 	}
 	else {
-	    // Choices...
+	    // Choices.
 		refresh();
 	}
 }
@@ -199,7 +199,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
@@ -247,7 +247,7 @@ private void checkInput ()
         props.set ( "ResponseCodeProperty", ResponseCodeProperty );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -301,7 +301,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -414,7 +414,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__LocalFile_JTextField = new JTextField ( 50 );
 	__LocalFile_JTextField.setToolTipText("Specify the output file (will have same the contents as retrieved from URL), can use ${Property}.");
 	__LocalFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel LocalFile_JPanel = new JPanel();
 	LocalFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(LocalFile_JPanel, __LocalFile_JTextField,
@@ -424,7 +424,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(LocalFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(LocalFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -493,14 +493,14 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
-    // Refresh the contents...
+    // Refresh the contents.
     refresh ();
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -568,11 +568,11 @@ private void refresh ()
 		}
 		else {
             if ( (EncodeURI == null) ||	EncodeURI.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__EncodeURI_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"EncodeURI parameter \"" + EncodeURI +
@@ -605,11 +605,11 @@ private void refresh ()
 		}
 		else {
             if ( (IfHttpError == null) || IfHttpError.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfHttpError_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfHttpError parameter \"" + IfHttpError +
@@ -620,8 +620,8 @@ private void refresh ()
             __ResponseCodeProperty_JTextField.setText ( ResponseCodeProperty );
         }
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
 	EncodeURI = __EncodeURI_JComboBox.getSelected();
 	HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
@@ -634,9 +634,9 @@ private void refresh ()
 	IfHttpError = __IfHttpError_JComboBox.getSelected();
     ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
-	props.add ( "URI=" + URI );
+	props.set ( "URI", URI ); // Use 'set' because the URIL may contain equals.
 	props.add ( "EncodeURI=" + EncodeURI );
-	props.add ( "HttpHeaders=" + HttpHeaders );
+	props.set ( "HttpHeaders", HttpHeaders ); // Use 'set' because headers may contain equals.
 	props.add ( "ConnectTimeout=" + ConnectTimeout );
 	props.add ( "ReadTimeout=" + ReadTimeout );
 	props.add ( "RetryMax=" + RetryMax );
@@ -646,7 +646,7 @@ private void refresh ()
 	props.add ( "IfHttpError=" + IfHttpError );
 	props.add ( "ResponseCodeProperty=" + ResponseCodeProperty );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (LocalFile != null) && !LocalFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -668,20 +668,20 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

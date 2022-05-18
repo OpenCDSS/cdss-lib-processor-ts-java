@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -113,8 +113,7 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
 }
 
 /**
@@ -122,7 +121,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
     String TableID = __TableID_JComboBox.getSelected();
 	String Condition = __Condition_JTextField.getText().trim();
 	String ProcessRows = __ProcessRows_JTextField.getText().trim();
@@ -161,7 +160,7 @@ private void checkInput ()
     }
 
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -230,9 +229,9 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -264,11 +263,11 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Input1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Input1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
     __Input1_JComboBox.setToolTipText("Input column name, can use ${Property} notation");
     List<String> input1Choices = new ArrayList<>();
     input1Choices.add("");
-    __Input1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __Input1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __Input1_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Input1_JComboBox,
@@ -278,7 +277,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Math operator:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
+    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit.
     __Operator_JComboBox.setData ( DataTableMath.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
@@ -290,11 +289,11 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 2:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Input2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Input2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
     __Input2_JComboBox.setToolTipText("Input column name or constant, can use ${Property} notation");
     List<String> input2Choices = new ArrayList<>();
     input2Choices.add("");
-    __Input2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __Input2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __Input2_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Input2_JComboBox,
@@ -304,11 +303,11 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Output_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Output_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
     __Output_JComboBox.setToolTipText("Output column name, can use ${Property} notation");
     List<String> outputChoices = new ArrayList<>();
     outputChoices.add("");
-    __Output_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __Output_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __Output_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Output_JComboBox,
@@ -318,12 +317,12 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-value:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NonValue_JComboBox = new SimpleJComboBox ( 12, false );    // Allow edit
+    __NonValue_JComboBox = new SimpleJComboBox ( 12, false );    // Allow edit.
     List<String> nonValueChoices = new ArrayList<>();
     nonValueChoices.add("");
     nonValueChoices.add(__command._NaN );
     nonValueChoices.add(__command._Null );
-    __NonValue_JComboBox.setData ( nonValueChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __NonValue_JComboBox.setData ( nonValueChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __NonValue_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NonValue_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -340,7 +339,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -387,7 +386,7 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
@@ -423,7 +422,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 	    TableID = props.getValue ( "TableID" );
         Condition = props.getValue ( "Condition" );
         ProcessRows = props.getValue ( "ProcessRows" );
@@ -433,7 +432,7 @@ private void refresh ()
 		Output = props.getValue ( "Output" );
 		NonValue = props.getValue ( "NonValue" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -454,7 +453,7 @@ private void refresh ()
             __ProcessRows_JTextField.setText ( ProcessRows );
         }
         if ( Input1 == null ) {
-            // Select default...
+            // Select default.
             __Input1_JComboBox.select ( 0 );
         }
         else {
@@ -462,12 +461,12 @@ private void refresh ()
                 __Input1_JComboBox.select ( Input1 );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __Input1_JComboBox.setText( Input1 );
             }
         }
         if ( Operator == null ) {
-            // Select default...
+            // Select default.
             __Operator_JComboBox.select ( 0 );
         }
         else {
@@ -482,7 +481,7 @@ private void refresh ()
             }
         }
         if ( Input2 == null ) {
-            // Select default...
+            // Select default.
             __Input2_JComboBox.select ( 0 );
         }
         else {
@@ -490,12 +489,12 @@ private void refresh ()
                 __Input2_JComboBox.select ( Input2 );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __Input2_JComboBox.setText( Input2 );
             }
         }
         if ( Output == null ) {
-            // Select default...
+            // Select default.
             __Output_JComboBox.select ( 0 );
         }
         else {
@@ -503,12 +502,12 @@ private void refresh ()
                 __Output_JComboBox.select ( Output );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __Output_JComboBox.setText( Output );
             }
         }
         if ( NonValue == null ) {
-            // Select default...
+            // Select default.
             __NonValue_JComboBox.select ( 0 );
         }
         else {
@@ -523,7 +522,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
     Condition = __Condition_JTextField.getText().trim();
     ProcessRows = __ProcessRows_JTextField.getText().trim();
@@ -551,16 +550,16 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

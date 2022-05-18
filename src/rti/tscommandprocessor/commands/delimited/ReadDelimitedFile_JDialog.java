@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.TimeInterval;
 
-// TODO SAM 2015-06-10 Need to enable properties but some work is done in checkCommmandParameters that complicates things
+// TODO SAM 2015-06-10 Need to enable properties but some work is done in checkCommmandParameters that complicates things.
 /**
 Editor for the ReadDelimitedFile() command.
 */
@@ -119,8 +119,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadDelimitedFile_JDialog ( JFrame parent, ReadDelimitedFile_Command command )
-{
+public ReadDelimitedFile_JDialog ( JFrame parent, ReadDelimitedFile_Command command ) {
 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -133,7 +132,7 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 try{
 	if ( o == __browse_JButton ) {
-		// Browse for the file to read...
+		// Browse for the file to read.
 		JFileChooser fc = new JFileChooser();
         fc.setDialogTitle( "Select Delimited Time Series File");
         SimpleFileFilter sff = new SimpleFileFilter("txt","Delimited Time Series File");
@@ -237,18 +236,16 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
-    // Add to this as more functionality is added
+private void checkGUIState () {
+    // Add to this as more functionality is added.
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	
-	// Put together a list of parameters to check...
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String Comment = __Comment_JTextField.getText().trim();
@@ -346,7 +343,7 @@ private void checkInput () {
 		props.set("InputEnd", InputEnd);
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
@@ -463,7 +460,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel for file to data mapping
+    // Panel for file to data mapping.
     int yData = -1;
     JPanel data_JPanel = new JPanel();
     data_JPanel.setLayout( new GridBagLayout() );
@@ -479,7 +476,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -489,7 +486,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -511,7 +508,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ), 
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TreatConsecutiveDelimitersAsOne_JComboBox = new SimpleJComboBox ( false );
-    List<String> delimChoices = new ArrayList<String>();
+    List<String> delimChoices = new ArrayList<>();
     delimChoices.add ( "" );
     delimChoices.add ( __command._False );
     delimChoices.add ( __command._True );
@@ -643,7 +640,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         "Required - location ID for each value column, separated by commas (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for additional time series data properties
+    // Panel for additional time series data properties.
     int yData2 = -1;
     JPanel data2_JPanel = new JPanel();
     data2_JPanel.setLayout( new GridBagLayout() );
@@ -686,7 +683,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     TimeInterval irreg = new TimeInterval ( TimeInterval.IRREGULAR, 0 );
     intervals.add("" + irreg);
     __Interval_JComboBox.setData ( intervals );
-    // Select a default...
+    // Select a default.
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(data2_JPanel, __Interval_JComboBox,
@@ -767,7 +764,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
@@ -870,7 +867,7 @@ private void refresh()
 	if (__first_time) {
 		__first_time = false;
 
-		// Get the properties from the command
+		// Get the properties from the command.
 		props = __command.getCommandParameters();
 		InputFile = props.getValue("InputFile");
 		Comment = props.getValue("Comment");
@@ -895,7 +892,7 @@ private void refresh()
 	    Alias = props.getValue("Alias");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
-		// Set the control fields
+		// Set the control fields.
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
@@ -912,7 +909,7 @@ private void refresh()
 	         __Delimiter_JTextField.setText(Delimiter);
 	    }
         if ( TreatConsecutiveDelimitersAsOne == null ) {
-            // Select default...
+            // Select default.
             __TreatConsecutiveDelimitersAsOne_JComboBox.select ( 0 );
         }
         else {
@@ -977,7 +974,7 @@ private void refresh()
             __DataType_JTextField.setText(DataType);
         }
         if ( Interval == null || Interval.equals("") ) {
-            // Select a default...
+            // Select a default.
             __Interval_JComboBox.select ( 0 );
         } 
         else {
@@ -1010,8 +1007,8 @@ private void refresh()
 		}
 	}
 
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	Comment = __Comment_JTextField.getText().trim();
     SkipRows = __SkipRows_JTextField.getText().trim();
@@ -1063,7 +1060,7 @@ private void refresh()
 	
 	__Command_JTextArea.setText( __command.toString(props) );
 
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -1091,14 +1088,14 @@ and the dialog is closed.
 public void response ( boolean ok ) {
 	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1107,32 +1104,26 @@ public void response ( boolean ok ) {
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response(false);
+public void windowClosing( WindowEvent event ) {
+	response(false);
 }
 
-public void windowActivated( WindowEvent evt )
-{
+public void windowActivated( WindowEvent evt ) {
 }
 
-public void windowClosed( WindowEvent evt )
-{
+public void windowClosed( WindowEvent evt ) {
 }
 
-public void windowDeactivated( WindowEvent evt )
-{
+public void windowDeactivated( WindowEvent evt ) {
 }
 
-public void windowDeiconified( WindowEvent evt )
-{
+public void windowDeiconified( WindowEvent evt ) {
 }
 
-public void windowIconified( WindowEvent evt )
-{
+public void windowIconified( WindowEvent evt ) {
 }
 
-public void windowOpened( WindowEvent evt )
-{
+public void windowOpened( WindowEvent evt ) {
 }
 
 }

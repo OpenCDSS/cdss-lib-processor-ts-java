@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -163,8 +163,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -187,11 +186,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -241,7 +240,7 @@ private void checkInput ()
         parameters.set ( "PropertyValue", PropertyValue );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -331,7 +330,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(main_JPanel, __props_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for built-in properties
+    // Panel for built-in properties.
     int yBuiltIn = -1;
     JPanel builtIn_JPanel = new JPanel();
     builtIn_JPanel.setLayout( new GridBagLayout() );
@@ -405,7 +404,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
         "Optional - for interactive edit tools (default=" + __command._False + ")."),
         3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for user-defined (not built-in) properties
+    // Panel for user-defined (not built-in) properties.
     int yUser = -1;
     JPanel user_JPanel = new JPanel();
     user_JPanel.setLayout( new GridBagLayout() );
@@ -432,7 +431,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property type:" ), 
         0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    List<String> propType = new ArrayList<String>();
+    List<String> propType = new ArrayList<>();
     propType.add ( "" );
     propType.add( __command._DateTime );
     propType.add ( __command._Double );
@@ -465,7 +464,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
     		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
@@ -516,27 +515,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "SetTimeSeriesProperty_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -552,7 +550,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
@@ -566,7 +564,7 @@ private void refresh ()
         PropertyType = parameters.getValue ( "PropertyType" );
         PropertyValue = parameters.getValue ( "PropertyValue" );
 		if ( TSList == null ) {
-			// Select default...
+			// Select default.
 			__TSList_JComboBox.select ( 0 );
 		}
 		else {
@@ -584,19 +582,19 @@ private void refresh ()
             __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -623,7 +621,7 @@ private void refresh ()
             __MissingValue_JTextField.setText ( MissingValue );
         }
         if ( Editable == null ) {
-            // Select default...
+            // Select default.
             if ( __Editable_JComboBox.getItemCount() > 0 ) {
                 __Editable_JComboBox.select ( 0 );
             }
@@ -646,7 +644,7 @@ private void refresh ()
             }
         }
         if ( PropertyType == null ) {
-            // Select default...
+            // Select default.
             __PropertyType_JComboBox.select ( 0 );
         }
         else {
@@ -664,7 +662,7 @@ private void refresh ()
             __PropertyValue_JTextField.setText ( PropertyValue );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -696,16 +694,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -714,8 +712,8 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ){;}

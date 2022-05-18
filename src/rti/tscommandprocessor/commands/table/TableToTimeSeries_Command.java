@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1995,14 +1995,18 @@ throws IOException
         valuePos = table.getFieldIndices(valueColumns.toArray(new String[valueColumns.size()]));
     }
     catch ( Exception e ) {
-        // Use empty array.
+        // Use empty array from above.
+    	errorMessages.add(e.toString());
+    	Message.printWarning(3, routine, e);
     }
     int [] flagPos = new int[0];
     try {
         flagPos = table.getFieldIndices(flagColumns.toArray(new String[flagColumns.size()]));
     }
     catch ( Exception e ) {
-        // Use empty array.
+    	Message.printWarning(3, routine, e);
+    	errorMessages.add(e.toString());
+        // Use empty array from above.
     }
     if ( errorMessages.size() > 0 ) {
         // Don't continue if there are errors.
@@ -2029,7 +2033,9 @@ throws IOException
     List<String> dataTypesFromTable = new ArrayList<>();
     List<String> scenariosFromTable = new ArrayList<>();
     List<String> unitsFromTable = new ArrayList<>();
-    for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
+    int errorMax = 50;
+    int errorCount = 0;
+    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
         try {
             rec = table.getRecord(iRec);
             // Consider whether single field, etc.
@@ -2045,6 +2051,12 @@ throws IOException
             }
         }
         catch ( Exception e ) {
+        	++errorCount;
+        	if ( errorCount < errorMax ) {
+        		// Print a few errors to help with troubleshooting.
+                errorMessages.add("Error getting date/time from record " + (iRec + 1) + ": " + e );
+                Message.printWarning(3, routine, e);
+        	}
             continue;
         }
     }
@@ -2078,6 +2090,8 @@ throws IOException
     // - don't have precision from the table, only the command parameter
     List<String>precisionForTS = createMetadataRuntime ( singleColumnFalse, null, valueColumns.size(), precision );
     Message.printStatus(2,routine,"Sizes:" +
+        " valueColumns=" + valueColumns.size() +
+        " valuePos=" + valuePos.length +
         " locationTypesForTS=" + locationTypesForTS.size() +
         " locationIdsForTS=" + locationIdsForTS.size() +
         " dataTypesForTS=" + dataTypesForTS.size() +
@@ -2840,8 +2854,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -2852,8 +2865,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -3585,7 +3597,7 @@ public String toString ( PropList props ) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
-		b.append("Precision=" + Precision );
+		b.append("Precision=\"" + Precision + "\"");
 	}
     if ((MissingValue != null) && (MissingValue.length() > 0)) {
         if (b.length() > 0) {

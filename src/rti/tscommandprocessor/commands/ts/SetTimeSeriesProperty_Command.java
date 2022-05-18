@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ throws InvalidCommandParameterException
 	}
 	
     if ( (PropertyName != null) && !PropertyName.equals("") ) {
-        // Check for allowed characters...
+        // Check for allowed characters.
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
             message = "The property name contains invalid characters ${}() space, tab.";
             warning += "\n" + message;
@@ -141,7 +141,7 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Provide a property type." ) );
-            // Set to blank to be able to do checks below
+            // Set to blank to be able to do checks below.
             PropertyType = "";
         }
         if ( (PropertyValue == null) || PropertyValue.equals("") ) {
@@ -154,7 +154,7 @@ throws InvalidCommandParameterException
         else {
             // Check the value given the type.
             if ( (PropertyValue.indexOf("%") >= 0) || (PropertyValue.indexOf("${") >= 0) ) {
-                // Let it pass because a property will be expanded at run-time
+                // Let it pass because a property will be expanded at run-time.
             }
             else if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
                 message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
@@ -180,7 +180,7 @@ throws InvalidCommandParameterException
         }
     }
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(11);
     validList.add ( "TSList" );
 	validList.add ( "TSID" );
@@ -209,11 +209,11 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new SetTimeSeriesProperty_JDialog ( parent, this )).ok();
 }
 
-// parseCommand from base class
+// Use parseCommand from the base class.
 
 /**
 Run the command.
@@ -231,7 +231,7 @@ CommandWarningException, CommandException
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -239,7 +239,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -254,7 +254,7 @@ CommandWarningException, CommandException
 	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
-    String Description = parameters.getValue ( "Description" ); // Expanded below
+    String Description = parameters.getValue ( "Description" ); // Expanded below.
     String Units = parameters.getValue ( "Units" );
 	Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
     String Precision = parameters.getValue ( "Precision" );
@@ -265,7 +265,7 @@ CommandWarningException, CommandException
 	}
     String MissingValue = parameters.getValue ( "MissingValue" );
 	MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
-    boolean Editable_boolean = false; // Default
+    boolean Editable_boolean = false; // Default.
     String Editable = parameters.getValue ( "Editable" );
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
         Editable_boolean = true;
@@ -274,7 +274,7 @@ CommandWarningException, CommandException
     String PropertyType = parameters.getValue ( "PropertyType" );
     String PropertyValue = parameters.getValue ( "PropertyValue" );
 
-	// Get the time series to process...
+	// Get the time series to process.
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -326,7 +326,7 @@ CommandWarningException, CommandException
     TS ts = null;
     for ( int i = 0; i < size; i++ ) {
         ts = tslist.get(i);
-        // Now set the data...
+        // Now set the data.
         try {
             if ( (Description != null) && (Description.length() > 0) ) {
                 ts.setDescription ( TSCommandProcessorUtil.expandTimeSeriesMetadataString (
@@ -348,7 +348,7 @@ CommandWarningException, CommandException
             ts.setEditable ( Editable_boolean );
             if ( PropertyName != null ) {
                 Object Property_Object = null;
-                // Expand the property value to utilize %L, ${ts:property}
+                // Expand the property value to utilize %L, ${ts:property}.
                 PropertyValue = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, PropertyValue, status, CommandPhaseType.RUN);
                 Message.printStatus(2,routine,"Expanded property value=\"" + PropertyValue + "\"");
@@ -378,7 +378,7 @@ CommandWarningException, CommandException
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
+						message, "Check the log file for details." ) );
             throw new CommandException ( message );
         }
     }

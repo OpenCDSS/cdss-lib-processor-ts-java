@@ -70,12 +70,16 @@ private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browsePayload_JButton = null;
 private SimpleJButton __path_JButton = null;
+private SimpleJButton __pathPayload_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextArea __URI_JTextArea = null;
 private SimpleJComboBox	__EncodeURI_JComboBox =null;
+private SimpleJComboBox __RequestMethod_JComboBox = null;
+private JTextField __PayloadFile_JTextField = null;
 private JTextArea __HttpHeaders_JTextArea = null;
 private JTextField __ConnectTimeout_JTextField = null;
 private JTextField __ReadTimeout_JTextField = null;
@@ -140,7 +144,42 @@ public void actionPerformed( ActionEvent event )
 					__LocalFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1,"FTPGet_JDialog", "Error converting file to relative path." );
+					Message.printWarning ( 1, "WebGet", "Error converting file to relative path." );
+				}
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
+    else if ( o == __browsePayload_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Payload File for Request");
+        //SimpleFileFilter sff = new SimpleFileFilter("txt", "Text file");
+        //fc.addChoosableFileFilter(sff);
+        
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__PayloadFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, "WebGet", "Error converting payload file to relative path." );
 				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
@@ -183,7 +222,22 @@ public void actionPerformed( ActionEvent event )
                         __LocalFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"WebGet_JDialog", "Error converting file name to relative path." );
+				Message.printWarning ( 1, "WebGet_JDialog", "Error converting local file name to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else if ( o == __pathPayload_JButton ) {
+		if ( __pathPayload_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__PayloadFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__PayloadFile_JTextField.getText() ) );
+		}
+		else if ( __pathPayload_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+                __PayloadFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+                        __PayloadFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "WebGet_JDialog", "Error converting payload file name to relative path." );
 			}
 		}
 		refresh ();
@@ -203,6 +257,8 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
+	String RequestMethod = __RequestMethod_JComboBox.getSelected();
+	String PayloadFile = __PayloadFile_JTextField.getText().trim();
 	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
@@ -218,6 +274,12 @@ private void checkInput ()
 	}
 	if ( EncodeURI.length() > 0 ) {
 		props.set ( "EncodeURI", EncodeURI );
+	}
+	if ( RequestMethod.length() > 0 ) {
+		props.set ( "RequestMethod", RequestMethod );
+	}
+	if ( PayloadFile.length() > 0 ) {
+		props.set ( "PayloadFile", PayloadFile );
 	}
 	if ( HttpHeaders.length() > 0 ) {
 		props.set ( "HttpHeaders", HttpHeaders );
@@ -263,6 +325,8 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
+	String RequestMethod = __RequestMethod_JComboBox.getSelected();
+	String PayloadFile = __PayloadFile_JTextField.getText().trim();
 	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
@@ -274,6 +338,8 @@ private void commitEdits ()
     String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
 	__command.setCommandParameter ( "EncodeURI", EncodeURI );
+	__command.setCommandParameter ( "RequestMethod", RequestMethod );
+	__command.setCommandParameter ( "PayloadFile", PayloadFile );
 	__command.setCommandParameter ( "HttpHeaders", HttpHeaders );
 	__command.setCommandParameter ( "ConnectTimeout", ConnectTimeout );
 	__command.setCommandParameter ( "ReadTimeout", ReadTimeout );
@@ -306,12 +372,17 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command retrieves content from the web using a Uniform Resource Identifier (URI) and" +
-		" saves the content to a local file and/or a processor property." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"This command performs a web request for a Uniform Resource Identifier (URI)." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"By default, a GET request will occur and output can be saved to a file or property."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Other request methods (DELETE, POST, PUT) are being phased in."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
     		"It is recommended that the local file name is relative to the working directory, which is:"),
@@ -353,6 +424,49 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - encode the URI? (default=" + __command._True + ")."), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Request method:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__RequestMethod_JComboBox = new SimpleJComboBox ( false );
+	__RequestMethod_JComboBox.setToolTipText(
+		"HTTP request method.");
+	List<String> methodChoices = new ArrayList<>();
+	methodChoices.add ( "" );	// Default
+	methodChoices.add ( __command.DELETE );
+	methodChoices.add ( __command.GET );
+	methodChoices.add ( __command.POST );
+	methodChoices.add ( __command.PUT );
+	__RequestMethod_JComboBox.setData(methodChoices);
+	__RequestMethod_JComboBox.select ( 0 );
+	__RequestMethod_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RequestMethod_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - request method (default=" + __command.GET + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Payload file:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__PayloadFile_JTextField = new JTextField ( 50 );
+	__PayloadFile_JTextField.setToolTipText("Specify the payload file (for PUT and POST requests), can use ${Property}.");
+	__PayloadFile_JTextField.addKeyListener ( this );
+    // Layout fights back with other rows so put in its own panel.
+	JPanel PayloadFile_JPanel = new JPanel();
+	PayloadFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(PayloadFile_JPanel, __PayloadFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browsePayload_JButton = new SimpleJButton ( "...", this );
+	__browsePayload_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(PayloadFile_JPanel, __browsePayload_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path.
+		__pathPayload_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(PayloadFile_JPanel, __pathPayload_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(main_JPanel, PayloadFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("HTTP headers:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -533,9 +647,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WebGet_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String URI = "";
     String EncodeURI = "";
+    String RequestMethod = "";
+    String PayloadFile = "";
     String HttpHeaders = "";
     String ConnectTimeout = "";
     String ReadTimeout = "";
@@ -551,6 +667,8 @@ private void refresh ()
         parameters = __command.getCommandParameters();
         URI = parameters.getValue ( "URI" );
         EncodeURI = parameters.getValue ( "EncodeURI" );
+        RequestMethod = parameters.getValue ( "RequestMethod" );
+        PayloadFile = parameters.getValue ( "PayloadFile" );
         HttpHeaders = parameters.getValue ( "HttpHeaders" );
         ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
         ReadTimeout = parameters.getValue ( "ReadTimeout" );
@@ -579,6 +697,25 @@ private void refresh ()
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__RequestMethod_JComboBox, RequestMethod,JGUIUtil.NONE, null, null ) ) {
+			__RequestMethod_JComboBox.select ( RequestMethod );
+		}
+		else {
+            if ( (RequestMethod == null) ||	RequestMethod.equals("") ) {
+				// New command...select the default.
+				__RequestMethod_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"RequestMethod parameter \"" + RequestMethod +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+        if ( PayloadFile != null ) {
+            __PayloadFile_JTextField.setText ( PayloadFile );
+        }
         if ( HttpHeaders != null ) {
             __HttpHeaders_JTextArea.setText ( HttpHeaders );
         }
@@ -624,6 +761,8 @@ private void refresh ()
 	// This is only  visible information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
 	EncodeURI = __EncodeURI_JComboBox.getSelected();
+	RequestMethod = __RequestMethod_JComboBox.getSelected();
+    PayloadFile = __PayloadFile_JTextField.getText().trim();
 	HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
 	ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	ReadTimeout = __ReadTimeout_JTextField.getText().trim();
@@ -636,6 +775,8 @@ private void refresh ()
 	PropList props = new PropList ( __command.getCommandName() );
 	props.set ( "URI", URI ); // Use 'set' because the URIL may contain equals.
 	props.add ( "EncodeURI=" + EncodeURI );
+	props.add ( "RequestMethod=" + RequestMethod );
+	props.add ( "PayloadFile=" + PayloadFile );
 	props.set ( "HttpHeaders", HttpHeaders ); // Use 'set' because headers may contain equals.
 	props.add ( "ConnectTimeout=" + ConnectTimeout );
 	props.add ( "ReadTimeout=" + ReadTimeout );
@@ -662,6 +803,23 @@ private void refresh ()
 		}
 		else {
 			__path_JButton.setEnabled(false);
+		}
+	}
+	if ( __pathPayload_JButton != null ) {
+		if ( (PayloadFile != null) && !PayloadFile.isEmpty() ) {
+			__pathPayload_JButton.setEnabled ( true );
+			File f = new File ( PayloadFile );
+			if ( f.isAbsolute() ) {
+				__pathPayload_JButton.setText ( __RemoveWorkingDirectory );
+				__pathPayload_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathPayload_JButton.setText ( __AddWorkingDirectory );
+            	__pathPayload_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathPayload_JButton.setEnabled(false);
 		}
 	}
 }

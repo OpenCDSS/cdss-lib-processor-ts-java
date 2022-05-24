@@ -86,10 +86,13 @@ private WriteDateValue_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __WriteSeparateFiles_JComboBox = null;
 private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private JTextField __IncludeProperties_JTextField = null;
+private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
+private JTextArea __HeaderComments_JTextArea = null;
 private SimpleJComboBox __WriteDataFlags_JComboBox = null;
 private SimpleJComboBox __WriteDataFlagDescriptions_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
@@ -226,10 +229,13 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	String HeaderComments = __HeaderComments_JTextArea.getText().trim();
     String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
     String WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -251,6 +257,9 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
+	if ( WriteSeparateFiles.length() > 0 ) {
+		parameters.set ( "WriteSeparateFiles", WriteSeparateFiles );
+	}
     if (Delimiter.length() > 0) {
         parameters.set("Delimiter", Delimiter);
     }
@@ -262,6 +271,12 @@ private void checkInput ()
     }
     if ( IncludeProperties.length() > 0 ) {
         parameters.set ( "IncludeProperties", IncludeProperties );
+    }
+    if ( WriteHeaderComments.length() > 0 ) {
+        parameters.set ( "WriteHeaderComments", WriteHeaderComments );
+    }
+    if ( HeaderComments.length() > 0 ) {
+        parameters.set ( "HeaderComments", HeaderComments );
     }
     if ( WriteDataFlags.length() > 0 ) {
         parameters.set ( "WriteDataFlags", WriteDataFlags );
@@ -301,10 +316,14 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	// Make sure that the value for the command contains escaped values.
+    String HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
     String WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -315,10 +334,13 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "WriteSeparateFiles", WriteSeparateFiles );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "IncludeProperties", IncludeProperties );
+	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
+	__command.setCommandParameter ( "HeaderComments", HeaderComments );
 	__command.setCommandParameter ( "WriteDataFlags", WriteDataFlags );
 	__command.setCommandParameter ( "WriteDataFlagDescriptions", WriteDataFlagDescriptions );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
@@ -385,7 +407,8 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "DateValue file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} "
+		+ "notation and time series properties if writing separate files");
 	__OutputFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
@@ -404,6 +427,24 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write separate files?:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteSeparateFiles_JComboBox = new SimpleJComboBox ( false );
+    __WriteSeparateFiles_JComboBox.setToolTipText("If separate files are written (" + __command._True +
+    	"), use time series format specifiers in the OutputFile");
+    List<String> fileChoices = new ArrayList<>();
+    fileChoices.add("");
+    fileChoices.add(__command._False);
+    fileChoices.add(__command._True);
+    __WriteSeparateFiles_JComboBox.setData ( fileChoices );
+    __WriteSeparateFiles_JComboBox.select(0);
+    __WriteSeparateFiles_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __WriteSeparateFiles_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - write separate files (default=" + __command._False + ")?"),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -445,7 +486,38 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
         "Optional - names of properties to write, separated by commas, *=wildcard (default=none)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flags?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write header comments?:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
+    __WriteHeaderComments_JComboBox.setToolTipText("Should comments be written at the top of the output file?");
+    List<String> headerChoices = new ArrayList<>();
+    headerChoices.add("");
+    headerChoices.add(__command._None);
+    headerChoices.add(__command._Minimal);
+    headerChoices.add(__command._Supplied);
+    headerChoices.add(__command._Full);
+    __WriteHeaderComments_JComboBox.setData ( headerChoices );
+    __WriteHeaderComments_JComboBox.select(0);
+    __WriteHeaderComments_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __WriteHeaderComments_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - write header comments (default=" + __command._Full + ")."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Header comments:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HeaderComments_JTextArea = new JTextArea (6,50);
+    __HeaderComments_JTextArea.setToolTipText(
+    	"Comments will be printed at the top of the file with # at front of each line.  " +
+        "Use \\n or use 'Enter' key to indicate new line.");
+    __HeaderComments_JTextArea.setLineWrap ( true );
+    __HeaderComments_JTextArea.setWrapStyleWord ( true );
+    __HeaderComments_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__HeaderComments_JTextArea),
+        1, y, 6, 1, 1.0, .3, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flags?:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WriteDataFlags_JComboBox = new SimpleJComboBox ( false );
     List<String> flagChoices = new ArrayList<>();
@@ -461,7 +533,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
         "Optional - write data flags (default=" + __command._True + " if available)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flag descriptions?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flag descriptions?:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WriteDataFlagDescriptions_JComboBox = new SimpleJComboBox ( false );
     List<String> flagDescChoices = new ArrayList<>();
@@ -586,29 +658,31 @@ Respond to KeyEvents.
 public void keyPressed ( KeyEvent event )
 {	int code = event.getKeyCode();
 
-	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
-		checkInput();
-		if ( !__error_wait ) {
-			response ( true );
+	if ( event.getComponent() != this.__HeaderComments_JTextArea) {
+		// Do not close the window if entering header comments with a Return.
+		if ( code == KeyEvent.VK_ENTER ) {
+			refresh ();
+			checkInput();
+			if ( !__error_wait ) {
+				response ( true );
+			}
 		}
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
@@ -620,10 +694,13 @@ private void refresh ()
     String TSID = "";
 	String EnsembleID = "";
 	String OutputFile = "";
+	String WriteSeparateFiles = "";
 	String Delimiter = "";
 	String Precision = "";
 	String MissingValue = "";
 	String IncludeProperties = "";
+	String WriteHeaderComments = "";
+	String HeaderComments = "";
 	String WriteDataFlags = "";
 	String WriteDataFlagDescriptions = "";
 	String OutputStart = "";
@@ -640,10 +717,18 @@ private void refresh ()
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
 	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
 	    IncludeProperties = parameters.getValue("IncludeProperties");
+	    WriteHeaderComments = parameters.getValue("WriteHeaderComments");
+	    HeaderComments = parameters.getValue("HeaderComments");
+		// Replace escaped newline with actual newline so it will display on multiple lines.
+		//Message.printStatus(2,routine,"First time - replacing escaped newline with actual newline.");
+		if ( (HeaderComments != null) && !HeaderComments.isEmpty() ) {
+			HeaderComments = HeaderComments.replace("\\n","\n");
+		}
 	    WriteDataFlags = parameters.getValue("WriteDataFlags");
 	    WriteDataFlagDescriptions = parameters.getValue("WriteDataFlagDescriptions");
 		OutputStart = parameters.getValue ( "OutputStart" );
@@ -698,6 +783,21 @@ private void refresh ()
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __WriteSeparateFiles_JComboBox, WriteSeparateFiles, JGUIUtil.NONE, null, null ) ) {
+            __WriteSeparateFiles_JComboBox.select ( WriteSeparateFiles );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple).
+            if ( (WriteSeparateFiles != null) && (WriteSeparateFiles.length() > 0) ) {
+                __WriteSeparateFiles_JComboBox.insertItemAt ( WriteSeparateFiles, 1 );
+                // Select.
+                __WriteSeparateFiles_JComboBox.select ( WriteSeparateFiles );
+            }
+            else {
+                // Select the blank.
+                __WriteSeparateFiles_JComboBox.select ( 0 );
+            }
+        }
 	    if (Delimiter != null) {
 	         __Delimiter_JTextField.setText(Delimiter);
 	    }
@@ -709,6 +809,26 @@ private void refresh ()
         }
         if ( IncludeProperties != null ) {
             __IncludeProperties_JTextField.setText ( IncludeProperties );
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
+            __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple).
+            if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+                __WriteHeaderComments_JComboBox.insertItemAt ( WriteHeaderComments, 1 );
+                // Select.
+                __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+            }
+            else {
+                // Select the blank.
+                __WriteHeaderComments_JComboBox.select ( 0 );
+            }
+        }
+        if ( (HeaderComments != null) && !HeaderComments.equals("") ) {
+        	// Replace escaped newlines with actual newline.
+            //__HeaderComments_JTextArea.setText ( HeaderComments.replace("\\n", "\n").replace("\\s",  "\"") );
+            __HeaderComments_JTextArea.setText ( HeaderComments );
         }
         if ( JGUIUtil.isSimpleJComboBoxItem( __WriteDataFlags_JComboBox, WriteDataFlags, JGUIUtil.NONE, null, null ) ) {
             __WriteDataFlags_JComboBox.select ( WriteDataFlags );
@@ -782,10 +902,14 @@ private void refresh ()
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+	WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	// Replace newlines with escaped version for parameter.
+	HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\r\n","\n").replace("\n", "\\n").replace("\"", "\\\"");
 	WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
 	WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
 	OutputStart = __OutputStart_JTextField.getText().trim();
@@ -797,10 +921,13 @@ private void refresh ()
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
+	parameters.add ( "WriteSeparateFiles=" + WriteSeparateFiles );
 	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "IncludeProperties=" + IncludeProperties );
+	parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
+	parameters.add ( "HeaderComments=" + HeaderComments );
 	parameters.add ( "WriteDataFlags=" + WriteDataFlags );
 	parameters.add ( "WriteDataFlagDescriptions=" + WriteDataFlagDescriptions );
 	parameters.add ( "OutputStart=" + OutputStart );

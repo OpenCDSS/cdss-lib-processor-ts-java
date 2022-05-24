@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -81,6 +82,11 @@ protected final String _Fail = "Fail";
 
 protected final String _False = "False";
 protected final String _True = "True";
+
+protected final String DELETE = "DELETE";
+protected final String GET = "GET";
+protected final String POST = "POST";
+protected final String PUT = "PUT";
     
 /**
 Output file that is created by this command.
@@ -106,6 +112,8 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String URI = parameters.getValue ( "URI" );
+	String EncodeURI = parameters.getValue ( "EncodeURI" );
+	String RequestMethod = parameters.getValue ( "RequestMethod" );
 	String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
 	String ReadTimeout = parameters.getValue ( "ReadTimeout" );
 	String RetryMax = parameters.getValue ( "RetryMax" );
@@ -128,6 +136,26 @@ throws InvalidCommandParameterException
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the URI."));
+	}
+
+	if ( (EncodeURI != null) && !EncodeURI.isEmpty() && !EncodeURI.equalsIgnoreCase(this._False) && !EncodeURI.equalsIgnoreCase(this._True) ) {
+		message = "The EncodeURI parameter is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify the EncodeURI parameter as " + this._False + " or " + this._True + " (default)."));
+	}
+
+	if ( (RequestMethod != null) && !RequestMethod.isEmpty() &&
+		!RequestMethod.equalsIgnoreCase(this.DELETE) &&
+		!EncodeURI.equalsIgnoreCase(this.GET) &&
+		!EncodeURI.equalsIgnoreCase(this.POST) &&
+		!EncodeURI.equalsIgnoreCase(this.PUT)) {
+		message = "The request method is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify the request method as " + this.DELETE + ", " + this.GET + " (default), " + this.POST + " or " + this.PUT + "."));
 	}
 
 	if ( (ConnectTimeout != null) && !ConnectTimeout.isEmpty() && !StringUtil.isDouble(ConnectTimeout)) {
@@ -213,9 +241,11 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(13);
 	validList.add ( "URI" );
 	validList.add ( "EncodeURI" );
+	validList.add ( "RequestMethod" );
+	validList.add ( "PayloadFile" );
 	validList.add ( "HttpHeaders" );
 	validList.add ( "ConnectTimeout" );
 	validList.add ( "ReadTimeout" );
@@ -356,11 +386,39 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String EncodeURI = parameters.getValue ( "EncodeURI" );
 	boolean encodeUri = true; // Default.
-	if ( (EncodeURI != null) && ! EncodeURI.isEmpty() ) {
+	if ( (EncodeURI != null) && !EncodeURI.isEmpty() ) {
 		if ( EncodeURI.equalsIgnoreCase("false") ) {
 			encodeUri = false;
 		}
 	}
+	String RequestMethod = parameters.getValue ( "RequestMethod" );
+	if ( (RequestMethod == null) || RequestMethod.isEmpty() ) {
+		RequestMethod = this.GET; // Default.
+	}
+	/*
+	if ( RequestMethod.equalsIgnoreCase(this.GET)) {
+		message = "Only the GET request method is currently supported.  Cannot process: " + RequestMethod;
+		Message.printWarning(log_level,
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Contact support - the software needs to be enhanced." ) );
+	}
+	*/
+
+    String PayloadFile = parameters.getValue ( "PayloadFile" );
+	if ( (PayloadFile != null) && !PayloadFile.isEmpty() ) {
+		PayloadFile = TSCommandProcessorUtil.expandParameterValue(processor,this,PayloadFile);
+	}
+	String payloadFile_full = PayloadFile;
+	File payloadFile = null;
+	if ( (PayloadFile != null) && !PayloadFile.isEmpty() ) {
+		payloadFile_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),PayloadFile) );
+		payloadFile = new File(payloadFile_full);
+	}
+
     String HttpHeaders = parameters.getValue ( "HttpHeaders" );
     HashMap<String,String> httpHeaders = new HashMap<>();
     if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) && (HttpHeaders.indexOf(":") > 0) ) {
@@ -394,6 +452,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (RetryWait != null) && StringUtil.isInteger(RetryWait) ) {
 		retryWait = Integer.parseInt(RetryWait);
 	}
+
     String LocalFile = parameters.getValue ( "LocalFile" );
     boolean doOutputFile = false;
 	if ( (LocalFile != null) && !LocalFile.isEmpty() ) {
@@ -405,6 +464,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		LocalFile_full = IOUtil.verifyPathForOS(
 	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile) );
 	}
+
 	boolean doOutputProperty = false;
 	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	if ( (OutputProperty != null) && !OutputProperty.isEmpty() ) {
@@ -436,7 +496,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		// Do at least one try.
     		retryMax = 1;
     	}
-    	boolean readSuccessful = false;
+    	boolean requestSuccessful = false;
 		int responseCode = -1;
     	for ( int iRetry = 1; iRetry <= retryMax; ++iRetry ) {
     		if ( iRetry > 1 ) {
@@ -448,6 +508,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		FileOutputStream fos = null;
 	    	HttpURLConnection urlConnection = null;
 	    	InputStream is = null;
+ 			OutputStreamWriter outputStream = null;
    			BufferedInputStream isr = null;
     		StringBuilder content = null;
     		responseCode = -1;
@@ -459,7 +520,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			// (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
     			CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
     			// Open the input stream.
-    			Message.printStatus(2,routine,"Reading URI \"" + URI + "\" (try " + iRetry + ")." );
+    			Message.printStatus(2,routine,"Requesting URI \"" + URI + "\" (try " + iRetry + ")." );
     			URL url = new URL(URI);
     			urlConnection = (HttpURLConnection)url.openConnection();
     			// Add headers.
@@ -480,7 +541,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     						urlConnection.disconnect();
     					}
     					String newUrl = urlConnection.getHeaderField("Location");
-    					Message.printStatus(2,routine,"Reading redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
+    					Message.printStatus(2,routine,"Requesting redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
     					url = new URL(newUrl);
     					urlConnection = (HttpURLConnection)url.openConnection();
     					// Add headers.
@@ -501,62 +562,102 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			if ( readTimeout > 0 ) {
     				urlConnection.setReadTimeout(readTimeout);
     			}
-    			is = urlConnection.getInputStream();
-    			isr = new BufferedInputStream(is);
-    			// Open the output file.
-    			if ( doOutputFile ) {
-    				fos = new FileOutputStream( LocalFile_full );
+    			if ( RequestMethod.equalsIgnoreCase(this.DELETE) ) {
+    				// TODO smalers 2022-05-18 need to complete the implementation.
+    				// See:  https://stackoverflow.com/questions/1051004/how-to-send-put-delete-http-request-in-httpurlconnection
+    				urlConnection.setRequestMethod("DELETE");
     			}
-    			// Output the characters to the local file.
-    			int numCharsRead;
-    			// 8K optimal for small files:
-    			// - TODO smalers, 2021-08-16 should a command parameter allow changing?
-    			int arraySize = 8192;
-    			byte[] byteArray = new byte[arraySize];
-    			int bytesRead = 0;
-    			while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
+    			else if ( RequestMethod.equalsIgnoreCase(this.GET) ) {
+    				is = urlConnection.getInputStream();
+    				isr = new BufferedInputStream(is);
+    				// Open the output file.
     				if ( doOutputFile ) {
-    					fos.write(byteArray, 0, numCharsRead);
+    					fos = new FileOutputStream( LocalFile_full );
     				}
+    				// Output the characters to the local file.
+    				int numCharsRead;
+    				// 8K optimal for small files:
+    				// - TODO smalers, 2021-08-16 should a command parameter allow changing?
+    				int arraySize = 8192;
+    				byte[] byteArray = new byte[arraySize];
+    				int bytesRead = 0;
+    				while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
+    					if ( doOutputFile ) {
+    						fos.write(byteArray, 0, numCharsRead);
+    					}
+    					if ( doOutputProperty ) {
+    						// Also set the content in memory to set property below.
+    						if ( numCharsRead == byteArray.length ) {
+    							content.append(new String(byteArray));
+    						}
+    						else {
+    							byte [] byteArray2 = new byte[numCharsRead];
+    							System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
+    							content.append(new String(byteArray2));
+    						}
+    					}
+    					bytesRead += numCharsRead;
+    				}
+    				// Save the output file name.
+    				Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
+    				if ( doOutputFile ) {
+    					setOutputFile ( new File(LocalFile_full));
+    				}
+    				// If requested, also set as a property.
     				if ( doOutputProperty ) {
-    					// Also set the content in memory to set property below.
-    					if ( numCharsRead == byteArray.length ) {
-    						content.append(new String(byteArray));
+    					PropList request_params = new PropList ( "" );
+    					request_params.setUsingObject ( "PropertyName", OutputProperty );
+    					request_params.setUsingObject ( "PropertyValue", content.toString() );
+    					try {
+    						processor.processRequest( "SetProperty", request_params);
     					}
-    					else {
-    						byte [] byteArray2 = new byte[numCharsRead];
-    						System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
-    						content.append(new String(byteArray2));
+    					catch ( Exception e ) {
+    						message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
+    						Message.printWarning(log_level,
+    							MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    							routine, message );
+    						status.addToLog ( CommandPhaseType.RUN,
+    							new CommandLogRecord(CommandStatusType.FAILURE,
+    								message, "Report the problem to software support." ) );
     					}
     				}
-    				bytesRead += numCharsRead;
-    			}
-    			// Save the output file name.
-    			Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
-    			if ( doOutputFile ) {
-    				setOutputFile ( new File(LocalFile_full));
-    			}
-    			// If requested, also set as a property.
-    			if ( doOutputProperty ) {
-    				PropList request_params = new PropList ( "" );
-    				request_params.setUsingObject ( "PropertyName", OutputProperty );
-    				request_params.setUsingObject ( "PropertyValue", content.toString() );
-    				try {
-    					processor.processRequest( "SetProperty", request_params);
-    				}
-    				catch ( Exception e ) {
-    					message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
-    					Message.printWarning(log_level,
-    						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    						routine, message );
-    					status.addToLog ( CommandPhaseType.RUN,
-    						new CommandLogRecord(CommandStatusType.FAILURE,
-    							message, "Report the problem to software support." ) );
-    				}
-    			}
     			
-    			// If here successful so break out of the retry loop.
-    			readSuccessful = true;
+    				// If here successful so break out of the retry loop.
+    				requestSuccessful = true;
+    			}
+    			else if ( RequestMethod.equalsIgnoreCase(this.POST) ) {
+    				urlConnection.setDoOutput(true);
+    				urlConnection.setRequestMethod("POST");
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
+    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
+    					outputStream.write(payloadBuilder.toString());
+    					outputStream.flush();
+    					outputStream.close();
+    				}
+    				requestSuccessful = true;
+    			}
+    			else if ( RequestMethod.equalsIgnoreCase(this.PUT) ) {
+    				urlConnection.setDoOutput(true);
+    				urlConnection.setRequestMethod("PUT");
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
+    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
+    					outputStream.write(payloadBuilder.toString());
+    					outputStream.flush();
+    					outputStream.close();
+    				}
+    				requestSuccessful = true;
+    			}
+    			else {
+    				message = "Request method \"" + RequestMethod + "\" is not recognized.";
+    				Message.printWarning ( warning_level, 
+                   	MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    				status.addToLog(CommandPhaseType.RUN,
+    					new CommandLogRecord(CommandStatusType.FAILURE,
+    						message, "See the log file for details."));
+    				break;
+    			}
     		}
     		catch (MalformedURLException me) {
     			message = "URI \"" + URI + "\" is malformed (" + me + ")";
@@ -652,13 +753,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				}
     			}
     		} // End 'finally'
-   			if ( readSuccessful ) {
+   			if ( requestSuccessful ) {
    				break;
    			}
     	} // End retry loop.
 
     	// Check the response code.
-    	if ( readSuccessful ) {
+    	if ( requestSuccessful ) {
     		if ( responseCode != 200 ) {
     			message = "Response code (" + responseCode + ") indicates an error retrieving the resource";
         	    if ( IfHttpError.equalsIgnoreCase(_Fail) ) {
@@ -709,6 +810,8 @@ public String toString ( PropList parameters )
 	}
     String URI = parameters.getValue ( "URI" );
     String EncodeURI = parameters.getValue ( "EncodeURI" );
+    String RequestMethod = parameters.getValue ( "RequestMethod" );
+    String PayloadFile = parameters.getValue ( "PayloadFile" );
     String HttpHeaders = parameters.getValue ( "HttpHeaders" );
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     String ReadTimeout = parameters.getValue ( "ReadTimeout" );
@@ -727,6 +830,18 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "EncodeURI=" + EncodeURI );
+	}
+	if ( (RequestMethod != null) && (RequestMethod.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "RequestMethod=" + RequestMethod );
+	}
+	if ( (PayloadFile != null) && (PayloadFile.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "PayloadFile=\"" + PayloadFile + "\"" );
 	}
 	if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) ) {
 		if ( b.length() > 0 ) {

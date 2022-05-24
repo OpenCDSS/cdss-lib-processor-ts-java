@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -68,6 +67,20 @@ This class initializes, checks, and runs the WriteDelimitedFile() command.
 */
 public class WriteDelimitedFile_Command extends AbstractCommand implements Command, FileGenerator
 {
+
+/**
+Values for WriteHeaderComments.
+*/
+protected final String _None = "None";
+protected final String _Minimal = "Minimal";
+protected final String _Supplied = "Supplied";
+protected final String _Full = "Full";
+
+/**
+Values for WriteSeparateFiles, WriteDataFlags, and WriteDataFlagDescriptions parameters.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
     
 /**
 Values for MissingValue parameter.
@@ -97,11 +110,13 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
+    String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
     String dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
     String HeadingSurround = parameters.getValue("HeadingSurround" );
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String warning = "";
 	String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String message;
@@ -117,7 +132,7 @@ throws InvalidCommandParameterException
 			message, "Specify an output file." ) );
 	}
 	else if ( OutputFile.indexOf("${") < 0 ) {
-		// Can only check when ${Property} is not used
+		// Can only check when ${Property} is not used.
         String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -156,6 +171,15 @@ throws InvalidCommandParameterException
 				message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
+
+    if ( (WriteSeparateFiles != null) && !WriteSeparateFiles.isEmpty() &&
+    	!WriteSeparateFiles.equals(_False) && !WriteSeparateFiles.equals(_True) ) {
+        message = "The WriteSeparateFiles \"" + WriteSeparateFiles + "\" parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the whether to write separate files using " + _False + " (default) or " + _True + "." ) );
+    }
 	
     if ( (dateTimeFormatterType != null) && !dateTimeFormatterType.equals("") ) {
         // Check the value given the type - only support types that are enabled in this command.
@@ -215,12 +239,23 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	// Check for invalid parameters...
-	ArrayList<String> validList = new ArrayList<>(15);
+    if ( (WriteHeaderComments != null) && !WriteHeaderComments.isEmpty() &&
+    	!WriteHeaderComments.equalsIgnoreCase(_None) && !WriteHeaderComments.equalsIgnoreCase(_Minimal) &&
+    	!WriteHeaderComments.equalsIgnoreCase(_Supplied) && !WriteHeaderComments.equalsIgnoreCase(_Full)) {
+        message = "The WriteHeaderComments \"" + WriteHeaderComments + "\" parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the whether to write data flags using " + _None + ", " + _Minimal + ", " + _Supplied + ", or " + _Full + " (default)." ) );
+    }
+
+	// Check for invalid parameters.
+	ArrayList<String> validList = new ArrayList<>(17);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
 	validList.add ( "OutputFile" );
+	validList.add ( "WriteSeparateFiles" );
 	validList.add ( "DateTimeColumn" );
 	validList.add ( "DateTimeFormatterType" );
 	validList.add ( "DateTimeFormat" );
@@ -231,6 +266,7 @@ throws InvalidCommandParameterException
 	validList.add ( "MissingValue" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
+	validList.add ( "WriteHeaderComments" );
 	validList.add ( "HeaderComments" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -248,15 +284,14 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
 	return (new WriteDelimitedFile_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of files that were created by this command.
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
@@ -267,8 +302,7 @@ public List<File> getGeneratedFileList ()
 /**
 Return the output file generated by this file.  This method is used internally.
 */
-private File getOutputFile ()
-{
+private File getOutputFile () {
 	return __OutputFile_File;
 }
 
@@ -285,11 +319,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
-	// Clear the output file
+	// Clear the output file.
 	
 	setOutputFile ( null );
 	
-	// Check whether the processor wants output files to be created...
+	// Check whether the processor wants output files to be created.
 
 	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
@@ -307,7 +341,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -332,6 +366,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (DateTimeFormatterType0 == null) || DateTimeFormatterType0.equals("") ) {
         DateTimeFormatterType0 = "" + DateTimeFormatterType.C;
     }
+
+	// This property triggers looping over time series below and is not passed to the write method.
+    String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
+    boolean writeSeparateFiles = false; // Default.
+    if ( WriteSeparateFiles != null ) {
+    	if ( WriteSeparateFiles.equalsIgnoreCase(_True)) {
+    		writeSeparateFiles = true;
+    	}
+    }
+
     DateTimeFormatterType dateTimeFormatterType = DateTimeFormatterType.valueOfIgnoreCase(DateTimeFormatterType0);
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
     String ValueColumns = parameters.getValue ( "ValueColumns" );
@@ -340,7 +384,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         HeadingSurround = "";
     }
     else {
-        // Swap special strings for internal characters
+        // Swap special strings for internal characters.
         HeadingSurround = HeadingSurround.replace ( "\\\"", "\"" );
     }
     String Delimiter = parameters.getValue ( "Delimiter" );
@@ -348,41 +392,44 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Delimiter = ","; // default
     }
     else {
-        // Swap special strings for internal characters
+        // Swap special strings for internal characters.
         Delimiter = Delimiter.replace ( "\\s", " " );
         Delimiter = Delimiter.replace ( "\\t", "\t" );
     }
     String Precision = parameters.getValue ( "Precision" );
-    Integer precision = 4; // default
+    Integer precision = 4; // Default.
     if ( (Precision != null) && !Precision.equals("") ) {
         precision = Integer.parseInt(Precision);
     }
     String MissingValue = parameters.getValue ( "MissingValue" );
     if ( (MissingValue != null) && MissingValue.equals("") ) {
-        // Set to null to indicate default internal value should be used
+        // Set to null to indicate default internal value should be used.
         MissingValue = null;
     }
+
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+    if ( WriteHeaderComments == null ) {
+    	WriteHeaderComments = _None; // Default, as per historical behavior.
+    }
+
     String HeaderComments = parameters.getValue ( "HeaderComments" );
     List<String> headerComments = new ArrayList<>();
     if ( HeaderComments != null ) {
     	if ( (HeaderComments != null) && (HeaderComments.indexOf("${") >= 0) ) {
 		   	HeaderComments = TSCommandProcessorUtil.expandParameterValue(processor, this, HeaderComments);
 	   	}
-    	// Expand \\n to actual newlines and \\" to quote
+    	// Expand \\n to actual newlines and \\" to quote.
     	HeaderComments = HeaderComments.replace("\\n", "\n").replace("\\\"", "\"");
     	headerComments = StringUtil.breakStringList(HeaderComments, "\n", 0);
-    	// Make sure that comments have # at front
-    	String comment;
-    	for ( int i = 0; i < headerComments.size(); i++ ) {
-    		comment = headerComments.get(i);
-    		if ( ! comment.startsWith("#") ) {
-    			comment = "# " + comment;
-    			headerComments.set(i,comment);
-    		}
+   		// Don't add hash because it is automatically added.
+    	// Insert an empty line before and after to make the comments more readable.
+    	if ( headerComments.size() > 0 ) {
+    		headerComments.add(0,"");
+    		headerComments.add("");
     	}
     }
 
-	// Get the time series to process...
+	// Get the time series to process.
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -427,11 +474,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
-		OutputStart = "${OutputStart}"; // Default
+		OutputStart = "${OutputStart}"; // Default.
 	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
-		OutputEnd = "${OutputEnd}"; // Default
+		OutputEnd = "${OutputEnd}"; // Default.
 	}
 	DateTime OutputStart_DateTime = null;
 	DateTime OutputEnd_DateTime = null;
@@ -441,7 +488,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -449,30 +496,102 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
 
-    // TODO SAM 2013-10-22 Get the comments to add to the top of the file.
-	/*
-    List<String> OutputComments_Vector = null;
+    // Get the standard comments to add to the top of the file:
+    // - this includes the commands and the list of HydroBase datastores
+
+    List<String> OutputComments_List = null;
     try {
         Object o = processor.getPropContents ( "OutputComments" );
+        // Comments are available so use them.
+        if ( o != null ) {
+        	@SuppressWarnings("unchecked")
+			List<String> OutputComments_List0 = (List<String>)o;
+            OutputComments_List = OutputComments_List0;
+        }
     }
     catch ( Exception e ) {
         // Not fatal, but of use to developers.
         message = "Error requesting OutputComments from processor - not using.";
         Message.printDebug(10, routine, message );
     }
-    */
-    
-    // Write the time series file even if no time series are available.  This is useful for
-    // troubleshooting and testing (in cases where no time series are available.
-    //if ( (tslist != null) && (tslist.size() > 0) ) {
+
+    // Set the properties to control how output file headers will be written:
+    // - always set the property so that the default for the command is enforced
+    // - the low level code uses OutputComments rather than HeaderComments
+    if ( (OutputComments_List == null) && (headerComments.size() == 0) ) {
+    	// No standard or supplied comments, so don't output anything.
+    	OutputComments_List = null;
+    }
+    else {
+    	// Have standard and/or supplied comments to process, but depends on the value of WriteHeaderComments.
+    	// The DateValueTS code will check whether to write comments.  The following prepares the comment list in case it is written.
+    	if ( WriteHeaderComments.equalsIgnoreCase(this._Supplied) ) {
+    		// Only output the supplied comments.
+    		OutputComments_List = headerComments;
+    	}
+    	else {
+    		// Use Full comments, will be ignored if comments are not written.
+    		if ( OutputComments_List == null ) {
+    			// Should not happen but handle this case:
+    			// - create an empty list to append to (if non-null the previous list will be used as is)
+    			OutputComments_List = new ArrayList<>();
+    		}
+    		if ( headerComments.size() > 0 ) {
+    			// Also insert the comments at the top so they are more visible.
+    			OutputComments_List.addAll(0,headerComments);
+    		}
+    	}
+    }
+
+    // Write the time series file even if no time series are available.
+    // This is useful for troubleshooting and testing (in cases where no time series are available.
+    if ( writeSeparateFiles ) {
+    	// Write a separate file for each time series:
+    	// - the file name expands using time series properties
+    	List<TS> tslist2 = new ArrayList<>();
+    	for ( TS ts : tslist ) {
+    		// Add a single time series to the output list.
+    		tslist2.clear();
+    		tslist2.add(ts);
+    		String OutputFile_full = OutputFile;
+   			List<String> problems = new ArrayList<String>();
+    		try {
+    			// Convert to an absolute path.
+    			OutputFile_full = IOUtil.verifyPathForOS(
+    				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    					TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, ts, OutputFile, status, commandPhase )));
+    			Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+    			Message.printStatus ( 2, routine, "Writing DelimitedFile file \"" + OutputFile_full + "\"" );
+    			writeTimeSeries ( tslist2, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat, ValueColumns,
+    				HeadingSurround, Delimiter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
+    				WriteHeaderComments, OutputComments_List,
+    				problems, processor, status, CommandPhaseType.RUN );
+    			// Save the output file name.
+    			setOutputFile ( new File(OutputFile_full));
+    		}
+    		catch ( Exception e ) {
+    			message = "Unexpected error writing time series " +
+    				ts.getIdentifier().toStringAliasAndTSID() + " to delimited file \"" + OutputFile_full + "\" (" + e + ")";
+    			Message.printWarning ( warning_level, 
+    				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog ( CommandPhaseType.RUN,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "Check log file for details." ) );
+    			throw new CommandException ( message );
+    		}
+    	}
+    }
+    else {
+    	// Write all the time series to one file.
         String OutputFile_full = OutputFile;
         try {
-            // Convert to an absolute path...
+            // Convert to an absolute path.
             OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                     TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
@@ -480,9 +599,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             List<String> problems = new ArrayList<String>();
             writeTimeSeries ( tslist, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat, ValueColumns,
                 HeadingSurround, Delimiter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
-                headerComments,
+                WriteHeaderComments, OutputComments_List,
                 problems, processor, status, CommandPhaseType.RUN );
-            // Save the output file name...
+            // Save the output file name.
             setOutputFile ( new File(OutputFile_full));
         }
         catch ( Exception e ) {
@@ -495,7 +614,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
-    //}
+    }
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
@@ -503,8 +622,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
@@ -520,6 +638,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
 	String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
     String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
@@ -530,6 +649,7 @@ public String toString ( PropList parameters )
 	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String WriteHeaderComments = parameters.getValue("WriteHeaderComments");
 	String HeaderComments = parameters.getValue ( "HeaderComments" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -556,6 +676,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (WriteSeparateFiles != null) && (WriteSeparateFiles.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteSeparateFiles=\"" + WriteSeparateFiles + "\"" );
+    }
     if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -616,6 +742,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteHeaderComments=" + WriteHeaderComments);
+    }
 	if ( (HeaderComments != null) && (HeaderComments.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -639,39 +771,64 @@ Write a time series to the output file.
 @param missingValue requested missing value to output, or null to output time series missing value
 @param outputStart start for output values
 @param output End end for output values
+@param writeHeaderComments whether to write header comments in the output file, ("Full", "Minimal", or "None")
 @param headerComments list of strings for file header, should already have '#' at front.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTimeColumn,
     DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat, String valueColumns,
     String headingSurround, String delim,
     Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
-    List<String> headerComments,
+    String writeHeaderComments, List<String> headerComments,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 {   String message;
 	String routine = getClass().getSimpleName() + ".writeTimeSeries";
     PrintWriter fout = null;
     // Make sure the time series have the same interval
     try {
-        // Open the file...
+        // Open the file.
         fout = new PrintWriter ( new FileOutputStream ( outputFile ) );
         if ( (tslist == null) || (tslist.size() == 0) ) {
             return;
         }
-        // Set up for writing time series data
+        // Set up for writing time series data.
         if ( precision == null ) {
             precision = 4;
         }
         String valueFormat = "%." + precision + "f";
         String missingValueString = "";
-        // Create a DateTimeFormatter to format the data values
+        // Create a DateTimeFormatter to format the data values.
         if ( dateTimeFormatterType == null ) {
             dateTimeFormatterType = DateTimeFormatterType.C;
         }
         if ( (dateTimeFormat != null) && dateTimeFormat.equals("") ) {
-            // Set to null to simplify checks below
+            // Set to null to simplify checks below.
             dateTimeFormat = null;
         }
-        // Loop through the specified period or if not specified the full overlapping period
+
+        // Determine if header should be written (default is full header comments).
+        if ( writeHeaderComments.equalsIgnoreCase("None") ) {
+        	// Don't write any file header, historical default behavior.
+        }
+        else {
+        	// Write Minimal or Full header:
+        	// - this prints the command file
+        	IOUtil.printCreatorHeader ( fout, "#", 80, 0 );
+        	if ( writeHeaderComments.equalsIgnoreCase("Full") || writeHeaderComments.equalsIgnoreCase("Supplied") ) {
+        		// Write the header with additional comments.
+        		if ( headerComments != null ) {
+        			// Write additional comments that were passed in if the list size is > 0.
+        			int commentSize = headerComments.size();
+        			if ( commentSize > 0 ) {
+        				for ( String comment : headerComments) {
+        					fout.println ( "# " + comment );
+        				}
+        			}
+        		}
+        	}
+        	fout.println ( "#" );
+        }
+        
+        // Loop through the specified period or if not specified the full overlapping period.
         if ( (outputStart == null) || (outputEnd == null) ) {
             TSLimits limits = TSUtil.getPeriodFromTS(tslist, TSUtil.MAX_POR);
             if ( outputStart == null ) {
@@ -684,15 +841,15 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
         if ( !TSUtil.areIntervalsSame(tslist) ) {
             throw new InvalidTimeIntervalException("Time series time intervals are not the same.  Cannot write file.");
         }
-        boolean isRegular = true; // All time series are matching regular interval
-        // TODO SAM 2013-10-22 For now only support writing irregular data for a single time series
+        boolean isRegular = true; // All time series are matching regular interval.
+        // TODO SAM 2013-10-22 For now only support writing irregular data for a single time series.
         if ( !TimeInterval.isRegularInterval(tslist.get(0).getDataIntervalBase()) ) {
-        	// This will be the case if 1+ time series all have irregular interval
+        	// This will be the case if 1+ time series all have irregular interval.
         	if ( tslist.size() > 1 ) {
         		throw new InvalidTimeIntervalException("Can only write a single irregular time series.  Cannot write file.");
         	}
         	else {
-        		// Have one time series so allow it to be written below as irregular
+        		// Have one time series so allow it to be written below as irregular.
         		isRegular = false;
         	}
         }
@@ -706,9 +863,9 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
                 intervalBase = ts.getDataIntervalBase();
                 intervalMult = ts.getDataIntervalMult();
             }
-            // Missing value can be output as a string so check
+            // Missing value can be output as a string so check.
             if ( (missingValue == null) || missingValue.equals("") ) {
-                // Use the time series value
+                // Use the time series value.
                 if ( Double.isNaN(ts.getMissing()) ) {
                     missingValueStrings[its] = "NaN";
                 }
@@ -725,14 +882,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
                 }
             }
         }
-        // Output the file header
-        // - currently does not output the standard header like DateValue but may add this
-        if ( headerComments.size() > 0 ) {
-        	for ( String headerComment : headerComments ) {
-        		fout.println(headerComment);
-        	}
-        }
-        // Output the column headings
+        // Output the column headings.
         if ( headingSurround == null ) {
             headingSurround = "";
         }
@@ -755,7 +905,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
             if ( ts != null ) {
                 String heading = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, valueColumns, cs, commandPhase );
-                // Make sure the heading does not include the surround character
+                // Make sure the heading does not include the surround character.
                 if ( headingSurround.length() != 0 ) {
                     heading = heading.replace(headingSurround,"");
                 }
@@ -764,37 +914,37 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
             fout.print(headingSurround);
         }
         fout.println();
-        // Loop through date/time corresponding to each row in the output file
+        // Loop through date/time corresponding to each row in the output file.
         double value;
         String valueString, dateTimeString = "";
         if ( isRegular ) {
-        	// Have regular interval data with matching intervals
-        	// Iterate using DateTime increment and the request data from time series
+        	// Have regular interval data with matching intervals.
+        	// Iterate using DateTime increment and the request data from time series.
 	        for ( DateTime date = new DateTime(outputStart); date.lessThanOrEqualTo(outputEnd); date.addInterval(intervalBase, intervalMult)) {
-	            // Output the date/time as per the format
+	            // Output the date/time as per the format.
 	            if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
 	                if ( dateTimeFormat == null ) {
-	                    // Just use the default
+	                    // Just use the default.
 	                    dateTimeString = date.toString();
 	                }
 	                else {
-	                    // Format according to the requested
+	                    // Format according to the requested.
 	                    dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
 	                }
 	                if ( delim.equals(" ") ) {
-	                    // The dateTimeString might contain a space between date and time so replace
+	                    // The dateTimeString might contain a space between date and time so replace.
 	                    dateTimeString.replace(" ","T");
 	                }
 	            }
 	            fout.print(dateTimeString);
-	            // Loop through the time series list and output each value
+	            // Loop through the time series list and output each value.
 	            its = -1;
 	            for ( TS ts : tslist ) {
 	                // Iterate through data in the time series and output each value according to the format.
 	                ++its;
 	                TSData tsdata = new TSData();
 	                tsdata = ts.getDataPoint(date, tsdata);
-	                // First expand the line to replace time series properties
+	                // First expand the line to replace time series properties.
 	                value = tsdata.getDataValue();
 	                if ( ts.isDataMissing(value) ) {
 	                    valueString = missingValueString;
@@ -808,9 +958,9 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
 	        }
         }
         else {
-        	// Single irregular interval time series
+        	// Single irregular interval time series.
         	IrregularTS ts = (IrregularTS)tslist.get(0);
-        	// Find the nearest date
+        	// Find the nearest date.
         	DateTime iteratorStart = null, iteratorEnd = null;
         	if ( outputStart == null ) {
         		iteratorStart = new DateTime(ts.getDate1());
@@ -840,24 +990,24 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
         	TSData tsdata = null;
         	DateTime date;
 	        while ( (tsdata = tsi.next()) != null ) {
-	            // Output the date/time as per the format
+	            // Output the date/time as per the format.
 	        	date = tsdata.getDate();
 	            if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
 	                if ( dateTimeFormat == null ) {
-	                    // Just use the default
+	                    // Just use the default.
 	                    dateTimeString = date.toString();
 	                }
 	                else {
-	                    // Format according to the requested
+	                    // Format according to the requested.
 	                    dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
 	                }
 	                if ( delim.equals(" ") ) {
-	                    // The dateTimeString might contain a space between date and time so replace
+	                    // The dateTimeString might contain a space between date and time so replace.
 	                    dateTimeString.replace(" ","T");
 	                }
 	            }
 	            fout.print(dateTimeString);
-                // First expand the line to replace time series properties
+                // First expand the line to replace time series properties.
                 value = tsdata.getDataValue();
                 if ( ts.isDataMissing(value) ) {
                     valueString = missingValueString;

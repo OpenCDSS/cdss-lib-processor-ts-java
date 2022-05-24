@@ -62,7 +62,15 @@ public class WriteDateValue_Command extends AbstractCommand implements Command, 
 {
 
 /**
-Possible values for WriteDataFlags and WriteDataFlagDescriptions parameters.
+Values for WriteHeaderComments.
+*/
+protected final String _None = "None";
+protected final String _Minimal = "Minimal";
+protected final String _Supplied = "Supplied";
+protected final String _Full = "Full";
+
+/**
+Values for WriteSeparateFiles, WriteDataFlags, and WriteDataFlagDescriptions parameters.
 */
 protected final String _False = "False";
 protected final String _True = "True";
@@ -90,9 +98,11 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
+    String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
     String Delimiter = parameters.getValue("Delimiter" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
     String WriteDataFlagDescriptions = parameters.getValue ( "WriteDataFlagDescriptions" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -152,6 +162,15 @@ throws InvalidCommandParameterException
 				message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
+
+    if ( (WriteSeparateFiles != null) && !WriteSeparateFiles.isEmpty() &&
+    	!WriteSeparateFiles.equals(_False) && !WriteSeparateFiles.equals(_True) ) {
+        message = "The WriteSeparateFiles \"" + WriteSeparateFiles + "\" parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the whether to write separate files using " + _False + " (default) or " + _True + "." ) );
+    }
 	
 	if ( (Delimiter != null) && !Delimiter.equals("") && !Delimiter.equals(",")) {
         message = "The delimiter \"" + Delimiter + "\" currently must be blank (to indicate space) or a comma.";
@@ -181,8 +200,18 @@ throws InvalidCommandParameterException
         }
     }
 
+    if ( (WriteHeaderComments != null) && !WriteHeaderComments.isEmpty() &&
+    	!WriteHeaderComments.equalsIgnoreCase(_None) && !WriteHeaderComments.equalsIgnoreCase(_Minimal) &&
+    	!WriteHeaderComments.equalsIgnoreCase(_Supplied) && !WriteHeaderComments.equalsIgnoreCase(_Full)) {
+        message = "The WriteHeaderComments \"" + WriteHeaderComments + "\" parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the whether to write data flags using " + _None + ", " + _Minimal + ", " + _Supplied + ", or " + _Full + " (default)." ) );
+    }
+
     if ( (WriteDataFlags != null) && !WriteDataFlags.isEmpty() &&
-    	!WriteDataFlags.equals(_False) && !WriteDataFlags.equals(_True) ) {
+    	!WriteDataFlags.equalsIgnoreCase(_False) && !WriteDataFlags.equalsIgnoreCase(_True) ) {
         message = "The WriteDataFlags \"" + WriteDataFlags + "\" parameter is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -191,7 +220,7 @@ throws InvalidCommandParameterException
     }
     
     if ( (WriteDataFlagDescriptions != null) && !WriteDataFlagDescriptions.isEmpty() &&
-    	!WriteDataFlagDescriptions.equals(_False) && !WriteDataFlagDescriptions.equals(_True) ) {
+    	!WriteDataFlagDescriptions.equalsIgnoreCase(_False) && !WriteDataFlagDescriptions.equalsIgnoreCase(_True) ) {
         message = "The WriteDataFlagDescriptions \"" + WriteDataFlagDescriptions + "\" parameter is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -251,15 +280,18 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(14);
+	List<String> validList = new ArrayList<>(17);
 	validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
 	validList.add ( "OutputFile" );
+	validList.add ( "WriteSeparateFiles" );
 	validList.add ( "Delimiter" );
 	validList.add ( "Precision" );
 	validList.add ( "MissingValue" );
 	validList.add ( "IncludeProperties" );
+	validList.add ( "WriteHeaderComments" );
+	validList.add ( "HeaderComments" );
 	validList.add ( "WriteDataFlags" );
 	validList.add ( "WriteDataFlagDescriptions" );
 	validList.add ( "OutputStart" );
@@ -481,11 +513,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 
-	// Now try to write.  Only do so if the number of time series is 1+.  Otherwise an exception will occur.
-    // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
-    // resulting in just a header in the output.  This might be useful during testing.
+	// Try to write the time series.
 
 	PropList props = new PropList ( "WriteDateValue" );
+
+	// This property triggers looping over time series below and is not passed to the write method.
+    String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
+    boolean writeSeparateFiles = false; // Default.
+    if ( WriteSeparateFiles != null ) {
+    	if ( WriteSeparateFiles.equalsIgnoreCase(_True)) {
+    		writeSeparateFiles = true;
+    	}
+    }
+
 	String Delimiter = parameters.getValue( "Delimiter" );
 	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
 	    props.set("Delimiter=" + Delimiter);
@@ -506,6 +546,30 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		includeProperties[i] = includeProperties[i].trim();
     	}
     	props.setUsingObject("IncludeProperties",includeProperties);
+    }
+
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+    if ( WriteHeaderComments == null ) {
+    	WriteHeaderComments = _Full; // Default.
+    }
+    // Always set the property so default for command is enforced.
+	props.set("WriteHeaderComments=" + WriteHeaderComments);
+
+    String HeaderComments = parameters.getValue ( "HeaderComments" );
+    List<String> headerComments = new ArrayList<>();
+    if ( HeaderComments != null ) {
+    	if ( (HeaderComments != null) && (HeaderComments.indexOf("${") >= 0) ) {
+		   	HeaderComments = TSCommandProcessorUtil.expandParameterValue(processor, this, HeaderComments);
+	   	}
+    	// Expand \\n to actual newlines and \\" to quote.
+    	HeaderComments = HeaderComments.replace("\\n", "\n").replace("\\\"", "\"");
+    	headerComments = StringUtil.breakStringList(HeaderComments, "\n", 0);
+   		// Don't add hash because it is automatically added.
+    	// Insert an empty line before and after to make the comments more readable.
+    	if ( headerComments.size() > 0 ) {
+    		headerComments.add(0,"");
+    		headerComments.add("");
+    	}
     }
 
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
@@ -532,7 +596,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         props.set("Version=" + Version);
     }
     
-    // Get the comments to add to the top of the file.
+    // Get the standard comments to add to the top of the file:
+    // - this includes the commands and the list of HydroBase datastores
 
     List<String> OutputComments_List = null;
     try {
@@ -542,13 +607,44 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	@SuppressWarnings("unchecked")
 			List<String> OutputComments_List0 = (List<String>)o;
             OutputComments_List = OutputComments_List0;
-            props.setUsingObject("OutputComments",OutputComments_List);
         }
     }
     catch ( Exception e ) {
         // Not fatal, but of use to developers.
         message = "Error requesting OutputComments from processor - not using.";
         Message.printDebug(10, routine, message );
+    }
+
+    // Set the properties to control how output file headers will be written:
+    // - always set the property so that the default for the command is enforced
+    // - the low level code uses OutputComments rather than HeaderComments
+    if ( (OutputComments_List == null) && (headerComments.size() == 0) ) {
+    	// No standard or supplied comments, so don't output anything.
+    	props.set("OutputComments", null);
+    }
+    else {
+    	// Have standard and/or supplied comments to process, but depends on the value of WriteHeaderComments.
+    	// The DateValueTS code will check whether to write comments.  The following prepares the comment list in case it is written.
+    	if ( WriteHeaderComments.equalsIgnoreCase(this._Supplied) ) {
+    		// Only output the supplied comments.
+    		props.setUsingObject("OutputComments", headerComments);
+    		// Also reset to output "Full" since called code is not as granular as this command.
+    		props.set("WriteHeaderComments=" + this._Full);
+    	}
+    	else {
+    		// Use Full comments, will be ignored if comments are not written.
+    		if ( OutputComments_List == null ) {
+    			// Should not happen but handle this case:
+    			// - create an empty list to append to (if non-null the previous list will be used as is)
+    			OutputComments_List = new ArrayList<>();
+    		}
+    		if ( headerComments.size() > 0 ) {
+    			// Also insert the comments at the top so they are more visible.
+    			OutputComments_List.addAll(0,headerComments);
+    		}
+    		// Set the final list for DateValueTS.
+   			props.setUsingObject("OutputComments", OutputComments_List);
+    	}
     }
     
     if ( irregularInterval != null ) {
@@ -557,7 +653,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Write the time series file even if no time series are available.
     // This is useful for troubleshooting and testing (in cases where no time series are available.
-    //if ( (tslist != null) && (tslist.size() > 0) ) {
+    if ( writeSeparateFiles ) {
+    	// Write a separate file for each time series:
+    	// - the file name expands using time series properties
+    	List<TS> tslist2 = new ArrayList<>();
+    	for ( TS ts : tslist ) {
+    		// Add a single time series to the output list.
+    		tslist2.clear();
+    		tslist2.add(ts);
+    		String OutputFile_full = OutputFile;
+    		try {
+    			// Convert to an absolute path.
+    			OutputFile_full = IOUtil.verifyPathForOS(
+    				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    					TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, ts, OutputFile, status, commandPhase )));
+    			Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+    			DateValueTS.writeTimeSeriesList ( tslist2, OutputFile_full,
+    				OutputStart_DateTime, OutputEnd_DateTime, "", true, props );
+    			// Save the output file name.
+    			setOutputFile ( new File(OutputFile_full));
+    		}
+    		catch ( Exception e ) {
+    			message = "Unexpected error writing time series " +
+    				ts.getIdentifier().toStringAliasAndTSID() + " to DateValue file \"" + OutputFile_full + "\" (" + e + ")";
+    			Message.printWarning ( warning_level, 
+    				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    			Message.printWarning ( 3, routine, e );
+    			status.addToLog ( CommandPhaseType.RUN,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "Check log file for details." ) );
+    			throw new CommandException ( message );
+    		}
+    	}
+    }
+    else {
+    	// Write all the time series into one output file.
         String OutputFile_full = OutputFile;
         try {
             // Convert to an absolute path.
@@ -580,7 +710,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
-    //}
+    }
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
@@ -604,10 +734,13 @@ public String toString ( PropList parameters )
 	String TSID = parameters.getValue( "TSID" );
 	String EnsembleID = parameters.getValue( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
 	String IncludeProperties = parameters.getValue("IncludeProperties");
+	String WriteHeaderComments = parameters.getValue("WriteHeaderComments");
+	String HeaderComments = parameters.getValue ( "HeaderComments" );
 	String WriteDataFlags = parameters.getValue("WriteDataFlags");
 	String WriteDataFlagDescriptions = parameters.getValue("WriteDataFlagDescriptions");
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -639,6 +772,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (WriteSeparateFiles != null) && (WriteSeparateFiles.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteSeparateFiles=\"" + WriteSeparateFiles + "\"" );
+    }
     if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -663,6 +802,18 @@ public String toString ( PropList parameters )
         }
         b.append ( "IncludeProperties=\"" + IncludeProperties + "\"");
     }
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteHeaderComments=" + WriteHeaderComments);
+    }
+	if ( (HeaderComments != null) && (HeaderComments.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "HeaderComments=\"" + HeaderComments + "\"" );
+	}
     if ( (WriteDataFlags != null) && (WriteDataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

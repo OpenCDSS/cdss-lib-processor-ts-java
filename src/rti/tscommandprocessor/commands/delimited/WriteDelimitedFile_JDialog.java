@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -95,15 +96,17 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __WriteSeparateFiles_JComboBox = null;
 private JTextField __DateTimeColumn_JTextField = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private TSFormatSpecifiersJPanel __ValueColumns_JTextField = null;
 private JTextField __HeadingSurround_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
-private JTextField __MissingValue_JTextField = null;// Missing value for output
+private JTextField __MissingValue_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private JTextArea __HeaderComments_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -193,7 +196,7 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
@@ -227,8 +230,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -255,12 +257,13 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
@@ -271,6 +274,7 @@ private void checkInput ()
     String MissingValue = __MissingValue_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	String HeaderComments = __HeaderComments_JTextArea.getText().trim();
 
 	__error_wait = false;
@@ -286,6 +290,9 @@ private void checkInput ()
     }
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
+	}
+	if ( WriteSeparateFiles.length() > 0 ) {
+		parameters.set ( "WriteSeparateFiles", WriteSeparateFiles );
 	}
     if (DateTimeColumn.length() > 0) {
         parameters.set("DateTimeColumn", DateTimeColumn);
@@ -317,11 +324,14 @@ private void checkInput ()
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
+    if ( WriteHeaderComments.length() > 0 ) {
+        parameters.set ( "WriteHeaderComments", WriteHeaderComments );
+    }
     if ( HeaderComments.length() > 0 ) {
         parameters.set ( "HeaderComments", HeaderComments );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -340,6 +350,7 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
@@ -350,11 +361,14 @@ private void commitEdits ()
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
-	String HeaderComments = __HeaderComments_JTextArea.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	// Make sure that the value for the command contains escaped values.
+    String HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "WriteSeparateFiles", WriteSeparateFiles );
 	__command.setCommandParameter ( "DateTimeColumn", DateTimeColumn );
     __command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
     __command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
@@ -365,8 +379,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
-	// Make sure that the value for the command contains escaped values
-	__command.setCommandParameter ( "HeaderComments", HeaderComments.replace("\r\n","\\n").replace("\n", "\\n").replace("\"", "\\\"") );
+	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
+	__command.setCommandParameter ( "HeaderComments", HeaderComments );
 }
 
 /**
@@ -409,14 +423,14 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits.
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -426,9 +440,9 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delimited file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation, use time series properties if separate files");
 	__OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -438,13 +452,31 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write separate files?:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteSeparateFiles_JComboBox = new SimpleJComboBox ( false );
+    __WriteSeparateFiles_JComboBox.setToolTipText("If separate files are written (" + __command._True +
+    	"), use time series format specifiers in the OutputFile");
+    List<String> fileChoices = new ArrayList<>();
+    fileChoices.add("");
+    fileChoices.add(__command._False);
+    fileChoices.add(__command._True);
+    __WriteSeparateFiles_JComboBox.setData ( fileChoices );
+    __WriteSeparateFiles_JComboBox.select(0);
+    __WriteSeparateFiles_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __WriteSeparateFiles_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - write separate files (default=" + __command._False + ")?"),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -457,7 +489,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
-    // is supported by the panel
+    // is supported by the panel.
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
@@ -543,11 +575,30 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Header comments:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write header comments?:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
+    __WriteHeaderComments_JComboBox.setToolTipText("Should comments be written at the top of the output file?");
+    List<String> headerChoices = new ArrayList<>();
+    headerChoices.add("");
+    headerChoices.add(__command._None);
+    headerChoices.add(__command._Minimal);
+    headerChoices.add(__command._Supplied);
+    headerChoices.add(__command._Full);
+    __WriteHeaderComments_JComboBox.setData ( headerChoices );
+    __WriteHeaderComments_JComboBox.select(0);
+    __WriteHeaderComments_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __WriteHeaderComments_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - write header comments (default=" + __command._None + ")."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Header comments:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HeaderComments_JTextArea = new JTextArea (6,50);
     __HeaderComments_JTextArea.setToolTipText(
-    	"Comments will be printed at the top of the file with # at front of each line.  " +
+    	"Comments are written at the top of the file with # at front of each line.  " +
         "Use \\n or use 'Enter' key to indicate new line.");
     __HeaderComments_JTextArea.setLineWrap ( true );
     __HeaderComments_JTextArea.setWrapStyleWord ( true );
@@ -581,7 +632,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 	
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
     refresh ();
     
@@ -604,43 +655,45 @@ public void itemStateChanged (ItemEvent e)
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	//int code = event.getKeyCode();
+{	int code = event.getKeyCode();
 
-	// Don't exit the window if enter is pressed because it could be used in comments
-	//if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
-		//checkInput();
-		//if ( !__error_wait ) {
-			//response ( true );
-		//}
-	//}
+	if ( event.getComponent() != this.__HeaderComments_JTextArea) {
+		// Do not close the window if entering header comments with a Return.
+		if ( code == KeyEvent.VK_ENTER ) {
+			refresh ();
+			checkInput();
+			if ( !__error_wait ) {
+				response ( true );
+			}
+		}
+	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteDelimitedFile_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
 	String OutputFile = "";
+	String WriteSeparateFiles = "";
 	String DateTimeColumn = "";
     String dateTimeFormatterType = "";
     String DateTimeFormat = "";
@@ -651,17 +704,19 @@ private void refresh ()
 	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String WriteHeaderComments = "";
 	String HeaderComments = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
         TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
 		DateTimeColumn = parameters.getValue("DateTimeColumn");
         dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
         DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
@@ -672,9 +727,15 @@ private void refresh ()
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 		HeaderComments = parameters.getValue ( "HeaderComments" );
+		// Replace escaped newline with actual newline so it will display on multiple lines.
+		//Message.printStatus(2,routine,"First time - replacing escaped newline with actual newline.");
+		if ( (HeaderComments != null) && !HeaderComments.isEmpty() ) {
+			HeaderComments = HeaderComments.replace("\\n","\n");
+		}
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -692,19 +753,19 @@ private void refresh ()
                 __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -721,11 +782,26 @@ private void refresh ()
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __WriteSeparateFiles_JComboBox, WriteSeparateFiles, JGUIUtil.NONE, null, null ) ) {
+            __WriteSeparateFiles_JComboBox.select ( WriteSeparateFiles );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple).
+            if ( (WriteSeparateFiles != null) && (WriteSeparateFiles.length() > 0) ) {
+                __WriteSeparateFiles_JComboBox.insertItemAt ( WriteSeparateFiles, 1 );
+                // Select.
+                __WriteSeparateFiles_JComboBox.select ( WriteSeparateFiles );
+            }
+            else {
+                // Select the blank.
+                __WriteSeparateFiles_JComboBox.select ( 0 );
+            }
+        }
         if (DateTimeColumn != null) {
              __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
         if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
-            // Select default...
+            // Select default.
             __DateTimeFormat_JPanel.selectFormatterType(null);
         }
         else {
@@ -763,16 +839,32 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
+            __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple).
+            if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+                __WriteHeaderComments_JComboBox.insertItemAt ( WriteHeaderComments, 1 );
+                // Select.
+                __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+            }
+            else {
+                // Select the blank.
+                __WriteHeaderComments_JComboBox.select ( 0 );
+            }
+        }
         if ( (HeaderComments != null) && !HeaderComments.equals("") ) {
-        	// Replace escaped newlines with actual newline
+        	// Replace escaped newlines with actual newline.
             __HeaderComments_JTextArea.setText ( HeaderComments.replace("\\n", "\n").replace("\\s",  "\"") );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
@@ -783,13 +875,15 @@ private void refresh ()
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	// Replace newlines with escaped version for parameter
-	HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\r\n","\\n").replace("\n", "\\n").replace("\"", "\\\"");
+	WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	// Replace newlines with escaped version for parameter.
+	HeaderComments = __HeaderComments_JTextArea.getText().trim().replace("\r\n","\n").replace("\n", "\\n").replace("\"", "\\\"");
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
+	parameters.add ( "WriteSeparateFiles=" + WriteSeparateFiles );
 	parameters.add ( "DateTimeColumn=" + DateTimeColumn );
     parameters.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
     parameters.add ( "DateTimeFormat=" + DateTimeFormat );
@@ -800,9 +894,10 @@ private void refresh ()
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
 	parameters.add ( "HeaderComments=" + HeaderComments );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -828,16 +923,16 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

@@ -1556,8 +1556,8 @@ private List<NodeNetwork> getPropContents_NetworkResultsList() {
 
 /**
 Handle the OutputComments property request.  This includes, for example,
-the commands that are active and HydroBase version information that documents
-data available for a command.
+the commands that are active and HydroBase version information that documents data available for a command.
+The leading comment character is NOT included since it will be added before final output by calling code.
 @return list of String containing comments for output.
 */
 private List<String> getPropContents_OutputComments() {

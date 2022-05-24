@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,648 +20,6 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
-//------------------------------------------------------------------------------
-// TSEngine - class to process time series
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// Notes:	(1)	This class processes time series in bulk fashion and
-//			understands tstool command-line options.
-//------------------------------------------------------------------------------
-// History:
-//
-// 07 Apr 1998	Steven A. Malers, RTi	Created class to handle bulk processing
-//					of time series.
-// 30 Jul 1998	SAM, RTi		Pass the requested time series to the
-//					getTimeSeries calls.  The low-level
-//					code will interpret correctly if the
-//					values are zero.
-// 31 Aug 1998	SAM, RTi		Finish the enhancements to frost dates
-//					and time series filling.
-//					For regression, base the regression on
-//					the full period but only fill the
-//					requested period.
-// 22 Sep 1998	SAM, RTi		Add _missing for use with StateMod.
-// 28 Sep 1998	SAM, RTi		Allow blank line in commands file.
-//					Make so that if time series returned for
-//					fillconst() is missing to allocate an
-//					empty time series.
-// 03 Dec 1998	SAM, RTi		Add the global _fatal_error_count to
-//					help track errors.  Wrap each parse
-//					option with exception handling.
-// 02 Jan 1999	SAM, RTi		Finish up 3.07 enhancements, including
-//					extending -fillhistave to monthly data
-//					and adding the -averageperiod option.
-// 07 Jan 1999	SAM, RTi		Make so -fillhistave works the same
-//					for frost dates and other data.  Enable
-//					the add() function for frost dates.
-// 27 Jan 1999	SAM, RTi		Update to 3.09.  React to feedback from
-//					users.
-// 23 Feb 1999	SAM, CEN, RTi		Add features to support RGDSS.  Change
-//					imports to only import needed packages.
-// 06 Apr 1999	CEN, RTi		Added StateModDayTS print call and
-//					changed StateMod*TS import to proper 
-//					location.
-// 17 May 1999	SAM, RTi		Test with Java 1.1.8.  Add genesis
-//					output to StateMod output.  Update to
-//					pass PropList for StateMod output and
-//					include more information in the header.
-//					Add the -detailedheader option.
-// 09 Jun 1999	SAM, RTi		Add -ofilterdatacoverage option.
-//					Allow reports to be exported without
-//					preview.  Start adding support for file
-//					formats other than StateMod.
-// 27 Jul 1999	SAM, RTi		Add day_to_month_reservoir data filling.
-// 28 Oct 1999	SAM, RTi		Add ignore <= zero feature for
-//					averages.
-// 01 Dec 1999	SAM, CEN, RTi		Add ability to fill diversions using
-//					diversion comments.
-// 27 Jan 2000	SAM, RTi		Add -missing Value1,Value2 to set the
-//					range of missing values.  This will
-//					allow data from the NWS to be properly
-//					processed (-998 and -999 are typically
-//					used for missing data).  Minor change
-//					to free _tslist when done and tslist
-//					before adding. 
-// 19 Jul 2000	SAM, RTi		When writing a large number of StateMod
-//					files, use a binary file to process.
-//					Add -slist ability and binary command
-//					line options.  Add ability to write
-//					commands file.  Print list of time
-//					series not found to the log file.
-// 25 Sep 2000	SAM, RTi		Add -include_missing_ts functionality.
-// 04 Oct 2000	SAM, RTi		Enable DateValue format.
-// 11 Oct 2000	SAM, RTi		Add -oannual_traces_graph option.
-//					Add -oyear_to_date_report.
-// 25 Oct 2000	SAM, RTi		Enable -oscatter_plot.
-// 30 Oct 2000	SAM, RTi		Enable -oduration_graph, -obar_graph.
-// 01 Nov 2000	SAM, RTi		Add runInterpreter() to allow multi-step
-//					processing.  Track Vector of dates to
-//					simplify commands.
-// 30 Nov 2000	SAM, RTi		Change -oscatter_plot to
-//					-oxyscatter_plot.
-// 10 Dec 2000	SAM, RTi		Change NWSHourTS to NWSCardTS.  Add
-//					-onwscard to write NWS Card file.
-//					Add processTimeSeries() to generate
-//					output.  Add finalize() method.
-//					Add support for new syntax for
-//					fillRegression(), etc.  In most cases
-//					treat old and new functionality
-//					separately so that code can be migrated
-//					more easily without mixing approaches.
-// 31 Dec 2000	SAM, RTi		Remove old running average code.  A time
-//					series can now be converted to a running
-//					average and then output in any format.
-// 02 Jan 2001	SAM, RTi		Begin reworking so that old options are
-//					specifically noted as such to provide
-//					backward compatibility while allowing
-//					new code.  In particular, historic
-//					averages are now computed as time series
-//					are read and are saved with the time
-//					series.  Therefore the processCommands()
-// 07 Jan 2001	SAM, RTi		Change IO to IOUtil, GUI to GUIUtil.
-// 15 Jan 2001	SAM, RTi		Add backward-compatibility features so
-//					that time series not found in memory are
-//					temporarily queried, used, and
-//					discarded.  Enable this for old commands
-//					so that old command files can be run as
-//					they were before.  Add TEMPTS feature
-//					as needed to support
-//					backward-compatibility and streamline
-//					processing.  Convert preference commands
-//					to full expressions to allow toggle.
-// 20 Feb 2001	SAM, RTi		Finalize SQL/Daily feature release.
-//					Add:
-//						TS X = normalize()
-//						TS X = newTimeSerie()
-//					Change _missing to -999.  This thing
-//					has outlived its time.
-// 15 Mar 2001	SAM, RTi		Update to allow warning messages in
-//					the main processing loop to be
-//					temporarily turned off to minimize user
-//					mouse clicks.  Replace _isBatch with
-//					IOUtil.isBatch().
-// 09 May 2001	SAM, RTi		Add multiply(), divide().
-// 23 Aug 2001	SAM, RTi		Add relativeDiff(), replaceValue(),
-//					runProgram().  When parsing
-//					setOutputPeriod(), do not use the space
-//					as a delimiter since it can be used for
-//					periods with times.  Trim the resulting
-//					tokens.
-// 30 Aug 2001	SAM, RTi		Fix bug where graphs were reverting to
-//					last output time series list contents.
-//					Verify that copy() works.  Fix problems
-//					in TS library with clone().  Allow
-//					missing time series to be automatically
-//					inserted with missing data, even in the
-//					GUI (this is used especially by the
-//					createFromList() command).  Add
-//					blend(), cumulate().  Add newGraph() and
-//					graph property set commands.  To do so
-//					need to wire together some
-//					WindowListener code so that graphs can
-//					be managed within a TSEngine.
-//					Fix fillFrostDatesTSWithHistAve to
-//					always fill with the historic average.
-//					Previously, it would only do so if the
-//					old -fillhistave option was used.
-//					Add writeSummary() to support frost date
-//					output.  For bar graphs, allow bars to
-//					be drawn to the left or right of the
-//					date, or centered on the date.
-// 2001-11-01	SAM, RTi		Remove references to the old Visualize
-//					graphing package.  It is now completely
-//					phased out.
-// 2001-11-20	SAM, RTi		Change a couple of String.indexOf()
-//					calls to StringUtil.indexOfIgnoreCase()
-//					to be more flexible.  Fix a bug where
-//					the user-specified precision for
-//					writeStateMod() was not being
-//					recognized.
-// 2002-01-14	SAM, RTi		Enable NWSRFS data source.  Use new
-//					GRTS classes that will support Swing.
-// 2002-01-31	SAM, RTi		Update to handle TS identifiers where
-//					input sources can be specified after the
-//					TSID:  TSID~input_type~input_name.
-// 2002-02-09	SAM, RTi		Modify getTSIdentifiersFromExpressions()
-//					to return only the part between the
-//					input type and name, so that time series
-//					commands only work on the identifiers.
-//					Change so createTraces() commands sets
-//					the scenario to include the sequence
-//					number.
-// 2002-02-25	SAM, RTi		Add fillMOVE2().
-// 2002-03-22	SAM, RTi		Use analysis period for fillMOVE*()
-//					commands.  Change some regression code
-//					and parameters to be more generic (e.g.,
-//					change RegressMonthly property to
-//					AnalyzeMonthly).  Change some
-//					"expression" methods to "command"
-//					methods.  Overload processCommands() to
-//					set properties for use in the TSTool
-//					GUI.  Remove the determineQueryPeriod()
-//					method since the query, output,
-//					and analysis periods are now explicitly
-//					defined.  Sort data declarations
-//					alphabetically (had become
-//					disorganized).  Change so flags are not
-//					declared as static since they are only
-//					used internally.  Remove code that
-//					controlled computation of historic
-//					averages - just do it always.
-//					setIncludeMissingTS() was not being
-//					handled by the command parser.
-//					Add support for:
-//					fillFromTS(),
-//					readUsgsNwis(),
-//					setAutoExtendPeriod(),
-//					setBinaryTSPeriod(),
-//					setFromTS(),
-//					setQueryPeriod().
-// 2002-04-15	SAM, RTi		Add support for shiftTimeByInterval().
-//					Update scale() to accept analysis
-//					period.
-// 2002-04-17	SAM, RTi		Add support for ARMA().  Add
-//					setRegressionPeriod() to help with
-//					backward compatibility.
-// 2002-04-18	SAM, RTi		Add disaggregate().
-// 2002-04-19	SAM, RTi		Fix ARMA() to handle ARMA interval
-//					(TSTool 05.05.06).
-// 2002-04-22	SAM, RTi		Update to 05.05.07 - final cosmetic
-//					changes on existing dialogs for public
-//					release.
-// 2002-04-23	SAM, RTi		Figure out why free() does not seem to
-//					be working.  Had a problem in that the
-//					do_XXX() methods were not properly
-//					handling the resetting of time series.
-//					Update to version 05.05.08.
-// 2002-04-23	SAM, RTi		Update to version 05.05.09 - more
-//					cosmetic changes.  Make replaceValue()
-//					more robust. Add TS x = readDateValue().
-//					Add processTSProduct() and consequently
-//					implement TSSupplier.
-// 2002-04-26	SAM, RTi		Update to version 05.05.10.  Fix bug
-//					where readTimeSeries() was not properly
-//					handling spaces in file names.
-// 2002-04-26	SAM, RTi		Update to version 05.05.11.  Fix some
-//					problems with dates in editor dialogs.
-// 2002-04-26	SAM, RTi		Update to version 05.05.12.  Expand ARMA
-//					features.  Support left and right legend
-//					position in graphs.
-// 2002-05-08	SAM, RTi		Update to version 05.05.14.  Fix
-//					disaggregate(Ormsbee) to set result to
-//					zero if the input is all zeros.
-// 2002-05-09	SAM, RTi		Fix newTimeSeries() to allow * dates.
-// 2002-05-12	SAM, RTi		Update to version 05.06.00.  Add
-//					readNwsCard() and writeNwsCard()
-//					commands.  Move the log file creation to
-//					the tstool.java file (main program).
-// 2002-05-26	SAM, RTi		Enable cancel in the warning dialog in
-//					the main processing loop - use the new
-//					MessageDialogListener feature.  Add
-//					adjustExtremes().  Add
-//					addTSViewWindowListener() to allow
-//					TSTool to listing to TSViewFrame
-//					closing.  Add support for RiverWare data
-//					type with TS X = readRiverWare() and
-//					writeRiverWare().
-// 2002-06-05	SAM, RTi		Add monthly mean and summary reports.
-// 2002-06-06	SAM, RTi		Add -oriverware support to allow GUI to
-//					use File...Save as RiverWare.
-// 2002-06-13	SAM, RTi		Add support for MODSIM.
-// 2002-06-25	SAM, RTi		Add support to read RiversideDB time
-//					series.
-// 2002-07-25	SAM, RTi		Fix a bug in writeRiverWare().
-// 2002-08-23	SAM, RTi		Update indexOf() to not care if the
-//					alias is "" or not when checking the
-//					identifiers.  This is because there are
-//					cases where the alias is specified in
-//					addition to the identifier but the ID
-//					is used in commands.  Add addConstant()
-//					command.
-// 2002-08-27	SAM, RTi		Add TS X = newEndOfMonthTSFromDayTS() to
-//					replace the day_to_month_reservoir()
-//					command.  The former operates on a TSID
-//					whereas the latter actually reads the
-//					time series.
-// 2002-10-11	SAM, RTi		Update ProcessManager to ProcessManager1
-//					to allow transition to Java 1.4.x.
-// 2002-10-17	SAM, RTi		Change back to ProcessManager since the
-//					update version seems to work well for
-//					java 1.1.8 and 1.4.0.
-// 2002-11-25	SAM, RTi		Add support for Mexico CSMN time series.
-// 2003-03-13	SAM, RTi		* Add support for StateModX time series.
-//					* Fix bug in readUsgsNwis() command
-//					  where spaces in file names were
-//					  causing an error.
-//					* Add convertDataUnits() command.
-// 2003-04-04	SAM, RTi		* Add support for DIADvisor database.
-// 2003-04-18	SAM, RTi		* Add support for RiverWare in the
-//					  TSSupplier.
-//					* Begin adding more do_XXX() methods -
-//					  it appears that the
-//					  processTimeSeriesCommands() method may
-//					  be having some type of memory bound
-//					  issues because of its size.
-//					* Remove support for graph() command.
-// 2003-05-14	SAM, RTi		* Allow fillRegression() to have an
-//					  Intercept property.
-// 2003-06-12	SAM, RTi		Update to version 06.00.00.
-//					* Start using Swing components.
-//					* Use new TS package (DateTime instead
-//					  of TSDate, etc.).
-//					* Use new HydroBaseDMI instead of HBDMI.
-//					* Use new StateMod_TS.
-//					* Add support for templates in time
-//					  series products.
-// 2003-07-29	SAM, RTi		Add ESPTraceEnsemble support.
-// 2003-11-02	SAM, RTi		* Add SHEF A support.
-// 2003-12-01	SAM, RTi		* Change to calendar year as the
-//					  default year type.
-//					* Default createFromList() to use
-//					  a HydroBase input type.
-// 2004-01-15	SAM, RTi		* Enabled writing StateMod files!
-// 2004-01-29	SAM, RTi		* Update add() to take * for the list
-//					  of time series identifiers.
-//					* Remove support for old-style() add -
-//					  the code is very old!
-// 2004-01-31	SAM, RTi		Version 06.00.08 Beta.
-//					* Enabled StateMod daily format write
-//					  and optimized performance of that
-//					  code some.
-//					* Add a StopWatch to record how fast
-//					  the commands are processed.
-//					* Enable openHydroBase() command and
-//					  deprecate setDatabaseEngine(),
-//					  setDatabaseHost(), and
-//					  setDataSource().
-// 2004-02-05	SAM, RTi		Version 06.00.09 Beta.
-//					* Enable reading StateCU input type time
-//					  series.
-//					* Add writeStateCU() command to write
-//					  frost dates.
-//					* Enable reading StateCU frost dates
-//					  time series.
-//					* Enable fillHistYearAverage() on any
-//					  yearly time series.
-//					* Enable statemodMax().
-//					* Enable setIgnoreLEZero().
-//					* Phase out setUseDiversionComments()
-//					  and add fillUsingDiversionComments()
-//					  for HydroBase where filling occurs
-//					  when the command is executed.
-// 2004-02-21	SAM, RTi		Version 06.01.00.
-//					* Add fillRepeat().
-//					* Unrecognized command was not resulting
-//					  in a warning - fix.
-//					* Add fillProrate().
-//					* Add isTSID() to help identify pure
-//					  time series identifiers.
-//					* Throw an Exception of the period
-//					  cannot be changed after a read - this
-//					  was letting some errors through.
-// 2004-03-15	SAM, RTi		* Add createYearStatisticsReport()
-//					  command for testing bulk analysis of
-//					  data.
-//					* Enable the deselectTimeSeries() and
-//					  selectTimeSeries() commands.
-//					* Update writeDateValue() to use
-//					  parameters.
-//					* Update readStateModB() to take a
-//					  free-format parameter list.
-// 2004-03-22	SAM, RTi		* Make normal TS read and TSProcessor
-//					  use the same readTimeSeries0() method
-//					  to actually read time series - that
-//					  way there is full support for
-//					  TSProducts.
-// 2004-03-28	SAM, RTi		* Update createYearStatisticsReport() to
-//					  put in a second column with the
-//					  time series description, to simplify
-//					  reading the results and because the
-//					  GeoView summary layer currently
-//					  defaults to ID,Name,Values...
-// 2004-04-13	SAM, RTi		* Change ESPTraceEnsemble to
-//					  NWSRFS_ESPTraceEnsemble.
-//					* Remove commented code - TSSupplier and
-//					  normal code seem to be able to share
-//					  code OK.
-// 2004-05-11	Scott 	  		Changed the package to get
-//		Townsend, RTi		NWSRFS_ESPTraceEnsemble from NWSRFS to
-//					NWSRFS_DMI.
-// 2004-05-21	SAM, RTi		* Change the ESPTraceEnsemble to use
-//					  input type "NWSRFS_ESPTraceEnsemble".
-//					* Enable support for HydroBase WIS time
-//					  series.
-//					* Fix problem where limits summary
-//					  report is not printing properly
-//					  because the newlines in the output
-//					  are not handled.
-//					* Change readESP... to readNWSRFSESP...,
-//					  and similar for the write methods.
-// 2004-05-28	SAM, RTi		* Expand selectTimeSeries() and
-//					  deselectTimeSeries() to take time
-//					  series position.
-//					* Add TSList parameter to
-//					  writeNWSRFSESPTraceEnsemble().
-// 2004-07-11	SAM, RTi		* Update deselectTimeSeries() and
-//					  selectTimeSeries() to have
-//					  "(de)selectAllFirst" parameters to
-//					  clear selections.
-//					* Update free() to use parameter lists.
-//					* Add readStateCU() that reads one or
-//					  more time series with wildcards for
-//					  the TSID.
-// 2004-07-20	SAM, RTi		* For summary time series, if the input
-//					  type is HydroBase, print the header
-//					  from the comments.  Else, print the
-//					  default header.  The __non_co_detected
-//					  data member and is removed.
-//					* Update the createFromList() command
-//					  to use new free-format notation and
-//					  use a standard table to read the
-//					  file.  Strip the binary time series
-//					  capability from the command since
-//					  computers typically have enough
-//					  memory now.
-//					* Remove _graph_list - not used.
-// 2004-07-29	SAM, RTi		* Fix bug where createFromList() with
-//					  no input name was throwing a null
-//					  pointer exception.
-//					* Fix bug where writeDateValue was not
-//					  recognizing OutputStart, OutputEnd
-//					  parameters.
-// 2004-08-12	SAM, RTi		* Update setConstant() to free-format
-//					  parameters and allow monthly constant
-//					  values and set period to be specified.
-// 2004-08-25	SAM, RTi		* Add TS X = readHydroBase().
-// 2004-09-07	SAM, RTi		* Add NWSRFS_DMI to constructor and
-//					  add read commands for NWSRFS FS5Files.
-// 2004-11-29	SAM, RTi		* Update to allow individual ESP
-//					  traces to be read with an ID.
-// 2005-02-17	SAM, RTi		Update to version 06.10.00.
-//					* Reenable changeInterval() with generic
-//					  functionality.
-// 2005-03-14	SAM, RTi		* Add OutputFillMethod and
-//					  HandleMissingInputHow parameters to
-//					  changeInterval.
-// 2005-04-05	SAM, RTi		* Start using the new message viewer
-//					  with message tags.
-//					* Start phasing in some StateDMI
-//					  concepts like prepended commands and
-//					  application status bar messages.
-//					* Add getTimeSeriesList() to return the
-//					  full list of time series.
-//					* Deprecate getSelectedTimeSeries() in
-//					  favor of getSelectedTimeSeriesList().
-//					* Update openHydroBase() to include
-//					  UseStoredProcedures and InputName
-//					  parameters.
-//					* Replace __hbdmi with __hbdmi_Vector to
-//					  allow multiple instances of
-//					  HydroBaseDMI to be open at the same
-//					  time.  Test with the openHydroBase()
-//					  method.
-//					* When reading from HydroBase, request
-//					  the HydroBaseDMI that matches the
-//					  requested InputName.
-//					* Fix typo in openHydroBase() where
-//					  "BatchAndGUI" was used instead of
-//					  "GUIAndBatch".
-//					* Overload
-//					  getTSIdentifiersFromCommands() to
-//					  process the entire identifier.  All
-//					  commands will likely transition to
-//					  using full identifiers or aliases.
-//					* Update fillPattern() to use new
-//					  free-format parameters.
-//					* Add point graph type -opointgraph.
-//					* Implement CommandProcessor and start
-//					  to prototype a more generalized
-//					  handling of time series.
-//					* Totally remove setRegressionPeriod(),
-//					  other than obsolete warning.
-//					* Add -oPredictedValue_graph and
-//					  PredictedValueResidual_graph.
-// 2005-05-17	SAM, RTi		* Phase out fillHistMonthAverage() code
-//					  in favor of the separate command
-//					  class.
-//					* Change getTimeSeriesToProcess() from
-//					  private to protected sine it is now
-//					  being called from commands.
-//					* Remove the boolean to track warnings
-//					  about filling non-month data with
-//					  monthly averages.
-// 2005-05-18	SAM, RTi		* Phase out fillHistYearAverage() code
-//					  in favor of the separate command
-//					  class.
-// 2005-05-19	SAM, RTi		* Migrate new Command-based code to
-//					  RTi.Util.IO and RTi.TS to allow more
-//					  general design and sharing with other
-//					  applications like StateDMI.
-// 2005-05-20	SAM, RTi		* Change getTSIdentifiersFromCommands()
-//					  to support block-style comments.
-//					* Add warning in add() when FrostDate
-//					  time series are being promised, to
-//					  help CDSS users transition.
-//					* Add command_tag to a number of private
-//					  methods to facilitate using the new
-//					  log viewer.
-//					* Convert TS X = changeInterval() to
-//					  new commands.
-// 2005-05-26	SAM, RTi		* Phase in new message command tags, to
-//					  allow use of the new message log
-//					  viewer.
-// 2005-05-31	SAM, RTi		* Convert writeRiverWare() to new
-//					  command design.
-//					* Change getDateTime() to return null if
-//					  a null string is passed.
-// 2004-06-08	SAM, RTi		Update to version 06.10.02.
-//					* Convert openHydroBase() to command and
-//					  move to HydroBaseDMI package.
-//					* Update readStateCU() to read the CDS
-//					  and IPY files.
-// 2005-07-05	SAM, RTi		* When creating TSViewJFrame, add the
-//					  HydroBaseDMI and RiversideDB_DMI as
-//					  interfaces that can save products.
-// 2005-07-17	SAM, RTi		* Update selectTimeSeries() to allow the
-//					  pattern and position to be specified,
-//					  to allow more power for selects.
-//					* Update fillProrate() to compute the
-//					  factor based on an average of the
-//					  independent time series.
-// 2005-08-01	SAM, RTi		* Update the fillProrate() InitialValue
-//					  parameter to include NearestBackward
-//					  and NearestForward.  The default is
-//					  now not to automatically look for an
-//					  initial value.
-// 2005-08-24	SAM, RTi		Update to version 06.10.07.
-//					* Convert scale() to command class.
-//					* Change TS X = ... to TS Alias = ...
-//					  in comments etc.
-//					* Convert TS Alias = copy() to command
-//					  class.
-// 2005-08-30	SAM, RTi		* Convert writeStateMod() to command
-//					  class and enhance parameters to
-//					  include the output period, missing
-//					  data value, and the ability to select
-//					  the time series to output.
-//					* In getDateTime() return null if a
-//					  named DateTime is requested and the
-//					  matching object value is null.
-//					* In getDateTime() add support for
-//					  InputStart and InputEnd, equivalent to
-//					  QueryStart and QueryEnd.
-//					* Convert readStateMod() to a command
-//					  class and enhance parameters to
-//					  include the input period.
-//					* Add public readTimeSeries2(Vector) to
-//					  facilitate use by command classes.
-// 2005-09-07	SAM, RTi		Update to version 06.10.08.
-//					* Convert fillConstant() to a command
-//					  class.
-// 2005-09-20	SAM, RTi		* Convert newTimeSeries() to a command
-//					  class.
-//					* Add the newStatisticYearTS() command.
-//					* Update openHydroBase() to take a
-//					  database name.
-// 2005-09-28	SAM, RTi		Update to version 06.10.08.
-//					* Update cumulate() to command.
-//					* Add more statistics to
-//					  newStatisticYearTS().
-//					* Convert readStateModB() to use the
-//					  command class.
-// 2005-10-18	SAM, RTi		Update to version 06.11.00.
-//					* Fix so that processTSProduct() in
-//					  batch mode can still preview.
-//					* Add addTSViewTSProductAnnotation
-//					  Providers().
-//					* Add support for the ColoradoSMS
-//					  database.  This is only used for
-//					  annotating HydroBase data, so there is
-//					  currently no need for most of the
-//					  time-series logic for this input type.
-//					* Convert processTSProduct() to a
-//					  command class.
-// 2005-11-13	SAM, RTi		* Disable ESP Trace Ensemble code if not
-//					  in the jar file.
-// ...					Update to version 06.14.00.
-// 2005-12-06	J. Thomas Sapienza, RTi	* Moved readNwsCard() command out to
-//					  a separate command class.
-//					* Added code to print Exceptions thrown
-//					  when running commands to the log file
-//					  at Debug level 3, if being run with
-//					  Debug on.  This is to speed up 
-//					  debugging and development.
-// 2005-12-14	SAM, RTi		* Convert setQueryPeriod() to the
-//					  command class setInputPeriod().
-// 2006-01-18	JTS, RTi		NWSCardTS is now in RTi.DMI.NWSRFS_DMI.
-//					Note:  writeNwsCard() and read*ESP*()
-//					have not been converted to a command
-//					class yet.
-// 2006-01-31	SAM, RTi		Update to version 06.16.00.
-//					* Add NDFD command support.
-// 2006-03-27	SAM, RTi		* For newEndOfMonthTSFromDayTS(), save
-//					  the original data limits after
-//					  creation.
-// 2006-04-13	SAM, RTi		* Reenable MOVE2, which was accidentally
-//					  commented out - use command classes.
-// 2006-04-20	SAM, RTi		Update to version 06.17.00.
-//					* Convert readHydroBase() commands to
-//					  use a command class.
-// 2006-05-18	SAM, RTi		Update to version 06.19.00.
-//					* Fix bug where disaggregate was calling
-//					  getTimeSeries() with the wrong
-//					  parameters.
-// 2006-01-19	SAM, RTi		* Change fillUsingDiversionComments() to
-//					  automatically extend the data period
-//					  if no output period has been
-//					  specified.
-//					* Change the output period data members
-//					  from __output_date1/__output_date2 to
-//					  __OutputStart_DateTime/
-//					  __OutputEnd_DateTime to be more
-//					  consistent with other code.
-// 2006-07-13	SAM, RTi		* Manage NDFD Adapters.
-// 2006-10-30   Kurt Tometich, RTi  * Commented out variables and packages
-//                    pertaining to the legacy dataServices code
-// 2006-11-02   KAT, RTi        * Fixed the newDayTSFromMonthAndDayTS
-//                    to multiply the monthly volume by (1 / 1.9835).
-//                    The old code was multiplying by 1.9385 and should 
-//                    have been the reciprocal.  Algorithm is tested with
-//                    with regression test commands.
-// 2006-11-02   KAT, RTi    * Fixed bug where TS wasn't being ignored when 
-//                    daily or monthly data was missing.  Fixed in the
-//                    setUsingMonthAndDay method.  Tested by regression
-//                    test commands under test/regression/commands.
-// 2007-01-11   KAT, RTi    * Fixed a bug in do_readStateCU() where the
-//                    file from the command was not taking into account
-//                    the current working directory like all other commands.
-// 2007-01-16   KAT, RTi    * Fixed a bug in do_writeStateCU() where the
-//                    file from the command was not taking into account
-//                    the current working directory like all other commands.
-// 2007-01-25 	KAT, RTi	Deleted several import statements that were not
-//							needed.
-// 2007-01-26	KAT, RTi	Moved the do_fillUsingDiversionComments() method
-//							to the HydroBase package.  Also deleted the old way
-//							of handling this command in processCommands() by
-//							allowing it to hit the generic code at the end and 
-//							call the TSCommandFactory.  The command was copied
-//							to HydroBase similar to the openHydroBase() command.
-// 2007-02-08	SAM, RTi	Rename to TSCommandProcessor package.
-//					Clean up code based on Eclipse feedback.
-//					Change so TSEngine does not implement CommandProcessor -
-//					force all interaction to go through the TSCommandProcessor,
-//					which has an instance of TSEngine.
-//					Change getPropContents() to protected since only
-//					TSCommandProcessor should call.
-//					Internally change QueryStart/End to InputStart/End -
-//					need to transition code at command level as edits occur.
-//					Remove setProp() and setPropContents() since these are
-//					now handled by the TSCommandProcessor.
-// 2007-03-01	SAM, RTi	Fix fillInterpolate() to handle TSID with spaces.
-//
-// EndHeader
 
 package rti.tscommandprocessor.core;
 
@@ -774,38 +132,36 @@ public class TSEngine implements TSSupplier, WindowListener
 	
 public final int OUTPUT_NONE = 0;		// Initial value for _output_format.
 public final int OUTPUT_STATEMOD = 1;		// Formats for outputting the time series.
-public final int OUTPUT_SUMMARY = 2;		// Time series summary
-public final int OUTPUT_LINEGRAPH = 3;		// Line graph
-public final int OUTPUT_LINELOGYGRAPH = 4;	// Line graph - log y axis
+public final int OUTPUT_SUMMARY = 2;		// Time series summary.
+public final int OUTPUT_LINEGRAPH = 3;		// Line graph.
+public final int OUTPUT_LINELOGYGRAPH = 4;	// Line graph - log y axis.
 public final int OUTPUT_PORGRAPH = 5;		// Period of record graph.
-//public final int OUTPUT_SUMMARY_NO_STATS = 8;	// Special output for Ayres
-						// software.  Just remove the
-						// statistics lines.
+//public final int OUTPUT_SUMMARY_NO_STATS = 8;	// Special output for Ayres software.  Just remove the statistics lines.
 public final int OUTPUT_PERCENT_EXCEED_GRAPH =9;// Percent exceedance curve.
 public final int OUTPUT_DOUBLE_MASS_GRAPH = 10; // Double mass graph.
 public final int OUTPUT_DATEVALUE = 11;		// Output in DateValue format.
 public final int OUTPUT_ANNUAL_TRACES_GRAPH =12;// Annual traces graph.
 public final int OUTPUT_YEAR_TO_DATE_REPORT =13;// Year to date totals.
-public final int OUTPUT_XY_SCATTER_GRAPH = 14;	// Scatter plot
-public final int OUTPUT_DURATION_GRAPH = 15;	// Duration graph 
-public final int OUTPUT_BAR_GRAPH = 16;		// Bar graph (parallel to each other)
+public final int OUTPUT_XY_SCATTER_GRAPH = 14;	// Scatter plot.
+public final int OUTPUT_DURATION_GRAPH = 15;	// Duration graph .
+public final int OUTPUT_BAR_GRAPH = 16;		// Bar graph (parallel to each other).
 public final int OUTPUT_NWSCARD_FILE = 17;	// Output in NWS Card format.
-public final int OUTPUT_DATA_LIMITS_REPORT = 18;// Data limits report
-public final int OUTPUT_DATA_COVERAGE_REPORT=19;// Data limits report
+public final int OUTPUT_DATA_LIMITS_REPORT = 18;// Data limits report.
+public final int OUTPUT_DATA_COVERAGE_REPORT=19;// Data limits report.
 public final int OUTPUT_MONTH_MEAN_SUMMARY_REPORT=20;
 public final int OUTPUT_MONTH_TOTAL_SUMMARY_REPORT=21; // Monthly summary reports.
 public final int OUTPUT_RIVERWARE_FILE = 22;	// Output in RiverWare format.
 public final int OUTPUT_SHEFA_FILE = 23;	// Output SHEF .A format.
-public final int OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE = 24; // Output NWSRFS ESP Trace Ensemble file
+public final int OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE = 24; // Output NWSRFS ESP Trace Ensemble file.
 public final int OUTPUT_TABLE = 25;		// Output a table (currently only for display).
-public final int OUTPUT_POINT_GRAPH = 26;	// Point graph
-public final int OUTPUT_PredictedValue_GRAPH = 27;	// Predicted Value graph
-public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value Residual graph
-public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fill information
-public final int OUTPUT_AREA_GRAPH = 30; // Area graph
-public final int OUTPUT_AREA_STACKED_GRAPH = 31; // Stacked area graph
-public final int OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH = 32; // Exceedance probability graph
-public final int OUTPUT_RASTER_GRAPH = 33;  // Raster graph
+public final int OUTPUT_POINT_GRAPH = 26;	// Point graph.
+public final int OUTPUT_PredictedValue_GRAPH = 27;	// Predicted Value graph.
+public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value Residual graph.
+public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fill information.
+public final int OUTPUT_AREA_GRAPH = 30; // Area graph.
+public final int OUTPUT_AREA_STACKED_GRAPH = 31; // Stacked area graph.
+public final int OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH = 32; // Exceedance probability graph.
+public final int OUTPUT_RASTER_GRAPH = 33;  // Raster graph.
 
 /**
 Filter indicating that output should be data (default).
@@ -817,7 +173,7 @@ Filter indicating that output should be data coverage (% non-missing).
 */
 public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 
-// Data members...
+// Data members.
 
 /**
 If true, then if the output period is specified, time series will be extended to
@@ -835,7 +191,7 @@ End date for averaging.
 */
 private DateTime __AverageEnd_DateTime = null;
 
-// TODO SAM 2015-05-17 Evaluate whether this can be removed - instead using general processor properties
+// TODO SAM 2015-05-17 Evaluate whether this can be removed - instead using general processor properties.
 /**
 List of DateTime initialized from commands.
 */
@@ -864,14 +220,14 @@ Indicates whether missing time series should be added automatically.
 private boolean __IncludeMissingTS_boolean = false;
 
 // TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
-// implemented for the ReadTimeSeriesList command
+// implemented for the ReadTimeSeriesList command.
 /**
 Start date/time when reading time series and returning empty missing time series.
 */
 private DateTime __IncludeMissingTSOutputStart = null;
 
 // TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
-// implemented for the ReadTimeSeriesList command
+// implemented for the ReadTimeSeriesList command.
 /**
 End date/time when reading time series and returning empty missing time series.
 */
@@ -932,13 +288,12 @@ which requires the working directory at that point of the workflow.
 private PropList __processor_PropList = null;
 
 // TODO SAM 2010-08-31 Evaluate extending to other databases to consolidate (HydroBase?).
-// TODO SAM 2012-09-10 During transition, HydroBase can be in a datastore (HydroBaseDataStore), which is
-// managed in this list, as well as the individual HydroBaseDMI list (above).  When requested by name,
-// the HydroBaseDataStore will take precedence given that users will have configured the data store and intend
-// that it be used.
+// TODO SAM 2012-09-10 During transition, HydroBase can be in a datastore (HydroBaseDataStore),
+// which is managed in this list, as well as the individual HydroBaseDMI list (above).When requested by name,
+// When the HydroBaseDataStore will take precedence given that users will have configured the data store and intend that it be used.
 /**
-Data store list, to generically manage database connections.  This list is guaranteed to be
-non-null, although the individual data stores may not be opened and need to be handled appropriately.
+Data store list, to generically manage database connections.
+This list is guaranteed to be non-null, although the individual data stores may not be opened and need to be handled appropriately.
 */
 private List<DataStore> __dataStoreList = new Vector<>();
 
@@ -968,8 +323,7 @@ List of time series vector that is the result of processing.  This will always b
 private List<TS> __tslist = new Vector<>(50,50);
 
 /**
-WindowListener for TSViewJFrame objects, used when calling application wants to listen for
-window events on plot windows.
+WindowListener for TSViewJFrame objects, used when calling application wants to listen for window events on plot windows.
 */
 private WindowListener _tsview_window_listener = null;
 
@@ -982,9 +336,9 @@ protected TSEngine ( TSCommandProcessor ts_processor ) {
 }
 
 /**
-Add the annotation provider property to TSView properties.  This examines
-DMI instances to see if they implement TSProductAnnotationProvider.  If so,
-call the TSViewJFrame.addTSProductAnnotationProvider() method with the instance.
+Add the annotation provider property to TSView properties.
+This examines DMI instances to see if they implement TSProductAnnotationProvider.
+If so, call the TSViewJFrame.addTSProductAnnotationProvider() method with the instance.
 */
 private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 {	List<TSProductAnnotationProvider> apList = getTSProductAnnotationProviders();
@@ -997,15 +351,15 @@ private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 /**
 TODO smalers 2020-06-03 this may be disabled at some point.
 It was developed for HydroBase but is no longer used.
-Make the TSProductDMI instances known to a TSViewJFrame.  This examines DMI instances to see
-if they implement TSProductDMI, which is used to persist TSProduct information to a database.
+Make the TSProductDMI instances known to a TSViewJFrame.
+This examines DMI instances to see if they implement TSProductDMI, which is used to persist TSProduct information to a database.
 If the implementation is detected, the TSView.addTSProductDMI() method is called with the instance.
 */
 private void addTSViewTSProductDMIs ( TSViewJFrame view )
-{	// Check the HydroBase instances...
-    // First add the new datastore list
+{	// Check the HydroBase instances.
+    // First add the new datastore list.
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
-    // Disable HydroBase datastores as TSProduct providers.
+    // Disable HydroBase datastores as TSProduct providers:
     // - feature is not used
     // - may remove code in the future, but leave in for now as an example
     // - need a way to query a DMI to ask whether the feature is supported
@@ -1017,7 +371,7 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
         	view.addTSProductDMI ( (HydroBaseDMI)hbds.getDMI() );
     	}
     }
-    // Next add the legacy DMI list
+    // Next add the legacy DMI list:
     // - feature is not used
     // - may remove code in the future, but leave in for now as an example
     // - need a way to query a DMI to ask whether the feature is supported
@@ -1035,9 +389,9 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 }
 
 /**
-Add a WindowListener for TSViewJFrame instances that are created.  Currently
-only one listener can be set.  This is needed to be able to close down the
-application when simple plot interfaces are displayed.
+Add a WindowListener for TSViewJFrame instances that are created.
+Currently only one listener can be set.
+This is needed to be able to close down the application when simple plot interfaces are displayed.
 @param listener WindowListener to listen to TSViewJFrame WindowEvents.
 */
 public void addTSViewWindowListener ( WindowListener listener )
@@ -1050,8 +404,7 @@ Append time series to the results list.
 @throws Exception if there is an error appending the time series
 */
 protected void appendTimeSeries ( TS ts )
-throws Exception
-{
+throws Exception {
 	// Position is zero index so request one more than the actual size.
 	int size = 0;
 	if ( __tslist != null ) {
@@ -1062,8 +415,8 @@ throws Exception
 
 /**
 Calculate the average values for a time series.
-@return the average data for a time series using the averaging and
-output period.  If a monthly time series, a MonthTSLimits will be returned.
+@return the average data for a time series using the averaging and output period.
+If a monthly time series, a MonthTSLimits will be returned.
 Otherwise, a TSLimits will be returned.
 The overloaded method is called with a time series counter having the return value of getTimeSeriesSize().
 @param ts Monthly time series to process.
@@ -1071,7 +424,7 @@ The overloaded method is called with a time series counter having the return val
 */
 protected TSLimits calculateTSAverageLimits ( TS ts )
 throws Exception
-{	// Find the position of the time series
+{	// Find the position of the time series.
     int size = 0;
     if ( __tslist != null ) {
         size = __tslist.size();
@@ -1087,8 +440,7 @@ throws Exception
 
 static int calculateTSAverageLimits_warningPrintCount = 0;
 /**
-Calculate the average data limits for a time series using the averaging period
-if specified (otherwise use the available period).
+Calculate the average data limits for a time series using the averaging period if specified (otherwise use the available period).
 @return the average data for a time series.
 If a monthly time series, a MonthTSLimits will be returned.
 @param i Counter for time series being processed (starting at zero), used to control printing of messages.
@@ -1098,7 +450,7 @@ Currently only limits for monthly time series are supported.
 */
 private TSLimits calculateTSAverageLimits ( int i, TS ts )
 throws Exception
-{	String message, routine = "TSEngine.calculateTSAverageLimits";
+{	String message, routine = getClass().getSimpleName() + ".calculateTSAverageLimits";
 	TSLimits average_limits = null;
 
 	if ( ts == null ) {
@@ -1110,14 +462,14 @@ throws Exception
 		Message.printDebug ( 1, routine, "Trying to calculate limits for " + ts.getIdentifierString() );
 	}
 	if ( ts.getDataIntervalBase() == TimeInterval.MONTH ) {
-		// Set the flag to pass to the limits code...
+		// Set the flag to pass to the limits code.
 		int limits_flag = 0;
 		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
 		try {
 		    if ( haveAveragingPeriod() ) {
-				// Get the average values from the averaging period...
+				// Get the average values from the averaging period.
 				if ( calculateTSAverageLimits_warningPrintCount == 0 ) {
 					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
 					getAverageStart() + " to " + getAverageEnd() );
@@ -1126,9 +478,9 @@ throws Exception
 				average_limits = new MonthTSLimits( (MonthTS)ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
 			else {
-			    // Get the average values from the available period...
+			    // Get the average values from the available period.
 				if ( calculateTSAverageLimits_warningPrintCount == 0 ) {
-					// Print the message once...
+					// Print the message once.
 					Message.printStatus ( 2, routine,
 					    "No averaging period specified.  Will use available period to compute averages.");
 					++calculateTSAverageLimits_warningPrintCount;
@@ -1144,14 +496,14 @@ throws Exception
 		}
 	}
 	else if ( ts.getDataIntervalBase() == TimeInterval.YEAR ) {
-		// Set the flag to pass to the limits code...
+		// Set the flag to pass to the limits code.
 		int limits_flag = 0;
 		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
 		try {
 		    if ( haveAveragingPeriod() ) {
-				// Get the average values from the averaging period...
+				// Get the average values from the averaging period.
 				if ( i <= 0 ) {
 					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
 					getAverageStart() + " to " + getAverageEnd().toString() );
@@ -1159,9 +511,9 @@ throws Exception
 				average_limits = new TSLimits( ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
 			else {
-			    // Get the average values from the available period...
+			    // Get the average values from the available period.
 				if ( i <= 0 ) {
-					// Print the message once...
+					// Print the message once.
 					Message.printStatus ( 2, routine, "No averaging period specified.  Will use available period.");
 				}
 				average_limits = new TSLimits ( ts,	ts.getDate1(), ts.getDate2(), limits_flag );
@@ -1174,11 +526,10 @@ throws Exception
 		}
 	}
 	else {
-	    // For now we probably won't use average limits for other
-		// time steps so to increase performance don't compute...
+	    // For now we probably won't use average limits for other time steps so to increase performance don't compute.
 		// If historical averages are used for filling daily, then add daily at some point.
-	    // FIXME SAM 2008-08-18 Need to at least compute overall max, min, etc. for any period, as long
-	    // as it is not a performance hit - why is this not done?
+	    // FIXME SAM 2008-08-18 Need to at least compute overall max, min, etc. for any period,
+		// as long as it is not a performance hit - why is this not done?
 		if ( Message.isDebugOn ) {
 			Message.printStatus ( 2, routine,
 			"Calculation of historic average limits for other than monthly and yearly data is not enabled: " +
@@ -1191,8 +542,7 @@ throws Exception
 /**
 Clear the time series results.  The commands will need to be rerun to regenerate the results.
 */
-protected void clearTimeSeriesResults ( )
-{
+protected void clearTimeSeriesResults ( ) {
 	if ( __tslist != null ) {
 		__tslist.clear();
 	} 
@@ -1236,10 +586,10 @@ private List<String> createDataLimitsReport ( List<TS> tslist )
 		report.add ( ts.getDescription() );
 		report.add ( ts.getIdentifierString() );
 		report.add ( "" );
-		// The limits come back as a string with line breaks.  This
-		// apparently is displayed correctly but does not print
+		// The limits come back as a string with line breaks.
+		// This apparently is displayed correctly but does not print
 		// correctly so break into separate strings here in order to
-		// keep the strings consistent...
+		// keep the strings consistent.
 		StringUtil.addListToStringList ( report, StringUtil.breakStringList(limits.toString(), "\n", 0) );
 		report.add ( "" );
 	}
@@ -1255,7 +605,7 @@ available period for the time series (it does not check the output period).
 private List<String> createMonthSummaryReport ( List<TS> tslist, PropList props )
 {	int size = tslist.size();
 	List<String> report = new ArrayList<> ();
-	String routine = "TSEngine.createMonthSummaryReport";
+	String routine = getClass().getSimpleName() + ".createMonthSummaryReport";
 
 	String prop_val = props.getValue ( "DayType" );
 	
@@ -1313,8 +663,8 @@ private List<String> createMonthSummaryReport ( List<TS> tslist, PropList props 
 }
 
 /**
-Create a year to date report listing the total accumulation of water volume for
-each year to the specified date.  Handle real-time and historic.  But only CFS units.
+Create a year to date report listing the total accumulation of water volume for each year to the specified date.
+Handle real-time and historic.  But only CFS units.
 @param tslist list of time series to analyze.
 @param end_date Ending date for annual total (precision day!).
 @param props Properties to control output (currently the only property is SortTotals=true/false).
@@ -1360,28 +710,28 @@ private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date
 			+ StringUtil.formatString(end_date.getDay(),"%02d")
 			+ "  days" );
 
-		// If an irregular time series, convert to a daily...
+		// If an irregular time series, convert to a daily.
 
 		if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
-			// Convert to a daily time series...
+			// Convert to a daily time series.
 		    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval ();
 			ts = tsu.OLDchangeToDayTS ( (IrregularTS)ts, 1 );
 		}
 
 		int interval_base = ts.getDataIntervalBase();
 		int interval_mult = ts.getDataIntervalMult();
-		start = new DateTime (ts.getDate1());	// Overall start
+		start = new DateTime (ts.getDate1());	// Overall start.
 		start.setPrecision ( DateTime.PRECISION_DAY );
 		int year1 = start.getYear();
-		end = new DateTime(ts.getDate2());	// Overall end
+		end = new DateTime(ts.getDate2());	// Overall end.
 		end.setPrecision ( DateTime.PRECISION_DAY );
 		nyears = end.getYear() - start.getYear() + 1;
 		// Should not hit the following now since put in a check above.
 		if ( interval_base == TimeInterval.MONTH ) {
-			// Should make comparisons work...
+			// Should make comparisons work.
 			end.setDay ( TimeUtil.numDaysInMonth(end.getMonth(), end.getYear()) );
 		}
-		// Memory for yearly values...
+		// Memory for yearly values.
 		totals = new double[nyears];
 		missing = new int[nyears];
 		years = new int[nyears];
@@ -1391,55 +741,54 @@ private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date
 			missing[j] = 0;
 		}
 		double value = 0.0;
-		// Loop using addInterval...
+		// Loop using addInterval.
 		DateTime date = new DateTime ( start );
-		// Date to stop accumulating for the year, passed in...
+		// Date to stop accumulating for the year, passed in.
 		DateTime compare_date = new DateTime ( end_date );
 		compare_date.setYear ( date.getYear());
-		// Use next_year as a quick check for whether we have gone to the next year...
+		// Use next_year as a quick check for whether we have gone to the next year.
 		int next_year = date.getYear() + 1;
 		for ( ; date.lessThanOrEqualTo( end ); date.addInterval(interval_base, interval_mult)){
 			value = ts.getDataValue ( date );
 			if ( date.lessThanOrEqualTo(compare_date) ) {
-				// Got the data value...
+				// Got the data value.
 				;
 			}
-			// This checks exactly for the next year, which will work with daily or other regular data data...
+			// This checks exactly for the next year, which will work with daily or other regular data data.
 			else if ( date.getYear() == next_year ) {
-				// Have read the next starting date (start of next year)...
-				// Need to set the new compare date...
+				// Have read the next starting date (start of next year).
+				// Need to set the new compare date.
 				compare_date.setYear ( date.getYear());
 				++next_year;
-				// Data value still in memory and will be checked below...
+				// Data value still in memory and will be checked below.
 			}
 			else {
-			    // Period after compare_date and before the end of the year.  Ignore the data in the total...
+			    // Period after compare_date and before the end of the year.  Ignore the data in the total.
 				continue;
 			}
-			// Below here have a valid piece of data so check it for correctness...
+			// Below here have a valid piece of data so check it for correctness.
 			ypos = date.getYear() - year1;
 			if ( ts.isDataMissing(value) ) {
-				// Keep track of how many missing in the year...
+				// Keep track of how many missing in the year.
 				++missing[ypos];
 			}
 			else {
 			    if ( interval_base == TimeInterval.DAY ) {
-					// Convert daily average flow to ACFT...
+					// Convert daily average flow to ACFT.
 					value = value*1.9835;
 				}
-				//Message.printStatus ( 1, "", "Adding " + value + " to year " +
-				//years[ypos] + " " + date.toString());
+				//Message.printStatus ( 1, "", "Adding " + value + " to year " + years[ypos] + " " + date.toString());
 				if ( totals[ypos] < 0.0 ) {
-					// Initial value of total so set it...
+					// Initial value of total so set it.
 					totals[ypos] = value;
 				}
 				else {
-				    // Just add to existing total...
+				    // Just add to existing total.
 					totals[ypos] += value;
 				}
 			}
 		}
-		// Print the sorted totals...
+		// Print the sorted totals.
 		int sort_order[] = new int[nyears];
 		MathUtil.sort ( totals, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING, sort_order, true );
 		for ( int j = 0; j < nyears; j++ ) {
@@ -1459,23 +808,23 @@ Create the data coverage report dialog.
 */
 private List<String> createDataCoverageReport ( List<TS> orig_tslist )
 throws Exception
-{	String routine = "TSEngine.createDataCoverageReport";
+{	String routine = getClass().getSimpleName() + ".createDataCoverageReport";
 	// If the output is to be a data coverage time series, convert each
-	// time series to the monthly statistics format and feed into the
-	// report.  This may be slower than before TSTool 05.00.xx but is
+	// time series to the monthly statistics format and feed into the report.
+	// This may be slower than before TSTool 05.00.xx but is
 	// consistent with how TSTool handles time series in memory now.
 
 	MonthTS newts = null;
 	Message.printStatus ( 1, routine, "Starting report at:  " +	new DateTime(DateTime.DATE_CURRENT).toString() );
 	TSAnalyst analyst = new TSAnalyst();
-	// Start the data coverage report...
+	// Start the data coverage report.
 	try {
 	    if ( haveOutputPeriod() ) {
-			// Use it...
+			// Use it.
 			analyst.startDataCoverageReport ( __OutputStart_DateTime, __OutputEnd_DateTime, getOutputYearType() );
 		}
 		else {
-		    // Figure out the maximum period and start the report with that...
+		    // Figure out the maximum period and start the report with that.
 			TSLimits report_limits = TSUtil.getPeriodFromTS ( __tslist, TSUtil.MAX_POR );
 			analyst.startDataCoverageReport ( report_limits.getDate1(),	report_limits.getDate2(), getOutputYearType() );
 		}
@@ -1494,7 +843,7 @@ throws Exception
 		try {
 		    newts = TSAnalyst.createStatisticMonthTS( orig_tslist.get(i), null );
 			analyst.appendToDataCoverageSummaryReport ( newts );
-			// Don't actually need the time series...
+			// Don't actually need the time series.
 			newts = null;
 		}
 		catch ( Exception e ) {
@@ -1503,11 +852,11 @@ throws Exception
 			continue;
 		}
 	}
-	// Now return the report contents...
+	// Now return the report contents.
 	return analyst.getDataCoverageReport();
 }
 
-// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
+// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities.
 /**
 Execute the following command:
 <pre>
@@ -1518,13 +867,13 @@ createYearStatisticsReport(OutputFile="x",TSOutputFile="x")
 */
 private void do_createYearStatisticsReport ( String command )
 throws Exception
-{	String routine = "TSEngine.do_createYearStatisticsReport", message;
+{	String routine = getClass().getSimpleName() + ".do_createYearStatisticsReport", message;
 	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed before...
+		// Should never happen because the command name was parsed before.
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
-	// Get the input needed to process the file...
+	// Get the input needed to process the file.
 	PropList props = PropList.parse ( (String)tokens.get(1), routine, "," );
 	String OutputFile = props.getValue ( "OutputFile" );
 	String TSOutputFile = props.getValue ( "TSOutputFile" );
@@ -1549,7 +898,7 @@ throws Exception
 		throw new Exception ( message );
 	}
 
-	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
+	// Loop through the time series and convert to yearly.  Do it the brute force way right now.
 
 	int nts = getTimeSeriesSize();
 	List<TS> yts_Vector = new ArrayList<>(nts);
@@ -1560,13 +909,13 @@ throws Exception
 	double total = 0.0, value = 0.0;
 	int count = 0;
 	for ( int its = 0; its < nts; its++ ) {
-		ts = getTimeSeries(its);	// Will throw Exception
+		ts = getTimeSeries(its);	// Will throw Exception.
 		if ( ts.getDataIntervalBase() == TimeInterval.YEAR ) {
-			// Just add to the list...
+			// Just add to the list.
 			yts = (YearTS)ts;
 		}
 		else if ( ts.getDataIntervalBase() == TimeInterval.MONTH ) {
-			// Create a new time series and accumulate...
+			// Create a new time series and accumulate.
 			tsident = new TSIdent ( ts.getIdentifier() );
 			tsident.setInterval ( "Year" );
 			yts = new YearTS ();
@@ -1577,7 +926,7 @@ throws Exception
 			yts.setDataUnits ( ts.getDataUnits() );
 			yts.allocateDataSpace();
 			datetime = new DateTime(ts.getDate1());
-			// Accumulate in calendar time...
+			// Accumulate in calendar time.
 			datetime.setMonth(1);
 			datetime2 = ts.getDate2();
 			datetime2.setMonth ( 12 );
@@ -1589,7 +938,7 @@ throws Exception
 					++count;
 				}
 				if ( datetime.getMonth() == 12 ) {
-					// Transfer to year time series only if all data are available in month...
+					// Transfer to year time series only if all data are available in month.
 					if ( count == 12 ) {
 						if ( MeasTimeScale.equalsIgnoreCase( "Mean") ) {
 							yts.setDataValue( datetime, total/(double)count);
@@ -1598,16 +947,16 @@ throws Exception
 							yts.setDataValue( datetime, total);
 						}
 					}
-					// Reset the accumulators...
+					// Reset the accumulators.
 					total = 0.0;
 					count = 0;
 				}
 			}
 		}
-		// Add to the list...
+		// Add to the list.
 		yts_Vector.add ( yts );
 	}
-	// Now open the output file and average all the values...
+	// Now open the output file and average all the values.
 	PrintWriter out = null;
 	String full_filename = IOUtil.getPathUsingWorkingDir ( OutputFile );
 	out = new PrintWriter(new FileOutputStream(full_filename));
@@ -1630,7 +979,7 @@ throws Exception
 	}
 	out.flush();
 	out.close();
-	// If the time series output file was specified, write out the time series that were analyzed...
+	// If the time series output file was specified, write out the time series that were analyzed.
 	if ( TSOutputFile != null ) {
 		DateValueTS.writeTimeSeriesList ( yts_Vector,
 			IOUtil.getPathUsingWorkingDir ( TSOutputFile ),	(DateTime)null, (DateTime)null, (String)null, true );
@@ -1730,7 +1079,7 @@ throws Exception
 }
 */
 
-// FIXME SAM 2008-09-30 Undocumented/untested command, not hooked into TSTool
+// FIXME SAM 2008-09-30 Undocumented/untested command, not hooked into TSTool.
 /**
 Execute the shift() command.
 @param command Command to parse.
@@ -1744,7 +1093,7 @@ throws Exception
 	if ( tokens.size() != 4 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
-	// Parse the name and dates...
+	// Parse the name and dates.
 	String alias = (String)tokens.elementAt(1);
 	DateTime olddate = (DateTime)__datetime_Hashtable.get( (String)tokens.elementAt(2));
 	if ( olddate == null ) {
@@ -1776,13 +1125,12 @@ throws Exception
 */
 
 /**
-Loop through the list of If_Command and evaluate the overall condition statement.  All conditions must
-be true for nested if statements to allow execution of commands in the block.
+Loop through the list of If_Command and evaluate the overall condition statement.
+All conditions must be true for nested if statements to allow execution of commands in the block.
 @param ifCommandStack list of If_Command to check
 @return true if all the If_Command evaluate to true, false otherwise.
 */
-private boolean evaluateIfStack ( List<If_Command> ifCommandStack )
-{
+private boolean evaluateIfStack ( List<If_Command> ifCommandStack ) {
     for ( If_Command c : ifCommandStack ) {
         if ( !c.getConditionEval() ) {
             return false;
@@ -1792,13 +1140,10 @@ private boolean evaluateIfStack ( List<If_Command> ifCommandStack )
 }
 
 /**
-Format comments for the header of output files.  The comments
-include the commands file and database version information.
-@param commands The commands that are being processed.
-@param include_commands Indicate whether the commands should be included
-in the comments.  IOUtil.printCreatorHeader will automatically include the
-commands if a commands file has been set but is probably better to move
-to a case where the commands are passed to the write methods.
+Format comments for the header of output files.
+The comments include the commands file and important datastore information (HydroBase datastores).
+The leading comment character is NOT included since it will be added before final output by calling code.
+@param commands The commands that are being processed, may be a subset of all the commands.
 @return a String array with output comments.
 */
 protected String [] formatOutputHeaderComments ( List<Command> commands )
@@ -1817,7 +1162,7 @@ protected String [] formatOutputHeaderComments ( List<Command> commands )
 	for ( int i = 0; i < size_commands; i++ ) {
 		comments.add ( ((Command)commands.get(i)).toString() );
 	}
-	// Save information about data sources.
+	// Save information about data sources:
 	// - only include enabled datastores
 	// - HydroBase datastores
 	String db_comments[] = null;
@@ -1840,7 +1185,7 @@ protected String [] formatOutputHeaderComments ( List<Command> commands )
             }
         }
     }
-	// Legacy HydroBaseDMI list...
+	// Legacy HydroBaseDMI list.
 	for ( HydroBaseDMI hbdmi : __hbdmi_Vector ) {
 		if ( (hbdmi != null) && hbdmi.connected() ) {
 			try {
@@ -1887,9 +1232,8 @@ protected DateTime getAverageStart()
 /**
 Get whether commands should clear their run status before running, needed to handle For() commands.
 */
-private boolean getCommandsShouldClearRunStatus ()
-{
-    Boolean clearStatus = new Boolean(true); // default
+private boolean getCommandsShouldClearRunStatus () {
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = __ts_processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -1897,7 +1241,7 @@ private boolean getCommandsShouldClearRunStatus ()
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     return clearStatus;
 }
@@ -1999,20 +1343,17 @@ protected HydroBaseDMI getHydroBaseDMI ( String inputName )
 		inputName = "";
 	}
 	if ( Message.isDebugOn ) {
-        Message.printDebug ( 1, "", "Trying to find requested HydroBaseDMI instance for input name=\""+
-        inputName + "\"" );
+        Message.printDebug ( 1, "", "Trying to find requested HydroBaseDMI instance for input name=\"" + inputName + "\"" );
     }
 	HydroBaseDMI hbdmi = null;
 	for ( int i = 0; i < size; i++ ) {
 		hbdmi = __hbdmi_Vector.get(i);
 	    if ( Message.isDebugOn ) {
-	        Message.printDebug ( 1, "", "Checking HydroBaseDMI instance with input name=\""+
-	            hbdmi.getInputName() + "\"" );
+	        Message.printDebug ( 1, "", "Checking HydroBaseDMI instance with input name=\""+ hbdmi.getInputName() + "\"" );
 	    }
 		if ( hbdmi.getInputName().equalsIgnoreCase(inputName) ) {
 			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, "", "Returning HydroBaseDMI[" + i +"] InputName=\""+
-				hbdmi.getInputName() + "\"" );
+				Message.printDebug ( 1, "", "Returning HydroBaseDMI[" + i +"] InputName=\""+ hbdmi.getInputName() + "\"" );
 			}
 			return hbdmi;
 		}
@@ -2037,8 +1378,7 @@ protected boolean getIgnoreLEZero()
 }
 
 /**
-Indicate whether missing time series should result in an empty time series (rather
-than a warning and no time series).
+Indicate whether missing time series should result in an empty time series (rather than a warning and no time series).
 @return True if blank time series should be generated when they cannot be read.
 */
 protected boolean getIncludeMissingTS()
@@ -2096,23 +1436,20 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 	}
 	NWSRFS_DMI nwsrfs_dmi = null;
 	for ( int i = 0; i < size; i++ ) {
-		nwsrfs_dmi = (NWSRFS_DMI)__nwsrfs_dmi_Vector.get(i);
+		nwsrfs_dmi = __nwsrfs_dmi_Vector.get(i);
 		if ( nwsrfs_dmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, routine,
-				"Returning NWSRFS_DMI[" + i +"] InputName=\""+ nwsrfs_dmi.getInputName() + "\"" );
+				Message.printDebug ( 1, routine, "Returning NWSRFS_DMI[" + i +"] InputName=\""+ nwsrfs_dmi.getInputName() + "\"" );
 			}
 			return nwsrfs_dmi;
 		}
 	}
 	if ( Message.isDebugOn ) {
-		Message.printDebug ( 1, routine,
-		"Could not find a matching NWSRFS FS5Files DMI for InputName=\""+ input_name + "\"" );
+		Message.printDebug ( 1, routine, "Could not find a matching NWSRFS FS5Files DMI for InputName=\""+ input_name + "\"" );
 	}
 	if ( open_if_not_found ) {
 			try {
-			    Message.printStatus( 2, routine,
-					"Opening new NWSRFS FS5Files DMI using path \"" + input_name + "\"" );
+			    Message.printStatus( 2, routine, "Opening new NWSRFS FS5Files DMI using path \"" + input_name + "\"" );
 				nwsrfs_dmi = new NWSRFS_DMI( input_name );
 				nwsrfs_dmi.open();
 				// Save so we can get to it again when we need it...
@@ -2147,14 +1484,13 @@ protected DateTime getOutputStart()
 Return the output year type, to be used for commands that create output.
 @return the output year type enumeration.
 */
-protected YearType getOutputYearType()
-{   
+protected YearType getOutputYearType() {   
     return __outputYearType;
 }
 
 /**
 Indicate whether output that is exported should be previewed first.
-@return True if output that is exported should be previewed first..
+@return True if output that is exported should be previewed first.
 */
 protected boolean getPreviewExportedOutput()
 {   return __PreviewExportedOutput_boolean;
@@ -2162,10 +1498,10 @@ protected boolean getPreviewExportedOutput()
 
 /**
 Return a time series from the __tslist list.
-The search is performed backwards in the
-list, assuming that the commands are being processed sequentially and therefore
-any reference to a duplicate ID would intuitively be referring to the latest
-instance in the list.  For this version of the method, the sequence identifier is ignored.
+The search is performed backwards in the list,
+assuming that the commands are being processed sequentially and therefore
+any reference to a duplicate ID would intuitively be referring to the latest instance in the list.
+For this version of the method, the sequence identifier is ignored.
 @param id Time series identifier (either an alias or TSIdent string).
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
@@ -2176,19 +1512,18 @@ throws Exception
 }
 
 /**
-Return a time series from either the __tslist list.  The search is performed backwards in the
-list, assuming that the commands are being processed sequentially and therefore
-any reference to a duplicate ID would intuitively be referring to the latest
-instance in the list.
+Return a time series from either the __tslist list.
+The search is performed backwards in the list,
+assuming that the commands are being processed sequentially and therefore
+any reference to a duplicate ID would intuitively be referring to the latest instance in the list.
 @param id Time series identifier (either an alias or TSIdent string).
 @param sequenceID if non-null and non-blank, the sequence ID of the time series is also checked to make a match.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
 protected TS getTimeSeries ( String command_tag, String id, String sequenceID )
-throws Exception
-{
-    // Expect the time series to be in memory or BinaryTS file...
+throws Exception {
+    // Expect the time series to be in memory or BinaryTS file.
 	int pos = indexOf ( id, sequenceID );
 	if ( pos < 0 ) {
 		return null;
@@ -2220,15 +1555,15 @@ throws Exception
 /**
 Return the list of time series.  See also getSelectedTimeSeriesList().
 @return the list of time series.  The list can be null or zero size.
-@param indices a list of indices to return or null to return all.  Only indices
-within the time series list size will be returned.
+@param indices a list of indices to return or null to return all.
+Only indices within the time series list size will be returned.
 */
 protected List<TS> getTimeSeriesList ( int [] indices )
 {	if ( indices == null ){
 		return __tslist;
 	}
 	else {
-	    // Return only the requested indices...
+	    // Return only the requested indices.
 		List<TS> v = new Vector<> ();
 		int size = 0;
 		if ( __tslist != null ) {
@@ -2252,8 +1587,7 @@ protected int getTimeSeriesSize ()
 }
 
 /**
-Return the list of time series to process, based on information that indicates
-how the list can be determined.
+Return the list of time series to process, based on information that indicates how the list can be determined.
 @param TSList Indicates how the list of time series for processing is to be
 determined, with one of the following values (see TSListType):
 <ol>
@@ -2273,19 +1607,18 @@ determined, with one of the following values (see TSListType):
         be enabled.</li>
 </ol>
 @param TSID A time series identifier (pattern) when used with TSList=AllMatchingTSID and
-TSList=LastMatchingTSID, or a list of time series separated by commas when used with
-TSList=SpecifiedTSID.
+TSList=LastMatchingTSID, or a list of time series separated by commas when used with TSList=SpecifiedTSID.
 @param EnsembleID A time series ensemble identifier (no pattern currently allowed).
 @return A list that has as its first element a list of TS to process and as
 its second element an int[] indicating the positions in the time series list,
-to be used to update the time series.  Use the size of the list (in the first
-element) to determine the number of time series to process.  The order of the
-time series will be from first to last.  A non-null list is guaranteed to be returned.
+to be used to update the time series.
+Use the size of the list (in the first element) to determine the number of time series to process.
+The order of the time series will be from first to last.
+A non-null list is guaranteed to be returned.
 */
 protected TimeSeriesToProcess getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID,
     String TSPosition )
-throws Exception
-{
+throws Exception {
     @SuppressWarnings("unchecked")
 	List<TSEnsemble> ensembleList = (List<TSEnsemble>)__ts_processor.getPropContents("EnsembleResultsList");
     return TSCommandProcessorUtil.getTSMatchingTSListParameters ( __tslist,
@@ -2327,16 +1660,16 @@ protected static List<String> getTraceIdentifiersFromCommands ( List<String> com
 		tokens = StringUtil.breakStringList( command," =(),", StringUtil.DELIM_SKIP_BLANKS );
 		string = tokens.get(0).trim();
 		if ( !string.regionMatches ( true,0,"createTraces",0,12) ) {
-			// Not a command we are looking for...
+			// Not a command we are looking for.
 			continue;
 		}
 		string = tokens.get(1).trim();
 		if ( string.regionMatches ( true,0,"tempts",0,6) ) {
-			// Assume the next item is the identifier...
+			// Assume the next item is the identifier.
 			v.add ( tokens.get(2).trim() );
 		}
 		else {
-		    // Assume this item is the identifier...
+		    // Assume this item is the identifier.
 			v.add ( tokens.get(1).trim() );
 		}
 	}
@@ -2344,14 +1677,14 @@ protected static List<String> getTraceIdentifiersFromCommands ( List<String> com
 }
 
 /**
-Return a list of objects (currently open DMI instances) that implement
-TSProductAnnotationProvider. This is a helper method for other methods.
+Return a list of objects (currently open DMI instances) that implement TSProductAnnotationProvider.
+This is a helper method for other methods.
 @return a non-null list of TSProductAnnotationProviders.
 */
 protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 {	List<TSProductAnnotationProvider> apList = new ArrayList<>();
-	// Check the HydroBase instances...
-    // First do the new datastores
+	// Check the HydroBase instances.
+    // First do the new datastores.
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
     HydroBaseDataStore hbds = null;
     for ( DataStore dataStore: dataStoreList ) {
@@ -2361,7 +1694,7 @@ protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
             apList.add ( hbdmi );
         }
     }
-    // Next do the legacy DMI list
+    // Next do the legacy DMI list.
 	for ( HydroBaseDMI hbdmi: __hbdmi_Vector ) {
 		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
 			apList.add ( hbdmi );
@@ -2381,8 +1714,7 @@ public String getTSSupplierName()
 
 /**
 Return the WindowListener that wants to track TSView windows.
-This is used when the TSCommandProcessor is run as a supporting
-tool (e.g., in TSTool with no main GUI).
+This is used when the TSCommandProcessor is run as a supporting tool (e.g., in TSTool with no main GUI).
 @return the WindowListener for TSView windows.
 */
 protected WindowListener getTSViewWindowListener ()
@@ -2433,12 +1765,10 @@ protected int indexOf ( String string )
 /**
 Return the position of a time series from the __tslist list.  The search is done as follows:
 <ol>
-<li>	If string matches a TS alias matches, return the TS index.  This is
-	the most specific match where an alias is being specified in the search string.</li>
-<li>	Else, if the string does match a series identifier (using
-	TSIdent.equals()), return the index.  This is
-	a more general search where the string is an TS identifier and therefore
-	safely does NOT match an alias.</li>
+<li>	If string matches a TS alias matches, return the TS index.
+	This is the most specific match where an alias is being specified in the search string.</li>
+<li>	Else, if the string does match a series identifier (using TSIdent.equals()), return the index.
+	This is a more general search where the string is an TS identifier and therefore safely does NOT match an alias.</li>
 <li>	Return -1.</li>
 </ol>
 The search is performed backwards in the list, assuming that the commands are
@@ -2449,7 +1779,7 @@ intuitively be referring to the latest instance in the list.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
 private int indexOf ( String string, String traceID )
-{	// First search the aliases in the BinaryTS and in memory list...
+{	// First search the aliases in the BinaryTS and in memory list.
 	int pos = -1;
 	if ( (string == null) || string.equals("") ) {
 		return -1;
@@ -2463,7 +1793,7 @@ private int indexOf ( String string, String traceID )
 	if ( pos >= 0 ) {
 		return pos;
 	}
-	// Now search the identifiers (can't totally rely on indexOf() because the alias must also be empty)...
+	// Now search the identifiers (can't totally rely on indexOf() because the alias must also be empty).
 	int size = 0;
 	if ( __tslist == null ) {
 		return -1;
@@ -2524,8 +1854,7 @@ Lookup the command index for the EndFor() command with requested starting comman
 @param forName the name of the "for" name to find
 @return the previous For() command, or null if not found.
 */
-private EndFor_Command lookupEndForCommand(List<Command> commandList, int iStart)
-{
+private EndFor_Command lookupEndForCommand(List<Command> commandList, int iStart) {
     Command c;
     for ( int i = iStart; i >= 0; i-- ) {
     	c = commandList.get(i);
@@ -2541,8 +1870,7 @@ Lookup the command index for the EndFor() command with requested name
 @param commandList list of commands to check
 @param forName the name of the "for" name to find
 */
-private int lookupEndForCommandIndex(List<Command> commandList, String forName )
-{
+private int lookupEndForCommandIndex(List<Command> commandList, String forName ) {
     int i = -1;
     EndFor_Command efc;
     for ( Command c : commandList ) {
@@ -2570,7 +1898,7 @@ private List<EndIf_Command> lookupEndIfForContinue(List<Command> commandList, in
 	for ( int i = iContinue; i < iEndFor; i++ ) {
 		c = commandList.get(i);
 		if ( c instanceof EndIf_Command ) {
-			// Only add the EndIf command if its matching If command is prior to the Continue command index
+			// Only add the EndIf command if its matching If command is prior to the Continue command index.
 			EndIf_Command ec = (EndIf_Command)c;
 			int index = lookupIfCommandIndex(commandList, ec.getName());
 			if ( (index >= 0) && (index < iContinue) ) {
@@ -2587,8 +1915,7 @@ Lookup the command index for the For() command with requested name.
 @param forName the name of the "for" name to find.
 @return the For command that matches "forName".
 */
-private For_Command lookupForCommand(List<Command> commandList, String forName)
-{
+private For_Command lookupForCommand(List<Command> commandList, String forName) {
     For_Command fc;
     for ( Command c : commandList ) {
         if ( c instanceof For_Command ) {
@@ -2607,8 +1934,7 @@ Lookup the command index for the For() command with requested starting command i
 @param iStart the starting index (0+) in the command list.
 @return the previous For() command, or null if not found.
 */
-private For_Command lookupForCommand(List<Command> commandList, int iStart)
-{
+private For_Command lookupForCommand(List<Command> commandList, int iStart) {
     Command c;
     for ( int i = iStart; i >= 0; i-- ) {
     	c = commandList.get(i);
@@ -2619,14 +1945,13 @@ private For_Command lookupForCommand(List<Command> commandList, int iStart)
     return null;
 }
 
-// TODO SAM optimize this so that lookup searches backward from a starting point, for example from EndFor()
+// TODO SAM optimize this so that lookup searches backward from a starting point, for example from EndFor().
 /**
 Lookup the command index for the For() command with requested name
 @param commandList list of commands to check
 @param forName the name of the "for" name to find
 */
-private int lookupForCommandIndex(List<Command> commandList, String forName )
-{
+private int lookupForCommandIndex(List<Command> commandList, String forName ) {
     int i = -1;
     For_Command fc;
     for ( Command c : commandList ) {
@@ -2647,8 +1972,7 @@ Find a matching If_Command given a name to look up.
 @param name If_Command name to find.
 @return the matching If_Command or null if not matched.
 */
-private If_Command lookupIfCommand ( List<If_Command> ifCommandStack, String name )
-{
+private If_Command lookupIfCommand ( List<If_Command> ifCommandStack, String name ) {
     for ( If_Command c : ifCommandStack ) {
         if ( c.getName().equalsIgnoreCase(name) ) {
             return c;
@@ -2663,8 +1987,7 @@ Lookup the command index for the If() command with requested name.
 @param ifName the name of the "if" name to find.
 @return the index of the requested If() command.
 */
-private int lookupIfCommandIndex(List<Command> commandList, String ifName )
-{
+private int lookupIfCommandIndex(List<Command> commandList, String ifName ) {
     int i = -1;
     If_Command ic;
     for ( Command c : commandList ) {
@@ -2684,8 +2007,7 @@ Lookup the command index for the EndFor() command with requested name.
 @param commandList list of commands to check, typically the full command list.
 @param iStart the index (0+) for the starting point of the search, a command within a For loop.
 */
-private int lookupNextEndForCommandIndex(List<Command> commandList, int iStart)
-{
+private int lookupNextEndForCommandIndex(List<Command> commandList, int iStart) {
     Command c;
     for ( int i = iStart; i < commandList.size(); i++ ) {
     	c = commandList.get(i);
@@ -2697,8 +2019,8 @@ private int lookupNextEndForCommandIndex(List<Command> commandList, int iStart)
 }
 
 /**
-Process the events from the MessageJDialog class.  If the "Cancel" button has
-been pressed, then indicate that the time series processing should stop.
+Process the events from the MessageJDialog class.
+If the "Cancel" button has been pressed, then indicate that the time series processing should stop.
 @param command If "Cancel", then a request will be made to cancel processing.
 */
 public void messageJDialogAction ( String command )
@@ -2707,20 +2029,17 @@ public void messageJDialogAction ( String command )
 	}
 }
 
-//TODO SAM 2006-05-02
-//Need to phase out app_PropList or make the exchange of control information more robust
+//TODO SAM 2006-05-02 Need to phase out app_PropList or make the exchange of control information more robust.
 /**
-Process a list of commands, resulting in a list of time series, ensembles, tables, and
-and properties in memory.  The resulting time series are
-saved in memory and can be output using the processTimeSeries() method.
+Process a list of commands, resulting in a list of time series, ensembles, tables, and and properties in memory.
+The resulting time series are saved in memory and can be output using the processTimeSeries() method.
 <b>Filling with historical averages is handled for monthly time series
 so that original data averages are used.</b>
-@param commandList The Vector of Command from the TSCommandProcessor,
-to be processed.  If null, process all.  Non-null is typically only used, for example,
-if a user has selected commands in a GUI.
-@param appPropList if not null, then properties are set as the commands are
-run.  This is typically used when running commands prior to using an edit
-dialog in the TSTool GUI.  Properties can have the following values:
+@param commandList The list of Command from the TSCommandProcessor, to be processed.  If null, process all.
+Non-null is typically only used, for example, if a user has selected commands in a GUI.
+@param appPropList if not null, then properties are set as the commands are run.
+This is typically used when running commands prior to using an edit dialog in the TSTool GUI.
+Properties can have the following values:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
 <td><b>Property</b></td>	<td><b>Description</b></td>
@@ -2728,18 +2047,16 @@ dialog in the TSTool GUI.  Properties can have the following values:
 
 <tr>
 <td><b>CreateOutput</b></td>
-<td>Indicate whether output files should be created.  False is faster but
-results in incomplete products.
+<td>Indicate whether output files should be created.  False is faster but results in incomplete products.
 </td>
 <td>True - create output files.</td>
 </tr>
 
 <tr>
 <td><b>Recursive</b></td>
-<td>If set to true, indicates that the commands string list being processed is
-from a recursive call (e.g., when processing runCommands()).  Consequently, the
-second commands list is processed, not the original one that started
-processing.
+<td>If set to true, indicates that the commands string list being processed is from a recursive call
+(e.g., when processing runCommands()).  Consequently, the second commands list is processed,
+not the original one that started processing.
 </td>
 <td>False</td>
 </tr>
@@ -2765,22 +2082,23 @@ throws Exception
 		commandList = __ts_processor.getCommands();
 	}
 	
-	// Save the passed in properties (formed in the TSCommandProcessor) request
-	// call, so that they can be retrieved with other requests.
+	// Save the passed in properties (formed in the TSCommandProcessor) request call,
+	// so that they can be retrieved with other requests.
 	
 	if ( appPropList == null ) {
 		appPropList = new PropList ( "TSEngine" );
 	}
-	// Save class version...
+	// Save class version.
 	__processor_PropList = appPropList;
 
 	// Initialize the working directory to the initial directory that is passed in.
 	// Do this because software may request the working directory that
 	// is the result of processing and the initial directory may never have been changed dynamically.
 	
-	// FIXME SAM 2008-07-09 Need to reset global properties to defaults before running
-	// This includes output period, etc.  Otherwise, the settings will be those of the
-	// previous run.  Probably need a parameter to control (do it by default) so that
+	// FIXME SAM 2008-07-09 Need to reset global properties to defaults before running.
+	// This includes output period, etc.
+	// Otherwise, the settings will be those of the previous run.
+	// Probably need a parameter to control (do it by default) so that
 	// when running RunCommands() it is possible to retain previously set values or clear.
 	// This is done in the TSCommandProcessor instance before calling this method.
 	
@@ -2793,8 +2111,7 @@ throws Exception
 	}
 	Message.printStatus(2, routine,"InitialWorkingDir=" + __processor_PropList.getValue("InitialWorkingDir"));
 	
-	// Indicate whether output products/files should be created, or
-	// just time series (to allow interactive graphing).
+	// Indicate whether output products/files should be created, or just time series (to allow interactive graphing).
 	boolean CreateOutput_boolean = __ts_processor.getCreateOutput().booleanValue();
 	if ( __processor_PropList != null ) {
 		String CreateOutput = appPropList.getValue ( "CreateOutput" );
@@ -2810,9 +2127,8 @@ throws Exception
 			" => " + CreateOutput_boolean );
 	
 	// Indicate whether time series should be cleared between runs.
-	// If true, do not clear the time series between recursive
-	// calls.  This is somewhat experimental to evaluate a master
-	// commands file that runs other commands files.
+	// If true, do not clear the time series between recursive calls.
+	// This is somewhat experimental to evaluate a master commands file that runs other commands files.
 	boolean AppendResults_boolean = false;
 	// Indicate whether a recursive run of the processor is being made (e.g., because RunCommands() is used).
 	boolean Recursive_boolean = false;
@@ -2820,7 +2136,7 @@ throws Exception
 		String Recursive = appPropList.getValue ( "Recursive" );
 		if ( (Recursive != null) && Recursive.equalsIgnoreCase("True")){
 			Recursive_boolean = true;
-			// Default for recursive runs is to NOT append results...
+			// Default for recursive runs is to NOT append results.
 			AppendResults_boolean = false;
 		}
 	}
@@ -2840,49 +2156,48 @@ throws Exception
 	String commandString = null;
 
 	boolean inComment = false;
-	Command command = null;	// The command to process
+	Command command = null;	// The command to process.
 	CommandStatus commandStatus = null; // Put outside of main try to be able to use in catch.
 
     // Turn off interactive warnings to prevent overload on user in loops.
     Message.setPropValue ( "ShowWarningDialog=false" );
     
-    // Clear any settings that may have been left over from the previous run and which
-    // can impact the current run.
+    // Clear any settings that may have been left over from the previous run and which can impact the current run.
     
     processCommands_ResetDataForRunStart ( AppendResults_boolean );
 
-	// Now loop through the commands, query time series, and manipulate
-	// to produce a list of final time series.  The following loop does the initial queries.
+	// Now loop through the commands, query time series, and manipulate to produce a list of final time series.
+    // The following loop does the initial queries.
 
 	inComment = false;
-	int i_for_message;	// This will be adjusted by
-				// __num_prepended_commands - the user will
-				// see command numbers in messages like (12),
-				// indicating the twelfth command.
+	// 'i_for_message' will be adjusted by __num_prepended_commands:
+	// - the user will see command numbers in messages like (12), indicating the twelfth command
+	int i_for_message;
 
-	String command_tag = null;	// String used in messages to allow
-					// link back to the application
-					// commands, for use with each command.
-	int i;	// Put here so can check count outside of end of loop
-	boolean prev_command_complete_notified = false;// If previous command completion listeners were notified
-										// May not occur if "continue" in loop.
-	// TODO SAM 2016-03-23 Need to evaluate how to use in For() and also whether to allow disable to improve performance
-	CommandProfile commandProfile = null; // Profile to track execution time, memory use
-	Command commandPrev = null; // previous command in loop
-	// Initialize the If() command stack that is in effect, needed to "and" the if conditions
+	// String used in messages to allow link back to the application commands, for use with each command.
+	String command_tag = null;
+	int i;	// Put here so can check count outside of end of loop.
+	// Whether previous command completion listeners were notified.
+	// May not occur if "continue" in loop.
+	boolean prev_command_complete_notified = false;
+	// TODO SAM 2016-03-23 Need to evaluate how to use in For() and also whether to allow disable to improve performance.
+	CommandProfile commandProfile = null; // Profile to track execution time, memory use.
+	Command commandPrev = null; // Previous command in loop.
+	// Initialize the If() command stack that is in effect, needed to "and" the if conditions:
 	// - all tested If blocks are evaluated and if all evaluate to true, the command can be run
 	List<If_Command> ifCommandStack = new ArrayList<>();
-	// Initialize the For() command stack that is in effect, needed to handle command logging
+	// Initialize the For() command stack that is in effect, needed to handle command logging.
 	List<For_Command> forCommandStack = new ArrayList<>();
-	boolean ifStackOkToRun = true; // Used in loop to indicate if command in If() blocks is OK to run
-	// Indicate the state of the processor...
+	boolean ifStackOkToRun = true; // Used in loop to indicate if command in If() blocks is OK to run.
+	// Indicate the state of the processor.
 	__ts_processor.setIsRunning ( true );
-	// Stopwatch to time each command...
+	// Stopwatch to time each command.
     StopWatch stopWatch = new StopWatch();
     int runtimeTotal = 0;
-    boolean needToInterrupt = false; // Will set to true if need to break out of running (e.g., no for loop end)
+    // Will set 'needToInterrupt' to true if need to break out of running (e.g., no for loop end).
     // Loop through the commands and reset any For() commands to make sure they don't think they are complete.
     // Nested for loops will be handled when processed by resetting when a for loop is totally complete.
+    boolean needToInterrupt = false;
     //For_Command forCommand = null;
     CommandStatusProvider commandStatusProvider = null;
     for ( i = 0; i < size; i++ ) {
@@ -2893,7 +2208,7 @@ throws Exception
         }
         commandStatusProvider = null;
         if ( command instanceof CommandStatusProvider ) {
-        	// The command status provider is used below as needed and does not need to be recast
+        	// The command status provider is used below as needed and does not need to be recast.
         	commandStatusProvider = (CommandStatusProvider)command;
         }
         if ( command instanceof For_Command ) {
@@ -2901,30 +2216,29 @@ throws Exception
             forCommand.resetCommand();
         }
         if ( commandStatusProvider != null ) {
-	        // Clear the log on all the commands
-	        // TODO SAM 2015-06-06 This is needed because it is difficult with For() commands to know when to clear vs. accumulate
+	        // Clear the log on all the commands.
+	        // TODO SAM 2015-06-06 This is needed because it is difficult with For() commands to know when to clear vs. accumulate.
         	// TODO SAM 2015-06-06 Do the other run modes need to be cleared out?
 	        commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
         }
     }
-    // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate
+    // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate.
     __ts_processor.setPropContents("CommandsShouldClearRunStatus",new Boolean(false));
-    // Create a list for output files.  This is now needed because with For() a command may generate multiple output files
+    // Create a list for output files.  This is now needed because with For() a command may generate multiple output files.
     List<File> outputFileList = new ArrayList<>();
     setOutputFileList ( outputFileList );
-    boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing
+    boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing.
     boolean outputFilesAdded = false;
-    // Run using the command list index because the index is modified below by For() commands
+    // Run using the command list index because the index is modified below by For() commands.
 	for ( i = 0; i < size; i++ ) {
-		// 1-offset command count for messages
+		// 1-offset command count for messages.
 		i_for_message = i + 1;
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
-		// Reset each command
+		// Reset each command.
 		needToInterrupt = false;
 		// Output files have not been added for a command, allows check in exceptions.
 		outputFilesAdded = false;
-		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
-		// continue in loop, do it now)...
+		// If for some reason the previous command did not notify listeners of its completion (e.g., due to continue in loop, do it now).
 		if ( !prev_command_complete_notified && (commandPrev != null) ) {
 			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (i - 1), size, commandPrev );
 		}
@@ -2934,14 +2248,13 @@ throws Exception
 			commandPrev = command;
 		}
 		// Check for a cancel, which would have been set by pressing
-		// the cancel button on the warning dialog or by using the other TSTool menus...
+		// the cancel button on the warning dialog or by using the other TSTool menus.
 		if ( __ts_processor.getCancelProcessingRequested() ) {
-			// Set Warning dialog settings back to normal...
+			// Set Warning dialog settings back to normal.
             Message.setPropValue ( "ShowWarningDialog=true" );
-			// Set flag so code interested in processor knows it is not running...
+			// Set flag so code interested in processor knows it is not running.
 			__ts_processor.setIsRunning ( false );
-			// Reset the cancel processing request and let interested code know that
-			// processing has been cancelled.
+			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 			return;
@@ -2949,28 +2262,28 @@ throws Exception
 		if ( Thread.interrupted() ) {
 			// Similar to above.  Swallow because know what is supposed to be happening at this point.
 			// Set Warning dialog settings back to normal.
-			// Also added this later in the loop in case
+			// Also added this later in the loop in case.
             Message.setPropValue ( "ShowWarningDialog=true" );
-			// Set flag so code interested in processor knows it is not running...
+			// Set flag so code interested in processor knows it is not running.
 			__ts_processor.setIsRunning ( false );
-			// Reset the cancel processing request and let interested code know that
-			// processing has been cancelled.
+			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 			return;
 		}
-		try { // Catch errors in all the commands.
+		try {
+			// Catch errors in all the commands.
     		command = commandList.get(i);
     		commandString = command.toString();
     		if ( commandString == null ) {
     			continue;
     		}
     		commandString = commandString.trim();
-    		// All commands implement CommandStatusProvider via AbstractCommand so get an instance of CommandStatusProvider
+    		// All commands implement CommandStatusProvider via AbstractCommand so get an instance of CommandStatusProvider.
     		commandStatusProvider = null;
     		commandStatus = null;
             if ( command instanceof CommandStatusProvider ) {
-            	// The command status provider is used below as needed so get an instance that does not need to be recast later
+            	// The command status provider is used below as needed so get an instance that does not need to be recast later.
             	commandStatusProvider = (CommandStatusProvider)command;
             }
     		commandStatus = commandStatusProvider.getCommandStatus();
@@ -2979,7 +2292,7 @@ throws Exception
     			commandStatus.clearLog(CommandPhaseType.RUN);
     		}
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
-    		// Don't use routine in messages... keep log messages shorter
+    		// Don't use routine in messages. keep log messages shorter.
     		if ( !inComment && ifStackOkToRun ) {
     			Message.printStatus ( 2, "", "-> Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\"" );
     		}
@@ -2987,7 +2300,7 @@ throws Exception
             stopWatch.start();
             commandProfile.setStartTime(System.currentTimeMillis());
             commandProfile.setStartHeap(Runtime.getRuntime().totalMemory());
-    		// Notify any listeners that the command is running...
+    		// Notify any listeners that the command is running.
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
     
     		if ( command instanceof Comment_Command ) {
@@ -3035,7 +2348,7 @@ throws Exception
                 		// - mark the command with an error
                 		// - set the command status information
         	    		if ( command instanceof CommandStatusProvider ) {
-				    		// Add to the command log as a failure...
+				    		// Add to the command log as a failure.
 				    		commandStatus.addToLog(CommandPhaseType.RUN,
 				    			new CommandLogRecord(CommandStatusType.FAILURE,
 					   			"Error checking @require comment (" + e + ").", "See log file for details.") );
@@ -3069,8 +2382,7 @@ throws Exception
     			continue;
     		}
     		if ( inComment ) {
-    		    // Commands won't know themselves that they are in a comment so set the status for them
-    		    // and continue.
+    		    // Commands won't know themselves that they are in a comment so set the status for them and continue.
     		    // TODO SAM 2008-09-30 Do the logs need to be cleared?
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -3089,15 +2401,15 @@ throws Exception
     		// This points out that perhaps If() statements cause a jump to EndIf()?
     		// - currently traverse all within the If() block and evaluate the stack?
     		//else if ( command instanceof Exit_Command ) {
-    		//	// Exit the processing...
+    		//	// Exit the processing.
     		//	Message.printStatus ( 1, routine, "Exit - stop processing commands." );
             //    commandProfile.setEndTime(System.currentTimeMillis());
             //    commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     		//	break;
     		//}
     	
-    		// Check for obsolete commands (do this last to minimize the amount of processing through this code)...
-    		// Do this at the end because this logic may seldom be hit if valid commands are processed above.  
+    		// Check for obsolete commands (do this last to minimize the amount of processing through this code).
+    		// Do this at the end because this logic may seldom be hit if valid commands are processed above.
     		
     		else if ( processCommands_CheckForObsoleteCommands(commandString, commandStatusProvider, message_tag, i_for_message) ) {
     			// Had a match so increment the counters.
@@ -3106,12 +2418,12 @@ throws Exception
                 commandProfile.setEndTime(System.currentTimeMillis());
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     		}
-    		// Command factory for remaining commands...
+    		// Command factory for remaining commands.
     		else {
-                // Try the Command class code...
+                // Try the Command class code.
     			try {
-                    // Make sure the command is valid...
-    				// Initialize the command (parse)...
+                    // Make sure the command is valid.
+    				// Initialize the command (parse).
     				// TODO SAM 2007-09-05 Need to evaluate where the initialization occurs (probably the initial edit or load)?
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "Initializing the Command for \"" + commandString + "\"" );
@@ -3120,35 +2432,34 @@ throws Exception
     					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
     					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
     				}
-    				// TODO SAM 2014-06-29 Need to determine how this will impact For()
+    				// TODO SAM 2014-06-29 Need to determine how this will impact For().
     				command.initializeCommand ( commandString, __ts_processor, true );
     				// TODO SAM 2005-05-11 Is this the best place for this or should it be in RunCommand()?
-    				// Check the command parameters...
+    				// Check the command parameters.
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + commandString + "\"" );
     				}
     				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
-    				// TODO SAM 2015-06-06 Seems to be multiple places where status is cleared
-    				// Clear the run status for the command...
+    				// TODO SAM 2015-06-06 Seems to be multiple places where status is cleared.
+    				// Clear the run status for the command.
     				if ( (commandStatusProvider != null) && commandsShouldClearRunStatus ) {
     					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
     				}
-    				// Check to see whether in one or more If() commands and if so evaluate their values to determine
-    				// whether to run
+    				// Check to see whether in one or more If() commands and if so evaluate their values to determine whether to run.
                    	Message.printStatus(3, routine, "Checking ifStackOkToRun: " + ifStackOkToRun);
     				if ( ifStackOkToRun ) {
-        				// Run the command...
+        				// Run the command.
         				if ( Message.isDebugOn ) {
         					Message.printDebug ( 1, routine, "Running command through new code..." );
         				}
         	    		if ( command instanceof Break_Command ) {
-        	    			// First find the For command that starts the loop
+        	    			// First find the For command that starts the loop.
         				    if ( Message.isDebugOn ) {
                            	    Message.printDebug(1, routine, "Looking up previous For() command for Break() command." );
         				    }
                             For_Command forCommand = lookupForCommand(commandList,i);
                             if ( forCommand == null ) {
-                                // Did not find a prior For() command so generate an error and exit
+                                // Did not find a prior For() command so generate an error and exit.
                                 needToInterrupt = true;
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3157,10 +2468,10 @@ throws Exception
                                 throw new CommandException ( "Unable to find previous For() command for Break() command.");
                             }
                             else {
-        	    			    // Then find the EndFor command that matches the beginning For command name
+        	    			    // Then find the EndFor command that matches the beginning For command name.
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 if ( endForIndex < 0 ) {
-                                    // Did not match the end of the For() so generate an error and exit
+                                    // Did not match the end of the For() so generate an error and exit.
                                     needToInterrupt = true;
                                     commandStatus.addToLog(CommandPhaseType.RUN,
                                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3185,10 +2496,10 @@ throws Exception
                                     }
                             	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);  // Method works for Continue and Break
                             	    for ( EndIf_Command endifCommand: endifCommandList ) {
-                            		    // Treat as if an EndIf had been encountered.
+                            		    // Treat as if an EndIf had been encountered:
                             		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
-                            		    // The following is the same as EndIf code below in this method
-    	                	            // Run the command so the status is set to success
+                            		    // The following is the same as EndIf code below in this method.
+    	                	            // Run the command so the status is set to success.
     	                                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
     	                                if ( ifCommand == null ) {
     	                                    commandStatus.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3196,40 +2507,40 @@ throws Exception
                                                 "Confirm that matching If() and EndIf() commands are specified.") );
     	                                }
     	                                else {
-    	                	                // Run the command so the status is set to success
+    	                	                // Run the command so the status is set to success.
     	                	                endifCommand.runCommand(i_for_message);
-    	                	                // Remove the If command from the stack since it has essentially been traversed
+    	                	                // Remove the If command from the stack since it has essentially been traversed.
                                             if ( Message.isDebugOn ) {
                             	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
                                             }
     	                                    ifCommandStack.remove(ifCommand);
     	                                }
-    	                                // Re-evaluate if stack
+    	                                // Re-evaluate if stack.
                                         ifStackOkToRun = evaluateIfStack(ifCommandStack);
                                         if ( Message.isDebugOn ) {
                          	                Message.printDebug(1,routine,"ifStackOkToRun = " + ifStackOkToRun );
                                         }
                             	    }
-                            	    // Tell the For() command that it has been interrupted by a Break.
+                            	    // Tell the For() command that it has been interrupted by a Break:
                             	    // - this will cause it to evaluate as done on the next iteration
                             	    forCommand.breakFor();
                             	    // No need to remove the For() command with forCommandStack.remove(forCommand) because calling forCommand.break() handles.
-                                    // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                                    // Modify the main command loop index and continue - the command after the end will be executed (or done):
                             	    // - this is similar to Continue but calling forCommand.break() above will cause loop to evaluate as done
                                     i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
                                     if ( Message.isDebugOn ) {
                             	        Message.printDebug(1, routine, "Jumping to command " + (i + 1) + " [" + i + "] (command loop will be ignored): " + commandList.get(i) );
                                     }
-                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
                                 }
                             }
         	    		}
         	    		else if ( command instanceof Continue_Command ) {
-        	    			// First find the For command that starts the loop
+        	    			// First find the For command that starts the loop.
                             For_Command forCommand = lookupForCommand(commandList,i);
                             if ( forCommand == null ) {
-                                // Did not find a prior For() command so generate an error and exit
+                                // Did not find a prior For() command so generate an error and exit.
                                 needToInterrupt = true;
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3238,10 +2549,10 @@ throws Exception
                                 throw new CommandException ( "Unable to find previous For() command for Break() command.");
                             }
                             else {
-        	    			    // Then find the EndFor command that matches the beginning For command name
+        	    			    // Then find the EndFor command that matches the beginning For command name.
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 if ( endForIndex < 0 ) {
-                                    // Did not match the end of the For() so generate an error and exit
+                                    // Did not match the end of the For() so generate an error and exit.
                                     needToInterrupt = true;
                                     commandStatus.addToLog(CommandPhaseType.RUN,
                                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3263,10 +2574,10 @@ throws Exception
                                 	//   EndIf
                             	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);
                             	    for ( EndIf_Command endifCommand: endifCommandList ) {
-                            		    // Treat as if an EndIf had been encountered.
+                            		    // Treat as if an EndIf had been encountered:
                             		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
-                            		    // The following is the same as EndIf code below in this method
-    	                	            // Run the command so the status is set to success
+                            		    // The following is the same as EndIf code below in this method.
+    	                	            // Run the command so the status is set to success.
     	                                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
     	                                if ( ifCommand == null ) {
     	                                    commandStatus.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3274,69 +2585,67 @@ throws Exception
                                                 "Confirm that matching If() and EndIf() commands are specified.") );
     	                                }
     	                                else {
-    	                	                // Run the command so the status is set to success
+    	                	                // Run the command so the status is set to success.
     	                	                endifCommand.runCommand(i_for_message);
-    	                	                // Remove the If command from the stack since it has essentially been traversed
+    	                	                // Remove the If command from the stack since it has essentially been traversed.
                                             if ( Message.isDebugOn ) {
                             	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
                                             }
     	                                    ifCommandStack.remove(ifCommand);
     	                                }
-    	                                // Re-evaluate if stack
+    	                                // Re-evaluate if stack.
                                         ifStackOkToRun = evaluateIfStack(ifCommandStack);
                                         if ( Message.isDebugOn ) {
                          	                Message.printDebug(1,routine,"ifStackOkToRun = " + ifStackOkToRun );
                                         }
                             	    }
-                                    // Modify the main command loop index and continue - the EndFor will be executed (or done)
-                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
-                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
+                                    // Modify the main command loop index and continue - the EndFor will be executed (or done).
+                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor.
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
                                 }
                             }
         	    		}
         	    		else if ( command instanceof Exit_Command ) {
-        	    			// Exit the processing...
+        	    			// Exit the processing.
         	    			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
         	                commandProfile.setEndTime(System.currentTimeMillis());
         	                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
         	    			break;
         	    		}
         	    		else if ( command instanceof For_Command ) {
-                            // TODO SAM 2014-06-29 Need a way to check for for loops that cross each other or in/out of if commands
-                            // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so that they
-                            // will run through again
-                            // Initialize or increment the for loop
+                            // TODO SAM 2014-06-29 Need a way to check for for loops that cross each other or in/out of if commands.
+                            // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so that they will run through again.
+                            // Initialize or increment the for loop.
                             For_Command forCommand = (For_Command)command;
                             boolean okToRunFor;
                             try {
                                 okToRunFor = forCommand.next();
                                 //Message.printStatus(2,routine,"okToRunFor="+okToRunFor);
-                                // If false, the for loop is done.  However, need to handle case where for loop
-                                // may be nested and need to run again...
+                                // If false, the for loop is done.  However, need to handle case where for loop may be nested and need to run again.
                                 // TODO SAM 2015-06-06 Are there any technical issues with this simple reset?
                                 if ( !okToRunFor ) {
                                 	forCommand.resetCommand();
                                 }
                             }
                             catch ( Exception e ) {
-                                // This is serious and can lead to infinite loop so generate an exception and jump to the end of the loop
+                                // This is serious and can lead to infinite loop so generate an exception and jump to the end of the loop.
                                 okToRunFor = false;
                                 // Add to the command log as a failure...
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
                                         "Error going to next iteration (" + e + ")", "Check For() command iteration data.  Has required input been read or created?") );
                                 Message.printWarning(3, routine, e);
-                                // Same logic as ending the loop...
+                                // Same logic as ending the loop.
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
-                                // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                                // Modify the main command loop index and continue - the command after the end will be executed (or done).
                                 if ( endForIndex >= 0 ) {
-                                    i = endForIndex; // OK because we don't want to trigger EndFor() going back to the top
-                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
+                                    i = endForIndex; // OK because we don't want to trigger EndFor() going back to the top.
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
                                 }
                                 else {
-                                    // Did not match the end of the For() so generate an error and exit
+                                    // Did not match the end of the For() so generate an error and exit.
                                     needToInterrupt = true;
                                     commandStatus.addToLog(CommandPhaseType.RUN,
                                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3345,24 +2654,24 @@ throws Exception
                                 }
                             }
                             if ( okToRunFor ) {
-                                // Continue running commands that are after the For() command
+                                // Continue running commands that are after the For() command.
                             	// Add to the for stack - if in any for loops, commands should by default NOT reset their logging
-                            	// so that messages will accumulate and help users troubleshoot errors
+                            	// so that messages will accumulate and help users troubleshoot errors.
                             	forCommandStack.add(forCommand);
-                                // Run the For() command to set the iterator property and then skip to the next command
+                                // Run the For() command to set the iterator property and then skip to the next command.
                                 command.runCommand ( i_for_message );
                                 continue;
                             }
                             else {
-                                // Done running the For() loop so jump to the matching EndFor() command
+                                // Done running the For() loop so jump to the matching EndFor() command.
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
-                                // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                                // Modify the main command loop index and continue - the command after the end will be executed (or done).
                                 if ( endForIndex >= 0 ) {
-                                    i = endForIndex; // Loop will increment so end EndFor will be skipped, which is OK - otherwise infinite loop
+                                    i = endForIndex; // Loop will increment so end EndFor will be skipped, which is OK - otherwise infinite loop.
                                     continue;
                                 }
                                 else {
-                                    // Did not match the end of the For() so generate an error and exit
+                                    // Did not match the end of the For() so generate an error and exit.
                                     needToInterrupt = true;
                                     commandStatus.addToLog(CommandPhaseType.RUN,
                                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3372,24 +2681,24 @@ throws Exception
                             }
                         }
                         else if ( command instanceof EndFor_Command ) {
-                            // Jump to matching For()
+                            // Jump to matching For().
                             EndFor_Command efc = (EndFor_Command)command;
-                            // Find the matching For() command
+                            // Find the matching For() command.
                             For_Command forCommand = lookupForCommand(commandList,efc.getName());
                             try {
                             	// Remove from the stack, will be added again when matching For() is executed (next command).
                             	forCommandStack.remove(forCommand);
                             }
                             catch ( Exception e ) {
-                            	// TODO SAM 2015-06-05 might need to log as mismatched nested loops
+                            	// TODO SAM 2015-06-05 might need to log as mismatched nested loops.
                             }
                             int forIndex = lookupForCommandIndex(commandList,efc.getName());
-                            i = forIndex - 1; // Decrement by one because the main loop will increment
+                            i = forIndex - 1; // Decrement by one because the main loop will increment.
                             if ( Message.isDebugOn ) {
                             	Message.printDebug(1,routine,"At EndFor(Name=\"" + efc.getName() +
                             		"\") - jumping to command " + (i + 1) + " [" + i + "] at top of For() loop for next iteration" );
                             }
-                            continue; // Goes to the top of the loop to get the command at "i"
+                            continue; // Goes to the top of the loop to get the command at "i".
                         }
                         else {
                         	// A typical command.  Run it.
@@ -3401,8 +2710,8 @@ throws Exception
                     			outputFilesAdded = true;
                             }
                             if ( command instanceof RunCommands_Command ) {
-                            	// Also need to get the output files from the commands that were run
-                            	// TODO SAM 2015-07-10 Enable this - need to add a method to RunCommands to track output files
+                            	// Also need to get the output files from the commands that were run.
+                            	// TODO SAM 2015-07-10 Enable this - need to add a method to RunCommands to track output files.
                             }
                         }
                     }
@@ -3411,19 +2720,19 @@ throws Exception
                          	Message.printDebug(1,routine,"ifStackOkToRun=" + ifStackOkToRun + ", not running this command");
                         }
     				}
-    				// TODO SAM 2014-06-29 Why are these here and not before the if stack check?  Need to document logic
+    				// TODO SAM 2014-06-29 Why are these here and not before the if stack check?  Need to document logic.
     	            if ( command instanceof If_Command ) {
-    	                // Add to the if command stack
+    	                // Add to the if command stack.
     	                If_Command ifCommand = (If_Command)command;
     	                ifCommandStack.add(ifCommand);
-    	                // Re-evaluate if stack
+    	                // Re-evaluate if stack.
     	                ifStackOkToRun = evaluateIfStack(ifCommandStack);
                         if ( Message.isDebugOn ) {
                          	Message.printDebug(1,routine,"If_Command detected, added to stack, ifStackOkToRun=" + ifStackOkToRun );
                         }
     	            }
     	            else if ( command instanceof EndIf_Command ) {
-    	                // Remove from the if command stack (generate a warning if the matching If() is not found in the stack
+    	                // Remove from the if command stack (generate a warning if the matching If() is not found in the stack.
     	                EndIf_Command endifCommand = (EndIf_Command)command;
     	                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
     	                if ( ifCommand == null ) {
@@ -3432,11 +2741,11 @@ throws Exception
                                 "Confirm that matching If() and EndIf() commands are specified.") );
     	                }
     	                else {
-    	                	// Run the command so the status is set to success
+    	                	// Run the command so the status is set to success.
     	                	endifCommand.runCommand(i_for_message);
     	                    ifCommandStack.remove(ifCommand);
     	                }
-    	                // Re-evaluate if stack
+    	                // Re-evaluate if stack.
                         ifStackOkToRun = evaluateIfStack(ifCommandStack);
                         if ( Message.isDebugOn ) {
                          	Message.printDebug(1,routine,"EndIf_Command detected, removed from stack, ifStackToRun=" + ifStackOkToRun );
@@ -3445,15 +2754,14 @@ throws Exception
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "...back from running command." );
     				}
-    				// Check to see if the thread was interrupted
+    				// Check to see if the thread was interrupted.
     				if ( Thread.interrupted() ) {
     					// Same code as earlier in the loop.  Swallow because know what is supposed to be happening at this point.
     					// Set Warning dialog settings back to normal.
     		            Message.setPropValue ( "ShowWarningDialog=true" );
     					// Set flag so code interested in processor knows it is not running...
     					__ts_processor.setIsRunning ( false );
-    					// Reset the cancel processing request and let interested code know that
-    					// processing has been cancelled.
+    					// Reset the cancel processing request and let interested code know that processing has been cancelled.
     					__ts_processor.setCancelProcessingRequested ( false );
     					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
     					return;
@@ -3464,7 +2772,7 @@ throws Exception
     				if ( commandStatusProvider != null ) {
     				       if (	CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                    greaterThan(CommandStatusType.UNKNOWN) ) {
-    				           // No need to print a message to the screen because a visual marker will be shown, but log...
+    				           // No need to print a message to the screen because a visual marker will be shown, but log.
     				           Message.printWarning ( 2,
     				                   MessageUtil.formatMessageTag(command_tag,
     				                           ++error_count), routine, message );
@@ -3486,14 +2794,14 @@ throws Exception
     				if ( commandStatusProvider != null ) {
     				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
-    				        // No need to print a message to the screen because a visual marker will be shown, but log...
+    				        // No need to print a message to the screen because a visual marker will be shown, but log.
     				        Message.printWarning ( 2,
     				                MessageUtil.formatMessageTag(command_tag,
     				                        ++error_count), routine, message );
                         }
     				}
     				else {
-    				    // Command has not been updated to set warning/failure in status so show here
+    				    // Command has not been updated to set warning/failure in status so show here.
     					Message.printWarning ( popup_warning_level,
     							MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
@@ -3512,13 +2820,13 @@ throws Exception
     				if ( commandStatusProvider != null ) {
     				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
-    				        // No need to print a message to the screen because a visual marker will be shown, but log...
+    				        // No need to print a message to the screen because a visual marker will be shown, but log.
     				        Message.printWarning ( 2,
     				                MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
                         }
     				}
     				else {
-    				    // Command has not been updated to set warning/failure in status so show here
+    				    // Command has not been updated to set warning/failure in status so show here.
     					Message.printWarning ( popup_warning_level,
     							MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
@@ -3537,13 +2845,13 @@ throws Exception
     				if ( commandStatusProvider != null ) {
     				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
-    				        // No need to print a message to the screen because a visual marker will be shown, but log...
+    				        // No need to print a message to the screen because a visual marker will be shown, but log.
     				        Message.printWarning ( 2,
     				                MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
                         }
     				}
     				else {
-    				    // Command has not been updated to set warning/failure in status so show here
+    				    // Command has not been updated to set warning/failure in status so show here.
     					Message.printWarning ( popup_warning_level,
     						MessageUtil.formatMessageTag(command_tag,
     						++error_count), routine, message );
@@ -3560,7 +2868,7 @@ throws Exception
     			}
     			catch ( Exception e ) {
     				if ( e instanceof InterruptedException ) {
-    					// Command processing was stopped by killing the thread
+    					// Command processing was stopped by killing the thread.
     					needToInterrupt = true;
     					Message.printStatus(2, routine, "Detected interrupt - setting processor running to false");
     					__ts_processor.setIsRunning(false);
@@ -3569,7 +2877,7 @@ throws Exception
     				else {
 	    				message = "Unexpected error processing command - unable to complete command (" + e + ").";
 	    				if ( commandStatusProvider != null ) {
-	    					// Add to the log as a failure...
+	    					// Add to the log as a failure.
 	    					Message.printWarning ( 2,
 	    						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
 	                        // Always add to the log because this type of exception is unexpected from a Command object.
@@ -3593,7 +2901,7 @@ throws Exception
     				}
     			}
                 finally {
-                    // Save the time spent running the command
+                    // Save the time spent running the command.
                     stopWatch.stop();
                     commandProfile.setEndTime(System.currentTimeMillis());
                     commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
@@ -3603,14 +2911,14 @@ throws Exception
     				}
                 }
     		}
-		} // Main catch
+		} // Main catch.
 		catch ( Exception e ) {
 			Message.printWarning ( popup_warning_level, MessageUtil.formatMessageTag(command_tag,
 			++error_count), routine, "There was an error processing command: \"" + commandString +
 			"\".  Cannot continue processing." );
 			Message.printWarning ( 3, routine, e );
 			if ( commandStatusProvider != null ) {
-				// Add to the command log as a failure...
+				// Add to the command log as a failure.
 				commandStatus.addToLog(CommandPhaseType.RUN,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								"Unexpected error \"" + e.getMessage() + "\"", "See log file for details.") );
@@ -3622,7 +2930,7 @@ throws Exception
 			MessageUtil.formatMessageTag(command_tag,
 			++error_count), routine, message );
 			if ( commandStatusProvider != null ) {
-				// Add to the command log as a failure...
+				// Add to the command log as a failure.
 				commandStatus.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE, message,
 						"Try increasing JRE memory with -Xmx and restarting the software.  " +
@@ -3658,29 +2966,27 @@ throws Exception
 	// Indicate that processing is done and now there is no need to handle canceling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
-		// Have gotten to here probably because the last command was processed
-		// and need to notify the listeners.
+		// Have gotten to here probably because the last command was processed and need to notify the listeners.
 		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
 	
-    // Make sure that important warnings are shown to the user...
+    // Make sure that important warnings are shown to the user.
     Message.setPropValue ( "ShowWarningDialog=true" );
 
 	Message.printStatus ( 1, routine, "Retrieved " + __tslist.size() + " time series." );
 
 	size = getTimeSeriesSize();
 
-	// Get the final time - note this includes intervening warnings if any occurred...
+	// Get the final time - note this includes intervening warnings if any occurred.
 
 	stopwatch.stop();
 	Message.printStatus ( 1, routine, "Processing took " + runtimeTotal + " ms, " +
 		StringUtil.formatString(runtimeTotal/1000.0,"%.4f") + " seconds" );
 
-	// Check for fatal errors (for Command classes, only warn if failures since
-	// others are likely not a problem)...
+	// Check for fatal errors (for Command classes, only warn if failures since others are likely not a problem).
 
-	int ml = 2;	// Message level for cleanup warnings
+	int ml = 2;	// Message level for cleanup warnings.
 
 	List<CommandStatusProvider> cspList = new ArrayList<>();
 	for ( Command c : commandList ) {
@@ -3694,7 +3000,7 @@ throws Exception
 		if ( IOUtil.isBatch() ) {
 			size = getMissingTS().size();
 			if ( size > 0 ) {
-				// FIXME SAM 2007-11-06 Put in CheckTimeSeries()...
+				// FIXME SAM 2007-11-06 Put in CheckTimeSeries().
 				Message.printWarning ( ml, routine,"The following time series were not found:" );
 				for ( int i2 = 0; i2 < size; i2++ ) {
 					Message.printWarning ( ml, routine,"   "+(String)getMissingTS().get(i2));
@@ -3733,8 +3039,8 @@ private void processCommands_AddOutputFiles ( List<File> outputFileList, Command
 }
 
 /**
-Check for obsolete commands and print an appropriate message.  Handling of warning increments is done in the
-calling code.
+Check for obsolete commands and print an appropriate message.
+Handling of warning increments is done in the calling code.
 @param command_String Command as string to check.
 @param command Command to check (GenericCommand).
 @param message_tag Message tag for logging.
@@ -3744,8 +3050,8 @@ private boolean processCommands_CheckForObsoleteCommands(
         String command_String, CommandStatusProvider command, String message_tag, int i_for_message)
 throws Exception
 {	String routine = getClass().getName() + ".processCommands_CheckForObsoleteCommands";
-    String message = null;  // problem - non-null will indicate obsolete command for return value
-    String suggest = null;  // Suggestion to fix
+    String message = null;  // Problem - non-null will indicate obsolete command for return value.
+    String suggest = null;  // Suggestion to fix.
 	// Print at level 1 or set in command status because these messages need to be addressed.
 	
 	if (command_String.regionMatches(true,0,"-averageperiod",0,14)){
@@ -3753,7 +3059,8 @@ throws Exception
 		suggest = "Use SetAveragePeriod()";
 	}
 	else if ( command_String.regionMatches(true,0,"-batch",0,6)) {
-		// Old syntax command.  Leave around because this functionality has never really been implemented but
+		// Old syntax command.
+		// Leave around because this functionality has never really been implemented but
 		// needs to be (e.g., call TSTool from web site and tell it to create a plot?).
 	    message = "-batch has never been enabled.";
 	    suggest = "Use -commmands (and -nomaingui)";
@@ -3849,9 +3156,9 @@ throws Exception
 		message = "-osummarynostats is obsolete.";
 		suggest = "Use WriteSummary() or other output commands.";
 	}
-	// Put this after all the other -o options...
+	// Put this after all the other -o options.
 	else if ( command_String.regionMatches( true,0,"-o",0,2) ){
-		// Output in StateMod format...
+		// Output in StateMod format.
 		message = "\"-o File\" is obsolete.";
 		suggest = "Use WriteStateMod() or other output commands.";
 	}
@@ -3912,7 +3219,7 @@ throws Exception
 		message = "-wy is obsolete.";
 		suggest = "Use SetOutputYearType(OutputYearType=Water).";
 	}
-	// Put after -wy...
+	// Put after -wy.
 	else if ( command_String.regionMatches(true,0,"-w",0,2) ) {
 		message = "-w is obsolete.";
 		suggest = "Use SetWarningLevel().";
@@ -3922,7 +3229,7 @@ throws Exception
 		suggest = "Set dates in FillRegression() instead.";
 	}
 	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String," \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
-		// Old-style date...
+		// Old-style date.
 		message = "Setting output period with MM/YYYY MM/YYYY is obsolete.";
 		suggest = "Use SetOutputPeriod().";
 	}
@@ -3932,7 +3239,7 @@ throws Exception
             command.getCommandStatus().addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE, message, suggest ) );
         }
-        // An obsolete command was detected
+        // An obsolete command was detected.
         return true;
 	}
 	// The command is not obsolete
@@ -3947,9 +3254,8 @@ need to be reset for the current run.
 appended to a previous run.
 */
 private void processCommands_ResetDataForRunStart ( boolean AppendResults_boolean )
-throws Exception
-{
-    // The following are the initial defaults...
+throws Exception {
+    // The following are the initial defaults.
     setAutoExtendPeriod ( true );
     __datetime_Hashtable.clear();
     setIncludeMissingTS ( false );
@@ -3962,7 +3268,7 @@ throws Exception
     setOutputYearType ( YearType.CALENDAR );
     setPreviewExportedOutput ( false );
     __reference_date = null;
-    // Free all data from the previous run...
+    // Free all data from the previous run.
     if ( !AppendResults_boolean ) {
         __ts_processor.clearResults ();
     }
@@ -3970,11 +3276,9 @@ throws Exception
 
 /**
 Process a list of time series to produce an output product.
-The time series are typically generated from a previous call to
-processCommands() or processTimeSeriesCommands().
-@param ts_indices List of time series indices to process from the internal
-time series list.  If null, all are processed.
-The indices do not have to be in order.
+The time series are typically generated from a previous call to processCommands() or processTimeSeriesCommands().
+@param ts_indices List of time series indices to process from the internal time series list.
+If null, all are processed. The indices do not have to be in order.
 @param proplist List of properties to define the output:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -4002,7 +3306,7 @@ The indices do not have to be in order.
 protected void processTimeSeries ( int ts_indices[], PropList proplist )
 throws IOException
 {	String message = null;
-	String routine = "TSEngine.processTimeSeries";
+	String routine = getClass().getSimpleName() + ".processTimeSeries";
 
     // List of time series to output, determined from the time series in memory
     // and a list of selected array positions (e.g., from a UI).
@@ -4051,7 +3355,7 @@ on the fly and is then processed here, independent of time series maintained wit
 protected void processTimeSeries ( List<TS> tslist_output, PropList proplist )
 throws IOException {
 	String message = null;
-	String routine = "TSEngine.processTimeSeries";
+	String routine = getClass().getSimpleName() + ".processTimeSeries";
 
 	// Define a local proplist to better deal with null.
 	PropList props = proplist;
@@ -4059,8 +3363,8 @@ throws IOException {
 		props = new PropList ( "" );
 	}
 
-	// Figure out the output.  This method is going to be called with
-	// legacy -o options (batch mode) as well as new PropList syntax.
+	// Figure out the output.
+	// This method is going to be called with legacy -o options (batch mode) as well as new PropList syntax.
 	// Make sure to support legacy first and then phase in new approach.
 
 	int output_format = OUTPUT_NONE;
@@ -4071,7 +3375,7 @@ throws IOException {
 	Message.printStatus ( 1, routine,"Output format is \""+prop_value+"\"");
 	String parameters = props.getValue ( "Parameters" );
 	if ( prop_value != null ) {
-		// Reports...
+		// Reports.
 		if ( prop_value.equalsIgnoreCase("-odata_coverage_report") ) {
 			output_format = OUTPUT_DATA_COVERAGE_REPORT;
 		}
@@ -4196,6 +3500,7 @@ throws IOException {
 
 	if ( output_format == OUTPUT_STATEMOD ) {
 		try {
+			// The output comments for the file are determined from the processor.
             writeStateModTS ( tslist_output, __output_file,
 			precision_string, formatOutputHeaderComments(__ts_processor.getCommands()) );
 		} catch ( Exception e ) {
@@ -4601,8 +3906,8 @@ throws IOException {
         }
     }
 	else if ( output_format == OUTPUT_TABLE ) {
-		// A table output.  Just copy the graph code and change for table.  At some point,
-        // need to initialize all the view data at the same time in case the user changes
+		// A table output.  Just copy the graph code and change for table.
+		// At some point, need to initialize all the view data at the same time in case the user changes
         // views interactively after the initial view.
 		// Temporary copy of data.
 		List<TS> tslist = tslist_output;
@@ -4711,7 +4016,7 @@ throws IOException {
     		graphprops.set ( "DataUnits", tslist.get(0).getDataUnits() );
     		graphprops.set ( "YAxisLabelString",tslist.get(0).getDataUnits() );
     		graphprops.set ( "CalendarType", "" + getOutputYearType() );
-    		// Set the total size of the graph window...
+    		// Set the total size of the graph window.
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
     
@@ -4790,8 +4095,7 @@ throws IOException {
     		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
     			graphprops.set("YAxisType=Log");
     			// Handle flags.
-    			/* TODO SAM 2006-05-22
-    			Can be very slow because blank labels are not ignored in low-level code.
+    			/* TODO SAM 2006-05-22 Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
     			*/
     		}
@@ -4803,8 +4107,7 @@ throws IOException {
     		else if ( output_format == OUTPUT_POINT_GRAPH ) {
     			graphprops.set("GraphType=Point");
     			// Handle flags.
-    			/* TODO SAM 2006-05-22
-    			Can be very slow because blank labels are not ignored in low-level code.
+    			/* TODO SAM 2006-05-22 Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
     			*/
     		}
@@ -4830,8 +4133,7 @@ throws IOException {
     		    // Default properties.
     			graphprops.set("GraphType=Line");
     			// Handle flags.
-    			/* TODO SAM 2006-05-22
-    			Can be very slow because blank labels are not ignored in low-level code.
+    			/* TODO SAM 2006-05-22 Can be very slow because blank labels are not ignored in low-level code.
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
     			*/
     		}
@@ -4872,8 +4174,8 @@ throws IOException {
 
 /**
 Get a time series from the database/file using current date and units settings.
-@param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status approach.
+@param wl Warning level if the time series is not found.
+Typically this will be 1 if mimicking the old processing, and 2+ during transition to the new command status approach.
 @param tsident_string Time series identifier.
 @param readData indicate whether all the data should be read or false for only the header.
 @return the time series.
@@ -4887,19 +4189,18 @@ throws Exception
 /**
 Read a time series from a database or file.  The following occur related to periods:
 <ol>
-<li> If the query period has been specified, then it is used to limit the
-	read/query.  Otherwise, the full period is retrieved.  Normally the
-	query period is only specified to improve performance (e.g., to get
-	a short period of real-time data or a short period from a long
-	time series file).</li>
-<li>	If the averaging period is specified, it will be used to compute
-	averages.  Otherwise, the full period is used.</li>
-<li>	If the output period is specified, then the time series that are read
-	will be extended to the output period if necessary.  If the output
-	period is within the returned data, the period is not changed (it is not shortened).</li>
+<li> If the query period has been specified, then it is used to limit the read/query.
+	Otherwise, the full period is retrieved.
+	Normally the query period is only specified to improve performance
+	(e.g., to get a short period of real-time data or a short period from a long time series file).</li>
+<li>	If the averaging period is specified, it will be used to compute averages.
+	Otherwise, the full period is used.</li>
+<li>	If the output period is specified,
+	then the time series that are read will be extended to the output period if necessary.
+	If the output period is within the returned data, the period is not changed (it is not shortened).</li>
 </ol>
-@param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status approach.
+@param wl Warning level if the time series is not found.
+Typically this will be 1 if mimicking the old processing, and 2+ during transition to the new command status approach.
 @param tsidentString Time series identifier for time series.
 @param fullPeriod If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
@@ -4910,7 +4211,7 @@ FIXME - need to phase out "full_period".
 private TS readTimeSeries (	int wl, String commandTag, String tsidentString, boolean fullPeriod, boolean readData )
 throws Exception
 {	TS ts = null;
-	String routine = "TSEngine.readTimeSeries";
+	String routine = getClass().getSimpleName() + ".readTimeSeries";
 	
 	// Figure out what dates to use for the query.
 
@@ -4976,8 +4277,8 @@ throws Exception
         if ( Message.isDebugOn ) {
 			Message.printDebug ( 1, routine, "Retrieved TS" );
 		}
-		// Now do the second set of processing on the time series (e.g.,
-		// to guarantee a period that is at least as long as the output period.
+		// Now do the second set of processing on the time series
+        // (e.g., to guarantee a period that is at least as long as the output period).
 		// TODO SAM - passing tsident_string2 causes problems - the input is lost.
         readTimeSeries2 ( ts, tsidentString, fullPeriod, readData );
 	}
@@ -4986,21 +4287,19 @@ throws Exception
 
 /**
 Read a time series.  This method is called internally by TSEngine code and when
-TSEngine serves as a TSSupplier when processing TSProducts.  It actually tries
-to read a time series from a file or database.
+TSEngine serves as a TSSupplier when processing TSProducts.
+It actually tries to read a time series from a file or database.
 @param tsidentString Time series identifier to read.
 @param readStart First date to read.  If specified as null the entire period will be read.
 @param readEnd Last date to read.  If specified as null the entire period will be read.
-@param units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param units Requested units to return data.  If specified as null or an empty string the units will not be converted.
 @param readData if true, the data will be read.  If false, only the time series header will be read.
 @return the requested time series or null if an error.
 @exception Exception if there is an error reading the time series.
 */
-private TS readTimeSeries0 ( String tsidentString, DateTime readStart, DateTime readEnd,
-				String units, boolean readData )
+private TS readTimeSeries0 ( String tsidentString, DateTime readStart, DateTime readEnd, String units, boolean readData )
 throws Exception
-{	String routine = "TSEngine.readTimeSeries0";
+{	String routine = getClass().getSimpleName() + ".readTimeSeries0";
 
 	if ( Message.isDebugOn ) {
 		Message.printDebug ( 10, routine, "Getting time series \"" + tsidentString + "\"" );
@@ -5028,8 +4327,9 @@ throws Exception
         Message.printStatus(2, routine, "Absolute path to input name is \"" + inputNameFull + "\"" );
 	}
 	
-	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
-	// using the input type string.  If matched, then the DataStore object information below (e.g., for
+	// New approach uses DataStore concept to manage input types.
+	// In this case, look up the data store using the input type string.
+	// If matched, then the DataStore object information below (e.g., for
 	// HydroBase, RccAcis, ReclamationHDB, UsgsNwis).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
@@ -5169,7 +4469,7 @@ throws Exception
             }
             else {
                 // Do need to fill daily diversion records with carry forward.
-                // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
+                // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default.
             	PropList readProps = null;
                 ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, readProps );
             }
@@ -5512,15 +4812,15 @@ throws Exception
 
 /**
 Method for TSSupplier interface.
-Read a time series given a time series identifier string.  The string may be
-a file name if the time series are stored in files, or may be a true identifier
-string if the time series is stored in a database.  The specified period is
-read.  The data are converted to the requested units.
+Read a time series given a time series identifier string.
+The string may be a file name if the time series are stored in files, or may be a true identifier
+string if the time series is stored in a database.
+The specified period is read.  The data are converted to the requested units.
 @param tsident_string Time series identifier or file name to read.
 @param req_date1 First date to query.  If specified as null the entire period will be read.
 @param req_date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
@@ -5528,12 +4828,12 @@ empty string the units will not be converted.
 public TS readTimeSeries (	String tsident_string,
 				DateTime req_date1, DateTime req_date2,	String req_units, boolean read_data )
 throws Exception
-{	String routine = "TSEngine.readTimeSeries";
+{	String routine = getClass().getSimpleName() + ".readTimeSeries";
 	Message.printStatus ( 2, routine,"Reading \"" + tsident_string + "\"" );
 
-	// First look for time series in the in-memory list.  If called with
-	// an alias, a match will be found in the aliases.  If called with
-	// a TSID, a match will be found in the TSIDs.
+	// First look for time series in the in-memory list.
+	// If called with an alias, a match will be found in the aliases.
+	// If called with a TSID, a match will be found in the TSIDs.
 
 	int size = 0;
 	if ( __tslist != null ) {
@@ -5541,7 +4841,7 @@ throws Exception
 	}
 
 	// If the tsident_string contains a ~, then use the full identifier with
-	// input fields to search below.  Otherwise, just use the main part of the identifier...
+	// input fields to search below.  Otherwise, just use the main part of the identifier.
 
 	boolean full_tsid_check = false;
 	if ( tsident_string.indexOf("~") >= 0 ) {
@@ -5552,7 +4852,7 @@ throws Exception
 		TS ts = null;
 		TSIdent tsident = null;
 
-		//  First try the aliases (not supported for templates)...
+		//  First try the aliases (not supported for templates).
 
 		for ( int i = 0; i < size; i++ ) {
 			ts = __tslist.get(i);
@@ -5565,7 +4865,7 @@ throws Exception
 			}
 		}
 
-		// Now try the TSIDs, including the input fields if necessary...
+		// Now try the TSIDs, including the input fields if necessary.
 
 		for ( int i = 0; i < size; i++ ) {
 			ts = __tslist.get(i);
@@ -5589,13 +4889,12 @@ throws Exception
     Message.printStatus ( 2, routine,
     		"TSID \"" + tsident_string + "\" could not be matched in memory.  Trying to read using TSID." );
 
-	// If not found, try reading from a persistent source.  If called with
-	// an alias, this will fail.  If called with a TSID, this should succeed...
+	// If not found, try reading from a persistent source.
+    // If called with an alias, this will fail.  If called with a TSID, this should succeed.
 
 	TS ts = readTimeSeries0 ( tsident_string, req_date1, req_date2,	req_units, read_data );
 	if ( ts == null ) {
-		Message.printStatus ( 2, routine,
-				"TSID \"" + tsident_string + "\" could not read using TSID.  Not able to provide." );
+		Message.printStatus ( 2, routine, "TSID \"" + tsident_string + "\" could not read using TSID.  Not able to provide." );
 	}
 	else {
 		Message.printStatus ( 2, routine, "TSID \"" + tsident_string + "\" successfully read using TSID." );
@@ -5607,14 +4906,14 @@ throws Exception
 Method for TSSupplier interface.  Read a time series given an existing time series and a file name.
 The specified period is read.  The data are converted to the requested units.
 @param req_ts Requested time series to fill.  If null, return a new time series.
-If not null, all data are reset, except for the identifier, which is assumed
-to have been set in the calling code.  This can be used to query a single
-time series from a file that contains multiple time series.
+If not null, all data are reset, except for the identifier,
+which is assumed to have been set in the calling code.
+This can be used to query a single time series from a file that contains multiple time series.
 @param fname File name to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
@@ -5633,8 +4932,8 @@ The specified period is read.  The data are converted to the requested units.
 @param fname File to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return List of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
@@ -5651,14 +4950,14 @@ Read a time series list from a file or database using the time series identifier
 information as a query pattern.  The specified period is
 read.  The data are converted to the requested units.
 @param tsident A TSIdent instance that indicates which time series to query.
-If the identifier parts are empty, they will be ignored in the selection.  If
-set to "*", then any time series identifier matching the field will be selected.
+If the identifier parts are empty, they will be ignored in the selection.
+If set to "*", then any time series identifier matching the field will be selected.
 If set to a literal string, the identifier field must match exactly to be selected.
 @param fname File to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return list of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
@@ -5704,16 +5003,16 @@ If false, the output period will be queried.
 */
 private void readTimeSeries2 ( TS ts, String tsident_string, boolean full_period, boolean readData )
 throws Exception
-{	String routine = "TSEngine.readTimeSeries2";
+{	String routine = getClass().getSimpleName() + ".readTimeSeries2";
 	if ( ts == null ) {
 		return;
 	}
 
-	// Do not want to use the abbreviated legend that was required with the old graph package...
+	// Do not want to use the abbreviated legend that was required with the old graph package.
 
 	ts.setLegend ( "" );
 
-	// If no description, set to the location...
+	// If no description, set to the location.
 
 	if ( ts.getDescription().length() == 0 ) {
 		ts.setDescription ( ts.getLocation() );
@@ -5733,22 +5032,20 @@ throws Exception
     	}
 	}
 
-	// To ensure that new and old time series identifiers can be used, reset
-	// the identifier in the queried string to that which was specified in the input commands.
+	// To ensure that new and old time series identifiers can be used,
+	// reset the identifier in the queried string to that which was specified in the input commands.
 
 	if ( tsident_string != null ) {
 		ts.setIdentifier ( tsident_string );
 	}
 
-	// If the output period has been specified, make sure that the time
-	// series has a period at least that long.  This will allow for data	
-	// filling and other manipulation.  Do not change the interval if the
-	// time series has irregular data or if the auto extend feature has been turned off.
+	// If the output period has been specified, make sure that the time series has a period at least that long.
+	// This will allow for data	filling and other manipulation.
+	// Do not change the interval if the time series has irregular data or if the auto extend feature has been turned off.
 	//
-	// Check by getting the maximum overlapping period of the time series
-	// and output period.  Then if the max period start is before the
-	// time series start or the max period end is after the time series end
-	// a change interval is needed...
+	// Check by getting the maximum overlapping period of the time series and output period.
+	// Then if the max period start is before the time series start or the max period end
+	// is after the time series end a change interval is needed.
 
 	if ( haveOutputPeriod() && getAutoExtendPeriod() ) {
 		List<TSLimits> v = new Vector<> ( 2 );
@@ -5763,8 +5060,8 @@ throws Exception
 		try {
 		    if ( readData ) {
                 limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
-                // If in discovery mode in TSTool, don't want to do the following because it throws
-                // an exception.  The output period may be set in the processor from a previous run and
+                // If in discovery mode in TSTool, don't want to do the following because it throws an exception.
+                // The output period may be set in the processor from a previous run and
                 // when new commands are loaded, the "readData" check is necessary.
     			if ( (limits.getDate1().lessThan(ts.getDate1()) ||
     			    limits.getDate2().greaterThan(ts.getDate2())) ) {
@@ -5820,8 +5117,7 @@ throws Exception
 /**
 Remove all time series in the results list.
 */
-protected void removeAllTimeSeries ()
-{
+protected void removeAllTimeSeries () {
     __tslist.clear();
 }
 
@@ -5829,8 +5125,7 @@ protected void removeAllTimeSeries ()
 Remove the time series at the specified index.
 @param index Index of the time series to remove.
 */
-protected void removeTimeSeries ( int index )
-{
+protected void removeTimeSeries ( int index ) {
     __tslist.remove ( index );
 }
 
@@ -5839,8 +5134,7 @@ Set the value of the AutoExtendPeriod property.  If true, the period for time se
 will automatically be extended to the output period at read.
 @param AutoExtendPeriod_boolean Value of property.
 */
-protected void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean )
-{
+protected void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean ) {
     __AutoExtendPeriod_boolean = AutoExtendPeriod_boolean;
 }
 
@@ -5862,38 +5156,38 @@ protected void setAverageStart ( DateTime start )
 
 /**
 Set a DataStore instance in the list that is being maintained for use.
-The DataStore identifier is used to lookup the instance.  If a match is found,
-the old instance is optionally closed and discarded before adding the new instance.
+The DataStore identifier is used to lookup the instance.
+If a match is found, the old instance is optionally closed and discarded before adding the new instance.
 The new instance is added at the end.
 @param dataStore DataStore to add to the list.  Null will be ignored.
-@param closeOld If an old data store is matched, close the data store (e.g., database connection) if
-true.  The main issue is that if something else is using a DMI instance (e.g.,
-the TSTool GUI) it may be necessary to leave the old instance open.
+@param closeOld If an old data store is matched, close the data store (e.g., database connection) if true.
+The main issue is that if something else is using a DMI instance (e.g., the TSTool GUI)
+it may be necessary to leave the old instance open.
 */
 protected void setDataStore ( DataStore dataStore, boolean closeOld )
-{   String routine = "TSEngine.setDataStore";
+{   String routine = getClass().getSimpleName() + ".setDataStore";
     if ( dataStore == null ) {
         return;
     }
     if ( Message.isDebugOn ) {
     	Message.printDebug(1, routine, "Setting datastore \"" + dataStore.getName() + "\"" );
     }
-    int i = -1; // Datastore position
+    int i = -1; // Datastore position.
     for ( DataStore ds : __dataStoreList ) {
     	++i;
         if ( ds.getName().equalsIgnoreCase(dataStore.getName())){
             // The input name of the current instance matches that of the instance in the list.
-            // Replace the instance in the list by the new instance...
+            // Replace the instance in the list by the new instance.
             if ( closeOld ) {
                 try {
                     if ( ds instanceof DatabaseDataStore ) {
                         DMI dmi = ((DatabaseDataStore)ds).getDMI();
                         if ( dmi != null ) {
-                        	// Only close if not null
+                        	// Only close if not null:
                         	// - if there was a configuration error then a datastore may exist without open DMI
                         	dmi.close();
                         }
-                        // Replace the datastore and return
+                        // Replace the datastore and return.
                         __dataStoreList.set(i, dataStore);
                         return;
                     }
@@ -5908,7 +5202,7 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
         }
     }
 
-    // Add a new instance to the list, alphabetized (ignore case)...
+    // Add a new instance to the list, alphabetized (ignore case).
     if ( __dataStoreList.size() == 0 ) {
     	__dataStoreList.add ( dataStore );
     }
@@ -5941,13 +5235,13 @@ protected void setDatastoreSubstituteList ( List<DataStoreSubstitute> substitute
 
 /**
 Set a HydroBaseDMI instance in the list that is being maintained for use for database queries.
-The input name in the DMI is used to lookup the instance.  If a match is found,
-the old instance is optionally closed and the new instance is set in the same
-location.  If a match is not found, the new instance is added at the end.
+The input name in the DMI is used to lookup the instance.
+If a match is found, the old instance is optionally closed and the new instance is set in the same location.
+If a match is not found, the new instance is added at the end.
 @param hbdmi HydroBaseDMI to add to the list.  Null will be ignored.
-@param close_old If an old DMI instance is matched, close the DMI instance if
-true.  The main issue is that if something else is using the DMI instance (e.g.,
-the TSTool GUI) it may be necessary to leave the old instance open.
+@param close_old If an old DMI instance is matched, close the DMI instance if true.
+The main issue is that if something else is using the DMI instance (e.g., the TSTool GUI)
+it may be necessary to leave the old instance open.
 */
 protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 {	if ( hbdmi == null ) {
@@ -5960,7 +5254,7 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 		hbdmi2 = __hbdmi_Vector.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the list.
-			// Replace the instance in the list by the new instance...
+			// Replace the instance in the list by the new instance.
 			if ( close_old && (hbdmi2 != hbdmi)) {
 			    // Close if different instances.
 				try {
@@ -5974,7 +5268,7 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 			return;
 		}
 	}
-	// Add a new instance to the Vector...
+	// Add a new instance to the list.
 	__hbdmi_Vector.add ( hbdmi );
 }
 
@@ -5990,8 +5284,7 @@ protected void setHydroBaseDMIList ( List<HydroBaseDMI> dmilist )
 Set the value of the IgnoreLEZero property.
 @param IgnoreLEZero_boolean Value of property.
 */
-protected void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
-{
+protected void setIgnoreLEZero ( boolean IgnoreLEZero_boolean ) {
     __IgnoreLEZero_boolean = IgnoreLEZero_boolean;
 }
 
@@ -5999,8 +5292,7 @@ protected void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
 Set the value of the IncludeMissingTS property.
 @param IncludeMissingTS_boolean Value of property.
 */
-protected void setIncludeMissingTS ( boolean IncludeMissingTS_boolean )
-{
+protected void setIncludeMissingTS ( boolean IncludeMissingTS_boolean ) {
     __IncludeMissingTS_boolean = IncludeMissingTS_boolean;
 }
 
@@ -6036,13 +5328,13 @@ protected void setInputStart ( DateTime start )
 
 /**
 Set a NWSRFS_DMI (NWSRFS FS5Files DMI) instance in the Vector that is being maintained for use.
-The input name in the DMI is used to lookup the instance.  If a match is found,
-the old instance is optionally closed and the new instance is set in the same
-location.  If a match is not found, the new instance is added at the end.
+The input name in the DMI is used to lookup the instance.
+If a match is found, the old instance is optionally closed and the new instance is set in the same location.
+If a match is not found, the new instance is added at the end.
 @param nwsrfs_dmi NWSRFS_DMI to add to the list.  Null will be ignored.
-@param close_old If an old DMI instance is matched, close the DMI instance if
-true.  The main issue is that if something else is using the DMI instance (e.g.,
-the TSTool GUI) it may be necessary to leave the old instance open.
+@param close_old If an old DMI instance is matched, close the DMI instance if true.
+The main issue is that if something else is using the DMI instance (e.g., the TSTool GUI)
+it may be necessary to leave the old instance open.
 */
 protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 {	if ( nwsrfs_dmi == null ) {
@@ -6054,8 +5346,8 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	for ( int i = 0; i < size; i++ ) {
 		nwsrfs_dmi2 = __nwsrfs_dmi_Vector.get(i);
 		if ( nwsrfs_dmi2.getInputName().equalsIgnoreCase(input_name)){
-			// The input name of the current instance matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the new instance...
+			// The input name of the current instance matches that of the instance in the list.
+			// Replace the instance in the Vector by the new instance.
 			if ( close_old ) {
 				try {
 				    nwsrfs_dmi2.close();
@@ -6068,7 +5360,7 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 			return;
 		}
 	}
-	// Add a new instance to the Vector...
+	// Add a new instance to the list.
 	__nwsrfs_dmi_Vector.add ( nwsrfs_dmi );
 }
 
@@ -6086,8 +5378,7 @@ The output files can then be retrieved, for example, in the TSTool results area.
 @param outputFileList List of output files generated by commands.
 */
 private void setOutputFileList ( List<File> outputFileList )
-throws Exception
-{
+throws Exception {
 	__ts_processor.setPropContents("OutputFileList",outputFileList);
 }
 
@@ -6111,8 +5402,7 @@ protected void setOutputYearType ( YearType outputYearType )
 Set the value of the PreviewExportedOutput property.
 @param PreviewExportedOutput_boolean Value of property.
 */
-private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean )
-{
+private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean ) {
     __PreviewExportedOutput_boolean = PreviewExportedOutput_boolean;
 }
 
@@ -6135,7 +5425,7 @@ Set the time series in either the __tslist vector.
 */
 protected void setTimeSeries ( TS ts, int position )
 throws Exception
-{	String routine = "TSEngine.setTimeSeries";
+{	String routine = getClass().getSimpleName() + ".setTimeSeries";
 
 	if ( ts == null ) {
 		Message.printStatus ( 2, routine, "Setting null time series at position " + (position + 1) +
@@ -6154,14 +5444,14 @@ throws Exception
 		// Create a new Vector.
 		__tslist = new Vector<> ( 50, 50 );
 	}
-	// Position is zero index...
+	// Position is zero index.
 	if ( position >= __tslist.size() ) {
-		// Append to the list.  Fill in intervening positions with null references...
+		// Append to the list.  Fill in intervening positions with null references.
 		for ( int i = __tslist.size(); i <= position; i++ ) {
 			__tslist.add ( null );
 		}
 	}
-	// Now update at the requested position...
+	// Now update at the requested position.
 	__tslist.remove ( position );
 	__tslist.add ( position, ts );
 }
@@ -6175,12 +5465,10 @@ protected void setTimeSeriesList ( List<TS> tslist )
 }
 
 /**
-Update the comments in the time series in case some information has changed
-(currently units and description only).  If this is not called, then looking at
-a summary may show the wrong information.  This method is needed because the
-comments are often used in the header and comments are generated from HydroBase.
-Currently only the units are updated.  THIS METHOD IS HIGHLY
-DEPENDENT ON THE SPECIFIC TIME SERIES COMMENTS USED WITH CDSS.
+Update the comments in the time series in case some information has changed (currently units and description only).
+If this is not called, then looking at a summary may show the wrong information.
+This method is needed because the comments are often used in the header and comments are generated from HydroBase.
+Currently only the units are updated.  THIS METHOD IS HIGHLY DEPENDENT ON THE SPECIFIC TIME SERIES COMMENTS USED WITH CDSS.
 @param ts Time series to update.
 */
 private void updateHydroBaseComments ( TS ts )
@@ -6195,7 +5483,7 @@ private void updateHydroBaseComments ( TS ts )
 	String comment = null;
 	int pos = 0;
 	for ( int i = 0; i < size; i++ ) {
-		comment = (String)comments.get(i);
+		comment = comments.get(i);
 		if ( comment.regionMatches(true,0,"Data units",0,10) ) {
 			pos = comment.indexOf ( "=" );
 			comments.set( i, comment.substring(0,pos + 2) + ts.getDataUnits() );
@@ -6208,30 +5496,28 @@ private void updateHydroBaseComments ( TS ts )
 }
 
 /**
-Write a StateMod time series file given the current time series.  This can be
-called using both the in-memory list of time series or the list to be output.
-Other than the time series list and the filename, all other parameters are taken
-from settings previously set.
+Write a StateMod time series file given the current time series.
+This can be called using both the in-memory list of time series or the list to be output.
+Other than the time series list and the filename, all other parameters are taken from settings previously set.
 @param tslist Vector of time series to write.
 @param output_file Name of file to write.
-@param precision_string If "*", then use the default rules that have been in
-place for some time.  If an integer, use as the precision parameter for
-StateMod.writePersistent().
+@param precision_string If "*", then use the default rules that have been in place for some time.
+If an integer, use as the precision parameter for StateMod.writePersistent().
 @param comments Comments to include at the top of the StateMod file, consisting
 of the commands as text and database version information.
 */
 private void writeStateModTS ( List<TS> tslist, String output_file, String precision_string, String[] comments )
-{	String routine = "TSEngine.writeStateModTS";
-	// Set the precision default precision for output (-2 generally works OK)...
+{	String routine = getClass().getSimpleName() + ".writeStateModTS";
+	// Set the precision default precision for output (-2 generally works OK).
 	int	precision = -2;
 	if ( !precision_string.equals("*") && !precision_string.equals("") &&
 		StringUtil.isInteger(precision_string) ) {
-		// Use the specified precision because the user has specified an integer precision...
+		// Use the specified precision because the user has specified an integer precision.
 		precision = StringUtil.atoi(precision_string);
 	}
 	else {
-        // Precision is determined from units and possibly data type...
-		// Default, get the precision from the units of the first time series...
+        // Precision is determined from units and possibly data type.
+		// Default, get the precision from the units of the first time series.
 	    int	list_size = 0;
 		TS tspt = null;
 		if ( (tslist != null) && (tslist.size() > 0) ) {
@@ -6245,15 +5531,15 @@ private void writeStateModTS ( List<TS> tslist, String output_file, String preci
 			if ( outputformat != null ) {
 				precision = outputformat.getPrecision();
 				if ( precision > 0 ) {
-					// Change to negative so output code will handle overflow...
+					// Change to negative so output code will handle overflow.
 					precision *= -1;
 				}
 			}
 			outputformat = null;
 			Message.printStatus ( 2, "", "Precision from units output format *-1 is " +	precision);
 		}
-		// Old code that we still need to support...
-		// In year 2, we changed the precision to 0 for RSTO.  See if any of the TS in the list are RSTO...
+		// Old code that we still need to support.
+		// In year 2, we changed the precision to 0 for RSTO.  See if any of the TS in the list are RSTO.
 		for ( int ilist = 0; ilist < list_size; ilist++ ) {
 			tspt = tslist.get(ilist);
 			if ( tspt == null ) {
@@ -6267,12 +5553,12 @@ private void writeStateModTS ( List<TS> tslist, String output_file, String preci
 	}
 
 	if ( TSUtil.intervalsMatch ( tslist )) {
-		// The time series to write have the same interval so write using the first interval....
+		// The time series to write have the same interval so write using the first interval.
 		int interval = 0;
 		interval = tslist.get(0).getDataIntervalBase();
 		if((interval == TimeInterval.DAY) ||(interval == TimeInterval.MONTH) ) {
 			PropList smprops = new PropList ( "StateMod" );
-			// Don't set input file since it is null...
+			// Don't set input file since it is null.
 			smprops.set ( "OutputFile", output_file );
 			if ( comments != null ) {
 				smprops.setUsingObject ( "NewComments", (Object)comments );

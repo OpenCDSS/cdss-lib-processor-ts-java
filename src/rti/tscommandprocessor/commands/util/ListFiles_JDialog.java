@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ private boolean __ok = false; // Whether the user has pressed OK to close the di
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param tableIDChoices list of tables to choose from
+@param tableIDChoices list of tables to choose from, used if appending
 */
 public ListFiles_JDialog ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices )
 {	super(parent, true);
@@ -165,17 +165,18 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
-	else {	// Choices...
+	else {
+		// Choices.
 		refresh();
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Folder = __Folder_JTextField.getText().trim();
 	String IncludeFiles = __IncludeFiles_JTextField.getText().trim();
@@ -198,7 +199,8 @@ private void checkInput ()
 	if ( Append.length() > 0 ) {
 		props.set ( "Append", Append );
 	}
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -228,6 +230,7 @@ private void commitEdits ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices list of tables to choose from, used if appending
 */
 private void initialize ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices )
 {	__command = command;
@@ -239,7 +242,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -268,7 +271,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	__Folder_JTextField = new JTextField ( 50 );
 	__Folder_JTextField.setToolTipText("Specify the folder from which to list files.");
 	__Folder_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel Folder_JPanel = new JPanel();
 	Folder_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(Folder_JPanel, __Folder_JTextField,
@@ -278,7 +281,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     JGUIUtil.addComponent(Folder_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(Folder_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -308,8 +311,8 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
@@ -322,8 +325,8 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
-	List<String> appendChoices = new ArrayList<String>();
-	appendChoices.add ( "" );	// Default
+	List<String> appendChoices = new ArrayList<>();
+	appendChoices.add ( "" );	// Default.
 	appendChoices.add ( __command._False );
 	appendChoices.add ( __command._True );
 	__Append_JComboBox.setData(appendChoices);
@@ -360,12 +363,12 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
-	// Refresh the contents...
+	// Refresh the contents.
     refresh ();
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( true );
     super.setVisible( true );
 }
@@ -406,7 +409,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String Folder = "";
 	String IncludeFiles = "";
 	String ExcludeFiles = "";
@@ -431,7 +434,7 @@ private void refresh ()
             __ExcludeFiles_JTextField.setText ( ExcludeFiles );
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -439,7 +442,7 @@ private void refresh ()
                 __TableID_JComboBox.select ( TableID );
             }
             else {
-                // Creating new table so add in the first position
+                // Creating new table so add in the first position.
                 if ( __TableID_JComboBox.getItemCount() == 0 ) {
                     __TableID_JComboBox.add(TableID);
                 }
@@ -454,10 +457,11 @@ private void refresh ()
 		}
 		else {
             if ( (Append == null) ||	Append.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__Append_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"Append parameter \"" + Append +
@@ -465,8 +469,8 @@ private void refresh ()
 			}
 		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	Folder = __Folder_JTextField.getText().trim();
 	IncludeFiles = __IncludeFiles_JTextField.getText().trim();
 	ExcludeFiles = __ExcludeFiles_JTextField.getText().trim();
@@ -479,7 +483,7 @@ private void refresh ()
 	props.add ( "TableID=" + TableID );
 	props.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (Folder != null) && !Folder.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -501,20 +505,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

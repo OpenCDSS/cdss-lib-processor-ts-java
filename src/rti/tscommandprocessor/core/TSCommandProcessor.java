@@ -4695,6 +4695,31 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
 }
 
 /**
+ * Set a processor property.
+ * This will set a built-in property if found and otherwise will set a user-defined property.
+ * This is similar to the processRequest_SetProperty() method,
+ * but does not require creating a bean object to pass the request.
+ */
+public void setProperty ( String propName, Object contents ) {
+    // Try to set official property...
+    Collection<String> internalProperties = getPropertyNameList(true,false);
+    if ( internalProperties.contains(propName) ) {
+	    try {
+	    	// Null is OK here for o2.
+	        setPropContents(propName, contents);
+	    }
+	    catch ( Exception e ) {
+	        // Not recognized as a core internal so will set below as a user property.
+	    	// TODO smalers 2022-06-21 this does not actually do anything here or in processRequest_SetProperty?
+	    }
+    }
+    else {
+	    // Otherwise it is a user-defined property.
+	    __propertyHashmap.put ( propName, contents );
+    }
+}
+
+/**
 Indicate whether StartLog commands should be enabled.
 @param StartLogEnabled_Boolean true if StartLog commands are enabled, false if not.
 */

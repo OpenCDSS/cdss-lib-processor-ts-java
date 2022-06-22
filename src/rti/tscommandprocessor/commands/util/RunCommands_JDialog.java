@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -83,7 +83,10 @@ private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __ExpectedStatus_JComboBox = null;
 //private SimpleJComboBox __ShareProperties_JComboBox = null;
 private SimpleJComboBox __ShareDataStores_JComboBox = null;
-private boolean __error_wait = false; // Is there an error waiting to be cleared up
+private SimpleJComboBox __AppendOutputFiles_JComboBox = null;
+private JTextField __WarningCountProperty_JTextField = null;
+private JTextField __FailureCountProperty_JTextField = null;
+private boolean __error_wait = false; // Is there an error waiting to be cleared up.
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
 
@@ -171,7 +174,7 @@ public void actionPerformed( ActionEvent event )
 		refresh ();
 	}
 	else {
-		// Parameter choices
+		// Parameter choices.
 		refresh ();
 	}
 }
@@ -181,12 +184,15 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    String AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
+	String WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
+	String FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -200,7 +206,17 @@ private void checkInput ()
     if ( ShareDataStores.length() > 0 ) {
         props.set ( "ShareDataStores", ShareDataStores );
     }
-	try {	// This will warn the user...
+    if ( AppendOutputFiles.length() > 0 ) {
+        props.set ( "AppendOutputFiles", AppendOutputFiles );
+    }
+    if ( WarningCountProperty.length() > 0 ) {
+        props.set ( "WarningCountProperty", WarningCountProperty );
+    }
+    if ( FailureCountProperty.length() > 0 ) {
+        props.set ( "FailureCountProperty", FailureCountProperty );
+    }
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -218,10 +234,16 @@ private void commitEdits ()
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    String AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
+	String WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
+	String FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile", InputFile );
     __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
     //__command.setCommandParameter ( "ShareProperties", ShareProperties );
     __command.setCommandParameter ( "ShareDataStores", ShareDataStores );
+    __command.setCommandParameter ( "AppendOutputFiles", AppendOutputFiles );
+    __command.setCommandParameter ( "WarningCountProperty", WarningCountProperty );
+    __command.setCommandParameter ( "FailureCountProperty", FailureCountProperty );
 }
 
 /**
@@ -239,7 +261,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -273,7 +295,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the file to remove or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -283,7 +305,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -295,7 +317,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExpectedStatus_JComboBox = new SimpleJComboBox ( false );
     List<String> statusChoices = new ArrayList<>();
-    statusChoices.add ( "" );   // Default
+    statusChoices.add ( "" );   // Default.
     statusChoices.add ( __command._Unknown );
     statusChoices.add ( __command._Success );
     statusChoices.add ( __command._Warning );
@@ -330,7 +352,7 @@ private void initialize ( JFrame parent, RunCommands_Command command )
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
     List<String> shareChoices = new ArrayList<>();
-    shareChoices.add ( "" );   // Default
+    shareChoices.add ( "" ); // Default.
     //shareChoices.add ( __command._Copy ); // Too difficult?
     shareChoices.add ( __command._DoNotShare );
     shareChoices.add ( __command._Share );
@@ -342,6 +364,43 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - share datastores (default=" + __command._Share + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append output files?:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AppendOutputFiles_JComboBox = new SimpleJComboBox ( false );
+    __AppendOutputFiles_JComboBox.setToolTipText("Should output files from the command file be added to the full output file list?");
+    List<String> appendFilesChoices = new ArrayList<>();
+    appendFilesChoices.add ( "" ); // Default.
+    appendFilesChoices.add ( __command._False );
+    appendFilesChoices.add ( __command._True );
+    __AppendOutputFiles_JComboBox.setData(appendFilesChoices);
+    __AppendOutputFiles_JComboBox.select ( 0 );
+    __AppendOutputFiles_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AppendOutputFiles_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - append output files (default=" + __command._False + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Warning count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WarningCountProperty_JTextField = new JTextField ( "", 20 );
+    __WarningCountProperty_JTextField.setToolTipText("Specify the property name for warning count, can use ${Property} notation");
+    __WarningCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __WarningCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as warning count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Failure count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FailureCountProperty_JTextField = new JTextField ( "", 20 );
+    __FailureCountProperty_JTextField.setToolTipText("Specify the property name for failure count, can use ${Property} notation");
+    __FailureCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FailureCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as failure count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -368,8 +427,8 @@ private void initialize ( JFrame parent, RunCommands_Command command )
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
-	// Dialogs do not need to be resizable...
+	refresh();	// Sets the __path_JButton status.
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -414,6 +473,9 @@ private void refresh ()
     String ExpectedStatus = "";
     //String ShareProperties = "";
     String ShareDataStores = "";
+    String AppendOutputFiles = "";
+    String WarningCountProperty = "";
+    String FailureCountProperty = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -423,6 +485,9 @@ private void refresh ()
         ExpectedStatus = props.getValue ( "ExpectedStatus" );
         //ShareProperties = props.getValue ( "ShareProperties" );
         ShareDataStores = props.getValue ( "ShareDataStores" );
+        AppendOutputFiles = props.getValue ( "AppendOutputFiles" );
+        WarningCountProperty = props.getValue ( "WarningCountProperty" );
+        FailureCountProperty = props.getValue ( "FailureCountProperty" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
@@ -431,10 +496,11 @@ private void refresh ()
         }
         else {
             if ( (ExpectedStatus == null) || ExpectedStatus.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __ExpectedStatus_JComboBox.select ( 0 );
             }
-            else {  // Bad user command...
+            else {
+            	// Bad user command.
                 Message.printWarning ( 1, routine,
                 "Existing command references an invalid\n"+
                 "ExpectedStatus parameter \"" +
@@ -463,28 +529,56 @@ private void refresh ()
         }
         else {
             if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __ShareDataStores_JComboBox.select ( 0 );
             }
-            else {  // Bad user command...
+            else {
+            	// Bad user command.
                 Message.printWarning ( 1, routine,
                 "Existing command references an invalid ShareDataStores parameter \"" +
                 ShareDataStores + "\".  Correct or Cancel." );
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__AppendOutputFiles_JComboBox, AppendOutputFiles,JGUIUtil.NONE, null, null ) ) {
+            __AppendOutputFiles_JComboBox.select ( AppendOutputFiles );
+        }
+        else {
+            if ( (AppendOutputFiles == null) || AppendOutputFiles.equals("") ) {
+                // New command...select the default.
+                __AppendOutputFiles_JComboBox.select ( 0 );
+            }
+            else {
+            	// Bad user command.
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid AppendOutputFiles parameter \"" +
+                AppendOutputFiles + "\".  Correct or Cancel." );
+            }
+        }
+		if ( WarningCountProperty != null ) {
+			__WarningCountProperty_JTextField.setText ( WarningCountProperty );
+		}
+		if ( FailureCountProperty != null ) {
+			__FailureCountProperty_JTextField.setText ( FailureCountProperty );
+		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	InputFile = __InputFile_JTextField.getText().trim();
     ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //ShareProperties = __ShareProperties_JComboBox.getSelected();
     ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
+    WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
+    FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
     props.add ( "ExpectedStatus=" + ExpectedStatus );
     //props.add ( "ShareProperties=" + ShareProperties );
     props.add ( "ShareDataStores=" + ShareDataStores );
+    props.add ( "AppendOutputFiles=" + AppendOutputFiles );
+    props.add ( "WarningCountProperty=" + WarningCountProperty );
+    props.add ( "FailureCountProperty=" + FailureCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -510,16 +604,16 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

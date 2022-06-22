@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,14 +26,12 @@ package rti.tscommandprocessor.commands.util;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -57,7 +55,7 @@ import RTi.Util.Table.TableRecord;
 This class initializes, checks, and runs the ListFiles() command.
 */
 public class ListFiles_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider
+implements CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -124,8 +122,8 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
 		}
 	}
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(5);
 	validList.add ( "Folder" );
 	validList.add ( "IncludeFiles" );
 	validList.add ( "ExcludeFiles" );
@@ -148,7 +146,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if changed.
     List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
@@ -158,8 +156,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
@@ -172,7 +169,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
@@ -186,8 +183,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -198,8 +194,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -229,7 +224,7 @@ CommandWarningException, CommandException
     }
 	
 	String Folder = parameters.getValue ( "Folder" );
-    // Replace the globbing notation with Java wildcarding
+    // Replace the globbing notation with Java wildcarding.
 	String IncludeFiles = parameters.getValue ( "IncludeFiles" );
 	String includePattern = null;
 	if ( (IncludeFiles != null) && !IncludeFiles.equals("") ) {
@@ -255,7 +250,7 @@ CommandWarningException, CommandException
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated/created
+        // Get the table to be updated/created.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -263,7 +258,7 @@ CommandWarningException, CommandException
             PropList bean_PropList = bean.getResultsPropList();
             Object o_Table = bean_PropList.getContents ( "Table" );
             if ( o_Table != null ) {
-                // Found the table so no need to create it
+                // Found the table so no need to create it.
                 table = (DataTable)o_Table;
             }
         }
@@ -286,13 +281,13 @@ CommandWarningException, CommandException
 	// Process the files.  Each input file is opened to get information.
 	
 	try {
-	    // Make sure the table has the columns that are needed
+	    // Make sure the table has the columns that are needed.
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        int fileNameCol = -1;
 	        int relPathCol = -1;
 	        int absPathCol = -1;
     	    if ( (table == null) || !append ) {
-    	        // The table needs to be created
+    	        // The table needs to be created.
     	        List<TableField> columnList = new ArrayList<>();
     	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "FileName", -1) );
     	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1) );
@@ -303,7 +298,7 @@ CommandWarningException, CommandException
                 absPathCol = table.getFieldIndex("AbsolutePath");
                 table.setTableID ( TableID );
                 Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-                // Set the table in the processor...
+                // Set the table in the processor.
                 request_params = new PropList ( "" );
                 request_params.setUsingObject ( "Table", table );
                 try {
@@ -319,7 +314,7 @@ CommandWarningException, CommandException
                 }
     	    }
     	    else {
-    	        // Make sure that the needed columns exist - otherwise add them
+    	        // Make sure that the needed columns exist - otherwise add them.
     	        fileNameCol = table.getFieldIndex("FileName");
     	        if ( fileNameCol < 0 ) {
     	            fileNameCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "FileName", -1), "");
@@ -333,14 +328,14 @@ CommandWarningException, CommandException
                     absPathCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1), "");
                 }
     	    }
-    	    // Get the list of all the files in the folder
+    	    // Get the list of all the files in the folder.
     	    String workingDir = TSCommandProcessorUtil.getWorkingDir(processor);
     	    File folder = new File( IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(workingDir,Folder) ) );
     	    File [] filePathList = folder.listFiles();
     	    boolean allowDuplicates = false;
     	    TableRecord rec = null;
         	for ( File filePath : filePathList ) {
-        	    // See if the file matches the include and exclude patterns.  To do this split out the filename from the parent
+        	    // See if the file matches the include and exclude patterns.  To do this split out the filename from the parent.
         	    String file = filePath.getName();
         	    if ( (includePattern != null) && !file.matches(includePattern) ) {
         	        continue;
@@ -348,20 +343,20 @@ CommandWarningException, CommandException
                 if ( (excludePattern != null) && file.matches(excludePattern) ) {
                     continue;
                 }
-                // If here add to the table
+                // If here add to the table.
                 String absPath = filePath.getAbsolutePath();
                 String relPath = IOUtil.toRelativePath(workingDir, absPath);
                 Message.printStatus(2, routine, "Matched file \"" + absPath + "\"" );
-                // Try to get the record by matching the absolute path, which should be unique
+                // Try to get the record by matching the absolute path, which should be unique.
                 if ( !allowDuplicates ) {
-                    // Try to match the TSID 
+                    // Try to match the TSID.
                     rec = table.getRecord ( absPathCol, absPath );
                 }
                 if ( rec == null ) {
-                    // Create a new record
+                    // Create a new record.
                     rec = table.addRecord(table.emptyRecord());
                 }
-                // Set the data in the record
+                // Set the data in the record.
                 rec.setFieldValue(fileNameCol,filePath.getName());
                 rec.setFieldValue(relPathCol,relPath);
                 rec.setFieldValue(absPathCol,absPath);
@@ -369,8 +364,8 @@ CommandWarningException, CommandException
 	    }
 	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	        if ( table == null ) {
-	            // Did not find table so is being created in this command
-	            // Create an empty table and set the ID
+	            // Did not find table so is being created in this command.
+	            // Create an empty table and set the ID.
 	            table = new DataTable();
 	            table.setTableID ( TableID );
 	        }
@@ -402,8 +397,7 @@ CommandWarningException, CommandException
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 

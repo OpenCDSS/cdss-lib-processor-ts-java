@@ -2257,6 +2257,9 @@ throws Exception
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			// Set the command file run time to help evaluate performance.
+			stopwatch.stop();
+			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
 			return;
 		}
 		if ( Thread.interrupted() ) {
@@ -2269,6 +2272,9 @@ throws Exception
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			// Set the command file run time to help evaluate performance.
+			stopwatch.stop();
+			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
 			return;
 		}
 		try {
@@ -2764,6 +2770,9 @@ throws Exception
     					// Reset the cancel processing request and let interested code know that processing has been cancelled.
     					__ts_processor.setCancelProcessingRequested ( false );
     					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+    					// Set the command file run time to help evaluate performance.
+			 			stopwatch.stop();
+			 			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
     					return;
     				}
     			}
@@ -3023,6 +3032,9 @@ throws Exception
 		"There were warnings printed for obsolete commands.\n" +
 		"See the log file for information.  The output may be incomplete." );
 	}
+    // Set the command file run time to help evaluate performance.
+	stopwatch.stop();
+	__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
 }
 
 /**

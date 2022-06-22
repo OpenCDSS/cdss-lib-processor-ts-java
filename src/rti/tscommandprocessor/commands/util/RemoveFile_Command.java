@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ implements Command
 {
 
 /**
-Data members used for parameter values.
+Data members used for IfNotFound parameter values.
 */
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
@@ -106,7 +106,7 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(2);
 	validList.add ( "InputFile" );
 	validList.add ( "IfNotFound" );
@@ -127,7 +127,7 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+{	// The command will be modified if parameters are changed.
 	return (new RemoveFile_JDialog ( parent, this )).ok();
 }
 
@@ -144,11 +144,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {
     // Call the base class method for basic parsing.
     super.parseCommand( command_string );
-    // Update syntax for new parameter name...
+    // Update syntax for new parameter name.
     PropList parameters = getCommandParameters();
     String WarnIfMissing = parameters.getValue("WarnIfMissing");
     if ( WarnIfMissing != null ) {
-        // Convert to IfNotFound
+        // Convert to IfNotFound.
         parameters.unSet( "WarnIfMissing" );
         String IfNotFound = _Ignore;
         if ( WarnIfMissing.equalsIgnoreCase("True") ) {
@@ -176,7 +176,7 @@ CommandWarningException, CommandException
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -184,7 +184,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -193,7 +193,7 @@ CommandWarningException, CommandException
 	String InputFile = parameters.getValue ( "InputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
-	    IfNotFound = _Warn; // Default
+	    IfNotFound = _Warn; // Default.
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
@@ -227,7 +227,7 @@ CommandWarningException, CommandException
 
 	if ( file.exists() ) {
 	    try {
-            // Remove the file...
+            // Remove the file.
             file.delete();
     	}
 	    catch ( SecurityException e ) {
@@ -251,10 +251,11 @@ CommandWarningException, CommandException
     		throw new CommandException ( message );
     	}
 
-    	// Sometimes files are locked because another process is using it.  Make sure that the file was deleted.
-    	// If not, generate a failure - user will need to do something
+    	// Sometimes files are locked because another process is using it.
+	    // Make sure that the file was deleted.
+    	// If not, generate a failure - user will need to do something.
     	if ( file.exists() ) {
-    	    // The file was not removed
+    	    // The file was not removed.
             message = "Unable to remove file \"" + InputFile_full + "\".";
             Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ throws InvalidCommandParameterException
                 message, "Specify the new table identifier different from the original table identifier." ) );
     }
  
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(8);
     validList.add ( "TableID" );
     validList.add ( "NewTableID" );
@@ -143,15 +143,14 @@ public boolean editCommand ( JFrame parent )
 {	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new CopyTable_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __discoveryTable;
 }
 
@@ -163,7 +162,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 {   DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
@@ -179,8 +178,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -191,8 +189,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -213,7 +210,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -221,7 +218,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -263,11 +260,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ColumnMap = parameters.getValue ( "ColumnMap" );
-    Hashtable<String,String> columnMap = new Hashtable<String,String>();
+    Hashtable<String,String> columnMap = new Hashtable<>();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnMap.put(parts[0].trim(), parts[1].trim() );
@@ -279,9 +276,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     Hashtable<String,String> columnFilters = new Hashtable<String,String>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnFilters.put(parts[0].trim(), parts[1].trim() );
@@ -290,7 +287,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
     StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
-    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
     }
     
@@ -301,7 +298,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
+            // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
             try {
@@ -338,14 +335,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Copy the table...
+    	// Copy the table.
 
 	    DataTable newTable = null;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        newTable = table.createCopy ( table, NewTableID, includeColumns,
 	            distinctColumns, columnMap, columnFilters, columnExcludeFilters );
             
-            // Set the table in the processor...
+            // Set the table in the processor.
             
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", newTable );
@@ -363,12 +360,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
+            // Create an empty table and set the ID.
             newTable = new DataTable();
             newTable.setTableID ( NewTableID );
             setDiscoveryTable ( newTable );
         }
-	    // Set the property indicating the number of rows in the table
+	    // Set the property indicating the number of rows in the table.
         if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
             int rowCount = 0;
             if ( newTable != null ) {
@@ -413,8 +410,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __discoveryTable = table;
 }
 

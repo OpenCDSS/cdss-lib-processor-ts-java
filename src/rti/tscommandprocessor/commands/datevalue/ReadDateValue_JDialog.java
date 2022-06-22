@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -54,6 +56,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -76,11 +79,12 @@ private ReadDateValue_Command __command = null;
 private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __InputStart_JTextField;
-private JTextField __InputEnd_JTextField; // Text fields for input period.
-private JTextField __InputFile_JTextField = null; // Field for input file
-private JTextField __NewUnits_JTextField = null; // Units to convert to at read
+private JTextField __InputEnd_JTextField;
+private JTextField __InputFile_JTextField = null;
+private JTextField __NewUnits_JTextField = null;
+private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextArea __Command_JTextArea = null;
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;			
 private final String __RemoveWorkingDirectory = "Rel";
@@ -104,7 +108,7 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		// Browse for the file to read...
+		// Browse for the file to read.
 		JFileChooser fc = new JFileChooser();
         fc.setDialogTitle( "Select DateValue Time Series File");
         SimpleFileFilter sff = new SimpleFileFilter("dv","DateValue Time Series File");
@@ -178,8 +182,7 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -187,8 +190,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -196,8 +198,7 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -209,13 +210,14 @@ to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput () {
 	
-	// Put together a list of parameters to check...
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	
 	__error_wait = false;
 
@@ -234,8 +236,12 @@ private void checkInput () {
 	if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 		props.set("NewUnits", NewUnits);
 	}
+	if ( IfNotFound.length() > 0 ) {
+		props.set ( "IfNotFound", IfNotFound );
+	}
 
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
@@ -254,12 +260,14 @@ private void commitEdits() {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 
     __command.setCommandParameter("Alias", Alias);
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	__command.setCommandParameter("NewUnits", NewUnits);
+	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
 /**
@@ -307,7 +315,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -317,7 +325,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -362,6 +370,23 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - date/time string or ${Property} (default=global input end)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default.
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfNotFound_JComboBox.setData(notFoundChoices);
+	__IfNotFound_JComboBox.select ( 0 );
+	__IfNotFound_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - action if file not found (default=" + __command._Fail + ")."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(4, 55);
@@ -388,7 +413,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
 
 	setTitle("Edit ReadDateValue Command");
 	
-	// Refresh the contents...
+	// Refresh the contents.
     refresh ();
 
     pack();
@@ -435,25 +460,28 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh() {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "",
 	       InputStart = "",
 	       InputEnd = "",
 	       NewUnits = "",
-	       Alias = "";
+	       Alias = "",
+	       IfNotFound = "";
 
 	PropList props = null;
 
 	if (__first_time) {
 		__first_time = false;
 
-		// Get the properties from the command
+		// Get the properties from the command.
 		props = __command.getCommandParameters();
         Alias = props.getValue("Alias");
 		InputFile = props.getValue("InputFile");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
-		// Set the control fields
+		IfNotFound = props.getValue("IfNotFound");
+		// Set the control fields.
 		if (Alias != null) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
@@ -469,15 +497,32 @@ private void refresh() {
 		if (NewUnits != null) {
 			__NewUnits_JTextField.setText(NewUnits);
 		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
+			__IfNotFound_JComboBox.select ( IfNotFound );
+		}
+		else {
+            if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
+				// New command...select the default.
+				__IfNotFound_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IfNotFound parameter \"" +	IfNotFound +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 	}
 
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+	IfNotFound = __IfNotFound_JComboBox.getSelected();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
@@ -485,8 +530,9 @@ private void refresh() {
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
+	props.add ( "IfNotFound=" + IfNotFound );
 	__Command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -513,14 +559,14 @@ React to the user response.
 public void response ( boolean ok ) {
 	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -529,32 +575,26 @@ public void response ( boolean ok ) {
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response(false);
+public void windowClosing( WindowEvent event ) {
+	response(false);
 }
 
-public void windowActivated( WindowEvent evt )
-{
+public void windowActivated( WindowEvent evt ) {
 }
 
-public void windowClosed( WindowEvent evt )
-{
+public void windowClosed( WindowEvent evt ) {
 }
 
-public void windowDeactivated( WindowEvent evt )
-{
+public void windowDeactivated( WindowEvent evt ) {
 }
 
-public void windowDeiconified( WindowEvent evt )
-{
+public void windowDeiconified( WindowEvent evt ) {
 }
 
-public void windowIconified( WindowEvent evt )
-{
+public void windowIconified( WindowEvent evt ) {
 }
 
-public void windowOpened( WindowEvent evt )
-{
+public void windowOpened( WindowEvent evt ) {
 }
 
 }

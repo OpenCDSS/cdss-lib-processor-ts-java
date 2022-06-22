@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.IOUtil;
@@ -50,12 +51,12 @@ import rti.tscommandprocessor.core.TSCommandFileRunner;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-// FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main processor
+// FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main processor.
 
 /**
 This class initializes, checks, and runs the RunCommands() command.
 */
-public class RunCommands_Command extends AbstractCommand implements Command
+public class RunCommands_Command extends AbstractCommand implements FileGenerator
 {
 
 /**
@@ -88,7 +89,12 @@ protected final String _Share = "Share";
 /**
 AppendResults parameter values.
 */
-// TODO SAM 2007-12-13 Need to enable AppendResults
+// TODO SAM 2007-12-13 Need to enable AppendResults.
+
+/**
+ * The output file list.
+ */
+private List<File> outputFileList = new ArrayList<>();
 
 /**
 Constructor.
@@ -112,6 +118,7 @@ throws InvalidCommandParameterException
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
     //String ShareProperties = parameters.getValue ( "ShareProperties" );
     String ShareDataStores = parameters.getValue ( "ShareDataStores" );
+    String AppendOutputFiles = parameters.getValue ( "AppendOutputFiles" );
 	String warning = "";
     String message;
 	
@@ -151,8 +158,8 @@ throws InvalidCommandParameterException
                 message = "The input file does not exist: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the command file to run exists." ) );
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that the command file to run exists - may be OK if file is created at run time." ) );
             }
 			f = null;
 		}
@@ -205,12 +212,25 @@ throws InvalidCommandParameterException
                 " (default if blank), " + ", or " + _Share) );
     }
 
+    if ( (AppendOutputFiles != null) && (AppendOutputFiles.length() == 0) &&
+        !AppendOutputFiles.equalsIgnoreCase(_False) &&
+        !AppendOutputFiles.equalsIgnoreCase(_True) ) {
+        message = "The AppendOutputFiles parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify AppendOutputFiles as " + _False + " (default) or " + _True) );
+    }
+
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(4);
+    List<String> validList = new ArrayList<>(6);
 	validList.add ( "InputFile" );
     validList.add ( "ExpectedStatus" );
     validList.add ( "ShareProperties" );
     validList.add ( "ShareDataStores" );
+    validList.add ( "AppendOutputFiles" );
+    validList.add ( "WarningCountProperty" );
+    validList.add ( "FailureCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -233,6 +253,19 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of files that were created by this command (from called commands).
+@return the list of files that were created by this command.
+*/
+public List<File> getGeneratedFileList () {
+	// Create a new list.
+	List<File> files = new ArrayList<>();
+	for ( File f : this.outputFileList ) {
+		files.add(f);
+	}
+	return files;
+}
+
+/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -244,6 +277,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
+	int log_level = 3; // Level for non-user messages for log file.
 	
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
@@ -278,7 +312,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
         ShareDataStores = _Share;
     }
+    // TODO smalers 2022-06-21 this is not enabled.  Need to implement for each major output.  See AppendOutputFiles.
 	String AppendResults = parameters.getValue ( "AppendResults" );
+	String AppendOutputFiles = parameters.getValue ( "AppendOutputFiles" );
+	boolean appendOutputFiles = false; // Default.
+	if ( (AppendOutputFiles != null) && AppendOutputFiles.equalsIgnoreCase("true") ) {
+		appendOutputFiles = true;
+	}
+    String WarningCountProperty = parameters.getValue ( "WarningCountProperty" );
+    WarningCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, WarningCountProperty);
+    String FailureCountProperty = parameters.getValue ( "FailureCountProperty" );
+    FailureCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, FailureCountProperty);
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -345,7 +389,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
              * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
              * handled explicitly whereas user-defined properties are in a list that can be easily shared.
              * Also, some properties like the working directory receive special treatment.
-             * For now don't bite off the property issue>
+             * For now don't bite off the property issue.
             if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
                 setProcessorProperties(processor,runnerProcessor,true);
             }
@@ -376,7 +420,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             //   agree with the actual status
             // - if no "@expectedStatus, set to the most severe status of the commands file that was just run
     		CommandStatusType maxSeverity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
-    		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity
+    		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity.
     		if ( ExpectedStatus != null ) {
     		    if ( maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
                     // User has indicated an expected status and it matches the actual so consider this a success.
@@ -424,6 +468,63 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     testPassFail = __PASS;
                 }
             }
+
+    		// Set the properties indicating the number of warnings and failures from running the commands.
+    		CommandPhaseType [] phases = { CommandPhaseType.RUN };
+        	if ( (WarningCountProperty != null) && !WarningCountProperty.equals("") ) {
+        		CommandStatusType [] statuses = { CommandStatusType.WARNING };
+            	int warningCount = status.getCommandLog(phases, statuses).size();
+            	PropList request_params = new PropList ( "" );
+            	request_params.setUsingObject ( "PropertyName", WarningCountProperty );
+            	request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+            	try {
+                	processor.processRequest( "SetProperty", request_params);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + WarningCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
+        	if ( (FailureCountProperty != null) && !FailureCountProperty.equals("") ) {
+        		CommandStatusType [] statuses = { CommandStatusType.FAILURE };
+            	int failureCount = status.getCommandLog(phases, statuses).size();
+            	PropList request_params = new PropList ( "" );
+            	request_params.setUsingObject ( "PropertyName", FailureCountProperty );
+            	request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+            	try {
+                	processor.processRequest( "SetProperty", request_params);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + FailureCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
+        	
+        	// Append the runner's output files to this processor so that they will be listed in TSTool results.
+        	this.outputFileList.clear();
+        	if ( appendOutputFiles ) {
+        		// Loop through all the commands in run by the processor.
+        		for ( Command command : runner.getProcessor().getCommands() ) {
+        			if ( command instanceof FileGenerator ) {
+        				// The command had output files:
+        				// - add any files that exist to this command's output files.
+        				FileGenerator fg = (FileGenerator)command;
+        				for ( File file : fg.getGeneratedFileList() ) {
+        					this.outputFileList.add(file);
+        				}
+        			}
+        		}
+        	}
 
             // Add a record to the regression report.
 
@@ -483,6 +584,9 @@ public String toString ( PropList props )
     String ExpectedStatus = props.getValue("ExpectedStatus");
     //String ShareProperties = props.getValue("ShareProperties");
     String ShareDataStores = props.getValue("ShareDataStores");
+    String AppendOutputFiles = props.getValue("AppendOutputFiles");
+    String WarningCountProperty = props.getValue("WarningCountProperty");
+    String FailureCountProperty = props.getValue("FailureCountProperty");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -509,6 +613,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ShareDataStores=" + ShareDataStores );
+    }
+    if ( (AppendOutputFiles != null) && (AppendOutputFiles.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AppendOutputFiles=" + AppendOutputFiles );
+    }
+    if ( (WarningCountProperty != null) && (WarningCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WarningCountProperty=\"" + WarningCountProperty + "\"" );
+    }
+    if ( (FailureCountProperty != null) && (FailureCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FailureCountProperty=\"" + FailureCountProperty + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

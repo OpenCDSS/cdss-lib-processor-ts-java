@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ public class SortTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __SortColumns_JTextField = null;
@@ -101,7 +101,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -130,7 +130,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String SortColumns = __SortColumns_JTextField.getText().trim();
@@ -147,7 +147,7 @@ private void checkInput ()
         props.set ( "SortOrder", SortOrder );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -183,7 +183,7 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -208,7 +208,7 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
@@ -252,7 +252,7 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
@@ -273,7 +273,7 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -330,7 +330,7 @@ private void refresh ()
         SortColumns = props.getValue ( "SortColumns" );
         SortOrder = props.getValue ( "SortOrder" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -351,7 +351,7 @@ private void refresh ()
             __SortOrder_JTextArea.setText ( SortOrder );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	SortColumns = __SortColumns_JTextField.getText().trim();
 	SortOrder = __SortOrder_JTextArea.getText().trim().replace("\n"," ");
@@ -367,16 +367,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -389,7 +389,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
+// The following methods are all necessary because this class implements WindowListener.
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

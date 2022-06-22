@@ -266,9 +266,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         ColumnType = "" + TableColumnType.STRING;
     }
     String InitialValue = parameters.getValue ( "InitialValue" );
-    if ( (InitialValue != null) && (InitialValue.indexOf("${") >= 0) ) {
-    	InitialValue = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialValue);
-	}
+    InitialValue = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialValue);
 	String InitialFunction = parameters.getValue ( "InitialFunction" );
 	DataTableFunctionType initialFunction = null;
 	if ( InitialFunction != null ) {

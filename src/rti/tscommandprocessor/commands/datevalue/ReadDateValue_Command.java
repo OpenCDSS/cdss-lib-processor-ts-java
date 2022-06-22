@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -66,6 +66,13 @@ implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipl
 {
 
 /**
+Data members used for IfNotFound parameter values.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
+
+/**
 List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
@@ -73,8 +80,7 @@ private List<TS> __discoveryTSList = null;
 /**
 Constructor.
 */
-public ReadDateValue_Command ()
-{
+public ReadDateValue_Command () {
 	super();
 	setCommandName ( "ReadDateValue" );
 }
@@ -104,10 +110,11 @@ throws InvalidCommandParameterException
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
     
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
-            // do not allow spaces in the alias
+            // Do not allow spaces in the alias.
             message = "The Alias value cannot contain any spaces.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -125,7 +132,7 @@ throws InvalidCommandParameterException
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
+                // Working directory is available so use it.
                 if ( o != null ) {
                     working_dir = (String)o;
                 }
@@ -155,7 +162,7 @@ throws InvalidCommandParameterException
     }
 
 	if ( NewUnits != null ) {
-		// Will check at run time
+		// Will check at run time.
 	}
 
 	// InputStart
@@ -197,14 +204,27 @@ throws InvalidCommandParameterException
                     message, "Specify an input start <= the input end." ) );
 		}
 	}
+
+	if ( (IfNotFound != null) && !IfNotFound.isEmpty() ) {
+		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
+		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
+			message = "The IfNotFound parameter \"" + IfNotFound + "\" is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + ", " + _Warn + " (default), or " +
+					_Fail + "."));
+		}
+	}
     
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(5);
     validList.add ( "Alias" );
     validList.add ( "InputFile" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
     validList.add ( "NewUnits" );
+	validList.add ( "IfNotFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -223,17 +243,15 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
 not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	
-	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {	
+	// The command will be modified if parameters are changed.
 	return ( new ReadDateValue_JDialog ( parent, this ) ).ok();
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discoveryTSList;
 }
 
@@ -242,15 +260,14 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
-    // First time series in list should be of a type that be requested (e.g., MonthTS)
+    // First time series in list should be of a type that be requested (e.g., MonthTS).
     TS datats = discoveryTSList.get(0);
-    // Use the most generic for the base class...
+    // Use the most generic for the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return (List<T>)discoveryTSList;
     }
@@ -273,7 +290,7 @@ public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
     if ( !command_string.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
+        // New style syntax using simple parameter=value notation.
         super.parseCommand(command_string);
     }
     else {
@@ -291,7 +308,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             index = str.indexOf("=");
             int index2 = str.indexOf("(");
             if (index2 < index) {
-                // no alias specified -- badly-formed command
+                // No alias specified -- badly-formed command.
                 Alias = "Invalid_Alias";
                 message = "No alias was specified, although the command started with \"TS ...\"";
                 Message.printWarning(warning_level, routine, message);
@@ -299,16 +316,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             }
     
             Alias = str.substring(0, index).trim();
-            // Parse the command parameters...
+            // Parse the command parameters.
             String command_string2 = str.substring(index+1).trim(); // ReadDateValue(...)
             if ( (command_string2.indexOf("=") > 0) || command_string2.endsWith("()") ) {
-                // New format...
+                // New format.
                 Message.printStatus(2, routine, "Parsing new format for " + command_string2);
                 super.parseCommand ( command_string2 );
             }
             else {
                 // Old format TS Alias = ReadDateValue(InputFile,TSID,NewUnits,InputStart,InputEnd)
-                // Where TSID and later arguments are * if defaults
+                // Where TSID and later arguments are * if defaults.
                 Message.printStatus(2, routine, "Parsing old format for " + command_string2);
                 PropList parameters = getCommandParameters();
                 parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -319,18 +336,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                 parameters.set("InputEnd", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 5));
                 parameters.setHowSet ( Prop.SET_UNKNOWN );
             }
-            // Also set the alias
+            // Also set the alias.
             PropList parameters = getCommandParameters();
             parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
             parameters.set ( "Alias", Alias );
             // If the dates are old-style "*", convert to blanks.
-            // Note that TSID is not currently used
+            // Note that TSID is not currently used.
             String TSID = parameters.getValue("TSID");
             String InputStart = parameters.getValue("InputStart");
             String InputEnd = parameters.getValue("InputEnd");
             String NewUnits = parameters.getValue("NewUnits");
             if ( TSID != null ) {
-                // Unset unused parameter
+                // Unset unused parameter.
                 parameters.unSet( "TSID" );
             }
             if ( (InputStart != null) && InputStart.equals("*") ) {
@@ -346,11 +363,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
         else {
             if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-                // Named parameters so parse the new way...
+                // Named parameters so parse the new way.
                 super.parseCommand ( command_string );
             }
             else {
-                // Grab the filename from the fixed list of parameters...
+                // Grab the filename from the fixed list of parameters.
                 PropList parameters = getCommandParameters();
                 parameters.set("InputFile", StringUtil.getToken(command_string, "()", StringUtil.DELIM_ALLOW_STRINGS, 1));
             }
@@ -365,8 +382,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -377,8 +393,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -397,11 +412,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 
-    // Get and clear the status and clear the run log...
+    // Get and clear the status and clear the run log.
     
     CommandStatus status = getCommandStatus();
     CommandProcessor processor = getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -409,7 +424,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -424,13 +439,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
-		InputStart = "${InputStart}"; // Global default
+		InputStart = "${InputStart}"; // Global default.
 	}
 	String InputEnd = parameters.getValue("InputEnd");
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
-		InputEnd = "${InputEnd}"; // Global default
+		InputEnd = "${InputEnd}"; // Global default.
 	}
 	String Alias = parameters.getValue("Alias");
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
+	if ( (IfNotFound == null) || IfNotFound.equals("")) {
+	    IfNotFound = _Warn; // Default.
+	}
     
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
@@ -440,7 +459,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -448,13 +467,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 	}
 	
 	// Read the file.
-    List<TS> tslist = null;   // Keep the list of time series
+    List<TS> tslist = null; // Keep the list of time series.
     String InputFile_full = InputFile;
 	try {
         boolean readData = true;
@@ -466,23 +485,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full) ) {
             if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-                message = "Input file does not exist:  \"" + InputFile_full + "\".";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Verify that filename is correct and that the file exists - " +
-                        	"may be OK if file is created during processing." ) );
+            	if ( InputFile.indexOf("${") < 0 ) {
+            		// Default for discovery mode is warning.
+            		CommandStatusType messageType = CommandStatusType.WARNING;
+        	   		if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+        	   			messageType = CommandStatusType.FAILURE;
+        	   		}
+        	   		if ( !IfNotFound.equalsIgnoreCase(_Ignore) ) {
+        	   			// Not ignoring a missing file so generate a message.
+        	   			message = "Input file does not exist:  \"" + InputFile_full + "\".";
+        	   			Message.printWarning(log_level,
+        	   				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+        	   				routine, message );
+        	   			status.addToLog ( commandPhase,
+        	   				new CommandLogRecord(messageType,
+        	   					message, "Verify that filename is correct and that the file exists - " +
+        	   					"may be OK if file is created during processing." ) );
+        	   		}
+            	}
             }
             else if ( commandPhase == CommandPhaseType.RUN ) {
-                message = "Input file does not exist:  \"" + InputFile_full + "\".";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that filename is correct and that the file exists." ) );
+            	// Default for run mode is failure.
+            	CommandStatusType messageType = CommandStatusType.FAILURE;
+        	   	if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+        	   		messageType = CommandStatusType.WARNING;
+        	   	}
+        	   	if ( !IfNotFound.equalsIgnoreCase(_Ignore) ) {
+        	   		// Not ignoring a missing file so generate a message.
+        	   		message = "Input file does not exist:  \"" + InputFile_full + "\".";
+        	   		Message.printWarning(log_level,
+        	   			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+        	   			routine, message );
+        	   		status.addToLog ( commandPhase,
+        	   			new CommandLogRecord(messageType,
+        	   				message, "Verify that filename is correct and that the file exists." ) );
+        	   	}
             }
         }
         else {
@@ -527,8 +564,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     if ( commandPhase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
-            // Further process the time series...
-            // This makes sure the period is at least as long as the output period...
+            // Further process the time series.
+            // This makes sure the period is at least as long as the output period.
             int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             if ( wc > 0 ) {
                 message = "Error post-processing series after read.";
@@ -541,7 +578,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 throw new CommandException ( message );
             }
     
-            // Now add the list in the processor...
+            // Now add the list in the processor.
             
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
             if ( wc2 > 0 ) {
@@ -575,8 +612,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the list of time series read in discovery phase.
 @param discovery_TS_List discovery time series list
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_List )
-{
+private void setDiscoveryTSList ( List<TS> discovery_TS_List ) {
     __discoveryTSList = discovery_TS_List;
 }
 
@@ -584,8 +620,7 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
@@ -610,15 +645,16 @@ public String toString ( PropList props, int majorVersion )
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String IfNotFound = props.getValue("IfNotFound");
 
 	StringBuffer b = new StringBuffer ();
 
-	// Input File
+	// InputFile
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
     if ( majorVersion >= 10 ) {
-        // Add as a parameter
+        // Add as a parameter.
         if ( (Alias != null) && (Alias.length() > 0) ) {
             if ( b.length() > 0 ) {
                 b.append ( "," );
@@ -627,7 +663,7 @@ public String toString ( PropList props, int majorVersion )
         }
     }
     
-	// New Units
+	// NewUnits
 	if ((NewUnits != null) && (NewUnits.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
@@ -635,7 +671,7 @@ public String toString ( PropList props, int majorVersion )
 		b.append("NewUnits=\"" + NewUnits + "\"");
 	}
 
-	// Input Start
+	// InputStart
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
@@ -643,7 +679,7 @@ public String toString ( PropList props, int majorVersion )
 		b.append("InputStart=\"" + InputStart + "\"");
 	}
 
-	// Input End
+	// InputEnd
 	if ((InputEnd != null) && (InputEnd.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
@@ -651,8 +687,15 @@ public String toString ( PropList props, int majorVersion )
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
 
+	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IfNotFound=" + IfNotFound );
+	}
+
     if ( majorVersion < 10 ) {
-        // Old syntax...
+        // Old syntax.
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";
         }

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ throws InvalidCommandParameterException
     	LinkedHashMap<String,String> map = sortOrder.getLinkedHashMap();
     	Set<String> set = map.keySet();
     	for ( String s : set ) {
-    		// Look for column in the sort columns list
+    		// Look for column in the sort columns list.
     		boolean found = false;
     		for ( int i = 0; i < this.sortColumns.length; i++ ) {
     			if ( s.equalsIgnoreCase(sortColumns[i]) ) {
@@ -147,8 +147,8 @@ throws InvalidCommandParameterException
     	}
     }
  
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(3);
     validList.add ( "TableID" );
     validList.add ( "SortColumns" );
     validList.add ( "SortOrder" );
@@ -173,7 +173,7 @@ public boolean editCommand ( JFrame parent )
 {	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new SortTable_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
@@ -185,13 +185,13 @@ public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {
 	super.parseCommand(commandString);
-	// Check for SortOrder that does not have the dictionary ":" delimiter
-	// If found, replace with the new syntax on the single column to be sorted
+	// Check for SortOrder that does not have the dictionary ":" delimiter.
+	// If found, replace with the new syntax on the single column to be sorted.
 	PropList props = getCommandParameters();
 	String propValue = props.getValue("SortOrder");
 	if ( propValue != null ) {
 		if ( propValue.indexOf(":") < 0 ) {
-			// Does not use the dictionary notation so set to new syntax
+			// Does not use the dictionary notation so set to new syntax.
 			String col = props.getValue("SortColumns");
 			props.set("SortOrder",col + ":" + propValue);
 		}
@@ -214,7 +214,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -222,28 +222,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
-    	if ( TableID.indexOf("${") >= 0 ) {
-    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    	}
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	// In discovery mode want lists of tables to include ${Property}.
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String SortOrder = parameters.getValue ( "SortOrder" );
     StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
 	int [] sortOrderArray = new int[sortColumns.length];
 	for ( int i = 0; i < sortColumns.length; i++ ) {
-		sortOrderArray[i] = 1; // Default
+		sortOrderArray[i] = 1; // Default.
 		Object o = sortOrder.get(sortColumns[i]);
 		if ( o != null ) {
 			String s = (String)o;
@@ -259,7 +257,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -295,7 +293,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Sort the table...
+    	// Sort the table.
         table.sortTable ( sortColumns, sortOrderArray );
 	}
 	catch ( Exception e ) {

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -227,8 +227,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -255,7 +254,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{   // Put together a list of parameters to check...
+{   // Create a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -321,7 +320,7 @@ private void checkInput ()
         parameters.set ( "AppendText", AppendText );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -424,7 +423,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     __OutputFile_JTextField = new JTextField ( 50 );
     __OutputFile_JTextField.setToolTipText("Specify the output file or specify with ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -434,7 +433,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -442,13 +441,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
 	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    __Append_JComboBox = new SimpleJComboBox ( false ); // Allow edit
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to GeoJSON file?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Append_JComboBox = new SimpleJComboBox ( false ); // Allow edit.
     __Append_JComboBox.add ( "" );
     __Append_JComboBox.add ( __command._False );
     __Append_JComboBox.add ( __command._True );
     __Append_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, ++y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - append content to file? (default=" + __command._False + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -459,7 +460,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel for point data in separate properties
+    // Panel for point data in separate properties.
     int yPoint = -1;
     JPanel point_JPanel = new JPanel();
     point_JPanel.setLayout( new GridBagLayout() );
@@ -517,7 +518,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Optional - time series property containing elevation (default=X,Y)."),
         3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for geometry data in WKT property
+    // Panel for geometry data in WKT property.
     int yGeom = -1;
     JPanel geom_JPanel = new JPanel();
     geom_JPanel.setLayout( new GridBagLayout() );
@@ -545,7 +546,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Optional - time series property WKT geometry."),
         3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for properties
+    // Panel for properties.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
@@ -577,7 +578,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - properties to exclude (default=exclude none)."),
         3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for JavaScript
+    // Panel for JavaScript.
     int yJs = -1;
     JPanel js_JPanel = new JPanel();
     js_JPanel.setLayout( new GridBagLayout() );
@@ -622,7 +623,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(js_JPanel, new JLabel ( "Optional - JavaScript variable for GeoJSON object (default=none)."),
         3, yJs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for inserts
+    // Panel for inserts.
     int yInsert = -1;
     JPanel insert_JPanel = new JPanel();
     insert_JPanel.setLayout( new GridBagLayout() );
@@ -684,7 +685,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
 
     setTitle ( "Edit " + __command.getCommandName() + " Command" );
     
-    // Refresh the contents...
+    // Refresh the contents.
     checkGUIState();
     refresh ();
     
@@ -758,7 +759,7 @@ private void refresh ()
     PropList parameters = null;
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         parameters = __command.getCommandParameters();
         TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
@@ -776,7 +777,7 @@ private void refresh ()
         PrependText = parameters.getValue ( "PrependText" );
         AppendText = parameters.getValue ( "AppendText" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -794,19 +795,19 @@ private void refresh ()
                 __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -824,7 +825,7 @@ private void refresh ()
             __OutputFile_JTextField.setText (OutputFile);
         }
         if ( Append == null ) {
-            // Select default...
+            // Select default.
             __Append_JComboBox.select ( 0 );
         }
         else {
@@ -869,7 +870,7 @@ private void refresh ()
             __AppendText_JTextField.setText (AppendText);
         }
     }
-    // Regardless, reset the command from the fields...
+    // Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -902,7 +903,7 @@ private void refresh ()
     parameters.add ( "PrependText=" + PrependText );
     parameters.add ( "AppendText=" + AppendText );
     __command_JTextArea.setText( __command.toString ( parameters ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -927,16 +928,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+{   __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }

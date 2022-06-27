@@ -4226,11 +4226,19 @@ throws Exception
     	b.append(programVersion);
     }
     else {
-    	// Transfer the characters including the first period but no other periods.
+    	// Transfer the characters including the first period but no other periods:
+    	// - only include the first 3 parts since the additional parts may be 'beta', 'dev2', etc.
     	b.append(programVersion.substring(0,pos) + ".");
+    	int partCount = 1;
     	for ( int i = pos + 1; i < programVersion.length(); i++ ) {
     		if ( programVersion.charAt(i) == '.' ) {
-    			continue;
+    			++partCount;
+    			if ( partCount == 3 ) {
+    				break;
+    			}
+    			else {
+    				continue;
+    			}
     		}
     		else {
     			b.append ( programVersion.charAt(i) );

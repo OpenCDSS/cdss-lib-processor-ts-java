@@ -2176,7 +2176,6 @@ throws Exception
 
 	// String used in messages to allow link back to the application commands, for use with each command.
 	String command_tag = null;
-	int i;	// Put here so can check count outside of end of loop.
 	// Whether previous command completion listeners were notified.
 	// May not occur if "continue" in loop.
 	boolean prev_command_complete_notified = false;
@@ -2200,7 +2199,7 @@ throws Exception
     boolean needToInterrupt = false;
     //For_Command forCommand = null;
     CommandStatusProvider commandStatusProvider = null;
-    for ( i = 0; i < size; i++ ) {
+    for ( int i = 0; i < size; i++ ) {
     	//Message.printStatus(2, routine, "Processing: " + command);
         command = commandList.get(i);
         if ( command == null ) {
@@ -2229,10 +2228,17 @@ throws Exception
     setOutputFileList ( outputFileList );
     boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing.
     boolean outputFilesAdded = false;
+    // The following are used to get the count of warning and failure messages used with built-in WarningCount and FailureCount propoerties.
+	CommandPhaseType [] phases = { CommandPhaseType.RUN };
+	CommandStatusType [] warnStatuses = { CommandStatusType.WARNING };
+	CommandStatusType [] failStatuses = { CommandStatusType.FAILURE };
+    int warningCount = 0;
+    int failureCount = 0;
     // Run using the command list index because the index is modified below by For() commands.
-	for ( i = 0; i < size; i++ ) {
+    int iCommand = 0;
+	for ( iCommand = 0; iCommand < size; iCommand++ ) {
 		// 1-offset command count for messages.
-		i_for_message = i + 1;
+		i_for_message = iCommand + 1;
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
 		// Reset each command.
 		needToInterrupt = false;
@@ -2240,11 +2246,11 @@ throws Exception
 		outputFilesAdded = false;
 		// If for some reason the previous command did not notify listeners of its completion (e.g., due to continue in loop, do it now).
 		if ( !prev_command_complete_notified && (commandPrev != null) ) {
-			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (i - 1), size, commandPrev );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (iCommand - 1), size, commandPrev );
 		}
 		prev_command_complete_notified = false;
 		// Save the previous command before resetting to new command below.
-		if ( i > 0 ) {
+		if ( iCommand > 0 ) {
 			commandPrev = command;
 		}
 		// Check for a cancel, which would have been set by pressing
@@ -2256,10 +2262,10 @@ throws Exception
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
-			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	iCommand, size, command );
 			// Set the command file run time to help evaluate performance.
 			stopwatch.stop();
-			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
 			return;
 		}
 		if ( Thread.interrupted() ) {
@@ -2271,15 +2277,15 @@ throws Exception
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
-			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	iCommand, size, command );
 			// Set the command file run time to help evaluate performance.
 			stopwatch.stop();
-			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
 			return;
 		}
 		try {
 			// Catch errors in all the commands.
-    		command = commandList.get(i);
+    		command = commandList.get(iCommand);
     		commandString = command.toString();
     		if ( commandString == null ) {
     			continue;
@@ -2300,14 +2306,14 @@ throws Exception
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		// Don't use routine in messages. keep log messages shorter.
     		if ( !inComment && ifStackOkToRun ) {
-    			Message.printStatus ( 2, "", "-> Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\"" );
+    			Message.printStatus ( 2, "", "-> Start processing command " + (iCommand + 1) + " of " + size + ": \"" + commandString + "\"" );
     		}
             stopWatch.clear();
             stopWatch.start();
             commandProfile.setStartTime(System.currentTimeMillis());
             commandProfile.setStartHeap(Runtime.getRuntime().totalMemory());
     		// Notify any listeners that the command is running.
-    		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
+    		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( iCommand, size, command );
     
     		if ( command instanceof Comment_Command ) {
     			// Comment.  Mark as processing successful unless requirements were not met.
@@ -2463,7 +2469,7 @@ throws Exception
         				    if ( Message.isDebugOn ) {
                            	    Message.printDebug(1, routine, "Looking up previous For() command for Break() command." );
         				    }
-                            For_Command forCommand = lookupForCommand(commandList,i);
+                            For_Command forCommand = lookupForCommand(commandList,iCommand);
                             if ( forCommand == null ) {
                                 // Did not find a prior For() command so generate an error and exit.
                                 needToInterrupt = true;
@@ -2500,7 +2506,7 @@ throws Exception
                                     if ( Message.isDebugOn ) {
                                   	    Message.printDebug(1, routine, "Found For() command for Break() command:  " + forCommand );
                                     }
-                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);  // Method works for Continue and Break
+                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,iCommand,endForIndex);  // Method works for Continue and Break
                             	    for ( EndIf_Command endifCommand: endifCommandList ) {
                             		    // Treat as if an EndIf had been encountered:
                             		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
@@ -2515,6 +2521,9 @@ throws Exception
     	                                else {
     	                	                // Run the command so the status is set to success.
     	                	                endifCommand.runCommand(i_for_message);
+    	                	                warningCount += endifCommand.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+    	                	                failureCount += endifCommand.getCommandStatus().getCommandLog(phases, failStatuses).size();
+    	                	               	setProcessorCommandEndProperties ( warningCount, failureCount );
     	                	                // Remove the If command from the stack since it has essentially been traversed.
                                             if ( Message.isDebugOn ) {
                             	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
@@ -2533,9 +2542,9 @@ throws Exception
                             	    // No need to remove the For() command with forCommandStack.remove(forCommand) because calling forCommand.break() handles.
                                     // Modify the main command loop index and continue - the command after the end will be executed (or done):
                             	    // - this is similar to Continue but calling forCommand.break() above will cause loop to evaluate as done
-                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
+                                    iCommand = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor
                                     if ( Message.isDebugOn ) {
-                            	        Message.printDebug(1, routine, "Jumping to command " + (i + 1) + " [" + i + "] (command loop will be ignored): " + commandList.get(i) );
+                            	        Message.printDebug(1, routine, "Jumping to command " + (iCommand + 1) + " [" + iCommand + "] (command loop will be ignored): " + commandList.get(iCommand) );
                                     }
                                     // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
@@ -2544,7 +2553,7 @@ throws Exception
         	    		}
         	    		else if ( command instanceof Continue_Command ) {
         	    			// First find the For command that starts the loop.
-                            For_Command forCommand = lookupForCommand(commandList,i);
+                            For_Command forCommand = lookupForCommand(commandList,iCommand);
                             if ( forCommand == null ) {
                                 // Did not find a prior For() command so generate an error and exit.
                                 needToInterrupt = true;
@@ -2578,7 +2587,7 @@ throws Exception
                                 	//   Continue
                                 	//   If
                                 	//   EndIf
-                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,i,endForIndex);
+                            	    List<EndIf_Command> endifCommandList = lookupEndIfForContinue(commandList,iCommand,endForIndex);
                             	    for ( EndIf_Command endifCommand: endifCommandList ) {
                             		    // Treat as if an EndIf had been encountered:
                             		    // - process in order of innermost If/EndIf block to outermost If/EndIf block until EndFor is encountered
@@ -2593,6 +2602,9 @@ throws Exception
     	                                else {
     	                	                // Run the command so the status is set to success.
     	                	                endifCommand.runCommand(i_for_message);
+    	                	                warningCount += endifCommand.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+    	                	                failureCount += endifCommand.getCommandStatus().getCommandLog(phases, failStatuses).size();
+    	                	               	setProcessorCommandEndProperties ( warningCount, failureCount );
     	                	                // Remove the If command from the stack since it has essentially been traversed.
                                             if ( Message.isDebugOn ) {
                             	                Message.printDebug(1,routine,"Removing If() command from stack processing Break(): " + ifCommand );
@@ -2606,7 +2618,7 @@ throws Exception
                                         }
                             	    }
                                     // Modify the main command loop index and continue - the EndFor will be executed (or done).
-                                    i = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor.
+                                    iCommand = endForIndex - 1; // "i" will be incremented in the command loop and will therefore match the EndFor.
                                     // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
                                 }
@@ -2646,7 +2658,7 @@ throws Exception
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 // Modify the main command loop index and continue - the command after the end will be executed (or done).
                                 if ( endForIndex >= 0 ) {
-                                    i = endForIndex; // OK because we don't want to trigger EndFor() going back to the top.
+                                    iCommand = endForIndex; // OK because we don't want to trigger EndFor() going back to the top.
                                     // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped.
                                     continue;
                                 }
@@ -2666,6 +2678,9 @@ throws Exception
                             	forCommandStack.add(forCommand);
                                 // Run the For() command to set the iterator property and then skip to the next command.
                                 command.runCommand ( i_for_message );
+    	                	    warningCount += commandStatusProvider.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+    	                	    failureCount += commandStatusProvider.getCommandStatus().getCommandLog(phases, failStatuses).size();
+    	                	    setProcessorCommandEndProperties ( warningCount, failureCount );
                                 continue;
                             }
                             else {
@@ -2673,7 +2688,7 @@ throws Exception
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 // Modify the main command loop index and continue - the command after the end will be executed (or done).
                                 if ( endForIndex >= 0 ) {
-                                    i = endForIndex; // Loop will increment so end EndFor will be skipped, which is OK - otherwise infinite loop.
+                                    iCommand = endForIndex; // Loop will increment so end EndFor will be skipped, which is OK - otherwise infinite loop.
                                     continue;
                                 }
                                 else {
@@ -2699,25 +2714,24 @@ throws Exception
                             	// TODO SAM 2015-06-05 might need to log as mismatched nested loops.
                             }
                             int forIndex = lookupForCommandIndex(commandList,efc.getName());
-                            i = forIndex - 1; // Decrement by one because the main loop will increment.
+                            iCommand = forIndex - 1; // Decrement by one because the main loop will increment.
                             if ( Message.isDebugOn ) {
                             	Message.printDebug(1,routine,"At EndFor(Name=\"" + efc.getName() +
-                            		"\") - jumping to command " + (i + 1) + " [" + i + "] at top of For() loop for next iteration" );
+                            		"\") - jumping to command " + (iCommand + 1) + " [" + iCommand + "] at top of For() loop for next iteration" );
                             }
                             continue; // Goes to the top of the loop to get the command at "i".
                         }
                         else {
                         	// A typical command.  Run it.
                             command.runCommand ( i_for_message );
+   	                	    warningCount += commandStatusProvider.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+   	                	    failureCount += commandStatusProvider.getCommandStatus().getCommandLog(phases, failStatuses).size();
+   	                	    setProcessorCommandEndProperties ( warningCount, failureCount );
                             // If the command generated an output file, add it in the list of output files.
                             // This list is used by the TSTool UI to display results.
                             if ( command instanceof FileGenerator ) {
                             	processCommands_AddOutputFiles(outputFileList, command);
                     			outputFilesAdded = true;
-                            }
-                            if ( command instanceof RunCommands_Command ) {
-                            	// Also need to get the output files from the commands that were run.
-                            	// TODO SAM 2015-07-10 Enable this - need to add a method to RunCommands to track output files.
                             }
                         }
                     }
@@ -2749,6 +2763,9 @@ throws Exception
     	                else {
     	                	// Run the command so the status is set to success.
     	                	endifCommand.runCommand(i_for_message);
+   	                	    warningCount += endifCommand.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+   	                	    failureCount += endifCommand.getCommandStatus().getCommandLog(phases, failStatuses).size();
+   	                	    setProcessorCommandEndProperties ( warningCount, failureCount );
     	                    ifCommandStack.remove(ifCommand);
     	                }
     	                // Re-evaluate if stack.
@@ -2769,10 +2786,10 @@ throws Exception
     					__ts_processor.setIsRunning ( false );
     					// Reset the cancel processing request and let interested code know that processing has been cancelled.
     					__ts_processor.setCancelProcessingRequested ( false );
-    					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+    					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled ( iCommand, size, command );
     					// Set the command file run time to help evaluate performance.
 			 			stopwatch.stop();
-			 			__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+			 			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
     					return;
     				}
     			}
@@ -2954,10 +2971,10 @@ throws Exception
 		}
 		// Notify any listeners that the command is done running.
 		prev_command_complete_notified = true;
-		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
+		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( iCommand, size, command );
 		if ( !inComment && ifStackOkToRun ) {
 			Message.printStatus ( 2, "",
-	            "<- Done processing command \"" + commandString + "\" (" +  (i + 1) + " of " + size + " commands, " +
+	            "<- Done processing command \"" + commandString + "\" (" +  (iCommand + 1) + " of " + size + " commands, " +
 	            StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );
 		}
 		runtimeTotal += commandProfile.getRunTime();
@@ -2966,17 +2983,17 @@ throws Exception
 	// If necessary, do a final notify for the last command:
 	// - this will also be called if Exit or other command broke out of processing
 	if ( !prev_command_complete_notified ) {
-		if ( i == size ) {
-			--i;
+		if ( iCommand == size ) {
+			--iCommand;
 		}
-		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
+		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( iCommand, size, command );
 	}
 	
 	// Indicate that processing is done and now there is no need to handle canceling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
 		// Have gotten to here probably because the last command was processed and need to notify the listeners.
-		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled ( iCommand, size, command );
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
 	
@@ -3034,7 +3051,7 @@ throws Exception
 	}
     // Set the command file run time to help evaluate performance.
 	stopwatch.stop();
-	__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+	setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
 }
 
 /**
@@ -5416,6 +5433,101 @@ Set the value of the PreviewExportedOutput property.
 */
 private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean ) {
     __PreviewExportedOutput_boolean = PreviewExportedOutput_boolean;
+}
+
+/**
+ * Set built-in processor properties at the end of a command.
+ * This should be calling before continuing to the top of the processing loop in the processCommands method.
+ * @param waringCount the cumulative count of warning messages inclusive of the last command that was run
+ * @param failureCount cumulative count of warning failure inclusive of the last command that was run
+ */
+private void setProcessorCommandEndProperties ( int warningCount, int failureCount ) {
+	String routine = getClass().getSimpleName() + ".setProcessorCommandEndProperties";
+
+	String message = null;
+    // Set the 'WarningCount' property.
+    PropList request_params = new PropList ( "" );
+    request_params.setUsingObject ( "PropertyName", "WarningCount" );
+    request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+    try {
+        this.__ts_processor.processRequest( "SetProperty", request_params);
+    }
+    catch ( Exception e ) {
+    	// Should not happen.
+        message = "Error requesting SetProperty(Property=\"WarningCount\") from processor.";
+        Message.printWarning(3,routine,message);
+    }
+    // Set the 'FailureCount' property.
+    request_params = new PropList ( "" );
+    request_params.setUsingObject ( "PropertyName", "FailureCount" );
+    request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+    try {
+        this.__ts_processor.processRequest( "SetProperty", request_params);
+    }
+    catch ( Exception e ) {
+    	// Should not happen.
+        message = "Error requesting SetProperty(Property=\"FailureCount\") from processor.";
+        Message.printWarning(3,routine,message);
+    }
+}
+
+/**
+ * Set built-in processor properties at the end of a run, whether complete or not.
+ * This should be calling before returning from the processCommands method.
+ * @param stopwatch the StopWatch instance used to time the run
+ * @param commands the list of commands that were run (or attempted to run)
+ * @param iLastCommand command list index for run, with value
+ */
+private void setProcessorRunEndProperties ( StopWatch stopwatch, List<Command> commands, int iLastCommand ) {
+	String routine = getClass().getSimpleName() + ".setProcessorRunEndProperties";
+	// Set the commands run time.
+	__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+
+	// Set the built-in processor properties for warning and failure count for the commands that were run:
+	// - must loop over all the commands that were run, but may have ended before full list was processed
+	CommandPhaseType [] phases = { CommandPhaseType.RUN };
+	CommandStatusType [] warnStatuses = { CommandStatusType.WARNING };
+	CommandStatusType [] failStatuses = { CommandStatusType.FAILURE };
+	Command command = null;
+	CommandStatusProvider csp = null;
+	int warningCount = 0;
+	int failureCount = 0;
+	String message = null;
+	for ( int i = 0; i <= iLastCommand; i++ ) {
+		command = commands.get(i);
+		if ( command instanceof CommandStatusProvider ) {
+			csp = (CommandStatusProvider)command;
+		}
+		else {
+			continue;
+		}
+        warningCount += csp.getCommandStatus().getCommandLog(phases, warnStatuses).size();
+        failureCount += csp.getCommandStatus().getCommandLog(phases, failStatuses).size();
+        // Set the 'WarningCount' property.
+        PropList request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", "WarningCount" );
+        request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+        try {
+            this.__ts_processor.processRequest( "SetProperty", request_params);
+        }
+        catch ( Exception e ) {
+        	// Should not happen.
+            message = "Error requesting SetProperty(Property=\"WarningCount\") from processor.";
+            Message.printWarning(3,routine,message);
+        }
+        // Set the 'FailureCount' property.
+        request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", "FailureCount" );
+        request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+        try {
+            this.__ts_processor.processRequest( "SetProperty", request_params);
+        }
+        catch ( Exception e ) {
+        	// Should not happen.
+            message = "Error requesting SetProperty(Property=\"FailureCount\") from processor.";
+            Message.printWarning(3,routine,message);
+        }
+	}
 }
 
 /**

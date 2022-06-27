@@ -31,6 +31,7 @@ import javax.swing.JFrame;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -119,6 +120,8 @@ throws InvalidCommandParameterException
     //String ShareProperties = parameters.getValue ( "ShareProperties" );
     String ShareDataStores = parameters.getValue ( "ShareDataStores" );
     String AppendOutputFiles = parameters.getValue ( "AppendOutputFiles" );
+    String WarningCountProperty = parameters.getValue ( "WarningCountProperty" );
+    String FailureCountProperty = parameters.getValue ( "FailureCountProperty" );
 	String warning = "";
     String message;
 	
@@ -222,8 +225,24 @@ throws InvalidCommandParameterException
                 message, "Specify AppendOutputFiles as " + _False + " (default) or " + _True) );
     }
 
+    if ( (WarningCountProperty != null) && WarningCountProperty.equalsIgnoreCase("WarningCount") ) {
+        message = "The WarningCountProperty parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "The property name cannot be 'WarningCount', which is a built-in property name.") );
+    }
+
+    if ( (FailureCountProperty != null) && FailureCountProperty.equalsIgnoreCase("FailureCount") ) {
+        message = "The FailureCountProperty parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "The property name cannot be 'FailureCount', which is a built-in property name.") );
+    }
+
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(6);
+    List<String> validList = new ArrayList<>(7);
 	validList.add ( "InputFile" );
     validList.add ( "ExpectedStatus" );
     validList.add ( "ShareProperties" );
@@ -414,6 +433,54 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     	    // Total runtime for the commands.
             long runTimeTotal = TSCommandProcessorUtil.getRunTimeTotal(runner.getProcessor().getCommands());
+
+    		// Set the properties indicating the number of warnings and failures from running the commands:
+            // - do this BEFORE adding the additional summary message below.
+            // - a processor has built-in WarningCount and FailureCount properties that can be checked
+        	if ( (WarningCountProperty != null) && !WarningCountProperty.equals("") ) {
+        		Object wc = runner.getProcessor().getPropContents("WarningCount");
+            	int warningCount = 0;
+            	if ( wc != null ) {
+            		warningCount = (Integer)wc;
+            	}
+            	PropList request_params = new PropList ( "" );
+            	request_params.setUsingObject ( "PropertyName", WarningCountProperty );
+            	request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+            	try {
+                	processor.processRequest( "SetProperty", request_params);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + WarningCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
+        	if ( (FailureCountProperty != null) && !FailureCountProperty.equals("") ) {
+        		Object fc = runner.getProcessor().getPropContents("FailureCount");
+            	int failureCount = 0;
+            	if ( fc != null ) {
+            		failureCount = (Integer)fc;
+            	}
+            	PropList request_params = new PropList ( "" );
+            	request_params.setUsingObject ( "PropertyName", FailureCountProperty );
+            	request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+            	try {
+                	processor.processRequest( "SetProperty", request_params);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + FailureCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
     		
     		// Set the CommandStatus for this command:
             // - if have "@expectedStatus", add an additional fail message if the expected status does not
@@ -469,47 +536,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
             }
 
-    		// Set the properties indicating the number of warnings and failures from running the commands.
-    		CommandPhaseType [] phases = { CommandPhaseType.RUN };
-        	if ( (WarningCountProperty != null) && !WarningCountProperty.equals("") ) {
-        		CommandStatusType [] statuses = { CommandStatusType.WARNING };
-            	int warningCount = status.getCommandLog(phases, statuses).size();
-            	PropList request_params = new PropList ( "" );
-            	request_params.setUsingObject ( "PropertyName", WarningCountProperty );
-            	request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
-            	try {
-                	processor.processRequest( "SetProperty", request_params);
-            	}
-            	catch ( Exception e ) {
-                	message = "Error requesting SetProperty(Property=\"" + WarningCountProperty + "\") from processor.";
-                	Message.printWarning(log_level,
-                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                	status.addToLog ( CommandPhaseType.RUN,
-                    	new CommandLogRecord(CommandStatusType.FAILURE,
-                        	message, "Report the problem to software support." ) );
-            	}
-        	}
-        	if ( (FailureCountProperty != null) && !FailureCountProperty.equals("") ) {
-        		CommandStatusType [] statuses = { CommandStatusType.FAILURE };
-            	int failureCount = status.getCommandLog(phases, statuses).size();
-            	PropList request_params = new PropList ( "" );
-            	request_params.setUsingObject ( "PropertyName", FailureCountProperty );
-            	request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
-            	try {
-                	processor.processRequest( "SetProperty", request_params);
-            	}
-            	catch ( Exception e ) {
-                	message = "Error requesting SetProperty(Property=\"" + FailureCountProperty + "\") from processor.";
-                	Message.printWarning(log_level,
-                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                	status.addToLog ( CommandPhaseType.RUN,
-                    	new CommandLogRecord(CommandStatusType.FAILURE,
-                        	message, "Report the problem to software support." ) );
-            	}
-        	}
-        	
         	// Append the runner's output files to this processor so that they will be listed in TSTool results.
         	this.outputFileList.clear();
         	if ( appendOutputFiles ) {

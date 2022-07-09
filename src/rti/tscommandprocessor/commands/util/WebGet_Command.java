@@ -44,8 +44,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.JFrame;
 
@@ -65,6 +66,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.MultiKeyStringDictionary;
 import RTi.Util.String.StringUtil;
 
 /**
@@ -85,6 +87,7 @@ protected final String _True = "True";
 
 protected final String DELETE = "DELETE";
 protected final String GET = "GET";
+protected final String OPTIONS = "OPTIONS";
 protected final String POST = "POST";
 protected final String PUT = "PUT";
     
@@ -148,14 +151,16 @@ throws InvalidCommandParameterException
 
 	if ( (RequestMethod != null) && !RequestMethod.isEmpty() &&
 		!RequestMethod.equalsIgnoreCase(this.DELETE) &&
-		!EncodeURI.equalsIgnoreCase(this.GET) &&
-		!EncodeURI.equalsIgnoreCase(this.POST) &&
-		!EncodeURI.equalsIgnoreCase(this.PUT)) {
-		message = "The request method is invalid.";
+		!RequestMethod.equalsIgnoreCase(this.GET) &&
+		!RequestMethod.equalsIgnoreCase(this.OPTIONS) &&
+		!RequestMethod.equalsIgnoreCase(this.POST) &&
+		!RequestMethod.equalsIgnoreCase(this.PUT)) {
+		message = "The request method (" + RequestMethod + ") is invalid.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the request method as " + this.DELETE + ", " + this.GET + " (default), " + this.POST + " or " + this.PUT + "."));
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the request method as " + this.DELETE + ", " + this.GET + " (default), " + this.OPTIONS +
+					", " + this.POST + " or " + this.PUT + "."));
 	}
 
 	if ( (ConnectTimeout != null) && !ConnectTimeout.isEmpty() && !StringUtil.isDouble(ConnectTimeout)) {
@@ -331,6 +336,21 @@ private File getOutputFile () {
     return __OutputFile_File;
 }
 
+/**
+ * Determine whether an HTTP response code is a redirect.
+ * @return true if a redirect, false if not
+ */
+private boolean isRedirect ( int responseCode ) {
+    if ( (responseCode == HttpURLConnection.HTTP_MOVED_TEMP) ||
+		(responseCode == HttpURLConnection.HTTP_MOVED_PERM) ||
+		(responseCode == HttpURLConnection.HTTP_SEE_OTHER) ) {
+    	return true;
+    }
+    else {
+    	return false;
+    }
+}
+
 // Use base class parseCommand.
 
 /**
@@ -419,16 +439,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		payloadFile = new File(payloadFile_full);
 	}
 
+	// Headers are a dictionary:
+	//   key1:value,key2:value2,...
+	// - if the value contains a colon, surround the value with single quotes.
+	// - the value cannot contain duplicates
     String HttpHeaders = parameters.getValue ( "HttpHeaders" );
-    HashMap<String,String> httpHeaders = new HashMap<>();
-    if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) && (HttpHeaders.indexOf(":") > 0) ) {
-        // First break map pairs by comma.
-        List<String>pairs = StringUtil.breakStringList(HttpHeaders, ",", 0 );
-        // Now break pairs and put in hashtable.
-        for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            httpHeaders.put(parts[0].trim(), parts[1].trim() );
-        }
+   	MultiKeyStringDictionary httpHeaders = null;
+    if ( (HttpHeaders != null) && !HttpHeaders.isEmpty() ) {
+    	// Parse the headers.
+    	httpHeaders = new MultiKeyStringDictionary ( HttpHeaders, ":", "," );
     }
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     int connectTimeout = 60000;
@@ -486,6 +505,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
+	
+	// Run the HTTP request.
+	// Creating an HttpURLConnection object does not actually perform the request.
+	// Once the connection is created, properties can be set on the object.
+	// The request is fired when the following methods are called:
+	//
+	// Explicit firing:
+	//
+	// connect()
+	//
+	// Implicit firing:
+	//
+	// getContentLength()
+	// getOutputStream()
+	//
+	// Also, connections automatically follow redirects, except not between http and https.
+	// Therefore, return status of 3xx need to attempt the action on the redirect link.
 
 	try {
 		// Encode the URI if requested.
@@ -498,76 +534,154 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     	boolean requestSuccessful = false;
 		int responseCode = -1;
-    	for ( int iRetry = 1; iRetry <= retryMax; ++iRetry ) {
+    	//for ( int iRetry = 1; iRetry <= retryMax; ++iRetry ) {
+		// Number of retries, corresponding to RetryMax parameter:
+		// - redirects do not increment the retry count
+		int iRetry = 0;
+		// The redirect count:
+		// - probably won't be a large number of redirects but limit just in case
+		//   there is a circular redirect
+		int redirectMax = 100;
+		int iRedirect = 0;
+		// Response code from the HTTP request:
+		// - initialized to -1 for first call and after that should be 3xx for redirect,
+		//   200 for success, etc.
+   		responseCode = -1;
+   		// The connection is initially null but retries will result in a non-null connection that needs to be disconnected.
+    	HttpURLConnection urlConnection = null;
+		while ( true ) {
+			// First iteration is retry 1.
+			++iRetry;
     		if ( iRetry > 1 ) {
     			// Second and later retries.  Apply the wait.
+   				Message.printStatus(2, routine, "Attempt number " + iRetry + ", waiting " + retryWait + " milliseconds first.");
     			if ( retryWait > 0 ) {
     				Thread.sleep(retryWait);
     			}
     		}
+    		if ( iRetry > retryMax ) {
+    			Message.printStatus(2, routine, "Maximum retry (" + retryMax + ") reached.");
+    			break;
+    		}
+    		if ( iRedirect > redirectMax ) {
+    			Message.printStatus(2, routine, "Maximum redirect (" + redirectMax + ") reached.");
+    			break;
+    		}
     		FileOutputStream fos = null;
-	    	HttpURLConnection urlConnection = null;
 	    	InputStream is = null;
  			OutputStreamWriter outputStream = null;
    			BufferedInputStream isr = null;
     		StringBuilder content = null;
-    		responseCode = -1;
     		if ( doOutputProperty ) {
     			content = new StringBuilder();
     		}
     		try {
-    			// Some sites need cookie manager:
-    			// (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
-    			CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
-    			// Open the input stream.
-    			Message.printStatus(2,routine,"Requesting URI \"" + URI + "\" (try " + iRetry + ")." );
-    			URL url = new URL(URI);
-    			urlConnection = (HttpURLConnection)url.openConnection();
-    			// Add headers.
-    			for ( String headerKey : httpHeaders.keySet() ) {
-    				urlConnection.setRequestProperty(headerKey, httpHeaders.get(headerKey));
+    			// Do global setup if the first try.
+    			if ( iRetry == 1 ) {
+    				// Some sites need cookie manager:
+    				// (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
+    				CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
     			}
 
-    			// Check for redirects.  Different technologies have maximum on redirects but loop for 100, which is unlikely to be reached.
-    			int redirectMax = 100;
-    			for ( int iRedirect = 1; iRedirect <= redirectMax; iRedirect++ ) {
-    				int status0 = urlConnection.getResponseCode();
-    				if ( (status0 == HttpURLConnection.HTTP_MOVED_TEMP) ||
-    					(status0 == HttpURLConnection.HTTP_MOVED_PERM) ||
-    					(status0 == HttpURLConnection.HTTP_SEE_OTHER) ) {
-    					// URL is a redirect so need to reopen the connection with the redirect.
-    					if ( urlConnection != null ) {
-    						// First close the old connection.
-    						urlConnection.disconnect();
-    					}
-    					String newUrl = urlConnection.getHeaderField("Location");
-    					Message.printStatus(2,routine,"Requesting redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
-    					url = new URL(newUrl);
-    					urlConnection = (HttpURLConnection)url.openConnection();
-    					// Add headers.
-    					for ( String headerKey : httpHeaders.keySet() ) {
-    						urlConnection.setRequestProperty(headerKey, httpHeaders.get(headerKey));
-    					}
+    			// Check for redirects:
+    			// - initial try 'responseCode' will be -1 so is not a redirect
+    			// - subsequent tries may result in a 3xx code, which indicates a redirect
+    			if ( isRedirect(responseCode) ) {
+    				// Previous loop detected a redirect and therefore could not complete:
+    				// - the default is to follow redirects but if the schema is different (e.g, http, https),
+    				//   the redirect is not automatically followed and the following handles
+    				// - different technologies have maximum on redirects but loop for 100, which is unlikely to be reached.
+
+    				// Decrement the try count since redirects don't count.
+    				--iRetry;
+    				// URL is a redirect so need to reopen the connection with the redirect.
+    				if ( urlConnection != null ) {
+    					// First close the old connection to free resources.
+    					urlConnection.disconnect();
     				}
-    				else {
-    					break;
+    				String newUrl = urlConnection.getHeaderField("Location");
+    				Message.printStatus(2,routine,"Executing " + RequestMethod + " for redirect URL \"" + newUrl + "\" (redirect count=" + iRedirect + ")." );
+    				URL url = new URL(newUrl);
+    				urlConnection = (HttpURLConnection)url.openConnection();
+    			}
+    			else {
+    				// Create the connection:
+    				// - could be the first attempt
+    				// - could be the final link of a redirect list
+    				if ( urlConnection != null ) {
+    					// First close the old connection to free resources.
+    					urlConnection.disconnect();
     				}
+    				// Open the input connection.
+    				Message.printStatus(2,routine,"Executing " + RequestMethod + " request for URI \"" + URI + "\" (try " + iRetry + ")." );
+    				URL url = new URL(URI);
+    				urlConnection = (HttpURLConnection)url.openConnection();
     			}
 
-   				Message.printStatus(2,routine,"Connect timeout default is: " + urlConnection.getConnectTimeout() );
-   				Message.printStatus(2,routine,"Read timeout default is: " + urlConnection.getReadTimeout() );
+   				// Add headers.
+    			if ( httpHeaders == null ) {
+    				Message.printStatus(2,routine,"Have 0 request headers from HttpHeaders parameter." );
+    			}
+    			else {
+    				Message.printStatus(2,routine,"Have " + httpHeaders.size() + " request headers from HttpHeaders parameter." );
+					for ( int i = 0; i < httpHeaders.size(); i++ ) {
+						String key = httpHeaders.getKey(i);
+						String value = httpHeaders.getValue(i);
+  						Message.printStatus(2,routine,"  Adding request header: " + key + " = " + value );
+  						urlConnection.setRequestProperty(key, value);
+   					}
+    			}
+
+    			// Print default connection information the first time.
+    			if ( iRetry == 1 ) {
+    				Message.printStatus(2,routine,"Connect timeout default is: " + urlConnection.getConnectTimeout() );
+   					Message.printStatus(2,routine,"Read timeout default is: " + urlConnection.getReadTimeout() );
+    			}
+
+    			// Set the timeout information for the current connection attempt.
     			if ( connectTimeout > 0 ) {
+    				Message.printStatus(2,routine,"Setting the connect to: " + connectTimeout );
     				urlConnection.setConnectTimeout(connectTimeout);
     			}
     			if ( readTimeout > 0 ) {
+    				Message.printStatus(2,routine,"Setting the read to: " + readTimeout );
     				urlConnection.setReadTimeout(readTimeout);
     			}
+    			
     			if ( RequestMethod.equalsIgnoreCase(this.DELETE) ) {
     				// TODO smalers 2022-05-18 need to complete the implementation.
     				// See:  https://stackoverflow.com/questions/1051004/how-to-send-put-delete-http-request-in-httpurlconnection
     				urlConnection.setRequestMethod("DELETE");
+
+    			    // Call the 'connect' method to explicitly fire the request.
+    			    // Check the response code immediately in case it was a redirect. 
+   				    urlConnection.connect();
+   				    // Get the response code:
+   				    // - if 3xx, loop again to follow the redirect
+   				    responseCode = urlConnection.getResponseCode();
+   				    if ( isRedirect(responseCode) ) {
+   					    // The above code will check the response code and follow the redirect.
+   					    continue;
+   				    }
+    			
+    				requestSuccessful = false;
     			}
     			else if ( RequestMethod.equalsIgnoreCase(this.GET) ) {
+    				urlConnection.setRequestMethod("GET");
+
+    			    // Call the 'connect' method to explicitly fire the request.
+    			    // Check the response code immediately in case it was a redirect. 
+   				    urlConnection.connect();
+   				    // Get the response code:
+   				    // - if 3xx, loop again to follow the redirect
+   				    responseCode = urlConnection.getResponseCode();
+   				    if ( isRedirect(responseCode) ) {
+   					    // The above code will check the response code and follow the redirect.
+   					    continue;
+   				    }
+
+    				// Read the response:
+    				// - it is a bit confusing as to what is input and output stream but follow examples
     				is = urlConnection.getInputStream();
     				isr = new BufferedInputStream(is);
     				// Open the output file.
@@ -625,9 +739,45 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				// If here successful so break out of the retry loop.
     				requestSuccessful = true;
     			}
+    			else if ( RequestMethod.equalsIgnoreCase(this.OPTIONS) ) {
+    				// TODO smalers 2022-05-18 need to complete the implementation.
+    				// See:  https://stackoverflow.com/questions/1051004/how-to-send-put-delete-http-request-in-httpurlconnection
+    				urlConnection.setRequestMethod("OPTIONS");
+    				// The following should be added with HttpHeaders command parameter:
+    				//urlConnection.setRequestProperty("Access-Control-Request-Method", "POST");
+    				//urlConnection.setRequestProperty("Access-Control-Request-Headers", "content-type");
+    				//urlConnection.setRequestProperty("Origin", "https://poudre.openwaterfoundation.org");
+
+    			    // Call the 'connect' method to explicitly fire the request.
+    			    // Check the response code immediately in case it was a redirect. 
+   				    urlConnection.connect();
+   				    // Get the response code:
+   				    // - if 3xx, loop again to follow the redirect
+   				    responseCode = urlConnection.getResponseCode();
+   				    if ( isRedirect(responseCode) ) {
+   					    // The above code will check the response code and follow the redirect.
+   					    continue;
+   				    }
+   				    
+   				    // Response headers are handled below.
+
+    				requestSuccessful = true;
+    			}
     			else if ( RequestMethod.equalsIgnoreCase(this.POST) ) {
-    				urlConnection.setDoOutput(true);
     				urlConnection.setRequestMethod("POST");
+    				urlConnection.setDoOutput(true);
+
+    			    // Call the 'connect' method to explicitly fire the request.
+    			    // Check the response code immediately in case it was a redirect. 
+   				    urlConnection.connect();
+   				    // Get the response code:
+   				    // - if 3xx, loop again to follow the redirect
+   				    responseCode = urlConnection.getResponseCode();
+   				    if ( isRedirect(responseCode) ) {
+   					    // The above code will check the response code and follow the redirect.
+   					    continue;
+   				    }
+
     				if ( (payloadFile != null) && payloadFile.exists() ) {
     					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
     					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
@@ -638,8 +788,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				requestSuccessful = true;
     			}
     			else if ( RequestMethod.equalsIgnoreCase(this.PUT) ) {
-    				urlConnection.setDoOutput(true);
     				urlConnection.setRequestMethod("PUT");
+    				urlConnection.setDoOutput(true);
+
+    			    // Call the 'connect' method to explicitly fire the request.
+    			    // Check the response code immediately in case it was a redirect. 
+   				    urlConnection.connect();
+   				    // Get the response code:
+   				    // - if 3xx, loop again to follow the redirect
+   				    responseCode = urlConnection.getResponseCode();
+   				    if ( isRedirect(responseCode) ) {
+   					    // The above code will check the response code and follow the redirect.
+   					    continue;
+   				    }
+
     				if ( (payloadFile != null) && payloadFile.exists() ) {
     					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
     					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
@@ -658,8 +820,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     						message, "See the log file for details."));
     				break;
     			}
-    		}
+
+    			// Get the response headers and print to the log file:
+    			// - the map is unmodifiable so have to make a copy before sorting
+    			// - also handle null Map key, which indicates the response code
+    			Map<String, List<String>> responseHeaders = urlConnection.getHeaderFields();
+    			if ( responseHeaders != null ) {
+    				Message.printStatus(2, routine, "Have " + responseHeaders.size() + " response headers.");
+    				// Can't just create a TreeMap from the map object because it can't handle null,
+    				// so iterate to transfer objects.
+    				TreeMap<String, List<String>> sorted = new TreeMap<>();
+   					for ( Map.Entry<String, List<String>> entry : responseHeaders.entrySet() ) {
+   						if ( entry.getKey() == null ) {
+   							// A key may be null:
+   							// - this seems to be used for the response code (null = [HTTP/1.1 200 OK])
+    						// - replace with a string so sort on keys will work
+   							sorted.put("null", entry.getValue() );
+   						}
+   						else {
+   							sorted.put(entry.getKey(), entry.getValue() );
+   						}
+   					}
+    				for ( Map.Entry<String, List<String>> entry : sorted.entrySet() ) {
+    					Message.printStatus(2, routine, "  Response header " + entry.getKey() + " = " + entry.getValue());
+    				}
+    			}
+    			else {
+    				Message.printStatus(2, routine, "Have 0 response headers.");
+    			}
+    		} // Try for executing the request.
     		catch (MalformedURLException me) {
+    			// A bad URI will not retry since the same error will be generated each time.
     			message = "URI \"" + URI + "\" is malformed (" + me + ")";
     			Message.printWarning ( warning_level, 
                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
@@ -667,9 +858,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			status.addToLog(CommandPhaseType.RUN,
     				new CommandLogRecord(CommandStatusType.FAILURE,
     					message, "See the log file for details."));
+    			break;
     		}
     		catch ( SocketTimeoutException te ) {
+    			// This exception allows the full number of retries.
     			if ( iRetry <= 5 ) {
+    				// Only print the message the first 5 times.
     				message = "Try " + iRetry + " - connect or read timeout reading URI \"" + URI +
     					"\" (" + te + "), only logging message for retries <= 5 (RetryMax=" + RetryMax + ").";
     				Message.printWarning ( warning_level, 
@@ -681,6 +875,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			}
     		}
     		catch (IOException ioe) {
+    			// For now... this exception allows the full number of retries.
     			StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + ioe + ").\n" );
     			// Try reading error stream - may only work for some error numbers.
     			if ( urlConnection != null ) {
@@ -706,6 +901,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					sb.toString(), "See the log file for details.  Try using the full URI in a web browser."));
     		}
     		catch (Exception e) {
+    			// For now... this exception allows the full number of retries.
     			// Catch everything else - should probably add specific handling to troubleshoot.
     			message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
     			Message.printWarning ( warning_level, 
@@ -716,7 +912,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					message, "See the log file for details."));
     		}
     		finally {
-    			// Close the streams and connection.
+    			// Close the streams and connection if open.
     			if ( isr != null ) {
     				try {
     					isr.close();
@@ -754,25 +950,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			}
     		} // End 'finally'
    			if ( requestSuccessful ) {
+   				// The request was successful so no need to retry.
    				break;
    			}
     	} // End retry loop.
 
-    	// Check the response code.
+    	// Check whether the response code needs to be set as a processor property.
     	if ( requestSuccessful ) {
     		if ( responseCode != 200 ) {
-    			message = "Response code (" + responseCode + ") indicates an error retrieving the resource";
+    			message = "Response code (" + responseCode + ") is not 200, which indicates an error retrieving the resource.";
         	    if ( IfHttpError.equalsIgnoreCase(_Fail) ) {
             	    Message.printWarning ( warning_level,
                 	    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             	    status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                    	    message, "Verify that the URI is correct, for example in a web browser."));
+                    	    message, "Verify that the URI is correct, for example try in a web browser."));
         	    }
         	    else if ( IfHttpError.equalsIgnoreCase(_Warn) ) {
             	    Message.printWarning ( warning_level,
                 	    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             	    status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                    	    message, "Verify that the URI is correct, for example in a web browser."));
+                    	    message, "Verify that the URI is correct, for example try in a web browser."));
         	    }
         	    else {
             	    Message.printStatus( 2, routine, message + "Ignoring HTTP error " + responseCode);

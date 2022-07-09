@@ -3051,6 +3051,11 @@ throws Exception
 	}
     // Set the command file run time to help evaluate performance.
 	stopwatch.stop();
+	// Make sure that when exiting the loop normally the command counter is not too large:
+	// - iCommand is 0-index
+	if ( iCommand >= commandList.size() ) {
+		iCommand = commandList.size() - 1;
+	}
 	setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
 }
 

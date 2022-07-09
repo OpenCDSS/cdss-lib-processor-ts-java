@@ -381,7 +381,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 		"By default, a GET request will occur and output can be saved to a file or property."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Other request methods (DELETE, POST, PUT) are being phased in."),
+		"Other request methods (DELETE, OPTIONS, POST, PUT) are being phased in."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -434,6 +434,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	methodChoices.add ( "" );	// Default
 	methodChoices.add ( __command.DELETE );
 	methodChoices.add ( __command.GET );
+	methodChoices.add ( __command.OPTIONS );
 	methodChoices.add ( __command.POST );
 	methodChoices.add ( __command.PUT );
 	__RequestMethod_JComboBox.setData(methodChoices);

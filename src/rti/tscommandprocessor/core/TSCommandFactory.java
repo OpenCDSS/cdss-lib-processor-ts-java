@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import cdss.dmi.hydrobase.rest.commands.ReadColoradoHydroBaseRest_Command;
+import rti.tscommandprocessor.commands.access.NewAccessDatabase_Command;
 import rti.tscommandprocessor.commands.check.CheckFile_Command;
 // Data checks (for now keep separate from logging and data tests)
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
@@ -361,8 +362,8 @@ import rti.tscommandprocessor.commands.waterml2.WriteWaterML2_Command;
 import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
 /**
-This class instantiates Commands for time series processing.  The full command name
-is required, but parameters are not because parsing does not occur.
+This class instantiates Commands for time series processing.
+The full command name is required, but parameters are not because parsing does not occur.
 */
 public class TSCommandFactory implements CommandFactory
 {
@@ -377,8 +378,7 @@ List<Class> pluginCommandClassList = new ArrayList<>();
 /**
 Constructor.
 */
-public TSCommandFactory ()
-{
+public TSCommandFactory () {
     super();
 }
 
@@ -386,33 +386,31 @@ public TSCommandFactory ()
 Constructor.
 */
 @SuppressWarnings("rawtypes")
-public TSCommandFactory ( List<Class> pluginCommandClassList )
-{
+public TSCommandFactory ( List<Class> pluginCommandClassList ) {
     super();
     this.pluginCommandClassList = pluginCommandClassList;
 }
 	
 /**
-Return a new command, based on the command name.  DO NOT create an
-UnknownCommand if the command is not recognized.
+Return a new command, based on the command name.
+DO NOT create an UnknownCommand if the command is not recognized.
 @return a new command, based on the command name.
 @param command_string The command string to process.
 @throws UnknownCommandException if the command name is not recognized.
 */
 public Command newCommand ( String command_string )
-throws UnknownCommandException
-{
+throws UnknownCommandException {
 	return newCommand ( command_string, false );
 }
 
 /**
 Return a new command, based on the command name.
 @return a new command, based on the command name.
-@param commandString The command string to process.  The command string can
-contain parameters but they are not parsed.  At a minimum, the command string needs
-to be of the form "CommandName()" or "TS Alias = CommandName()".
-@param createUnknownCommandIfNotRecognized If true and the command is
-not recognized, create an UnknownCommand instance that holds the command string.
+@param commandString The command string to process.
+The command string can contain parameters but they are not parsed.
+At a minimum, the command string needs to be of the form "CommandName()" or "TS Alias = CommandName()".
+@param createUnknownCommandIfNotRecognized If true and the command is not recognized,
+create an UnknownCommand instance that holds the command string.
 This is useful for code that is being migrated to the full command class design.
 @throws UnknownCommandException if the command name is not recognized
 (and createUnknownCommandIfNotRecognized=false).
@@ -421,7 +419,7 @@ public Command newCommand ( String commandString, boolean createUnknownCommandIf
 throws UnknownCommandException
 {	commandString = commandString.trim(); // Full command string, with no surrounding white space.
     String commandName = ""; // Command name without "(...parameters...)".
-    String routine = "TSCommandFactory.newCommand";
+    String routine = getClass().getSimpleName() + ".newCommand";
 
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here.
 
@@ -782,6 +780,9 @@ throws UnknownCommandException
 
 	// "N" commands.
 
+    else if ( commandName.equalsIgnoreCase("NewAccessDatabase") ) {
+        return new NewAccessDatabase_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
         return new NewDayTSFromMonthAndDayTS_Command ();
     }

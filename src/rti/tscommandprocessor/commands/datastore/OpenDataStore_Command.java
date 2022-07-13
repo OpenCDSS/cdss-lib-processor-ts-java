@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import RTi.DMI.DMIDatabaseType;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.GenericDMI;
 import RTi.Util.Message.Message;
@@ -89,6 +90,13 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String DataStoreName = parameters.getValue ( "DataStoreName" );
+    String ServerName = parameters.getValue ( "ServerName" );
+    String DatabaseEngine = parameters.getValue ( "DatabaseEngine" );
+    if ( (DatabaseEngine == null) || DatabaseEngine.isEmpty() ) {
+    	// Default for checks.
+    	DatabaseEngine = "" + DMIDatabaseType.SQLITE;
+    }
+    String DatabaseName = parameters.getValue ( "DatabaseName" );
 	String IfFound = parameters.getValue ( "IfFound" );
 
 	String warning = "";
@@ -105,6 +113,35 @@ throws InvalidCommandParameterException
                 message, "Specify the datastore name." ) );
     }
 
+    DMIDatabaseType dbEngine = DMIDatabaseType.valueOfIgnoreCase(DatabaseEngine);
+    if ( dbEngine == null ) {
+        message = "The database engine (" + DatabaseEngine + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the datasbase engine using the command editor." ) );
+    }
+    else {
+    	if ( dbEngine == DMIDatabaseType.ACCESS ) {
+    		if ( (DatabaseName == null) || DatabaseName.isEmpty() ) {
+    			message = "The database name must be specified as the path to the database.";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "Specify the datasbase name as the path to the database file." ) );
+    		}
+    	}
+    	else if ( dbEngine == DMIDatabaseType.SQLITE ) {
+    		if ( (ServerName == null) || ServerName.isEmpty() ) {
+    			message = "The database server must be specified as the path to the database file or MEMORY for in-memory database";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "Specify the datasbase server as the path to the database file or MEMORY for in-memory database." ) );
+    		}
+    	}
+    }
+
 	if ( (IfFound != null) && !IfFound.isEmpty() ) {
 		if ( !IfFound.equalsIgnoreCase(_Close) && !IfFound.equalsIgnoreCase(_Warn)
 		    && !IfFound.equalsIgnoreCase(_Fail) ) {
@@ -118,7 +155,7 @@ throws InvalidCommandParameterException
 	}
     
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(10);
     validList.add ( "DataStoreName" );
     validList.add ( "DataStoreDescription" );
     validList.add ( "DataStoreType" );
@@ -127,6 +164,7 @@ throws InvalidCommandParameterException
     validList.add ( "DatabaseName" );
     validList.add ( "Login" );
     validList.add ( "Password" );
+    validList.add ( "ConnectionProperties" );
 	validList.add ( "IfFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
@@ -155,8 +193,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the datastore that is read by this class when run in discovery mode.
 */
-private DataStore getDiscoveryDataStore()
-{
+private DataStore getDiscoveryDataStore() {
     return __discoveryDataStore;
 }
 
@@ -184,8 +221,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -196,8 +232,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -226,11 +261,11 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
     String DataStoreName = parameters.getValue ( "DataStoreName" );
-    if ( (DataStoreName != null) && !DataStoreName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DataStoreName.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		DataStoreName = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreName);
     }
     String DataStoreDescription = parameters.getValue ( "DataStoreDescription" );
-    if ( (DataStoreDescription != null) && !DataStoreName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DataStoreName.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		DataStoreDescription = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreDescription);
     }
     if ( (DataStoreDescription == null) || DataStoreDescription.isEmpty() ) {
@@ -241,20 +276,24 @@ CommandWarningException, CommandException
     //String DataStoreType = parameters.getValue ( "DataStoreType" );
     String DatabaseEngine = parameters.getValue ( "DatabaseEngine" );
     String ServerName = parameters.getValue ( "ServerName" );
-    if ( (ServerName != null) && !ServerName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ServerName.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		ServerName = TSCommandProcessorUtil.expandParameterValue(processor, this, ServerName);
     }
     String DatabaseName = parameters.getValue ( "DatabaseName" );
-    if ( (DatabaseName != null) && !DatabaseName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DatabaseName.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		DatabaseName = TSCommandProcessorUtil.expandParameterValue(processor, this, DatabaseName);
     }
     String Login = parameters.getValue ( "Login" );
-    if ( (Login != null) && !Login.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Login.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		Login = TSCommandProcessorUtil.expandParameterValue(processor, this, Login);
     }
     String Password = parameters.getValue ( "Password" );
-    if ( (Password != null) && !Password.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Password.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		Password = TSCommandProcessorUtil.expandParameterValue(processor, this, Password);
+    }
+    String ConnectionProperties = parameters.getValue ( "ConnectionProperties" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		ConnectionProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, ConnectionProperties);
     }
 	String IfFound = parameters.getValue ( "IfFound" );
 	if ( (IfFound == null) || IfFound.equals("")) {
@@ -314,8 +353,17 @@ CommandWarningException, CommandException
 				// Use the parts and create the connection string on the fly.
 				String systemLogin = Login;
 				String systemPassword = Password;
+				String serverName = null;
 				GenericDMI dmi = null;
-				if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
+				if ( DatabaseEngine.equalsIgnoreCase("Access") ) {
+					// Get file path:
+					// - use the database name as the path to the file
+					String DatabaseFile_full = IOUtil.verifyPathForOS(
+						IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+						TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseName)));
+					dmi = new GenericDMI( "Access", serverName, DatabaseFile_full, -1, systemLogin, systemPassword );
+				}
+				else if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
 					if ( ServerName.equalsIgnoreCase("Memory") ) {
 						// SQLite documentation shows lower case.
 						dmi = new GenericDMI( "SQLite", "memory", DatabaseName, -1, systemLogin, systemPassword );
@@ -332,8 +380,12 @@ CommandWarningException, CommandException
 					// Database that does not use a file.
 					dmi = new GenericDMI( DatabaseEngine, ServerName, DatabaseName, -1, systemLogin, systemPassword );
 				}
-				// TODO SAM 2014-04-22 Define properties before opening.
-				//ds.setProperties(props);
+				if ( (ConnectionProperties != null) && !ConnectionProperties.isEmpty() ) {
+					// Set additional connection properties if specified:
+					// - must get the properties and then append
+					PropList props = ds.getProperties();
+					props.set("ConnectionProperties",ConnectionProperties);
+				}
 				dmi.open();
 				gds = new GenericDatabaseDataStore( DataStoreName, DataStoreDescription, dmi );
 				// TODO smalers 2020-10-18 could add more information to the status message such as command file name.
@@ -375,9 +427,19 @@ CommandWarningException, CommandException
 				try {
 					String systemLogin = Login;
 					String systemPassword = Password;
+					String serverName = null;
 					GenericDMI dmi = null;
-					if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
-						// Special handling for SQLite because it can be an in-memory or on-disk database.
+					if ( DatabaseEngine.equalsIgnoreCase("Access") ) {
+						// Get file path:
+						// - use the database name as the path to the file
+						String DatabaseFile_full = IOUtil.verifyPathForOS(
+							IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+							TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseName)));
+						dmi = new GenericDMI( "Access", serverName, DatabaseFile_full, -1, systemLogin, systemPassword );
+					}
+					else if ( DatabaseEngine.equalsIgnoreCase("SQLite") ) {
+						// Special handling for SQLite because it can be an in-memory or on-disk database:
+						// - use the server name for the path to the database file
 						if ( ServerName.equalsIgnoreCase("Memory") ) {
 							// SQLite documentation shows lower case.
 							dmi = new GenericDMI( "SQLite", "memory", DatabaseName, -1, systemLogin, systemPassword );
@@ -385,8 +447,8 @@ CommandWarningException, CommandException
 						else {
 							// Get file path.
 							String DatabaseFile_full = IOUtil.verifyPathForOS(
-									IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-									TSCommandProcessorUtil.expandParameterValue(processor,this,ServerName)));
+								IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+								TSCommandProcessorUtil.expandParameterValue(processor,this,ServerName)));
 							dmi = new GenericDMI( "SQLite", DatabaseFile_full, DatabaseName, -1, systemLogin, systemPassword );
 						}
 					}
@@ -394,7 +456,9 @@ CommandWarningException, CommandException
 						// Database that does not use a file.
 						dmi = new GenericDMI( DatabaseEngine, ServerName, DatabaseName, -1, systemLogin, systemPassword );
 					}
-					// TODO SAM 2014-04-22 Define properties before opening.
+					if ( (ConnectionProperties != null) && !ConnectionProperties.isEmpty() ) {
+						dmi.setAdditionalConnectionProperties(ConnectionProperties);
+					}
 					//ds.setProperties(props);
 					dmi.open();
 					gds = new GenericDatabaseDataStore( DataStoreName, DataStoreDescription, dmi );
@@ -444,8 +508,7 @@ CommandWarningException, CommandException
 /**
 Set the data store that is read by this class in discovery mode.
 */
-private void setDiscoveryDataStore ( DataStore dataStore )
-{
+private void setDiscoveryDataStore ( DataStore dataStore ) {
     __discoveryDataStore = dataStore;
 }
 
@@ -464,6 +527,7 @@ public String toString ( PropList props )
     String DatabaseName = props.getValue("DatabaseName");
     String Login = props.getValue("Login");
     String Password = props.getValue("Password");
+    String ConnectionProperties = props.getValue("ConnectionProperties");
 	String IfFound = props.getValue("IfFound");
 	StringBuffer b = new StringBuffer ();
     if ( (DataStoreName != null) && (DataStoreName.length() > 0) ) {
@@ -513,6 +577,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Password=\"" + Password + "\"" );
+    }
+    if ( (ConnectionProperties != null) && (ConnectionProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ConnectionProperties=\"" + ConnectionProperties + "\"" );
     }
 	if ( (IfFound != null) && (IfFound.length() > 0) ) {
 		if ( b.length() > 0 ) {

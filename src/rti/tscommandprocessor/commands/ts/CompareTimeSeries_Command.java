@@ -1979,7 +1979,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	// Time zone is not included in the following list.
 					   	List<DateTime> dateTimeList = new ArrayList<>();
 					   	if ( (date1 != null) && (date2 != null) ) {
-					   		TSUtil.createTSDateTimeList ( tempList, date1, date2 );
+					   		dateTimeList = TSUtil.createTSDateTimeList ( tempList, date1, date2 );
 					   	}
 					   	// Because value lookups do a time comparison, the time zone in the iterator must be ignored in each time series
 					   	// do this by making sure the lookup time zone is the same as in the time series.
@@ -2000,6 +2000,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   				doSetTz2 = true;
 					   			}
 					   		}
+					   	}
+					   	if ( Message.isDebugOn ) {
+					   		Message.printStatus(2,routine,"Have " + dateTimeList.size() + " irregular time series date/times to compare.");
 					   	}
 					   	for ( DateTime dt : dateTimeList ) {
 						   	if ( doSetTz1 ) {
@@ -2197,7 +2200,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	// Output summary at the top of log messages.
 
           	// The AllowedDiff value impacts the status.
-          	if ( (tsdiff_count > 0) && (diffCountTotal > AllowedDiff_int) ) {
+          	//if ( (tsdiff_count > 0) && (diffCountTotal > AllowedDiff_int) ) {
+          	if ( tsdiff_count > 0 ) {
 			    CommandStatusType statusType = CommandStatusType.UNKNOWN;
 			    if ( IfDifferent.equalsIgnoreCase(_Warn) ) {
 			        statusType = CommandStatusType.WARNING;
@@ -2231,7 +2235,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                new CommandLogRecord(statusType,
 	           	        message, "Verify that time series differences are expected." ) );
 		    }
-		    if ( tsdiff_count == 0 ) {
+          	else if ( tsdiff_count == 0 ) {
 			    CommandStatusType statusType = CommandStatusType.UNKNOWN;
 			    if ( IfSame.equalsIgnoreCase(_Warn) ) {
 			       statusType = CommandStatusType.WARNING;

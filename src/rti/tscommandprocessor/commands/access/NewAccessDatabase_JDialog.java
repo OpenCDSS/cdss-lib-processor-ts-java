@@ -1,4 +1,4 @@
-// NewSQLiteDatabase_JDialog - editor for NewSQLiteDatabase command
+// NewAccessDatabase_JDialog - editor for NewAccessDatabase command
 
 /* NoticeStart
 
@@ -21,7 +21,7 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
 
 NoticeEnd */
 
-package rti.tscommandprocessor.commands.sqlite;
+package rti.tscommandprocessor.commands.access;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -51,10 +51,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -62,7 +66,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 @SuppressWarnings("serial")
-public class NewSQLiteDatabase_JDialog extends JDialog
+public class NewAccessDatabase_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -74,12 +78,13 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private JTextField __DataStore_JTextField = null;
 private JTextField __DatabaseFile_JTextField = null;
+private SimpleJComboBox __Version_JComboBox = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private NewSQLiteDatabase_Command __command = null;
+private NewAccessDatabase_Command __command = null;
 private boolean __ok = false;
 private String __working_dir = null;
 
@@ -88,7 +93,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewSQLiteDatabase_JDialog ( JFrame parent, NewSQLiteDatabase_Command command )
+public NewAccessDatabase_JDialog ( JFrame parent, NewAccessDatabase_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -110,7 +115,12 @@ public void actionPerformed(ActionEvent event)
         else {
             fc = JFileChooserFactory.createJFileChooser(__working_dir );
         }
-        fc.setDialogTitle( "Select File for SQLite Database");
+        fc.setDialogTitle( "Select File for Microsoft Access Database");
+		SimpleFileFilter accdbSff = new SimpleFileFilter("accdb", "Microsoft Access Database File (2007+ version)");
+		fc.addChoosableFileFilter(accdbSff);
+		SimpleFileFilter mdbSff = new SimpleFileFilter("mdb", "Microsoft Access Database File (2000 and 2003)");
+		fc.addChoosableFileFilter(mdbSff);
+		fc.setFileFilter(accdbSff);
         
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String filename = fc.getSelectedFile().getName(); 
@@ -126,7 +136,7 @@ public void actionPerformed(ActionEvent event)
 					__DatabaseFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1,"NewSQLiteDatabase_JDialog", "Error converting file to relative path." );
+					Message.printWarning ( 1,"NewAccessDatabase_JDialog", "Error converting file to relative path." );
 				}
                 JGUIUtil.setLastFileDialogDirectory(path);
                 refresh();
@@ -137,7 +147,7 @@ public void actionPerformed(ActionEvent event)
 		response ( false );
 	}
 	else if ( o == __help_JButton ) {
-		HelpViewer.getInstance().showHelp("command", "NewSQLiteDatabase");
+		HelpViewer.getInstance().showHelp("command", "NewAccessDatabase");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -175,6 +185,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String DataStore = __DataStore_JTextField.getText().trim();
     String DatabaseFile = __DatabaseFile_JTextField.getText().trim();
+    String Version = __Version_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( DataStore.length() > 0 ) {
@@ -182,6 +193,9 @@ private void checkInput ()
     }
     if ( DatabaseFile.length() > 0 ) {
         props.set ( "DatabaseFile", DatabaseFile );
+    }
+    if ( Version.length() > 0 ) {
+        props.set ( "Version", Version );
     }
 	try {
 	    // This will warn the user.
@@ -201,8 +215,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String DataStore = __DataStore_JTextField.getText().trim();
     String DatabaseFile = __DatabaseFile_JTextField.getText().trim();
+    String Version = __Version_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "DatabaseFile", DatabaseFile );
+    __command.setCommandParameter ( "Version", Version );
 }
 
 /**
@@ -210,7 +226,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
+private void initialize ( JFrame parent, NewAccessDatabase_Command command )
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -230,30 +246,16 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command creates a new SQLite database, which is a database in a single file."),
+        "This command creates a new Microsoft Access database, which is a database in a single file."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "A database file or in-memory SQLite temporary database can be created."),
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "File database:"),
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    Specify the path to the database filename, with '.db' extension."),
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "In-memory database:"),
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    Specify " + __command._Memory + " as the filename."),
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    The in-memory database can be saved to a file by creating a backup of the in-memory database."),
+        "Specify the path to the database filename, with '.accdb' extension (or '.mdb' for version 2000 and 2003)."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
-        JGUIUtil.addComponent(paragraph, new JLabel (
-        "The working directory is: " + __working_dir ), 
-        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(paragraph, new JLabel("The working directory is:"), 
+        	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(paragraph, new JLabel ( "   " + __working_dir ), 
+        	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -273,6 +275,7 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Database file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DatabaseFile_JTextField = new JTextField ( 50 );
+    __DatabaseFile_JTextField.setToolTipText("Relative or absolute path to the database file.");
     __DatabaseFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
 	JPanel DatabaseFile_JPanel = new JPanel();
@@ -291,6 +294,25 @@ private void initialize ( JFrame parent, NewSQLiteDatabase_Command command )
 	}
 	JGUIUtil.addComponent(main_JPanel, DatabaseFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Version:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Version_JComboBox = new SimpleJComboBox ( false );
+	List<String> versionChoices = new ArrayList<>();
+	versionChoices.add ( "" );	// Default.
+	versionChoices.add ( "2016" );
+	versionChoices.add ( "2010" );
+	versionChoices.add ( "2007" );
+	versionChoices.add ( "2003" );
+	versionChoices.add ( "2000" );
+	__Version_JComboBox.setData(versionChoices);
+	__Version_JComboBox.select ( 0 );
+	__Version_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Version_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - Access version (default=2016)."), 
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -368,27 +390,46 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String routine = getClass().getSimpleName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String DataStore = "";
     String DatabaseFile = "";
+    String Version = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
 		DatabaseFile = props.getValue ( "DatabaseFile" );
+		Version = props.getValue ( "Version" );
         if ( DataStore != null ) {
             __DataStore_JTextField.setText ( DataStore );
         }
         if ( DatabaseFile != null ) {
             __DatabaseFile_JTextField.setText ( DatabaseFile );
         }
+        if ( Version == null ) {
+            // Select default.
+            __Version_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Version_JComboBox,Version, JGUIUtil.NONE, null, null ) ) {
+                __Version_JComboBox.select ( Version );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nVersion value \"" + Version +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields.
 	DataStore = __DataStore_JTextField.getText().trim();
 	DatabaseFile = __DatabaseFile_JTextField.getText().trim();
+    Version = __Version_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DatabaseFile=" + DatabaseFile );
+	props.add ( "Version=" + Version );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
@@ -424,7 +465,7 @@ private void response ( boolean ok )
 			return;
 		}
 	}
-	// Now close out.
+	// Now close out...
 	setVisible( false );
 	dispose();
 }

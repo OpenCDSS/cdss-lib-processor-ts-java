@@ -1,4 +1,4 @@
-// NewSQLiteDatabase_Command - This class initializes, checks, and runs the NewSQLiteDatabase() command.
+// NewAccessDatabase_Command - This class initializes, checks, and runs the NewAccessDatabase() command.
 
 
 /* NoticeStart
@@ -22,15 +22,21 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
 
 NoticeEnd */
 
-package rti.tscommandprocessor.commands.sqlite;
+package rti.tscommandprocessor.commands.access;
 
 import javax.swing.JFrame;
+
+import com.healthmarketscience.jackcess.Database;
+import com.healthmarketscience.jackcess.Database.FileFormat;
+import com.healthmarketscience.jackcess.DatabaseBuilder;
 
 import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,16 +59,11 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 
 /**
-This class initializes, checks, and runs the NewSQLiteDatabase() command.
+This class initializes, checks, and runs the NewAccessDatabase() command.
 */
-public class NewSQLiteDatabase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class NewAccessDatabase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
  
-/**
-Indicates that the database is created in memory.
-*/
-protected final String _Memory = "Memory";
-
 /**
 Datastore from discovery mode.
 */
@@ -71,9 +72,9 @@ private DataStore __discoveryDataStore = null;
 /**
 Constructor.
 */
-public NewSQLiteDatabase_Command ()
+public NewAccessDatabase_Command ()
 {	super();
-	setCommandName ( "NewSQLiteDatabase" );
+	setCommandName ( "NewAccessDatabase" );
 }
 
 /**
@@ -89,6 +90,7 @@ throws InvalidCommandParameterException
 {   String routine = getClass().getSimpleName() + ".checkCommandParameters";
     String DataStore = parameters.getValue ( "DataStore" );
     String DatabaseFile = parameters.getValue ( "DatabaseFile" );
+    String Version = parameters.getValue ( "Version" );
 
 	String warning = "";
     String message;
@@ -143,11 +145,23 @@ throws InvalidCommandParameterException
                 message, "Verify that database directory and working directory paths are compatible." ) );
         }
     }
+
+    if ( (Version != null) && !Version.isEmpty() ) {
+    	FileFormat version = FileFormat.valueOf(Version);
+    	if ( version == null ) {
+    		message = "The version (" + Version + ") is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+    			new CommandLogRecord(CommandStatusType.FAILURE,
+    				message, "Specify a valid version using the command editor." ) );
+    	}
+    }
     
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(2);
+	List<String> validList = new ArrayList<>(3);
     validList.add ( "DataStore" );
     validList.add ( "DatabaseFile" );
+    validList.add ( "Version" );
 
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
@@ -168,7 +182,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if edits are saved.
-	return (new NewSQLiteDatabase_JDialog ( parent, this )).ok();
+	return (new NewAccessDatabase_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -245,6 +259,11 @@ CommandWarningException, CommandException
 
     String DataStore = parameters.getValue ( "DataStore" );
     String DatabaseFile = parameters.getValue ( "DatabaseFile" );
+    String Version = parameters.getValue ( "Version" );
+    FileFormat version = FileFormat.V2016; // Default.
+    if ( (Version != null) && !Version.isEmpty() ) {
+    	version = FileFormat.valueOf(Version);
+    }
     
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -254,36 +273,61 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
+    // Query the table and set in the processor.
+    
     if ( commandPhase == CommandPhaseType.RUN ) {
         GenericDatabaseDataStore ds = null;
+      	String DatabaseFile_full = DatabaseFile;
         try {
             if ( (DatabaseFile != null) && !DatabaseFile.isEmpty() ) {
                 // Use the parts and create the connection string on the fly.
                 String systemLogin = null;
                 String systemPassword = null;
                 GenericDMI dmi = null;
-                if ( DatabaseFile.equalsIgnoreCase(_Memory) ) {
-                	// SQLite documentation shows lower case.
-                	dmi = new GenericDMI( "SQLite", "memory", DataStore, -1, systemLogin, systemPassword );
-                }
-                else {
-                	// Get file path.
-                	String DatabaseFile_full = IOUtil.verifyPathForOS(
-                    	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        	TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseFile)));
-                	dmi = new GenericDMI( "SQLite", DatabaseFile_full, DataStore, -1, systemLogin, systemPassword );
-                }
-                // TODO SAM 2014-04-22 Define properties before opening.
-                //ds.setProperties(props);
-                dmi.open();
-                ds = new GenericDatabaseDataStore( DataStore, DataStore, dmi );
-                // Set the datastore in the processor.
-                // TODO SAM 2014-04-22 How to turn off after the processor runs or reset?
-                processor.setPropContents ( "DataStore", ds );
+               	// Get file path.
+               	DatabaseFile_full = IOUtil.verifyPathForOS(
+                   	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                       	TSCommandProcessorUtil.expandParameterValue(processor,this,DatabaseFile))).replace("\\", "/");
+               	// First create the database:
+               	// - use try with resources to ensure that it will close properly
+               	// - if unable to create an IOException will be thrown
+               	boolean createOk = false;
+               	try ( Database db = DatabaseBuilder.create(version, new File(DatabaseFile_full))) {
+               		Message.printStatus(2, routine, "Created Microsoft Access database: " + DatabaseFile_full);
+               		createOk = true;
+               	}
+               	catch ( IOException e ) {
+               		message = "Error creating Access database \"" + DatabaseFile_full + "\" (" + e + ").";
+               		Message.printWarning ( 2, routine, message );
+               		status.addToLog ( commandPhase,
+                   		new CommandLogRecord(CommandStatusType.FAILURE,
+                       		message, "Verify that the datastore \"" + DataStore +
+                       		"\" and file \"" + DatabaseFile + "\" is appropriate." ) );
+               		Message.printWarning ( 3, routine, e );
+               	}
+               	if ( createOk ) {
+               		// The database was successfully created above:
+               		// - open the DMI
+               		String databaseServer = "";
+               		dmi = new GenericDMI( "Access", databaseServer, DatabaseFile_full, -1, systemLogin, systemPassword );
+               		/* TODO smalers 2022-07-10 add additional connection properties.
+					if ( (ConnectionProperties != null) && !ConnectionProperties.isEmpty() ) {
+						// Set additional connection properties if specified:
+						// - must get the properties and then append
+						PropList props = ds.getProperties();
+						props.set("ConnectionProperties",ConnectionProperties);
+					}
+					*/
+               		dmi.open();
+               		ds = new GenericDatabaseDataStore( DataStore, DataStore, dmi );
+               		// Set the datastore in the processor.
+               		// TODO SAM 2014-04-22 How to turn off after the processor runs or reset?
+               		processor.setPropContents ( "DataStore", ds );
+               	}
             }
         }
         catch ( Exception e ) {
-            message = "Error creating SQLite database \"" + DatabaseFile + "\" (" + e + ").";
+            message = "Error creating Access database \"" + DatabaseFile_full + "\" (" + e + ").";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -326,6 +370,7 @@ public String toString ( PropList props )
 	}
 	String DataStore = props.getValue( "DataStore" );
 	String DatabaseFile = props.getValue( "DatabaseFile" );
+	String Version = props.getValue( "Version" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -338,6 +383,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "DatabaseFile=\"" + DatabaseFile + "\"" );
+    }
+    if ( (Version != null) && (Version.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Version=\"" + Version + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

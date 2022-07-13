@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,7 +54,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -75,6 +74,7 @@ private JTextField __ServerName_JTextField = null;
 private JTextField __DatabaseName_JTextField = null;
 private JTextField __Login_JTextField = null;
 private JTextField __Password_JTextField = null;
+private JTextField __ConnectionProperties_JTextField = null;
 private SimpleJComboBox	__IfFound_JComboBox =null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -108,7 +108,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -119,11 +119,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 
     String DataStoreName = __DataStoreName_JTextField.getText().trim();
@@ -134,6 +134,7 @@ private void checkInput ()
     String DatabaseName = __DatabaseName_JTextField.getText().trim();
     String Login = __Login_JTextField.getText().trim();
     String Password = __Password_JTextField.getText().trim();
+    String ConnectionProperties = __ConnectionProperties_JTextField.getText().trim();
 	String IfFound = __IfFound_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -161,11 +162,14 @@ private void checkInput ()
     if ( (Password != null) && Password.length() > 0 ) {
         props.set ( "Password", Password );
     }
+    if ( (ConnectionProperties != null) && ConnectionProperties.length() > 0 ) {
+        props.set ( "ConnectionProperties", ConnectionProperties );
+    }
 	if ( IfFound.length() > 0 ) {
 		props.set ( "IfFound", IfFound );
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -188,6 +192,7 @@ private void commitEdits ()
     String DatabaseName = __DatabaseName_JTextField.getText().trim();
     String Login = __Login_JTextField.getText().trim();
     String Password = __Password_JTextField.getText().trim();
+    String ConnectionProperties = __ConnectionProperties_JTextField.getText().trim();
 	String IfFound = __IfFound_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStoreName", DataStoreName );
     __command.setCommandParameter ( "DataStoreDescription", DataStoreDescription );
@@ -197,6 +202,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "DatabaseName", DatabaseName );
     __command.setCommandParameter ( "Login", Login );
     __command.setCommandParameter ( "Password", Password );
+    __command.setCommandParameter ( "ConnectionProperties", ConnectionProperties );
 	__command.setCommandParameter ( "IfFound", IfFound );
 }
 
@@ -227,13 +233,12 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, OpenDataStore_Command command )
 {	__command = command;
-	CommandProcessor processor = __command.getCommandProcessor();
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -251,7 +256,7 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
         "This command is used to manage datastores that are dynamically created, such as SQLite in-memory and file databases."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Datastore metadata are available for command editing but editing functionality may be limited."),
+        "Command parameters that are required depend on the database software that is used."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Configuration information can be provided via command parameters or by reading a datastore configuration file."),
@@ -308,13 +313,13 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataStoreType_JComboBox = new SimpleJComboBox ( false );
 	List<String> typeChoices = new ArrayList<>();
-	// TODO smalers 2020-10-18 need to figure out how to get all types
-	typeChoices.add ( "" );	// Default
+	// TODO smalers 2020-10-18 need to figure out how to get all types.
+	typeChoices.add ( "" );	// Default.
 	typeChoices.add ( "GenericDatabaseDataStore" );
 	__DataStoreType_JComboBox.setData(typeChoices);
 	__DataStoreType_JComboBox.select ( 0 );
 	__DataStoreType_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(prop_JPanel, __DataStoreType_JComboBox,
+    JGUIUtil.addComponent(prop_JPanel, __DataStoreType_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
 		"Optional - datastore type (default=GenericDatabaseDataStore)."), 
@@ -324,8 +329,8 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DatabaseEngine_JComboBox = new SimpleJComboBox ( false );
 	List<String> dbChoices = new ArrayList<>();
-	// TODO smalers 2020-10-18 these should be provided by an enumeration or other code
-	dbChoices.add ( "" );	// Default
+	// TODO smalers 2020-10-18 these should be provided by an enumeration or other code.
+	dbChoices.add ( "" );	// Default.
 	dbChoices.add ( "Access" );
 	dbChoices.add ( "Derby" );
 	// H2
@@ -380,11 +385,21 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Usually required - database password."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Connection properties:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConnectionProperties_JTextField = new JTextField (10);
+    __ConnectionProperties_JTextField.setToolTipText("Optional connection properties (see datastore documentation.");
+    __ConnectionProperties_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(prop_JPanel, __ConnectionProperties_JTextField,
+        1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Optional - additional connection properties."),
+        3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "If found?:"),
 		0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfFound_JComboBox = new SimpleJComboBox ( false );
-	List<String> notFoundChoices = new ArrayList<String>();
-	notFoundChoices.add ( "" );	// Default
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Close );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -397,7 +412,7 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
 		"Optional - action if datastore is found (default=" + __command._Close + ")."), 
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for configuration file
+    // Panel for configuration file.
     int yConfig = -1;
     JPanel config_JPanel = new JPanel();
     config_JPanel.setLayout( new GridBagLayout() );
@@ -419,7 +434,7 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
@@ -449,8 +464,7 @@ private void initialize ( JFrame parent, OpenDataStore_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent event)
-{
+public void itemStateChanged (ItemEvent event) {
     refresh();
 }
 
@@ -496,6 +510,7 @@ private void refresh ()
     String DatabaseName = "";
     String Login = "";
     String Password = "";
+    String ConnectionProperties = "";
 	String IfFound = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -508,6 +523,7 @@ private void refresh ()
     	DatabaseName = props.getValue ( "DatabaseName" );
     	Login = props.getValue ( "Login" );
     	Password = props.getValue ( "Password" );
+    	ConnectionProperties = props.getValue ( "ConnectionProperties" );
 		IfFound = props.getValue ( "IfFound" );
         if ( DataStoreName != null ) {
             __DataStoreName_JTextField.setText ( DataStoreName );
@@ -516,37 +532,37 @@ private void refresh ()
             __DataStoreDescription_JTextField.setText ( DataStoreDescription );
         }
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreType_JComboBox, DataStoreType, JGUIUtil.NONE, null, null ) ) {
-            __DataStoreType_JComboBox.select ( null ); // To ensure that following causes an event
-            __DataStoreType_JComboBox.select ( DataStoreType ); // This will trigger getting the DMI for use in the editor
+            __DataStoreType_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStoreType_JComboBox.select ( DataStoreType ); // This will trigger getting the DMI for use in the editor.
         }
         else {
             if ( (DataStoreType == null) || DataStoreType.equals("") ) {
-                // New command...select the default...
+                // New command.  Select the default.
                 __DataStoreType_JComboBox.select ( null ); // To ensure that following causes an event
                 if ( __DataStoreType_JComboBox.getItemCount() > 0 ) {
                 	__DataStoreType_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStoreType parameter \"" + DataStoreType + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         if ( JGUIUtil.isSimpleJComboBoxItem(__DatabaseEngine_JComboBox, DatabaseEngine, JGUIUtil.NONE, null, null ) ) {
-            __DatabaseEngine_JComboBox.select ( null ); // To ensure that following causes an event
+            __DatabaseEngine_JComboBox.select ( null ); // To ensure that following causes an event.
             __DatabaseEngine_JComboBox.select ( DatabaseEngine );
         }
         else {
             if ( (DatabaseEngine == null) || DatabaseEngine.equals("") ) {
-                // New command...select the default...
-                __DatabaseEngine_JComboBox.select ( null ); // To ensure that following causes an event
+                // New command.  Select the default.
+                __DatabaseEngine_JComboBox.select ( null ); // To ensure that following causes an event.
                 if ( __DatabaseEngine_JComboBox.getItemCount() > 0 ) {
                 	__DatabaseEngine_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DatabaseEngine parameter \"" + DatabaseEngine + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -563,16 +579,19 @@ private void refresh ()
         if ( Password != null ) {
             __Password_JTextField.setText ( Password );
         }
+        if ( ConnectionProperties != null ) {
+            __ConnectionProperties_JTextField.setText ( ConnectionProperties );
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfFound_JComboBox, IfFound,JGUIUtil.NONE, null, null ) ) {
 			__IfFound_JComboBox.select ( IfFound );
 		}
 		else {
             if ( (IfFound == null) || IfFound.equals("") ) {
-				// New command...select the default...
+				// New command.  Select the default.
 				__IfFound_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfFound parameter \"" +	IfFound +
@@ -580,7 +599,7 @@ private void refresh ()
 			}
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     DataStoreName = __DataStoreName_JTextField.getText().trim();
     DataStoreDescription = __DataStoreDescription_JTextField.getText().trim();
     DataStoreType = __DataStoreType_JComboBox.getSelected();
@@ -589,6 +608,7 @@ private void refresh ()
     DatabaseName = __DatabaseName_JTextField.getText().trim();
     Login = __Login_JTextField.getText().trim();
     Password = __Password_JTextField.getText().trim();
+    ConnectionProperties = __ConnectionProperties_JTextField.getText().trim();
 	IfFound = __IfFound_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStoreName=" + DataStoreName );
@@ -599,6 +619,7 @@ private void refresh ()
     props.add ( "DatabaseName=" + DatabaseName );
     props.add ( "Login=" + Login );
     props.add ( "Password=" + Password );
+    props.add ( "ConnectionProperties=" + ConnectionProperties );
 	props.add ( "IfFound=" + IfFound );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
@@ -608,16 +629,16 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -630,7 +651,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
+// The following methods are all necessary because this class implements WindowListener.
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.util;
 
 import java.io.FileReader;
+import java.time.Instant;
 import java.io.BufferedReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
@@ -77,6 +79,19 @@ protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
 
 /**
+Data members used for WaitUntil.
+*/
+protected final String _FilesAreDifferent = "FilesAreDifferent";
+protected final String _FilesAreSame = "FilesAreSame";
+protected final String _NoWait = "NoWait";
+
+/**
+ * Temporary files used when comparing URLs.
+ */
+protected String tmpInputFile1 = null;
+protected String tmpInputFile2 = null;
+
+/**
 Constructor.
 */
 public CompareFiles_Command ()
@@ -103,6 +118,9 @@ throws InvalidCommandParameterException
 	String FileProperty = parameters.getValue ( "FileProperty" );
 	String FilePropertyOperator = parameters.getValue ( "FilePropertyOperator" );
 	String FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
+	String WaitUntil = parameters.getValue ( "WaitUntil" );
+	String WaitTimeout = parameters.getValue ( "WaitTimeout" );
+	String WaitInterval = parameters.getValue ( "WaitInterval" );
 	String warning = "";
 	String message;
 
@@ -223,8 +241,32 @@ throws InvalidCommandParameterException
 		}
 	}
 
+	if ( (WaitUntil != null) && !WaitUntil.equals("") && !WaitUntil.equalsIgnoreCase(_FilesAreDifferent) &&
+		!WaitUntil.equalsIgnoreCase(_FilesAreSame) && !WaitUntil.equalsIgnoreCase(_NoWait) ) {
+			message = "The WaitUntil parameter \"" + WaitUntil + "\" is not a valid value.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _FilesAreDifferent + ", " +
+					_FilesAreSame + ", or " + _NoWait + " (default)."));
+	}
+    if ( (WaitTimeout != null) && !WaitTimeout.equals("") && !StringUtil.isInteger(WaitTimeout) ) {
+            message = "The wait timeout \"" + WaitTimeout + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Specify the parameter as an integer number of milliseconds."));
+    }
+    if ( (WaitInterval != null) && !WaitInterval.equals("") && !StringUtil.isInteger(WaitInterval) ) {
+            message = "The wait interval \"" + WaitInterval + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Specify the parameter as an integer number of milliseconds."));
+    }
+
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(12);
+	List<String> validList = new ArrayList<>(15);
 	validList.add ( "InputFile1" );
 	validList.add ( "InputFile2" );
 	validList.add ( "CommentLineChar" );
@@ -237,6 +279,9 @@ throws InvalidCommandParameterException
 	validList.add ( "FileProperty" );
 	validList.add ( "FilePropertyOperator" );
 	validList.add ( "FilePropertyAction" );
+	validList.add ( "WaitUntil" );
+	validList.add ( "WaitTimeout" );
+	validList.add ( "WaitInterval" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -399,6 +444,20 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+ * Return the temporary input file if the first file is a URL.
+ */
+public String getTmpInputFile1 () {
+	return this.tmpInputFile1;
+}
+
+/**
+ * Return the temporary input file if the second file is a URL.
+ */
+public String getTmpInputFile2 () {
+	return this.tmpInputFile2;
+}
+
+/**
 Parse the command string into a PropList of parameters.
 Can't use base class method because of change in parameter names.
 @param command A string command to parse.
@@ -543,6 +602,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
+
+    // Reset temporary files to null so can check for null in the editor.
+	this.tmpInputFile1 = null;
+	this.tmpInputFile2 = null;
 	
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
@@ -608,16 +671,51 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	else {
 		FilePropertyAction_CommandStatusType = CommandStatusType.parse(FilePropertyAction);
 	}
+	String WaitUntil = parameters.getValue ( "WaitUntil" );
+	boolean doWaitUntil = false; // Used to simplify logic below.
+	if ( (WaitUntil == null) || WaitUntil.isEmpty() ) {
+		WaitUntil = this._NoWait;
+	}
+	if ( !WaitUntil.equals(this._NoWait) ) {
+		doWaitUntil = true;
+	}
+	String WaitTimeout = parameters.getValue ( "WaitTimeout" );
+	int waitTimeout = 1000;
+	if ( StringUtil.isInteger(WaitTimeout) ) {
+	    waitTimeout = Integer.parseInt(WaitTimeout);
+	}
+	String WaitInterval = parameters.getValue ( "WaitInterval" );
+	int waitInterval = 1000;
+	if ( StringUtil.isInteger(WaitInterval) ) {
+	    waitInterval = Integer.parseInt(WaitInterval);
+	}
 
-	int diff_count = 0; // Number of lines that are different.
-
-	String InputFile1_full = IOUtil.verifyPathForOS(
+	String InputFile1_full = InputFile1;
+	boolean inputFile1IsUrl = StringUtil.isUrl(InputFile1);
+	if ( inputFile1IsUrl ) {
+		// Expand for properties but don't adjust the path.
+		InputFile1_full = TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile1);
+	}
+	else {
+		// Local file so check the path.
+		InputFile1_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                    TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile1) ) );
-	String InputFile2_full = IOUtil.verifyPathForOS(
+                TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile1) ) );
+	}
+	String InputFile2_full = InputFile2;
+	boolean inputFile2IsUrl = StringUtil.isUrl(InputFile2);
+	if ( inputFile2IsUrl ) {
+		// Expand for properties but don't adjust the path.
+		InputFile2_full = TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile2);
+	}
+	else {
+		// Local file so check the path.
+		InputFile2_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                    TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile2) ) );
-	if ( !IOUtil.fileExists(InputFile1_full) ) {
+                TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile2) ) );
+	}
+	if ( !inputFile1IsUrl && !IOUtil.fileExists(InputFile1_full) ) {
+		// Not a URL and file does not exist.
 		message = "First input file \"" + InputFile1_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
@@ -626,7 +724,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "Verify that the file exists at the time the command is run."));
 	}
-	if ( !IOUtil.fileExists(InputFile2_full) ) {
+	if ( !inputFile2IsUrl && !IOUtil.fileExists(InputFile2_full) ) {
+		// Not a URL and file does not exist.
 		message = "Second input file \"" + InputFile2_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
@@ -635,6 +734,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "Verify that the file exists at the time the command is run."));
 	}
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
@@ -642,82 +742,241 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
+	
+	// If input is a URL, download to a temporary file and use that for the comparison:
+	// - reuse the filename so that only one or two files are created
+	// - use the command number and time to uniquely identify the files
+	Instant now = Instant.now();
+	String tmpFolder = System.getProperty("java.io.tmpdir");
+	if ( !(tmpFolder.charAt(tmpFolder.length() - 1) == File.separatorChar) ) {
+		tmpFolder = tmpFolder + File.separatorChar;
+	}
+	if ( inputFile1IsUrl ) {
+		this.tmpInputFile1 = tmpFolder + "CompareFiles-InputFile1-" +
+			command_number + "." + now.getEpochSecond() + "." + now.getNano();
+		Message.printStatus(2, routine, "Temporary file for InputFile1 URL is: " + this.tmpInputFile1);
+	}
+	if ( inputFile2IsUrl ) {
+		this.tmpInputFile2 = tmpFolder + "CompareFiles-InputFile2-" +
+			command_number + "." + now.getEpochSecond() + "." + now.getNano();
+		Message.printStatus(2, routine, "Temporary file for InputFile2 URL is: " + this.tmpInputFile2);
+	}
 
+	// Used in messages so have to define outside the loop:
+	// - reset to zero below
 	int lineCountCompared = 0;
+	int diffCount = 0; // Number of lines that are different.
+
 	try {
-		if ( doCompareContent ) {
-			// Compare the file content.
-			// Open the files.
-			BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
-			BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
-			// Loop through the files, comparing non-comment lines.
-			String iline1 = null, iline2 = null;
-			boolean file1EndReached = false;
-			boolean file2EndReached = false;
-			while ( true ) {
-				// The following will discard comments and only return non-comment lines.
-				// Therefore comparisons are made on chunks of non-comment lines.
-				if ( !file1EndReached ) {
-					iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
-				}
-				if ( !file2EndReached ) {
-					iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
-				}
-				if ( (iline1 == null) && (iline2 == null) ) {
-					// Both are done at the same time.
+		// Loop once if no wait is occurring or until the wait timeout has been exceeded:
+		// - only allow a single exception, not each loop
+		// - a check is done at the end to break out if wait is not used
+		int waitTotal = 0;
+		while ( waitTotal < waitTimeout ) {
+			// Initialize for the loop.
+			lineCountCompared = 0;
+			diffCount = 0;
+			// If URLs are used as input, download the files to temporary names.
+			if ( inputFile1IsUrl ) {
+				int code = IOUtil.getUriContent(InputFile1_full, this.tmpInputFile1, null);
+				if ( code != 200 ) {
+					message = "Error downloading: " + InputFile1_full;
+					Message.printWarning ( warning_level, 
+						MessageUtil.formatMessageTag(command_tag, ++warning_count),
+						routine, message );
+					status.addToLog(CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Verify that the URL is valid and the resource exists."
+								+ "  Note that a web browser may cache the file and therefore may not be an accurate reflection of whether the file exists on a server."));
+					// Break out of loop since can't compare.
 					break;
 				}
-				// TODO SAM 2006-04-20 The following needs to handle comments at the end.
-				if ( (iline1 == null) && (iline2 != null) ) {
-					// First file is done (second is not) so files are different:
-					// - increment the count because a line exists in one file but not the other
-					file1EndReached = true;
-					++diff_count;
+			}
+			if ( inputFile2IsUrl ) {
+				int code = IOUtil.getUriContent(InputFile2_full, this.tmpInputFile2, null);
+				if ( code != 200 ) {
+					message = "Error downloading: " + InputFile2_full;
+					Message.printWarning ( warning_level, 
+						MessageUtil.formatMessageTag(command_tag, ++warning_count),
+						routine, message );
+					status.addToLog(CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Verify that the URL is valid and the resource exists."
+								+ "  Note that a web browser may cache the file and therefore may not be an accurate reflection of whether the file exists on a server."));
+					// Break out of loop since can't compare.
+					break;
 				}
-				if ( (iline2 == null) && (iline1 != null) ) {
-					// Second file is done (first is not) so files are different:
-					// - increment the count because a line exists in one file but not the other
-					file2EndReached = true;
-					++diff_count;
-				}
-				++lineCountCompared;
-				if ( (iline1 != null) && (iline2 != null) ) {
-					// Have lines from each file to compare.
-					if ( MatchCase_boolean ) {
-    					if ( !iline1.equals(iline2) ) {
-    						++diff_count;
-    					}
+			}
+			if ( doCompareContent ) {
+				// Compare the file content.
+
+				// Open the files:
+				// - allow missing files if using WaitUntil
+				BufferedReader in1 = null;
+				BufferedReader in2 = null;
+				// Use the following to indicate end of file reached and also no file.
+				boolean file1EndReached = false;
+				boolean file2EndReached = false;
+				if ( doWaitUntil ) {
+					// Allow missing file:
+					// - for example upload or other processing needs to complete
+					// - for missing file, set as if end of file has been reached
+					if ( inputFile1IsUrl ) {
+						try {
+							in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(this.tmpInputFile1)));
+						}
+						catch ( Exception e ) {
+							file1EndReached = true;
+						}
 					}
 					else {
-			    		if ( !iline1.equalsIgnoreCase(iline2) ) {
-                    		++diff_count;
-                		}
+						try {
+							in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
+						}
+						catch ( Exception e ) {
+							file1EndReached = true;
+						}
 					}
-					if ( Message.isDebugOn ) {
-						Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
-								diff_count );
+					if ( inputFile2IsUrl ) {
+						try {
+							in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(this.tmpInputFile2)));
+						}
+						catch ( Exception e ) {
+							file2EndReached = true;
+						}
+					}
+					else {
+						try {
+							in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
+						}
+						catch ( Exception e ) {
+							file2EndReached = true;
+						}
 					}
 				}
+				else {
+					// No missing files allowed so allow exception to stop processing.
+					if ( inputFile1IsUrl ) {
+						in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(this.tmpInputFile1)));
+					}
+					else {
+						in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
+					}
+					if ( inputFile2IsUrl ) {
+						in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(this.tmpInputFile2)));
+					}
+					else {
+						in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
+					}
+				}
+				// Loop through the files, comparing non-comment lines.
+				String iline1 = null, iline2 = null;
+				while ( true ) {
+					// The following will discard comments and only return non-comment lines.
+					// Therefore comparisons are made on chunks of non-comment lines.
+					if ( !file1EndReached ) {
+						iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
+					}
+					if ( !file2EndReached ) {
+						iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean, excludeText );
+					}
+					if ( (iline1 == null) && (iline2 == null) ) {
+						// Reached the end of both files at the same time.
+						break;
+					}
+					// Increment the line counter now.
+					++lineCountCompared;
+					// TODO SAM 2006-04-20 The following needs to handle comments at the end.
+					if ( (iline1 == null) && (iline2 != null) ) {
+						// First file is done (second is not) so files are different:
+						// - increment the count because a line exists in one file but not the other
+						file1EndReached = true;
+						++diffCount;
+					}
+					else if ( (iline2 == null) && (iline1 != null) ) {
+						// Second file is done (first is not) so files are different:
+						// - increment the count because a line exists in one file but not the other
+						file2EndReached = true;
+						++diffCount;
+					}
+					else if ( (iline1 != null) && (iline2 != null) ) {
+						// Have lines from each file to compare.
+						if ( MatchCase_boolean ) {
+    						if ( !iline1.equals(iline2) ) {
+    							++diffCount;
+    						}
+						}
+						else {
+			    			if ( !iline1.equalsIgnoreCase(iline2) ) {
+                    			++diffCount;
+                			}
+						}
+						if ( Message.isDebugOn ) {
+							Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
+									diffCount );
+						}
+					}
+				}
+				// Comparison is done so close the files.
+				in1.close();
+				in2.close();
+				if ( lineCountCompared == 0 ) {
+					// Likely because both files are empty.
+					double diffPercent = 0.0;
+					Message.printStatus ( 2, routine, "There are " + diffCount + " lines that are different, " +
+						StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?");
+				}
+				else {
+					Message.printStatus ( 2, routine, "There are " + diffCount + " lines that are different, " +
+						StringUtil.formatString(100.0*(double)diffCount/(double)lineCountCompared, "%.2f") +
+						"% (compared " + lineCountCompared + " lines).");
+				}
 			}
-			in1.close();
-			in2.close();
-			if ( lineCountCompared == 0 ) {
-				// Likely because both files are empty.
-				double diffPercent = 0.0;
-				Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
-					StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?");
+			else if ( (FileProperty != null) && !FileProperty.isEmpty() ) {
+				warning_level += compareFileProperty(InputFile1, InputFile1_full,
+					InputFile2, InputFile2_full, FileProperty, FilePropertyOperator,
+					FilePropertyAction_CommandStatusType, status, warning_level, command_tag);
+			}
+			
+			// Check for conditions to exit the "WaitUntil" while loop.
+			
+			if ( !doWaitUntil ) {
+				// Not waiting so exit the loop:
+				// - this is the default if no WaitUntil parameter is specified
+				break;
 			}
 			else {
-				Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
-					StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
-					"% (compared " + lineCountCompared + " lines).");
+				// Check to see if the wait condition is satisfied.
+				if ( WaitUntil.equalsIgnoreCase(this._FilesAreDifferent) && (diffCount > 0) ) {
+					// Detected difference.
+					Message.printStatus ( 2, routine, "WaitUntil=" + WaitUntil + ", detected different files.  Stop waiting after " + waitTotal + " ms.");
+					break;
+				}
+				else if ( WaitUntil.equalsIgnoreCase(this._FilesAreSame) && (diffCount == 0) ) {
+					// Detected same.
+					Message.printStatus ( 2, routine, "WaitUntil=" + WaitUntil + ", detected same files.  Stop waiting after " + waitTotal + " ms.");
+					break;
+				}
+				else {
+					// Check to see if the processor needs to break.
+					if ( processor instanceof TSCommandProcessor ) {
+						TSCommandProcessor tp = (TSCommandProcessor)processor;
+						if ( tp.getCancelProcessingRequested() ) {
+							// Request from the main interface to stop processing.
+							Message.printStatus ( 2, routine, "WaitUntil=" + WaitUntil + ", cancel processing was requested at time " + waitTotal + "ms.");
+							break;
+						}
+					}
+					// Increment the wait total and compare again.
+					Message.printStatus ( 2, routine, "WaitUntil=" + WaitUntil + ", waiting " + waitInterval + " ms.");
+					Thread.sleep(waitInterval);
+					waitTotal += waitInterval;
+					Message.printStatus ( 2, routine, "WaitUntil=" + WaitUntil + ", waited " + waitInterval + " ms, now at " + waitTotal + " total wait of " + waitTimeout + " timeout.");
+				}
 			}
-		}
-		else if ( (FileProperty != null) && !FileProperty.isEmpty() ) {
-			warning_level += compareFileProperty(InputFile1, InputFile1_full,
-				InputFile2, InputFile2_full, FileProperty, FilePropertyOperator,
-				FilePropertyAction_CommandStatusType, status, warning_level, command_tag);
-		}
+		} // End of wait loop.
+
+		// Done looping so report on the last iteration's result below.
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing files (" + e + ").";
@@ -730,17 +989,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
+
 	if ( lineCountCompared == 0 ) {
 		// Likely because both files are empty.
 		double diffPercent = 0.0;
-		message = "" + diff_count + " lines were different, " +
+		message = "" + diffCount + " lines were different, " +
 			StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).  Files are both empty or all comments?";
 		Message.printStatus ( 2, routine, message );
 	}
-	if ( (diff_count > AllowedDiff_int) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+	if ( (diffCount > AllowedDiff_int) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
 		(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-		double diffPercent = 100.0*(double)diff_count/(double)lineCountCompared;
-		message = "" + diff_count + " lines were different, " +
+		double diffPercent = 100.0*(double)diffCount/(double)lineCountCompared;
+		message = "" + diffCount + " lines were different, " +
 			StringUtil.formatString(diffPercent, "%.2f") + "% (compared " + lineCountCompared + " lines).";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
@@ -750,7 +1010,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message, "Check files because difference is not expected.") );
 		throw new CommandException ( message );
 	}
-	if ( (diff_count == 0) && ((IfSame_CommandStatusType == CommandStatusType.WARNING) ||
+	if ( (diffCount == 0) && ((IfSame_CommandStatusType == CommandStatusType.WARNING) ||
 			(IfSame_CommandStatusType == CommandStatusType.FAILURE))) {
 		message = "No lines were different (the files are the same).";
 		Message.printWarning ( warning_level,
@@ -783,6 +1043,9 @@ public String toString ( PropList parameters )
 	String FileProperty = parameters.getValue("FileProperty");
 	String FilePropertyOperator = parameters.getValue("FilePropertyOperator");
 	String FilePropertyAction = parameters.getValue("FilePropertyAction");
+	String WaitUntil = parameters.getValue("WaitUntil");
+	String WaitTimeout = parameters.getValue("WaitTimeout");
+	String WaitInterval = parameters.getValue("WaitInterval");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile1 != null) && (InputFile1.length() > 0) ) {
 		b.append ( "InputFile1=\"" + InputFile1 + "\"" );
@@ -852,6 +1115,24 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "FilePropertyAction=" + FilePropertyAction );
+	}
+	if ( (WaitUntil != null) && (WaitUntil.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "WaitUntil=" + WaitUntil );
+	}
+	if ( (WaitTimeout != null) && (WaitTimeout.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "WaitTimeout=" + WaitTimeout );
+	}
+	if ( (WaitInterval != null) && (WaitInterval.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "WaitInterval=" + WaitInterval );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

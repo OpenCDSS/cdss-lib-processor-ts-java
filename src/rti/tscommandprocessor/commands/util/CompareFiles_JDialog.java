@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -90,6 +91,11 @@ private JTextField __ExcludeText_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox = null;
 private SimpleJComboBox __IfSame_JComboBox = null;
+
+// Wait
+private SimpleJComboBox __WaitUntil_JComboBox = null;
+private JTextField __WaitInterval_JTextField = null;
+private JTextField __WaitTimeout_JTextField = null;
 
 private SimpleJComboBox __FileProperty_JComboBox = null;
 private SimpleJComboBox __FilePropertyOperator_JComboBox = null;
@@ -238,12 +244,32 @@ public void actionPerformed( ActionEvent event )
 		// Run the diff program on the input and output files
 		// (they should have existed because the button will have been disabled if not).
 		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+		
+		String InputFile1 = __InputFile1_JTextField.getText();
+		String InputFile2 = __InputFile2_JTextField.getText();
+		
+		String inputFile1 = InputFile1;
+		String inputFile2 = InputFile2;
+
+		boolean isFile1Url = StringUtil.isUrl( InputFile1 );
+		boolean isFile2Url = StringUtil.isUrl( InputFile2 );
+
+		if ( isFile1Url ) {
+			// Get the temporary input file from the command rather the text field.
+			inputFile1 = this.__command.getTmpInputFile1();
+		}
+		if ( isFile2Url ) {
+			// Get the temporary input file from the command rather the text field.
+			inputFile2 = this.__command.getTmpInputFile2();
+		}
+
 		String file1Path = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(__working_dir,
-                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile1_JTextField.getText()) ) );
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile1) ) );
 		String file2Path = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(__working_dir,
-                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile2_JTextField.getText()) ) );
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile2) ) );
+
 		String [] programAndArgsList = { __diffProgram, file1Path, file2Path };
 		try {
 			ProcessManager pm = new ProcessManager ( programAndArgsList,
@@ -283,6 +309,9 @@ private void checkInput ()
 	String FileProperty = __FileProperty_JComboBox.getSelected();
 	String FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
 	String FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
+	String WaitUntil = __WaitUntil_JComboBox.getSelected();
+	String WaitTimeout = __WaitTimeout_JTextField.getText().trim();
+	String WaitInterval = __WaitInterval_JTextField.getText().trim();
 	__error_wait = false;
 	if ( InputFile1.length() > 0 ) {
 		props.set ( "InputFile1", InputFile1 );
@@ -320,6 +349,15 @@ private void checkInput ()
 	if ( FilePropertyAction.length() > 0 ) {
 		props.set ( "FilePropertyAction", FilePropertyAction );
 	}
+	if ( WaitUntil.length() > 0 ) {
+		props.set ( "WaitUntil", WaitUntil );
+	}
+	if ( WaitTimeout.length() > 0 ) {
+		props.set ( "WaitTimeout", WaitTimeout );
+	}
+	if ( WaitInterval.length() > 0 ) {
+		props.set ( "WaitInterval", WaitInterval );
+	}
 	try {
 		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
@@ -347,6 +385,9 @@ private void commitEdits ()
 	String FileProperty = __FileProperty_JComboBox.getSelected();
 	String FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
 	String FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
+	String WaitUntil = __WaitUntil_JComboBox.getSelected();
+	String WaitTimeout = __WaitTimeout_JTextField.getText().trim();
+	String WaitInterval = __WaitInterval_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
@@ -359,6 +400,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "FileProperty", FileProperty );
 	__command.setCommandParameter ( "FilePropertyOperator", FilePropertyOperator );
 	__command.setCommandParameter ( "FilePropertyAction", FilePropertyAction );
+	__command.setCommandParameter ( "WaitUntil", WaitUntil );
+	__command.setCommandParameter ( "WaitTimeout", WaitTimeout );
+	__command.setCommandParameter ( "WaitInterval", WaitInterval );
 }
 
 /**
@@ -402,7 +446,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
-	__InputFile1_JTextField.setToolTipText("Name of the first file, can use ${Property} notation");
+	__InputFile1_JTextField.setToolTipText("Name of the first file, can use ${Property} notation, can be a URL");
 	__InputFile1_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile1_JPanel = new JPanel();
@@ -415,7 +459,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path.
-		__path1_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		__path1_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile1_JPanel, __path1_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
@@ -425,7 +469,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
-	__InputFile2_JTextField.setToolTipText("Name of the second file, can use ${Property} notation");
+	__InputFile2_JTextField.setToolTipText("Name of the second file, can use ${Property} notation, can be a URL");
 	__InputFile2_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile2_JPanel = new JPanel();
@@ -437,8 +481,8 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(InputFile2_JPanel, __browse2_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path2_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		// Add the button to allow conversion to/from relative path.
+		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile2_JPanel, __path2_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
@@ -475,7 +519,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     __CommentLineChar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(content_JPanel, __CommentLineChar_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - must be first char on line (default=#)"), 
+    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - must be first char on line (default=#)."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Match case:"),
@@ -491,14 +535,14 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, __MatchCase_JComboBox,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel(
-        "Optional - match case (default=" + __command._True + ")"), 
+        "Optional - match case (default=" + __command._True + ")."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Ignore whitespace:"),
 		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IgnoreWhitespace_JComboBox = new SimpleJComboBox ( false );
 	List<String> ignoreChoices = new ArrayList<>();
-	ignoreChoices.add ( "" );	// Default
+	ignoreChoices.add ( "" );	// Default.
 	ignoreChoices.add ( __command._False );
 	ignoreChoices.add ( __command._True );
 	__IgnoreWhitespace_JComboBox.setData(ignoreChoices);
@@ -507,7 +551,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, __IgnoreWhitespace_JComboBox,
 		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel(
-		"Optional - ignore whitespace at ends of lines (default=" + __command._False + ")"), 
+		"Optional - ignore whitespace at ends of lines (default=" + __command._False + ")."),
 		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Exclude text:"),
@@ -518,7 +562,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, __ExcludeText_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel(
-        "Optional - exclude lines matching regular expression (default=include all)"), 
+        "Optional - exclude lines matching regular expression (default=include all)."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Allowed # of different lines:"),
@@ -527,7 +571,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     __AllowedDiff_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(content_JPanel, __AllowedDiff_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+    JGUIUtil.addComponent(content_JPanel, new JLabel( "Optional - when checking for differences (default=0)."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Action if different:"),
@@ -544,7 +588,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, __IfDifferent_JComboBox,
 		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel(
-		"Optional - action if files are different (default=" + __command._Ignore + ")"), 
+		"Optional - action if files are different (default=" + __command._Ignore + ")."),
 		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Action if same:"),
@@ -561,7 +605,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, __IfSame_JComboBox,
 		1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(content_JPanel, new JLabel(
-		"Optional - action if files are the same (default=" + __command._Ignore + ")"), 
+		"Optional - action if files are the same (default=" + __command._Ignore + ")."),
 		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for file property comparison.
@@ -605,7 +649,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FileProperty_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Required (for property comparison) - file property to compare."), 
+		"Required (for property comparison) - file property to compare."),
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property comparison operator:"),
@@ -625,7 +669,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FilePropertyOperator_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Required (for property comparison) - comparison operator."), 
+		"Required (for property comparison) - comparison operator."),
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Action if met:"),
@@ -641,8 +685,65 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(prop_JPanel, __FilePropertyAction_JComboBox,
 		1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
-		"Optional - action if condition is met (default=" + __command._Warn + ")."), 
+		"Optional - action if condition is met (default=" + __command._Warn + ")."),
 		3, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for wait.
+    int yWait = -1;
+    JPanel wait_JPanel = new JPanel();
+    wait_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Wait", wait_JPanel );
+
+    JGUIUtil.addComponent(wait_JPanel, new JLabel (
+		"The specified files can be compared multiple times until a condition is met." ),
+		0, ++yWait, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(wait_JPanel, new JLabel (
+		"For example, this can be used to evaluate file copy/upload latency and caching." ),
+		0, ++yWait, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(wait_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yWait, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(wait_JPanel, new JLabel ( "Wait until:"),
+		0, ++yWait, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__WaitUntil_JComboBox = new SimpleJComboBox ( false );
+	List<String> waitChoices = new ArrayList<>();
+	waitChoices.add ( "" ); // Default.
+	waitChoices.add ( __command._FilesAreDifferent );
+	waitChoices.add ( __command._FilesAreSame );
+	waitChoices.add ( __command._NoWait );
+	__WaitUntil_JComboBox.setData(waitChoices);
+	__WaitUntil_JComboBox.select ( 0 );
+	__WaitUntil_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(wait_JPanel, __WaitUntil_JComboBox,
+		1, yWait, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(wait_JPanel, new JLabel(
+		"Optional - wait until condition is met (default=" + __command._NoWait + ")."),
+		3, yWait, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(wait_JPanel, new JLabel ( "Wait timeout (ms):"),
+        0, ++yWait, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WaitTimeout_JTextField = new JTextField ( 20 );
+    __WaitTimeout_JTextField.setToolTipText("Wait timeout (ms) if 'wait until' is not reached.");
+    __WaitTimeout_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(wait_JPanel, __WaitTimeout_JTextField,
+        1, yWait, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(wait_JPanel, new JLabel(
+        "Optional - timeout if 'wait until' is not reached (default=1000 ms)."),
+        3, yWait, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(wait_JPanel, new JLabel ( "Wait interval (ms):"),
+        0, ++yWait, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WaitInterval_JTextField = new JTextField ( 20 );
+    __WaitInterval_JTextField.setToolTipText("Wait interval (ms) to increment.");
+    __WaitInterval_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(wait_JPanel, __WaitInterval_JTextField,
+        1, yWait, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(wait_JPanel, new JLabel(
+        "Optional - wait interval to increment (default=1000 ms)."),
+        3, yWait, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Command text area.
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -722,6 +823,9 @@ private void refresh ()
 	String FileProperty = "";
 	String FilePropertyOperator = "";
 	String FilePropertyAction = "";
+	String WaitUntil = "";
+	String WaitTimeout = "";
+	String WaitInterval = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -738,6 +842,9 @@ private void refresh ()
 		FileProperty = parameters.getValue ( "FileProperty" );
 		FilePropertyOperator = parameters.getValue ( "FilePropertyOperator" );
 		FilePropertyAction = parameters.getValue ( "FilePropertyAction" );
+		WaitUntil = parameters.getValue ( "WaitUntil" );
+		WaitTimeout = parameters.getValue ( "WaitTimeout" );
+		WaitInterval = parameters.getValue ( "WaitInterval" );
 		if ( InputFile1 != null ) {
 			__InputFile1_JTextField.setText ( InputFile1 );
 		}
@@ -823,7 +930,7 @@ private void refresh ()
 				__FileProperty_JComboBox.select ( 0 );
 			}
 			else {
-				// Bad user command...
+				// Bad user command.
 				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"FileProperty parameter \"" + FileProperty + "\".  Select a\ndifferent value or Cancel." );
 			}
@@ -856,6 +963,26 @@ private void refresh ()
 				"FilePropertyAction parameter \"" + FilePropertyAction + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WaitUntil_JComboBox, WaitUntil, JGUIUtil.NONE, null, null ) ) {
+            __WaitUntil_JComboBox.select ( WaitUntil );
+        }
+        else {
+            if ( (WaitUntil == null) || WaitUntil.equals("") ) {
+                // New command...select the default.
+                __WaitUntil_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command.
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "WaitUntil parameter \"" + WaitUntil + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( WaitTimeout != null ) {
+            __WaitTimeout_JTextField.setText ( WaitTimeout );
+        }
+        if ( WaitInterval != null ) {
+            __WaitInterval_JTextField.setText ( WaitInterval );
+        }
 	}
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
@@ -871,6 +998,9 @@ private void refresh ()
 	FileProperty = __FileProperty_JComboBox.getSelected();
 	FilePropertyOperator = __FilePropertyOperator_JComboBox.getSelected();
 	FilePropertyAction = __FilePropertyAction_JComboBox.getSelected();
+	WaitUntil = __WaitUntil_JComboBox.getSelected();
+	WaitTimeout = __WaitTimeout_JTextField.getText().trim();
+	WaitInterval = __WaitInterval_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
@@ -885,6 +1015,9 @@ private void refresh ()
 	// Use the following to handle '=' in parameters.
 	props.set ( "FilePropertyOperator" , FilePropertyOperator );
 	props.add ( "FilePropertyAction=" + FilePropertyAction );
+	props.add ( "WaitUntil=" + WaitUntil );
+	props.add ( "WaitTimeout=" + WaitTimeout );
+	props.add ( "WaitInterval=" + WaitInterval );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path1_JButton != null ) {
@@ -921,16 +1054,39 @@ private void refresh ()
 			__path2_JButton.setEnabled(false);
 		}
 	}
-	// Disable the Visual Diff button if the program file does not exist or
-	// either of the files to compare do not exist
+	// Disable the Visual Diff button if the program file does not exist or either of the files to compare do not exist:
+	// - if the input is from URL, use the temporary file
 	if ( __visualDiff_JButton != null ) {
 		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
-		String file1Path = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(__working_dir,
-                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile1_JTextField.getText()) ) );
-		String file2Path = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(__working_dir,
-                TSCommandProcessorUtil.expandParameterValue(processor, __command, __InputFile2_JTextField.getText()) ) );
+
+		// Get the input files to compare:
+		// - if URL, get the filenames from the command, which will be temporary files
+		String inputFile1 = InputFile1;
+		String inputFile2 = InputFile2;
+
+		boolean isFile1Url = StringUtil.isUrl( InputFile1 );
+		boolean isFile2Url = StringUtil.isUrl( InputFile2 );
+		
+		if ( isFile1Url ) {
+			// Get the temporary input file from the command rather the text field.
+			inputFile1 = this.__command.getTmpInputFile1();
+		}
+		if ( isFile2Url ) {
+			// Get the temporary input file from the command rather the text field.
+			inputFile2 = this.__command.getTmpInputFile2();
+		}
+
+		String file1Path = null;
+		String file2Path = null;
+		if ( inputFile1 != null ) {
+			file1Path = IOUtil.verifyPathForOS( IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile1) ) );
+		}
+		if ( inputFile2 != null ) {
+			file2Path = IOUtil.verifyPathForOS( IOUtil.toAbsolutePath(__working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile2) ) );
+		}	
+
 		if ( IOUtil.fileExists(__diffProgram) && IOUtil.fileExists(file1Path) && IOUtil.fileExists(file2Path) ) {
 			__visualDiff_JButton.setEnabled(true);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel);

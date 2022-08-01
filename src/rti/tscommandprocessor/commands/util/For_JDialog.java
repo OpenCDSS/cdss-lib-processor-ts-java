@@ -457,6 +457,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableColumn_JTextField = new JTextField (20);
+    __TableColumn_JTextField.setToolTipText("Table column to use for iterator values.");
     __TableColumn_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(table_JPanel, __TableColumn_JTextField,
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -660,7 +661,7 @@ private void refresh ()
         if ( IteratorValueProperty != null ) {
             __IteratorValueProperty_JTextField.setText( IteratorValueProperty );
         }
-        if ( List != null ) {
+        if ( (List != null) && !List.isEmpty() ) {
             __List_JTextArea.setText( List );
             __main_JTabbedPane.setSelectedIndex(0);
         }
@@ -675,7 +676,7 @@ private void refresh ()
 		    __SequenceIncrement_JTextField.setText( SequenceIncrement );
 		}
         if ( (TableID == null) || TableID.isEmpty() ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -696,8 +697,8 @@ private void refresh ()
         if ( TablePropertyMap != null ) {
             __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
         }
-        if ( TSList == null ) {
-            // Select default...
+        if ( (TSList == null) || TSList.isEmpty() ) {
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {

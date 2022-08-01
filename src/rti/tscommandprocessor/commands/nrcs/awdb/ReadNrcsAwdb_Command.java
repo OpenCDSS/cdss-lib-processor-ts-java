@@ -282,7 +282,7 @@ throws InvalidCommandParameterException
 	}
 	
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(21);
+    List<String> validList = new ArrayList<>(21);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "Stations" );
@@ -355,7 +355,7 @@ public <T> List<T> getObjectList ( Class<T> c )
         // Asking for tables
         List<T> list = null;
         if ( table != null ) {
-            list = new ArrayList<T>();
+            list = new ArrayList<>();
             list.add ( (T)table );
         }
         return list;
@@ -440,7 +440,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     String dataStoreName = parameters.getValue("DataStore");
     String Stations = parameters.getValue("Stations");
-    List<String> stationList = new ArrayList<String>();
+    List<String> stationList = new ArrayList<>();
     if ( (Stations != null) && !Stations.equals("") ) {
         // Station list is allowed to use a processor property
         Stations = TSCommandProcessorUtil.expandParameterValue(processor,this,Stations);
@@ -455,7 +455,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String States = parameters.getValue("States");
-    List<String> stateList = new ArrayList<String>();
+    List<String> stateList = new ArrayList<>();
     if ( (States != null) && !States.equals("") ) {
         // State list is allowed to use a processor property
         States = TSCommandProcessorUtil.expandParameterValue(processor,this,States);
@@ -470,7 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String Networks = parameters.getValue("Networks");
-    List<NrcsAwdbNetworkCode> networkList = new ArrayList<NrcsAwdbNetworkCode>();
+    List<NrcsAwdbNetworkCode> networkList = new ArrayList<>();
     if ( (Networks != null) && !Networks.equals("") ) {
         // Network list is allowed to use a processor property
         Networks = TSCommandProcessorUtil.expandParameterValue(processor,this,Networks);
@@ -485,7 +485,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String HUCs = parameters.getValue("HUCs");
-    List<String> hucList = new ArrayList<String>();
+    List<String> hucList = new ArrayList<>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
         // HUC list is allowed to use a processor property
         HUCs = TSCommandProcessorUtil.expandParameterValue(processor,this,HUCs);
@@ -500,7 +500,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String Counties = parameters.getValue("Counties");
-    List<String> countyList = new ArrayList<String>();
+    List<String> countyList = new ArrayList<>();
     if ( (Counties != null) && !Counties.equals("") ) {
         // County list is allowed to use a processor property
         Counties = TSCommandProcessorUtil.expandParameterValue(processor,this,Counties);
@@ -526,13 +526,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ForecastPeriod = parameters.getValue("ForecastPeriod");
     ForecastPeriod = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPeriod);
     String ForecastPublicationDateStart = parameters.getValue("ForecastPublicationDateStart");
-    if ( ForecastPublicationDateStart != null ) {
-        ForecastPublicationDateStart = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateStart);
-    }
+    ForecastPublicationDateStart = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateStart);
     String ForecastPublicationDateEnd = parameters.getValue("ForecastPublicationDateEnd");
-    if ( ForecastPublicationDateEnd != null ) {
-        ForecastPublicationDateEnd = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateEnd);
-    }
+    ForecastPublicationDateEnd = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateEnd);
     String ForecastExceedanceProbabilities = parameters.getValue("ForecastExceedanceProbabilities");
     int [] forecastExceedanceProbabilities = null;
     if ( (ForecastExceedanceProbabilities != null) && !ForecastExceedanceProbabilities.equals("") ) {
@@ -544,7 +540,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
    
     String Elements = parameters.getValue("Elements");
-    List<Element> elementList = new ArrayList<Element>();
+    List<Element> elementList = new ArrayList<>();
     Element el;
     if ( (Elements != null) && !Elements.equals("") ) {
         if ( Elements.indexOf(",") < 0 ) {
@@ -632,7 +628,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now try to read...
 
-	List<TS> tslist = new ArrayList<TS>();
+	List<TS> tslist = new ArrayList<>();
 	try {
 		// Find the data store to use...
 		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -678,10 +674,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    }
 		}
 		else {
-		    // Reading time series
-            tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
-                hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
-                InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
+		    // Reading time series.
+			if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+				if ( stateList.indexOf("${") < 0 ) {
+					// OK to do discovery read.
+					tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
+						hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
+						InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
+				}
+			}
+			else {
+				// Full read.
+				tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
+					hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
+					InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
+			}
     		// Make sure that size is set...
     		int size = 0;
     		if ( tslist != null ) {
@@ -689,15 +696,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		}
     	
        		if ( (tslist == null) || (size == 0) ) {
-    			Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
-    	        // Warn if nothing was retrieved (can be overridden to ignore).
-                message = "No time series were read from the NRCS AWDB web service.";
-                Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Data may not be in database." +
-                        	"  Previous messages may provide more information." ) );
+       			// Only warn if in run mode because may be using properties so no time series are read up front.
+       			if ( commandPhase == CommandPhaseType.RUN ) {
+       				Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
+    	        	// Warn if nothing was retrieved (can be overridden to ignore).
+                	message = "No time series were read from the NRCS AWDB web service.";
+                	Message.printWarning ( warning_level, 
+                    	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                	status.addToLog ( commandPhase,
+                    	new CommandLogRecord(CommandStatusType.WARNING,
+                    		message, "Data may not be in database." +
+                    		"  Previous messages may provide more information.  OK if " ) );
+       			}
        		}
        		else {
     			// Else, further process each time series...
@@ -739,18 +749,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         throw new CommandException ( message );
                     }
                 }
+                // Warn if nothing was retrieved (can be overridden to ignore).
+                if ( (tslist == null) || (size == 0) ) {
+                    message = "No time series were read from the NRCS AWDB value web service.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Data may not be in database.  See previous messages." ) );
+                }
             }
             else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            	// Save the time series for discovery mode, may be empty if properties are used.
                 setDiscoveryTSList ( tslist );
-            }
-            // Warn if nothing was retrieved (can be overridden to ignore).
-            if ( (tslist == null) || (size == 0) ) {
-                message = "No time series were read from the NRCS AWDB value web service.";
-                Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Data may not be in database.  See previous messages." ) );
             }
 		}
 	}

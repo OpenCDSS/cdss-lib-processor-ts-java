@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __InputFile_JTextField = null;
 // TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter,
-// similar to TSFormatSpecifiersJPanel
+// similar to TSFormatSpecifiersJPanel.
 private SimpleJComboBox __FileFormat_JComboBox = null;
 private JTextField __IncludeProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -173,11 +173,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String FileFormat = __FileFormat_JComboBox.getSelected();
@@ -195,7 +195,7 @@ private void checkInput ()
         parameters.set ( "FileFormat", FileFormat );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -256,7 +256,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Property file name, can use ${Property} notation.");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -266,7 +266,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -278,7 +278,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
     List<PropertyFileFormatType> fileFormatTypes = __command.getFileFormatChoices();
-    List<String> fileFormatChoices = new ArrayList<String>();
+    List<String> fileFormatChoices = new ArrayList<>();
     fileFormatChoices.add ( "" );
     for ( PropertyFileFormatType c : fileFormatTypes ) {
         fileFormatChoices.add ( "" + c );
@@ -298,7 +298,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
 	__IncludeProperty_JTextField.setToolTipText("List of properties to read separated by commas, can use ${Property} notation.");
 	__IncludeProperty_JTextField.addKeyListener (this);
 	JGUIUtil.addComponent(main_JPanel, __IncludeProperty_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - properties to read, separated by commas (default=read all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -310,7 +310,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    		1, y, 6, 1, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -324,10 +324,10 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
 	button_JPanel.add ( __ok_JButton );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+	setResizable ( false );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
     super.setVisible( true );
 }
 
@@ -359,7 +359,7 @@ public void keyReleased ( KeyEvent event )
 }
 
 public void keyTyped ( KeyEvent event )
-{	// Covered by the other events
+{	// Covered by the other events.
 }
 
 /**
@@ -382,7 +382,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		IncludeProperty = parameters.getValue ( "IncludeProperty" );
@@ -391,7 +391,7 @@ private void refresh ()
 			__InputFile_JTextField.setText (InputFile);
 		}
         if ( FileFormat == null ) {
-            // Select default...
+            // Select default.
             __FileFormat_JComboBox.select ( 0 );
         }
         else {
@@ -410,7 +410,7 @@ private void refresh ()
             __IncludeProperty_JTextField.setText (IncludeProperty);
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	InputFile = __InputFile_JTextField.getText().trim();
 	FileFormat = __FileFormat_JComboBox.getSelected();
 	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
@@ -419,7 +419,7 @@ private void refresh ()
 	parameters.add ( "FileFormat=" + FileFormat );
 	parameters.add ( "IncludeProperty=" + IncludeProperty );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -447,14 +447,14 @@ and the dialog is closed.
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

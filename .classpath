@@ -8,9 +8,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-common-java"/>
 	<classpathentry kind="lib" path="lib/Jython/jython.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
-	<classpathentry kind="lib" path="lib/heclib/heclib.jar"/>
-	<classpathentry kind="lib" path="lib/heclib/hec.jar"/>
-	<classpathentry kind="lib" path="lib/heclib/rma.jar"/>
 	<classpathentry kind="lib" path="lib/freemarker/freemarker.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/poi-3.9-20121203.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/commons-codec-1.5.jar"/>
@@ -42,5 +39,9 @@
 	<classpathentry kind="lib" path="lib/UCanAccess/jackcess-3.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/UCanAccess/hsqldb-2.5.0.jar"/>
 	<classpathentry kind="lib" path="lib/UCanAccess/commons-lang3-3.8.1.jar"/>
+	<classpathentry kind="lib" path="lib/flogger/flogger-0.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/flogger/flogger-system-backend-0.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/heclib/hec-monolith-3.0.1-rc03.jar"/>
+	<classpathentry kind="lib" path="lib/heclib/hec-nucleus-metadata-1.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -497,15 +497,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
 
+    /* TODO smalers 2022-08-11 remove when 64-bit tests out.
     int arch = IOUtil.getJreArchBits();
     if ( arch != 32 ) {
-    	message = "Running as " + arch + "-bit environent. The command is only supported on 32-bit Java Runtime Environment (and corresponding 32-bit HEC-DSS libraries).";
+    	message = "Running as " + arch + "-bit environment. The command is only supported on 32-bit Java Runtime Environment (and corresponding 32-bit HEC-DSS libraries).";
     	Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
     	status.addToLog(commandPhase, new CommandLogRecord( CommandStatusType.FAILURE, message,
         	"Do not use the command on 64 bit operating systems."));
     	throw new CommandException ( message );
     }
+    */
 	
     String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),

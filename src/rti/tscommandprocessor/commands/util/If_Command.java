@@ -23,6 +23,7 @@ NoticeEnd */
 
 package rti.tscommandprocessor.commands.util;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,11 +40,14 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.JSON.JSONObject;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 
 /**
 This class initializes, checks, and runs the If() command.
@@ -84,9 +88,16 @@ throws InvalidCommandParameterException
 	String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
+	String FileExists = parameters.getValue ( "FileExists" );
+	String FileDoesNotExist = parameters.getValue ( "FileDoesNotExist" );
+	String ObjectExists = parameters.getValue ( "ObjectExists" );
+	String ObjectDoesNotExist = parameters.getValue ( "ObjectDoesNotExist" );
 	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
 	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
+	String TableExists = parameters.getValue ( "TableExists" );
+	String TableDoesNotExist = parameters.getValue ( "TableDoesNotExist" );
 	String TSExists = parameters.getValue ( "TSExists" );
+	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
 	String warning = "";
 	String message;
 	
@@ -94,20 +105,32 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	boolean conditionProvided = false;
-	boolean tsexistsProvided = false;
+	boolean fileExistsProvided = false;
+	boolean objectExistsProvided = false;
 	boolean propertyDefinedProvided = false;
+	boolean tableExistsProvided = false;
+	boolean tsExistsProvided = false;
 	
 	if ( (Condition != null) && !Condition.isEmpty() ) {
 		conditionProvided = true;
 	}
-	if ( (TSExists != null) && !TSExists.isEmpty() ) {
-		tsexistsProvided = true;
+	if ( ((FileExists != null) && !FileExists.isEmpty()) || ((FileDoesNotExist != null) && !FileDoesNotExist.isEmpty()) ) {
+		fileExistsProvided = true;
+	}
+	if ( ((ObjectExists != null) && !ObjectExists.isEmpty()) || ((ObjectDoesNotExist != null) && !ObjectDoesNotExist.isEmpty()) ) {
+		objectExistsProvided = true;
 	}
 	if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
 		propertyDefinedProvided = true;
 	}
 	if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
 		propertyDefinedProvided = true;
+	}
+	if ( ((TableExists != null) && !TableExists.isEmpty()) || ((TableDoesNotExist != null) && !TableDoesNotExist.isEmpty()) ) {
+		tableExistsProvided = true;
+	}
+	if ( ((TSExists != null) && !TSExists.isEmpty()) || ((TSDoesNotExist != null) && !TSDoesNotExist.isEmpty()) ) {
+		tsExistsProvided = true;
 	}
 
     if ( (Name == null) || Name.equals("") ) {
@@ -116,8 +139,9 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( !conditionProvided && !tsexistsProvided && !propertyDefinedProvided ) {
-        message = "A condition, PropertyIsNotDefinedOrIsEmpty, PropertyIsDefined, or TSExists must be specified";
+    if ( !conditionProvided && !fileExistsProvided && !objectExistsProvided &&
+   		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided ) {
+        message = "A condition or check of file, object, property, table, or time series must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
@@ -131,14 +155,21 @@ throws InvalidCommandParameterException
                 message, "Specify CompareAsStrings as " + _False + " (default) or " + _True + "." ));
 	}
 
-	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(6);
+	// Check for invalid parameters.
+    List<String> validList = new ArrayList<>(13);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
+	validList.add ( "FileExists" );
+	validList.add ( "FileDoesNotExist" );
+	validList.add ( "ObjectExists" );
+	validList.add ( "ObjectDoesNotExist" );
 	validList.add ( "PropertyIsNotDefinedOrIsEmpty" );
 	validList.add ( "PropertyIsDefined" );
+	validList.add ( "TableExists" );
+	validList.add ( "TableDoesNotExist" );
 	validList.add ( "TSExists" );
+	validList.add ( "TSDoesNotExist" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
@@ -156,8 +187,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new If_JDialog ( parent, this )).ok();
 }
 
@@ -165,8 +196,7 @@ public boolean editCommand ( JFrame parent )
 Return the result of evaluating the condition, which is set when runCommand() is called.
 @return the result of evaluating the condition
 */
-public boolean getConditionEval ()
-{
+public boolean getConditionEval () {
     return this.conditionEval;
 }
 
@@ -174,8 +204,7 @@ public boolean getConditionEval ()
 Return the name of the if command.
 @return the name of the if command, should not be null.
 */
-public String getName ()
-{
+public String getName () {
     return getCommandParameters().getValue("Name");
 }
 
@@ -221,17 +250,45 @@ throws CommandWarningException, CommandException
 	if ( (CompareAsStrings != null) && CompareAsStrings.equalsIgnoreCase(_True) ) {
 		compareAsStrings = true;
 	}
+	String FileExists = parameters.getValue ( "FileExists" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		FileExists = TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists);
+	}
+	String FileDoesNotExist = parameters.getValue ( "FileDoesNotExist" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		FileDoesNotExist = TSCommandProcessorUtil.expandParameterValue(processor, this, FileDoesNotExist);
+	}
+	String ObjectExists = parameters.getValue ( "ObjectExists" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ObjectExists = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectExists);
+	}
+	String ObjectDoesNotExist = parameters.getValue ( "ObjectDoesNotExist" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ObjectDoesNotExist = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectDoesNotExist);
+	}
 	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
-	if ( (PropertyIsNotDefinedOrIsEmpty != null) && (PropertyIsNotDefinedOrIsEmpty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PropertyIsNotDefinedOrIsEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsNotDefinedOrIsEmpty);
 	}
 	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
-	if ( (PropertyIsDefined != null) && (PropertyIsDefined.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PropertyIsDefined = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsDefined);
 	}
+	String TableExists = parameters.getValue ( "TableExists" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TableExists = TSCommandProcessorUtil.expandParameterValue(processor, this, TableExists);
+	}
+	String TableDoesNotExist = parameters.getValue ( "TableDoesNotExist" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TableDoesNotExist = TSCommandProcessorUtil.expandParameterValue(processor, this, TableDoesNotExist);
+	}
 	String TSExists = parameters.getValue ( "TSExists" );
-	if ( (TSExists != null) && (TSExists.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSExists = TSCommandProcessorUtil.expandParameterValue(processor, this, TSExists);
+	}
+	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSDoesNotExist = TSCommandProcessorUtil.expandParameterValue(processor, this, TSDoesNotExist);
 	}
 
 	try {
@@ -551,6 +608,124 @@ throws CommandWarningException, CommandException
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
 	    }
+	    if ( (FileExists != null) && !FileExists.isEmpty() ) {
+	        // Check whether a file exists - this is ANDed to the condition.
+	    	String FileExists_full = IOUtil.verifyPathForOS(
+	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists) ) );
+	    	File f = new File(FileExists_full);
+            if ( !f.exists() ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            else {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (FileDoesNotExist != null) && !FileDoesNotExist.isEmpty() ) {
+	        // Check whether a file does not exist - this is ANDed to the condition.
+	    	String FileDoesNotExist_full = IOUtil.verifyPathForOS(
+	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileDoesNotExist) ) );
+	    	File f = new File(FileDoesNotExist_full);
+            if ( f.exists() ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            else {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (ObjectExists != null) && !ObjectExists.isEmpty() ) {
+	        // Check whether a table exists - this is ANDed to the condition.
+	        // Get the table to process.  The table is searched backwards until the first match.
+	        JSONObject object = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "ObjectID", ObjectExists );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetObject", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetObject(ObjectID=\"" + ObjectExists + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_Object = bean_PropList.getContents ( "Object");
+            if ( o_Object != null ) {
+                object = (JSONObject)o_Object;
+            }
+            if ( object == null ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            else {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (ObjectDoesNotExist != null) && !ObjectDoesNotExist.isEmpty() ) {
+	        // Check whether a table exists - this is ANDed to the condition.
+	        // Get the table to process.  The table is searched backwards until the first match.
+	        JSONObject object = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "ObjectID", ObjectDoesNotExist );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetObject", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetObject(ObjectID=\"" + ObjectDoesNotExist + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_object = bean_PropList.getContents ( "Object");
+            if ( o_object != null ) {
+                object = (JSONObject)o_object;
+            }
+            if ( object == null ) {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            else {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            setConditionEval(conditionEval);
+	    }
 	    if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists
 	    	Object o = processor.getPropContents(PropertyIsNotDefinedOrIsEmpty);
@@ -610,9 +785,87 @@ throws CommandWarningException, CommandException
 	    	}
             setConditionEval(conditionEval);
 	    }
+	    if ( (TableExists != null) && !TableExists.isEmpty() ) {
+	        // Check whether a table exists - this is ANDed to the condition.
+	        // Get the table to process.  The table is searched backwards until the first match.
+	        DataTable table = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TableID", TableExists );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTable", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTable(TableID=\"" + TableExists + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_Table = bean_PropList.getContents ( "Table");
+            if ( o_Table != null ) {
+                table = (DataTable)o_Table;
+            }
+            if ( table == null ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            else {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (TableDoesNotExist != null) && !TableDoesNotExist.isEmpty() ) {
+	        // Check whether a table exists - this is ANDed to the condition.
+	        // Get the table to process.  The table is searched backwards until the first match.
+	        DataTable table = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TableID", TableDoesNotExist );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTable", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTable(TableID=\"" + TableDoesNotExist + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_Table = bean_PropList.getContents ( "Table");
+            if ( o_Table != null ) {
+                table = (DataTable)o_Table;
+            }
+            if ( table == null ) {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                   	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            else {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+            }
+            setConditionEval(conditionEval);
+	    }
 	    if ( (TSExists != null) && !TSExists.isEmpty() ) {
-	        // Want to check whether a time series exists - this is ANDed to the condition
-	        // Get the time series to process.  The time series list is searched backwards until the first match...
+	        // Check whether a time series exists - this is ANDed to the condition.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
 	        TS ts = null;
             PropList request_params = new PropList ( "" );
             request_params.set ( "CommandTag", command_tag );
@@ -635,17 +888,58 @@ throws CommandWarningException, CommandException
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
+            if ( (TSExists != null) && !TSExists.isEmpty() ) {
+            	if ( ts == null ) {
+                	// Does not matter what the Condition had - the final result is false.
+                	conditionEval = false;
+            	}
+            	else {
+                	if ( (Condition != null) && !Condition.equals("") ) {
+                     	conditionEval = conditionEval & true;
+                	}
+                	else {
+                    	conditionEval = true;
+                	}
+            	}
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (TSDoesNotExist != null) && !TSDoesNotExist.isEmpty() ) {
+	        // Check whether a time series does not exist - this is ANDed to the condition.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+	        TS ts = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSDoesNotExist );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSDoesNotExist + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_TS = bean_PropList.getContents ( "TS");
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
             if ( ts == null ) {
-                // Does not matter what the Condition had - the final result is false
-                conditionEval = false;
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                    	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
             }
             else {
-                if ( (Condition != null) && !Condition.equals("") ) {
-                     conditionEval = conditionEval & true;
-                }
-                else {
-                    conditionEval = true;
-                }
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
             }
             setConditionEval(conditionEval);
 	    }
@@ -667,8 +961,7 @@ throws CommandWarningException, CommandException
 Set the result of evaluating the condition.
 @param conditionEval result of evaluating the condition
 */
-private void setConditionEval ( boolean conditionEval )
-{
+private void setConditionEval ( boolean conditionEval ) {
     this.conditionEval = conditionEval;
 }
 
@@ -677,7 +970,20 @@ Return the string representation of the command.
 @param props list of properties to format for output
 */
 public String toString ( PropList props )
-{   String [] order = { "Name", "Condition", "CompareAsStrings", "PropertyIsNotDefinedOrIsEmpty", "PropertyIsDefined", "TSExists" };
+{   String [] order = {
+		"Name",
+		"Condition",
+		"CompareAsStrings",
+		"FileExists",
+		"FileDoesNotExist",
+		"ObjectExists",
+		"ObjectDoesNotExist",
+		"PropertyIsNotDefinedOrIsEmpty",
+		"PropertyIsDefined",
+		"TableExists",
+		"TableDoesNotExist",
+		"TSExists",
+		"TSDoesNotExist" };
 	return super.toString(props,order);
 }
 

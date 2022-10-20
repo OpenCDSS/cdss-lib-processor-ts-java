@@ -475,6 +475,7 @@ CommandWarningException, CommandException
     // Get the table to process.
 
     DataTable table1 = null;
+    int table1RowCount = 0;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
@@ -503,11 +504,13 @@ CommandWarningException, CommandException
             }
             else {
                 table1 = (DataTable)o_Table;
+                table1RowCount = table1.getNumberOfRecords();
             }
         }
     }
     
     DataTable table2 = null;
+    int table2RowCount = 0;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
@@ -536,6 +539,7 @@ CommandWarningException, CommandException
             }
             else {
                 table2 = (DataTable)o_Table;
+                table2RowCount = table2.getNumberOfRecords();
             }
         }
     }
@@ -632,29 +636,80 @@ CommandWarningException, CommandException
         if ( needToNotify &&
            ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
            (IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-           // Have differences and need to warn.
-           Message.printWarning ( warning_level,
-           MessageUtil.formatMessageTag( command_tag,++warning_count),
-           routine, message );
-           status.addToLog(CommandPhaseType.RUN,
-               new CommandLogRecord(IfDifferent_CommandStatusType,
-                   message, "Check files because difference is not expected.") );
+            // Have differences and need to warn.
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag,++warning_count),
+            routine, message );
+            status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(IfDifferent_CommandStatusType,
+                    message, "Check tables because difference is not expected.") );
         }
     }
-	else {
-	    // No differences were reported.
-        message = "No table values were different (the tables are the same).";
-        Message.printStatus ( 2, routine, message );
-	    if ( (IfSame_CommandStatusType == CommandStatusType.WARNING) ||
-	       (IfSame_CommandStatusType == CommandStatusType.FAILURE)) {
-           Message.printWarning ( warning_level,
-           MessageUtil.formatMessageTag( command_tag,++warning_count),
-           routine, message );
-           status.addToLog(CommandPhaseType.RUN,
-               new CommandLogRecord(IfSame_CommandStatusType,
-                   message, "Check files because match is not expected.") );
-	    }
-    }
+	boolean tablesDiffSize = false;
+		// Also check for different table sizes, which may not be fully handled in the above comparison:
+		// - set diffcount to 1 if the 
+		if ( (table1RowCount == 0) && (table2RowCount != 0) ) {
+			tablesDiffSize = true;
+			if ( 
+				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+				// Have differences and need to warn:
+				// - do not allow any differences
+				message = "First table is empty and second is not.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag( command_tag,++warning_count),
+					routine, message );
+				status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(IfDifferent_CommandStatusType,
+						message, "Check tables because difference is not expected.") );
+			}
+		}
+		else if ( (table2RowCount == 0) && (table1RowCount != 0) ) {
+			tablesDiffSize = true;
+			if ( 
+				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+				// Have differences and need to warn:
+				// - do not allow any differences
+				message = "Second table is empty and first is not.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag( command_tag,++warning_count),
+					routine, message );
+				status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(IfDifferent_CommandStatusType,
+						message, "Check tables because difference is not expected.") );
+			}
+		}
+		else if ( table2RowCount != table1RowCount ) {
+			tablesDiffSize = true;
+			if ( 
+				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+				// Have differences and need to warn:
+				// - do not allow any differences
+				message = "First table has " + table1RowCount + " rows and second table has " + table2RowCount + " rows.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag( command_tag,++warning_count),
+					routine, message );
+				status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(IfDifferent_CommandStatusType,
+						message, "Check tables because difference is not expected.") );
+			}
+		}
+		if ( (diffCount == 0) && !tablesDiffSize ) {
+			// No differences were reported.
+			message = "No table values were different (the tables are the same).";
+			Message.printStatus ( 2, routine, message );
+			if ( (IfSame_CommandStatusType == CommandStatusType.WARNING) ||
+				(IfSame_CommandStatusType == CommandStatusType.FAILURE)) {
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag( command_tag,++warning_count),
+					routine, message );
+				status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(IfSame_CommandStatusType,
+						message, "Check tables because match is not expected.") );
+			}
+		}
 	if ( errorCount > 0 ) {
 		// Error comparing the tables, usually due to a software problem.
 		message = "There were " + errorCount + " errors performaing the comparison.";

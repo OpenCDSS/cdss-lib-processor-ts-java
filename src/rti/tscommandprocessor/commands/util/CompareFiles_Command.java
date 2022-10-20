@@ -400,11 +400,15 @@ public boolean editCommand ( JFrame parent )
 	String routine = getClass().getSimpleName() + ".editCommand";
 	String diffProgram = null;
 	Prop prop = IOUtil.getProp("DiffProgram");
-	// Get the initial program to use for visual difference comparison.
+	// Get the initial program to use for visual difference comparison:
+	// - the DiffProgram property can be a comma-separated list of paths to program to run,
+	//   or program name without path to find in the PATH
+	// - multiple candidate programs can be listed because the location may have changed over time
+	// - use the first one that exists
 	if ( prop != null ) {
 		diffProgram = prop.getValue();
 		if ( Message.isDebugOn ) {
-			Message.printStatus(2, routine, "Difference program from DiffProgram=\"" + diffProgram + "\"");
+			Message.printStatus(2, routine, "Difference program(s) from DiffProgram=\"" + diffProgram + "\"");
 		}
 	}
 	// If defined, use the property for the operating system.
@@ -416,12 +420,12 @@ public boolean editCommand ( JFrame parent )
 		if ( prop != null ) {
 			diffProgram = prop.getValue();
 			if ( Message.isDebugOn ) {
-				Message.printStatus(2, routine, "Difference program from DiffProgram.Linux=\"" + diffProgram + "\"");
+				Message.printStatus(2, routine, "Difference program(s) from DiffProgram.Linux=\"" + diffProgram + "\"");
 			}
 		}
 		else {
 			if ( Message.isDebugOn ) {
-				Message.printStatus(2, routine, "No program DiffProgram.Linux=\"" + diffProgram + "\"");
+				Message.printStatus(2, routine, "No program(s) from DiffProgram.Linux");
 			}
 		}
 	}
@@ -435,9 +439,31 @@ public boolean editCommand ( JFrame parent )
 			if ( prop != null ) {
 				diffProgram = prop.getValue();
 				if ( Message.isDebugOn ) {
-					Message.printStatus(2, routine, "Difference program from DiffProgram.Windows=\"" + diffProgram + "\"");
+					Message.printStatus(2, routine, "Difference program(s) from DiffProgram.Windows=\"" + diffProgram + "\"");
 				}
 			}
+		}
+	}
+	// Make sure that the difference program exists specified as a path or in the PATH.
+	List<String> diffPrograms = new ArrayList<String>();
+	if ( diffProgram.indexOf(",") < 0) {
+		// Have a single program.
+		diffPrograms.add(diffProgram);
+	}
+	else {
+		// Have more than one program.
+		diffPrograms = StringUtil.breakStringList(diffProgram, ",", StringUtil.DELIM_TRIM_STRINGS);
+	}
+	diffProgram = null;
+	for ( String prog : diffPrograms ) {
+		if ( prog == null ) {
+			continue;
+		}
+		File f = new File(prog);
+		// TODO smalers 2022-10-20 the following does not handle just a program found in the path.
+		if ( f.exists() || (IOUtil.findProgramInPath(prog) != null) ) {
+			diffProgram = prog;
+			break;
 		}
 	}
 	return (new CompareFiles_JDialog ( parent, this, diffProgram )).ok();

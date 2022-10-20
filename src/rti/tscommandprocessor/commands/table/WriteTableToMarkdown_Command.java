@@ -39,7 +39,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -61,7 +60,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class initializes, checks, and runs the WriteTableToMarkdown() command.
 */
-public class WriteTableToMarkdown_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteTableToMarkdown_Command extends AbstractCommand implements FileGenerator
 {
 
 /** 

@@ -91,9 +91,13 @@ import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Comm
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
+import rti.tscommandprocessor.commands.json.FreeObject_Command;
+import rti.tscommandprocessor.commands.json.NewObject_Command;
 
 // JSON commands.
 import rti.tscommandprocessor.commands.json.ReadTableFromJSON_Command;
+import rti.tscommandprocessor.commands.json.SetObjectPropertiesFromTable_Command;
+import rti.tscommandprocessor.commands.json.WriteObjectToJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
@@ -718,6 +722,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("Free") ) {
         return new Free_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("FreeObject") ) {
+        return new FreeObject_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("FreeTable") ) {
         return new FreeTable_Command ();
     }
@@ -797,6 +804,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("NewExcelWorkbook") ) {
         return new NewExcelWorkbook_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewObject") ) {
+        return new NewObject_Command ();
     }
     else if ( commandName.equalsIgnoreCase("NewPatternTimeSeries") ) {
         return new NewPatternTimeSeries_Command ();
@@ -1086,6 +1096,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();
 	}
+	else if ( commandName.equalsIgnoreCase("SetObjectPropertiesFromTable") ) {
+		return new SetObjectPropertiesFromTable_Command ();
+	}
 	else if ( commandName.equalsIgnoreCase("SetOutputPeriod") ) {
 		return new SetOutputPeriod_Command ();
 	}
@@ -1241,6 +1254,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("WriteNWSRFSESPTraceEnsemble")) {
 		return new WriteNWSRFSESPTraceEnsemble_Command();
 	}
+    else if ( commandName.equalsIgnoreCase("WriteObjectToJSON")) {
+        return new WriteObjectToJSON_Command();
+    }
     else if ( commandName.equalsIgnoreCase("WritePropertiesToFile") ) {
         return new WritePropertiesToFile_Command ();
     }

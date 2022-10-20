@@ -113,7 +113,7 @@ private boolean __ok = false; // Indicates whether the user pressed OK to close 
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param diffProgram visual difference program
+@param diffProgram visual difference program, expected to exist
 */
 public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command, String diffProgram )
 {	super(parent, true);
@@ -1093,7 +1093,8 @@ private void refresh ()
 		}
 		else if ( !IOUtil.fileExists(__diffProgram)) {
 			__visualDiff_JButton.setEnabled(false);
-			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because diff program not configured.");
+			__visualDiff_JButton.setToolTipText(this.visualDiffLabel +
+				" - disabled because diff program is not configured or program does not exist.");
 		}
 		else if ( !IOUtil.fileExists(file1Path) ) {
 			__visualDiff_JButton.setEnabled(false);

@@ -65,6 +65,7 @@ import RTi.Util.IO.ProcessRunner;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.WarningCount;
+import RTi.Util.JSON.JSONObject;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -1888,6 +1889,143 @@ public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCo
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );
     // Get the time series identifiers from the commands.
     return getEnsembleIdentifiersFromCommands ( commands );
+}
+
+/**
+Get a list of object identifiers from a list of commands.  See documentation for fully loaded method.
+@param commands commands to search
+@return list of object identifiers or an empty non-null list if nothing found.
+*/
+private static List<String> getObjectIdentifiersFromCommands ( List<Command> commands )
+{   // Default behavior.
+    return getObjectIdentifiersFromCommands ( commands, false );
+}
+
+/**
+Get a list of object identifiers from a list of commands.
+The returned strings are suitable for drop-down lists, etc.  Object identifiers are determined as follows:
+Commands that implement ObjectListProvider have their getObjectList(JSONObject) method called.
+The getObjectID() method on the JSONObject is then returned.
+@param commands Commands to search.
+@param sort Should output be sorted by identifier.
+@return list of object identifiers or an empty non-null list if nothing found.
+*/
+protected static List<String> getObjectIdentifiersFromCommands ( List<Command> commands, boolean sort )
+{   if ( commands == null ) {
+        return new ArrayList<>();
+    }
+    List<String> objectIDList = new ArrayList<> ();
+    int size = commands.size();
+    boolean in_comment = false;
+    Command command = null;
+    String commandString = null;
+    String commandName = null;
+    for ( int i = 0; i < size; i++ ) {
+        command = commands.get(i);
+        commandString = command.toString();
+        commandName = command.getCommandName();
+        if ( commandString.startsWith("/*") ) {
+            in_comment = true;
+            continue;
+        }
+        else if ( commandString.startsWith("*/") ) {
+            in_comment = false;
+            continue;
+        }
+        if ( in_comment ) {
+            continue;
+        }
+        // Commands that provide a list of objects (so add to the list).
+        if ( command instanceof ObjectListProvider ) {
+        	Object o = ((ObjectListProvider)command).getObjectList ( new JSONObject().getClass() );
+            List<JSONObject> list = null;
+            if ( o != null ) {
+            	@SuppressWarnings("unchecked")
+				List<JSONObject> list0 = (List<JSONObject>)o;
+            	list = list0;
+            }
+            String id;
+            if ( list != null ) {
+                int listsize = list.size();
+                JSONObject object;
+                for ( int its = 0; its < listsize; its++ ) {
+                    object = list.get(its);
+                    id = object.getObjectID();
+                    if ( (id != null) && !id.isEmpty() ) {
+                    	// Don't add if already in the list.
+                    	boolean found = false;
+                    	for ( String objectID : objectIDList ) {
+                    		if ( id.equalsIgnoreCase(objectID) ) {
+                    			found = true;
+                    			break;
+                    		}
+                    	}
+                    	if ( !found ) {
+                    		objectIDList.add( id );
+                    	}
+                    }
+                }
+            }
+        }
+        else if ( commandName.equalsIgnoreCase("FreeObject") ) {
+            // Need to remove matching object identifiers that are in the list
+            // (otherwise editing commands will show extra objects as of that point in the workflow,
+        	// which will be confusing and may lead to errors).
+            // First get the matching objects for the FreeObject() command parameters.
+            PropList parameters = command.getCommandParameters();
+            String ObjectID = parameters.getValue("ObjectID");
+            for ( int iObject = 0; iObject < objectIDList.size(); iObject++ ) {
+                if ( objectIDList.get(iObject).equalsIgnoreCase(ObjectID) ) {
+                    //Message.printStatus(2,"", "Removing object " + ObjectID );
+                    objectIDList.remove(iObject--);
+                }
+            }
+        }
+    }
+    if ( sort ) {
+        java.util.Collections.sort(objectIDList);
+    }
+    return objectIDList;
+}
+
+/**
+Return the object identifiers for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@return a list of String containing the object identifiers, or an empty list.
+*/
+public static List<String> getObjectIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+	return getObjectIdentifiersFromCommandsBeforeCommand( processor, command, false );
+}
+
+/**
+Return the object identifiers for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@param inclusive if true also search the current specified command.
+@return a list of String containing the object identifiers, or an empty list.
+*/
+public static List<String> getObjectIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive )
+{   String routine = "TSCommandProcessorUtil.getObjectIdentifiersFromCommandsBeforeCommand";
+    // Get the position of the command in the list.
+    int pos = processor.indexOf(command);
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
+    if ( pos < 0 ) {
+        // Just return a blank list.
+        return new ArrayList<>();
+    }
+    // If inclusive increment the index.
+    if ( inclusive ) {
+   		++pos;
+    }
+    // Find the commands above the position.
+    List<Command> commands = getCommandsBeforeIndex ( processor, pos );
+    // Get the time series identifiers from the commands.
+    return getObjectIdentifiersFromCommands ( commands );
 }
 
 /**

@@ -68,6 +68,7 @@ import RTi.Util.IO.RequestParameterInvalidException;
 import RTi.Util.IO.RequestParameterNotFoundException;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
+import RTi.Util.JSON.JSONObject;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -250,6 +251,11 @@ List<DataTable> __TableList = new Vector<>();
 List of NodeNetwork objects maintained by the processor.
 */
 List<NodeNetwork> __NodeNetworkList = new Vector<>();
+
+/**
+List of JSON objects maintained by the processor.
+*/
+List<JSONObject> __jsonObjectList = new Vector<>();
 
 /**
 List of TimeSeriesView objects maintained by the processor.
@@ -756,13 +762,19 @@ public boolean areCommandsTemplate ()
 
 /**
 Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
-Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRun()
+Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRunStart()
 method, which calls this method.
 */
 public void clearResults() {
-	__tsengine.clearTimeSeriesResults();
-    if ( __TableList != null ) {
-        __TableList.clear();
+	this.__tsengine.clearTimeSeriesResults();
+    if ( this.__NodeNetworkList != null ) {
+        this.__NodeNetworkList.clear();
+    }
+    if ( this.__jsonObjectList != null ) {
+        this.__jsonObjectList.clear();
+    }
+    if ( this.__TableList != null ) {
+        this.__TableList.clear();
     }
     removeAllEnsembles();
     removeAllPatternTS();
@@ -1345,6 +1357,9 @@ public Object getPropContents ( String propName ) throws Exception
     else if ( propName.equalsIgnoreCase("NetworkResultsList") ) {
         return getPropContents_NetworkResultsList();
     }
+    else if ( propName.equalsIgnoreCase("ObjectResultsList") ) {
+        return getPropContents_ObjectResultsList();
+    }
 	else if ( propName.equalsIgnoreCase("OutputComments") ) {
 		return getPropContents_OutputComments();
 	}
@@ -1551,7 +1566,15 @@ Handle the NetworkResultsList property request.
 @return The network results list, as a List of NodeNetwork.
 */
 private List<NodeNetwork> getPropContents_NetworkResultsList() {
-    return __NodeNetworkList;
+    return this.__NodeNetworkList;
+}
+
+/**
+Handle the ObjectResultsList property request.
+@return The object results list, as a List of JSONObject.
+*/
+private List<JSONObject> getPropContents_ObjectResultsList() {
+    return this.__jsonObjectList;
 }
 
 /**
@@ -2046,6 +2069,19 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>GetObject</b></td>
+<td>Get a JSONObject instance managed by the processor.  Parameters to this request are:
+<ol>
+<li>    <b>ObjectID</b> An object identifier.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    <b>Object</b> A JSONObject object.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>GetProperty</b></td>
 <td>Get a processor property.  Parameters to this request are:
 <ol>
@@ -2076,7 +2112,7 @@ Returned values from this request are:
 <td><b>GetTable</b></td>
 <td>Get a DataTable instance managed by the processor.  Parameters to this request are:
 <ol>
-<li>    <b>TableID</b> A table identier.</li>
+<li>    <b>TableID</b> A table identifier.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2321,6 +2357,19 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>SetObject</b></td>
+<td>Set an object.  Parameters to this request are:
+<ol>
+<li>    <b>Object</b> The JSONObject instance to set.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>SetPatternTSList</b></td>
 <td>Set the list of pattern time series, to be used with FillPattern() commands.
     Parameters to this request are:
@@ -2421,6 +2470,9 @@ throws Exception
     else if ( request.equalsIgnoreCase("GetNwsrfsDMI") ) {
         return processRequest_GetNwsrfsDMI ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("GetObject") ) {
+        return processRequest_GetObject ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("GetOutputPeriodForCommand") ) {
         return processRequest_GetOutputPeriodForCommand ( request, request_params );
     }
@@ -2473,6 +2525,9 @@ throws Exception
     else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
         return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("RemoveObjectFromResultsList") ) {
+        return processRequest_RemoveObjectFromResultsList ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("RemoveProperty") ) {
         return processRequest_RemoveProperty ( request, request_params );
     }
@@ -2498,6 +2553,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetObject") ) {
+        return processRequest_SetObject ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("SetPatternTSList") ) {
         return processRequest_SetPatternTSList ( request, request_params );
     }
@@ -2782,6 +2840,44 @@ throws Exception
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference.
     results.setUsingObject("NwsrfsDMI", dmi );
+    return bean;
+}
+
+/**
+Process the GetObject request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetObject (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "ObjectID" );
+    if ( o == null ) {
+            String warning = "Request GetObject() does not provide a ObjectID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String ObjectID = (String)o;
+    int size = 0;
+    if ( this.__jsonObjectList != null ) {
+        size = this.__jsonObjectList.size();
+    }
+    JSONObject object = null;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        object = (JSONObject)this.__jsonObjectList.get(i);
+        if ( object.getObjectID().equalsIgnoreCase(ObjectID) ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        object = null;
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference.
+    results.setUsingObject("Object", object );
     return bean;
 }
 
@@ -3473,6 +3569,35 @@ throws Exception
 }
 
 /**
+Process the RemoveObjectFromResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveObjectFromResultsList (
+    String request, PropList request_params )
+throws Exception
+{   //String routine = "TSCommandProcessor.processRequest_RemoveObjectFromResultsList";
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "ObjectID" );
+    if ( o == null ) {
+        String warning = "Request RemoveObjectFromResultsList() does not provide an ObjectID parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    String ObjectID = (String)o;
+    // Remove all objects having the same identifier.
+    JSONObject object;
+    for ( int i = 0; i < this.__jsonObjectList.size(); i++ ) {
+        object = this.__jsonObjectList.get(i);
+        // Remove and decrement the counter so that the next table is checked.
+        if ( object.getObjectID().equalsIgnoreCase(ObjectID) ) {
+            this.__jsonObjectList.remove(i--);
+        }
+    }
+    return bean;
+}
+
+/**
 Process the SetProperty request.  Null property values are NOT allowed.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveProperty (
@@ -3707,6 +3832,40 @@ throws Exception
 	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
+}
+
+/**
+Process the SetObject request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetObject (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "Object" );
+    if ( o == null ) {
+            String warning = "Request SetObject() does not provide an Object parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ("This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    JSONObject o_JSONObject = (JSONObject)o;
+    // Loop through the objects.  If a matching object ID is found, reset.  Otherwise, add at the end.
+    int size = this.__jsonObjectList.size();
+    JSONObject object;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        object = (JSONObject)this.__jsonObjectList.get(i);
+        if ( object.getObjectID().equalsIgnoreCase(o_JSONObject.getObjectID())) {
+            this.__jsonObjectList.set(i,o_JSONObject);
+            found = true;
+        }
+    }
+    if ( !found ) {
+        this.__jsonObjectList.add ( o_JSONObject );
+    }
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**

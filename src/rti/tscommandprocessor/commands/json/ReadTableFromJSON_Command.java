@@ -1243,7 +1243,7 @@ private int readJSONUsingJackson ( String inputFile, DataTable table, String arr
 	int top,
 	CommandStatus status, int warningCount )
 throws FileNotFoundException, IOException
-{	String routine = getClass().getSimpleName() + ".readJSON";
+{	String routine = getClass().getSimpleName() + ".readJSONFromJackson";
 
 	boolean useMapper = true;
 	if ( useMapper ) {

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,13 +71,27 @@ private JTextField __Name_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
 private SimpleJComboBox __CompareAsStrings_JComboBox = null;
+private JTextField __FileExists_JTextField = null;
+private JTextField __FileDoesNotExist_JTextField = null;
+private JTextField __ObjectExists_JTextField = null;
+private JTextField __ObjectDoesNotExist_JTextField = null;
 private JTextField __PropertyIsNotDefinedOrIsEmpty_JTextField = null;
 private JTextField __PropertyIsDefined_JTextField = null;
+private JTextField __TableExists_JTextField = null;
+private JTextField __TableDoesNotExist_JTextField = null;
 private JTextField __TSExists_JTextField = null;
+private JTextField __TSDoesNotExist_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
+
+// Tab number (0+), to allow selecting tabs based on parameters.
+private int fileTabNum = 1;
+private int objectTabNum = 2;
+private int propertyTabNum = 3;
+private int tableTabNum = 4;
+private int tsTabNum = 5;
 
 /**
 Command dialog editor constructor.
@@ -112,18 +126,25 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{   // Put together a list of parameters to check...
+{   // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String FileExists = __FileExists_JTextField.getText().trim();
+    String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
+    String ObjectExists = __ObjectExists_JTextField.getText().trim();
+    String ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
     String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+    String TableExists = __TableExists_JTextField.getText().trim();
+    String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
+    String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
@@ -133,17 +154,38 @@ private void checkInput ()
     if ( CompareAsStrings.length() > 0 ) {
         props.set ( "CompareAsStrings", CompareAsStrings );
     }
+    if ( FileExists.length() > 0 ) {
+        props.set ( "FileExists", FileExists );
+    }
+    if ( FileDoesNotExist.length() > 0 ) {
+        props.set ( "FileDoesNotExist", FileDoesNotExist );
+    }
+    if ( ObjectExists.length() > 0 ) {
+        props.set ( "ObjectExists", ObjectExists );
+    }
+    if ( ObjectDoesNotExist.length() > 0 ) {
+        props.set ( "ObjectDoesNotExist", ObjectDoesNotExist );
+    }
     if ( PropertyIsNotDefinedOrIsEmpty.length() > 0 ) {
         props.set ( "PropertyIsNotDefinedOrIsEmpty", PropertyIsNotDefinedOrIsEmpty );
     }
     if ( PropertyIsDefined.length() > 0 ) {
         props.set ( "PropertyIsDefined", PropertyIsDefined );
     }
+    if ( TableExists.length() > 0 ) {
+        props.set ( "TableExists", TableExists );
+    }
+    if ( TableDoesNotExist.length() > 0 ) {
+        props.set ( "TableDoesNotExist", TableDoesNotExist );
+    }
     if ( TSExists.length() > 0 ) {
         props.set ( "TSExists", TSExists );
     }
+    if ( TSDoesNotExist.length() > 0 ) {
+        props.set ( "TSDoesNotExist", TSDoesNotExist );
+    }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -159,15 +201,29 @@ private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String FileExists = __FileExists_JTextField.getText().trim();
+    String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
+    String ObjectExists = __ObjectExists_JTextField.getText().trim();
+    String ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
     String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+    String TableExists = __TableExists_JTextField.getText().trim();
+    String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
+    String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
+    __command.setCommandParameter ( "FileExists", FileExists );
+    __command.setCommandParameter ( "FileDoesNotExist", FileDoesNotExist );
+    __command.setCommandParameter ( "ObjectExists", ObjectExists );
+    __command.setCommandParameter ( "ObjectDoesNotExist", ObjectDoesNotExist );
     __command.setCommandParameter ( "PropertyIsNotDefinedOrIsEmpty", PropertyIsNotDefinedOrIsEmpty );
     __command.setCommandParameter ( "PropertyIsDefined", PropertyIsDefined );
+    __command.setCommandParameter ( "TableExists", TableExists );
+    __command.setCommandParameter ( "TableDoesNotExist", TableDoesNotExist );
     __command.setCommandParameter ( "TSExists", TSExists );
+    __command.setCommandParameter ( "TSDoesNotExist", TSDoesNotExist );
 }
 
 /**
@@ -183,7 +239,7 @@ private void initialize ( JFrame parent, If_Command command )
     Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -199,29 +255,29 @@ private void initialize ( JFrame parent, If_Command command )
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Name_JTextField = new JTextField ( 20 );
     __Name_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Name_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - the name will be matched against an EndIf() command name."), 
+        "Required - the name will be matched against an EndIf() command name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for expression
+
+    // Panel for expression.
     int yCond = -1;
     JPanel cond_JPanel = new JPanel();
     cond_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Condition", cond_JPanel );
-    
+
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Currently the condition can only consist of the syntax:"),
+        "The condition can consist of the following syntax:"),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "   Value1 operator Value2"),
@@ -240,8 +296,8 @@ private void initialize ( JFrame parent, If_Command command )
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Condition:" ), 
+
+    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Condition:" ),
         0, ++yCond, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Condition_JTextArea = new JTextArea (5,40);
     __Condition_JTextArea.setLineWrap ( true );
@@ -249,10 +305,10 @@ private void initialize ( JFrame parent, If_Command command )
     __Condition_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(cond_JPanel, new JScrollPane(__Condition_JTextArea),
         1, yCond, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(cond_JPanel, new JLabel("Optional - condition to evaluate."), 
+    JGUIUtil.addComponent(cond_JPanel, new JLabel("Optional - condition to evaluate."),
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as strings?:" ), 
+
+    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as strings?:" ),
         0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareAsStrings_JComboBox = new SimpleJComboBox ( false );
     List<String> compareChoices = new ArrayList<String>();
@@ -264,25 +320,93 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(cond_JPanel, __CompareAsStrings_JComboBox,
         1, yCond, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel(
-        "Optional - compare values as strings (default = " + __command._False + ")."), 
+        "Optional - compare values as strings (default = " + __command._False + ")."),
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for whether property has been defined
+
+    // Panel for whether file exists.
+    int yFile = -1;
+    JPanel file_JPanel = new JPanel();
+    file_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "File Exists?", file_JPanel );
+
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "The FileExists and FileDoesNotExist parameters, if specified, check whether a file exists."),
+        0, ++yFile, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yFile, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(file_JPanel, new JLabel ( "If file exists:" ),
+        0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FileExists_JTextField = new JTextField ( 40 );
+    __FileExists_JTextField.setToolTipText("Specify a file name, can use ${Property}.");
+    __FileExists_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(file_JPanel, __FileExists_JTextField,
+        1, yFile, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel(
+        "Optional - If() will be true if the specified file exists."),
+        3, yFile, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(file_JPanel, new JLabel ( "If file does not exist:" ),
+        0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FileDoesNotExist_JTextField = new JTextField ( 40 );
+    __FileDoesNotExist_JTextField.setToolTipText("Specify a file name, can use ${Property}.");
+    __FileDoesNotExist_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(file_JPanel, __FileDoesNotExist_JTextField,
+        1, yFile, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel(
+        "Optional - If() will be true if the specified file does not exist."),
+        3, yFile, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for whether object exists.
+    int yObject = -1;
+    JPanel object_JPanel = new JPanel();
+    object_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Object Exists?", object_JPanel );
+
+    JGUIUtil.addComponent(object_JPanel, new JLabel (
+        "The ObjectExists and ObjectDoesNotExist parameters, if specified, checks whether an object with the specified ObjectID exists."),
+        0, ++yObject, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(object_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yObject, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(object_JPanel, new JLabel ( "If object exists:" ),
+        0, ++yObject, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ObjectExists_JTextField = new JTextField ( 40 );
+    __ObjectExists_JTextField.setToolTipText("Specify an ObjectID to match, can use ${Property}.");
+    __ObjectExists_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(object_JPanel, __ObjectExists_JTextField,
+        1, yObject, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(object_JPanel, new JLabel(
+        "Optional - If() will be true if the specified ObjectID exists."),
+        3, yObject, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(object_JPanel, new JLabel ( "If object does not exist:" ),
+        0, ++yObject, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ObjectDoesNotExist_JTextField = new JTextField ( 40 );
+    __ObjectDoesNotExist_JTextField.setToolTipText("Specify an ObjectID to match, can use ${Property}.");
+    __ObjectDoesNotExist_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(object_JPanel, __ObjectDoesNotExist_JTextField,
+        1, yObject, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(object_JPanel, new JLabel(
+        "Optional - If() will be true if the specified ObjectID does not exist."),
+        3, yObject, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for whether property has been defined.
     int yPropDefined = -1;
     JPanel propDefined_JPanel = new JPanel();
     propDefined_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Property Defined?", propDefined_JPanel );
-    
+
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel (
-        "This parameter, if specified, checks whether the specified property name is defined (not null) or is empty."),
+        "These parameters, if specified, check whether the specified property name is defined (not null) or is empty."),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel (
         "Double is considered empty if value is NaN."),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is not defined or is empty:" ), 
+
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is not defined or is empty:" ),
         0, ++yPropDefined, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyIsNotDefinedOrIsEmpty_JTextField = new JTextField ( 20 );
     __PropertyIsNotDefinedOrIsEmpty_JTextField.setToolTipText("Specify a property name to check.");
@@ -290,10 +414,10 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(propDefined_JPanel, __PropertyIsNotDefinedOrIsEmpty_JTextField,
         1, yPropDefined, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel(
-        "Optional - If() will be true if the specified property is not defined or is empty."), 
+        "Optional - If() will be true if the specified property is not defined or is empty."),
         3, yPropDefined, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is defined:" ), 
+
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is defined:" ),
         0, ++yPropDefined, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyIsDefined_JTextField = new JTextField ( 20 );
     __PropertyIsDefined_JTextField.setToolTipText("Specify a property name to check.");
@@ -301,30 +425,75 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(propDefined_JPanel, __PropertyIsDefined_JTextField,
         1, yPropDefined, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel(
-        "Optional - If() will be true if the specified property is defined (not null)."), 
+        "Optional - If() will be true if the specified property is defined (not null)."),
         3, yPropDefined, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for whether time series exists
+
+    // Panel for whether table exists.
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Table Exists?", table_JPanel );
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "The TableExists and ObjectDoesNotExist parameters, if specified, checks whether a table with the specified TableID exists."),
+        0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "If table exists:" ),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableExists_JTextField = new JTextField ( 40 );
+    __TableExists_JTextField.setToolTipText("Specify a TableID to match, can use ${Property}.");
+    __TableExists_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableExists_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
+        "Optional - If() will be true if the specified TableID exists."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "If table does not exist:" ),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableDoesNotExist_JTextField = new JTextField ( 40 );
+    __TableDoesNotExist_JTextField.setToolTipText("Specify a TableID to match, can use ${Property}.");
+    __TableDoesNotExist_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableDoesNotExist_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
+        "Optional - If() will be true if the specified TableID does not exist."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for whether time series exists.
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Time Series Exists?", ts_JPanel );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TSID exists:" ), 
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TSID exists:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSExists_JTextField = new JTextField ( 40 );
-    __TSExists_JTextField.setToolTipText("Specify a TSID or alias to match or use ${Property}.");
+    __TSExists_JTextField.setToolTipText("Specify a TSID or alias to match, can use ${Property}.");
     __TSExists_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __TSExists_JTextField,
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
-        "Optional - If() will be true if the specified TSID exists."), 
+        "Optional - If() will be true if the specified TSID exists."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TSID does not exist:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSDoesNotExist_JTextField = new JTextField ( 40 );
+    __TSDoesNotExist_JTextField.setToolTipText("Specify a TSID or alias to match, can use ${Property}.");
+    __TSDoesNotExist_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSDoesNotExist_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified TSID does not exist."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -336,13 +505,13 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -405,9 +574,16 @@ private void refresh ()
 	String Name = "";
 	String Condition = "";
 	String CompareAsStrings = "";
+	String FileExists = "";
+	String FileDoesNotExist = "";
+	String ObjectExists = "";
+	String ObjectDoesNotExist = "";
 	String PropertyIsNotDefinedOrIsEmpty = "";
 	String PropertyIsDefined = "";
+	String TableExists = "";
+	String TableDoesNotExist = "";
 	String TSExists = "";
+	String TSDoesNotExist = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -415,9 +591,16 @@ private void refresh ()
 		Name = props.getValue( "Name" );
 		Condition = props.getValue( "Condition" );
 		CompareAsStrings = props.getValue( "CompareAsStrings" );
+		FileExists = props.getValue( "FileExists" );
+		FileDoesNotExist = props.getValue( "FileDoesNotExist" );
+		ObjectExists = props.getValue( "ObjectExists" );
+		ObjectDoesNotExist = props.getValue( "ObjectDoesNotExist" );
 		PropertyIsNotDefinedOrIsEmpty = props.getValue( "PropertyIsNotDefinedOrIsEmpty" );
 		PropertyIsDefined = props.getValue( "PropertyIsDefined" );
+		TableExists = props.getValue( "TableExists" );
+		TableDoesNotExist = props.getValue( "TableDoesNotExist" );
 		TSExists = props.getValue( "TSExists" );
+		TSDoesNotExist = props.getValue( "TSDoesNotExist" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
@@ -428,7 +611,7 @@ private void refresh ()
             }
         }
         if ( CompareAsStrings == null ) {
-            // Select default...
+            // Select default.
             __CompareAsStrings_JComboBox.select ( 0 );
         }
         else {
@@ -442,39 +625,95 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( FileExists != null ) {
+            __FileExists_JTextField.setText( FileExists );
+            if ( !FileExists.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.fileTabNum);
+            }
+        }
+        if ( FileDoesNotExist != null ) {
+            __FileDoesNotExist_JTextField.setText( FileDoesNotExist );
+            if ( !FileDoesNotExist.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.fileTabNum);
+            }
+        }
+        if ( ObjectExists != null ) {
+            __ObjectExists_JTextField.setText( ObjectExists );
+            if ( !ObjectExists.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.objectTabNum);
+            }
+        }
+        if ( ObjectDoesNotExist != null ) {
+            __ObjectDoesNotExist_JTextField.setText( ObjectDoesNotExist );
+            if ( !ObjectDoesNotExist.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.objectTabNum);
+            }
+        }
         if ( PropertyIsNotDefinedOrIsEmpty != null ) {
             __PropertyIsNotDefinedOrIsEmpty_JTextField.setText( PropertyIsNotDefinedOrIsEmpty );
             if ( !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
-            	__main_JTabbedPane.setSelectedIndex(1);
+            	__main_JTabbedPane.setSelectedIndex(this.propertyTabNum);
             }
         }
         if ( PropertyIsDefined != null ) {
             __PropertyIsDefined_JTextField.setText( PropertyIsDefined );
             if ( !PropertyIsDefined.isEmpty() ) {
-            	__main_JTabbedPane.setSelectedIndex(1);
+            	__main_JTabbedPane.setSelectedIndex(this.propertyTabNum);
+            }
+        }
+        if ( TableExists != null ) {
+            __TableExists_JTextField.setText( TableExists );
+            if ( !TableExists.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tableTabNum);
+            }
+        }
+        if ( TableDoesNotExist != null ) {
+            __TableDoesNotExist_JTextField.setText( TableDoesNotExist );
+            if ( !TableDoesNotExist.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tableTabNum);
             }
         }
         if ( TSExists != null ) {
             __TSExists_JTextField.setText( TSExists );
             if ( !TSExists.isEmpty() ) {
-            	__main_JTabbedPane.setSelectedIndex(2);
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
+        if ( TSDoesNotExist != null ) {
+            __TSDoesNotExist_JTextField.setText( TSDoesNotExist );
+            if ( !TSDoesNotExist.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Name = __Name_JTextField.getText().trim();
 	Condition = __Condition_JTextArea.getText().trim();
 	CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    FileExists = __FileExists_JTextField.getText().trim();
+    FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
 	PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
 	PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+    ObjectExists = __ObjectExists_JTextField.getText().trim();
+    ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
+    TableExists = __TableExists_JTextField.getText().trim();
+    TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     TSExists = __TSExists_JTextField.getText().trim();
+    TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
-    props.set ( "Condition", Condition ); // May contain = so handle differently
+    props.set ( "Condition", Condition ); // May contain = so handle differently.
     props.add ( "CompareAsStrings=" + CompareAsStrings );
+    props.add ( "FileExists=" + FileExists );
+    props.add ( "FileDoesNotExist=" + FileDoesNotExist );
+    props.add ( "ObjectExists=" + ObjectExists );
+    props.add ( "ObjectDoesNotExist=" + ObjectDoesNotExist );
     props.add ( "PropertyIsNotDefinedOrIsEmpty=" + PropertyIsNotDefinedOrIsEmpty );
     props.add ( "PropertyIsDefined=" + PropertyIsDefined );
+    props.add ( "TableExists=" + TableExists );
+    props.add ( "TableDoesNotExist=" + TableDoesNotExist );
     props.add ( "TSExists=" + TSExists );
+    props.add ( "TSDoesNotExist=" + TSDoesNotExist );
     __command_JTextArea.setText( __command.toString(props) );
 }
 
@@ -485,14 +724,14 @@ React to the user response.
 public void response ( boolean ok )
 {   __ok = ok;
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -505,11 +744,22 @@ public void windowClosing( WindowEvent event )
 {	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

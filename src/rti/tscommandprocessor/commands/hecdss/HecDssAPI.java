@@ -25,10 +25,12 @@ package rti.tscommandprocessor.commands.hecdss;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import hec.dssgui.CondensedReference;
+// TODO smalers 2022-08-11 was never used in production code.
+//import hec.dssgui.CondensedReference;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSDataAttributes;
 import hec.heclib.dss.HecDSSFileAccess;
@@ -79,12 +81,20 @@ TODO SAM 2009-01-08 Need to determine the minimum of the indicated files needed 
 Load the javaHeclib.dll library in a static block so it gets done once.  These DLLs are used
 via JNI to run native code (C? and FORTRAN) that reads the DSS files.  The following jars and DLLs need to be
 in the classpath for the test environment and installed software:
+
+For 64-bit:
+<ol>
+<li> javaHeclib.dll - the DLL that patches the Java code to native code (required)</li>
+<li> hec-monolith-3.0.0-rc7.jar - one file that contains code that was previously in separate jar files</li>
+</ol>
+
+For 32-bit:
 <ol>
 <li> hec.jar - contains many newer utility classes/methods (to support VUE?) (could be optional?)</li>
 <li> heclib.jar - the low-level API to the HEC-DSS files, which call native methods (required)</li>
 <li> javaHeclib.dll - the DLL that patches the Java code to native code (required)</li>
-<li> MSVCRTD.DLL - the Microsoft Visual Studio DLL that contains FORTRAN debug routines (required).  Normally on a
-computer only the optimized/release version of the DLL is distributed.  Although it is not ideal
+<li> MSVCRTD.DLL - the Microsoft Visual Studio DLL that contains FORTRAN debug routines (required).
+Normally on a computer only the optimized/release version of the DLL is distributed.  Although it is not ideal
 to distribute OS level DLLs, this copy of the file is isolated and is probably not going to be found by
 anything else on the system.</li>
 <li> rma.jar - apparently some low-level IO code (optional, but required when hec.jar is used?)<li>
@@ -92,23 +102,23 @@ anything else on the system.</li>
 </ol>
 */
 static 
-{   String routine = "HecDssAPI.static";
+{   String routine = HecDssAPI.class.getSimpleName() + ".static";
 
     if ( !IOUtil.isUNIXMachine() ) {
-        // The DLLS won't load properly on UNIX/Linux
-        //boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
+        // The DLLS won't load properly on UNIX/Linux.
+        //boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path.
         String dll = "";
-        boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
+        boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies.
         // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
         // for the app on Windows - keep for now.
         int maxTries = 5; // Number of times to try loading a library - have seen some exceptions on servers due to locking?
         int sleepMilliSeconds = 10;
         
-        // Do each library separately to be able to better handle errors, but loop to avoid redundant code
-        String [] libnames = { "javaHeclib", "rmaUtil" };
-        UnsatisfiedLinkError [] libException = new UnsatisfiedLinkError[libnames.length]; // Default to null for each
+        // Do each library separately to be able to better handle errors, but loop to avoid redundant code.
+        String [] libnames = { "javaHeclib" }; // TODO smalers 2022-08-11 32-bit also used: "rmaUtil";
+        UnsatisfiedLinkError [] libException = new UnsatisfiedLinkError[libnames.length]; // Default to null for each.
         for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
-            // If not loading the rmaUtil, skip the second iteration
+            // If not loading the rmaUtil, skip the second iteration.
             if ( (ilib == 1) && !loadRmaUtil ) {
                 continue;
             }
@@ -168,13 +178,14 @@ static
         StringBuffer b = new StringBuffer();
         for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
             if ( libException[ilib] != null ) {
-                b.append ( " Unable to load library \"" + libnames[ilib] + "\" after " + maxTries + " tries.  java.library.path=\"" + System.getProperty("java.library.path"));
+                b.append ( " Unable to load library \"" + libnames[ilib] + "\" after " + maxTries +
+                	" tries.  java.library.path=\"" + System.getProperty("java.library.path"));
             }
         }
         if ( b.length() > 0 ) {
             b.append ( "HEC-DSS features may not be functional." );
             Message.printWarning ( 2, routine, b.toString() );
-            // Rethrow the error so it can be indicated as a command error
+            // Rethrow the error so it can be indicated as a command error.
             throw new RuntimeException ( b.toString() );
         }
        
@@ -791,7 +802,7 @@ throws Exception
     // Use the following code to allow wildcards in matching 1+ time series
     // Normally wildcards will only be used when doing a bulk read and a single time series
     // will be matched for a specific time series identifier.
-    Vector pathnameList = new Vector();
+    List<String> pathnameList = new ArrayList();
     String locType = tsident.getLocationType();
     String location = tsident.getLocation();
     // Location type was added to TSIdent after original HEC-DSS features and A-part will be interpreted as the location type
@@ -821,13 +832,14 @@ throws Exception
             "D=\"" + dPartReq + "\" " +
             "E=\"" + ePartReq + "\" " +
             "F=\"" + fPartReq + "\"" );
-    List condensedPathnameList = null;
+    List<String> condensedPathnameList = null;
     // FIXME SAM 2009-01-08 Cannot get the following HEC code to work because it does not seem to allow filtering
     // on the pathname parts.  Therefore use the code below but use boolean to allow HEC code to be turned on.
 
     // TODO QUESTION FOR BILL CHARLEY - I can't get this to work - see questions below
     boolean useHECCondensedPathnameListCode = false;
     if ( useHECCondensedPathnameListCode ) {
+    	/* TODO smalers 2022-08-11 - this has been disabled for years and does not compile with the latest 'monolith' library so comment out.
         // Get condensed catalog
         HecDSSUtilities u = new HecDSSUtilities();
         // TODO QUESTION FOR BILL CHARLEY - why not permanently put this method in the heclib jar since it is useful
@@ -837,10 +849,12 @@ throws Exception
         // TODO QUESTION FOR BILL CHARLEY - how does this work with the ability to filter the parts?
         // We need a method like the following that includes searchDSSCatalog() functionality with wildcards
         condensedPathnameList = u.getCondensedCatalog();
+        */
     }
     else {
         // Use the code written by SAM, which condenses catalog records and allows wildcards on parts
-        stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
+    	// TODO smalers 2022-08-11 need to fix.
+        //stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
         Message.printStatus ( 2, routine, "Status from searching catalog is " + stat +
             ".  Number of matching path names before condensing is " + pathnameList.size() );
         // Condense the pathnames because the D part might be redundant
@@ -885,7 +899,7 @@ throws Exception
 /**
 Internal method to help with reading time series, called from multiple methods.
 */
-private static List<TS> readTimeSeriesListUsingPathnameList ( String dssFilename, List condensedPathnameList,
+private static List<TS> readTimeSeriesListUsingPathnameList ( String dssFilename, List<String> condensedPathnameList,
     DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDSSAPI.readTimeSeriesListUsingPathnameList";
@@ -913,6 +927,7 @@ throws Exception
         String fPart = null;
         // The following use of instanceof allows the HEC and non-HEC code from above to be used.
         if ( condensedPathname instanceof String ) {
+        	// TODO 2022-08-11 this has always been the case for working code
             // From non-HEC code above.
             String p = (String)condensedPathname;
             dssPathName = new DSSPathname ( p );
@@ -924,6 +939,7 @@ throws Exception
             ePart = dssPathName.getEPart();
             fPart = dssPathName.getFPart();
         }
+        /* TODO smalers 2022-08-11 comment out since it was never enabled.
         else if ( condensedPathname instanceof CondensedReference ) {
             // TODO QUESTION FOR BILL CHARLEY I think that I have this figured out.  However, the inability to
             // filter on the parts makes it so I can't use this right now without doing the filtering myself.  Is
@@ -945,6 +961,7 @@ throws Exception
             ePart = cp1.ePart();
             fPart = cp1.fPart();
         }
+        */
         // Check here whether the pathname corresponds to a time series or not.
         // This can't be called unless the HecDSSUtilities code is told what the DSS file is
         //HecDSSUtilities hutil = new HecDSSUtilities.pathnameDataType(dssPathName.toString());
@@ -1715,6 +1732,7 @@ throws IOException, Exception
             pathsWrittenNoDPartList.add ( pathnameNoDString );
         }
         // End of duplicate path check
+        // TODO smalers 2022-08-11 the following has a warning.
         tsc.fullName = pathname;
         tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
         // Set the data units - any string can be used but may want to standardize to allow units conversion

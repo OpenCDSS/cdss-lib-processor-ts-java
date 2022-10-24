@@ -81,7 +81,7 @@ Values for WriteSeparateFiles, WriteDataFlags, and WriteDataFlagDescriptions par
 */
 protected final String _False = "False";
 protected final String _True = "True";
-    
+
 /**
 Values for MissingValue parameter.
 */
@@ -199,7 +199,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the double quote as \\\"." ) );
     }
-	   
+
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
             message = "The precision \"" + Precision + "\" is not an integer.";
@@ -209,7 +209,7 @@ throws InvalidCommandParameterException
                             message, "Specify the precision as an integer." ) );
         }
     }
-    
+
 	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
@@ -250,7 +250,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters.
-	ArrayList<String> validList = new ArrayList<>(17);
+	ArrayList<String> validList = new ArrayList<>(18);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -260,6 +260,7 @@ throws InvalidCommandParameterException
 	validList.add ( "DateTimeFormatterType" );
 	validList.add ( "DateTimeFormat" );
 	validList.add ( "ValueColumns" );
+	validList.add ( "DataFlagColumns" );
 	validList.add ( "HeadingSurround" );
 	validList.add ( "Delimiter" );
 	validList.add ( "Precision" );
@@ -379,6 +380,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTimeFormatterType dateTimeFormatterType = DateTimeFormatterType.valueOfIgnoreCase(DateTimeFormatterType0);
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
     String ValueColumns = parameters.getValue ( "ValueColumns" );
+    String DataFlagColumns = parameters.getValue ( "DataFlagColumns" );
     String HeadingSurround = parameters.getValue ( "HeadingSurround" );
     if ( HeadingSurround == null ) {
         HeadingSurround = "";
@@ -567,7 +569,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, ts, OutputFile, status, commandPhase )));
     			Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
     			Message.printStatus ( 2, routine, "Writing DelimitedFile file \"" + OutputFile_full + "\"" );
-    			writeTimeSeries ( tslist2, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat, ValueColumns,
+    			writeTimeSeries ( tslist2, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat,
+    				ValueColumns, DataFlagColumns,
     				HeadingSurround, Delimiter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
     				WriteHeaderComments, OutputComments_List,
     				problems, processor, status, CommandPhaseType.RUN );
@@ -577,7 +580,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		catch ( Exception e ) {
     			message = "Unexpected error writing time series " +
     				ts.getIdentifier().toStringAliasAndTSID() + " to delimited file \"" + OutputFile_full + "\" (" + e + ")";
-    			Message.printWarning ( warning_level, 
+    			Message.printWarning ( warning_level,
     				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     			Message.printWarning ( 3, routine, e );
     			status.addToLog ( CommandPhaseType.RUN,
@@ -597,7 +600,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing DelimitedFile file \"" + OutputFile_full + "\"" );
             List<String> problems = new ArrayList<String>();
-            writeTimeSeries ( tslist, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat, ValueColumns,
+            writeTimeSeries ( tslist, OutputFile_full, DateTimeColumn, dateTimeFormatterType, DateTimeFormat,
+            	ValueColumns, DataFlagColumns,
                 HeadingSurround, Delimiter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
                 WriteHeaderComments, OutputComments_List,
                 problems, processor, status, CommandPhaseType.RUN );
@@ -606,7 +610,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         catch ( Exception e ) {
             message = "Unexpected error writing time series to delimited file \"" + OutputFile_full + "\" (" + e + ")";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
@@ -643,6 +647,7 @@ public String toString ( PropList parameters )
     String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 	String ValueColumns = parameters.getValue ( "ValueColumns" );
+	String DataFlagColumns = parameters.getValue ( "DataFlagColumns" );
 	String HeadingSurround = parameters.getValue ( "HeadingSurround" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
@@ -706,6 +711,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "ValueColumns=\"" + ValueColumns + "\"" );
     }
+    if ( (DataFlagColumns != null) && (DataFlagColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataFlagColumns=\"" + DataFlagColumns + "\"" );
+    }
     if ( (HeadingSurround != null) && (HeadingSurround.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -765,6 +776,7 @@ Write a time series to the output file.
 @param dateTimeFormatterType formatter type for date/times
 @param dateTimeFormat the format to use for date/times, when processed by the date/time formatter
 @param valueColumns name(s) of column(s) for time series values using %L, ${ts:property}, ${property}
+@param dataFlagColumns name(s) of column(s) for time series data flags using %L, ${ts:property}, ${property}
 @param headingSurround character to surround column headings
 @param delim delimiter between columns
 @param precision precision for output value (default is from data units, or 4)
@@ -775,7 +787,8 @@ Write a time series to the output file.
 @param headerComments list of strings for file header, should already have '#' at front.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTimeColumn,
-    DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat, String valueColumns,
+    DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
+    String valueColumns, String dataFlagColumns,
     String headingSurround, String delim,
     Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
     String writeHeaderComments, List<String> headerComments,
@@ -827,7 +840,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
         	}
         	fout.println ( "#" );
         }
-        
+
         // Loop through the specified period or if not specified the full overlapping period.
         if ( (outputStart == null) || (outputEnd == null) ) {
             TSLimits limits = TSUtil.getPeriodFromTS(tslist, TSUtil.MAX_POR);
@@ -887,6 +900,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
             headingSurround = "";
         }
         fout.print(headingSurround);
+        // Output the date (or date/time) column heading.
         if ( (dateTimeColumn == null) || dateTimeColumn.equals("") ) {
             if ( intervalBase >= TimeInterval.DAY ) {
                 dateTimeColumn = "Date";
@@ -898,25 +912,48 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
         fout.print(dateTimeColumn);
         fout.print(headingSurround);
         if ( (valueColumns == null) || valueColumns.equals("") ) {
+        	// Default heading for value columns.
             valueColumns = "%L_%T";
         }
+        // Output the data value and optionally data flag column heading for each time series.
         for ( TS ts : tslist ) {
+        	// The data value is output always, empty column if the time series is null.
             fout.print(delim + headingSurround);
             if ( ts != null ) {
                 String heading = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, valueColumns, cs, commandPhase );
-                // Make sure the heading does not include the surround character.
+                // Make sure the heading does not include the surround character, otherwise will have duplicates.
                 if ( headingSurround.length() != 0 ) {
                     heading = heading.replace(headingSurround,"");
                 }
                 fout.print(heading);
             }
             fout.print(headingSurround);
+            if ( (dataFlagColumns != null) && !dataFlagColumns.isEmpty() ) {
+            	// The data flag if requested is output always, empty column if the time series is null
+            	// or the flag is null.
+            	fout.print(delim + headingSurround);
+            	if ( ts != null ) {
+                	// Optionally output data flag columns.
+                	String heading = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                    	processor, ts, dataFlagColumns, cs, commandPhase );
+                	// Make sure the heading does not include the surround character, otherwise will have duplicates.
+                	if ( headingSurround.length() != 0 ) {
+                    	heading = heading.replace(headingSurround,"");
+                	}
+                	fout.print(heading);
+                }
+            	fout.print(headingSurround);
+            }
         }
         fout.println();
         // Loop through date/time corresponding to each row in the output file.
+        String dateTimeString = "";
         double value;
-        String valueString, dateTimeString = "";
+        String valueString;
+        String dataFlagString;
+        // Builder used to format the data flag.
+        StringBuilder dataFlagBuilder = new StringBuilder();
         if ( isRegular ) {
         	// Have regular interval data with matching intervals.
         	// Iterate using DateTime increment and the request data from time series.
@@ -953,6 +990,22 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
 	                    valueString = StringUtil.formatString(value, valueFormat);
 	                }
 	                fout.print(delim + valueString);
+	                if ( (dataFlagColumns != null) && !dataFlagColumns.isEmpty() ) {
+	                	// Also output the data flag.
+	                	dataFlagString = tsdata.getDataFlag();
+	                	if ( dataFlagString == null ) {
+	                		dataFlagString = "";
+	                	}
+	                	else if ( dataFlagString.indexOf(delim) >= 0 ) {
+	                		// Add quotes around flag if it contains the delimiter.
+	                		dataFlagBuilder.setLength(0);
+	                		dataFlagBuilder.append("\"");
+	                		dataFlagBuilder.append(dataFlagString);
+	                		dataFlagBuilder.append("\"");
+	                		dataFlagString = dataFlagBuilder.toString();
+	                	}
+	                	fout.print(delim + dataFlagString);
+	                }
 	            }
 	            fout.println();
 	        }

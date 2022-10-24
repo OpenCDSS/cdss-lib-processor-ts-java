@@ -100,6 +100,7 @@ private SimpleJComboBox __WriteSeparateFiles_JComboBox = null;
 private JTextField __DateTimeColumn_JTextField = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private TSFormatSpecifiersJPanel __ValueColumns_JTextField = null;
+private TSFormatSpecifiersJPanel __DataFlagColumns_JTextField = null;
 private JTextField __HeadingSurround_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
@@ -146,8 +147,8 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (filename == null || filename.equals("")) {
 				return;
@@ -265,6 +266,7 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
+	String DataFlagColumns = __DataFlagColumns_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
@@ -305,6 +307,9 @@ private void checkInput ()
     }
     if (ValueColumns.length() > 0) {
         parameters.set("ValueColumns", ValueColumns);
+    }
+    if (DataFlagColumns.length() > 0) {
+        parameters.set("DataFlagColumns", DataFlagColumns);
     }
     if (HeadingSurround.length() > 0) {
         parameters.set("HeadingSurround", HeadingSurround);
@@ -348,13 +353,14 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String WriteSeparateFiles = __WriteSeparateFiles_JComboBox.getSelected();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
+	String DataFlagColumns = __DataFlagColumns_JTextField.getText().trim();
 	String HeadingSurround = __HeadingSurround_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
@@ -373,6 +379,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
     __command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
 	__command.setCommandParameter ( "ValueColumns", ValueColumns );
+	__command.setCommandParameter ( "DataFlagColumns", DataFlagColumns );
 	__command.setCommandParameter ( "HeadingSurround", HeadingSurround );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "Precision", Precision );
@@ -410,7 +417,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"The working directory is: " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -418,7 +425,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -428,7 +435,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
@@ -437,7 +444,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delimited file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delimited file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation, use time series properties if separate files");
@@ -477,7 +484,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - write separate files (default=" + __command._False + ")?"),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeColumn_JTextField = new JTextField (10);
@@ -487,10 +494,10 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - name for date/time column (default=Date or DateTime)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
     // is supported by the panel.
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __DateTimeFormat_JPanel.addKeyListener ( this );
@@ -498,9 +505,9 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - format string for data date/time formatter (default=ISO)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - format string for data date/time formatter (default=ISO)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Value column(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumns_JTextField = new TSFormatSpecifiersJPanel(30);
@@ -513,6 +520,18 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property (default=%L_%T)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Data flag column(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataFlagColumns_JTextField = new TSFormatSpecifiersJPanel(30);
+    __DataFlagColumns_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
+    	"%{ts:property} for time series property, ${property} for processor property.");
+    __DataFlagColumns_JTextField.addKeyListener ( this );
+    __DataFlagColumns_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __DataFlagColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property (default=not output)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Heading surround character:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HeadingSurround_JTextField = new JTextField (10);
@@ -522,7 +541,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - character to surround headings, \\\" for quote (default=none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter character:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Delimiter_JTextField = new JTextField (10);
@@ -532,7 +551,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - delimiter between columns (default=comma, \\t=tab, \\s=space)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Precision_JTextField = new JTextField ( "", 10 );
@@ -541,7 +560,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 10 );
@@ -553,7 +572,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
         "Optional - value to write for missing data (default=initial missing value)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
 	__OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
@@ -564,7 +583,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 		"Optional - override the global output start (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"),
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
 	__OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
@@ -605,8 +624,8 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     __HeaderComments_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__HeaderComments_JTextArea),
         1, y, 6, 1, 1.0, .3, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -618,7 +637,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -635,7 +654,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
 	// Refresh the contents.
     checkGUIState();
     refresh ();
-    
+
     pack();
     JGUIUtil.center( this );
 	setResizable ( false );
@@ -698,6 +717,7 @@ private void refresh ()
     String dateTimeFormatterType = "";
     String DateTimeFormat = "";
 	String ValueColumns = "";
+	String DataFlagColumns = "";
 	String HeadingSurround = "";
 	String Delimiter = "";
 	String Precision = "";
@@ -721,6 +741,7 @@ private void refresh ()
         dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
         DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 		ValueColumns = parameters.getValue("ValueColumns");
+		DataFlagColumns = parameters.getValue("DataFlagColumns");
 		HeadingSurround = parameters.getValue("HeadingSurround");
 	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
@@ -821,6 +842,9 @@ private void refresh ()
         if (ValueColumns != null) {
              __ValueColumns_JTextField.setText(ValueColumns);
         }
+        if (DataFlagColumns != null) {
+             __DataFlagColumns_JTextField.setText(DataFlagColumns);
+        }
         if (HeadingSurround != null) {
             __HeadingSurround_JTextField.setText(HeadingSurround);
         }
@@ -869,6 +893,7 @@ private void refresh ()
     dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	ValueColumns = __ValueColumns_JTextField.getText().trim();
+	DataFlagColumns = __DataFlagColumns_JTextField.getText().trim();
     HeadingSurround = __HeadingSurround_JTextField.getText().trim();
     Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
@@ -888,6 +913,7 @@ private void refresh ()
     parameters.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
     parameters.add ( "DateTimeFormat=" + DateTimeFormat );
 	parameters.add ( "ValueColumns=" + ValueColumns );
+	parameters.add ( "DataFlagColumns=" + DataFlagColumns );
 	parameters.add ( "HeadingSurround=" + HeadingSurround );
 	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "Precision=" + Precision );

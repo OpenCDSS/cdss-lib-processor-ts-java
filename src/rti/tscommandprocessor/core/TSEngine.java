@@ -63,7 +63,6 @@ import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
-import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import DWR.StateCU.StateCU_BTS;
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
@@ -4465,23 +4464,27 @@ throws Exception
         }
     }
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
-    	int arch = IOUtil.getJreArchBits();
+        // TODO smalers 2022-10-21 64-bit should be working now.  Remove this code when tested out.
+    	//int arch = IOUtil.getJreArchBits();
         if ( IOUtil.isUNIXMachine() ) {
             // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux.
             String message = "HEC-DSS input type is not supported on UNIX/Linux - cannot read time series \"" + tsidentString + "\".";
             Message.printWarning ( 2, routine, message );
             ts = null;
         }
-        else if ( arch != 32 ) {
-        	Message.printWarning ( 2, routine,
-                "HEC-DSS input type is not supported on " + arch +
-                "-bit runtime environment (only 32-bit runtime environment supported) - cannot read time series \"" + tsidentString + "\".");
-            ts = null;
-        }
+        // TODO smalers 2022-10-21 64-bit should be working now.  Remove this code when tested out.
+        //else if ( arch != 32 ) {
+        //	Message.printWarning ( 2, routine,
+        //        "HEC-DSS input type is not supported on " + arch +
+        //        "-bit runtime environment (only 32-bit runtime environment supported) - cannot read time series \"" + tsidentString + "\".");
+        //    ts = null;
+        //}
         else {
             try {
                 // Pass the full path to the read method.  The TSID string may still have a relative path.
-                ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units, readData );
+            	boolean closeAfterRead = false;
+                ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units,
+                	readData, closeAfterRead );
             }
             catch ( Exception e ) {
                 Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from HEC-DSS file (" + e + ")." );

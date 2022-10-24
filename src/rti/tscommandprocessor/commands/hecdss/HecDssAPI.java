@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ package rti.tscommandprocessor.commands.hecdss;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,8 +36,8 @@ import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSDataAttributes;
 import hec.heclib.dss.HecDSSFileAccess;
 import hec.heclib.dss.HecDSSFileDataManager;
-import hec.heclib.dss.HecDSSUtilities;
 import hec.heclib.dss.HecDataManager;
+import hec.heclib.dss.HecDssCatalog;
 import hec.heclib.dss.HecTimeSeries;
 import hec.heclib.util.Heclib;
 import hec.heclib.util.HecTime;
@@ -71,16 +72,16 @@ public class HecDssAPI
 
 /**
 TODO QUESTION FOR BILL CHARLEY - we really don't want a special install where you have copied code into heclib.
-This will cause you to do more work and will possibly result in things falling through the cracks in future
-releases.  Instead, comments are included below to identify where the API could be improved.  SAM added hec.jar,
+This will cause you to do more work and will possibly result in things falling through the cracks in future releases.
+Instead, comments are included below to identify where the API could be improved.  SAM added hec.jar,
 rma.jar (and correspondingly rmaUtil.dll) during various trials of code but these may not all be needed and
 more time will be spent later evaluating dependencies.
 
-TODO SAM 2009-01-08 Need to determine the minimum of the indicated files needed to access to HEC-DSS files
+TODO SAM 2009-01-08 Need to determine the minimum of the indicated files needed to access to HEC-DSS files.
 
-Load the javaHeclib.dll library in a static block so it gets done once.  These DLLs are used
-via JNI to run native code (C? and FORTRAN) that reads the DSS files.  The following jars and DLLs need to be
-in the classpath for the test environment and installed software:
+Load the javaHeclib.dll library in a static block so it gets done once.
+These DLLs are used via JNI to run native code (C? and FORTRAN) that reads the DSS files.
+The following jars and DLLs need to be in the classpath for the test environment and installed software:
 
 For 64-bit:
 <ol>
@@ -131,7 +132,7 @@ static
                         dll = libnames[ilib];
                         Message.printStatus(2, routine, "Attempting to load library using System.loadLibrary(" + dll + ")." );
                         System.loadLibrary(dll);
-                        // If successful, make sure the exception object is null and break out of the retries
+                        // If successful, make sure the exception object is null and break out of the retries.
                         Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
                         libException[ilib] = null; // Set to null indicating success
                         break;
@@ -157,7 +158,7 @@ static
                         System.load( dll );
                         Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
                         // If unsuccessful an exception will be thrown.  If successful, break out of the loop.
-                        libException[ilib] = null; // Set to null indicating success
+                        libException[ilib] = null; // Set to null indicating success.
                         break;
                     }
                 }
@@ -168,7 +169,7 @@ static
                     Message.printWarning ( 2, routine, "[Try " + (i + 1) +
                         "] Unable to load " + dll + " using System.load(" + dll + ") (" + e2 + ")." );
                     Message.printWarning ( 3, routine, e2 );
-                    // Sleep for the next try...
+                    // Sleep for the next try.
                     TimeUtil.sleep(sleepMilliSeconds);
                 }
             }
@@ -212,7 +213,7 @@ private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime block
     // Adjust DateTime to the end of the block, based on the time series interval.
     if ( intervalBase == TimeInterval.YEAR ) {
         // Annual blocks are century.  Add 100 to make sure roundoff results in the end being offset by
-        // a century and then subtract a year to make sure the year is at the end of the starting century
+        // a century and then subtract a year to make sure the year is at the end of the starting century.
         adjusted.setYear(((blockStartDateTime.getYear() + 100)/100)*100 - 1);
     }
     else if ( intervalBase == TimeInterval.MONTH ) {
@@ -222,31 +223,31 @@ private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime block
         adjusted.setMonth ( 12 );
     }
     else if ( intervalBase == TimeInterval.DAY ) {
-        // Blocks are years - set the month and day to the end of the year
+        // Blocks are years - set the month and day to the end of the year.
         adjusted.setMonth ( 12 );
         adjusted.setDay ( 31 );
     }
     else if ( (intervalBase == TimeInterval.HOUR) ||
         ((intervalBase == TimeInterval.MINUTE) && (intervalMult == 15) || (intervalMult == 20) ||
         (intervalMult == 30))) {
-        // Blocks are month - set the day and hour to the end of the month
+        // Blocks are month - set the day and hour to the end of the month.
         adjusted.setDay ( TimeUtil.numDaysInMonth(blockStartDateTime) );
-        // FIXME SAM 2009-01-14 Below, ...may need to roll over to next day, hour zero
+        // FIXME SAM 2009-01-14 Below, ...may need to roll over to next day, hour zero.
         if (intervalBase == TimeInterval.HOUR) {
-            // HEC-DSS does not allow 24 hour so the following will give the last value in the day
+            // HEC-DSS does not allow 24 hour so the following will give the last value in the day.
             adjusted.setHour ( 24 - intervalMult );
         }
         else {
-            // Set the hour to 23 since minute interval will go until the last hour of the day
+            // Set the hour to 23 since minute interval will go until the last hour of the day.
             adjusted.setHour ( 23 );
-            // HEC-DSS does not allow 60 minute so the following will give the last value in the day
+            // HEC-DSS does not allow 60 minute so the following will give the last value in the day.
             adjusted.setMinute ( 60 - intervalMult );
         }
     }
     else if ( intervalBase == TimeInterval.MINUTE ) {
-        // Blocks are day - set the hour to 23 since minute interval will go until the last hour of the day
+        // Blocks are day - set the hour to 23 since minute interval will go until the last hour of the day.
         adjusted.setHour ( 23 );
-        // HEC-DSS does not allow 60 minute so the following will give the last value in the day
+        // HEC-DSS does not allow 60 minute so the following will give the last value in the day.
         adjusted.setMinute ( 60 - intervalMult );
     }
     return adjusted;
@@ -255,8 +256,7 @@ private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime block
 /**
 Adjust a requested date/time precision to that needed by HEC-DSS (to minute).
 */
-private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean start )
-{
+private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean start ) {
     DateTime adjusted = new DateTime();
     if ( dt.getPrecision() == DateTime.PRECISION_YEAR ) {
         adjusted.setYear(dt.getYear());
@@ -270,7 +270,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
             adjusted.setMonth(12);
             adjusted.setDay(31);
             adjusted.setHour(0);
-            adjusted.addHour(24); // OK to roll over
+            adjusted.addHour(24); // OK to roll over.
             adjusted.setMinute(0);
         }
     }
@@ -285,7 +285,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
         else {
             adjusted.setDay(TimeUtil.numDaysInMonth(dt));
             adjusted.setHour(0);
-            adjusted.addHour(24); // OK to roll over
+            adjusted.addHour(24); // OK to roll over.
             adjusted.setMinute(0);
         }
     }
@@ -299,7 +299,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
         }
         else {
             adjusted.setHour(0);
-            adjusted.addHour(24); // OK to roll over
+            adjusted.addHour(24); // OK to roll over.
             adjusted.setMinute(0);
         }
     }
@@ -324,8 +324,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
 Run Bill Charley's example write code.  Keep this around for awhile for a reference.
 */
 /*
-private static void billsWriteCode ()
-{
+private static void billsWriteCode () {
     HecTimeSeries.setMessageLevel(9);
     HecTimeSeries.setDefaultDSSFileName("C:/Temp_X/mydb.dss");
     
@@ -373,12 +372,22 @@ HecTimeSeries.getEPartFromInterval(tsc.interval);
 
 /**
 Close the data files that may be open.
+This ensures that they are not locked.
 */
-public static void closeAllFiles ()
-{
+public static void closeAllFiles () {
     HecTimeSeries.closeAllFiles();
-    // As per Bill Charley, this will print the status of all files...
+    // As per Bill Charley, this will print the status of all files.
     HecDSSFileDataManager.status();
+}
+
+/**
+ * Close a single DSS file given the path that was used to read time series.
+ * @param dssFilename name of the DSS file to close
+ */
+public static void closeFile ( String dssFilename ) {
+    HecTimeSeries rts = new HecTimeSeries();
+    rts.setDSSFileName(dssFilename);
+    rts.closeDSSFile();
 }
 
 /**
@@ -393,12 +402,12 @@ Condensing works for time series records and paired data pass through.
 @return a condensed pathname list, as a new list.
 */
 private static List<String> createCondensedCatalog ( List<String> pathnameList )
-{   String routine = "HecDssAPI.createCondensedCatalog";
+{   String routine = HecDssAPI.class.getSimpleName() + "createCondensedCatalog";
     // Sort the pathnames to make sure that duplicates are grouped - seems like this is not needed
-    // because the catalog is always sorted.  For now don't sort to increase performance
+    // because the catalog is always sorted.  For now don't sort to increase performance.
     
-    // Loop through the pathnames.  Compare the parts with the previous item.  If all parts are the same
-    // except for the D part, remove the item and change the D part to be inclusive
+    // Loop through the pathnames.  Compare the parts with the previous item.
+	// If all parts are the same except for the D part, remove the item and change the D part to be inclusive.
     
     int size = pathnameList.size();
     List<String> condensedPathnameList = new Vector<String>();
@@ -409,11 +418,11 @@ private static List<String> createCondensedCatalog ( List<String> pathnameList )
     String ePart, ePart2 = null; // Interval
     String fPart, fPart2 = null; // Scenario
     DSSPathname dssPathName, dssPathName2;
-    String pathname; // One record pathname
+    String pathname; // One record pathname.
     String pathname2;
-    String condensedPathname; // With D part that has two dates
-    int numAdditionalRecords = 0; // Number of records to merge with the first
-    int numAdditionalRecordsTotal = 0; // Number of total addtional/merged records
+    String condensedPathname; // With D part that has two dates.
+    int numAdditionalRecords = 0; // Number of records to merge with the first.
+    int numAdditionalRecordsTotal = 0; // Number of total additional/merged records.
     for ( int i = 0; i < size; i++ ) {
         pathname = pathnameList.get(i);
         dssPathName = new DSSPathname ( pathname );
@@ -436,37 +445,39 @@ private static List<String> createCondensedCatalog ( List<String> pathnameList )
             // TODO SAM 2009-04-16 Does this always work correctly for paired data?
             if ( !aPart.equals(aPart2) || !bPart.equals(bPart2) || !cPart.equals(cPart2) ||
                 !ePart.equals(ePart2) || !fPart.equals(fPart2)) {
-                // Not a continuation of the same time series
+                // Not a continuation of the same time series.
                 break;
             }
             else {
-                // A continuation of the record
+                // A continuation of the record.
                 ++numAdditionalRecords;
                 ++numAdditionalRecordsTotal;
-                // Save the D part so by the end will have the maximum
+                // Save the D part so by the end will have the maximum.
                 dPart2 = dssPathName2.getDPart();
             }
         }
-        // Now process the D parts in the first and last record to give a new pathname list
+        // Now process the D parts in the first and last record to give a new pathname list.
         if ( numAdditionalRecords == 0 ) {
-            // Just add the original record to the condensed list
+            // Just add the original record to the condensed list.
             condensedPathnameList.add(pathname);
         }
         else {
-            // Modify the D part of the original record and add the merged record
+            // Modify the D part of the original record and add the merged record.
             dPart = dssPathName.getDPart();
             dssPathName.setDPart( dPart + " - " + dPart2 );
             condensedPathname = dssPathName.toString();
             //Message.printStatus( 2, routine, "Condensed pathname = \"" + condensedPathname + "\"" );
             condensedPathnameList.add(condensedPathname);
-            // Increment the counter to start a new set of records
+            // Increment the counter to start a new set of records.
             i += numAdditionalRecords;
         }
     }
-    for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
-        Message.printStatus( 2, routine, "Condensed pathname " + i + " = \"" + condensedPathnameList.get(i) + "\"" );
+    if ( Message.isDebugOn ) {
+    	for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
+        	Message.printStatus( 2, routine, "Condensed pathname " + i + " = \"" + condensedPathnameList.get(i) + "\"" );
+    	}
+    	Message.printStatus( 2, routine, "Removed " + numAdditionalRecordsTotal + " path records during condensing." );
     }
-    Message.printStatus( 2, routine, "Removed " + numAdditionalRecordsTotal + " path records during condensing." );
     return condensedPathnameList;
 }
 
@@ -480,7 +491,7 @@ the D part if includeHour=false and compatible with the time window string in an
 */
 private static String createTimeWindowString ( DateTime startDateTime, DateTime endDateTime, TS ts, boolean includeHour )
 {
-    // Format of the period to read...
+    // Format of the period to read.
     //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
     String startString = StringUtil.formatString(startDateTime.getDay(),"%02d") +
         TimeUtil.monthAbbreviation(startDateTime.getMonth()).toUpperCase() +
@@ -494,7 +505,7 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
     if ( includeHour ) {
         if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
             (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
-            // Add the hour and minute for higher precision interval
+            // Add the hour and minute for higher precision interval.
             startString = startString + " " + StringUtil.formatString(startDateTime.getHour(),"%02d");
             endString = endString + " " + StringUtil.formatString(endDateTime.getHour(),"%02d");
             if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
@@ -502,13 +513,13 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
                 endString = endString + StringUtil.formatString(endDateTime.getMinute(),"%02d");
             }
             else {
-            	// Minute
+            	// Minute.
                 startString = startString + "00";
                 endString = endString + "00";
             }
         }
         else {
-            // Ending at 2400 seems to be the standard
+            // Ending at 2400 seems to be the standard.
             startString = startString + " 0000";
             endString = endString + " 2400";
         }
@@ -543,18 +554,18 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
     int hour = dt.getHour();
     int minute = dt.getMinute();
     if ( dt.getPrecision() == DateTime.PRECISION_YEAR ) {
-        // Value is recorded for last day of the year
+        // Value is recorded for last day of the year.
         month = 12;
         day = 31;
     }
     if ( dt.getPrecision() == DateTime.PRECISION_MONTH ) {
-        // Value is recorded for the last day of the month
+        // Value is recorded for the last day of the month.
         day = TimeUtil.numDaysInMonth(dt);
     }
     if ( (dt.getPrecision() == DateTime.PRECISION_YEAR) ||
         (dt.getPrecision() == DateTime.PRECISION_MONTH) ||
         (dt.getPrecision() == DateTime.PRECISION_DAY) ) {
-        // Value is recorded at the end of the day
+        // Value is recorded at the end of the day.
         hour = 24;
         minute = 0;
     }
@@ -575,11 +586,10 @@ A:B.HEC-DSS.Cpart.Epart.Fpart.
 @param ts Time series to examine.
 @return a new DSS pathname object with parts set according to the above.
 */
-public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
-{
+public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts ) {
     TSIdent tsident = ts.getIdentifier();
     DSSPathname p = new DSSPathname();
-    // Do the following to preserve legacy code
+    // Do the following to preserve legacy code.
     String locType = tsident.getLocationType();
     String loc = tsident.getLocation();
     if ( !locType.isEmpty() ) {
@@ -587,11 +597,11 @@ public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
     }
     int pos = loc.indexOf(":");
     if ( pos < 0 ) {
-        // No basin
+        // No basin.
         p.setBPart(loc);
     }
     else {
-        // Have basin and site
+        // Have basin and site.
         p.setAPart(loc.substring(0,pos));
         p.setBPart(loc.substring(pos + 1));
     }
@@ -602,61 +612,73 @@ public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
 }
 
 /**
-Get the list of A parts that are available in the file.
-@return the list of unique A parts from the file, using a condensed catalog.
+Get the list of unique values for a part that are available in the file.
+@param partReq the requested part to process: "A", "B", "C", "E", or "F".
+@return the list of unique parts from the file, using a condensed catalog.
 */
-public static List<String> getUniqueAPartList ( File hecDssFile, String bPartReq, String cPartReq, String ePartReq, String fPartReq )
-{
-    // Internally use the time series code because it handles all of the wildcarding
+public static List<String> getUniquePartList ( File hecDssFile, String partReq ) {
+    // Internally use the time series code because it handles all of the wildcarding.
+	// TODO smalers 2022-10-21 if this is slow, use lower-level HEC-DSS library code.
     List<TS> tsList = null;
-    List<String> aPartList = new Vector<String>();
+    List<String> partList = new ArrayList<>();
+    String aPart = "*";
     String bPart = "*";
     String cPart = "*";
     String ePart = "*";
     String fPart = "*";
-    if ( (bPartReq != null) && !bPartReq.equals("") ) {
-        bPart = bPartReq;
-    }
-    if ( (cPartReq != null) && !cPartReq.equals("") ) {
-        cPart = cPartReq;
-    }
-    if ( (ePartReq != null) && !ePartReq.equals("") ) {
-        ePart = ePartReq;
-    }
-    if ( (fPartReq != null) && !fPartReq.equals("") ) {
-        fPart = fPartReq;
-    }
     try {
-        String tsidPattern = "*-" + bPart + "*." + cPart + "." + ePart + "." + fPart;
-        tsList = readTimeSeriesList ( hecDssFile, tsidPattern, null, null, null, false );
+    	// Use all the filters except the A part and then get the unique list of A parts:
+    	// - if a filter was not given then * is used to retrieve all
+        String tsidPattern = aPart + ":" + bPart + ".HEC-DSS." + cPart + "." + ePart + "." + fPart;
+        tsList = readTimeSeriesList ( hecDssFile, tsidPattern, null, null, null, false, false );
         int tsListSize = tsList.size();
         TS ts = null;
-        String aPart = null;
-        int aPartListSize = 0;
+        int partListSize = 0;
+        String part = null;
         boolean found = false;
         for ( int i = 0; i < tsListSize; i++ ) {
-            // Search the list to see if the A part is already in the list.  If not, add it.
+            // Search the list to see if the part is already in the list.  If not, add it.
             ts = tsList.get(i);
-            aPart = ts.getIdentifier().getMainLocation();
-            aPartListSize = aPartList.size();
+            part = null;
+            if ( partReq.charAt(0) == 'A' ) {
+            	part = ts.getIdentifier().getLocationType();
+            }
+            else if ( partReq.charAt(0) == 'B' ) {
+            	part = ts.getIdentifier().getLocation();
+            }
+            else if ( partReq.charAt(0) == 'C' ) {
+            	part = ts.getIdentifier().getType();
+            }
+            else if ( partReq.charAt(0) == 'E' ) {
+            	part = ts.getIdentifier().getInterval();
+            }
+            else if ( partReq.charAt(0) == 'F' ) {
+            	part = ts.getIdentifier().getScenario();
+            }
+           	if ( part == null ) {
+           		continue;
+           	}
+            partListSize = partList.size();
             found = false;
-            for ( int j = 0; j < aPartListSize; j++ ) {
-                if ( aPartList.get(j).equals(aPart)) {
+            for ( int j = 0; j < partListSize; j++ ) {
+                if ( partList.get(j).equals(part)) {
                     found = true;
                     break;
                 }
             }
             if ( !found ) {
-                aPartList.add ( aPart );
+                partList.add ( part );
             }
         }
     }
     catch ( Exception e ) {
-        // Log it and return an empty list
+        // Log it and return an empty list.
         String routine = "HecDssAPI.getUniqueAPartList";
         Message.printWarning(3, routine, e);
     }
-    return aPartList;
+    // Sort the list.
+    Collections.sort(partList, String.CASE_INSENSITIVE_ORDER);
+    return partList;
 }
      
 /**
@@ -677,8 +699,7 @@ been written.  Others are not supported because the interval is not supported by
 HEC-DSS (e.g., 24-hour).
 @return false if the interval is not supported.
 */
-public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts )
-{
+public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts ) {
     boolean supported = false;
     int intervalBase = ts.getDataIntervalBase();
     int intervalMult = ts.getDataIntervalMult();
@@ -697,7 +718,7 @@ public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts )
         supported = true;
     }
     else if ( intervalBase == TimeInterval.WEEK ) {
-        // Not currently handled
+        // Not currently handled.
         supported = false;
     }
     else if ( (intervalBase == TimeInterval.MONTH) && ( (intervalMult == 1) ) ) {
@@ -731,16 +752,16 @@ If null, read all available data.
 If null, read all available data.
 @param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
 @param readData if true, read the time series values.  If false, only read the metadata.
+@param closeFileAfterRead if true, close the DSS file after reading, false to leave open
 @return a single time series matching the requesting time series identifier.
 @exception RuntimeException if there is an error reading the time series.
 */
 public static TS readTimeSeries ( File file, String tsident, DateTime readStartReq, DateTime readEndReq,
-        String unitsReq, boolean readData )
-throws Exception
-{
+    String unitsReq, boolean readData, boolean closeFileAfterRead )
+throws Exception {
     // Expecting that a single time series will be matched because the time series identifier should not
     // contain wildcards.
-	List<TS> tslist = readTimeSeriesList ( file, tsident, readStartReq, readEndReq, unitsReq, readData );
+	List<TS> tslist = readTimeSeriesList ( file, tsident, readStartReq, readEndReq, unitsReq, readData, closeFileAfterRead );
     if ( (tslist == null) || (tslist.size() == 0) ) {
         throw new RuntimeException ( "No time series were found matching \"" + tsident + "\"" );
     }
@@ -773,7 +794,7 @@ TSID convention:
 Location.DataSource.DataType.Interval.Scenario~HEC-DSS~Filename
 
 HEC parts inserted:
-A-B.HEC-DSS.C.E.F
+A:B.HEC-DSS.C.E.F
 </pre>
 The main issue is that this convention utilizes periods and dashes and these characters in the original
 data may need substitution for internal handling.  The input name should be the name of the HEC-DSS file to absolute or
@@ -785,27 +806,31 @@ If null, read all available data.
 If null, read all available data.
 @param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
 @param readData if true, read the time series values.  If false, only read the metadata.
+@param closeFileAfterRead if true, close the DSS file after reading, false to leave open
 @return a list of time series that were read.
 @throws Exception if there is an error reading the time series
 */
 public static List<TS> readTimeSeriesList ( File file, String tsidentPattern,
-        DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
+   DateTime readStartReq, DateTime readEndReq, String unitsReq,
+   boolean readData, boolean closeFileAfterRead )
 throws Exception
-{   String routine = "HecDssAPI.readTimeSeriesList";
+{   String routine = HecDssAPI.class.getSimpleName() + ".readTimeSeriesList";
     TSIdent tsident = new TSIdent ( tsidentPattern );
     String dssFilename = file.getCanonicalPath();
-    HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
-    // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened
+    // Old version.
+    //HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
+    // New version, HecDSSCatalog extends HecDSSFileAccess.
+    HecDssCatalog dssFile = new HecDssCatalog ( dssFilename );
+    // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened.
     // Do this similar to other binary file databases like StateMod and StateCU
     int stat = dssFile.open();
-    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat );
-    // Use the following code to allow wildcards in matching 1+ time series
+    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat + ".");
+    // Use the following code to allow wildcards in matching 1+ time series.
     // Normally wildcards will only be used when doing a bulk read and a single time series
     // will be matched for a specific time series identifier.
-    List<String> pathnameList = new ArrayList();
     String locType = tsident.getLocationType();
     String location = tsident.getLocation();
-    // Location type was added to TSIdent after original HEC-DSS features and A-part will be interpreted as the location type
+    // Location type was added to TSIdent after original HEC-DSS features and A-part will be interpreted as the location type.
     if ( !locType.isEmpty() ) {
     	location = locType + ":" + location;
     }
@@ -813,7 +838,7 @@ throws Exception
     String aPartReq = "";
     String bPartReq = "";
     if ( posColon >= 0 ) {
-        // Get separate A parts
+        // Get separate A parts.
         aPartReq = location.substring(0,posColon);
         bPartReq = location.substring(posColon + 1);
     }
@@ -822,7 +847,7 @@ throws Exception
         bPartReq = location;
     }
     String cPartReq = tsident.getType();
-    String dPartReq = "*"; // Do not limit based on start - get all available data
+    String dPartReq = "*"; // Do not limit based on start - get all available data.
     String ePartReq = tsident.getInterval();
     String fPartReq = tsident.getScenario();
     Message.printStatus ( 2, routine, "Requesting matching pathnames for " +
@@ -836,7 +861,7 @@ throws Exception
     // FIXME SAM 2009-01-08 Cannot get the following HEC code to work because it does not seem to allow filtering
     // on the pathname parts.  Therefore use the code below but use boolean to allow HEC code to be turned on.
 
-    // TODO QUESTION FOR BILL CHARLEY - I can't get this to work - see questions below
+    // TODO QUESTION FOR BILL CHARLEY - I can't get this to work - see questions below.
     boolean useHECCondensedPathnameListCode = false;
     if ( useHECCondensedPathnameListCode ) {
     	/* TODO smalers 2022-08-11 - this has been disabled for years and does not compile with the latest 'monolith' library so comment out.
@@ -847,7 +872,7 @@ throws Exception
         // TODO SAM 2009-01-07 Is this global filename a performance hit when jumping around files?
         HecDSSUtilities.setDefaultDSSFileName ( dssFilename );
         // TODO QUESTION FOR BILL CHARLEY - how does this work with the ability to filter the parts?
-        // We need a method like the following that includes searchDSSCatalog() functionality with wildcards
+        // We need a method like the following that includes searchDSSCatalog() functionality with wildcards.
         condensedPathnameList = u.getCondensedCatalog();
         */
     }
@@ -855,21 +880,44 @@ throws Exception
         // Use the code written by SAM, which condenses catalog records and allows wildcards on parts
     	// TODO smalers 2022-08-11 need to fix.
         //stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
-        Message.printStatus ( 2, routine, "Status from searching catalog is " + stat +
-            ".  Number of matching path names before condensing is " + pathnameList.size() );
-        // Condense the pathnames because the D part might be redundant
+    	// As of 2022-10-21, the following is deprecated so keep an eye out for alternative in the future.
+    	// stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
+    	// 2022-10-21 Karl Tarbet suggested the following.
+    	// The aPartReq might be a literal string or * to query all.
+    	boolean sorted = true;
+    	StringBuilder queryPath = new StringBuilder("/");
+    	queryPath.append(aPartReq);
+    	queryPath.append("/");
+    	queryPath.append(bPartReq);
+    	queryPath.append("/");
+    	queryPath.append(cPartReq);
+    	queryPath.append("/");
+    	queryPath.append(dPartReq);
+    	queryPath.append("/");
+    	queryPath.append(ePartReq);
+    	queryPath.append("/");
+    	queryPath.append(fPartReq);
+    	queryPath.append("/");
+    	// The following null search path returns all the paths.
+    	//String [] pathNameArray = dssFile.getCatalog(sorted, (String)null );
+    	String [] pathNameArray = dssFile.getCatalog(sorted, queryPath.toString());
+    	List<String> pathnameList = StringUtil.toList(pathNameArray);
+        Message.printStatus ( 2, routine, "Status from searching catalog using \"" + queryPath.toString() +
+        	"\" is " + stat + ".  Number of matching path names before condensing is " + pathnameList.size() + ".");
+        // Condense the pathnames because the D part might be redundant.
         condensedPathnameList = createCondensedCatalog(pathnameList);
         Message.printStatus ( 2, routine, "Number of matching path names after condensing is " +
             condensedPathnameList.size() );
     }
     return readTimeSeriesListUsingPathnameList ( dssFilename, condensedPathnameList, readStartReq, readEndReq,
-        unitsReq, readData );
+        unitsReq, readData, closeFileAfterRead );
 }
 
 /**
-Read a list of one or more time series from a HEC-DSS file.  This method is typically called when a specific
-pathname is given.  It is envisioned that * could be included in the pathname but currently the pathname must be
-a literal string, as if taken from the condensed catalog.
+Read a list of one or more time series from a HEC-DSS file.
+This method is typically called when a specific pathname is given.
+It is envisioned that * could be included in the pathname but currently the pathname must be a literal string,
+as if taken from the condensed catalog.
 @param file HEC-DSS file (full path).
 @param pathname HEC-DSS condensed pathname for time series to read (D-part must contain period, not just one date).
 @param readStartReq the DateTime to start reading data, with precision at least as fine as the time series.
@@ -878,43 +926,55 @@ If null, read all available data.
 If null, read all available data.
 @param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
 @param readData if true, read the time series values.  If false, only read the metadata.
+@param closeFileAfterRead if true, close the DSS file after reading, false to leave open
 @return a list of time series that were read.
 @throws Exception if there is an error reading the time series
 */
 public static List<TS> readTimeSeriesListUsingPathname ( File file, String pathname,
-        DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
+    DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData,
+    boolean closeFileAfterRead)
 throws Exception
-{   String routine = "HecDssAPI.readTimeSeriesListUsingPathname";
+{   String routine = HecDssAPI.class.getSimpleName() + ".readTimeSeriesListUsingPathname";
     String dssFilename = file.getCanonicalPath();
     HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
-    // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened
-    // Do this similar to other binary file databases like StateMod and StateCU
+    // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened.
+    // Do this similar to other binary file databases like StateMod and StateCU.
     int stat = dssFile.open();
-    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat );
-    Vector<String> pathnameList = new Vector<String>();
+    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat + ".");
+    List<String> pathnameList = new ArrayList<>();
     pathnameList.add ( pathname );
-    return readTimeSeriesListUsingPathnameList ( dssFilename, pathnameList, readStartReq, readEndReq, unitsReq, readData );
+    return readTimeSeriesListUsingPathnameList ( dssFilename, pathnameList, readStartReq, readEndReq, unitsReq,
+    	readData, closeFileAfterRead );
 }
 
 /**
 Internal method to help with reading time series, called from multiple methods.
+@param dssFilename path to a DSS file
+@param condensePathnameList list of condensed pathnames
+@param readStartReq the DateTime to start reading data, with precision at least as fine as the time series.
+If null, read all available data.
+@param readEndReq the DateTime to end reading data, with precision at least as fine as the time series.
+If null, read all available data.
+@param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
+@param readData if true, read the time series values.  If false, only read the metadata.
+@param closeFileAfterRead if true, close the DSS file after reading, false to leave open
 */
 private static List<TS> readTimeSeriesListUsingPathnameList ( String dssFilename, List<String> condensedPathnameList,
-    DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
+    DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData, boolean closeFileAfterRead )
 throws Exception
-{   String routine = "HecDSSAPI.readTimeSeriesListUsingPathnameList";
-    List<TS> tslist = new Vector<TS>();
+{   String routine = HecDssAPI.class.getSimpleName() + ".readTimeSeriesListUsingPathnameList";
+    List<TS> tslist = new ArrayList<>();
     DateTime date1FromDPart = null;
     DateTime date2FromDPart = null;
-    // Create a file manager so that the utility code for sure knows the filename
+    // Create a file manager so that the utility code for sure knows the filename.
     //System.out.println("Creating HecDataManager");
     HecDataManager hmgr = new HecDataManager(dssFilename);
     //System.out.println("Created HecDataManager");
-    // Loop through the pathnames and read each time series
-    // Get the period from the D part in case data are not being read
+    // Loop through the pathnames and read each time series.
+    // Get the period from the D part in case data are not being read.
     for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
         String alias = null;  // Set to TSID if TSID contains periods.
-        boolean readData2 = readData;   // Modified below depending on whether know how to read data
+        boolean readData2 = readData;   // Modified below depending on whether know how to read data.
         //Message.printStatus( 2, routine, "Pathname[" + i + "] = \"" + dssPath + "\"");
         Object condensedPathname = condensedPathnameList.get(i);
         DSSPathname dssPathName = null;
@@ -927,7 +987,7 @@ throws Exception
         String fPart = null;
         // The following use of instanceof allows the HEC and non-HEC code from above to be used.
         if ( condensedPathname instanceof String ) {
-        	// TODO 2022-08-11 this has always been the case for working code
+        	// TODO 2022-08-11 this has always been the case for working code.
             // From non-HEC code above.
             String p = (String)condensedPathname;
             dssPathName = new DSSPathname ( p );
@@ -969,10 +1029,10 @@ throws Exception
         String dssPathNameNotCondensed = uncondensedPathName(dssPathName).toString();
         int t = hmgr.recordType(dssPathNameNotCondensed);
         // TODO SAM 2009-04-16 Emailed Bill Charley to ask how to interpret the type and for now just skip types
-        // that obviously look inappropriate
+        // that obviously look inappropriate.
         if ( (t == HecDSSDataAttributes.PAIRED) || (t == HecDSSDataAttributes.PAIRED_DOUBLES) ||
             (t == HecDSSDataAttributes.TEXT) ) {
-            Message.printStatus(2, routine, "Skipping path \"" + dssPathName + "\" because it is record type " + t +
+            Message.printStatus(2, routine, "Skipping path \"" + dssPathName + "\" because its record type " + t +
                 " (not time series).");
             continue;
         }
@@ -987,7 +1047,7 @@ throws Exception
             // Note that the D part might be one date if no condensing was necessary, or two parts if
             // condensing occurred.
             
-            // FIXME SAM 2008-09-02 Might be HECLIB code to do this
+            // FIXME SAM 2008-09-02 Might be HECLIB code to do this.
             
             // TODO QUESTION FOR BILL CHARLEY - is there code to convert the D part to one or two HecTimes?
             // Then I would not need to deal with the parsing here.  What about automatically getting a date/time
@@ -995,12 +1055,12 @@ throws Exception
             // Is a full month of data always available?
             int pos = dPart.indexOf("-");
             if ( pos >= 0 ) {
-                // Have date range
+                // Have date range.
                 dPart1 = dPart.substring(0,pos).trim();
                 dPart2 = dPart.substring(pos + 1).trim();
             }
             else {
-                // Only have the first date so make the second one the same as the first
+                // Only have the first date so make the second one the same as the first.
                 dPart1 = dPart;
                 dPart2 = dPart1;
             }
@@ -1016,7 +1076,7 @@ throws Exception
         }
         if ( ePart.equals("") ) {
             // If no E part, assume irregular interval for time series objects - otherwise HEC intervals are
-            // already interpreted correctly for time series objects
+            // already interpreted correctly for time series objects.
             
             // FIXME SAM 2008-11-10 Evaluate whether this is a good idea - need to understand better the
             // irregular intervals used by HEC software - might need to adopt a more granular irregular
@@ -1028,16 +1088,16 @@ throws Exception
                 "D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
             continue;
         }
-        Message.printStatus ( 2, routine, "DSS pathname for time series: " +
-            "A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
-            "D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
+       	Message.printDebug ( 1, routine, "DSS pathname for time series: " +
+           	"A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
+           	"D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
         // Create time series.
         // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters (periods and dashes) in
         // HEC parts since these conflict with TSID conventions.  For now, replace the
         // periods with spaces in the identifier and utilize the time
         // series alias to retain the original identifier.
         String dotfPart = "";
-        String dotfPartNoPeriod = ""; // Dot F part without a period
+        String dotfPartNoPeriod = ""; // Dot F part without a period.
         if ( !fPart.trim().equals("") ) {
             dotfPart = "." + fPart;
             dotfPartNoPeriod = "." + fPart.replace('.',' ');
@@ -1065,15 +1125,15 @@ throws Exception
             alias = tsidMain;
         }
         String tsidentString = tsidMainNoPeriodsInParts + "~HEC-DSS~" + dssFilename;
-        // Create a new time series with appropriate internal data management for the interval
+        // Create a new time series with appropriate internal data management for the interval.
         TS ts = TSUtil.newTimeSeries(tsidentString, true);
-        int tsIntervalBase = ts.getDataIntervalBase(); // Used to help with date precisions
+        int tsIntervalBase = ts.getDataIntervalBase(); // Used to help with date precisions.
         ts.setIdentifier( tsidentString );
-        // Set the alias if the TSID had periods above
+        // Set the alias if the TSID had periods above.
         if ( alias != null ) {
             ts.setAlias ( alias );
         }
-        // Set the description to the location, space, and data type
+        // Set the description to the location, space, and data type.
         
         // TODO QUESTION FOR BILL CHARLEY - do DSS files have any narrative description or comments for each time
         // series other than the parts?  Time series objects have a description (typically like
@@ -1085,7 +1145,7 @@ throws Exception
         else {
         	ts.setDescription ( locType + ":" + ts.getLocation() + " " + ts.getDataType() );
         }
-        // Time series input name is the original HEC-DSS file
+        // Time series input name is the original HEC-DSS file.
         ts.setInputName ( dssFilename );
         // Set the start date from the D part but might be reset below from actual data.
         // Only set the end date if it is different from the start.  This will mimic the catalog in that
@@ -1097,13 +1157,14 @@ throws Exception
         if ( !date1FromDPart.equals(date2FromDPart) ) {
             ts.setDate2 ( date2FromDPart );
         }
-        // Set the time series properties
+        // Set the time series properties.
         ts.setProperty("A", aPart);
         ts.setProperty("B", bPart);
         ts.setProperty("C", cPart);
         ts.setProperty("D", dPart);
         ts.setProperty("E", ePart);
         ts.setProperty("F", fPart);
+        HecTimeSeries rts = null;
         if ( !readData ) {
             // Not reading the data (generally for performance reasons).  To get complete metadata including
             // the units, need to read something out of the time series.
@@ -1142,9 +1203,9 @@ throws Exception
             //    dssPathName.setDPart(dPart1);
             //}
 
-            HecTimeSeries rts = new HecTimeSeries();
+            rts = new HecTimeSeries();
             rts.setDSSFileName(dssFilename);
-            // If the read period has been requested, use it when reading the time series from HEC-DSS
+            // If the read period has been requested, use it when reading the time series from HEC-DSS.
             if ( (readStartReq != null) && (readEndReq != null) ) {
                 String timeWindow = createTimeWindowString ( adjustRequestedDateTimePrecision(readStartReq,true),
                     adjustRequestedDateTimePrecision(readEndReq,false), ts, true );
@@ -1173,14 +1234,14 @@ throws Exception
 
             Message.printStatus(2, routine, "Reading data using path \"" + dssPathName + "\"" );
             rts.setPathname(dssPathName.toString());
-            // This appears to be equivalent to negative Float.MAX_VALUE
+            // This appears to be equivalent to negative Float.MAX_VALUE.
             ts.setMissing( Heclib.UNDEFINED_DOUBLE );
 
             if ( Message.isDebugOn ) {
                 Message.printDebug(2, routine, "Before rts.read()" );
             }
             TimeSeriesContainer tsc = new TimeSeriesContainer();
-            // False below means don't remove missing
+            // False below means don't remove missing.
             
             // TODO SAM 2009-01-08 Evaluate whether true or false should be specified.  If true, then there is
             // a performance hit in the HEC code to remove the missing values.  If false, there is more overhead
@@ -1191,7 +1252,7 @@ throws Exception
             // are for the boolean (see also above TODO comment).
             
             int status = rts.read (tsc,false);
-            Message.printStatus(2, routine, "Status from read = " + status + " number of values=" + tsc.values.length );
+            Message.printStatus(2, routine, "Status from read = " + status + " number of values=" + tsc.values.length + ".");
             // Some time series don't have a period so can't set dates in TS from HecTimeSeries
             // TODO QUESTION FOR BILL CHARLEY - why do some time series not have dates for their period?  Is it
             // because a time series is defined but no data records are saved?
@@ -1206,13 +1267,13 @@ throws Exception
             String units = rts.units();
             ts.setDataUnits ( units );
             ts.setDataUnitsOriginal ( units );
-            // FIXME SAM 2009-01-09 Need to evaluate mapping of HEC units with standard units supported by TS code
+            // FIXME SAM 2009-01-09 Need to evaluate mapping of HEC units with standard units supported by TS code.
             if ( (unitsReq != null) && !unitsReq.equalsIgnoreCase(units) ) {
                 throw new RuntimeException ( "Requested units \"" + unitsReq +
                      "\" do not equal time series units and don't know how to convert." );
             }
             if (status < -1) {
-                // No data - OK if time series was defined but no data saved
+                // No data - OK if time series was defined but no data saved.
                 Message.printStatus(2,routine, "No Data for " + dssPathName + " in \"" + dssFilename + "\"");
             }
             else if ( readData2 || (tsc.values.length > 0) ) {
@@ -1228,15 +1289,15 @@ throws Exception
                 }
                 // Now allocate the data space for the time series before actually transferring the data.
                 ts.allocateDataSpace();
-                // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to time series
+                // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to time series.
                 
                 // Transfer the data values from the HEC time series container - the container arrays are
                 // apparently public to increase performance.
                 HecTime hecTime = new HecTime();
-                // DateTime for iteration is copy of time series start to get precision
+                // DateTime for iteration is copy of time series start to get precision.
                 DateTime date = new DateTime ( ts.getDate1() );
                 for ( int idata = 0; idata < tsc.values.length; idata++ ) {
-                    // Assume that access is direct on the arrays for performance reasons
+                    // Assume that access is direct on the arrays for performance reasons.
                     hecTime.set ( tsc.times[idata] );
                     if ( Message.isDebugOn ) { 
                         Message.printDebug ( 10, routine, "Setting value " + tsc.values[idata] + " at " +
@@ -1246,9 +1307,9 @@ throws Exception
                         // Don't try to set because this may cause exceptions in some cases.
                         continue;
                     }
-                    // Set DateTime class instances to HecTime data
+                    // Set DateTime class instances to HecTime data.
                     // Monthly and daily values are set using hecTime like 31 January 2000 24:00
-                    // ... so be picky about how dates roll over hour 24
+                    // ... so be picky about how dates roll over hour 24.
                     if ( (tsIntervalBase == TimeInterval.YEAR) || (tsIntervalBase == TimeInterval.MONTH) ||
                         (tsIntervalBase == TimeInterval.DAY) ) {
                         setDateTime ( date, hecTime, tsIntervalBase, false );
@@ -1256,14 +1317,14 @@ throws Exception
                     else {
                         setDateTime ( date, hecTime, tsIntervalBase, true );
                     }
-                    // Set the value in the time series object
+                    // Set the value in the time series object.
                     ts.setDataValue( date, tsc.values[idata]);
                     // FIXME SAM 2009-01-08 Here is where units would be converted, or do it on the entire time
                     // series once read.
                 }
             }
         }
-        // Add the time series to the list
+        // Add the time series to the list.
         tslist.add ( ts );
     }
     // FIXME SAM 2009-01-08 Closing the file is a performance hit so don't probably don't want to do it
@@ -1285,10 +1346,13 @@ throws Exception
     //          open so return the object to use
     // Comments?  Is something like this already done internally in the HECl library for optimization?
     
-    // Close out the file so that reading multiple files does not waste resources
-    //rts.done();
-    //rts.close();  //  Close the file (usually at the end of the program)
-    //dssFile.close();
+    if ( closeFileAfterRead ) {
+    	// Close out the file so that reading multiple files does not waste resources.
+    	//rts.done();
+    	//rts.close();  //  Close the file (usually at the end of the program).
+    	//dssFile.close();
+    	hmgr.close();
+    }
     return tslist;
 }
 
@@ -1306,7 +1370,7 @@ private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, D
     if ( Message.isDebugOn ) {
         Message.printDebug(2, routine, "Before hects.getSeriesTimeRange()" );
     }
-    // This did not work so just look at the data values themselves
+    // This did not work so just look at the data values themselves.
     //hects.getSeriesTimeRange ( hecStart, hecEnd, 0 );
     if ( (tsc != null) && (tsc.times != null) && (tsc.times.length > 0) ) {
         hecStart.set ( tsc.times[0] );
@@ -1325,7 +1389,7 @@ private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, D
     }
     DateTime date1 = new DateTime();
     // Allow rollover because for monthly data need 1999-12-31 24 to show up as 2000-01 and
-    // daily to show up as 2000-01-01
+    // daily to show up as: 2000-01-01
     setDateTime ( date1, hecStart, ts.getDataIntervalBase(), true );
     DateTime date2 = new DateTime();
     // TODO SAM 2009-03-30 Not sure about roll-over here?
@@ -1333,7 +1397,7 @@ private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, D
     // Set the dates in the file...
     ts.setDate1Original ( date1 );
     ts.setDate2Original ( date2 );
-    // Set the dates as requested or in the file...
+    // Set the dates as requested or in the file.
     if ( readStart != null ) {
         ts.setDate1 ( readStart );
     }
@@ -1360,8 +1424,7 @@ need to ignore the hour when setting the date.
 month, and day interval.  This flag is needed because some of the period-related dates are at hour 24 of a prior
 day and data is typically on the same day.
 */
-private static void setDateTime ( DateTime date, HecTime hecTime, int tsIntervalBase, boolean rollOver )
-{
+private static void setDateTime ( DateTime date, HecTime hecTime, int tsIntervalBase, boolean rollOver ) {
     date.setYear( hecTime.year() );
     if ( tsIntervalBase == TimeInterval.YEAR ) {
         return;
@@ -1377,7 +1440,7 @@ private static void setDateTime ( DateTime date, HecTime hecTime, int tsInterval
     boolean hour24 = false;
     if ( (hecTime.hour() == 24) ) {
         // Set to hour 23 and then increment by one hour after setting everything, to roll to hour "24"
-        // This is because DateTime only allows hour 0
+        // This is because DateTime only allows hour 0.
         date.setHour( 23 );
         hour24 = true;
     }
@@ -1413,12 +1476,12 @@ private static void setTimeSeriesDatesToData ( TS ts, int [] times )
     hdataEnd.set (times[times.length - 1]);
     DateTime dataStart = new DateTime();
     // Allow the roll-over to the next day if hour 24 because for monthly data 1999-12-31 24 should actually
-    // be 2000-01 and daily should be 2000-01-01
+    // be 2000-01 and daily should be: 2000-01-01
     setDateTime(dataStart,hdataStart,ts.getDataIntervalBase(),true);
     DateTime dataEnd = new DateTime();
-    // Do not allow roll-over to the next day
+    // Do not allow roll-over to the next day.
     setDateTime(dataEnd,hdataEnd,ts.getDataIntervalBase(),false);
-    // The following will properly adjust the precision to match the time series interval
+    // The following will properly adjust the precision to match the time series interval.
     ts.setDate1(dataStart);
     ts.setDate2(dataEnd);
     Message.printStatus(2, routine, "Setting time series period to dates from data records:  " + dataStart +
@@ -1428,14 +1491,13 @@ private static void setTimeSeriesDatesToData ( TS ts, int [] times )
 /**
 Convert a time series identifier interval to a HEC-DSS time series interval.
 */
-private static String tsidIntervalToHecInterval ( TSIdent tsid )
-{
+private static String tsidIntervalToHecInterval ( TSIdent tsid ) {
     String hecInterval = null;
     int intervalBase = tsid.getIntervalBase();
     int intervalMult = tsid.getIntervalMult();
-    // FIXME SAM 2009-01-08 Need to handle irregular time series
+    // FIXME SAM 2009-01-08 Need to handle irregular time series.
     if ( intervalBase == TimeInterval.IRREGULAR ) {
-        // Need special attention - not yet addressed
+        // Need special attention - not yet addressed.
         throw new RuntimeException ( "Irregular time series are not yet handled for conversion to HEC-DSS.");
     }
     else if ( intervalBase == TimeInterval.YEAR ) {
@@ -1500,7 +1562,7 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String
 {
     DSSPathname path = new DSSPathname();
     TSIdent tsid = ts.getIdentifier();
-    // A part from first part of location, separated by ':'
+    // A part from first part of location, separated by ':'.
     String locType = tsid.getLocationType();
     String location = tsid.getLocation();
     if ( !locType.isEmpty() ) {
@@ -1511,12 +1573,12 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String
     int intervalMult = ts.getDataIntervalMult();
     if ( pos >= 0 ) {
         // The location includes a : - assume that it is defined to be compatible with the HEC-DSS
-        // conventions and has a location Apart:Bpart
+        // conventions and has a location: Apart:Bpart'
         path.setAPart(location.substring(0,pos));
         path.setBPart(location.substring(pos+1));
     }
     else {
-        // No colon so assume no basin
+        // No colon so assume no basin.
         path.setAPart ( "" );
         path.setBPart ( location );
     }
@@ -1533,29 +1595,29 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String
     else {
         path.setCPart(tsid.getType());
     }
-    // D part depends on the interval
+    // D part depends on the interval.
     if ( writeStart != null ) {
         if ( intervalBase == TimeInterval.YEAR ) {
-            // Annual blocks are century
+            // Annual blocks are century.
             path.setDPart( "01JAN" + (writeStart.getYear()/100)*100 );
         }
         else if ( intervalBase == TimeInterval.MONTH ) {
-            // Blocks are decades
+            // Blocks are decades.
             path.setDPart( "01JAN" + (writeStart.getYear()/10)*10 );
         }
         else if ( intervalBase == TimeInterval.DAY ) {
-            // Blocks are years
+            // Blocks are years.
             path.setDPart( "01JAN" + writeStart.getYear() );
         }
         else if ( (intervalBase == TimeInterval.HOUR) ||
             ((intervalBase == TimeInterval.MINUTE) && (intervalMult == 15) || (intervalMult == 20) ||
             (intervalMult == 30))) {
-            // Blocks are month
+            // Blocks are month.
             path.setDPart( "01" + TimeUtil.monthAbbreviation(writeStart.getMonth()).toUpperCase() +
                 writeStart.getYear() );
         }
         else if ( intervalBase == TimeInterval.MINUTE ) {
-            // The rest of the minutes - blocks are day
+            // The rest of the minutes - blocks are day.
             path.setDPart( StringUtil.formatString(writeStart.getDay(), "%02d") +
                     TimeUtil.monthAbbreviation(writeStart.getMonth()).toUpperCase() +
                     writeStart.getYear() );
@@ -1582,12 +1644,11 @@ and return the first date only.
 @param DSS pathhname to evaluate.
 @return the uncondensed pathname.  A new instance is always returned.
 */
-private static DSSPathname uncondensedPathName ( DSSPathname dssPathName )
-{
+private static DSSPathname uncondensedPathName ( DSSPathname dssPathName ) {
     DSSPathname uncondensed = new DSSPathname(dssPathName.toString());
     String dPart = dssPathName.getDPart();
     if ( (dPart.length() == 21) && Character.isDigit(dPart.charAt(0)) && dPart.regionMatches(9, " - ", 0, 3)) {
-        // Assume that the part might be a normal path of form DDMonYYYY - DDMonYYYY
+        // Assume that the part might be a normal path of form: DDMonYYYY - DDMonYYYY
         dPart = dPart.substring(0,9);
         uncondensed.setDPart(dPart);
     }
@@ -1625,26 +1686,26 @@ throws IOException, Exception
 {   String routine = "HecDssAPI.writeTimeSeriesList";
 
     if ( (tslist == null) || (tslist.size() == 0) ) {
-        // Nothing in the list so return
+        // Nothing in the list so return.
         return;
     }
     
-    // Turn messaging to high to troubleshoot
+    // Turn messaging to high to troubleshoot.
     if ( Message.isDebugOn ) {
         HecDataManager.setMessageLevel ( 9 );
         //HecDataManager.setMessageLevel ( 12 );
     }
 
-    // Loop through the time series and write each to the file
+    // Loop through the time series and write each to the file.
     int tslistSize = tslist.size();
-    List<String> pathsNotWritten80List = new Vector<String>(); // HEC-DSS time series that could not be written (path > 80 char)
-    List<String> pathsNotWrittenBadIntervalList = new Vector<String>(); // HEC-DSS time series that could not be written (interval not supported)
-    List<String> errorDuplicatePathsList = new Vector<String>(); // Writing multiple time series with the same path
-    List<String> pathsWrittenNoDPartList = new Vector<String>(); // Unique list of paths (no D parts) that are written (duplicates removed) - for error check
-    HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop
+    List<String> pathsNotWritten80List = new Vector<>(); // HEC-DSS time series that could not be written (path > 80 char).
+    List<String> pathsNotWrittenBadIntervalList = new Vector<>(); // HEC-DSS time series that could not be written (interval not supported).
+    List<String> errorDuplicatePathsList = new Vector<>(); // Writing multiple time series with the same path.
+    List<String> pathsWrittenNoDPartList = new Vector<>(); // Unique list of paths (no D parts) that are written (duplicates removed) - for error check.
+    HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop.
     for ( int i = 0; i < tslistSize; i++ ) {
         TS ts = tslist.get(i);
-        // Get the date/times for output, either the entire period or the requested date/times
+        // Get the date/times for output, either the entire period or the requested date/times.
         DateTime writeStart = ts.getDate1();
         DateTime writeEnd = ts.getDate2();
         if ( writeStartReq != null ) {
@@ -1653,7 +1714,7 @@ throws IOException, Exception
         if ( writeEndReq != null ) {
             writeEnd = new DateTime(writeEndReq);
         }
-        // Create a container to receive the data from the time series object
+        // Create a container to receive the data from the time series object.
         TimeSeriesContainer tsc = new TimeSeriesContainer();
         int numValues = TSUtil.calculateDataSize(ts, writeStart, writeEnd);
         Message.printStatus(2, routine, "Writing " + numValues + " values for period " + writeStart + " to " + writeEnd );
@@ -1662,21 +1723,21 @@ throws IOException, Exception
         tsc.values = new double[numValues];
         tsc.times = new int[numValues];
         DateTime date = new DateTime(writeStart);
-        TSIterator tsi = ts.iterator(); // Iterator for time series data
-        TSData dataPoint; // Single data point in time series
-        HecTime hectime = new HecTime(); // Used for transfer of date/times to HEC time series
+        TSIterator tsi = ts.iterator(); // Iterator for time series data.
+        TSData dataPoint; // Single data point in time series.
+        HecTime hectime = new HecTime(); // Used for transfer of date/times to HEC time series.
         double value;
         // Iterate through the time series and transfer the date and corresponding values from
         // the internal time series to the HEC time series container.
         for ( int ival = 0; ((dataPoint = tsi.next()) != null) && (ival < numValues); ival++ ) {
             value = dataPoint.getDataValue();
             date = dataPoint.getDate();
-            // Check for missing values in the time series and set the the HEC missing value for output
+            // Check for missing values in the time series and set the the HEC missing value for output.
             if( ts.isDataMissing( value ) ) {
-                // Translate to the missing value used by HEC
+                // Translate to the missing value used by HEC.
                 value = Heclib.UNDEFINED_DOUBLE;
             }
-            // Set in the arrays
+            // Set in the arrays.
             tsc.values[ival] = value;
             tsc.times[ival] = dateTimeToHecTime(date, hectime).value();
             if ( Message.isDebugOn ) {
@@ -1691,7 +1752,7 @@ throws IOException, Exception
         HecTime hend = new HecTime();
         hend.set(tsc.endTime);
         Message.printStatus(2, routine, "HEC-DSS time series container startTime=" + hstart + " endTime=" + hend );
-        // Set the precision of output, if requested by calling code
+        // Set the precision of output, if requested by calling code.
         if ( precisionReq >= 0 ) {
             Message.printStatus(2, routine, "HEC-DSS time series container precision=" + precisionReq );
             tsc.precision = precisionReq;
@@ -1707,7 +1768,7 @@ throws IOException, Exception
         if ( !isTimeSeriesIntervalSupportedByAPI(ts) ) {
             pathsNotWrittenBadIntervalList.add ( pathname );
         }
-        // Verify that the path is not already written (ignore the D part)
+        // Verify that the path is not already written (ignore the D part).
         DSSPathname pathnameNoD = new DSSPathname();
         pathnameNoD.setAPart(dssPathName.getAPart());
         pathnameNoD.setBPart(dssPathName.getBPart());
@@ -1723,19 +1784,18 @@ throws IOException, Exception
                     pathsWrittenNoDPartList.get(ipath) + "\"" );
             if ( pathnameNoDString.equalsIgnoreCase(pathsWrittenNoDPartList.get(ipath))) {
                 duplicateFound = true;
-                errorDuplicatePathsList.add(pathname); // Include D so user can match
+                errorDuplicatePathsList.add(pathname); // Include D so user can match.
                 break;
             }
         }
         if ( !duplicateFound ) {
-            // Add to the list of unique paths (no D part) that are written, to allow check
+            // Add to the list of unique paths (no D part) that are written, to allow check.
             pathsWrittenNoDPartList.add ( pathnameNoDString );
         }
-        // End of duplicate path check
-        // TODO smalers 2022-08-11 the following has a warning.
+        // End of duplicate path check.
         tsc.fullName = pathname;
         tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
-        // Set the data units - any string can be used but may want to standardize to allow units conversion
+        // Set the data units - any string can be used but may want to standardize to allow units conversion.
         tsc.units = ts.getDataUnits();
         if ( (tsc.units == null) || (tsc.units.length() == 0) ) {
             throw new RuntimeException ( "The HEC-DSS data units are not defined for \"" +
@@ -1747,7 +1807,7 @@ throws IOException, Exception
         //   PER-CUM (period cumulative, is this interval cumulative?)
         //   INST-VAL (instantaneous)
         //   INST-CUM (instantaneous cumulative)
-        // FIXME SAM 2008-12-01 Try this to see if it solves the -5 status on write (it does not)
+        // FIXME SAM 2008-12-01 Try this to see if it solves the -5 status on write (it does not).
         if ( hecType == null ) {
             throw new RuntimeException ( "The HEC-DSS type is not defined for \"" +
                 ts.getIdentifierString() + "\"" );
@@ -1756,23 +1816,23 @@ throws IOException, Exception
             tsc.type = hecType;
             Message.printStatus(2, routine, "HEC-DSS time series container type=\"" + tsc.type + "\"" );
         }
-        // The pathname will NOT contain a D part.  It does not seem that a D part is necessary based on the
-        // HecDssTimeSeriesExample.java code.  Do convert it to upper-case though because it seems that HEC strings
-        // are all upper-case.
+        // The pathname will NOT contain a D part.
+        // It does not seem that a D part is necessary based on the HecDssTimeSeriesExample.java code.
+        // Do convert it to upper-case though because it seems that HEC strings are all upper-case.
         String outputFileCanonical = outputFile.getCanonicalPath();
         Message.printStatus( 2, routine, "HEC-DSS time series output file is \"" + outputFileCanonical + "\"" );
         Message.printStatus( 2, routine, "HEC-DSS time series pathname is \"" + pathname + "\"" );
         // Create HEC time series and write the container to the specified file.
         hts = new HecTimeSeries();
         hts.setDSSFileName(outputFileCanonical);
-        // Delete the old records if replacing
+        // Delete the old records if replacing.
         if ( replaceTimeSeries ) {
             // FIXME SAM 2009-04-05 See Bill Charley email about ZDELET?
             //Heclib.zdelet(ifltab, pathname);
         }
-        // Now try to write...
+        // Now try to write.
         int status = hts.write(tsc);
-        Message.printStatus( 2, routine, "Status from writing time series is " + status );
+        Message.printStatus( 2, routine, "Status from writing time series is " + status + ".");
         if ( status != 0 ) {
             // FIXME SAM 2009-01-13 Evaluate code.
             // For now throw an exception whenever an error occurs, until we figure out status.
@@ -1780,20 +1840,21 @@ throws IOException, Exception
             throw new RuntimeException ( "Error writing time series to HEC-DSS file, return status=" + status);
         }
     }
-    // Close the file if requested - not the default because it may be a performance hit
+    // Close the file if requested - not the default because it may be a performance hit.
     if ( closeFileAfterWrite ) {
         if ( hts != null ) {
-            // TODO SAM 2009-04-14 does not seem to work
+            // TODO SAM 2009-04-14 does not seem to work.
             hts.done();
             hts.close();
             hts.closeDSSFile();
         }
         //Heclib.zclose(ifltab);
-        // The following is code from Bill Charley
+        // The following is code from Bill Charley.
         closeAllFiles();
     }
-    // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
-    // as much writing to occur as possible.  For now a single message is passed back to the calling code.
+    // Throw an exception if there were any other problems in the loop.
+    // Could put this in the loop but want as much writing to occur as possible.
+    // For now a single message is passed back to the calling code.
     int pathsNotWritten80ListSize = pathsNotWritten80List.size();
     int pathsNotWrittenBadIntervalListSize = pathsNotWrittenBadIntervalList.size();
     StringBuffer b = new StringBuffer();

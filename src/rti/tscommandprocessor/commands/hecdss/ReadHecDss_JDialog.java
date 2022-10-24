@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -54,6 +56,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -86,6 +89,7 @@ private JTextField __InputFile_JTextField = null;
 private JTextField __Location_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			//__NewUnits_JTextField = null; // Units to convert to at read
+private SimpleJComboBox __CloseAfterReading_JComboBox = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -99,8 +103,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadHecDss_JDialog ( JFrame parent, ReadHecDss_Command command )
-{
+public ReadHecDss_JDialog ( JFrame parent, ReadHecDss_Command command ) {
 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -113,7 +116,7 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		// Browse for the file to read...
+		// Browse for the file to read.
 		JFileChooser fc = new JFileChooser();
         fc.setDialogTitle( "Select HEC-DSS File");
         SimpleFileFilter sff = new SimpleFileFilter("dss","HEC-DSS File");
@@ -128,8 +131,8 @@ public void actionPerformed( ActionEvent event )
 		}
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (filename == null || filename.equals("")) {
 				return;
@@ -183,8 +186,7 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -192,8 +194,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -201,8 +202,7 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -213,8 +213,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	
-	// Put together a list of parameters to check...
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String A = __A_JTextField.getText().trim();
@@ -228,6 +227,7 @@ private void checkInput () {
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Location = __Location_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String CloseAfterReading = __CloseAfterReading_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -269,11 +269,14 @@ private void checkInput () {
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
     }
+    if (CloseAfterReading.length() > 0) {
+        props.set("CloseAfterReading", CloseAfterReading);
+    }
 
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
-	} 
+	}
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
 		__error_wait = true;
@@ -284,8 +287,7 @@ private void checkInput () {
 Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
-private void commitEdits()
-{
+private void commitEdits() {
 	String InputFile = __InputFile_JTextField.getText().trim();
     String A = __A_JTextField.getText().trim();
     String B = __B_JTextField.getText().trim();
@@ -298,6 +300,7 @@ private void commitEdits()
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Location = __Location_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String CloseAfterReading = __CloseAfterReading_JComboBox.getSelected();
 
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("A", A);
@@ -311,6 +314,7 @@ private void commitEdits()
 	//__command.setCommandParameter("NewUnits", NewUnits);
 	__command.setCommandParameter("Location", Location);
 	__command.setCommandParameter("Alias", Alias);
+	__command.setCommandParameter("CloseAfterReading", CloseAfterReading);
 }
 
 /**
@@ -337,43 +341,39 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         "Read time series from a HEC-DSS file."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use * in the A, B, C, E, and F parts to filter the time series that are read (or leave blank to read all)." ), 
+        "Use * in the A, B, C, E, and F parts to filter the time series that are read (or leave blank to read all)." ),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "The D part (start of period) is handled by specifying the input period." ), 
+    "The D part (start of period) is handled by specifying the input period." ),
     0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "Or, instead of specifying parts, specify the DSS pathname to read a specific time series " +
-    "(the path will be used before the parts)." ), 
+    "(the path will be used before the parts)." ),
     0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "The alias can be assigned for time series based on time series properties, for example use " +
-    "%L for location (A-part:B-part), %T for data type (C-part), %Z for scenario (F-part)." ), 
+    "%L for location (A-part:B-part), %T for data type (C-part), %Z for scenario (F-part)." ),
     0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working directory) for a HEC-DSS file to read." ), 
+		"Specify a full path or relative path (relative to working directory) for a HEC-DSS file to read." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    The working directory is: " + __working_dir ), 
+		"    The working directory is: " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the input period will limit data that are " +
-		"available for fill commands but can increase performance." ), 
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
     	    0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"HEC-DSS file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"HEC-DSS file to read:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the input file, can use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -383,14 +383,14 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("A part (basin):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __A_JTextField = new JTextField ( "", 30 );
@@ -400,7 +400,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - A part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("B part (location):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __B_JTextField = new JTextField ( "", 30 );
@@ -410,7 +410,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - B part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("C part (parameter):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField ( "", 30 );
@@ -420,7 +420,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - C part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("E part (interval):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __E_JTextField = new JTextField ( "", 30 );
@@ -430,7 +430,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - E part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("F part (scenario):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __F_JTextField = new JTextField ( "", 30 );
@@ -440,7 +440,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - F part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("DSS pathname:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Pathname_JTextField = new JTextField ( "", 30 );
@@ -460,7 +460,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 		*/
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
@@ -470,7 +470,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start (default=read all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"),
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
@@ -501,6 +501,23 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Close after reading?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__CloseAfterReading_JComboBox = new SimpleJComboBox ( false );
+	__CloseAfterReading_JComboBox.setToolTipText("Whether to close the file after reading, default is to keep open for more actions.");
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default.
+	notFoundChoices.add ( __command._False );
+	notFoundChoices.add ( __command._True );
+	__CloseAfterReading_JComboBox.setData(notFoundChoices);
+	__CloseAfterReading_JComboBox.select ( 0 );
+	__CloseAfterReading_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __CloseAfterReading_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - close file after reading (default=" + __command._False + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(4, 55);
@@ -513,7 +530,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -527,12 +544,12 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 
 	setTitle("Edit " + __command.getCommandName() + " Command");
 	
-	// Refresh the contents...
+	// Refresh the contents.
     refresh ();
 
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -573,8 +590,8 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh()
-{
+private void refresh() {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "",
     A = "",
     B = "",
@@ -586,14 +603,15 @@ private void refresh()
     InputEnd = "",
     NewUnits = "",
     Location = "",
-    Alias = "";
+    Alias = "",
+    CloseAfterReading = "";
 
 	PropList props = null;
 
 	if (__first_time) {
 		__first_time = false;
 
-		// Get the properties from the command
+		// Get the properties from the command.
 		props = __command.getCommandParameters();
 		InputFile = props.getValue("InputFile");
 		A = props.getValue("A");
@@ -607,7 +625,8 @@ private void refresh()
 		NewUnits = props.getValue("NewUnits");
 		Location = props.getValue("Location");
         Alias = props.getValue("Alias");
-		// Set the control fields
+        CloseAfterReading = props.getValue("CloseAfterReading");
+		// Set the control fields.
         if (A != null) {
             __A_JTextField.setText(A);
         }
@@ -646,10 +665,26 @@ private void refresh()
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__CloseAfterReading_JComboBox, CloseAfterReading,JGUIUtil.NONE, null, null ) ) {
+			__CloseAfterReading_JComboBox.select ( CloseAfterReading );
+		}
+		else {
+            if ( (CloseAfterReading == null) ||	CloseAfterReading.equals("") ) {
+				// New command...select the default.
+				__CloseAfterReading_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"CloseAfterReading parameter \"" +	CloseAfterReading +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 	}
 
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
     A = __A_JTextField.getText().trim();
     B = __B_JTextField.getText().trim();
@@ -662,6 +697,7 @@ private void refresh()
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Location = __Location_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+	CloseAfterReading = __CloseAfterReading_JComboBox.getSelected();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
@@ -676,6 +712,7 @@ private void refresh()
 	props.add("NewUnits=" + NewUnits);
 	props.add("Location=" + Location);
 	props.add("Alias=" + Alias);
+	props.add("CloseAfterReading=" + CloseAfterReading);
 
 	__Command_JTextArea.setText( __command.toString(props) );
 
@@ -703,14 +740,14 @@ React to the user response.
 public void response ( boolean ok ) {
 	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }

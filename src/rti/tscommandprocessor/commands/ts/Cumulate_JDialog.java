@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox	__HandleMissingHow_JComboBox = null;
 private SimpleJComboBox	__Reset_JComboBox = null;
+private SimpleJComboBox	__InsertResetPoint_JComboBox = null;
 private SimpleJComboBox __ResetValue_JComboBox = null;
 private JTextField __AllowMissingCount_JTextField = null;
 private JTextField __MinimumSampleSize_JTextField = null;
@@ -123,8 +124,7 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
             TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -151,14 +151,15 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
 	String Reset = __Reset_JComboBox.getSelected();
 	String ResetValue = __ResetValue_JComboBox.getSelected();
+	String InsertResetPoint = __InsertResetPoint_JComboBox.getSelected();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	__error_wait = false;
@@ -181,6 +182,9 @@ private void checkInput ()
     if ( ResetValue.length() > 0 ) {
         parameters.set ( "ResetValue", ResetValue );
     }
+    if ( InsertResetPoint.length() > 0 ) {
+        parameters.set ( "InsertResetPoint", InsertResetPoint );
+    }
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         parameters.set ( "AllowMissingCount", AllowMissingCount );
     }
@@ -188,7 +192,7 @@ private void checkInput ()
         parameters.set ( "MinimumSampleSize", MinimumSampleSize );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -204,14 +208,15 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
 	String Reset = __Reset_JComboBox.getSelected();
 	String ResetValue = __ResetValue_JComboBox.getSelected();
+	String InsertResetPoint = __InsertResetPoint_JComboBox.getSelected();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	if ( (Reset != null) && (Reset.length() > 0) ) {
-		// Use the first token...
+		// Use the first token.
 		Reset = StringUtil.getToken(Reset,"(",0,0).trim();
 	}
     __command.setCommandParameter ( "TSList", TSList );
@@ -220,23 +225,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
 	__command.setCommandParameter ( "Reset", Reset );
 	__command.setCommandParameter ( "ResetValue", ResetValue );
+	__command.setCommandParameter ( "InsertResetPoint", InsertResetPoint );
     __command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
     __command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__HandleMissingHow_JComboBox = null;
-	__Reset_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -251,7 +242,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -259,22 +250,11 @@ private void initialize ( JFrame parent, Cumulate_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The selected time series will be converted to cumulative values over the period." ), 
+		"This command cumulates the values for the selected time series, updating the input time series." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The units remain the original." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The values can accumulate over the entire period or can reset each year." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify a Reset value to reset the total for each year.  The date/time should be specified to " +
-        "a precision matching the time series." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   Use a format MM for month, MM-DD for day, MM-DD hh for hour, and MM-DD hh:mm for minute data." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   The year's data will be set to missing if AllowingMissingCount and " +
-        "MinimumSampleSize criteria are not met." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -286,7 +266,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
@@ -295,7 +275,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ();
 	List<String> missingChoices = new ArrayList<>();
@@ -307,9 +287,9 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional (default=" + __command._SetMissingIfMissing + ")."), 
+		"Optional (default=" + __command._SetMissingIfMissing + ")."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     int yReset = -1;
     JPanel reset_JPanel = new JPanel();
     reset_JPanel.setLayout( new GridBagLayout() );
@@ -318,12 +298,32 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent( main_JPanel, reset_JPanel,
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset date/time:" ), 
+    JGUIUtil.addComponent(reset_JPanel, new JLabel (
+        "Specify a Reset value to reset the total for each year.  The date/time should be specified to " +
+        "a precision matching the time series" ),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JLabel (
+        "and should correspond to the first interval-ending date/time for the year."),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JLabel (
+        "   Use a format MM for month, MM-DD for day, MM-DD hh for hour, MM-DD hh:mm for minute, and MM-DD hh:mm:ss for second." ),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JLabel (
+        "   The entire year's data will be set to missing if AllowingMissingCount and " +
+        "MinimumSampleSize criteria are not met." ),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JLabel (
+        "<html><b>As of TSTool 14.4.0, ResetValue=DataValue is the default (previously was 0).  See the documentation.</b></html>"),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yReset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset date/time:" ),
 		0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Reset_JComboBox = new SimpleJComboBox (true); // Editable
+	__Reset_JComboBox = new SimpleJComboBox (true); // Editable.
 	__Reset_JComboBox.setToolTipText("Reset in format MM, MM-DD, etc. consistent with time series precision, can use ${Property}.");
 	List<String> resetChoices = new ArrayList<>();
-	resetChoices.add ( "" );  // No reset
+	resetChoices.add ( "" );  // No reset.
     /*
     for ( int i = 1; i <= 12; i++ ) {
         resetChoices.add ( "Date " + i + "-1 (reset matching MM-DD for day interval)" );
@@ -343,12 +343,12 @@ private void initialize ( JFrame parent, Cumulate_Command command )
         JGUIUtil.addComponent(reset_JPanel, __Reset_JComboBox,
 		1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(reset_JPanel, new JLabel(
-		"Optional - date/time on which to reset total (default=no reset)."), 
+		"Optional - date/time on which to reset total (default=no reset)."),
 		3, yReset, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset value:" ), 
+
+    JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset value:" ),
         0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ResetValue_JComboBox = new SimpleJComboBox (true); // Allow edit
+    __ResetValue_JComboBox = new SimpleJComboBox (true); // Allow edit.
     List<String> resetValueChoices = new ArrayList<>();
     resetValueChoices.add ( "" );
     resetValueChoices.add ( __command._DataValue );
@@ -356,24 +356,44 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     __ResetValue_JComboBox.addItemListener ( this );
     __ResetValue_JComboBox.setData(resetValueChoices);
     JGUIUtil.addComponent(reset_JPanel, __ResetValue_JComboBox,
-        1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(reset_JPanel, new JLabel(
-        "Optional - value for reset (default=" + __command._Zero + ")."), 
+        "Optional - value for reset (default=" + __command._DataValue + ")."),
         3, yReset, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
+    JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Insert reset point:" ),
+        0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InsertResetPoint_JComboBox = new SimpleJComboBox (false);
+    __InsertResetPoint_JComboBox.setToolTipText(
+    	"Whether to auto-insert an initial zero value at the reset date/time.");
+    List<String> insertChoices = new ArrayList<>();
+    insertChoices.add ( "" );
+    insertChoices.add ( __command._False );
+    insertChoices.add ( __command._True );
+    __InsertResetPoint_JComboBox.addItemListener ( this );
+    __InsertResetPoint_JComboBox.setData(insertChoices);
+    JGUIUtil.addComponent(reset_JPanel, __InsertResetPoint_JComboBox,
+        1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(reset_JPanel, new JLabel(
+        "Optional - auto-insert zero at year start (default=" + __command._False + ")."),
+        3, yReset, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(reset_JPanel, new JLabel ("Allow missing count:"),
         0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AllowMissingCount_JTextField = new JTextField (10);
+    __AllowMissingCount_JTextField.setToolTipText(
+    	"The number of missing values allowed in a year to accept that year's data, not used for irregular interval.");
     __AllowMissingCount_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(reset_JPanel, __AllowMissingCount_JTextField,
         1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(reset_JPanel, new JLabel (
         "Optional - number of missing values allowed in year (default=no limit)."),
         3, yReset, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(reset_JPanel, new JLabel ("Minimum sample size:"),
         0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinimumSampleSize_JTextField = new JTextField (10);
+    __MinimumSampleSize_JTextField.setToolTipText("The minimum sample size in a year's data to accept that year's data.");
     __MinimumSampleSize_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(reset_JPanel, __MinimumSampleSize_JTextField,
         1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -381,7 +401,7 @@ private void initialize ( JFrame parent, Cumulate_Command command )
         "Optional - minimum required sample size in year (default=no minimum)."),
         3, yReset, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 40 );
 	__command_JTextArea.setLineWrap ( true );
@@ -390,14 +410,14 @@ private void initialize ( JFrame parent, Cumulate_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -437,7 +457,7 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
@@ -460,29 +480,31 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "Cumulate_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
 	String HandleMissingHow = "";
 	String Reset = "";
 	String ResetValue = "";
+	String InsertResetPoint = "";
     String AllowMissingCount = "";
     String MinimumSampleSize = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
 		HandleMissingHow = props.getValue ( "HandleMissingHow" );
 		Reset = props.getValue ( "Reset" );
 		ResetValue = props.getValue ( "ResetValue" );
+		InsertResetPoint = props.getValue ( "InsertResetPoint" );
         AllowMissingCount = props.getValue ( "AllowMissingCount" );
         MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -500,19 +522,19 @@ private void refresh ()
             __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -530,13 +552,13 @@ private void refresh ()
 		    __HandleMissingHow_JComboBox.select ( HandleMissingHow );
 		}
 		else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
 			if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
 				__HandleMissingHow_JComboBox.insertItemAt ( HandleMissingHow, 1 );
-				// Select...
+				// Select.
 				__HandleMissingHow_JComboBox.select ( HandleMissingHow );
 			}
-			else {	// Select the blank...
+			else {	// Select the blank.
 				__HandleMissingHow_JComboBox.select ( 0 );
 			}
 		}
@@ -544,14 +566,14 @@ private void refresh ()
             JGUIUtil.selectTokenMatches ( __Reset_JComboBox, true, "(", 0, 0, Reset, "", true );
 		}
 		catch ( Exception e ) {
-			// Automatically add to the list after the blank...
+			// Automatically add to the list after the blank.
 			if ( (Reset != null) && (Reset.length() > 0) ) {
 				__Reset_JComboBox.insertItemAt ( Reset, 1 );
-				// Select...
+				// Select.
 				__Reset_JComboBox.select ( Reset );
 			}
 			else {
-			    // Select the blank...
+			    // Select the blank.
 				__Reset_JComboBox.select ( 0 );
 			}
 		}
@@ -559,15 +581,30 @@ private void refresh ()
             __ResetValue_JComboBox.select ( ResetValue );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (ResetValue != null) && (ResetValue.length() > 0) ) {
                 __ResetValue_JComboBox.insertItemAt ( ResetValue, 1 );
-                // Select...
+                // Select.
                 __ResetValue_JComboBox.select ( ResetValue );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __ResetValue_JComboBox.select ( 0 );
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __InsertResetPoint_JComboBox, InsertResetPoint, JGUIUtil.NONE, null, null ) ) {
+            __InsertResetPoint_JComboBox.select ( InsertResetPoint );
+        }
+        else {
+            // Automatically add to the list after the blank.
+            if ( (InsertResetPoint != null) && (InsertResetPoint.length() > 0) ) {
+                __InsertResetPoint_JComboBox.insertItemAt ( InsertResetPoint, 1 );
+                // Select.
+                __InsertResetPoint_JComboBox.select ( InsertResetPoint );
+            }
+            else {
+                // Select the blank.
+                __InsertResetPoint_JComboBox.select ( 0 );
             }
         }
         if ( AllowMissingCount != null ) {
@@ -577,17 +614,18 @@ private void refresh ()
             __MinimumSampleSize_JTextField.setText ( MinimumSampleSize );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
 	Reset = __Reset_JComboBox.getSelected();
 	ResetValue = __ResetValue_JComboBox.getSelected();
+	InsertResetPoint = __InsertResetPoint_JComboBox.getSelected();
     AllowMissingCount = __AllowMissingCount_JTextField.getText();
     MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
 	if ( (Reset != null) && (Reset.length() > 0) ) {
-		// Use the first token...
+		// Use the first token.
 		Reset = StringUtil.getToken(Reset,"(",0,0).trim();
 	}
 	props = new PropList ( __command.getCommandName() );
@@ -597,6 +635,7 @@ private void refresh ()
 	props.add ( "HandleMissingHow=" + HandleMissingHow );
 	props.add ( "Reset=" + Reset );
 	props.add ( "ResetValue=" + ResetValue );
+	props.add ( "InsertResetPoint=" + InsertResetPoint );
     props.add ( "AllowMissingCount=" + AllowMissingCount );
     props.add ( "MinimumSampleSize=" + MinimumSampleSize );
 	__command_JTextArea.setText( __command.toString ( props ) );
@@ -608,16 +647,16 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok; // Save to be returned by ok()
+{	__ok = ok; // Save to be returned by ok()>
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -630,11 +669,22 @@ public void windowClosing( WindowEvent event )
 {	response ( true );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

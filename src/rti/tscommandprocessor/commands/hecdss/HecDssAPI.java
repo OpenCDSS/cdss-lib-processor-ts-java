@@ -109,7 +109,10 @@ static
         // The DLLS won't load properly on UNIX/Linux.
         //boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path.
         String dll = "";
-        boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies.
+        // Quick way to turn on/off rmaUtil.dll load, for testing dependencies:
+        // - was true for TSTool prior to 14.4.0
+        // - for TSTool 14.4.0 only 'javaHeclib' is required
+        boolean loadRmaUtil = false;
         // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
         // for the app on Windows - keep for now.
         int maxTries = 5; // Number of times to try loading a library - have seen some exceptions on servers due to locking?
@@ -134,7 +137,7 @@ static
                         System.loadLibrary(dll);
                         // If successful, make sure the exception object is null and break out of the retries.
                         Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
-                        libException[ilib] = null; // Set to null indicating success
+                        libException[ilib] = null; // Set to null indicating success.
                         break;
                     }
                     catch ( UnsatisfiedLinkError e ) {
@@ -172,6 +175,11 @@ static
                     // Sleep for the next try.
                     TimeUtil.sleep(sleepMilliSeconds);
                 }
+                catch ( Exception e3 ) {
+                    Message.printWarning ( 2, routine, "[Try " + (i + 1) +
+                        "] Unable to load " + dll + " using System.load(" + dll + ") (" + e3 + ")." );
+                    Message.printWarning ( 3, routine, e3 );
+                }
             }
         }
         // Now check for exceptions that still remain, indicating that the load could not occur even after retries.
@@ -193,6 +201,7 @@ static
         // Set the message level to the maximum to track down issues.
         
         //HecDataManager.setMessageLevel ( 15 );
+        Message.printStatus(2, routine, "Leaving HecDssAPI static initialization.");
     }
 }
 
@@ -204,11 +213,10 @@ the first of the month.
 with no previous adjustments.
 @return the adjusted DateTime that corresponds to the end of the month
 */
-private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime blockStartDateTime )
-{
+private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime blockStartDateTime ) {
     int intervalBase = ts.getDataIntervalBase();
     int intervalMult = ts.getDataIntervalMult();
-    // Create a new DateTime from the block start
+    // Create a new DateTime from the block start.
     DateTime adjusted = new DateTime ( blockStartDateTime );
     // Adjust DateTime to the end of the block, based on the time series interval.
     if ( intervalBase == TimeInterval.YEAR ) {
@@ -431,8 +439,8 @@ private static List<String> createCondensedCatalog ( List<String> pathnameList )
         cPart = dssPathName.getCPart();
         ePart = dssPathName.getEPart();
         fPart = dssPathName.getFPart();
-        // Look ahead to see if any duplicates exist.  If on the last record, numAdditionalRecords
-        // will be zero and the current record will be added below.
+        // Look ahead to see if any duplicates exist.
+        // If on the last record, numAdditionalRecords will be zero and the current record will be added below.
         numAdditionalRecords = 0;
         for ( int j = (i + 1); j < size; j++ ) {
             pathname2 = pathnameList.get(j);
@@ -489,8 +497,7 @@ the D part if includeHour=false and compatible with the time window string in an
 @param ts the time series being processed, used to determine the data interval.
 @param includeHour indicates whether the hour should be included
 */
-private static String createTimeWindowString ( DateTime startDateTime, DateTime endDateTime, TS ts, boolean includeHour )
-{
+private static String createTimeWindowString ( DateTime startDateTime, DateTime endDateTime, TS ts, boolean includeHour ) {
     // Format of the period to read.
     //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
     String startString = StringUtil.formatString(startDateTime.getDay(),"%02d") +
@@ -544,11 +551,13 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
 
     // Transfer the values.
     
-    // TODO QUESTION FOR BILL CHARLEY - why doesn't HecTime have setYear(), etc.?  If the precision of
-    // the date/time is year, why force the other values to set?  The DateTime class has a precision data
+    // TODO QUESTION FOR BILL CHARLEY - why doesn't HecTime have setYear(), etc.?
+    // If the precision of the date/time is year, why force the other values to set?
+    // The DateTime class has a precision data
     // member that seems to be similar to the HecTime granularity so I'm trying to keep them consistent.
-    // Does the HEC code now how to deal with granularity from the interval on the time series?  See the commented
-    // lines below.  Doesn't HecTime allow setting the "granularity" to "year", "month", or even "period"?
+    // Does the HEC code now how to deal with granularity from the interval on the time series?
+    // See the commented lines below.
+    // Doesn't HecTime allow setting the "granularity" to "year", "month", or even "period"?
     int month = dt.getMonth();
     int day = dt.getDay();
     int hour = dt.getHour();
@@ -569,8 +578,8 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
         hour = 24;
         minute = 0;
     }
-    // TODO SAM 2009-03-30 Does the hour depend on the time series "Type".  For example does instantaneous vs. mean
-    // change the hour that a daily value is recorded?
+    // TODO SAM 2009-03-30 Does the hour depend on the time series "Type".
+    // For example does instantaneous vs. mean change the hour that a daily value is recorded?
     ht.setYearMonthDay(dt.getYear(), month, day, (hour*60 + minute) );
     //int precision = dt.getPrecision();
     //if ( precision == DateTime.PRECISION_YEAR ) {
@@ -694,9 +703,8 @@ public static List<String> getDataTypes ( String filename )
 
 /**
 Determine whether the time series interval is supported by the HEC-DSS API.
-Some intervals (e.g., irregular) are not supported because the software has not
-been written.  Others are not supported because the interval is not supported by
-HEC-DSS (e.g., 24-hour).
+Some intervals (e.g., irregular) are not supported because the software has not been written.
+Others are not supported because the interval is not supported by HEC-DSS (e.g., 24-hour).
 @return false if the interval is not supported.
 */
 public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts ) {
@@ -731,8 +739,8 @@ public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts ) {
 }
 
 /**
-Read a single time series from a HEC-DSS file.  This method is typically called when a specific time series is
-read for processing.
+Read a single time series from a HEC-DSS file.
+This method is typically called when a specific time series is read for processing.
 @param file HEC-DSS file (full path).
 @param tsident Time series identifier string of the form where only the parts before "~" are required since
 this API equates to HEC-DSS input type and the filename is in the "file" parameter:
@@ -775,17 +783,20 @@ throws Exception {
     }
 }
 
-// TODO QUESTION FOR BILL CHARLEY - using the following code on the sample.dss file shipped with DSS-VUE, there
-// appear to be 32 pathnames in the file, 17 after condensing.  DSS-VUE only shows 3.  Is there an attribute on the
-// time series that indicates that it is deleted (but still listed in the catalog) or something like that which
+// TODO QUESTION FOR BILL CHARLEY - using the following code on the sample.dss file shipped with DSS-VUE,
+// there appear to be 32 pathnames in the file, 17 after condensing.  DSS-VUE only shows 3.
+// Is there an attribute on the time series that indicates that it is deleted
+// (but still listed in the catalog) or something like that which
 // would cause the pathname to show up in my code but not DSS-VUE?
 
 /**
-Read a list of one or more time series from a HEC-DSS file.  This method is typically called when the entire file
-or a subset filtered by the parts is read.  For example, all time series in an area or of a data type may be
-processed for data filling or quality control.  Another use is to call this method from a GUI with readData=false
-in order to display the time series in the file without actually reading all the data - this allows time selections
-in GUIs to be fast.
+Read a list of one or more time series from a HEC-DSS file.
+This method is typically called when the entire file or a subset filtered by the parts is read.
+For example, all time series in an area or of a data type may be
+processed for data filling or quality control.
+Another use is to call this method from a GUI with readData=false
+in order to display the time series in the file without actually reading all the data.
+This allows time selections in GUIs to be fast.
 @param file HEC-DSS file (full path).
 @param tsident Time series identifier string of the form where only the parts before "~" are required since
 this API equates to HEC-DSS input type and the filename is in the "file" parameter:
@@ -797,9 +808,10 @@ HEC parts inserted:
 A:B.HEC-DSS.C.E.F
 </pre>
 The main issue is that this convention utilizes periods and dashes and these characters in the original
-data may need substitution for internal handling.  The input name should be the name of the HEC-DSS file to absolute or
-relative precision, consistent with how the identifier should appear for data access.  The "*" character can be used
-in the time series identifier parts to filter the query.
+data may need substitution for internal handling.
+The input name should be the name of the HEC-DSS file to absolute or relative precision,
+consistent with how the identifier should appear for data access.
+The "*" character can be used in the time series identifier parts to filter the query.
 @param readStartReq the DateTime to start reading data, with precision at least as fine as the time series.
 If null, read all available data.
 @param readEndReq the DateTime to end reading data, with precision at least as fine as the time series.
@@ -820,9 +832,12 @@ throws Exception
     // Old version.
     //HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
     // New version, HecDSSCatalog extends HecDSSFileAccess.
+    Message.printStatus ( 2, routine, "Creating HecDssCatalog for \"" + dssFilename + "\"");
     HecDssCatalog dssFile = new HecDssCatalog ( dssFilename );
+    Message.printStatus ( 2, routine, "Back from creating HecDssCatalog for \"" + dssFilename + "\"");
     // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened.
-    // Do this similar to other binary file databases like StateMod and StateCU
+    // Do this similar to other binary file databases like StateMod and StateCU.
+    Message.printStatus ( 2, routine, "Opening DSS file \"" + dssFilename + "\"");
     int stat = dssFile.open();
     Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat + ".");
     // Use the following code to allow wildcards in matching 1+ time series.
@@ -864,7 +879,8 @@ throws Exception
     // TODO QUESTION FOR BILL CHARLEY - I can't get this to work - see questions below.
     boolean useHECCondensedPathnameListCode = false;
     if ( useHECCondensedPathnameListCode ) {
-    	/* TODO smalers 2022-08-11 - this has been disabled for years and does not compile with the latest 'monolith' library so comment out.
+    	/* TODO smalers 2022-08-11 - this has been disabled for years and does
+    	 not compile with the latest 'monolith' library so comment out.
         // Get condensed catalog
         HecDSSUtilities u = new HecDSSUtilities();
         // TODO QUESTION FOR BILL CHARLEY - why not permanently put this method in the heclib jar since it is useful
@@ -1023,7 +1039,7 @@ throws Exception
         }
         */
         // Check here whether the pathname corresponds to a time series or not.
-        // This can't be called unless the HecDSSUtilities code is told what the DSS file is
+        // This can't be called unless the HecDSSUtilities code is told what the DSS file is.
         //HecDSSUtilities hutil = new HecDSSUtilities.pathnameDataType(dssPathName.toString());
         //System.out.println("Trying to get attributes");
         String dssPathNameNotCondensed = uncondensedPathName(dssPathName).toString();
@@ -1044,8 +1060,8 @@ throws Exception
         // Handle the D part similarly regardless of whether using non-HEC or HEC code above.
         if ( !dPart.equals("") ) {
             // Parse out the D part into DateTime objects, but only to day precision since that is all that is in D.
-            // Note that the D part might be one date if no condensing was necessary, or two parts if
-            // condensing occurred.
+            // Note that the D part might be one date if no condensing was necessary,
+        	// or two parts if condensing occurred.
             
             // FIXME SAM 2008-09-02 Might be HECLIB code to do this.
             
@@ -1080,8 +1096,8 @@ throws Exception
             
             // FIXME SAM 2008-11-10 Evaluate whether this is a good idea - need to understand better the
             // irregular intervals used by HEC software - might need to adopt a more granular irregular
-            // interval convention in time series code than the current generic irregular interval.  For example use
-            // Irr6Hour.
+            // interval convention in time series code than the current generic irregular interval.
+        	// For example use Irr6Hour.
             ePart = "Irregular";
             Message.printStatus ( 2, routine, "Reading irregular time series and paired data are not yet supported - " +
         		"not reading data for " + "A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
@@ -1092,9 +1108,9 @@ throws Exception
            	"A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
            	"D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
         // Create time series.
-        // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters (periods and dashes) in
-        // HEC parts since these conflict with TSID conventions.  For now, replace the
-        // periods with spaces in the identifier and utilize the time
+        // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters
+       	// (periods and dashes) in HEC parts since these conflict with TSID conventions.
+       	// For now, replace the periods with spaces in the identifier and utilize the time
         // series alias to retain the original identifier.
         String dotfPart = "";
         String dotfPartNoPeriod = ""; // Dot F part without a period.
@@ -1102,9 +1118,10 @@ throws Exception
             dotfPart = "." + fPart;
             dotfPartNoPeriod = "." + fPart.replace('.',' ');
         }
-        // Make sure that the parts do not contain periods, which will mess up the time series.  If the parts
-        // do contain periods, set an alias with the first part since the alias can contain parts and replace
-        // the periods with dots.  Separate the A and B parts with a colon because dashes are often used in HEC
+        // Make sure that the parts do not contain periods, which will mess up the time series.
+        // If the parts do contain periods, set an alias with the first part since the alias
+        // can contain parts and replace the periods with dots.
+        // Separate the A and B parts with a colon because dashes are often used in HEC
         // and have special meaning in TSID for main-sub location.
         String tsidMain = aPart + ":" + bPart + ".HEC-DSS." + cPart + "." + ePart + dotfPart;
         String tsidMainNoPeriodsInParts = aPart.replace('.',' ') + ":" + bPart.replace('.',' ') + ".HEC-DSS." +
@@ -1148,11 +1165,11 @@ throws Exception
         // Time series input name is the original HEC-DSS file.
         ts.setInputName ( dssFilename );
         // Set the start date from the D part but might be reset below from actual data.
-        // Only set the end date if it is different from the start.  This will mimic the catalog in that
-        // only ranges will be shown.
+        // Only set the end date if it is different from the start.
+        // This will mimic the catalog in that only ranges will be shown.
         
-        // FIXME SAM 2009-01-08 Need to set the precision of dates including hour.  Currently only set to day
-        // based on the D part.  This will be reset below.
+        // FIXME SAM 2009-01-08 Need to set the precision of dates including hour.
+        // Currently only set to day based on the D part.  This will be reset below.
         ts.setDate1 ( date1FromDPart );
         if ( !date1FromDPart.equals(date2FromDPart) ) {
             ts.setDate2 ( date2FromDPart );
@@ -1166,13 +1183,14 @@ throws Exception
         ts.setProperty("F", fPart);
         HecTimeSeries rts = null;
         if ( !readData ) {
-            // Not reading the data (generally for performance reasons).  To get complete metadata including
-            // the units, need to read something out of the time series.
+            // Not reading the data (generally for performance reasons).
+        	// To get complete metadata including the units, need to read something out of the time series.
 
             // TODO QUESTION FOR BILL CHARLEY - is the following the correct way to get the data units
-            // without reading the time series, or does it actually read ALL the data (which would be undesirable
-            // because it is slow)?  Or does it do nothing if the time series has not been read?
-            // It does not seem to result in units coming back so I have commented it out
+            // without reading the time series, or does it actually read ALL the data
+        	// (which would be undesirable because it is slow)?
+        	// Or does it do nothing if the time series has not been read?
+            // It does not seem to result in units coming back so I have commented it out.
             /*
             HecTimeSeries rts = new HecTimeSeries();
             rts.setDSSFileName(dssFilename);
@@ -1191,8 +1209,8 @@ throws Exception
             // format (e.g., first day in period) to get the units when not reading data).
         }
         else {
-            // Read the time series data.  This is the only way to get data units so reading
-            // no data above will have blank units.
+            // Read the time series data.
+        	// This is the only way to get data units so reading no data above will have blank units.
 
             // For now just set the D part to first value because it does not seem that a range
             // is allowed when reading.
@@ -1215,9 +1233,10 @@ throws Exception
                 rts.setTimeWindow(timeWindow);
             }
             else {
-                // No specific period has been requested so read all available data.  Not sure if there is a
-                // simple API to do this so do it brute force by coming up with temporary dates based on the
-                // condensed pathname D parts.  Request that hour be added because it seems to be required.
+                // No specific period has been requested so read all available data.
+            	// Not sure if there is a simple API to do this so do it brute force by
+            	// coming up with temporary dates based on the condensed pathname D parts.
+            	// Request that hour be added because it seems to be required.
                 String timeWindow = createTimeWindowString ( date1FromDPart,
                     adjustEndBlockDateToLastDateTime(ts, date2FromDPart), ts, true );
                 Message.printStatus(2, routine,
@@ -1227,8 +1246,9 @@ throws Exception
                 // TODO QUESTION FOR BILL CHARLEY - reading the entire period without the user having to specify
                 // that information is a very common use case.  It would be great if there were a way to read
                 // the entire time series without specifying the window.  I'm still seeing that by default if the
-                // window is not specified it only reads the first "block".  Is there something easier than what
-                // I have done above?  DSS-VUE seems to do something because you can view the entire time series
+                // window is not specified it only reads the first "block".
+                // Is there something easier than what I have done above?
+                // DSS-VUE seems to do something because you can view the entire time series
                 // without specifying the time window.
             }
 
@@ -1243,28 +1263,31 @@ throws Exception
             TimeSeriesContainer tsc = new TimeSeriesContainer();
             // False below means don't remove missing.
             
-            // TODO SAM 2009-01-08 Evaluate whether true or false should be specified.  If true, then there is
-            // a performance hit in the HEC code to remove the missing values.  If false, there is more overhead
-            // to process more records.  Not sure what is best.
+            // TODO SAM 2009-01-08 Evaluate whether true or false should be specified.
+            // If true, then there is a performance hit in the HEC code to remove the missing values.
+            // If false, there is more overhead to process more records.  Not sure what is best.
             
-            // TODO QUESTION FOR BILL CHARLEY - The TS time series package handles missing values.  Regular
-            // time series are filled with missing at initialization.  I'm not sure what the performance impacts
-            // are for the boolean (see also above TODO comment).
+            // TODO QUESTION FOR BILL CHARLEY - The TS time series package handles missing values.
+            // Regular time series are filled with missing at initialization.
+            // I'm not sure what the performance impacts are for the boolean (see also above TODO comment).
             
             int status = rts.read (tsc,false);
             Message.printStatus(2, routine, "Status from read = " + status + " number of values=" + tsc.values.length + ".");
             // Some time series don't have a period so can't set dates in TS from HecTimeSeries
-            // TODO QUESTION FOR BILL CHARLEY - why do some time series not have dates for their period?  Is it
-            // because a time series is defined but no data records are saved?
+            // TODO QUESTION FOR BILL CHARLEY - why do some time series not have dates for their period?
+            // Is it because a time series is defined but no data records are saved?
             if ( Message.isDebugOn ) {
                 Message.printDebug(2, routine, "Before setDataPeriod()" );
             }
             // readData2 below indicates that a period was determined so it is OK to continue reading the data.
-            // If OK, it also sets the period for the time series objects.  However, it is possible that data were
-            // read but the output of getTimeRange() is not valid so rely on the data values below to set the dates.
+            // If OK, it also sets the period for the time series objects.
+            // However, it is possible that data were read but the output of getTimeRange()
+            // is not valid so rely on the data values below to set the dates.
             readData2 = setDataPeriodFromData ( ts, tsc, readStartReq, readEndReq );
             // Remember units are not available until data records are read so handle units below.
-            String units = rts.units();
+            // 2022-10-24 Karl Tarbet indicates that units should come from the container.
+            //String units = rts.units();
+            String units = tsc.getUnits();
             ts.setDataUnits ( units );
             ts.setDataUnitsOriginal ( units );
             // FIXME SAM 2009-01-09 Need to evaluate mapping of HEC units with standard units supported by TS code.
@@ -1281,9 +1304,8 @@ throws Exception
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2, routine, "Start transferring data." );
                 }
-                // Reset the dates in the time series to either the requested or the range of
-                // dates in the returned data.  This is easier than trying to interpret the path dates for
-                // returned data.
+                // Reset the dates in the time series to either the requested or the range of dates in the returned data.
+                // This is easier than trying to interpret the path dates for returned data.
                 if ( (readStartReq == null) && (readEndReq == null) ) {
                     setTimeSeriesDatesToData ( ts, tsc.times );
                 }
@@ -1319,23 +1341,24 @@ throws Exception
                     }
                     // Set the value in the time series object.
                     ts.setDataValue( date, tsc.values[idata]);
-                    // FIXME SAM 2009-01-08 Here is where units would be converted, or do it on the entire time
-                    // series once read.
+                    // FIXME SAM 2009-01-08 Here is where units would be converted,
+                    // or do it on the entire time series once read.
                 }
             }
         }
         // Add the time series to the list.
         tslist.add ( ts );
     }
-    // FIXME SAM 2009-01-08 Closing the file is a performance hit so don't probably don't want to do it
-    // for each call.  Need to evaluate the cache of opened DSS files and making sure they do get closed out
-    // so that they don't interfere with other file resources in the session.  DSS files seem to have a timeout
-    // for non-use so this can be good in that files would automatically close, but if we rely on this, we could
-    // end up with too many open files that don't close in a timely manner and free up resources.
+    // FIXME SAM 2009-01-08 Closing the file is a performance hit so don't probably don't want to do it for each call.
+    // Need to evaluate the cache of opened DSS files and making sure they do get closed out
+    // so that they don't interfere with other file resources in the session.
+    // DSS files seem to have a timeout for non-use so this can be good in that files would automatically close,
+    // but if we rely on this, we could end up with too many open files that don't close
+    // in a timely manner and free up resources.
     
     // TODO QUESTION FOR BILL CHARLEY - I don't know how many DSS files we might want to open at once but for some
-    // other formats we open hundreds or thousands of files so managing open files may be an issue.  I'm going to
-    // look at caching, something like:
+    // other formats we open hundreds or thousands of files so managing open files may be an issue.
+    // I'm going to look at caching, something like:
     //
     // List openHecDSS...
     // openHecDSS ( filename )
@@ -1418,10 +1441,11 @@ private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, D
 Set a DateTime from a HecTime instance.
 @param date DateTime instance to modify.
 @param hecTime HecTime instance from which to retrieve data.
-@param tsIntervalBase time series interval base.  Monthly dates in hecTime will have an hour of 24 and therefore
-need to ignore the hour when setting the date.
-@param rollOver if True allow the day to roll over if hour is 24.  If false, do not roll over the day for year,
-month, and day interval.  This flag is needed because some of the period-related dates are at hour 24 of a prior
+@param tsIntervalBase time series interval base.
+Monthly dates in hecTime will have an hour of 24 and therefore need to ignore the hour when setting the date.
+@param rollOver if True allow the day to roll over if hour is 24.
+If false, do not roll over the day for year, month, and day interval.
+This flag is needed because some of the period-related dates are at hour 24 of a prior
 day and data is typically on the same day.
 */
 private static void setDateTime ( DateTime date, HecTime hecTime, int tsIntervalBase, boolean rollOver ) {
@@ -1461,8 +1485,9 @@ private static void setDateTime ( DateTime date, HecTime hecTime, int tsInterval
 }
 
 /**
-Set the time series period based on data read from the HEC-DSS file.  The precisions of the dates will
-be set automatically in the TS.set*() methods.  The dates should be OK (no extra 24 hour rollover for monthly, etc.)
+Set the time series period based on data read from the HEC-DSS file.
+The precisions of the dates will be set automatically in the TS.set*() methods.
+The dates should be OK (no extra 24 hour rollover for monthly, etc.)
 because the setDateTime() method only sets what is appropriate for the precision of the time series.
 @param ts Time series being filled.
 @param times list of times read from the HEC-DSS time series, corresponding to data.
@@ -1659,13 +1684,14 @@ private static DSSPathname uncondensedPathName ( DSSPathname dssPathName ) {
 Write a list of time series to a HEC-DSS file.  
 @param outputFile the output file to write.  The file will be created if it does not already exist.
 The parent folder must exist.
-@param tslist list of time series to write.  The HEC-DSS pathname for each time series will be created from the
+@param tslist list of time series to write.
+The HEC-DSS pathname for each time series will be created from the
 time series ID convention (see readTimeSeries() for documentation).
 @param writeStartReq the requested start for output, or null to write all data.
 @param writeEndReq the requested end for output, or null to write all data.
 @param unitsReq the requested units for output, currently not used.
-@param precisionReq the requested precision for output, digits after the period (specify as negative to use the
-default).
+@param precisionReq the requested precision for output,
+digits after the period (specify as negative to use the default).
 @param hecType the "type" in HEC-DSS convention (e.g., "PER-AVER").
 @param A A-part to override default from TSID, or null to use TSID.
 @param B B-part to override default from TSID, or null to use TSID.
@@ -1673,8 +1699,8 @@ default).
 @param E E-part to override default from TSID, or null to use TSID.
 @param F F-part to override default from TSID, or null to use TSID.
 @param replaceTimeSeries if true, delete the existing time series before writing.
-@param closeFileAfterWrite if true, close the HEC-DSS file after write.  This may slow overall performance but
-will ensure that the process does not lock the file for removal, etc.
+@param closeFileAfterWrite if true, close the HEC-DSS file after write.
+This may slow overall performance but will ensure that the process does not lock the file for removal, etc.
 @see #readTimeSeries(File, String, DateTime, DateTime, String, boolean)
 @exception IOException if the HEC-DSS file cannot be written.
 @exception Exception if other errors occur.
@@ -1683,7 +1709,7 @@ public static void writeTimeSeriesList ( File outputFile, List<TS> tslist, DateT
         String unitsReq, int precisionReq, String hecType, String A, String B, String C, String E, String F,
         boolean replaceTimeSeries, boolean closeFileAfterWrite )
 throws IOException, Exception
-{   String routine = "HecDssAPI.writeTimeSeriesList";
+{   String routine = HecDssAPI.class.getSimpleName() + ".writeTimeSeriesList";
 
     if ( (tslist == null) || (tslist.size() == 0) ) {
         // Nothing in the list so return.

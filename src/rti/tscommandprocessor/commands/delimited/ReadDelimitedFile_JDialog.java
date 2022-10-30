@@ -150,8 +150,8 @@ try{
 		}
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (filename == null || filename.equals("")) {
 				return;
@@ -345,7 +345,7 @@ private void checkInput () {
 	try {
 	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
-	} 
+	}
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
 	    Message.printWarning(3, "CheckInput", e);
@@ -432,25 +432,25 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Column names are defined by parameters or are determined from the file, " +
-        "and are then used by other parameters to read data." ), 
+        "and are then used by other parameters to read data." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The column name(s), date/time column, value column(s), and Location ID(s) columns can use the notation " +
-        "FC[start:stop] to read column headings from the first non-comment file line." ), 
+        "FC[start:stop] to read column headings from the first non-comment file line." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "For example, \"Date,FC[2:]\" defines the first column as \"Date\" and column names " +
-        "2+ will be read from the file." ), 
+        "2+ will be read from the file." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "If \"FC[\" does NOT appear in any parameters, then a column heading line is NOT automatically read after comments." ), 
+        "If \"FC[\" does NOT appear in any parameters, then a column heading line is NOT automatically read after comments." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working directory) for a delimited file to read." ), 
+		"Specify a full path or relative path (relative to working directory) for a delimited file to read." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -459,7 +459,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     // Panel for file to data mapping.
     int yData = -1;
     JPanel data_JPanel = new JPanel();
@@ -471,7 +471,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(data_JPanel, new JLabel (	"Delimited file to read:" ), 
+    JGUIUtil.addComponent(data_JPanel, new JLabel (	"Delimited file to read:" ),
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
@@ -493,7 +493,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	}
 	JGUIUtil.addComponent(data_JPanel, InputFile_JPanel,
 		1, yData, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Delimiter:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Delimiter_JTextField = new JTextField (15);
@@ -504,8 +504,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - delimiter character (use \\t for tab or \\s for space)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ), 
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TreatConsecutiveDelimitersAsOne_JComboBox = new SimpleJComboBox ( false );
     List<String> delimChoices = new ArrayList<>();
@@ -518,7 +518,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Optional (default=False)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Comment character(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Comment_JTextField = new JTextField (15);
@@ -529,7 +529,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - character(s) that indicate comment lines (default=#)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Rows to skip (by row number):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SkipRows_JTextField = new JTextField (15);
@@ -539,7 +539,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - comma-separated numbers (1+) and ranges (e.g., 1,3-7) (default=none)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Rows to skip (after header comments):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SkipRowsAfterComments_JTextField = new JTextField (15);
@@ -549,7 +549,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - number of rows to skip after header comments (default=0)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Column name(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnNames_JTextField = new JTextField (30);
@@ -559,7 +559,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Required - column names for file, used below to read data (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Date/time column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeColumn_JTextField = new JTextField (15);
@@ -570,7 +570,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - if date and time are in the same column (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
     JGUIUtil.addComponent(data_JPanel, DateTimeFormat_JLabel,
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -584,7 +584,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - date/time format MM/DD/YYYY, etc. (default=auto-detect)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Date column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateColumn_JTextField = new JTextField (15);
@@ -595,7 +595,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - if date and time are in separate columns (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Time column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeColumn_JTextField = new JTextField (15);
@@ -606,7 +606,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - if date and time are in separate columns (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Value column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new JTextField (20);
@@ -617,7 +617,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - specify column names for time series values, separated by commas (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Flag column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagColumn_JTextField = new JTextField (20);
@@ -628,7 +628,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - specify column names for time series flags, separated by commas (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Location ID(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationID_JTextField = new JTextField (15);
@@ -639,7 +639,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - location ID for each value column, separated by commas (can use \"FC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     // Panel for additional time series data properties.
     int yData2 = -1;
     JPanel data2_JPanel = new JPanel();
@@ -649,11 +649,14 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         "Specify additional time series properties not found in the data file."),
         0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
-        "If used, specify input start and end to a precision appropriate for the data." ), 
+        "If used, specify input start and end to a precision appropriate for the data." ),
+        0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data2_JPanel, new JLabel (
+        "Irregular time series should specify the precision of date/time in the data interva (e.g., IrregSecond)." ),
         0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data2_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Data provider:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Provider_JTextField = new JTextField (10);
@@ -664,7 +667,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "Optional - data provider (data source) for the data (default=blank)."),
         3, yData2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Data type(s):"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataType_JTextField = new JTextField (15);
@@ -675,11 +678,23 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "Optional - data type for each value column, separated by commas (default=value column name(s))."),
         3, yData2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel( "Data interval:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
     List<String> intervals = TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1);
+    // Add new style irregular interval.
+    intervals.add("IrregYear");
+    intervals.add("IrregMonth");
+    intervals.add("IrregDay");
+    intervals.add("IrregHour");
+    intervals.add("IrregMinute");
+    intervals.add("IrregSecond");
+    intervals.add("IrregHSecond");
+    intervals.add("IrregNanoSecond");
+    intervals.add("IrregMicroSecond");
+    intervals.add("IrregMilliSecond");
+    // Add old style irregular interval.
     TimeInterval irreg = new TimeInterval ( TimeInterval.IRREGULAR, 0 );
     intervals.add("" + irreg);
     __Interval_JComboBox.setData ( intervals );
@@ -690,7 +705,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data2_JPanel, new JLabel ( "Required - data interval for time series."),
         3, yData2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Scenario:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Scenario_JTextField = new JTextField (15);
@@ -701,7 +716,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "Optional - scenario for the time series (comma-separated, default=blank)."),
         3, yData2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel("Data units:"),
 		0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 15 );
@@ -723,7 +738,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "Optional - missing value indicator(s) for file data (default=blank values)."),
         3, yData2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel("Alias to assign:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -735,7 +750,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, yData2, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(data2_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(data2_JPanel, new JLabel ("Input start:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
@@ -745,7 +760,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel ( "Optional - overrides the global input start."),
         3, yData2, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(data2_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(data2_JPanel, new JLabel ( "Input end:"),
         0, ++yData2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
@@ -770,7 +785,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -976,7 +991,7 @@ private void refresh()
         if ( Interval == null || Interval.equals("") ) {
             // Select a default.
             __Interval_JComboBox.select ( 0 );
-        } 
+        }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
                 __Interval_JComboBox.select ( Interval );

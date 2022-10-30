@@ -51,6 +51,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the Cumulate() command.
@@ -64,12 +65,20 @@ Strings used with the command.
 protected final String _CarryForwardIfMissing = "CarryForwardIfMissing";
 protected final String _SetMissingIfMissing = "SetMissingIfMissing";
 
-// TODO SAM 2012-07-25 Maybe need a "DataValueOrZero" option in case the data value is missing.
 /**
-Possible values for the ResetValue parameter.
+Possible values for the ResetValue parameter:
+- TODO smalers 2022-10-25 perhaps zero should never be used because it overrides the data value on the reset date/time?
+       The following might make sense.
+- TODO SAM 2012-07-25 Maybe need a "DataValueOrZero" option in case the data value is missing.
 */
 protected final String _Zero = "0";
 protected final String _DataValue = "DataValue";
+
+/**
+ * Possible values for InsertResetPoint.
+ */
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 Year to prepend to reset string (because Reset parameter does not include year).
@@ -99,11 +108,12 @@ throws InvalidCommandParameterException
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     String Reset = parameters.getValue ( "Reset" );
     String ResetValue = parameters.getValue ( "ResetValue" );
+    String InsertResetPoint = parameters.getValue ( "InsertResetPoint" );
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -150,7 +160,18 @@ throws InvalidCommandParameterException
                 message, "ResetValue, if specified, must be " +
                 _DataValue + " or a number." ) );
     }
-    
+
+    if ( (InsertResetPoint != null) && !InsertResetPoint.equals("") &&
+        !InsertResetPoint.equalsIgnoreCase(_False) &&
+        !InsertResetPoint.equalsIgnoreCase(_True)) {
+        message = "The InsertResetPoint parameter (" + InsertResetPoint + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "InsertResetPoint, if specified, must be " +
+                _False + " or " + _True + "." ) );
+    }
+
     if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
         if ( !StringUtil.isInteger(AllowMissingCount) ) {
             message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";
@@ -171,7 +192,7 @@ throws InvalidCommandParameterException
             }
         }
     }
-    
+
     if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
         if ( !StringUtil.isInteger(MinimumSampleSize) ) {
             message = "The MinimumSampleSize value (" + MinimumSampleSize + ") is not an integer.";
@@ -192,26 +213,27 @@ throws InvalidCommandParameterException
             }
         }
     }
-    
+
     // Check for invalid parameters.
-    List<String> validList = new ArrayList<String>(8);
+    List<String> validList = new ArrayList<>(9);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "HandleMissingHow" );
     validList.add ( "Reset" );
     validList.add ( "ResetValue" );
+    validList.add ( "InsertResetPoint" );
     validList.add ( "AllowMissingCount" );
     validList.add ( "MinimumSampleSize" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -330,7 +352,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	PropList parameters = getCommandParameters();
-    
+
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
@@ -365,16 +387,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ResetValue = parameters.getValue ( "ResetValue" );
-    boolean resetValueToDataValue = false;
+    boolean resetValueToDataValue = true; // Default, reset below.
     Double ResetValue_Double = null;
     if ( ResetValue != null ) {
         if ( StringUtil.isDouble(ResetValue) ) {
             ResetValue_Double = new Double(ResetValue);
+            resetValueToDataValue = false;
         }
         else if ( ResetValue.equalsIgnoreCase(_DataValue) ) {
             resetValueToDataValue = true;
         }
     }
+	String InsertResetPoint = parameters.getValue("InsertResetPoint");
+	boolean insertResetPoint = false; // Default.
+	if ( (InsertResetPoint != null) && InsertResetPoint.equalsIgnoreCase(_True) ) {
+		insertResetPoint = true;
+	}
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     Integer AllowMissingCount_Integer = null;
     if ( (AllowMissingCount != null) && StringUtil.isInteger(AllowMissingCount) ) {
@@ -507,7 +535,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {	ts = (TS)prop_contents;
 		}
 		
-		// TODO SAM 2007-02-17 Evaluate whether to print warning if null TS.
+		// If the time series interval is year, the command should not be used
+		// because the output will be a single value for each year.
+		
+		if ( ts.getDataIntervalBase() == TimeInterval.YEAR ) {
+            message = "Time series \"" + ts.getIdentifierString() +
+            	"\" interval is year, no need to use the command.  Not cumulating.";
+			Message.printWarning(log_level,
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Don't use the Cumulate() command on the year interval time series." ) );
+            continue;
+		}
 		
 		DateTime analysisStart = null; // Not yet supported.
 		DateTime analysisEnd = null;
@@ -518,8 +559,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\", Reset=" + resetDateTime +
 				", ResetValue=" + ResetValue);
 			TSUtil_CumulateTimeSeries u = new TSUtil_CumulateTimeSeries( ts, analysisStart, analysisEnd,
-			    handleMissingHow, resetDateTime, ResetValue_Double, resetValueToDataValue, AllowMissingCount_Integer,
-			    MinimumSampleSize_Integer );
+			    handleMissingHow,
+			    resetDateTime, ResetValue_Double, resetValueToDataValue, insertResetPoint,
+			    AllowMissingCount_Integer, MinimumSampleSize_Integer );
             u.cumulate ();
 		}
 		catch ( Exception e ) {
@@ -546,7 +588,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -563,6 +605,7 @@ public String toString ( PropList props )
 	String HandleMissingHow = props.getValue("HandleMissingHow");
 	String Reset = props.getValue("Reset");
 	String ResetValue = props.getValue("ResetValue");
+	String InsertResetPoint = props.getValue("InsertResetPoint");
     String AllowMissingCount = props.getValue( "AllowMissingCount" );
     String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
 	StringBuffer b = new StringBuffer ();
@@ -601,6 +644,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ResetValue=" + ResetValue );
+    }
+    if ( (InsertResetPoint != null) && (InsertResetPoint.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InsertResetPoint=" + InsertResetPoint );
     }
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         if ( b.length() > 0 ) {

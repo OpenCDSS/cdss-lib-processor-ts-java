@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -149,8 +149,7 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -158,8 +157,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -167,8 +165,7 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -179,7 +176,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	// Check parameter values.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -204,7 +201,7 @@ private void checkInput ()
         props.set ( "CopyHistory", CopyHistory );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -253,18 +250,18 @@ private void initialize ( JFrame parent, Copy_Command command )
 		"Make a copy of a time series, giving the copy an alias." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The copy is exactly the same and can be referenced by its alias in other commands." ), 
+		"The copy is exactly the same and can be referenced by its alias in other commands." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify new time series identifier (TSID) information for the copy to avoid errors " +
-		"with the copy being mistaken for the original." ), 
+		"with the copy being mistaken for the original." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to copy:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit.
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -272,7 +269,7 @@ private void initialize ( JFrame parent, Copy_Command command )
 	__TSID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
@@ -281,11 +278,11 @@ private void initialize ( JFrame parent, Copy_Command command )
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Required - specify to avoid confusion with TSID from original time series."), 
+		"Required - specify to avoid confusion with TSID from original time series."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
     JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
@@ -294,7 +291,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -305,11 +302,11 @@ private void initialize ( JFrame parent, Copy_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Copy data flags?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CopyDataFlags_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices = new Vector<String>();
+    List<String> choices = new ArrayList<>();
     choices.add ("");
     choices.add ( __command._False );
     choices.add ( __command._True );
@@ -318,9 +315,9 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, __CopyDataFlags_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - should data flags be copied (default=" + __command._True + ")."), 
+        "Optional - should data flags be copied (default=" + __command._True + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Copy history?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CopyHistory_JComboBox = new SimpleJComboBox ( false );
@@ -329,7 +326,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, __CopyHistory_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - should history be copied (default=" + __command._True + ")."), 
+        "Optional - should history be copied (default=" + __command._True + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -341,13 +338,13 @@ private void initialize ( JFrame parent, Copy_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -415,7 +412,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		Alias = props.getValue ( "Alias" );
 		TSID = props.getValue ( "TSID" );
 		NewTSID = props.getValue ( "NewTSID" );
@@ -429,14 +426,14 @@ private void refresh ()
 		    __TSID_JComboBox.select ( TSID );
 		}
 		else {
-		    // Automatically add to the list...
+		    // Automatically add to the list.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 0 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {
-			    // Select the first choice...
+			    // Select the first choice.
 				if ( __TSID_JComboBox.getItemCount() > 0 ) {
 					__TSID_JComboBox.select ( 0 );
 				}
@@ -446,7 +443,7 @@ private void refresh ()
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
         if ( CopyDataFlags == null ) {
-            // Select default...
+            // Select default.
             __CopyDataFlags_JComboBox.select ( 0 );
         }
         else {
@@ -461,7 +458,7 @@ private void refresh ()
             }
         }
         if ( CopyHistory == null ) {
-            // Select default...
+            // Select default.
             __CopyHistory_JComboBox.select ( 0 );
         }
         else {
@@ -476,7 +473,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
@@ -499,14 +496,14 @@ and the dialog is closed.
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -519,11 +516,22 @@ public void windowClosing( WindowEvent event )
 {	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

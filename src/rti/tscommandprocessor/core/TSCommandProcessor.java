@@ -1761,8 +1761,9 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
 }
 
 /**
-Determine if the commands are read-only.  In this case, applications may disable
-save features.  The special comment "#@readOnly" indicates that the commands are read-only.
+Determine if the commands are read-only.
+In this case, applications may disable save features.
+The special comment "#@readOnly" indicates that the commands are read-only.
 @return true if read-only, false if can be written.
 */
 public boolean getReadOnly ()

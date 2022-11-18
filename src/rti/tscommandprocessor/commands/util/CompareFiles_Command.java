@@ -802,9 +802,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Initialize for the loop.
 			lineCountCompared = 0;
 			diffCount = 0;
-			// If URLs are used as input, download the files to temporary names.
+			// If URLs are used as input, download the files to temporary names:
+			// - don't specify a timeout as per historical conventions but may want to specify something
 			if ( inputFile1IsUrl ) {
-				int code = IOUtil.getUriContent(InputFile1_full, this.tmpInputFile1, null);
+				int code = IOUtil.getUriContent(InputFile1_full, this.tmpInputFile1, null, -1, -1);
 				if ( code != 200 ) {
 					message = "Error downloading: " + InputFile1_full;
 					Message.printWarning ( warning_level, 
@@ -819,7 +820,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 			if ( inputFile2IsUrl ) {
-				int code = IOUtil.getUriContent(InputFile2_full, this.tmpInputFile2, null);
+				int code = IOUtil.getUriContent(InputFile2_full, this.tmpInputFile2, null, -1, -1);
 				if ( code != 200 ) {
 					message = "Error downloading: " + InputFile2_full;
 					Message.printWarning ( warning_level, 

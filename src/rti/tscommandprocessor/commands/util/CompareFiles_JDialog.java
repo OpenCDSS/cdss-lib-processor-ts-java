@@ -1087,7 +1087,11 @@ private void refresh ()
                 TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile2) ) );
 		}	
 
-		if ( IOUtil.fileExists(__diffProgram) && IOUtil.fileExists(file1Path) && IOUtil.fileExists(file2Path) ) {
+		if ( IOUtil.fileExists(__diffProgram) &&
+			(InputFile1 != null) && !InputFile1.isEmpty() &&
+			IOUtil.fileExists(file1Path) &&
+			(InputFile2 != null) && !InputFile2.isEmpty() &&
+			IOUtil.fileExists(file2Path) ) {
 			__visualDiff_JButton.setEnabled(true);
 			__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
 		}

@@ -980,7 +980,103 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     }
     return s2;
 }
+
+/**
+ * Get the annotation command parameter from a "#@annotation ..." command.
+ * @param command Annotation command to parse
+ * @param index position of the parameter 0 is the annotation and 1 is the first parameter
+ * @return the parameter or null if not available (command string too short);
+ * the parameter name is returned without the leading @
+ */
+public static String getAnnotationCommandParameter ( Command command, int index ) {
+	String commandString = command.toString().trim();
+	if ( !commandString.startsWith("#") ) {
+		// Not in an annotation comment.
+		return null;
+	}
+	int pos1 = commandString.indexOf("@");
+	if ( pos1 < 0 ) {
+		// Not in an annotation comment.
+		return null;
+	}
+	// Advance to the space after the annotation name.
+	int pos2 = commandString.indexOf(" ",pos1);
+	if ( pos2 < 0 ) {
+		// No space after the annotation name so no parameters, something like "# @readOnly"
+		if ( index == 0 ) {
+			// Requested the annotation name so return it without the leading @.
+			return commandString.substring(pos1 + 1).trim();
+		}
+		else {
+			// Requested a parameter that does not exist.
+			return null;
+		}
+	}
+	else if ( index == 0 ) {
+		// Have annotation name and parameters but want the parameter name.
+		return commandString.substring(pos1 + 1,pos2).trim();
+	}
+	else {
+		// Have a space after the annotation name so parse the remaining tokens.
+		List<String> params = StringUtil.breakStringList(commandString.substring(pos2).trim(), " ", 0);
+		if ( params.size() < index ) {
+			// Do not have the requested parameter.
+			return null;
+		}
+		else {
+			// Have the requested parameter.
+			return params.get(index - 1);
+		}
+	}
+}
 	
+/**
+ * Get commands that match an annotation.
+ * @param processing command processor
+ * @param annotation the annotation of interest (e.g., "author" or "@author")
+ * @return a list of commands that match the requested annotation
+ */
+public static List<Command> getAnnotationCommands ( TSCommandProcessor processor, String annotation ) {
+	List<Command> annotationCommands = new ArrayList<>();
+	// Add the leading @ if not present.
+	if ( !annotation.startsWith("@") ) {
+		annotation = "@" + annotation;
+	}
+	boolean doAdd;
+    for ( Command c : processor.getCommands() ) {
+        String commandString = c.toString().trim();
+        // The following might match @version for @versionDate.
+       	if ( commandString.startsWith("#") && (commandString.indexOf(annotation) > 0) ) {
+       		// Make sure that the annotation is exactly matched (e.g., @versionDate) so have to check:
+       		// - the following returns the annotation name without the leading @ but should not be null.
+       		String annotationName = getAnnotationCommandParameter(c,0);
+       		annotationName = "@" + annotationName;
+       		if ( (annotationName != null) && annotationName.equalsIgnoreCase(annotation) ) {
+       			// Have a matching annotation name.
+        		// Make sure that # and @ only have spaces in between because the annotation string could
+        		// be used in a comment, for example automated tests for the annotations.
+        		doAdd = true;
+        		int pos1 = commandString.indexOf("#");
+        		int pos2 = commandString.indexOf(annotation);
+        		if ( (pos2 - pos1) > 1 ) {
+        			// Have characters between # and @ so check those characters.
+        			for ( int i = (pos1 + 1); i < pos2; i++ ) {
+        				if ( !Character.isWhitespace(commandString.charAt(i)) ) {
+        					// Not an annotation. Assume it is a normal comment, for example an automated test explaining the annotation.
+        					doAdd = false;
+        					break;
+        				}
+        			}
+        		}
+        		if ( doAdd ) {
+        			annotationCommands.add(c);
+        		}
+       		}
+        }
+    }
+    return annotationCommands;
+}
+
 /**
 Get the commands before the indicated index position.
 Only the requested commands are returned.

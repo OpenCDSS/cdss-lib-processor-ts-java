@@ -97,6 +97,7 @@ import rti.tscommandprocessor.commands.json.NewObject_Command;
 // JSON commands.
 import rti.tscommandprocessor.commands.json.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.SetObjectPropertiesFromTable_Command;
+import rti.tscommandprocessor.commands.json.SetObjectProperty_Command;
 import rti.tscommandprocessor.commands.json.WriteObjectToJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
@@ -1095,6 +1096,9 @@ throws UnknownCommandException
     }
 	else if ( commandName.equalsIgnoreCase("SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();
+	}
+	else if ( commandName.equalsIgnoreCase("SetObjectProperty") ) {
+		return new SetObjectProperty_Command ();
 	}
 	else if ( commandName.equalsIgnoreCase("SetObjectPropertiesFromTable") ) {
 		return new SetObjectPropertiesFromTable_Command ();

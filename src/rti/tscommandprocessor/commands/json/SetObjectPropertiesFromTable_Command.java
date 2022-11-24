@@ -69,8 +69,7 @@ public SetObjectPropertiesFromTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -154,7 +153,7 @@ public boolean editCommand ( JFrame parent )
 private Object findObject ( Map<?,?> map, Map<String,String> matchMap, Object [] matchValues, StringBuilder pathSearched ) {
 	String routine = getClass().getSimpleName() + ".findObject";
 	
-	// Number of levels processed so far in the search.
+	// Put together a string of values to match for the log message below.
 	StringBuilder matchValuesString = new StringBuilder();
 	for ( int i = 0; i < matchValues.length; i++ ) {
 		if ( i != 0 ) {
@@ -162,6 +161,8 @@ private Object findObject ( Map<?,?> map, Map<String,String> matchMap, Object []
 		}
 		matchValuesString.append(matchValues[i]);
 	}
+
+	// Number of levels processed so far in the search.
 	int levelsProcessed = StringUtil.patternCount(pathSearched.toString(), ".");
 	Message.printStatus(2, routine, "Searching level=" + levelsProcessed + " pathSearched=\"" + pathSearched +
 		"\" for matchValues=\"" + matchValuesString + "\".");
@@ -546,7 +547,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message, "Verify that a table exists with the requested column." ) );
         }
     }
-    
+
     // Get the match column numbers from the table to be used as input.
     int [] matchColumnNums = new int[matchMap.size()];
     int iMatch = -1;
@@ -566,7 +567,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( CommandPhaseType.RUN,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -622,7 +623,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         // Don't add to command log because warnings will result.
                         //status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
                         //    "Verify that the proper table input column is specified and that column values are numbers." ) );
-                        // Go to next time series.
+                        // Go to next row.
                         continue;
                     }
                     else {
@@ -654,7 +655,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     catch ( Exception e ) {
-        message = "Unexpected error processing time series (" + e + ").";
+        message = "Unexpected error setting object properies from table (" + e + ").";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
@@ -670,6 +671,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
  * Set the object's property based on an object from the table.
  * @param map the full object map
  * @param matchMap the map of table to object property names to match records
+ * @param matchValues the table column values used to match an object
  * @param propertyName the property name to set in the object
  * @param propertyValue the property value to set in the object
  * @param initializing if true then initializing and only set the value if the property does not exist

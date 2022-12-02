@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -87,8 +87,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices choices for TableID value.
 */
-public ManipulateTableString_JDialog ( JFrame parent, ManipulateTableString_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public ManipulateTableString_JDialog ( JFrame parent, ManipulateTableString_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -96,8 +96,8 @@ public ManipulateTableString_JDialog ( JFrame parent, ManipulateTableString_Comm
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -146,9 +146,8 @@ public void actionPerformed( ActionEvent event )
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 This just sets tooltips to be appropriate for choices.
 */
-private void checkGUIState ()
-{
-	// Reset the tooltips based on the selected operator.
+private void checkGUIState () {
+	// Reset the tooltips based on the selected operator:
 	// - set to initial values
 	__InputColumn1_JComboBox.setToolTipText("Not used.");
 	__InputColumn2_JComboBox.setToolTipText("Not used.");
@@ -180,10 +179,10 @@ private void checkGUIState ()
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SUBSTRING) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have a substring extracted - see also InputValue2 and InputValue3");
-    	__InputValue2_JTextField.setToolTipText("Specify the starting character position 1+ for the extracted substring - see also InputValue3");
-    	__InputValue3_JTextField.setToolTipText("Specify the ending character position 1+ for the extracted substring or blank for end of input string");
+    	__InputValue2_JTextField.setToolTipText("Specify the starting character position 1+ (or negative if from end) for the extracted substring - see also InputValue3");
+    	__InputValue3_JTextField.setToolTipText("Specify the ending character position 1+ (or negative if from end) for the extracted substring or blank for end of input string");
     }
-    // TODO SAM 2015-04-29 Need to enable boolean
+    // TODO SAM 2015-04-29 Need to enable boolean.
     //choices.add ( DataTableStringOperatorType.TO_BOOLEAN );
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_DATE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to date value");
@@ -209,11 +208,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
     String TableID = __TableID_JComboBox.getSelected();
 	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
@@ -256,7 +255,7 @@ private void checkInput ()
     }
 
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -266,11 +265,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
 	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
     String InputColumn1 = __InputColumn1_JComboBox.getSelected();
@@ -298,8 +297,8 @@ Instantiates the GUI components.
 @param command The command to edit.
 @param tableIDChoices list of choices for table identifiers
 */
-private void initialize ( JFrame parent, ManipulateTableString_Command command, List<String> tableIDChoices )
-{	__parent = parent;
+private void initialize ( JFrame parent, ManipulateTableString_Command command, List<String> tableIDChoices ) {
+	__parent = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -312,39 +311,39 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Manipulate a column of string data in a table, using one of the following approaches:" ), 
+		"Manipulate a column of string data in a table, using one of the following approaches:" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input values from two columns (InputColumn1 and InputColumn2) to populate the output column (e.g. operator Append, Prepend)" ), 
+        "   - process input values from two columns (InputColumn1 and InputColumn2) to populate the output column (e.g. operator Append, Prepend)" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input values from a column and a constant (InputColumn1 and InputValue2) to populate the output column (e.g. operator Append, Prepend)" ), 
+        "   - process input values from a column and a constant (InputColumn1 and InputValue2) to populate the output column (e.g. operator Append, Prepend)" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input values from a column and two constants (InputColumn1, InputValue2, InputValue3) to populate the output column (e.g. operator Replace)" ), 
+        "   - process input values from a column and two constants (InputColumn1, InputValue2, InputValue3) to populate the output column (e.g. operator Replace)" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - convert an input string value from a column (InputColumn1) into an output value (e.g. operator ToDate, ToDateTime)" ), 
+        "   - convert an input string value from a column (InputColumn1) into an output value (e.g. operator ToDate, ToDateTime)" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The operator defines the number of values that are needed as input - mouse over the input fields for feedback on what is needed." ), 
+        "The operator defines the number of values that are needed as input - mouse over the input fields for feedback on what is needed." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to include rows:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
@@ -358,7 +357,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
@@ -372,86 +371,86 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 1:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 1:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __InputColumn1_JComboBox.setToolTipText("Specify the first input column name (if appropriate) or use ${Property} notation");
-    List<String> input1Choices = new Vector<String>();
+    List<String> input1Choices = new ArrayList<>();
     input1Choices.add("");
-    __InputColumn1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __InputColumn1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __InputColumn1_JComboBox.addItemListener ( this );
     __InputColumn1_JComboBox.addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __InputColumn1_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - first input column name."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - first input column name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "String operator:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "String operator:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
+    __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit.
     __Operator_JComboBox.setData ( DataTableStringManipulator.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
-    // Set to the maximum known number
+    // Set to the maximum known number.
     __Operator_JComboBox.setMaximumRowCount(DataTableStringManipulator.getOperatorChoicesAsStrings().size());
     JGUIUtil.addComponent(main_JPanel, __Operator_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - string manipulation to perform on input."), 
+        "Required - string manipulation to perform on input."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 2:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 2:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __InputColumn2_JComboBox.setToolTipText("Specify the second input column name (if appropriate) or use ${Property} notation");
-    List<String> input2Choices = new Vector<String>();
+    List<String> input2Choices = new ArrayList<>();
     input2Choices.add("");
-    __InputColumn2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __InputColumn2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __InputColumn2_JComboBox.addItemListener ( this );
     __InputColumn2_JComboBox.addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __InputColumn2_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required if no input value 2 - second input column name."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required if no input value 2 - second input column name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 2:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 2:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputValue2_JTextField = new JTextField ( 10 );
     __InputValue2_JTextField.setToolTipText("Specify the second input value (if appropriate) or use ${Property} notation");
     __InputValue2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputValue2_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required if no input column 2 - constant string."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required if no input column 2 - constant string."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 3:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 3:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputValue3_JTextField = new JTextField ( 10 );
     __InputValue3_JTextField.setToolTipText("Specify the third input value (if appropriate) or use ${Property} notation");
     __InputValue3_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputValue3_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only used by some operators."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only used by some operators."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
-    List<String> outputChoices = new Vector<String>();
+    List<String> outputChoices = new ArrayList<>();
     outputChoices.add("");
-    __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
+    __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __OutputColumn_JComboBox.addItemListener ( this );
     __OutputColumn_JComboBox.addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __OutputColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - output column name."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - output column name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -460,16 +459,16 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
-    // Somewhat redundant but make sure tooltips are correct
+    // Somewhat redundant but make sure tooltips are correct.
     checkGUIState();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -490,18 +489,18 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
-    // Somewhat redundant but make sure tooltips are correct
+    // Somewhat redundant but make sure tooltips are correct.
     checkGUIState();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -511,30 +510,31 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
 	String ColumnIncludeFilters = "";
 	String ColumnExcludeFilters = "";
@@ -548,7 +548,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 	    TableID = props.getValue ( "TableID" );
 		ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
 		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
@@ -580,7 +580,7 @@ private void refresh ()
             __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
         if ( InputColumn1 == null ) {
-            // Select default...
+            // Select default.
             __InputColumn1_JComboBox.select ( 0 );
         }
         else {
@@ -588,12 +588,12 @@ private void refresh ()
                 __InputColumn1_JComboBox.select ( InputColumn1 );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __InputColumn1_JComboBox.setText( InputColumn1 );
             }
         }
         if ( Operator == null ) {
-            // Select default...
+            // Select default.
             __Operator_JComboBox.select ( 0 );
         }
         else {
@@ -608,7 +608,7 @@ private void refresh ()
             }
         }
         if ( InputColumn2 == null ) {
-            // Select default...
+            // Select default.
             __InputColumn2_JComboBox.select ( 0 );
         }
         else {
@@ -616,7 +616,7 @@ private void refresh ()
                 __InputColumn2_JComboBox.select ( InputColumn2 );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __InputColumn2_JComboBox.setText( InputColumn2 );
             }
         }
@@ -627,7 +627,7 @@ private void refresh ()
             __InputValue3_JTextField.setText ( InputValue3 );
         }
         if ( OutputColumn == null ) {
-            // Select default...
+            // Select default.
             __OutputColumn_JComboBox.select ( 0 );
         }
         else {
@@ -635,12 +635,12 @@ private void refresh ()
                 __OutputColumn_JComboBox.select ( OutputColumn );
             }
             else {
-                // Just set the user-specified value
+                // Just set the user-specified value.
                 __OutputColumn_JComboBox.setText( OutputColumn );
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
@@ -665,20 +665,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -687,15 +686,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

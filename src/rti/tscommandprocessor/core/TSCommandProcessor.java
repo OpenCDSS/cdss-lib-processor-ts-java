@@ -4068,8 +4068,7 @@ problems will in any case be flagged at run-time as unrecognized or problematic.
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
 */
-public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append,
-    boolean runDiscoveryOnLoad )
+public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append, boolean runDiscoveryOnLoad )
 throws IOException, FileNotFoundException
 {	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );

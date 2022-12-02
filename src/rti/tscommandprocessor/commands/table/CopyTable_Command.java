@@ -56,7 +56,7 @@ This class initializes, checks, and runs the CopyTable() command.
 */
 public class CopyTable_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 The table that is created in discovery mode.
 */
@@ -65,8 +65,8 @@ private DataTable __discoveryTable = null;
 /**
 Constructor.
 */
-public CopyTable_Command ()
-{	super();
+public CopyTable_Command () {
+	super();
 	setCommandName ( "CopyTable" );
 }
 
@@ -78,12 +78,12 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String NewTableID = parameters.getValue ( "NewTableID" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -94,7 +94,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
+
     if ( (NewTableID == null) || NewTableID.isEmpty() ) {
         message = "The new table identifier must be specified.";
         warning += "\n" + message;
@@ -102,7 +102,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier." ) );
     }
-    
+
     if ( (TableID != null) && !TableID.isEmpty() && (NewTableID != null) && !NewTableID.isEmpty() &&
         TableID.equalsIgnoreCase(NewTableID) ) {
         message = "The original and new table identifiers are the same.";
@@ -111,7 +111,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the original table identifier." ) );
     }
- 
+
 	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(8);
     validList.add ( "TableID" );
@@ -122,25 +122,24 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnFilters" );
     validList.add ( "ColumnExcludeFilters" );
     validList.add ( "RowCountProperty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed.
@@ -158,8 +157,8 @@ private DataTable getDiscoveryTable() {
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new ArrayList<>();
@@ -173,12 +172,11 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -201,13 +199,13 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -290,7 +288,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
     	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
     }
-    
+
     // Get the table to process.
 
     DataTable table = null;
@@ -341,9 +339,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        newTable = table.createCopy ( table, NewTableID, includeColumns,
 	            distinctColumns, columnMap, columnFilters, columnExcludeFilters );
-            
+
             // Set the table in the processor.
-            
+
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", newTable );
             try {
@@ -417,8 +415,8 @@ private void setDiscoveryTable ( DataTable table ) {
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
+public String toString ( PropList props ) {
+	if ( props == null ) {
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );

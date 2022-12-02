@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -287,7 +289,7 @@ throws InvalidCommandParameterException {
     */
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(10);
 	validList.add ( "OutputFile" );
 	validList.add ( "Append" );
 	validList.add ( "TableID" );
@@ -299,6 +301,7 @@ throws InvalidCommandParameterException {
 	//validList.add ( "AlwaysQuoteDateTimes" );
 	//validList.add ( "AlwaysQuoteStrings" );
 	//validList.add ( "NewlineReplacement" );
+	validList.add ( "LinkColumns" );
 	validList.add ( "NaNValue" );
 	validList.add ( "OutputSchemaFile" );
 	validList.add ( "OutputSchemaFormat" );
@@ -460,6 +463,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
     String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
     */
+    // Use a LinkedHashMap to preserve order so table colummn number arrays can align.
+    String LinkColumns = parameters.getValue ( "LinkColumns" );
+    LinkedHashMap<String,String> linkColumns = new LinkedHashMap<>();
+    if ( (LinkColumns != null) && (LinkColumns.length() > 0) && (LinkColumns.indexOf(":") > 0) ) {
+        // First break map pairs by comma.
+        List<String>pairs = StringUtil.breakStringList(LinkColumns, ",", 0 );
+        // Now break pairs and put in hashtable.
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            linkColumns.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     String NewlineReplacement = " "; // Should work by default.
     String NaNValue = parameters.getValue ( "NaNValue" );
     if ( NaNValue != null ) {
@@ -504,6 +519,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         table = (DataTable)o_Table;
     }
 
+    // Check that link columns exist in the table.
+    for ( Map.Entry<String,String> entry : linkColumns.entrySet() ) {
+       	String linkColumn = entry.getKey();
+       	String textColumn = entry.getValue();
+       	try {
+       		table.getFieldIndex(linkColumn);
+       	}
+       	catch ( Exception e ) {
+       		message = "The link column \"" + linkColumn + "\" is not in the table.";
+        	Message.printWarning ( warning_level,
+        	MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+            	message, "Verify that the link column name is correct." ) );
+       	}
+       	try {
+       		table.getFieldIndex(textColumn);
+       	}
+       	catch ( Exception e ) {
+       		message = "The link text column \"" + textColumn + "\" is not in the table.";
+        	Message.printWarning ( warning_level,
+        	MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+            	message, "Verify that the link text column name is correct." ) );
+       	}
+    }
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings for command parameters.";
         Message.printWarning ( 2,
@@ -534,6 +575,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		writeProps.put("IncludeColumns", includeColumns);
 		writeProps.put("ExcludeColumns", excludeColumns);
 		writeProps.put("NaNValue", NaNValue);
+		writeProps.put("LinkColumns", linkColumns );
 		//writeProps.put("NewlineReplacement", StringUtil.literalToInternal(NewlineReplacement));
 		warning_count = writeMarkdown ( table,
 			OutputFile_full,
@@ -603,6 +645,7 @@ public String toString ( PropList parameters ) {
 	//String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
 	//String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	//String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
+	String LinkColumns = parameters.getValue ( "LinkColumns" );
 	String NaNValue = parameters.getValue ( "NaNValue" );
 	String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
 	String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
@@ -675,6 +718,12 @@ public String toString ( PropList parameters ) {
         b.append ( "NewlineReplacement=\"" + NewlineReplacement + "\"" );
     }
     */
+    if ( (LinkColumns != null) && (LinkColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LinkColumns=\"" + LinkColumns + "\"" );
+    }
     if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -978,11 +1027,12 @@ Writes a table to a Markdown file.  If the data items contain the | delimiter, t
 <ul>
 <li>IncludeColumns - array of String containing column names to include</li>
 <li>ExcludeColumns - array of String containing column names to exclude</li>
+<li>LinkColumns - a map of link column and link text column.</li>
 <li>NaNValue - value to replace NaN in output (no property or null will result in NaN being written).</li>
-<li>NewlineReplacement - if not null, replace newlines in string table values with this replacement string
-(which can be an empty string).  This is needed to ensure that the delimited file does not include unexpected
-newlines in mid-row.  Checks are done for \r\n, then \n, then \r to catch all combinations.  This can be a
-performance hit and mask data issues so the default is to NOT replace newlines.</li>
+<li>NewlineReplacement - if not null, replace newlines in string table values with this replacement string (which can be an empty string).
+This is needed to ensure that the delimited file does not include unexpected newlines in mid-row.
+Checks are done for \r\n, then \n, then \r to catch all combinations.
+This can be a performance hit and mask data issues so the default is to NOT replace newlines.</li>
 </ul>
 */
 public void writeMarkdownTable(
@@ -1030,9 +1080,35 @@ throws Exception {
 	if ( propO != null ) {
 		excludeColumns = (String [])propO;
 	}
+
+	// Get the link map:
+	// - theoretically, use LinkedHashMap to preserve the order so that column positions can be determined
+	// - practically, the lookup of table column number from link text column must also use a map
+	// - TODO smalers 2022-11-30 may just switch to HashMap if code is working because LinkedHashMap is not needed
+	propO = writeProps.get("LinkColumns");
+	LinkedHashMap<String,String> linkColumns = null;
+	HashMap<String,Integer> linkTextMap = null;
+	if ( propO != null ) {
+		linkColumns = (LinkedHashMap<String,String>)propO;
+		linkTextMap = new HashMap<>();
+		
+		// Get the associated table columns for the links:
+		// - warnings are generated in the main run method
+		// - if columns are not found, just format the link as text
+        for ( Map.Entry<String,String> entry : linkColumns.entrySet() ) {
+        	String textColumn = entry.getValue();
+        	try {
+        		linkTextMap.put(textColumn,new Integer(table.getFieldIndex(textColumn)));
+        	}
+        	catch ( Exception e ) {
+        		// Don't need to do anything - link won't have text.
+        	}
+        }
+	}
 	
 	int irow = 0, icol = 0;
 	try {
+
     	// If any comments have been passed in, print them at the top of the file.
     	if ( (comments != null) && (comments.size() > 0) ) {
     		writer.comment(comments);
@@ -1126,6 +1202,7 @@ throws Exception {
     	Double fieldValueDouble;
     	Float fieldValueFloat;
     	int icolOut = 0; // Count of columns actually written.
+    	String columnName = null;
     	for ( irow = 0; irow < rows; irow++) {
     		icolOut = 0;
     		// Start a row.
@@ -1186,6 +1263,46 @@ throws Exception {
     		    // 2) alwaysQuoteStrings=true
     		    // 3) the field contains a double quote (additionally replace " with "")
     		    if ( tableFieldType == TableField.DATA_TYPE_STRING ) {
+    		    	// Determine if the string is a URL:
+    		    	// - must start with http: or https:
+    		    	// - may not be a full URL because no http://hostname
+    		    	// - can be absolute or relative
+    		    	if ( cell.startsWith("http:") || cell.startsWith("https:") ) {
+    		    		// Determine whether the first part of the URL is a hostname or IP address:
+    		    		// https://some.domain/some/path
+    		    		// https:some/relative/path
+    		    		int colonPos = cell.indexOf(":");
+    		    		int colonSlash2Pos = cell.indexOf("://");
+    		    		boolean isRelative = false;
+    		    		String link = null;
+    		    		if ( colonSlash2Pos < 0 ) {
+    		    			// No :// so relative path.
+    		    			isRelative = true;
+    		    			link = cell.substring(colonPos + 1).trim();
+    		    		}
+    		    		else {
+    		    			// Else, has :// so assume a ful URL.
+    		    			link = cell;
+    		    		}
+    		    		Integer linkTextColNum = null;
+    		    		Object linkText = link;
+    		    		columnName = table.getFieldName(icol);
+    		    		String linkTextColumn = linkColumns.get(columnName);
+    		    		if ( linkTextColumn != null ) {
+    		    			// A link is available for the column.
+    		    			linkTextColNum = linkTextMap.get(linkTextColumn);
+    		    			if ( linkTextColNum != null ) {
+    		    				// Link text column exists in the table.
+    		    				linkText = table.getFieldValue(irow, linkTextColNum);
+    		    				if ( linkText == null ) {
+    		    					// Null string so use the link URL.
+    		    					linkText = link;
+    		    				}
+    		    			}
+    		    		}
+    		    		// Format the URL as a link.  If a relative path (no periods in first part), format as a relative URL.
+    		    		cell = "[" + linkText + "](" + link + ")";
+    		    	}
     		    }
     		    else if ( tableFieldType == TableField.DATA_TYPE_DATETIME ) {
     		    }

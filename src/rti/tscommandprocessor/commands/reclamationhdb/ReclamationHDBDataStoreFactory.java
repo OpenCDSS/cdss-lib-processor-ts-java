@@ -46,8 +46,8 @@ public class ReclamationHDBDataStoreFactory implements DataStoreFactory, DataSto
 Create a ReclamationHDBDataStore instance and open the encapsulated ReclamationHDB_DMI using the specified properties.
 @param props datastore configuration properties, such as read from the configuration file
 */
-public DataStore create ( PropList props )
-{   String routine = getClass().getSimpleName() + ".create";
+public DataStore create ( PropList props ) {
+    String routine = getClass().getSimpleName() + ".create";
     String name = props.getValue ( "Name" );
     String description = props.getValue ( "Description" );
     if ( description == null ) {
@@ -166,8 +166,7 @@ This version is used when a prompt is desired to enter database login credential
 @param props properties read from datastore configuration file
 @param frame a JFrame to use as the parent of the editor dialog
 */
-public DataStore openDataStoreConnectionUI ( PropList props, JFrame frame )
-{
+public DataStore openDataStoreConnectionUI ( PropList props, JFrame frame ) {
 	return new ReclamationHDBConnectionUI ( this, props, frame ).getDataStore();
 }
 
@@ -179,8 +178,7 @@ The user will first pick a datastore to access its properties, and will then ent
 Properties for the datastores are used in addition to the login and password specified interactively to recreate the database connection.
 @param frame a JFrame to use as the parent of the editor dialog
 */
-public DataStore openDataStoreConnectionUI ( List<? extends DataStore> datastoreList, JFrame frame )
-{
+public DataStore openDataStoreConnectionUI ( List<? extends DataStore> datastoreList, JFrame frame ) {
 	// TODO SAM 2015-03-22 Need to figure out how to handle the generics mapping - is there a better way?
 	List<ReclamationHDBDataStore> datastoreList2 = new ArrayList<ReclamationHDBDataStore>();
 	for ( DataStore datastore : datastoreList ) {

@@ -96,8 +96,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CopyFile_JDialog ( JFrame parent, CopyFile_Command command )
-{	super(parent, true);
+public CopyFile_JDialog ( JFrame parent, CopyFile_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -105,8 +105,8 @@ public CopyFile_JDialog ( JFrame parent, CopyFile_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 	String routine = "Copy_JDialog";
 
 	if ( o == __browseInput_JButton ) {
@@ -188,8 +188,8 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle( "Select Temporary File Folder");
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			String folder = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String folder = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (folder == null || folder.equals("")) {
 				return;
@@ -270,11 +270,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -316,11 +316,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String InputFile = __InputFile_JTextField.getText().trim();
+private void commitEdits () {
+	String InputFile = __InputFile_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
 	String TempFolder = __TempFolder_JTextField.getText().trim();
 	String TempFilePrefix = __TempFilePrefix_JTextField.getText().trim();
@@ -341,8 +341,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, CopyFile_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, CopyFile_Command command ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -467,7 +467,7 @@ private void initialize ( JFrame parent, CopyFile_Command command )
     JGUIUtil.addComponent(temp_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
     	0, ++yTemp, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(temp_JPanel, new JLabel ( "Temporary folder:" ), 
+    JGUIUtil.addComponent(temp_JPanel, new JLabel ( "Temporary folder:" ),
 		0, ++yTemp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TempFolder_JTextField = new JTextField ( 50 );
 	__TempFolder_JTextField.setToolTipText("Specify the folder for temporary files, can use ${Property} notation");
@@ -558,16 +558,16 @@ private void initialize ( JFrame parent, CopyFile_Command command )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
 public void keyTyped ( KeyEvent event ) {;}
@@ -575,15 +575,15 @@ public void keyTyped ( KeyEvent event ) {;}
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
 	String OutputFile = "";
 	String TempFolder = "";
@@ -607,23 +607,33 @@ private void refresh ()
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
-            __main_JTabbedPane.setSelectedIndex(0);
+        	if ( !OutputFile.isEmpty() ) {
+        		__main_JTabbedPane.setSelectedIndex(0);
+        	}
         }
 		if ( TempFolder != null ) {
 			__TempFolder_JTextField.setText ( TempFolder );
-            __main_JTabbedPane.setSelectedIndex(1);
+        	if ( !TempFolder.isEmpty() ) {
+        		__main_JTabbedPane.setSelectedIndex(1);
+        	}
 		}
 		if ( TempFilePrefix != null ) {
 			__TempFilePrefix_JTextField.setText ( TempFilePrefix );
-            __main_JTabbedPane.setSelectedIndex(1);
+        	if ( !TempFilePrefix.isEmpty() ) {
+        		__main_JTabbedPane.setSelectedIndex(1);
+        	}
 		}
 		if ( TempFileSuffix != null ) {
 			__TempFileSuffix_JTextField.setText ( TempFileSuffix );
-            __main_JTabbedPane.setSelectedIndex(1);
+        	if ( !TempFileSuffix.isEmpty() ) {
+        		__main_JTabbedPane.setSelectedIndex(1);
+        	}
 		}
 		if ( TempFileProperty != null ) {
 			__TempFileProperty_JTextField.setText ( TempFileProperty );
-            __main_JTabbedPane.setSelectedIndex(1);
+        	if ( !TempFileProperty.isEmpty() ) {
+        		__main_JTabbedPane.setSelectedIndex(1);
+        	}
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfInputNotFound_JComboBox, IfInputNotFound,JGUIUtil.NONE, null, null ) ) {
 			__IfInputNotFound_JComboBox.select ( IfInputNotFound );
@@ -719,8 +729,8 @@ React to the user response.
 @param ok if false, then the edit is canceled.
 If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -738,15 +748,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

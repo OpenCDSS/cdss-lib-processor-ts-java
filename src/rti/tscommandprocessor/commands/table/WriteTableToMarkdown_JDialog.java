@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -91,6 +92,7 @@ private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 //private SimpleJComboBox __AlwaysQuoteDateTimes_JComboBox = null;
 //private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
 //private JTextField __NewlineReplacement_JTextField = null;
+private JTextArea __LinkColumns_JTextArea = null;
 private JTextField __NaNValue_JTextField = null;
 private JTextField __OutputSchemaFile_JTextField = null;
 private SimpleJComboBox __OutputSchemaFormat_JComboBox = null;
@@ -98,14 +100,15 @@ private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK.
+private JFrame __parent = null;
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit
 */
-public WriteTableToMarkdown_JDialog ( JFrame parent, WriteTableToMarkdown_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public WriteTableToMarkdown_JDialog ( JFrame parent, WriteTableToMarkdown_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -113,8 +116,8 @@ public WriteTableToMarkdown_JDialog ( JFrame parent, WriteTableToMarkdown_Comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -131,7 +134,7 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String path = fc.getSelectedFile().getPath(); 
+			String path = fc.getSelectedFile().getPath();
 	
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
@@ -165,7 +168,7 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String path = fc.getSelectedFile().getPath(); 
+			String path = fc.getSelectedFile().getPath();
 	
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
@@ -232,6 +235,20 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditLinkColumns") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String LinkColumns = __LinkColumns_JTextArea.getText().trim();
+        String [] notes = {
+            "Specify link columns and corresponding column with the link text.",
+            "The link text will be visible in the rendered Markdown file.",
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, LinkColumns,
+            "Edit LinkColumns Parameter", notes, "Column Name for Link", "Column Name for Link Text",10)).response();
+        if ( dict != null ) {
+            __LinkColumns_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else {
 		// Choices.
 		refresh ();
@@ -239,11 +256,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -256,6 +273,7 @@ private void checkInput ()
     //String AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
     //String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     //String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
+	String LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
     String NaNValue = __NaNValue_JTextField.getText().trim();
     String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -297,6 +315,9 @@ private void checkInput ()
         parameters.set ( "NewlineReplacement", NewlineReplacement );
     }
     */
+    if ( LinkColumns.length() > 0 ) {
+        parameters.set ( "LinkColumns", LinkColumns );
+    }
     if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
         parameters.set ( "NaNValue", NaNValue );
     }
@@ -318,11 +339,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TableID = __TableID_JComboBox.getSelected();   
+private void commitEdits () {
+    String TableID = __TableID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
@@ -335,6 +356,7 @@ private void commitEdits ()
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	*/
+	String LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
 	String NaNValue = __NaNValue_JTextField.getText().trim();
     String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -351,6 +373,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
 	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 	*/
+	__command.setCommandParameter ( "LinkColumns", LinkColumns );
 	__command.setCommandParameter ( "NaNValue", NaNValue );
 	__command.setCommandParameter ( "OutputSchemaFile", OutputSchemaFile );
 	__command.setCommandParameter ( "OutputSchemaFormat", OutputSchemaFormat );
@@ -361,8 +384,9 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, List<String> tableIDChoices ) {
+	__parent = parent;
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -380,18 +404,21 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 		"relative path (relative to the working directory)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Formatting is currently very basic.  Strings that are URLs will be output as links."),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A schema file can also be written to provide metadata about the delimited file columns, which can be used by other software."),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
-     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " ), 
+     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " ),
      		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "    " + __working_dir ), 
+     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "    " + __working_dir ),
      		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 }
   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits.
     __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
@@ -402,7 +429,7 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
@@ -429,7 +456,7 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
 	List<String> appendChoices = new ArrayList<>();
-	appendChoices.add ( "" );	// Default
+	appendChoices.add ( "" );	// Default.
 	appendChoices.add ( __command._False );
 	appendChoices.add ( __command._True );
 	__Append_JComboBox.setData(appendChoices);
@@ -438,28 +465,28 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
    JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - whether to append to table (default=" + __command._False + ")."), 
+		"Optional - whether to append to table (default=" + __command._False + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to write:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to include:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (30);
     __IncludeColumns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns to write, separated by commas (default=write all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns to include, separated by commas (default=write all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to NOT write:"),
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to exclude:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns_JTextField = new JTextField (30);
     __ExcludeColumns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __ExcludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns to not write, separated by commas (default=write all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns to exclude, separated by commas (default=write all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write file header comments?:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write file header comments?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
      __WriteHeaderComments_JComboBox.setToolTipText("Header comments indicate the author and other information, will use <!--- --> HTML comments.");
@@ -475,9 +502,9 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - should file header comments be written? (default=" + __command._False + ")."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
+
     /*
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write column names?:"), 
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write column names?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteColumnNames_JComboBox = new SimpleJComboBox ( false );
      List<String> writeColumnNamesList = new ArrayList<>();
@@ -505,7 +532,7 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
          "Optional - delimiter character (default=,)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
          */
-     
+
     /*
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Newline replacement:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -517,7 +544,21 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
          "Optional - replacement for newline character (use \\t for tab or \\s for space)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
          */
-     
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Link columns:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LinkColumns_JTextArea = new JTextArea (6,35);
+    __LinkColumns_JTextArea.setLineWrap ( true );
+    __LinkColumns_JTextArea.setWrapStyleWord ( true );
+    __LinkColumns_JTextArea.setToolTipText("LinkColumn1:LinkTextColumn1,LinkColumn2:LinkTextColumn2");
+    __LinkColumns_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__LinkColumns_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - link properties (default=link is used for link text)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditLinkColumns",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
      JGUIUtil.addComponent(main_JPanel, new JLabel ("NaN value:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __NaNValue_JTextField = new JTextField (10);
@@ -528,8 +569,8 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - value to use for NaN (use " + __command._Blank + " to write a blank)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output schema file to write:" ), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output schema file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	 __OutputSchemaFile_JTextField = new JTextField ( 50 );
 	 __OutputSchemaFile_JTextField.setToolTipText("Specify the path to the output schema file or use ${Property} notation");
@@ -551,8 +592,8 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputSchemaFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output schema format:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output schema format:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __OutputSchemaFormat_JComboBox = new SimpleJComboBox ( false );
      List<String> schemaFormatChoices = new ArrayList<>();
@@ -567,8 +608,8 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - schema format (default=" + __command._JSONTableSchema + ")."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -580,7 +621,7 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -605,16 +646,15 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e)
-{
+public void itemStateChanged (ItemEvent e) {
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -625,26 +665,27 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	// Only refresh if the event is in the file TextField...
+public void keyReleased ( KeyEvent event ) {
+	// Only refresh if the event is in the file TextField.
 	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + "_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + "_JDialog.refresh";
     String TableID = "";
 	String OutputFile = "";
 	String Append = "";
@@ -656,6 +697,7 @@ private void refresh ()
     //String AlwaysQuoteDateTimes = "";
     //String AlwaysQuoteStrings = "";
     //String NewlineReplacement = "";
+    String LinkColumns = "";
     String NaNValue = "";
     String OutputSchemaFile = "";
     String OutputSchemaFormat = "";
@@ -676,6 +718,7 @@ private void refresh ()
         //AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
         //AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
         //NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
+        LinkColumns = parameters.getValue ( "LinkColumns" );
         NaNValue = parameters.getValue ( "NaNValue" );
         OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
         OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
@@ -704,10 +747,11 @@ private void refresh ()
 		}
 		else {
             if ( (Append == null) || Append.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__Append_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"Append parameter \"" +	Append +
@@ -792,6 +836,9 @@ private void refresh ()
             __NewlineReplacement_JTextField.setText(NewlineReplacement);
         }
         */
+        if ( LinkColumns != null ) {
+            __LinkColumns_JTextArea.setText ( LinkColumns );
+        }
         if (NaNValue != null) {
             __NaNValue_JTextField.setText(NaNValue);
         }
@@ -813,6 +860,7 @@ private void refresh ()
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     */
+	LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
     NaNValue = __NaNValue_JTextField.getText().trim();
     OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -840,6 +888,7 @@ private void refresh ()
     }
     parameters.add("NewlineReplacement=" + NewlineReplacement );
     */
+	parameters.add ( "LinkColumns=" + LinkColumns );
     parameters.add("NaNValue=" + NaNValue );
     parameters.add ( "OutputSchemaFile=" + OutputSchemaFile );
     if ( OutputSchemaFormat != null ) {
@@ -892,7 +941,7 @@ private void response ( boolean ok )
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -909,11 +958,22 @@ public void windowClosing( WindowEvent event )
 {	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

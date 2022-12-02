@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -90,8 +90,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public TextEdit_JDialog ( JFrame parent, TextEdit_Command command )
-{	super(parent, true);
+public TextEdit_JDialog ( JFrame parent, TextEdit_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -99,8 +99,8 @@ public TextEdit_JDialog ( JFrame parent, TextEdit_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browseInput_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -115,8 +115,8 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (filename == null || filename.equals("")) {
 				return;
@@ -145,16 +145,16 @@ public void actionPerformed( ActionEvent event )
             fc = JFileChooserFactory.createJFileChooser(__working_dir );
         }
         fc.setDialogTitle( "Select Output File");
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -213,17 +213,18 @@ public void actionPerformed( ActionEvent event )
         }
         refresh ();
     }
-	else {	// Choices...
+	else {
+		// Choices.
 		refresh();
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String SearchFor = __SearchFor_JTextField.getText().trim();
@@ -246,7 +247,8 @@ private void checkInput ()
 	if ( IfInputNotFound.length() > 0 ) {
 		props.set ( "IfInputNotFound", IfInputNotFound );
 	}
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -256,11 +258,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String InputFile = __InputFile_JTextField.getText().trim();
+private void commitEdits () {
+	String InputFile = __InputFile_JTextField.getText().trim();
     String SearchFor = __SearchFor_JTextField.getText().trim();
     String ReplaceWith = __ReplaceWith_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -277,8 +279,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, TextEdit_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, TextEdit_Command command ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -287,7 +289,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -313,12 +315,12 @@ private void initialize ( JFrame parent, TextEdit_Command command )
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
     	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the input file, can use ${Property} notation.");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -328,7 +330,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
     JGUIUtil.addComponent(InputFile_JPanel, __browseInput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathInput_JButton = new SimpleJButton( __RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -344,7 +346,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
     JGUIUtil.addComponent(main_JPanel, __SearchFor_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - pattern to search for."), 
+        "Required - pattern to search for."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replace with:"),
@@ -355,15 +357,15 @@ private void initialize ( JFrame parent, TextEdit_Command command )
     JGUIUtil.addComponent(main_JPanel, __ReplaceWith_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - pattern to replace with."), 
+        "Required - pattern to replace with."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
     __OutputFile_JTextField.setToolTipText("Specify the output file, can use ${Property} notation.");
     __OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -373,7 +375,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
     JGUIUtil.addComponent(OutputFile_JPanel, __browseOutput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -385,7 +387,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfInputNotFound_JComboBox = new SimpleJComboBox ( false );
 	List<String> notFoundChoices = new ArrayList<String>();
-	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -395,10 +397,10 @@ private void initialize ( JFrame parent, TextEdit_Command command )
    JGUIUtil.addComponent(main_JPanel, __IfInputNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if input file is not found (default=" + __command._Warn + ")"), 
+		"Optional - action if input file is not found (default=" + __command._Warn + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -411,7 +413,7 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -423,12 +425,12 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
 	
-	// Refresh the contents...
+	// Refresh the contents.
     refresh ();
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -436,32 +438,33 @@ private void initialize ( JFrame parent, TextEdit_Command command )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
 	String SearchFor = "";
 	String ReplaceWith = "";
@@ -493,10 +496,11 @@ private void refresh ()
 		}
 		else {
             if ( (IfInputNotFound == null) ||	IfInputNotFound.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfInputNotFound_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfInputNotFound parameter \"" +	IfInputNotFound +
@@ -504,8 +508,8 @@ private void refresh ()
 			}
 		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	SearchFor = __SearchFor_JTextField.getText().trim();
 	ReplaceWith = __ReplaceWith_JTextField.getText().trim();
@@ -518,7 +522,7 @@ private void refresh ()
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "IfInputNotFound=" + IfInputNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __pathInput_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__pathInput_JButton.setEnabled ( true );
@@ -557,20 +561,20 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
 			// Not ready to close out!
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -579,15 +583,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

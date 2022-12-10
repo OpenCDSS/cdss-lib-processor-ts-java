@@ -310,7 +310,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String command_tag = "" + command_number;
     int warning_count = 0;
     //int log_level = 3;  // Level for non-use messages for log file.
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
@@ -321,17 +321,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String ObjectID = parameters.getValue ( "ObjectID" );
     if ( commandPhase == CommandPhaseType.RUN ) {
-    	// In discovery mode want lists of tables to include ${Property}.
+    	// In discovery mode want lists of objects to include ${Property}.
     	ObjectID = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectID);
     }
     String ObjectProperty = parameters.getValue ( "ObjectProperty" );
     if ( commandPhase == CommandPhaseType.RUN ) {
-    	// In discovery mode want lists of tables to include ${Property}.
+    	// In discovery mode want lists of objects to include ${Property}.
     	ObjectProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectProperty);
     }
     String Property = parameters.getValue ( "Property" );
     if ( commandPhase == CommandPhaseType.RUN ) {
-    	// In discovery mode want lists of tables to include ${Property}.
+    	// In discovery mode want lists of objects to include ${Property}.
     	Property = TSCommandProcessorUtil.expandParameterValue(processor, this, Property);
     }
     String SetAsString = parameters.getValue ( "SetAsString" );
@@ -435,7 +435,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
- * Set the object's property based on an object from the table.
+ * Set the object's property.
  * @param map the full object map
  * @param propertyName the property name to set in the object
  * @param propertyValue the property value to set in the object

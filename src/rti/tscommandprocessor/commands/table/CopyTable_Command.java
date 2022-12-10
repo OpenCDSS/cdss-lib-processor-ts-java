@@ -272,7 +272,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
     	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
     }
-    Hashtable<String,String> columnFilters = new Hashtable<String,String>();
+    Hashtable<String,String> columnFilters = new Hashtable<>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );

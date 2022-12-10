@@ -98,6 +98,7 @@ import rti.tscommandprocessor.commands.json.NewObject_Command;
 import rti.tscommandprocessor.commands.json.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.SetObjectPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.json.SetObjectProperty_Command;
+import rti.tscommandprocessor.commands.json.SetPropertyFromObject_Command;
 import rti.tscommandprocessor.commands.json.WriteObjectToJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
@@ -1123,6 +1124,9 @@ throws UnknownCommandException
     // Put this before the shorter SetProperty() to avoid ambiguity.
     else if ( commandName.equalsIgnoreCase("SetPropertyFromTable") ) {
         return new SetPropertyFromTable_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SetPropertyFromObject") ) {
+        return new SetPropertyFromObject_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetPropertyFromTimeSeries") ) {
         return new SetPropertyFromTimeSeries_Command ();

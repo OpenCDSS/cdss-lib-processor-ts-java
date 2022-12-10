@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2022 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ public class ReadTableFromJSON_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-// Used for button labels...
+// Used for button labels.
 
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
@@ -77,8 +77,9 @@ private final String __RemoveWorkingDirectory = "Rel";
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
-private JTextField __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
+private SimpleJComboBox __ObjectID_JComboBox = null;
+private JTextField __TableID_JTextField = null;
 private JTextField __ArrayName_JTextField = null;
 private SimpleJComboBox	__AppendArrays_JComboBox =null;
 private JTextField __ExcludeNames_JTextField = null;
@@ -89,6 +90,8 @@ private JTextField __DoubleColumns_JTextField = null;
 private JTextField __IntegerColumns_JTextField = null;
 private JTextField __TextColumns_JTextField = null;
 private JTextField __Top_JTextField = null;
+private JTextField __RowCountProperty_JTextField = null;
+private SimpleJComboBox __Append_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -102,18 +105,20 @@ private boolean __ok = false;
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param objectIDChoices list of choices for object identifiers
 */
-public ReadTableFromJSON_JDialog ( JFrame parent, ReadTableFromJSON_Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+public ReadTableFromJSON_JDialog ( JFrame parent, ReadTableFromJSON_Command command,
+	List<String> objectIDChoices ) {
+	super(parent, true);
+	initialize ( parent, command, objectIDChoices );
 }
 
 /**
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -154,7 +159,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -169,27 +174,28 @@ public void actionPerformed(ActionEvent event)
                         __InputFile_JTextField.getText()));
 			}
 			catch (Exception e) {
-				Message.printWarning (1, 
+				Message.printWarning (1,
 				__command.getCommandName() + "_JDialog", "Error converting file to relative path.");
 			}
 		}
 		refresh ();
 	}
 	else {
-		// Choices...
+		// Choices.
 		refresh();
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
-    String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String ObjectID = __ObjectID_JComboBox.getSelected();
+    String TableID = __TableID_JTextField.getText().trim();
 	String ArrayName = __ArrayName_JTextField.getText().trim();
 	String AppendArrays = __AppendArrays_JComboBox.getSelected();
 	String ExcludeNames  = __ExcludeNames_JTextField.getText().trim();
@@ -200,14 +206,19 @@ private void checkInput ()
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	String Append = __Append_JComboBox.getSelected();
 	__error_wait = false;
 
-    if ( TableID.length() > 0 ) {
-        props.set ( "TableID", TableID );
-    }
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( ObjectID.length() > 0 ) {
+        props.set ( "ObjectID", ObjectID );
+    }
+    if ( TableID.length() > 0 ) {
+        props.set ( "TableID", TableID );
+    }
     if ( ArrayName.length() > 0 ) {
         props.set ( "ArrayName", ArrayName );
     }
@@ -238,8 +249,14 @@ private void checkInput ()
     if ( Top.length() > 0 ) {
         props.set ( "Top", Top );
     }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
+	if ( Append.length() > 0 ) {
+		props.set ( "Append", Append );
+	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -250,12 +267,13 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JTextField.getText().trim();
+private void commitEdits () {
     String InputFile = __InputFile_JTextField.getText().trim();
+    String ObjectID = __ObjectID_JComboBox.getSelected();
+	String TableID = __TableID_JTextField.getText().trim();
 	String ArrayName = __ArrayName_JTextField.getText().trim();
 	String AppendArrays = __AppendArrays_JComboBox.getSelected();
     String ExcludeNames  = __ExcludeNames_JTextField.getText().trim();
@@ -266,8 +284,11 @@ private void commitEdits ()
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
-    __command.setCommandParameter ( "TableID", TableID );
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	String Append = __Append_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
+    __command.setCommandParameter ( "ObjectID", ObjectID );
+    __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "ArrayName", ArrayName );
 	__command.setCommandParameter ( "AppendArrays", AppendArrays );
 	__command.setCommandParameter ( "ExcludeNames", ExcludeNames );
@@ -278,15 +299,19 @@ private void commitEdits ()
 	__command.setCommandParameter ( "IntegerColumns", IntegerColumns );
 	__command.setCommandParameter ( "TextColumns", TextColumns );
 	__command.setCommandParameter ( "Top", Top );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
+	__command.setCommandParameter ( "Append", Append );
 }
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
+@param objectIDChoices list of choices for object identifiers
 */
-private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, ReadTableFromJSON_Command command,
+	List<String> objectIDChoices ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -294,7 +319,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 
     Insets insetsTLBR = new Insets(1,2,1,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -304,15 +329,15 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
-		"This command reads a table from a JavaScript Object Notation (JSON) file by processing one or more array(s) of objects."),
+		"This command reads a table from a JavaScript Object Notation (JSON) file or in-memory object by processing one or more array(s) of objects."),
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
 		"See the following JSON reference:  http://www.json.org/"),
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-		"The JSON array name indicates how to locate the data in the JSON hierarchy."), 
+		"The JSON array name indicates how to locate the data in the JSON hierarchy."),
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "If the array name is not specified, an unnamed array is expected to be found in the input file."),
@@ -343,7 +368,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);			
 	if (__working_dir != null) {
     	JGUIUtil.addComponent(paragraph, new JLabel (
-		"The working directory is: " + __working_dir), 
+		"The working directory is: " + __working_dir),
 		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
@@ -351,23 +376,13 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JTextField = new JTextField (20);
-    __TableID_JTextField.setToolTipText("Specify the table ID or use ${Property} notation");
-    __TableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the table."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField (35);
 	__InputFile_JTextField.setToolTipText("Specify the path to the file to read or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener (this);
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -377,13 +392,35 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Object ID:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ObjectID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
+    objectIDChoices.add(0,""); // Add blank to ignore object.
+    __ObjectID_JComboBox.setData ( objectIDChoices );
+    __ObjectID_JComboBox.addItemListener ( this );
+    //__ObjectID_JComboBox.setMaximumRowCount(objectIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __ObjectID_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if no input file - object to process."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JTextField = new JTextField (20);
+    __TableID_JTextField.setToolTipText("Specify the table ID or use ${Property} notation");
+    __TableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the table."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("JSON array name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -400,7 +437,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AppendArrays_JComboBox = new SimpleJComboBox ( false );
 	List<String> notFoundChoices = new ArrayList<String>();
-	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._False );
 	notFoundChoices.add ( __command._True );
 	__AppendArrays_JComboBox.setData(notFoundChoices);
@@ -409,9 +446,9 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
    JGUIUtil.addComponent(main_JPanel, __AppendArrays_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - should all matched arrays be appended? (default=" + __command._False + ")"), 
+		"Optional - should all matched arrays be appended? (default=" + __command._False + ")"),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Exclude names:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeNames_JTextField = new JTextField (20);
@@ -454,7 +491,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - columns that contain date/times, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Double columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DoubleColumns_JTextField = new JTextField (20);
@@ -465,7 +502,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - columns that contain double (floating point) values, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Integer columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IntegerColumns_JTextField = new JTextField (20);
@@ -476,7 +513,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - columns that contain integer values, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Text columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TextColumns_JTextField = new JTextField (20);
@@ -487,7 +524,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - columns that contain text, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Top N objects:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Top_JTextField = new JTextField (5);
@@ -499,7 +536,33 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
         new JLabel ("Optional - only process top N objects."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Append_JComboBox = new SimpleJComboBox ( false );
+	List<String> appendChoices = new ArrayList<>();
+	appendChoices.add ( "" );	// Default.
+	appendChoices.add ( __command._False );
+	appendChoices.add ( __command._True );
+	__Append_JComboBox.setData(appendChoices);
+	__Append_JComboBox.select ( 0 );
+	__Append_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - whether to append to table (default=" + __command._False + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -508,13 +571,13 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -529,7 +592,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command )
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -561,23 +624,25 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
-	String TableID = "";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String InputFile = "";
+    String ObjectID = "";
+	String TableID = "";
     String ArrayName = "";
     String AppendArrays = "";
     String ExcludeNames = "";
@@ -588,11 +653,14 @@ private void refresh ()
 	String IntegerColumns = "";
 	String TextColumns = "";
 	String Top = "";
+    String RowCountProperty = "";
+	String Append = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
-        TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
+        ObjectID = props.getValue ( "ObjectID" );
+        TableID = props.getValue ( "TableID" );
 		ArrayName = props.getValue ( "ArrayName" );
 		AppendArrays = props.getValue ( "AppendArrays" );
 		ExcludeNames = props.getValue ( "ExcludeNames" );
@@ -603,12 +671,29 @@ private void refresh ()
 		IntegerColumns = props.getValue ( "IntegerColumns" );
 		TextColumns = props.getValue ( "TextColumns" );
 		Top = props.getValue ( "Top" );
-        if ( TableID != null ) {
-            __TableID_JTextField.setText ( TableID );
-        }
+		RowCountProperty = props.getValue ( "RowCountProperty" );
+		Append = props.getValue ( "Append" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( ObjectID == null ) {
+            // Select default.
+            __ObjectID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ObjectID_JComboBox,ObjectID, JGUIUtil.NONE, null, null ) ) {
+                __ObjectID_JComboBox.select ( ObjectID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nObjectID value \"" + ObjectID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TableID != null ) {
+            __TableID_JTextField.setText ( TableID );
+        }
 		if ( ArrayName != null ) {
 			__ArrayName_JTextField.setText ( ArrayName );
 		}
@@ -617,10 +702,11 @@ private void refresh ()
 		}
 		else {
             if ( (AppendArrays == null) ||	AppendArrays.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__AppendArrays_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"AppendArrays parameter \"" + AppendArrays +
@@ -651,10 +737,30 @@ private void refresh ()
         if ( Top != null ) {
             __Top_JTextField.setText ( Top );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__Append_JComboBox, Append,JGUIUtil.NONE, null, null ) ) {
+			__Append_JComboBox.select ( Append );
+		}
+		else {
+            if ( (Append == null) ||	Append.equals("") ) {
+				// New command...select the default.
+				__Append_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"Append parameter \"" + Append +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 	}
-	// Regardless, reset the command from the fields...
-    TableID = __TableID_JTextField.getText().trim();
+	// Regardless, reset the command from the fields.
 	InputFile = __InputFile_JTextField.getText().trim();
+	ObjectID = __ObjectID_JComboBox.getSelected();
+    TableID = __TableID_JTextField.getText().trim();
 	ArrayName = __ArrayName_JTextField.getText().trim();
 	AppendArrays = __AppendArrays_JComboBox.getSelected();
 	ExcludeNames = __ExcludeNames_JTextField.getText().trim();
@@ -665,9 +771,12 @@ private void refresh ()
 	IntegerColumns = __IntegerColumns_JTextField.getText().trim();
 	TextColumns = __TextColumns_JTextField.getText().trim();
 	Top = __Top_JTextField.getText().trim();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	Append = __Append_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
-    props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
+    props.add ( "ObjectID=" + ObjectID );
+    props.add ( "TableID=" + TableID );
 	props.add ( "ArrayName=" + ArrayName );
 	props.add ( "AppendArrays=" + AppendArrays );
 	props.add ( "ExcludeNames=" + ExcludeNames );
@@ -678,8 +787,10 @@ private void refresh ()
 	props.add ( "IntegerColumns=" + IntegerColumns );
 	props.add ( "TextColumns=" + TextColumns );
 	props.add ( "Top=" + Top );
+	props.add ( "RowCountProperty=" + RowCountProperty );
+	props.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -704,34 +815,46 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+// The following methods are all necessary because this class implements WindowListener.
+
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

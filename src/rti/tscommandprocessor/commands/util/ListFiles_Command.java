@@ -72,22 +72,21 @@ private DataTable __table = null;
 /**
 Constructor.
 */
-public ListFiles_Command ()
-{	super();
+public ListFiles_Command () {
+	super();
 	setCommandName ( "ListFiles" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
+@param warning_level The warning level to use when printing parse warnings (recommended is 2 for initialization,
+and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Folder = parameters.getValue ( "Folder" );
+throws InvalidCommandParameterException {
+	String Folder = parameters.getValue ( "Folder" );
     String TableID = parameters.getValue ( "TableID" );
 	String Append = parameters.getValue ( "Append" );
 	String warning = "";
@@ -142,11 +141,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
     List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
@@ -165,8 +163,8 @@ Return a list of objects of the requested type.  This class only keeps a list of
 The following classes can be requested:  DataTable
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new ArrayList<>();
@@ -178,12 +176,11 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -207,8 +204,8 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -273,7 +270,7 @@ CommandWarningException, CommandException
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
@@ -374,7 +371,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
         message = "Unexpected error creating file list (" + e + ").";
-        Message.printWarning ( warning_level, 
+        Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -404,8 +401,8 @@ private void setDiscoveryTable ( DataTable table ) {
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
 	String Folder = parameters.getValue("Folder");

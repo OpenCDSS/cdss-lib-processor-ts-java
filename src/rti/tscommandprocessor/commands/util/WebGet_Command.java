@@ -90,17 +90,17 @@ protected final String GET = "GET";
 protected final String OPTIONS = "OPTIONS";
 protected final String POST = "POST";
 protected final String PUT = "PUT";
-    
+
 /**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
-    
+
 /**
 Constructor.
 */
-public WebGet_Command ()
-{	super();
+public WebGet_Command () {
+	super();
 	setCommandName ( "WebGet" );
 }
 
@@ -113,8 +113,8 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String URI = parameters.getValue ( "URI" );
+throws InvalidCommandParameterException {
+	String URI = parameters.getValue ( "URI" );
 	String EncodeURI = parameters.getValue ( "EncodeURI" );
 	String RequestMethod = parameters.getValue ( "RequestMethod" );
 	String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
@@ -246,12 +246,13 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(13);
+	List<String> validList = new ArrayList<>(14);
 	validList.add ( "URI" );
 	validList.add ( "EncodeURI" );
 	validList.add ( "RequestMethod" );
 	validList.add ( "PayloadFile" );
 	validList.add ( "HttpHeaders" );
+	validList.add ( "Cookies" );
 	validList.add ( "ConnectTimeout" );
 	validList.add ( "ReadTimeout" );
 	validList.add ( "RetryMax" );
@@ -273,11 +274,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new WebGet_JDialog ( parent, this )).ok();
 }
 
@@ -360,15 +360,15 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
     // Clear the output file.
-    
+
     setOutputFile ( null );
 	
 	PropList parameters = getCommandParameters();
@@ -390,10 +390,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	String URI = parameters.getValue ( "URI" );
-	if ( URI != null ) {
-	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
-	    Message.printStatus(2, routine, "URI after expanding is \"" + URI + "\"");
-	}
+	URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
+	Message.printStatus(2, routine, "URI after expanding is \"" + URI + "\"");
 	if ( URI.indexOf("${") >= 0 ) {
 		// The above expansion did not work and will cause problems when doing the request.
 		message = "URI after expansion contains property reference (not a valid URI): " + URI;
@@ -428,9 +426,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	*/
 
     String PayloadFile = parameters.getValue ( "PayloadFile" );
-	if ( (PayloadFile != null) && !PayloadFile.isEmpty() ) {
-		PayloadFile = TSCommandProcessorUtil.expandParameterValue(processor,this,PayloadFile);
-	}
+	PayloadFile = TSCommandProcessorUtil.expandParameterValue(processor,this,PayloadFile);
 	String payloadFile_full = PayloadFile;
 	File payloadFile = null;
 	if ( (PayloadFile != null) && !PayloadFile.isEmpty() ) {
@@ -444,10 +440,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// - if the value contains a colon, surround the value with single quotes.
 	// - the value cannot contain duplicates
     String HttpHeaders = parameters.getValue ( "HttpHeaders" );
+	HttpHeaders = TSCommandProcessorUtil.expandParameterValue(processor,this,HttpHeaders);
    	MultiKeyStringDictionary httpHeaders = null;
     if ( (HttpHeaders != null) && !HttpHeaders.isEmpty() ) {
     	// Parse the headers.
     	httpHeaders = new MultiKeyStringDictionary ( HttpHeaders, ":", "," );
+    }
+	// Cookies are a dictionary:
+	//   key1:value,key2:value2,...
+	// - if the value contains a colon, surround the value with single quotes.
+	// - the value cannot contain duplicates
+    String Cookies = parameters.getValue ( "Cookies" );
+	Cookies = TSCommandProcessorUtil.expandParameterValue(processor,this,Cookies);
+   	MultiKeyStringDictionary cookies = null;
+    if ( (Cookies != null) && !Cookies.isEmpty() ) {
+    	// Parse the headers.
+    	cookies = new MultiKeyStringDictionary ( Cookies, ":", "," );
     }
     String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
     int connectTimeout = 60000;
@@ -501,7 +509,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
@@ -632,6 +640,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    					}
     			}
 
+   				// Add cookies.
+    			if ( cookies == null ) {
+    				Message.printStatus(2,routine,"Have 0 cookies from Cookies parameter." );
+    			}
+    			else {
+    				Message.printStatus(2,routine,"Have " + cookies.size() + " request cookies from Cookies parameter." );
+    				StringBuilder cookieBuilder = new StringBuilder();
+					for ( int i = 0; i < cookies.size(); i++ ) {
+						String key = cookies.getKey(i);
+						String value = cookies.getValue(i);
+  						Message.printStatus(2,routine,"  Adding request cookie: " + key + " = " + value );
+  						if ( cookieBuilder.length() > 0 ) {
+  							cookieBuilder.append("; ");
+  						}
+  						cookieBuilder.append(key + "=" + value);
+   					}
+					// The header name is "Cookie" and the value is a list of 1+ cookies.
+					urlConnection.setRequestProperty("Cookie", cookieBuilder.toString());
+    			}
+
     			// Print default connection information the first time.
     			if ( iRetry == 1 ) {
     				Message.printStatus(2,routine,"Connect timeout default is: " + urlConnection.getConnectTimeout() );
@@ -654,7 +682,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				urlConnection.setRequestMethod("DELETE");
 
     			    // Call the 'connect' method to explicitly fire the request.
-    			    // Check the response code immediately in case it was a redirect. 
+    			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
@@ -670,7 +698,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				urlConnection.setRequestMethod("GET");
 
     			    // Call the 'connect' method to explicitly fire the request.
-    			    // Check the response code immediately in case it was a redirect. 
+    			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
@@ -749,7 +777,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				//urlConnection.setRequestProperty("Origin", "https://poudre.openwaterfoundation.org");
 
     			    // Call the 'connect' method to explicitly fire the request.
-    			    // Check the response code immediately in case it was a redirect. 
+    			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
@@ -758,7 +786,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    					    // The above code will check the response code and follow the redirect.
    					    continue;
    				    }
-   				    
+
    				    // Response headers are handled below.
 
     				requestSuccessful = true;
@@ -768,7 +796,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				urlConnection.setDoOutput(true);
 
     			    // Call the 'connect' method to explicitly fire the request.
-    			    // Check the response code immediately in case it was a redirect. 
+    			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
@@ -792,7 +820,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				urlConnection.setDoOutput(true);
 
     			    // Call the 'connect' method to explicitly fire the request.
-    			    // Check the response code immediately in case it was a redirect. 
+    			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
@@ -813,7 +841,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			}
     			else {
     				message = "Request method \"" + RequestMethod + "\" is not recognized.";
-    				Message.printWarning ( warning_level, 
+    				Message.printWarning ( warning_level,
                    	MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     				status.addToLog(CommandPhaseType.RUN,
     					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -852,7 +880,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		catch (MalformedURLException me) {
     			// A bad URI will not retry since the same error will be generated each time.
     			message = "URI \"" + URI + "\" is malformed (" + me + ")";
-    			Message.printWarning ( warning_level, 
+    			Message.printWarning ( warning_level,
                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     			Message.printWarning ( 3, routine, me );
     			status.addToLog(CommandPhaseType.RUN,
@@ -866,7 +894,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				// Only print the message the first 5 times.
     				message = "Try " + iRetry + " - connect or read timeout reading URI \"" + URI +
     					"\" (" + te + "), only logging message for retries <= 5 (RetryMax=" + RetryMax + ").";
-    				Message.printWarning ( warning_level, 
+    				Message.printWarning ( warning_level,
                     	MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     				Message.printWarning ( 3, routine, te );
     				status.addToLog(CommandPhaseType.RUN,
@@ -893,7 +921,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				}
     			}
     			sb.append ( ")" );
-    			Message.printWarning ( warning_level, 
+    			Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, sb.toString() );
     			Message.printWarning ( 3, routine, ioe );
     			status.addToLog(CommandPhaseType.RUN,
@@ -904,7 +932,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			// For now... this exception allows the full number of retries.
     			// Catch everything else - should probably add specific handling to troubleshoot.
     			message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
-    			Message.printWarning ( warning_level, 
+    			Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     			Message.printWarning ( 3, routine, e );
     			status.addToLog(CommandPhaseType.RUN,
@@ -979,7 +1007,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error getting resource from \"" + URI + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,

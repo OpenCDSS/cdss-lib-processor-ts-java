@@ -284,10 +284,19 @@ public TSCommandProcessor ( PropList initialProps )
     // This is used to locate the HTML documentation for command editor dialogs, etc.
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
-    String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    // FIXME smalers 2022-12-06 Prior to this date used the following:
+    // - not sure why .tstool is included
+    // - As of TSTool 14.5.1 add UserTstoolDir
+    //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    String homeDir = System.getProperty("user.home");
     __propertyHashmap.put ( "UserHomeDir", homeDir );
     __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
-    
+    __propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
+    __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
+    // TODO smalers set based on the version from ProgramVersionString property
+    //__propertyHashmap.put ( "UserTstoolVersionDir", homeDir + File.separator + ".tstool" + File.separator + majorVersion);
+    //__propertyHashmap.put ( "UserTstoolVersionDirURL", "file:///" + homeDir.replace("\\", "/") );
+
     // Save the initial properties.
     if ( initialProps == null ) {
     	initialProps = new PropList("AppProperties");
@@ -4361,11 +4370,16 @@ throws Exception
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases.
     __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
-    // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
-    String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    // FIXME smalers 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
+    // FIXME smalers 2022-12-06 before this date used the following.
+    //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    String homeDir = System.getProperty("user.home");
     __propertyHashmap.put ( "UserHomeDir", homeDir );
     __propertyHashmap.put ( "UserHomeDirPosix", IOUtil.toPosixPath(homeDir) );
     __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    __propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
+    __propertyHashmap.put ( "UserTstoolDirPosix", IOUtil.toPosixPath(homeDir) + "/.tstool" );
+    __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
     __propertyHashmap.put ( "UserName", System.getProperty("user.name") );
     // Set the program version as a property, useful for version-dependent command logic
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period.

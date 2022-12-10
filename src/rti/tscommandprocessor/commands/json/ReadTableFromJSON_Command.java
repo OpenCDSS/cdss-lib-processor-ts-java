@@ -26,13 +26,11 @@ package rti.tscommandprocessor.commands.json;
 import javax.swing.JFrame;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,12 +46,14 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.JSON.JSONObject;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
@@ -76,7 +76,7 @@ protected final String _True = "True";
  * Default precision for floating point numbers.
  */
 protected final int defaultPrecision = 6;
-    
+
 /**
 The table that is read.
 */
@@ -85,8 +85,8 @@ private DataTable __table = null;
 /**
 Constructor.
 */
-public ReadTableFromJSON_Command ()
-{	super();
+public ReadTableFromJSON_Command () {
+	super();
 	setCommandName ( "ReadTableFromJSON" );
 }
 
@@ -94,16 +94,18 @@ public ReadTableFromJSON_Command ()
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
 @param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
+@param warning_level The warning level to use when printing parse warnings (recommended is 2 for initialization,
+and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
     String InputFile = parameters.getValue ( "InputFile" );
+    String ObjectID = parameters.getValue ( "ObjectID" );
+	String TableID = parameters.getValue ( "TableID" );
+	String Append = parameters.getValue ( "Append" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -113,36 +115,16 @@ throws InvalidCommandParameterException
 	
 	CommandProcessor processor = getCommandProcessor();
 	
-    if ( (TableID == null) || TableID.isEmpty() ) {
-        message = "The table identifier must be specified.";
+	if ( ((InputFile == null) || InputFile.isEmpty()) && ((ObjectID == null) || ObjectID.isEmpty()) ) {
+        message = "The input file or object identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the table identifier." ) );
-    }
-	try {
-	    Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it.
-		if ( o != null ) {
-			//working_dir = (String)o;
-		}
+                        message, "Specify an existing input file or object identifier." ) );
 	}
-	catch ( Exception e ) {
-        message = "Error requesting WorkingDir from processor.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	}
-	
-	if ( (InputFile == null) || InputFile.isEmpty() ) {
-        message = "The input file must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an existing input file." ) );
-	}
-	else if ( InputFile.indexOf("${") < 0 ) {
+
+	if ( (InputFile != null) && !InputFile.isEmpty() ) {
+		if ( InputFile.indexOf("${") < 0 ) {
 		// Can only check if no property in path.
 		/* Allow since might be dynamically created - TODO SAM 2015-12-06 Add warning in run code.
         try {
@@ -169,11 +151,46 @@ throws InvalidCommandParameterException
 		}
 		*/
 	}
-    
+	}
+
+    if ( (TableID == null) || TableID.isEmpty() ) {
+        message = "The table identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the table identifier." ) );
+    }
+
+	try {
+	    Object o = processor.getPropContents ( "WorkingDir" );
+		// Working directory is available so use it.
+		if ( o != null ) {
+			//working_dir = (String)o;
+		}
+	}
+	catch ( Exception e ) {
+        message = "Error requesting WorkingDir from processor.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+	}
+	
+	if ( (Append != null) && !Append.equals("") ) {
+		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
+			message = "The Append parameter \"" + Append + "\" is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
+		}
+	}
+
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(12);
-    validList.add ( "TableID" );
+	List<String> validList = new ArrayList<>(15);
     validList.add ( "InputFile" );
+    validList.add ( "ObjectID" );
+    validList.add ( "TableID" );
     validList.add ( "ArrayName" );
     validList.add ( "AppendArrays" );
     validList.add ( "ExcludeNames" );
@@ -184,26 +201,30 @@ throws InvalidCommandParameterException
     validList.add ( "IntegerColumns" );
     validList.add ( "TextColumns" );
     validList.add ( "Top" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    validList.add ( "RowCountProperty" );
+    validList.add ( "Append" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
-	return (new ReadTableFromJSON_JDialog ( parent, this )).ok();
+public boolean editCommand ( JFrame parent ) {
+    List<String> objectIDChoices =
+        TSCommandProcessorUtil.getObjectIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	// The command will be modified if changed.
+	return (new ReadTableFromJSON_JDialog ( parent, this, objectIDChoices) ).ok();
 }
 
 /**
@@ -220,12 +241,10 @@ private DataTable getDiscoveryTable() {
  * The resulting array(s) can be processed into one merged table.
  * If the name is in a list of such objects, the first array (list) is returned.
  * This method is called recursively to dig down into the JSON object model.
- * @param map read from a JSON string, can be a top level map the first call or an embedded
- * map from recursive call
- * @param arrayName name of the array to find or empty to use the first array,
- * such as a top-level array
+ * @param map read from a JSON string, can be a top level map the first call or an embedded map from recursive call
+ * @param arrayName name of the array to find or empty to use the first array, such as a top-level array
  * @param appendArrays whether to append multiple matched arrays (false will return the first instance)
- * @param arrays list of arrays to return.  If null, a new array will be created.
+ * @param arrays list of arrays to return. If null, a new array will be created.
  * If non-null, the list will be modified, such as by recursive calls.
  * @return the object for the requested array (a list), or null if not found
  */
@@ -314,8 +333,8 @@ Return a list of objects of the requested type.  This class only keeps a list of
 The following classes can be requested:  DataTable
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new Vector<>();
@@ -909,381 +928,66 @@ private boolean isArrayColumn ( String name, String [] arrayColumns ) {
 
 // Use base class parseCommand() method.
 
-// TODO SAM 2015-12-05 Need to evaluate how best to flatten arrays embedded in objects.
-/**
-Read a JSON file into a table object.
-*/
-private DataTable readJSONUsingGson ( String inputFile, String [] excludeNames,
-	String [] dateTimeColumns, String [] doubleColumns,
-	String [] integerColumns, String [] textColumns, int top )
-throws FileNotFoundException, IOException
-{	String routine = getClass().getSimpleName() + ".readJSON";
-	DataTable table = new DataTable();
-    JsonReader jsonReader = new JsonReader(new FileReader(inputFile));
-    // Refer to Gson API:  http://google.github.io/gson/apidocs/
-    // Consume the opening "["
-    if ( Message.isDebugOn ) {
-    	Message.printDebug(2, routine, "Begin main array");
-    }
-    jsonReader.beginArray();
-    // Read until there are no more objects in the array.
-    // If the first object, set up the table columns.
-    boolean tableInitialized = false;
-    int tableColumnAdded = 0; // Used to handle table initialization.
-    int row = -1; // Row in table.
-    int col = 0; // Column in table.
-    int colType = 0; // Column type when adding/using table.
-    int objectCount = 0; // Count of objects processed, used with "top".
-    double dvalue = 0; // Number value for token.
-    String svalue = ""; // String value for token.
-    boolean bvalue = false; // Boolean value for token.
-    int arrayRowStart = -1, arrayRowEnd = -1, arrayColStart = -1; // Used to repeat array rows for columns not in embedded array.
-    int objectArrayCount = 0; // Count of arrays embedded in top-level object - only allow 1 active for flattening.
-    boolean excludeName = false; // Whether or not to exclude a name.
-    // Loop through top-level objects in array:
-    // - may have simple name/value pairs but some names may correspond to arrays
-    // - currently only allow one array value and handle flattening
-    while (jsonReader.hasNext()) {
-    	// Table row is the object count, which is zero-indexed and only incremented at end of this loop.
-    	// Process the objects in the top-level array.
-    	arrayRowStart = -1;
-    	arrayRowEnd = -1;
-    	arrayColStart = -1;
-    	objectArrayCount = 0; // Within the object.
-    	++row; // Goes to 0 on first iteration.
-    	// In the array so get the next object.
-        if ( Message.isDebugOn ) {
-        	Message.printDebug(2, routine, "Begin object");
-        }
-        jsonReader.beginObject();
-        while (jsonReader.hasNext()) {
-	    	// Process name/value pairs until exhausted.
-        	// Always get the name.
-	    	String name = jsonReader.nextName();
-	    	excludeName = readJSON_ExcludeName(name,excludeNames);
-	    	// Peek ahead to determine the value type of the next value so that it can be handled below.
-	    	JsonToken token = jsonReader.peek();
-	    	// List token types in likely order of occurrence to improve performance.
-	    	if ( token == JsonToken.STRING ) {
-	    		svalue = jsonReader.nextString();
-	    		if ( !tableInitialized ) {
-	    			colType = TableField.DATA_TYPE_STRING; // Default.
-	    			// Check for column type override.
-	    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
-	    			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
-	    				++tableColumnAdded;
-	    			}
-	    		}
-	    		// Set the table cell value.
-	    		if ( !excludeName ) {
-		    		try {
-		    			col = table.getFieldIndex(name);
-		    			colType = table.getFieldDataType(col);
-		    		}
-		    		catch ( Exception e ) {
-		    			col = -1;
-		    		}
-		    		if ( col >= 0 ) {
-		    			try {
-			    			if ( colType == TableField.DATA_TYPE_STRING ) {
-			    				// Simple set.
-			    				table.setFieldValue(row, col, svalue, true);
-			    			}
-			    			else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
-		    					double d = Double.parseDouble(svalue);
-		    					table.setFieldValue(row, col, d, true);
-			    			}
-			    			else if ( colType == TableField.DATA_TYPE_INT ) {
-		    					int i = Integer.parseInt(svalue);
-		    					table.setFieldValue(row, col, i, true);
-			    			}
-			    			else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-			    				// Parse the date/time.
-			    				table.setFieldValue(row,col,DateTime.parse(svalue));
-			    			}
-		    			}
-		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
-		    				// Leave as initial null value in table.
-		    			}
-		    		}
-	    		}
-	    	}
-	    	else if ( token == JsonToken.NUMBER ) {
-	    		dvalue = jsonReader.nextDouble();
-	    		svalue = "" + dvalue;
-	    		if ( !tableInitialized ) {
-	    			// Check for column type override, may be double or integer.
-	    			colType = TableField.DATA_TYPE_DOUBLE; // Default.
-	    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
-	    			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
-	    				++tableColumnAdded;
-	    			}
-	    		}
-	    		if ( !excludeName ) {
-		    		try {
-		    			col = table.getFieldIndex(name);
-		    			colType = table.getFieldDataType(col);
-		    		}
-		    		catch ( Exception e ) {
-		    			col = -1;
-		    		}
-		    		if ( col >= 0 ) {
-		    			try {
-			    			if ( colType == TableField.DATA_TYPE_DOUBLE ) {
-			    				table.setFieldValue(row, col, dvalue, true);
-			    			}
-			    			else if ( colType == TableField.DATA_TYPE_STRING ) {
-			    				table.setFieldValue(row, col, svalue, true);
-			    			}
-			    			else if ( colType == TableField.DATA_TYPE_INT ) {
-			    				table.setFieldValue(row, col, (int)dvalue, true);
-			    			}
-		    			}
-		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
-		    			}
-		    		}
-	    		}
-	    	}
-	    	else if ( token == JsonToken.BOOLEAN ) {
-	    		bvalue = jsonReader.nextBoolean();
-	    		svalue = "" + bvalue;
-    			colType = TableField.DATA_TYPE_BOOLEAN; // Default.
-    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
-    			if ( !excludeName && readJSON_AddTableColumn(table,name,colType) >= 0 ) {
-    				++tableColumnAdded;
-    			}
-    			if ( !excludeName ) {
-		    		try {
-		    			col = table.getFieldIndex(name);
-		    			colType = table.getFieldDataType(col);
-		    		}
-		    		catch ( Exception e ) {
-		    			col = -1;
-		    		}
-		    		if ( col >= 0 ) {
-		    			try {
-		    				table.setFieldValue(row, col, bvalue, true);
-		    			}
-		    			catch ( Exception e ) {
-		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
-		    			}
-		    		}
-    			}
-	    	}
-	    	else if ( token == JsonToken.NULL ) {
-	    		// TODO SAM 2015-12-05 need to handle in initialization, but table is initialized to nulls.
-	    		svalue = null;
-	    	}
-	    	else if ( token == JsonToken.BEGIN_ARRAY ) {
-	    		if ( (objectArrayCount >= 1) || excludeName ) {
-	    			// Currently only know how to flatten one array in object (that is not excluded).
-	    			jsonReader.skipValue();
-	    		}
-	    		else {
-		    		// Expand the array and add columns to the table.
-		    		// For array position [0] add to current row.
-		    		// For array position [1+] repeat the other column values.
-		    		// This could be made recursive with some additional effort.
-	    			++objectArrayCount;
-		    		jsonReader.beginArray();
-		    		arrayRowStart = row; // Used to flatten other columns by repeating values.
-		    		arrayRowEnd = arrayRowStart;
-		    		arrayColStart = -1;
-		    		int arrayIndex = -1;
-		    		int arrayObjectCount = 0; // Number of objects in the array.
-		    		while (jsonReader.hasNext()) {
-		    			// Iterate through objects in the array.
-		    			++arrayIndex;
-		    			jsonReader.beginObject();
-		    			++arrayObjectCount;
-		    	        while (jsonReader.hasNext()) {
-		    		    	// Process name/value pairs until exhausted.
-		    	        	// Always get the name.
-		    		    	name = jsonReader.nextName();
-		    		    	token = jsonReader.peek();
-		    		    	// List token types in likely order of occurrence to improve performance.
-		    		    	if ( token == JsonToken.STRING ) {
-		    		    		svalue = jsonReader.nextString();
-		    		    		if ( !tableInitialized && (arrayIndex == 0) ) {
-			    		    		// Only add columns if the first array index.
-		    		    			colType = TableField.DATA_TYPE_STRING; // Default.
-		    		    			// Check for column type override.
-		    		    			colType = readJSON_DetermineColumnType ( name, colType, dateTimeColumns, doubleColumns, integerColumns, textColumns );
-		    		    			if ( readJSON_AddTableColumn(table,name,colType) >= 0 ) {
-		    		    				++tableColumnAdded;
-		    		    			}
-		    		    		}
-		    		    		// Set the table cell value.
-		    		    		try {
-		    		    			col = table.getFieldIndex(name);
-		    		    			if ( arrayColStart < 0 ) {
-		    		    				arrayColStart = col;
-		    		    			}
-		    		    			colType = table.getFieldDataType(col);
-		    		    		}
-		    		    		catch ( Exception e ) {
-		    		    			col = -1;
-		    		    		}
-		    		    		if ( col >= 0 ) {
-		    		    			try {
-		    			    			if ( colType == TableField.DATA_TYPE_STRING ) {
-		    			    				// Simple set.
-		    			    				table.setFieldValue(row, col, svalue, true);
-		    			    			}
-		    			    			else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
-		    		    					double d = Double.parseDouble(svalue);
-		    		    					table.setFieldValue(row, col, d, true);
-		    			    			}
-		    			    			else if ( colType == TableField.DATA_TYPE_INT ) {
-		    		    					int i = Integer.parseInt(svalue);
-		    		    					table.setFieldValue(row, col, i, true);
-		    			    			}
-		    			    			else if ( colType == TableField.DATA_TYPE_DATETIME ) {
-		    			    				// Parse the date/time.
-		    			    				table.setFieldValue(row,col,DateTime.parse(svalue));
-		    			    			}
-		    		    			}
-		    		    			catch ( Exception e ) {
-		    		    				// TODO SAM 2015-12-05 Should generally not happen - evaluate error messages.
-		    		    				// Leave as initial null value in table.
-		    		    			}
-		    		    		}
-		    		    	}
-			    	    	else if ( token == JsonToken.BEGIN_ARRAY ) {
-			    	    		// Only go one level deep on hierarchy until figure out recursion.
-			    	    		jsonReader.skipValue();
-			    	    	}
-		    	        }
-		    	        jsonReader.endObject();
-		    			// Increment the row because each object in the array will be in a different row.
-		    			++row;
-		    			++arrayRowEnd;
-		    		}
-		    		// Decrement the row because want the next name/value in the object to occur on the same row as the last array object.
-		    		// Columns will be filled in as necessary to fill the row.
-		    		// Only do this if the array actually had elements.
-		    		if ( arrayObjectCount > 0 ) {
-		    			--row;
-		    		}
-		    		jsonReader.endArray();
-		    		// Fill out the columns prior to those added by the array by repeating rows.
-		    		//Message.printStatus(2, routine, "Filling in content before array columns arrayRowStart="+arrayRowStart+", arrayRowEnd="+arrayRowEnd+", arrayColStart="+arrayColStart);
-		    		for ( int iArrayRow = (arrayRowStart + 1); iArrayRow <= arrayRowEnd; iArrayRow++ ) {
-		    			for ( int iArrayCol = 0; iArrayCol < arrayColStart; iArrayCol++ ) {
-		    				// Duplicate each columns values from the first row of the array to other rows introduced by array.
-		    				try {
-		    					table.setFieldValue(iArrayRow, iArrayCol, table.getFieldValue(arrayRowStart, iArrayCol));
-		    				}
-		    				catch ( Exception e ) {
-		    					// Just leave the value null - should not happen.
-		    				}
-		    			}
-		    		}
-	    		}
-	    	}
-	    	else if ( token == JsonToken.END_ARRAY ) {
-	    		// TODO SAM 2015-12-05 need to consume array
-	    		// Should not need to do anything if skipValue() or above code handles?
-	    	}
-	    	// For debugging.
-	        if ( Message.isDebugOn ) {
-	        	Message.printDebug(2, routine, "Read name=\"" + name + "\" value=\"" + svalue + "\", set at row="+row+ ", col="+col);
-	        }
-	        //Message.printStatus(2, routine, "objectArrayCount="+objectArrayCount+", col="+col);
-			if ( (objectArrayCount > 0) && (col >= 0) ) {
-				if ( Message.isDebugOn ) {
-					Message.printDebug(2, routine, "Filling in content before array columns arrayRowStart="+arrayRowStart+", arrayRowEnd="+arrayRowEnd+", arrayColStart="+arrayColStart);
-				}
-				// Fill out the rows for current column prior to those added by the array by repeating rows.
-				// Handle generically without caring about the column type.
-	    		for ( int iArrayRow = arrayRowStart; iArrayRow < row; iArrayRow++ ) {
-    				// Duplicate column' value to other rows introduced by array (start of array to previous row).
-    				try {
-    					table.setFieldValue(iArrayRow, col, table.getFieldValue(row, col));
-    				}
-    				catch ( Exception e ) {
-    					// Just leave the value null - should not happen.
-    				}
-	    		}
-			}
-        }
-        if ( Message.isDebugOn ) {
-        	Message.printDebug(2, routine, "End object");
-        }
-        jsonReader.endObject();
-        ++objectCount;
-        // If any columns have been added indicate that the table has been initialized.
-        if ( tableColumnAdded > 0 ) {
-        	tableInitialized = true;
-        }
-        // Exit reading if top has been exceeded.
-        if ( objectCount == top ) {
-        	break;
-        }
-    }
-    if ( Message.isDebugOn ) {
-    	Message.printDebug(2, routine, "End main array");
-    }
-    // Don't need the following and it may throw exception if "top" is used.
-    //jsonReader.endArray();
-    jsonReader.close();
-	return table;
-}
-
 /**
 Read a JSON file into a table object.
 This code is similar to reading a CSV file, with automatic determination of column types.
 */
-private int readJSONUsingJackson ( String inputFile, DataTable table, String arrayName, boolean appendArrays,
+private int readJSONUsingJackson ( String inputFile, JSONObject jsonObject, DataTable table, String arrayName, boolean appendArrays,
 	String [] excludeNames,
 	String [] arrayColumns, String [] booleanColumns, String [] dateTimeColumns,
 	String [] doubleColumns, String [] integerColumns, String [] textColumns,
 	int top,
 	CommandStatus status, int warningCount )
-throws FileNotFoundException, IOException
-{	String routine = getClass().getSimpleName() + ".readJSONFromJackson";
+throws FileNotFoundException, IOException {
+	String routine = getClass().getSimpleName() + ".readJSONUsingJackson";
 
 	boolean useMapper = true;
 	if ( useMapper ) {
 		// Map the JSON string into an object hierarchy and then pull out what is needed:
 		// - may fail on very large input files by running out of memory
 		
-		// First read the input file into a string.
-		StringBuilder responseJson = IOUtil.fileToStringBuilder(inputFile);
-		
-		// Parse the string into object hierarchy:
-		// - if the JSON string starts with '{', read into a map
-		// - if the JSON string starts with '[', read into an array and add to a map for further processing
-		ObjectMapper mapper = new ObjectMapper();
+		StringBuilder responseJson = null;
 		Map<?,?> map = null;
-		if ( responseJson.charAt(0) == '{' ) {
-			map = mapper.readValue(responseJson.toString(), Map.class);
-		}
-		else if ( responseJson.charAt(0) == '[' ) {
-			// Create a top-level map with black name:
-			// - use a LinkedHashMap to preserve element order
-			//map = new LinkedHashMap<>();
-			if ( Message.isDebugOn ) {
-				Message.printStatus(2, routine,
-					"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+		if ( (inputFile != null) && !inputFile.isEmpty() ) {
+			// First read the input file into a string.
+			responseJson = IOUtil.fileToStringBuilder(inputFile);
+		
+			// Parse the string into object hierarchy:
+			// - if the JSON string starts with '{', read into a map
+			// - if the JSON string starts with '[', read into an array and add to a map for further processing
+			ObjectMapper mapper = new ObjectMapper();
+			if ( responseJson.charAt(0) == '{' ) {
+				map = mapper.readValue(responseJson.toString(), Map.class);
 			}
-			responseJson.insert(0, "{ \"toparray\" : ");
-			responseJson.append("}");
-			map = mapper.readValue(responseJson.toString(), Map.class);
+			else if ( responseJson.charAt(0) == '[' ) {
+				// Create a top-level map with black name:
+				// - use a LinkedHashMap to preserve element order
+				//map = new LinkedHashMap<>();
+				if ( Message.isDebugOn ) {
+					Message.printStatus(2, routine,
+						"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+				}
+				responseJson.insert(0, "{ \"toparray\" : ");
+				responseJson.append("}");
+				map = mapper.readValue(responseJson.toString(), Map.class);
+			}
+			else {
+				String message = "JSON does not start with { or [ - cannot parse.";
+        		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            		message, "Verify that the JSON file content is valid JSON starting with { or [ ." ) );
+        		Message.printWarning(3, routine, message);
+        		// Cannot read any more data.
+        		++warningCount;
+        		return warningCount;
+			}
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
+			}
 		}
-		else {
-			String message = "JSON does not start with { or [ - cannot parse.";
-        	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            	message, "Verify that the JSON file content is valid JSON starting with { or [ ." ) );
-        	Message.printWarning(3, routine, message);
-        	// Cannot read any more data.
-        	++warningCount;
-        	return warningCount;
-		}
-		if ( Message.isDebugOn ) {
-			Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
+		else if ( jsonObject != null ) {
+			// A JSON object is provided as input:
+			// - the object map has already been read into memory
+			map = jsonObject.getObjectMap();
 		}
 
 		// Find the array of interest, which is actually a Java List:
@@ -1373,7 +1077,8 @@ throws FileNotFoundException, IOException
 }
 
 /**
-Add a column to the table for the column type.
+Add a column to the table for the column type:
+- TODO smalers 2022-12-06 this was used with GSON an need to evaluate using
 */
 private int readJSON_AddTableColumn (DataTable table, String name, int colType) {
 	if ( colType == TableField.DATA_TYPE_STRING ) {
@@ -1398,12 +1103,13 @@ private int readJSON_AddTableColumn (DataTable table, String name, int colType) 
 
 // TODO SAM 2015-12-05 Maybe move this to DataTable to allow reuse.
 /**
-Determine the column type considering overrides.
+Determine the column type considering overrides:
+- TODO smalers 2022-12-06 this was used with GSON an need to evaluate using
 @param colType0 initial column type if override is not specified.
 */
 private int readJSON_DetermineColumnType ( String colName, int colType0, String [] dateTimeColumns,
-	String [] doubleColumns, String [] integerColumns, String [] textColumns )
-{	int colType = colType0;
+	String [] doubleColumns, String [] integerColumns, String [] textColumns ) {
+	int colType = colType0;
 	
 	if ( dateTimeColumns != null) {
 		for ( int i = 0; i < dateTimeColumns.length; i++ ) {
@@ -1437,7 +1143,8 @@ private int readJSON_DetermineColumnType ( String colName, int colType0, String 
 }
 
 /**
-Determine whether the name should be excluded from output.
+Determine whether the name should be excluded from output:
+- TODO smalers 2022-12-06 this was used with GSON an need to evaluate using
 */
 private boolean readJSON_ExcludeName(String name, String [] excludeNames) {
 	if ( excludeNames != null ) {
@@ -1453,7 +1160,7 @@ private boolean readJSON_ExcludeName(String name, String [] excludeNames) {
 /**
  * Read the data into the table.
  * @param table data table to read
- * @param objectList list of objects lists to process 
+ * @param objectList list of objects lists to process
  * @param arrayColumns array of columns that are arrays
  * @param excludeNames array of data array object names to exclude
  * @param top if non-zero indicates the number of first records to read
@@ -1578,6 +1285,8 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 						// If a string, check the column type and convert if necessary:
 						// - this can be used, for example, to convert boolean string to boolean
 						// - DateTime must be in standard formats
+						// - empty strings are handled as null for most types but have to do below
+						//   because an empty string for string type is OK
 						s = (String)value;
 						if ( s.equalsIgnoreCase("NULL") ) {
 							value = null;
@@ -1588,7 +1297,12 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							if ( columnType == TableField.DATA_TYPE_BOOLEAN) {
 								// Try to parse.
 								try {
-									value = Boolean.parseBoolean(s);
+									if ( s.isEmpty() ) {
+										value = null;
+									}
+									else {
+										value = Boolean.parseBoolean(s);
+									}
 								}
 								catch ( Exception e ) {
 									problems.add("Invalid boolean for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
@@ -1598,7 +1312,12 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							else if ( columnType == TableField.DATA_TYPE_DATETIME) {
 								// Try to parse.
 								try {
-									value = DateTime.parse(s);
+									if ( s.isEmpty() ) {
+										value = null;
+									}
+									else {
+										value = DateTime.parse(s);
+									}
 								}
 								catch ( Exception e ) {
 									problems.add("Invalid date/time for \"" + name + "\" object (" + (iObject + 1) + ") (" + e + "): " + s );
@@ -1609,7 +1328,12 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							else if ( columnType == TableField.DATA_TYPE_DOUBLE) {
 								// Try to parse.
 								try {
-									value = Double.parseDouble(s);
+									if ( s.isEmpty() ) {
+										value = null;
+									}
+									else {
+										value = Double.parseDouble(s);
+									}
 								}
 								catch ( Exception e ) {
 									problems.add("Invalid double for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
@@ -1619,7 +1343,12 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							else if ( columnType == TableField.DATA_TYPE_INT) {
 								// Try to parse.
 								try {
-									value = Integer.parseInt(s);
+									if ( s.isEmpty() ) {
+										value = null;
+									}
+									else {
+										value = Integer.parseInt(s);
+									}
 								}
 								catch ( Exception e ) {
 									problems.add("Invalid integer for \"" + name + "\" object (" + (iObject + 1) + "): " + s );
@@ -1709,8 +1438,7 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -1738,8 +1466,8 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -1767,9 +1495,11 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters();
 
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
+    String ObjectID = parameters.getValue ( "ObjectID" );
+	ObjectID = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectID);
     String TableID = parameters.getValue ( "TableID" );
 	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
 	String ArrayName = parameters.getValue ( "ArrayName" );
 	ArrayName = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayName);
 	if ( ArrayName == null ) {
@@ -1873,19 +1603,36 @@ CommandWarningException, CommandException
 	if ( (Top != null) && !Top.isEmpty() ) {
 		top = Integer.parseInt(Top);
 	}
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
 
-	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		if ( !IOUtil.fileExists(InputFile_full) ) {
-			message += "\nThe JSON file \"" + InputFile_full + "\" does not exist.";
-			++warning_count;
-        	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            	message, "Verify that the JSON file exists." ) );
-		}
+	String Append = parameters.getValue ( "Append" );
+	boolean append = false;
+	if ( (Append != null) && !Append.equals("")) {
+	    if ( Append.equalsIgnoreCase(_True) ) {
+	        append = true;
+	    }
 	}
 
+	boolean haveFile = false;
+	String InputFile_full = null;
+	if ( (InputFile != null) && !InputFile.isEmpty() ) {
+		InputFile_full = IOUtil.verifyPathForOS(
+        	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        		TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			if ( !IOUtil.fileExists(InputFile_full) ) {
+				message += "\nThe JSON file \"" + InputFile_full + "\" does not exist.";
+				++warning_count;
+        		status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+            		message, "Verify that the JSON file exists." ) );
+			}
+		}
+		haveFile = true;
+	}
+	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
 		Message.printWarning ( 2,
@@ -1909,40 +1656,113 @@ CommandWarningException, CommandException
         if ( (Top != null) && !Top.isEmpty() ) {
             props.set ( "Top=" + Top);
         }
-        boolean useJackson = true;
     	try {
-    		if ( useJackson ) {
-    			// Use Jackson, preferred because it is used in more code elsewhere.
+    		if ( append ) {
+        		PropList request_params = null;
+        		CommandProcessorRequestResultsBean bean = null;
+        		if ( (TableID != null) && !TableID.equals("") ) {
+            		// Get the table to be updated.
+            		request_params = new PropList ( "" );
+            		request_params.set ( "TableID", TableID );
+            		try {
+                		bean = processor.processRequest( "GetTable", request_params);
+            		}
+            		catch ( Exception e ) {
+                		message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+                		Message.printWarning(warning_level,
+                    		MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    		message, "Report problem to software support." ) );
+            		}
+            		PropList bean_PropList = bean.getResultsPropList();
+            		Object o_Table = bean_PropList.getContents ( "Table" );
+            		if ( o_Table == null ) {
+                		message = "Unable to find table to append to using TableID=\"" + TableID + "\".";
+                		Message.printWarning ( warning_level,
+                		MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    		message, "Verify that a table exists with the requested ID." ) );
+            		}
+            		else {
+                		table = (DataTable)o_Table;
+            		}
+        		}
+    		}
+    		else {
     			table = new DataTable();
 	   			table.setTableID(TableID);
-    			warning_count = readJSONUsingJackson ( InputFile_full, table,
+    		}
+
+    		// Get the object to process.
+
+    		JSONObject jsonObject = null;
+    		PropList request_params = null;
+    		CommandProcessorRequestResultsBean bean = null;
+    		if ( (ObjectID != null) && !ObjectID.equals("") ) {
+        		// Get the object to be updated.
+        		request_params = new PropList ( "" );
+        		request_params.set ( "ObjectID", ObjectID );
+        		try {
+            		bean = processor.processRequest( "GetObject", request_params);
+        		}
+        		catch ( Exception e ) {
+            		message = "Error requesting GetObject(ObjectID=\"" + ObjectID + "\") from processor.";
+            		Message.printWarning(warning_level,
+                		MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                		message, "Report problem to software support." ) );
+        		}
+        		PropList bean_PropList = bean.getResultsPropList();
+        		Object o_object = bean_PropList.getContents ( "Object" );
+        		if ( o_object == null ) {
+            		message = "Unable to find object to process using ObjectID=\"" + ObjectID + "\".";
+            		Message.printWarning ( warning_level,
+            		MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+            		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                		message, "Verify that an object exists with the requested ID." ) );
+        		}
+        		else {
+            		jsonObject = (JSONObject)o_object;
+        		}
+    		}
+
+    		// Read the table from JSON:
+    		// - if null because not found for append, don't try to read
+    		// - TODO smalers 2022-12-09 consider moving to library code
+    		if ( (table != null) && (haveFile || (jsonObject != null))) {
+    			warning_count = readJSONUsingJackson ( InputFile_full, jsonObject, table,
     				ArrayName, appendArrays, excludeNames,
     				arrayColumns, booleanColumns, dateTimeColumns, doubleColumns, integerColumns, textColumns,
     				top, status, warning_count);
+            		// Set the table identifier.
+            	table.setTableID ( TableID );
     		}
-    		else {
-    			// Use GSON.
-    			table = readJSONUsingGson ( InputFile_full, excludeNames, dateTimeColumns, doubleColumns, integerColumns, textColumns, top );
-    		}
-            // Set the table identifier.
-            table.setTableID ( TableID );
     	}
     	catch ( Exception e ) {
     		Message.printWarning ( 3, routine, e );
-    		message = "Unexpected error reading table from JSON file \"" + InputFile_full + "\" (" + e + ").";
-    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the file exists and is readable." ) );
-    		throw new CommandWarningException ( message );
+    		if ( (InputFile != null) && !InputFile.isEmpty() ) {
+    			message = "Unexpected error reading table from JSON file \"" + InputFile_full + "\" (" + e + ").";
+    			Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+            	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                	message, "Verify that the file exists and is readable." ) );
+    			throw new CommandWarningException ( message );
+    		}
+    		else if ( (ObjectID != null) && !ObjectID.isEmpty() ) {
+    			message = "Unexpected error reading table from JSON object \"" + ObjectID + "\" (" + e + ").";
+    			Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+            	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                	message, "Verify that the object contains JSON content." ) );
+    			throw new CommandWarningException ( message );
+    		}
+    		else {
+    			message = "Unexpected error reading table, no file or JSON object (" + e + ").";
+    			Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+            	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                	message, "Verify that the command input is correct." ) );
+    			throw new CommandWarningException ( message );
+    		}
     	}
     	
-    	if ( warning_count > 0 ) {
-    		message = "There were " + warning_count + " warnings processing the command.";
-    		Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
-    		throw new CommandWarningException ( message );
-    	}
-        
         // Set the table in the processor.
 
         PropList request_params = new PropList ( "" );
@@ -1959,6 +1779,37 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
+
+	    // Set the property indicating the number of rows in the table.
+        if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+            int rowCount = 0;
+            if ( table != null ) {
+                rowCount = table.getNumberOfRecords();
+            }
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", RowCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+
+    	if ( warning_count > 0 ) {
+    		message = "There were " + warning_count + " warnings processing the command.";
+    		Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
+    		throw new CommandWarningException ( message );
+    	}
+
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Create an empty table and set the ID.
@@ -1980,12 +1831,13 @@ private void setDiscoveryTable ( DataTable table ) {
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
+public String toString ( PropList props ) {
+	if ( props == null ) {
 		return getCommandName() + "()";
 	}
-    String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
+    String ObjectID = props.getValue( "ObjectID" );
+    String TableID = props.getValue( "TableID" );
 	String ArrayName = props.getValue( "ArrayName" );
 	String AppendArrays = props.getValue( "AppendArrays" );
 	String ExcludeNames = props.getValue("ExcludeNames");
@@ -1996,19 +1848,27 @@ public String toString ( PropList props )
 	String IntegerColumns = props.getValue("IntegerColumns");
 	String TextColumns = props.getValue("TextColumns");
 	String Top = props.getValue("Top");
+	String RowCountProperty = props.getValue( "RowCountProperty" );
+	String Append = props.getValue("Append");
 	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+    if ( (ObjectID != null) && !ObjectID.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ObjectID=\"" + ObjectID + "\"" );
+    }
+    if ( (TableID != null) && (TableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableID=\"" + TableID + "\"" );
+    }
 	if ( (ArrayName != null) && (ArrayName.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -2069,6 +1929,19 @@ public String toString ( PropList props )
 		}
 		b.append ( "Top=" + Top );
 	}
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
+    }
+	if ( (Append != null) && (Append.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Append=" + Append );
+	}
+
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

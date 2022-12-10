@@ -92,8 +92,8 @@ Command editor constructor.
 @param command Command to edit.
 @param tableIDChoices list of tables to choose from, used if appending
 */
-public ListFiles_JDialog ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public ListFiles_JDialog ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -101,8 +101,8 @@ public ListFiles_JDialog ( JFrame parent, ListFiles_Command command, List<String
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -117,8 +117,8 @@ public void actionPerformed( ActionEvent event )
 		fc.setFileSelectionMode (JFileChooser.DIRECTORIES_ONLY );
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
 	
 			if (filename == null || filename.equals("")) {
 				return;
@@ -175,8 +175,8 @@ public void actionPerformed( ActionEvent event )
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Folder = __Folder_JTextField.getText().trim();
 	String IncludeFiles = __IncludeFiles_JTextField.getText().trim();
@@ -210,11 +210,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Folder = __Folder_JTextField.getText().trim();
+private void commitEdits () {
+	String Folder = __Folder_JTextField.getText().trim();
     String IncludeFiles = __IncludeFiles_JTextField.getText().trim();
     String ExcludeFiles = __ExcludeFiles_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
@@ -232,8 +232,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 @param tableIDChoices list of tables to choose from, used if appending
 */
-private void initialize ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -266,7 +266,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Folder:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Folder:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Folder_JTextField = new JTextField ( 50 );
 	__Folder_JTextField.setToolTipText("Specify the folder from which to list files.");
@@ -288,17 +288,17 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	}
 	JGUIUtil.addComponent(main_JPanel, Folder_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("File(s) to include:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File(s) to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeFiles_JTextField = new JTextField ( 40 );
     __IncludeFiles_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeFiles_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - files in folder to include (default=include all)."), 
+        "Optional - files in folder to include (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "File(s) to exclude:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeFiles_JTextField = new JTextField ( 40 );
@@ -306,10 +306,10 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, __ExcludeFiles_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - files in folder to exclude (default=none)."), 
+        "Optional - files in folder to exclude (default=none)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     tableIDChoices.add(0,""); // Add blank to ignore table.
@@ -319,7 +319,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table contain file list."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table contain file list."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:"),
@@ -335,10 +335,10 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
    JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - whether to append to table (default=" + __command._False + ")."), 
+		"Optional - whether to append to table (default=" + __command._False + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -351,7 +351,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -377,39 +377,40 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{    refresh();
+public void itemStateChanged ( ItemEvent e ) {
+     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Folder = "";
 	String IncludeFiles = "";
 	String ExcludeFiles = "";
@@ -507,8 +508,8 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -526,15 +527,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

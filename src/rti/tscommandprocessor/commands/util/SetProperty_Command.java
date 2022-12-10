@@ -407,7 +407,7 @@ public <T> List<T> getObjectList ( Class<T> c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data.
     if ( c == prop.getClass() ) {
-        List<T> v = new Vector<T>(1);
+        List<T> v = new ArrayList<>(1);
         v.add ( (T)discovery_Prop );
         return v;
     }
@@ -792,8 +792,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the property defined in discovery phase.
 @param prop Property set during discovery phase.
 */
-private void setDiscoveryProp ( Prop prop )
-{
+private void setDiscoveryProp ( Prop prop ) {
     __discovery_Prop = prop;
 }
 

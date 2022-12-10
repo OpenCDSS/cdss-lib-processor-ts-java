@@ -44,6 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -76,11 +77,13 @@ private SimpleJButton __pathPayload_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __URI_JTextArea = null;
 private SimpleJComboBox	__EncodeURI_JComboBox =null;
 private SimpleJComboBox __RequestMethod_JComboBox = null;
 private JTextField __PayloadFile_JTextField = null;
 private JTextArea __HttpHeaders_JTextArea = null;
+private JTextArea __Cookies_JTextArea = null;
 private JTextField __ConnectTimeout_JTextField = null;
 private JTextField __ReadTimeout_JTextField = null;
 private JTextField __RetryMax_JTextField = null;
@@ -128,16 +131,16 @@ public void actionPerformed( ActionEvent event )
         fc.addChoosableFileFilter(sff);
         sff = new SimpleFileFilter("txt", "Text File");
         fc.addChoosableFileFilter(sff);
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -163,16 +166,16 @@ public void actionPerformed( ActionEvent event )
         fc.setDialogTitle("Select Payload File for Request");
         //SimpleFileFilter sff = new SimpleFileFilter("txt", "Text file");
         //fc.addChoosableFileFilter(sff);
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -202,6 +205,21 @@ public void actionPerformed( ActionEvent event )
             "Edit HttpHeaders Parameter", notes, "Property Name", "Property Value",10)).response();
         if ( dict != null ) {
             __HttpHeaders_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditCookies") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String HttpHeaders = __Cookies_JTextArea.getText().trim();
+        String [] notes = {
+            "Cookie header properties can be set for the request and will be inluded in a single header as follows:.",
+            "",
+            "   Cookie: CookieName1=CookieValue1; CookieName2=CookieValue2"
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, HttpHeaders,
+            "Edit Cookies Parameter", notes, "Cookie Name", "Cookie Value",10)).response();
+        if ( dict != null ) {
+            __Cookies_JTextArea.setText ( dict );
             refresh();
         }
     }
@@ -260,6 +278,7 @@ private void checkInput ()
 	String RequestMethod = __RequestMethod_JComboBox.getSelected();
 	String PayloadFile = __PayloadFile_JTextField.getText().trim();
 	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
+	String Cookies = __Cookies_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -283,6 +302,9 @@ private void checkInput ()
 	}
 	if ( HttpHeaders.length() > 0 ) {
 		props.set ( "HttpHeaders", HttpHeaders );
+	}
+	if ( Cookies.length() > 0 ) {
+		props.set ( "Cookies", Cookies );
 	}
 	if ( ConnectTimeout.length() > 0 ) {
 		props.set ( "ConnectTimeout", ConnectTimeout );
@@ -328,6 +350,7 @@ private void commitEdits ()
 	String RequestMethod = __RequestMethod_JComboBox.getSelected();
 	String PayloadFile = __PayloadFile_JTextField.getText().trim();
 	String HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
+	String Cookies = __Cookies_JTextArea.getText().trim().replace("\n"," ");
 	String ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	String ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	String RetryMax = __RetryMax_JTextField.getText().trim();
@@ -341,6 +364,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "RequestMethod", RequestMethod );
 	__command.setCommandParameter ( "PayloadFile", PayloadFile );
 	__command.setCommandParameter ( "HttpHeaders", HttpHeaders );
+	__command.setCommandParameter ( "Cookies", Cookies );
 	__command.setCommandParameter ( "ConnectTimeout", ConnectTimeout );
 	__command.setCommandParameter ( "ReadTimeout", ReadTimeout );
 	__command.setCommandParameter ( "RetryMax", RetryMax );
@@ -375,10 +399,10 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command performs a web request for a Uniform Resource Identifier (URI)." ),
+		"This command performs a web request for a Uniform Resource Identifier (URI, which is a more general term that includes URLs)." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"By default, a GET request will occur and output can be saved to a file or property."),
+		"By default, a GET request will occur and the response can be saved to a file or property."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Other request methods (DELETE, OPTIONS, POST, PUT) are being phased in."),
@@ -394,21 +418,32 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("URI:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    //__main_JTabbedPane.addChangeListener(this);
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for request.
+    int yRequest = -1;
+    JPanel request_JPanel = new JPanel();
+    request_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Request", request_JPanel );
+
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("URI:" ),
+        0, ++yRequest, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __URI_JTextArea = new JTextArea ( 6, 60 );
     __URI_JTextArea.setToolTipText("Specify the URL from which to read content, can use ${Property}.");
     __URI_JTextArea.setLineWrap ( true );
     __URI_JTextArea.setWrapStyleWord ( true );
     __URI_JTextArea.addKeyListener ( this );
     __URI_JTextArea.setEditable ( true );
-        JGUIUtil.addComponent(main_JPanel, new JScrollPane(__URI_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - URI for content to download."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        JGUIUtil.addComponent(request_JPanel, new JScrollPane(__URI_JTextArea),
+        1, yRequest, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("Required - URI for content to download."),
+        3, yRequest, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Encode URI?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ( "Encode URI?:"),
+		0, ++yRequest, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__EncodeURI_JComboBox = new SimpleJComboBox ( false );
 	__EncodeURI_JComboBox.setToolTipText(
 		"Should the query part of the URI be encoded, for example space character becomes + and other special charactes are %-encoded.");
@@ -419,14 +454,14 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__EncodeURI_JComboBox.setData(encodeChoices);
 	__EncodeURI_JComboBox.select ( 0 );
 	__EncodeURI_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __EncodeURI_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - encode the URI? (default=" + __command._True + ")."), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, __EncodeURI_JComboBox,
+		1, yRequest, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel(
+		"Optional - encode the URI? (default=" + __command._True + ")."),
+		3, yRequest, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Request method:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ( "Request method:"),
+		0, ++yRequest, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RequestMethod_JComboBox = new SimpleJComboBox ( false );
 	__RequestMethod_JComboBox.setToolTipText(
 		"HTTP request method.");
@@ -440,14 +475,14 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__RequestMethod_JComboBox.setData(methodChoices);
 	__RequestMethod_JComboBox.select ( 0 );
 	__RequestMethod_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RequestMethod_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - request method (default=" + __command.GET + ")."), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, __RequestMethod_JComboBox,
+		1, yRequest, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel(
+		"Optional - request method (default=" + __command.GET + ")."),
+		3, yRequest, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Payload file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("Payload file:" ),
+		0, ++yRequest, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PayloadFile_JTextField = new JTextField ( 50 );
 	__PayloadFile_JTextField.setToolTipText("Specify the payload file (for PUT and POST requests), can use ${Property}.");
 	__PayloadFile_JTextField.addKeyListener ( this );
@@ -466,66 +501,109 @@ private void initialize ( JFrame parent, WebGet_Command command )
 		JGUIUtil.addComponent(PayloadFile_JPanel, __pathPayload_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
-	JGUIUtil.addComponent(main_JPanel, PayloadFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(request_JPanel, PayloadFile_JPanel,
+		1, yRequest, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("HTTP headers:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("HTTP headers:"),
+        0, ++yRequest, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HttpHeaders_JTextArea = new JTextArea (6,35);
+    __HttpHeaders_JTextArea.setToolTipText("Each header is added using the specified name and value.");
     __HttpHeaders_JTextArea.setLineWrap ( true );
     __HttpHeaders_JTextArea.setWrapStyleWord ( true );
-    __HttpHeaders_JTextArea.setToolTipText("PropertyName1:PropertyValue1,PropertyName2:PropertyValue2,...");
+    __HttpHeaders_JTextArea.setToolTipText("HeaderName1:HeaderValue1,HeaderName2:HeaderValue2,...");
     __HttpHeaders_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__HttpHeaders_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - HTTP headers."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditHttpHeaders",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(request_JPanel, new JScrollPane(__HttpHeaders_JTextArea),
+        1, yRequest, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("Optional - HTTP headers."),
+        3, yRequest, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(request_JPanel, new SimpleJButton ("Edit","EditHttpHeaders",this),
+        3, ++yRequest, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Connection timeout:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("Cookies:"),
+        0, ++yRequest, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Cookies_JTextArea = new JTextArea (6,35);
+    __Cookies_JTextArea.setToolTipText("All cookies are included in a single 'Cookie' header the specified name and value.");
+    __Cookies_JTextArea.setLineWrap ( true );
+    __Cookies_JTextArea.setWrapStyleWord ( true );
+    __Cookies_JTextArea.setToolTipText("CookieName1:CookieValue1,CookieName2:CookieValue2,...");
+    __Cookies_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(request_JPanel, new JScrollPane(__Cookies_JTextArea),
+        1, yRequest, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(request_JPanel, new JLabel ("Optional - cookies."),
+        3, yRequest, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(request_JPanel, new SimpleJButton ("Edit","EditCookies",this),
+        3, ++yRequest, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for timeout and retry.
+    int yTimeout = -1;
+    JPanel timeout_JPanel = new JPanel();
+    timeout_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Timeout & Retry", timeout_JPanel );
+
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel (
+		"It is generally a good practice to set an appropriate timeout on requests to streamline workflows." ),
+		0, ++yTimeout, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(timeout_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTimeout, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Connection timeout:"),
+        0, ++yTimeout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ConnectTimeout_JTextField = new JTextField (10);
     __ConnectTimeout_JTextField.setToolTipText("Timeout for establishing connection (ms), after which an error will occur.");
     __ConnectTimeout_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ConnectTimeout_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - connection timeout, ms (default=60000)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(timeout_JPanel, __ConnectTimeout_JTextField,
+        1, yTimeout, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Optional - connection timeout, ms (default=60000)."),
+        3, yTimeout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Read timeout:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Read timeout:"),
+        0, ++yTimeout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ReadTimeout_JTextField = new JTextField (10);
     __ReadTimeout_JTextField.setToolTipText("Timeout for starting read (ms), after which an error will occur.");
     __ReadTimeout_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ReadTimeout_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - read timeout, ms (default=60000)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(timeout_JPanel, __ReadTimeout_JTextField,
+        1, yTimeout, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Optional - read timeout, ms (default=60000)."),
+        3, yTimeout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry maximum:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Retry maximum:"),
+        0, ++yTimeout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RetryMax_JTextField = new JTextField (10);
     __RetryMax_JTextField.setToolTipText("Maximum number of retries if a connection:w"
     		+ " timeout or error occurs.");
     __RetryMax_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RetryMax_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - (default=no retries)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(timeout_JPanel, __RetryMax_JTextField,
+        1, yTimeout, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Optional - (default=no retries)."),
+        3, yTimeout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry wait:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Retry wait:"),
+        0, ++yTimeout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RetryWait_JTextField = new JTextField (10);
     __RetryWait_JTextField.setToolTipText("Wait between retries (ms).");
     __RetryWait_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RetryWait_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - wait between retries, ms (default=0)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-      
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Local file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(timeout_JPanel, __RetryWait_JTextField,
+        1, yTimeout, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ("Optional - wait between retries, ms (default=0)."),
+        3, yTimeout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for response.
+    int yResponse = -1;
+    JPanel response_JPanel = new JPanel();
+    response_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Response", response_JPanel );
+
+    JGUIUtil.addComponent(response_JPanel, new JLabel (
+		"The response can be saved to a file and/or processor property." ),
+		0, ++yResponse, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(response_JPanel, new JLabel (
+		"A successful response code is 200 and can be set as a property to control workflow logic." ),
+		0, ++yResponse, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(response_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yResponse, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(response_JPanel, new JLabel ("Local file:" ),
+		0, ++yResponse, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__LocalFile_JTextField = new JTextField ( 50 );
 	__LocalFile_JTextField.setToolTipText("Specify the output file (will have same the contents as retrieved from URL), can use ${Property}.");
 	__LocalFile_JTextField.addKeyListener ( this );
@@ -544,21 +622,21 @@ private void initialize ( JFrame parent, WebGet_Command command )
 		JGUIUtil.addComponent(LocalFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
-	JGUIUtil.addComponent(main_JPanel, LocalFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output property:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	JGUIUtil.addComponent(response_JPanel, LocalFile_JPanel,
+		1, yResponse, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(response_JPanel, new JLabel ("Output property:"),
+        0, ++yResponse, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputProperty_JTextField = new JTextField (10);
     __OutputProperty_JTextField.setToolTipText("Name of processor property to assign retrieved URI content.");
     __OutputProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for output (default=not set)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(response_JPanel, __OutputProperty_JTextField,
+        1, yResponse, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(response_JPanel, new JLabel ("Optional - property name for output (default=not set)."),
+        3, yResponse, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If HTTP error occurs?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(response_JPanel, new JLabel ( "If HTTP error occurs?:"),
+		0, ++yResponse, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfHttpError_JComboBox = new SimpleJComboBox ( false );
 	__IfHttpError_JComboBox.setToolTipText("An HTTP error is any code other than 200, which indicates success.");
 	List<String> notFoundChoices = new ArrayList<>();
@@ -569,23 +647,23 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__IfHttpError_JComboBox.setData(notFoundChoices);
 	__IfHttpError_JComboBox.select ( 0 );
 	__IfHttpError_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IfHttpError_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if HTTP error after retries (default=" + __command._Warn + ")."), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Response code property:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(response_JPanel, __IfHttpError_JComboBox,
+		1, yResponse, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(response_JPanel, new JLabel(
+		"Optional - action if HTTP error after retries (default=" + __command._Warn + ")."),
+		3, yResponse, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(response_JPanel, new JLabel ("Response code property:"),
+        0, ++yResponse, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ResponseCodeProperty_JTextField = new JTextField (10);
     __ResponseCodeProperty_JTextField.setToolTipText("Name of processor property to assign retrieved URI content.");
     __ResponseCodeProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ResponseCodeProperty_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for response code (default=not set)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(response_JPanel, __ResponseCodeProperty_JTextField,
+        1, yResponse, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(response_JPanel, new JLabel ("Optional - property name for response code (default=not set)."),
+        3, yResponse, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 6, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -598,7 +676,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -654,6 +732,7 @@ private void refresh ()
     String RequestMethod = "";
     String PayloadFile = "";
     String HttpHeaders = "";
+    String Cookies = "";
     String ConnectTimeout = "";
     String ReadTimeout = "";
     String RetryMax = "";
@@ -671,6 +750,7 @@ private void refresh ()
         RequestMethod = parameters.getValue ( "RequestMethod" );
         PayloadFile = parameters.getValue ( "PayloadFile" );
         HttpHeaders = parameters.getValue ( "HttpHeaders" );
+        Cookies = parameters.getValue ( "Cookies" );
         ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
         ReadTimeout = parameters.getValue ( "ReadTimeout" );
         RetryMax = parameters.getValue ( "RetryMax" );
@@ -720,6 +800,9 @@ private void refresh ()
         if ( HttpHeaders != null ) {
             __HttpHeaders_JTextArea.setText ( HttpHeaders );
         }
+        if ( Cookies != null ) {
+            __Cookies_JTextArea.setText ( Cookies );
+        }
 		if ( ConnectTimeout != null ) {
 			__ConnectTimeout_JTextField.setText ( ConnectTimeout );
 		}
@@ -765,6 +848,7 @@ private void refresh ()
 	RequestMethod = __RequestMethod_JComboBox.getSelected();
     PayloadFile = __PayloadFile_JTextField.getText().trim();
 	HttpHeaders = __HttpHeaders_JTextArea.getText().trim().replace("\n"," ");
+	Cookies = __Cookies_JTextArea.getText().trim().replace("\n"," ");
 	ConnectTimeout = __ConnectTimeout_JTextField.getText().trim();
 	ReadTimeout = __ReadTimeout_JTextField.getText().trim();
 	RetryMax = __RetryMax_JTextField.getText().trim();
@@ -779,6 +863,7 @@ private void refresh ()
 	props.add ( "RequestMethod=" + RequestMethod );
 	props.add ( "PayloadFile=" + PayloadFile );
 	props.set ( "HttpHeaders", HttpHeaders ); // Use 'set' because headers may contain equals.
+	props.set ( "Cookies", Cookies ); // Use 'set' because headers may contain equals.
 	props.add ( "ConnectTimeout=" + ConnectTimeout );
 	props.add ( "ReadTimeout=" + ReadTimeout );
 	props.add ( "RetryMax=" + RetryMax );

@@ -424,7 +424,7 @@ public static void displayCommandDocumentation ( Command command ) {
 		if ( isCommandPlugin ) {
 			// Envision that command documentation would be in:
 			// $home/.tstool/plugin-command/CommandName/doc/CommandName.html or CommandName.pdf
-			Prop prop = command.getCommandProcessor().getProp("UserHomeDirURL");
+			Prop prop = command.getCommandProcessor().getProp("UserTstoolDirURL");
 			if ( prop != null ) {
 				docURL = prop.getValue() + "/plugin-command/" + command.getCommandName() + "/doc/" +
 				command.getCommandName() + ".html";

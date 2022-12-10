@@ -1,4 +1,4 @@
-// SetObjectProperty_JDialog - editor dialog for SetObjectProperty command
+// SetPropertyFromObject_JDialog - editor dialog for SetPropertyFromObject command
 
 /* NoticeStart
 
@@ -58,17 +58,17 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 @SuppressWarnings("serial")
-public class SetObjectProperty_JDialog extends JDialog
+public class SetPropertyFromObject_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private SetObjectProperty_Command __command = null;
+private SetPropertyFromObject_Command __command = null;
 private SimpleJComboBox __ObjectID_JComboBox = null;
 private JTextField __ObjectProperty_JTextField = null;
-private JTextField __Property_JTextField = null;
-private SimpleJComboBox __SetAsString_JComboBox = null;
+private JTextField __PropertyName_JTextField = null;
+private SimpleJComboBox __PropertyType_JComboBox = null;
 private SimpleJComboBox __AllowNull_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
@@ -82,7 +82,7 @@ Command dialog constructor.
 @param command Command to edit.
 @param objectIDChoices choices for ObjectID value.
 */
-public SetObjectProperty_JDialog ( JFrame parent, SetObjectProperty_Command command, List<String> objectIDChoices ) {
+public SetPropertyFromObject_JDialog ( JFrame parent, SetPropertyFromObject_Command command, List<String> objectIDChoices ) {
 	super(parent, true);
 	initialize ( parent, command, objectIDChoices );
 }
@@ -98,7 +98,7 @@ public void actionPerformed( ActionEvent event ) {
 		response ( false );
 	}
 	else if ( o == __help_JButton ) {
-		HelpViewer.getInstance().showHelp("command", "SetObjectProperty");
+		HelpViewer.getInstance().showHelp("command", "SetPropertyFromObject");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -147,15 +147,15 @@ private void checkGUIState () {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
-This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag
+to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput () {
 	// Put together a list of parameters to check.
     String ObjectID = __ObjectID_JComboBox.getSelected();
     String ObjectProperty = __ObjectProperty_JTextField.getText().trim();
-    String Property = __Property_JTextField.getText().trim();
-    String SetAsString = __SetAsString_JComboBox.getSelected();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyType = __PropertyType_JComboBox.getSelected();
     String AllowNull = __AllowNull_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
 
@@ -167,11 +167,11 @@ private void checkInput () {
     if ( ObjectProperty.length() > 0 ) {
         parameters.set ( "ObjectProperty", ObjectProperty );
     }
-    if ( Property.length() > 0 ) {
-        parameters.set ( "Property", Property );
+    if ( PropertyName.length() > 0 ) {
+        parameters.set ( "PropertyName", PropertyName );
     }
-    if ( SetAsString.length() > 0 ) {
-        parameters.set ( "SetAsString", SetAsString );
+    if ( PropertyType.length() > 0 ) {
+        parameters.set ( "PropertyType", PropertyType );
     }
     if ( AllowNull.length() > 0 ) {
         parameters.set ( "AllowNull", AllowNull );
@@ -194,13 +194,13 @@ In this case the command parameters have already been checked and no errors were
 private void commitEdits () {
     String ObjectID = __ObjectID_JComboBox.getSelected();
     String ObjectProperty = __ObjectProperty_JTextField.getText().trim();
-    String Property = __Property_JTextField.getText().trim();
-    String SetAsString = __SetAsString_JComboBox.getSelected();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyType = __PropertyType_JComboBox.getSelected();
     String AllowNull = __AllowNull_JComboBox.getSelected();
     __command.setCommandParameter ( "ObjectID", ObjectID );
     __command.setCommandParameter ( "ObjectProperty", ObjectProperty );
-    __command.setCommandParameter ( "Property", Property );
-    __command.setCommandParameter ( "SetAsString", SetAsString );
+    __command.setCommandParameter ( "PropertyName", PropertyName );
+    __command.setCommandParameter ( "PropertyType", PropertyType );
     __command.setCommandParameter ( "AllowNull", AllowNull );
 }
 
@@ -211,7 +211,7 @@ Instantiates the GUI components.
 @param command The command to edit.
 @param objectIDChoices list of choices for object identifiers
 */
-private void initialize ( JFrame parent, SetObjectProperty_Command command,
+private void initialize ( JFrame parent, SetPropertyFromObject_Command command,
 	List<String> objectIDChoices ) {
 	__command = command;
     //__parent = parent;
@@ -229,34 +229,22 @@ private void initialize ( JFrame parent, SetObjectProperty_Command command,
 		"<html><b>This command is under development.</b></html>"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set an object's property value(s)." ),
+		"Set a processor object from an object's property value." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The processor property to use for the value must have been previously set (e.g., with the SetProperty command)."),
+		"The object's property name is specified using levels separated by periods, for example:" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The object's property is specified using a string, with * to match an array, for example:" ),
+		"    level1.level2.level3.name" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    level1.level2.level3.name - set/add a single property" ),
+		"Currently, the object property must be a single property, not an object in an array." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    level1.level2.array.name - set property matching 'name' value in an array of objects" ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    level1.level2.array.* - set all object or primitive values in an array" ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    level1.level2.array.abc* - set array properties that have name starting with 'abc'" ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If the property exists, it is reset.  If it does not exist, it is added under the parent level." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "The property type is retained in the object property (e.g., integer retained as integer, string as string)." ),
+       "The property type defaults from the object property (e.g., integer retained as integer, string as string)." ),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "Use SetAsString=True for complex objects such as date/time to avoid verbose output."),
+       "Or, set the type to convert from the object property type."),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
@@ -265,14 +253,13 @@ private void initialize ( JFrame parent, SetObjectProperty_Command command,
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Object ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ObjectID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
-    __ObjectID_JComboBox.setToolTipText("Identifier for object to process.");
     objectIDChoices.add(0,""); // Add blank to ignore object.
     __ObjectID_JComboBox.setData ( objectIDChoices );
     __ObjectID_JComboBox.addItemListener ( this );
     //__ObjectID_JComboBox.setMaximumRowCount(objectIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __ObjectID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - object to process."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - object process."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Object Property:" ),
@@ -285,28 +272,33 @@ private void initialize ( JFrame parent, SetObjectProperty_Command command,
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - object property name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property Name:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Property_JTextField = new JTextField ( 20 );
-    __Property_JTextField.setToolTipText("Property to use as input.");
-    __Property_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Property_JTextField,
+    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.setToolTipText("Property name for property to set.");
+    __PropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - property name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set as String?:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SetAsString_JComboBox = new SimpleJComboBox ( false );
-    List<String> setAsStringChoices = new ArrayList<>();
-    setAsStringChoices.add("");
-    setAsStringChoices.add(__command._False);
-    setAsStringChoices.add(__command._True);
-    __SetAsString_JComboBox.setData ( setAsStringChoices );
-    __SetAsString_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetAsString_JComboBox,
+    __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    List<String> typeChoices = new ArrayList<>();
+    typeChoices.add ( "" ); // Use when setting special values or removing.
+    typeChoices.add ( __command._Boolean );
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
+    __PropertyType_JComboBox.select ( __command._String );
+    __PropertyType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - set property as string (default=" + __command._False + ")?"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - set the property type (default=from object property)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allow Null?:" ),
@@ -406,8 +398,8 @@ private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
     String ObjectID = "";
     String ObjectProperty = "";
-    String Property = "";
-    String SetAsString = "";
+    String PropertyName = "";
+    String PropertyType = "";
     String AllowNull = "";
 
 	PropList props = __command.getCommandParameters();
@@ -416,8 +408,8 @@ private void refresh () {
 		// Get the parameters from the command.
         ObjectID = props.getValue ( "ObjectID" );
         ObjectProperty = props.getValue ( "ObjectProperty" );
-        Property = props.getValue ( "Property" );
-        SetAsString = props.getValue ( "SetAsString" );
+        PropertyName = props.getValue ( "PropertyName" );
+        PropertyType = props.getValue ( "PropertyType" );
         AllowNull = props.getValue ( "AllowNull" );
         if ( ObjectID == null ) {
             // Select default.
@@ -437,20 +429,20 @@ private void refresh () {
         if ( ObjectProperty != null ) {
             __ObjectProperty_JTextField.setText ( ObjectProperty );
         }
-        if ( Property != null ) {
-            __Property_JTextField.setText ( Property );
+        if ( PropertyName != null ) {
+            __PropertyName_JTextField.setText ( PropertyName );
         }
-        if ( SetAsString == null ) {
+        if ( PropertyType == null ) {
             // Select default.
-            __SetAsString_JComboBox.select ( 0 );
+            __PropertyType_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __SetAsString_JComboBox,SetAsString, JGUIUtil.NONE, null, null ) ) {
-                __SetAsString_JComboBox.select ( SetAsString );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PropertyType_JComboBox,PropertyType, JGUIUtil.NONE, null, null ) ) {
+                __PropertyType_JComboBox.select ( PropertyType );
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nSetAsString value \"" + SetAsString +
+                "Existing command references an invalid\nPropertyType value \"" + PropertyType +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -474,14 +466,14 @@ private void refresh () {
 	// Regardless, reset the command from the fields.
 	ObjectID = __ObjectID_JComboBox.getSelected();
     ObjectProperty = __ObjectProperty_JTextField.getText().trim();
-    Property = __Property_JTextField.getText().trim();
-	SetAsString = __SetAsString_JComboBox.getSelected();
+    PropertyName = __PropertyName_JTextField.getText().trim();
+	PropertyType = __PropertyType_JComboBox.getSelected();
 	AllowNull = __AllowNull_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "ObjectID=" + ObjectID );
     props.add ( "ObjectProperty=" + ObjectProperty );
-    props.add ( "Property=" + Property );
-    props.add ( "SetAsString=" + SetAsString );
+    props.add ( "PropertyName=" + PropertyName );
+    props.add ( "PropertyType=" + PropertyType );
     props.add ( "AllowNull=" + AllowNull );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

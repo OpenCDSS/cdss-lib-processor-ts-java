@@ -335,14 +335,23 @@ throws FileNotFoundException, IOException
 			// Create a top-level map with black name:
 			// - use a LinkedHashMap to preserve element order
 			//map = new LinkedHashMap<>();
-			if ( Message.isDebugOn ) {
-				Message.printStatus(2, routine,
-					"JSON array detected.  Adding an object nameed 'toparray' object at top to facilitate parsing into a map.");
+			boolean insertArrayName = false;
+			if ( insertArrayName ) {
+				if ( Message.isDebugOn ) {
+					Message.printStatus(2, routine,
+						"JSON top-level array detected.  Adding an object named 'toparray' object at top to facilitate parsing into a map.");
+				}
+				responseJson.insert(0, "{ \"toparray\" : ");
+				responseJson.append("}");
+				// Top level object will be a List of objects.
+				map = mapper.readValue(responseJson.toString(), Map.class);
+				object.setObjectMap ( map );
 			}
-			responseJson.insert(0, "{ \"toparray\" : ");
-			responseJson.append("}");
-			map = mapper.readValue(responseJson.toString(), Map.class);
-			object.setObjectMap ( map );
+			else {
+				// Top level object will be a List of objects.
+				List<?> list = mapper.readValue(responseJson.toString(), List.class);
+				object.setObjectArray ( list );
+			}
 		}
 		else {
 			String message = "JSON does not start with { or [ - cannot parse.";

@@ -337,7 +337,12 @@ CommandWarningException, CommandException
        		}
        		DefaultPrettyPrinter printer = new DefaultPrettyPrinter().withObjectIndenter(
        			new DefaultIndenter(indentSpaces, "\n"));
-       		mapper.writer(printer).writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectMap());
+       		if ( object.getObjectMap() != null ) {
+       			mapper.writer(printer).writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectMap());
+       		}
+       		else if ( object.getObjectArray() != null ) {
+       			mapper.writer(printer).writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectArray());
+       		}
        	}
        	else {
        		// Write with default formatting (not pretty).
@@ -345,7 +350,12 @@ CommandWarningException, CommandException
        		mapper.registerModule(new JavaTimeModule());
        		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
        		mapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));
-       		mapper.writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectMap());
+       		if ( object.getObjectMap() != null ) {
+       			mapper.writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectMap());
+       		}
+       		else if ( object.getObjectArray() != null ) {
+       			mapper.writeValue(Paths.get(OutputFile_full).toFile(), object.getObjectArray());
+       		}
        	}
 		// Save the output file name.
 		setOutputFile ( new File(OutputFile_full));

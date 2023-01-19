@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TimeSeriesTreeView;
@@ -57,7 +56,7 @@ This class initializes, checks, and runs the NewTreeView() command.
 */
 public class NewTreeView_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 The view that is created.
 */
@@ -74,18 +73,17 @@ public NewTreeView_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String ViewID = parameters.getValue ( "ViewID" );
+throws InvalidCommandParameterException {
+	String ViewID = parameters.getValue ( "ViewID" );
     String InputFile = parameters.getValue ( "InputFile" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -96,14 +94,14 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the view identifier." ) );
     }
-    
-    // If the input file does not exist, warn the user...
+
+    // If the input file does not exist, warn the user.
 
     String working_dir = null;
     CommandProcessor processor = getCommandProcessor();
     try {
         Object o = processor.getPropContents ( "WorkingDir" );
-        // Working directory is available so use it...
+        // Working directory is available so use it.
         if ( o != null ) {
             working_dir = (String)o;
         }
@@ -115,7 +113,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
     }
-    
+
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
@@ -147,9 +145,9 @@ throws InvalidCommandParameterException
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
     }
- 
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(2);
     validList.add ( "ViewID" );
     validList.add ( "InputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -159,26 +157,24 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new NewTreeView_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the time series view that is read by this class when run in discovery mode.
 */
-private TimeSeriesView getDiscoveryView()
-{
+private TimeSeriesView getDiscoveryView() {
     return __view;
 }
 
@@ -187,28 +183,26 @@ Return a list of objects of the requested type.  This class only keeps a list of
 Classes that can be requested:  TimeSeriesView
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   TimeSeriesView view = getDiscoveryView();
+public <T> List<T> getObjectList ( Class<T> c ) {
+   TimeSeriesView view = getDiscoveryView();
     List<T> v = null;
     if ( (view != null) && (c == view.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<>();
         v.add ( (T)view );
     }
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -219,8 +213,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -232,16 +225,16 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -249,7 +242,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -258,14 +251,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         setDiscoveryView ( null );
     }
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 
     String ViewID = parameters.getValue ( "ViewID" );
     if ( (ViewID != null) && (ViewID.indexOf("${") >= 0) ) {
     	ViewID = TSCommandProcessorUtil.expandParameterValue(processor, this, ViewID);
 	}
     String InputFile = parameters.getValue ( "InputFile" );
-    
+
     String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
@@ -285,18 +278,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Create the view...
-    
+    	// Create the view.
+
 	    TimeSeriesTreeView view = null;
-        
+
         if ( commandPhase == CommandPhaseType.RUN ) {
-            // Create the view based on the input file
+            // Create the view based on the input file.
             view = new TimeSeriesTreeView( ViewID );
-            List<String> problems = new Vector<String>();
+            List<String> problems = new ArrayList<>();
             view.createViewFromFile ( (TSCommandProcessor)processor, new File(InputFile_full), problems );
-            
-            // Set the table in the processor...
-            
+
+            // Set the table in the processor.
+
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "TimeSeriesView", view );
             try {
@@ -313,7 +306,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty view and set the ID
+            // Create an empty view and set the ID.
             view = new TimeSeriesTreeView(ViewID);
             setDiscoveryView ( view );
         }
@@ -340,16 +333,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryView ( TimeSeriesView view )
-{
+private void setDiscoveryView ( TimeSeriesView view ) {
     __view = view;
 }
 
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
+public String toString ( PropList props ) {
+	if ( props == null ) {
 		return getCommandName() + "()";
 	}
     String ViewID = props.getValue( "ViewID" );

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,10 +38,8 @@ import RTi.Util.String.StringUtil;
 /**
 Implementation of TimeSeriesView that organizes time series in an hierarchical tree.
 */
-public class TimeSeriesTreeView implements TimeSeriesView
+public class TimeSeriesTreeView implements TimeSeriesView {
 
-{
-    
 /**
 The view identifier.
 */
@@ -57,8 +55,7 @@ private SimpleJTree_Node __rootNode;
 Construct a tree view with the given identifier.
 @param viewID a string identifier for the view
 */
-public TimeSeriesTreeView ( String viewID )
-{
+public TimeSeriesTreeView ( String viewID ) {
     setViewID ( viewID );
 }
 
@@ -78,28 +75,28 @@ specifically:
 </ol>
 */
 public void createViewFromFile ( TSCommandProcessor processor, File viewFile, List<String> problems )
-throws IOException
-{   String routine = getClass().getSimpleName() + ".createViewFromFile";
+throws IOException {
+   String routine = getClass().getSimpleName() + ".createViewFromFile";
     // TODO SAM 2010-07-16 This code could use recursion to perhaps read the file more
-    // elegantly but for now keep the logic here and just locate the proper list by counting tabs
+    // elegantly but for now keep the logic here and just locate the proper list by counting tabs.
     String filename = viewFile.getCanonicalPath();
     File f = new File(filename);
     List<String> fileLines = IOUtil.fileToStringList(filename);
     boolean rootFound = false;
-    int ntab = 0; // Number of tabs in current line
-    int ntabPrev = 0; // Number of tabs in previous non-comment line
-    SimpleJTree_Node folderNode = null; // Active node (a "folder")
-    SimpleJTree_Node nodePrev = null; // The node processed in the previous row
+    int ntab = 0; // Number of tabs in current line.
+    int ntabPrev = 0; // Number of tabs in previous non-comment line.
+    SimpleJTree_Node folderNode = null; // Active node (a "folder").
+    SimpleJTree_Node nodePrev = null; // The node processed in the previous row.
     int lineCount = 0;
     for ( String fileLine : fileLines ) {
         ++lineCount;
         String fileLineTrimmed = fileLine.trim();
-        // Allow comments to be indented
+        // Allow comments to be indented.
         if ( fileLineTrimmed.startsWith("#") || fileLineTrimmed.equals("") ) {
             continue;
         }
-        // Determine how many tabs at the start of the current line...
-        ntabPrev = ntab; // From previous line
+        // Determine how many tabs at the start of the current line.
+        ntabPrev = ntab; // From previous line.
         ntab = 0;
         for ( int i = 0; i < fileLine.length(); i++ ) {
             if ( fileLine.charAt(i) == '\t' ) {
@@ -109,16 +106,15 @@ throws IOException
                 break;
             }
         }
-        // First make sure that the root node is properly handled
+        // First make sure that the root node is properly handled.
         if ( !rootFound && StringUtil.startsWithIgnoreCase(fileLineTrimmed, "Label:") ) {
             String nodeLabel = fileLineTrimmed.substring(6).trim();
-            // Simple label node
+            // Simple label node.
             if ( ntab > 0 ) {
-                throw new IOException ( "No root Label: in \"" + filename +
-                    "\" (add before any tabbed content)." );
+                throw new IOException ( "No root Label: in \"" + filename + "\" (add before any tabbed content)." );
             }
             else if ( ntab == 0 ) {
-                // Create the root node
+                // Create the root node.
             	if ( Message.isDebugOn ) {
             		Message.printDebug(1, routine, "Adding root label \"" + nodeLabel + "\"." );
             	}
@@ -126,11 +122,11 @@ throws IOException
                 folderNode = __rootNode;
                 nodePrev = folderNode;
                 rootFound = true;
-                //ntab = 1; // This will correspond to using the root as the folder
+                //ntab = 1; // This will correspond to using the root as the folder.
                 continue;
             }
         }
-        // Other lines are added to the root or appropriate nodes under the root
+        // Other lines are added to the root or appropriate nodes under the root.
         if ( rootFound && (ntab == 0) ) {
             throw new IOException ( "Can only have one root Label: in \"" + filename +
             "\" (need to insert tab(s) near line " + lineCount + "?)." );
@@ -138,26 +134,26 @@ throws IOException
         else {
             // First determine the parent folder under which the node will be added.
             if ( ntab == ntabPrev ) {
-                // Are at the same level as the previous line so the current "folder" node remains
-                // No action needed
+                // Are at the same level as the previous line so the current "folder" node remains.
+                // No action needed.
             }
             else if ( ntab == (ntabPrev + 1)) {
-                // Have added another tab so need to add under the last row
+                // Have added another tab so need to add under the last row.
                 folderNode = nodePrev;
             }
             else if ( ntab > (ntabPrev + 1)) {
-                // Not allowed to jump more than one indent over the previous
+                // Not allowed to jump more than one indent over the previous.
                 throw new IOException ( "Cannot jump more than one tab forward from previous line.  Check \"" + filename +
                 "\" near line " + lineCount + "." );
             }
             else {
-                // Tab level is decreasing so set the folder back to a previous parent folder...
+                // Tab level is decreasing so set the folder back to a previous parent folder.
                 int nshift = ntabPrev - ntab;
                 for ( int i = 0; i < nshift; i++ ) {
                     folderNode = (SimpleJTree_Node)folderNode.getParent();
                 }
             }
-            // Now add the node depending on the node type...
+            // Now add the node depending on the node type.
             if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "Label:") ) {
                 String nodeLabel = fileLineTrimmed.substring(6).trim();
                 if ( Message.isDebugOn ) {
@@ -175,12 +171,12 @@ throws IOException
 	                    "\" from file line " + lineCount );
                 }
                 nodePrev = new SimpleJTree_Node(nodeLabel);
-                // Filename is data for node
+                // Filename is data for node.
                 nodePrev.setData(IOUtil.toAbsolutePath(f.getParent(),tokens.get(1)));
                 folderNode.add(nodePrev );
             }
             else if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "TS:") ) {
-                // List of time series to match in availableTS
+                // List of time series to match in availableTS.
                 String TSID = fileLineTrimmed.substring(3).trim();
                 String TSList = "" + TSListType.ALL_MATCHING_TSID;
                 String EnsembleID = null;
@@ -239,8 +235,7 @@ throws IOException
 Get the root node.
 */
 //public TimeSeriesTreeViewNode getRootNode ()
-public SimpleJTree_Node getRootNode ()
-{
+public SimpleJTree_Node getRootNode () {
     return __rootNode;
 }
 
@@ -248,8 +243,7 @@ public SimpleJTree_Node getRootNode ()
 Get the view identifier.
 @return the view identifier.
 */
-public String getViewID()
-{
+public String getViewID() {
     return __viewID;
 }
 
@@ -257,8 +251,7 @@ public String getViewID()
 Set the view identifier.
 @param viewID the view identifier.
 */
-public void setViewID(String viewID)
-{
+public void setViewID(String viewID) {
     __viewID = viewID;
 }
 

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ Command dialog editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetDebugLevel_JDialog ( JFrame parent, SetDebugLevel_Command command )
-{ 	super(parent, true);
+public SetDebugLevel_JDialog ( JFrame parent, SetDebugLevel_Command command ) {
+ 	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -81,8 +81,8 @@ public SetDebugLevel_JDialog ( JFrame parent, SetDebugLevel_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -100,11 +100,10 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
     PropList props = new PropList ( "" );
     String ScreenLevel = __ScreenLevel_JTextField.getText().trim();
     String LogFileLevel = __LogFileLevel_JTextField.getText().trim();
@@ -115,7 +114,7 @@ private void checkInput ()
         props.set ( "LogFileLevel", LogFileLevel );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -127,25 +126,11 @@ private void checkInput ()
 /**
 Commit the edits to the command.
 */
-private void commitEdits ()
-{   String ScreenLevel = __ScreenLevel_JTextField.getText().trim();
+private void commitEdits () {
+    String ScreenLevel = __ScreenLevel_JTextField.getText().trim();
     String LogFileLevel = __LogFileLevel_JTextField.getText().trim();
     __command.setCommandParameter ( "ScreenLevel", ScreenLevel );
     __command.setCommandParameter ( "LogFileLevel", LogFileLevel );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__LogFileLevel_JTextField = null;
-	__ScreenLevel_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -154,15 +139,15 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, SetDebugLevel_Command command )
-{   __command = command;
+private void initialize ( JFrame parent, SetDebugLevel_Command command ) {
+    __command = command;
 
 	addWindowListener( this );
 
     Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -180,31 +165,31 @@ private void initialize ( JFrame parent, SetDebugLevel_Command command )
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Debug levels can be increased before and decreased after " +
-		"specific commands to troublesheet the commands." ), 
+		"specific commands to troublesheet the commands." ),
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set the screen and log file debug levels to 0 to turn off debugging (execution speed will increase)." ), 
+		"<html><b>Set the screen and log file debug levels to 0 to turn off debugging (execution speed will increase).</b></html>" ),
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Screen debug level:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Screen debug level:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ScreenLevel_JTextField = new JTextField ( 4 );
 	__ScreenLevel_JTextField.setText( "1");
 	__ScreenLevel_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ScreenLevel_JTextField,
 		1, y, 1, 1, 1, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("0=none, 100=all, blank=no change."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("0=none, 1=important, 10=more detail, 100=all, blank=no change."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Log file debug level:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Log file debug level:" ),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__LogFileLevel_JTextField = new JTextField ( 4 );
 	__LogFileLevel_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __LogFileLevel_JTextField,
 		1, y, 1, 1, 1, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("0=none, 100=all, blank=no change."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("0=none, 1=important, 10=more detail, 100=all, blank=no change."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -216,13 +201,13 @@ private void initialize ( JFrame parent, SetDebugLevel_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -242,8 +227,8 @@ private void initialize ( JFrame parent, SetDebugLevel_Command command )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -254,24 +239,25 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String ScreenLevel = "1";
+private void refresh () {
+	String ScreenLevel = "1";
 	String LogFileLevel = "2";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
@@ -282,7 +268,7 @@ private void refresh ()
 		__ScreenLevel_JTextField.setText( ScreenLevel );
 		__LogFileLevel_JTextField.setText( LogFileLevel );
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	ScreenLevel = __ScreenLevel_JTextField.getText().trim();
 	LogFileLevel = __LogFileLevel_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -293,20 +279,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{   __ok = ok;
+public void response ( boolean ok ) {
+    __ok = ok;
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -315,15 +300,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

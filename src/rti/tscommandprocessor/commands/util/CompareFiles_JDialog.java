@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,8 +115,8 @@ Command editor constructor.
 @param command Command to edit.
 @param diffProgram visual difference program, expected to exist
 */
-public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command, String diffProgram )
-{	super(parent, true);
+public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command, String diffProgram ) {
+	super(parent, true);
 	initialize ( parent, command, diffProgram );
 }
 
@@ -124,8 +124,8 @@ public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command, Strin
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse1_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -137,16 +137,16 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select First File to Compare");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -170,16 +170,16 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select Second File to Compare");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -244,10 +244,10 @@ public void actionPerformed( ActionEvent event )
 		// Run the diff program on the input and output files
 		// (they should have existed because the button will have been disabled if not).
 		TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
-		
+
 		String InputFile1 = __InputFile1_JTextField.getText();
 		String InputFile2 = __InputFile2_JTextField.getText();
-		
+
 		String inputFile1 = InputFile1;
 		String inputFile2 = InputFile2;
 
@@ -291,11 +291,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
@@ -369,11 +369,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String InputFile1 = __InputFile1_JTextField.getText().trim();
+private void commitEdits () {
+	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	String MatchCase = __MatchCase_JComboBox.getSelected();
@@ -411,11 +411,11 @@ Instantiates the GUI components.
 @param command Command to edit.
 @param diffProgram visual diff program
 */
-private void initialize ( JFrame parent, CompareFiles_Command command, String diffProgram )
-{	__command = command;
+private void initialize ( JFrame parent, CompareFiles_Command command, String diffProgram ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	__diffProgram = diffProgram;
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
@@ -443,7 +443,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
 	__InputFile1_JTextField.setToolTipText("Name of the first file, can use ${Property} notation, can be a URL");
@@ -465,8 +465,8 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile1_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
 	__InputFile2_JTextField.setToolTipText("Name of the second file, can use ${Property} notation, can be a URL");
@@ -511,11 +511,11 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 
     JGUIUtil.addComponent(content_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yContent, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Comment line character:"),
         0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommentLineChar_JTextField = new JTextField ( 20 );
-    __CommentLineChar_JTextField.setToolTipText("For example: #");
+    __CommentLineChar_JTextField.setToolTipText("For example #, use <!-- to indicate HTML comment.");
     __CommentLineChar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(content_JPanel, __CommentLineChar_JTextField,
         1, yContent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -537,7 +537,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, new JLabel(
         "Optional - match case (default=" + __command._True + ")."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Ignore whitespace:"),
 		0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IgnoreWhitespace_JComboBox = new SimpleJComboBox ( false );
@@ -553,7 +553,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, new JLabel(
 		"Optional - ignore whitespace at ends of lines (default=" + __command._False + ")."),
 		3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Exclude text:"),
         0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
@@ -564,7 +564,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(content_JPanel, new JLabel(
         "Optional - exclude lines matching regular expression (default=include all)."),
         3, yContent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(content_JPanel, new JLabel ( "Allowed # of different lines:"),
         0, ++yContent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AllowedDiff_JTextField = new JTextField ( 5 );
@@ -742,10 +742,10 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(wait_JPanel, new JLabel(
         "Optional - wait interval to increment (default=1000 ms)."),
         3, yWait, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     // Command text area.
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -758,7 +758,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -769,7 +769,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
-	
+
 	// Refresh the contents (put after buttons because want to enable/disable).
 	refresh ();
 
@@ -785,32 +785,33 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";
@@ -1066,7 +1067,7 @@ private void refresh ()
 
 		boolean isFile1Url = StringUtil.isUrl( InputFile1 );
 		boolean isFile2Url = StringUtil.isUrl( InputFile2 );
-		
+
 		if ( isFile1Url ) {
 			// Get the temporary input file from the command rather the text field.
 			inputFile1 = this.__command.getTmpInputFile1();
@@ -1085,7 +1086,7 @@ private void refresh ()
 		if ( inputFile2 != null ) {
 			file2Path = IOUtil.verifyPathForOS( IOUtil.toAbsolutePath(__working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor, __command, inputFile2) ) );
-		}	
+		}
 
 		if ( IOUtil.fileExists(__diffProgram) &&
 			(InputFile1 != null) && !InputFile1.isEmpty() &&
@@ -1115,8 +1116,8 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -1132,15 +1133,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

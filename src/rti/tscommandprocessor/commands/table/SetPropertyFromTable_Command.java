@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ This class initializes, checks, and runs the SetPropertyFromTable() command.
 */
 public class SetPropertyFromTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 Property set during discovery - only name will be available.
 */
@@ -68,26 +68,27 @@ private Prop __discovery_Prop = null;
 /**
 Constructor.
 */
-public SetPropertyFromTable_Command ()
-{	super();
+public SetPropertyFromTable_Command () {
+	super();
 	setCommandName ( "SetPropertyFromTable" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String PropertyName = parameters.getValue ( "PropertyName" );
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    String ColumnCountProperty = parameters.getValue ( "ColumnCountProperty" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -99,41 +100,50 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
     
-    if ( (PropertyName == null) || (PropertyName.length() == 0) ) {
-        message = "The property name must be specified.";
+    int propCount = 0;
+    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
+    	++propCount;
+    }
+    if ( (ColumnCountProperty != null) && !ColumnCountProperty.isEmpty() ) {
+    	++propCount;
+    }
+
+    if ( (propCount == 0) && ((PropertyName == null) || (PropertyName.length() == 0)) ) {
+        message = "The property name, RowCountProperty, or ColumnCountProperty must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the property name." ) );
+                message, "Specify the property name, RowCountProperty, or ColumnCountProperty." ) );
     }
- 
+
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(6);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "TableID" );
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
     validList.add ( "PropertyName" );
     validList.add ( "DefaultValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    validList.add ( "RowCountProperty" );
+    validList.add ( "ColumnCountProperty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed.
@@ -148,8 +158,7 @@ Find the table rows that match the include and exclude filters.
 */
 private List<TableRecord> findTableRecords ( DataTable table,
 	StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
-	List<String>errors )
-{
+	List<String>errors ) {
     // Get include filter columns and glob-style regular expressions.
     int [] columnIncludeFiltersNumbers = new int[0];
     String [] columnIncludeFiltersGlobs = null;
@@ -333,8 +342,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
 /**
 Return the property defined in discovery phase.
 */
-private Prop getDiscoveryProp ()
-{
+private Prop getDiscoveryProp () {
     return __discovery_Prop;
 }
 
@@ -343,8 +351,7 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
         return null;
@@ -366,13 +373,11 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -383,8 +388,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -396,13 +400,13 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
 	CommandProcessor processor = getCommandProcessor();
@@ -485,7 +489,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (DefaultValue != null) && !DefaultValue.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DefaultValue.indexOf("${") >= 0 ) {
     	DefaultValue = TSCommandProcessorUtil.expandParameterValue(processor, this, DefaultValue);
     }
-    
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
+    String ColumnCountProperty = parameters.getValue ( "ColumnCountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ColumnCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnCountProperty);
+    }
+
     // Get the table to process.
 
     DataTable table = null;
@@ -533,84 +545,132 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    Prop prop = null;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
-	    	// Match 1+ rows so first match can be used.
-	    	List<String> errors = new ArrayList<>();
-	        List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, errors );
-	        for ( String error : errors ) {
-	        	Message.printWarning(3, routine, "Error: " + error);
-	        }
-	        Message.printStatus(2, routine, "Found " + records.size() + " matching records.");
-	        if ( records.size() <= 0 ) {
-	        	// Set to the default value if specified.
-	        	String propValue = null;
-	        	if ( (DefaultValue == null) || DefaultValue.isEmpty() ) {
-	        		// Unset the property by setting to null.
-	        		propValue = null;
+		    if ( (PropertyName != null) && !PropertyName.isEmpty() ) {
+		    	// Match 1+ rows so first match can be used.
+	    		List<String> errors = new ArrayList<>();
+	        	List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, errors );
+	        	for ( String error : errors ) {
+	        		Message.printWarning(3, routine, "Error: " + error);
 	        	}
-	        	else if ( DefaultValue.equalsIgnoreCase("Blank") ) {
-	        		propValue = "";
-	        	}
-	        	else if ( DefaultValue.equalsIgnoreCase("Null") ) {
-	        		propValue = null;
-	        	}
-	        	else {
-	        		propValue = DefaultValue;
-	        	}
-	        	if ( propValue == null ) {
-	        		prop = new Prop(propertyName, propValue, "", Prop.SET_AT_RUNTIME_BY_USER);
-	        	}
-	        	else {
-	        		prop = new Prop(propertyName, propValue, propValue, Prop.SET_AT_RUNTIME_BY_USER);
-	        	}
-	        }
-	        else {
-	        	// Have a matching record so set the property based on the column value.
-	        	int col = table.getFieldIndex(Column);
-	        	if ( col < 0 ) {
-		        	message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" +
-		        		Column + "\". Can't set property.";
-	                Message.printWarning(warning_level,
-	                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-	                    message, "Verify that the column exists in the table." ) );
-	                prop = null;
+	        	Message.printStatus(2, routine, "Found " + records.size() + " matching records.");
+	        	if ( records.size() <= 0 ) {
+	        		// Set to the default value if specified.
+	        		String propValue = null;
+	        		if ( (DefaultValue == null) || DefaultValue.isEmpty() ) {
+	        			// Unset the property by setting to null.
+	        			propValue = null;
+	        		}
+	        		else if ( DefaultValue.equalsIgnoreCase("Blank") ) {
+	        			propValue = "";
+	        		}
+	        		else if ( DefaultValue.equalsIgnoreCase("Null") ) {
+	        			propValue = null;
+	        		}
+	        		else {
+	        			propValue = DefaultValue;
+	        		}
+	        		if ( propValue == null ) {
+	        			prop = new Prop(propertyName, propValue, "", Prop.SET_AT_RUNTIME_BY_USER);
+	        		}
+	        		else {
+	        			prop = new Prop(propertyName, propValue, propValue, Prop.SET_AT_RUNTIME_BY_USER);
+	        		}
 	        	}
 	        	else {
-		        	Object o = records.get(0).getFieldValue(col);
-		        	Message.printStatus(2,routine,"Column \"" + Column + "\" col=" + col + " value="+ o);
-		        	if ( o == null ) {
-		        		prop = new Prop(propertyName, o, "", Prop.SET_AT_RUNTIME_BY_USER);
-		        	}
-		        	else {
-		        		prop = new Prop(propertyName, o, "" + o, Prop.SET_AT_RUNTIME_BY_USER);
-		        	}
+	        		// Have a matching record so set the property based on the column value.
+	        		int col = table.getFieldIndex(Column);
+	        		if ( col < 0 ) {
+		        		message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" +
+		        			Column + "\". Can't set property.";
+	                	Message.printWarning(warning_level,
+	                    	MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	                	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    	message, "Verify that the column exists in the table." ) );
+	                	prop = null;
+	        		}
+	        		else {
+		        		Object o = records.get(0).getFieldValue(col);
+		        		Message.printStatus(2,routine,"Column \"" + Column + "\" col=" + col + " value="+ o);
+		        		if ( o == null ) {
+		        			prop = new Prop(propertyName, o, "", Prop.SET_AT_RUNTIME_BY_USER);
+		        		}
+		        		else {
+		        			prop = new Prop(propertyName, o, "" + o, Prop.SET_AT_RUNTIME_BY_USER);
+		        		}
+	        		}
 	        	}
-	        }
-	    	// Set the property in the processor.
-	        
-	    	PropList request_params = new PropList ( "" );
-	    	request_params.set ( "PropertyName", propertyName );
-	    	if ( prop == null ) {
-	    		request_params.setUsingObject ( "PropertyValue", null );
-	    	}
-	    	else {
-	    		request_params.setUsingObject ( "PropertyValue", prop.getValue() );
-	    	}
-	    	try {
-	            processor.processRequest( "SetProperty", request_params);
-	    	}
-	    	catch ( Exception e ) {
-	    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
-	    		Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	    	}
+	    		// Set the property in the processor.
+
+	    		PropList requestParams = new PropList ( "" );
+	    		requestParams.set ( "PropertyName", propertyName );
+	    		if ( prop == null ) {
+	    			requestParams.setUsingObject ( "PropertyValue", null );
+	    		}
+	    		else {
+	    			requestParams.setUsingObject ( "PropertyValue", prop.getValue() );
+	    		}
+	    		try {
+	            	processor.processRequest( "SetProperty", requestParams);
+	    		}
+	    		catch ( Exception e ) {
+	    			message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
+	    			Message.printWarning(log_level,
+    					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    					routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+	    		}
+		    }
+
+	    	// Set the property indicating the number of rows in the table.
+        	if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+            	int rowCount = 0;
+            	if ( table != null ) {
+                	rowCount = table.getNumberOfRecords();
+            	}
+            	PropList requestParams = new PropList ( "" );
+            	requestParams.setUsingObject ( "PropertyName", RowCountProperty );
+            	requestParams.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            	try {
+                	processor.processRequest( "SetProperty", requestParams);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    	routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
+
+	    	// Set the property indicating the number of columns in the table.
+        	if ( (ColumnCountProperty != null) && !ColumnCountProperty.equals("") ) {
+            	int colCount = 0;
+            	if ( table != null ) {
+                	colCount = table.getNumberOfFields();
+            	}
+            	PropList requestParams = new PropList ( "" );
+            	requestParams.setUsingObject ( "PropertyName", ColumnCountProperty );
+            	requestParams.setUsingObject ( "PropertyValue", new Integer(colCount) );
+            	try {
+                	processor.processRequest( "SetProperty", requestParams);
+            	}
+            	catch ( Exception e ) {
+                	message = "Error requesting SetProperty(Property=\"" + ColumnCountProperty + "\") from processor.";
+                	Message.printWarning(log_level,
+                    	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    	routine, message );
+                	status.addToLog ( CommandPhaseType.RUN,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "Report the problem to software support." ) );
+            	}
+        	}
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty property
+            // Create an empty property.
             prop = new Prop();
             prop.setKey ( PropertyName ); // OK if property name includes ${} in discovery mode.
             prop.setHowSet(Prop.SET_UNKNOWN);
@@ -625,7 +685,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -640,16 +700,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the property defined in discovery phase.
 @param prop Property set during discovery phase.
 */
-private void setDiscoveryProp ( Prop prop )
-{
+private void setDiscoveryProp ( Prop prop ) {
     __discovery_Prop = prop;
 }
 
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
+public String toString ( PropList props ) {
+	if ( props == null ) {
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
@@ -658,6 +717,8 @@ public String toString ( PropList props )
 	String ColumnExcludeFilters = props.getValue( "ColumnExcludeFilters" );
     String PropertyName = props.getValue( "PropertyName" );
     String DefaultValue = props.getValue( "DefaultValue" );
+	String RowCountProperty = props.getValue( "RowCountProperty" );
+	String ColumnCountProperty = props.getValue( "ColumnCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -694,6 +755,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "DefaultValue=\"" + DefaultValue + "\"" );
+    }
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
+    }
+    if ( (ColumnCountProperty != null) && (ColumnCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnCountProperty=\"" + ColumnCountProperty + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

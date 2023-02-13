@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -60,15 +61,18 @@ public class SetPropertyFromTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __Column_JTextField = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
 private JTextField __PropertyName_JTextField = null;
 private JTextField __DefaultValue_JTextField = null;
+private JTextField __RowCountProperty_JTextField = null;
+private JTextField __ColumnCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -82,8 +86,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public SetPropertyFromTable_JDialog ( JFrame parent, SetPropertyFromTable_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public SetPropertyFromTable_JDialog ( JFrame parent, SetPropertyFromTable_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -91,8 +95,8 @@ public SetPropertyFromTable_JDialog ( JFrame parent, SetPropertyFromTable_Comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -104,7 +108,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -147,37 +151,48 @@ public void actionPerformed(ActionEvent event)
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
+	// Cell.
 	String Column = __Column_JTextField.getText().trim();
 	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
+    // Table.
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	String ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
-    if ( TableID.length() > 0 ) {
+    if ( !TableID.isEmpty() ) {
         props.set ( "TableID", TableID );
     }
-	if ( Column.length() > 0 ) {
+	if ( !Column.isEmpty() ) {
 		props.set ( "Column", Column );
 	}
-    if ( ColumnIncludeFilters.length() > 0 ) {
+    if ( !ColumnIncludeFilters.isEmpty() ) {
         props.set ( "ColumnIncludeFilters", ColumnIncludeFilters );
     }
-    if ( ColumnExcludeFilters.length() > 0 ) {
+    if ( !ColumnExcludeFilters.isEmpty() ) {
         props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
     }
-    if ( PropertyName.length() > 0 ) {
+    if ( !PropertyName.isEmpty() ) {
         props.set ( "PropertyName", PropertyName );
     }
-    if ( DefaultValue.length() > 0 ) {
+    if ( !DefaultValue.isEmpty() ) {
         props.set ( "DefaultValue", DefaultValue );
     }
+    // Table
+    if ( !RowCountProperty.isEmpty() ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
+    if ( !ColumnCountProperty.isEmpty() ) {
+        props.set ( "ColumnCountProperty", ColumnCountProperty );
+    }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -188,22 +203,30 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
+	// Cell.
     String Column = __Column_JTextField.getText().trim();
     String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
+    // Table.
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	String ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
+    // Cell.
 	__command.setCommandParameter ( "Column", Column );
 	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "DefaultValue", DefaultValue );
+    // Table.
+    __command.setCommandParameter ( "RowCountProperty", RowCountProperty );
+    __command.setCommandParameter ( "ColumnCountProperty", ColumnCountProperty );
 }
 
 /**
@@ -211,15 +234,15 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, SetPropertyFromTable_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, SetPropertyFromTable_Command command, List<String> tableIDChoices ) {
+	__command = command;
     __parent = parent;
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -229,16 +252,9 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command sets a processor property using a value from a table cell."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "This is useful when iteration uses a property value."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "Using the filter parameters to match row(s) may result in multiple matches - " +
-        "only the first match is used to set the property."),
+        "This command sets a processor property using a value from a table cell or full table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -246,78 +262,137 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table>
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table that provides the property value."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table that provides the property value."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column to supply property:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+
+    // Tabbed pane to separate cell and table property.
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for 'Cell Property' parameters.
+    int yCell = -1;
+    JPanel cell_JPanel = new JPanel();
+    cell_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Cell Property", cell_JPanel );
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel (
+        "Use the following parameters to set a property based on a cell value."),
+        0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel (
+        "This is useful when iteration uses a property value."),
+        0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel (
+        "Using the filter parameters to match row(s) may result in multiple matches - " +
+        "only the first match is used to set the property."),
+        0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Column to supply property:"),
+        0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Column_JTextField = new JTextField (20);
     __Column_JTextField.setToolTipText("Specify the column to provide the property or use ${Property} notation");
     __Column_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Column_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - name of column that supplies the property value (can use ${property}."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column include filters:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(cell_JPanel, __Column_JTextField,
+        1, yCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Required - name of column that supplies the property value (can use ${property}."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Column include filters:"),
+        0, ++yCell, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
     __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
     __ColumnIncludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property}.");
     __ColumnIncludeFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to include by matching column filter pattern (default=match all rows)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column exclude filters:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(cell_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
+        1, yCell, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Optional - filter rows to include by matching column filter pattern (default=match all rows)."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(cell_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
+        3, ++yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Column exclude filters:"),
+        0, ++yCell, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
     __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
     __ColumnExcludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property}");
     __ColumnExcludeFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to exclude by matching column filter pattern (default=match all rows)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Property name:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(cell_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
+        1, yCell, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Optional - filter rows to exclude by matching column filter pattern (default=match all rows)."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(cell_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
+        3, ++yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Property name:"),
+        0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField (20);
     __PropertyName_JTextField.setToolTipText("Specify the property name to set or use ${Property} notation");
     __PropertyName_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - property name to set (can use ${property})."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Default value:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(cell_JPanel, __PropertyName_JTextField,
+        1, yCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Required - property name to set (can use ${property})."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Default value:"),
+        0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultValue_JTextField = new JTextField (20);
     __DefaultValue_JTextField.setToolTipText("Specify the property default value or use ${Property} notation");
     __DefaultValue_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DefaultValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - Default value, ${property}, Blank, or Null (default=property not set)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(cell_JPanel, __DefaultValue_JTextField,
+        1, yCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Optional - Default value, ${property}, Blank, or Null (default=property not set)."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    // Panel for 'Table Property' parameters.
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Table Property", table_JPanel );
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Use the following parameters to set a property value using a full table property."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "This is useful when comparing the table size against the expected size."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Row count property:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 30 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __RowCountProperty_JTextField,
+        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Optional - processor property to set as table row count." ),
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Column count property:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnCountProperty_JTextField = new JTextField ( "", 30 );
+    __ColumnCountProperty_JTextField.setToolTipText("Specify the property name for the table column count, can use ${Property} notation");
+    __ColumnCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __ColumnCountProperty_JTextField,
+        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Optional - processor property to set as table column count." ),
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -326,15 +401,15 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -385,21 +460,23 @@ public void keyTyped (KeyEvent event) {}
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getName() + ".refresh";
     String TableID = "";
     String Column = "";
     String ColumnIncludeFilters = "";
     String ColumnExcludeFilters = "";
     String PropertyName = "";
     String DefaultValue = "";
+    String RowCountProperty = "";
+    String ColumnCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -409,8 +486,10 @@ private void refresh ()
         ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
         PropertyName = props.getValue ( "PropertyName" );
         DefaultValue = props.getValue ( "DefaultValue" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
+        ColumnCountProperty = props.getValue ( "ColumnCountProperty" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -439,14 +518,22 @@ private void refresh ()
         if ( DefaultValue != null ) {
             __DefaultValue_JTextField.setText ( DefaultValue );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
+        if ( ColumnCountProperty != null ) {
+            __ColumnCountProperty_JTextField.setText ( ColumnCountProperty );
+        }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	Column = __Column_JTextField.getText().trim();
 	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
     PropertyName = __PropertyName_JTextField.getText().trim();
     DefaultValue = __DefaultValue_JTextField.getText().trim();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
+	ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "Column=" + Column );
@@ -454,6 +541,8 @@ private void refresh ()
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
     props.add ( "PropertyName=" + PropertyName );
     props.add ( "DefaultValue=" + DefaultValue );
+	props.add ( "RowCountProperty=" + RowCountProperty );
+	props.add ( "ColumnCountProperty=" + ColumnCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
@@ -461,35 +550,47 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt){}
-public void windowClosed(WindowEvent evt){}
-public void windowDeactivated(WindowEvent evt){}
-public void windowDeiconified(WindowEvent evt){}
-public void windowIconified(WindowEvent evt){}
-public void windowOpened(WindowEvent evt){}
+// The following methods are all necessary because this class implements WindowListener.
+
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,8 +71,8 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public CopyFile_Command ()
-{	super();
+public CopyFile_Command () {
+	super();
 	setCommandName ( "CopyFile" );
 }
 
@@ -84,8 +84,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String InputFile = parameters.getValue ( "InputFile" );
+throws InvalidCommandParameterException {
+	String InputFile = parameters.getValue ( "InputFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String TempFolder = parameters.getValue ( "TempFolder" );
     String TempFilePrefix = parameters.getValue ( "TempFilePrefix" );
@@ -97,7 +97,7 @@ throws InvalidCommandParameterException
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
@@ -167,11 +167,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new CopyFile_JDialog ( parent, this )).ok();
 }
 
@@ -200,15 +199,15 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
@@ -225,10 +224,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
     // Clear the output file.
     setOutputFile ( null );
-	
+
 	String InputFile = parameters.getValue ( "InputFile" ); // Expand below.
 	String OutputFile = parameters.getValue ( "OutputFile" ); // Expand below.
 	String TempFolder = parameters.getValue ( "TempFolder" ); // Expand below.
@@ -249,7 +248,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
    	String InputFile_full = InputFile;
    	String TempFolder_full = TempFolder;
 	String OutputFile_full = OutputFile;
@@ -346,7 +345,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
-	
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -369,8 +368,8 @@ private void setOutputFile ( File file ) {
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
 	String InputFile = parameters.getValue("InputFile");

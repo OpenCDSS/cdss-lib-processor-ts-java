@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -228,15 +228,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String NewTableID = parameters.getValue ( "NewTableID" );
-    if ( (NewTableID != null) && !NewTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && NewTableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	NewTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTableID);
     }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
-    if ( (IncludeColumns != null) && !IncludeColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && IncludeColumns.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	IncludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeColumns);
     }
     String [] includeColumns = null;
@@ -247,7 +247,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String DistinctColumns = parameters.getValue ( "DistinctColumns" );
-    if ( (DistinctColumns != null) && !DistinctColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DistinctColumns.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	DistinctColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DistinctColumns);
     }
     String [] distinctColumns = null;
@@ -269,7 +269,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ColumnFilters = parameters.getValue ( "ColumnFilters" );
-    if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
     }
     Hashtable<String,String> columnFilters = new Hashtable<>();

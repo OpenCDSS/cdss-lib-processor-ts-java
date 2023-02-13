@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -89,8 +89,8 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetProperty_JDialog ( JFrame parent, SetProperty_Command command )
-{	super(parent, true);
+public SetProperty_JDialog ( JFrame parent, SetProperty_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -98,8 +98,8 @@ public SetProperty_JDialog ( JFrame parent, SetProperty_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -123,17 +123,16 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     // TODO SAM 2008-01-30 Anything to do?
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
@@ -206,12 +205,12 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String PropertyName = __PropertyName_JTextField.getText().trim();
-    String PropertyType = __PropertyType_JComboBox.getSelected(); 
+private void commitEdits () {
+	String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyType = __PropertyType_JComboBox.getSelected();
 	String PropertyValue = __PropertyValue_JTextField.getText().trim();
 	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
 	String JavaProperty = __JavaProperty_JTextField.getText().trim();
@@ -246,8 +245,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, SetProperty_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, SetProperty_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -260,27 +259,27 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Set (or unset) a property for the processor." +
-		"  The property can be referenced in parameters of other commands using ${Property} notation." ), 
+		"  The property can be referenced in parameters of other commands using ${Property} notation." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to command documentation and command editors for information about support for ${Property} in command parameters." ), 
+		"Refer to command documentation and command editors for information about support for ${Property} in command parameters." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be set using the \"Set\", \"Environment Variable\", \"Java Property\", or \"Special Values\" tabs." ), 
+		"Properties can be set using the \"Set\", \"Environment Variable\", \"Java Property\", or \"Special Values\" tabs." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be removed (unset) using the \"Remove (Unset)\" tab." ), 
+		"Properties can be removed (unset) using the \"Remove (Unset)\" tab." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Existing properties can be modified using basic math.  Set the value using ${Property} (can reference itself) and modify using \"Math\" tab." ), 
+		"Existing properties can be modified using basic math.  Set the value using ${Property} (can reference itself) and modify using \"Math\" tab." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
+
     // Panel for setting.
     int ySet = -1;
     JPanel set_JPanel = new JPanel();
@@ -288,13 +287,13 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     __main_JTabbedPane.addTab ( "Set", set_JPanel );
 
     JGUIUtil.addComponent(set_JPanel, new JLabel (
-		"The property value must be provided in a format that is appropriate for the type." ), 
+		"The property value must be provided in a format that is appropriate for the type." ),
 		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
-		"For example, a Boolean property can have a value true or false, and Integer can only contain numbers and the negative sign." ), 
+		"For example, a Boolean property can have a value true or false, and Integer can only contain numbers and the negative sign." ),
 		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
-        "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
+        "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ),
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
         "DateTime values also recognize the following syntax (use as appropriate for date/time precision):"),
@@ -316,18 +315,18 @@ private void initialize ( JFrame parent, SetProperty_Command command )
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property name:" ), 
+
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property name:" ),
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField = new JTextField ( 30 );
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyName_JTextField,
         1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel(
-        "Required - do not use spaces $, { or } in name."), 
+        "Required - do not use spaces $, { or } in name."),
         3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ), 
+
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ),
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
     List<String> typeChoices = new ArrayList<>();
@@ -343,16 +342,16 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(set_JPanel, __PropertyType_JComboBox,
         1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel(
-        "Required - to ensure proper initialization and checks."), 
+        "Required - to ensure proper initialization and checks."),
         3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property value:" ), 
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property value:" ),
 		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__PropertyValue_JTextField = new JTextField ( 20 );
+	__PropertyValue_JTextField = new JTextField ( 30 );
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyValue_JTextField,
 		1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required if not specified otherwise - property value, can use ${Property}."), 
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required if not specified otherwise - property value, can use ${Property}."),
 		3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for environment variable.
@@ -360,7 +359,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JPanel env_JPanel = new JPanel();
     env_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Environment Variable", env_JPanel );
-    
+
     JGUIUtil.addComponent(env_JPanel, new JLabel (
         "A property can be set to the value of an environment variable."),
         0, ++yEnv, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -376,7 +375,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	__EnvironmentVariable_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(env_JPanel, __EnvironmentVariable_JTextField,
 		1, yEnv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(env_JPanel, new JLabel( "Optional - environment variable, can use ${Property}."), 
+    JGUIUtil.addComponent(env_JPanel, new JLabel( "Optional - environment variable, can use ${Property}."),
 		3, yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for Java property.
@@ -384,7 +383,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JPanel java_JPanel = new JPanel();
     java_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Java Property", java_JPanel );
-    
+
     JGUIUtil.addComponent(java_JPanel, new JLabel (
         "A property can be set to the value of a Java Property."),
         0, ++yJava, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -400,7 +399,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	__JavaProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(java_JPanel, __JavaProperty_JTextField,
 		1, yJava, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(java_JPanel, new JLabel( "Optional - Java property, can use ${Property}."), 
+    JGUIUtil.addComponent(java_JPanel, new JLabel( "Optional - Java property, can use ${Property}."),
 		3, yJava, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(java_JPanel, new JLabel ( "If Java property is undefined?:"),
@@ -417,7 +416,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(java_JPanel, __IfJavaPropertyUndefined_JComboBox,
 		1, yJava, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(java_JPanel, new JLabel(
-		"Optional - action if property undefined (default=" + __command._Warn + ")."), 
+		"Optional - action if property undefined (default=" + __command._Warn + ")."),
 		3, yJava, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for special values.
@@ -425,7 +424,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JPanel special_JPanel = new JPanel();
     special_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Special Values", special_JPanel );
-    
+
     JGUIUtil.addComponent(special_JPanel, new JLabel (
         "Use the following parameters to set properties to special values, depending on property type."),
         0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -456,9 +455,9 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, __SetEmpty_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
-		"Optional - set String property to empty string."), 
+		"Optional - set String property to empty string."),
 		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to NaN?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNaN_JComboBox = new SimpleJComboBox ( false );
@@ -471,9 +470,9 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, __SetNaN_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
-		"Optional - set Double property to \"not a number\" (NaN)."), 
+		"Optional - set Double property to \"not a number\" (NaN)."),
 		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to null?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNull_JComboBox = new SimpleJComboBox ( false );
@@ -486,16 +485,15 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, __SetNull_JComboBox,
 		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(special_JPanel, new JLabel(
-		"Optional - set any property type to null."), 
+		"Optional - set any property type to null."),
 		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
 
     // Panel for unset/remove.
     int yUnset = -1;
     JPanel unset_JPanel = new JPanel();
     unset_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Remove (Unset)", unset_JPanel );
-    
+
     JGUIUtil.addComponent(unset_JPanel, new JLabel (
         "Use the following parameter to remove (unset) a property."),
         0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -507,7 +505,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
         0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(unset_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(unset_JPanel, new JLabel ( "Remove/unset property?"),
 		0, ++yUnset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RemoveProperty_JComboBox = new SimpleJComboBox ( false );
@@ -520,9 +518,9 @@ private void initialize ( JFrame parent, SetProperty_Command command )
    JGUIUtil.addComponent(unset_JPanel, __RemoveProperty_JComboBox,
 		1, yUnset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(unset_JPanel, new JLabel(
-		"Optional - remove/unset the property"), 
+		"Optional - remove/unset the property"),
 		3, yUnset, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     // Panel for math.
     int yMath = -1;
     JPanel math_JPanel = new JPanel();
@@ -536,7 +534,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"The values can be specified using ${Property} notation."),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
-		"The value must be consistent with the property type and math operation, as follows:" ), 
+		"The value must be consistent with the property type and math operation, as follows:" ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
 		"  DateTime - can add or subtract an interval such as 1Day, 15Minute" ),
@@ -548,52 +546,52 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"  Integer - can add, subtract, multiply, or divide by an integer" ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
-		"  String - can concatenate (add), remove (subtract), or replicate (multiply: append inital value multiple times)" ), 
+		"  String - can concatenate (add), remove (subtract), or replicate (multiply: append inital value multiple times)" ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Add:" ), 
+
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Add:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Add_JTextField = new JTextField ( 20 );
 	__Add_JTextField.setToolTipText("Value to add to the property being set, can use ${Property}.");
 	__Add_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Add_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to add."), 
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to add."),
 		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Subtract:" ), 
+
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Subtract:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Subtract_JTextField = new JTextField ( 20 );
 	__Subtract_JTextField.setToolTipText("Value to subtract from the property being set, can use ${Property}.");
 	__Subtract_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Subtract_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to subtract."), 
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to subtract."),
 		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Multiply:" ), 
+
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Multiply:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Multiply_JTextField = new JTextField ( 20 );
 	__Multiply_JTextField.setToolTipText("Value to multiply the property by, can use ${Property}.");
 	__Multiply_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Multiply_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to multiply."), 
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to multiply."),
 		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Divide:" ), 
+
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Divide:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Divide_JTextField = new JTextField ( 20 );
 	__Divide_JTextField.setToolTipText("Value to divide the property by, can use ${Property}.");
 	__Divide_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Divide_JTextField,
 		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to divide."), 
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to divide."),
 		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -609,7 +607,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -630,16 +628,16 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -654,25 +652,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String PropertyName = "";
     String PropertyType = "";
 	String PropertyValue = "";
@@ -860,16 +859,16 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -882,15 +881,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

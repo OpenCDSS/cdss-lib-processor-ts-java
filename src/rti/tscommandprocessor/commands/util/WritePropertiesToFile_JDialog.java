@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,8 +48,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JFileChooserFactory;
@@ -86,7 +86,7 @@ private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 // TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter,
-// similar to TSFormatSpecifiersJPanel
+// similar to TSFormatSpecifiersJPanel.
 private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox	__WriteMode_JComboBox = null;
 private SimpleJComboBox __FileFormat_JComboBox = null;
@@ -100,8 +100,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WritePropertiesToFile_JDialog (	JFrame parent, WritePropertiesToFile_Command command )
-{	super(parent, true);
+public WritePropertiesToFile_JDialog (	JFrame parent, WritePropertiesToFile_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -109,33 +109,31 @@ public WritePropertiesToFile_JDialog (	JFrame parent, WritePropertiesToFile_Comm
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+			fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select Property File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "Property File");
 		fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -164,17 +162,14 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __path_JButton ) {
 		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
-			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,__OutputFile_JTextField.getText() ) );
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,__OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
 			try {
-			    __OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,__OutputFile_JTextField.getText() ) );
+			    __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, "WritePropertiesToFile_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "WritePropertiesToFile_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -182,11 +177,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
@@ -195,7 +190,7 @@ private void checkInput ()
     String SortOrder = __SortOrder_JComboBox.getSelected();
 
 	__error_wait = false;
-	
+
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
@@ -212,7 +207,7 @@ private void checkInput ()
     	parameters.set("SortOrder", SortOrder);
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -223,11 +218,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String OutputFile = __OutputFile_JTextField.getText().trim();
+private void commitEdits () {
+	String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     String FileFormat = __FileFormat_JComboBox.getSelected();
@@ -244,8 +239,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, WritePropertiesToFile_Command command ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -262,22 +257,22 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 		"Write one or more properties to a file.  Properties include build-in properties (e.g., OutputStart) and user-defined properties." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the output file be relative to the current working directory." ), 
+		"It is recommended that the output file be relative to the current working directory." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"The working directory is: " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 40 );
 	__OutputFile_JTextField.setToolTipText("Specify the file to output or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -287,7 +282,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -304,11 +299,11 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - properties to write, separated by commas, *=wildcard (default=write all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write mode:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<FileWriteModeType> writeModeChoices = __command.getWriteModeChoices();
-    List<String> writeModeChoicesS = new Vector<String>();
+    List<String> writeModeChoicesS = new ArrayList<>();
     writeModeChoicesS.add ( "" );
     for ( FileWriteModeType c : writeModeChoices ) {
         writeModeChoicesS.add ( "" + c );
@@ -321,12 +316,12 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - how to write file (default=" + FileWriteModeType.OVERWRITE + ")."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File format:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
     List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
-    List<String> fileFormatChoicesS = new Vector<String>();
+    List<String> fileFormatChoicesS = new ArrayList<>();
     fileFormatChoicesS.add ( "" );
     for ( PropertyFileFormatType c : fileFormatChoices ) {
         fileFormatChoicesS.add ( "" + c );
@@ -338,7 +333,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - property file format (default=" + PropertyFileFormatType.NAME_TYPE_VALUE + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Sort order:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortOrder_JComboBox = new SimpleJComboBox ( false );
@@ -349,10 +344,10 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     __SortOrder_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SortOrder_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - sort order (default=" + __command._None + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - sort order (default=" + __command._None + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -364,7 +359,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -379,7 +374,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -395,8 +390,8 @@ public void itemStateChanged (ItemEvent e) {
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -407,27 +402,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String OutputFile = "";
 	String IncludeProperties = "";
 	String WriteMode = "";
@@ -437,7 +431,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
 		IncludeProperties = parameters.getValue ( "IncludeProperties" );
@@ -451,7 +445,7 @@ private void refresh ()
             __IncludeProperties_JTextField.setText (IncludeProperties);
         }
 		if ( WriteMode == null ) {
-			// Select default...
+			// Select default.
 			__WriteMode_JComboBox.select ( 0 );
 		}
 		else {
@@ -467,7 +461,7 @@ private void refresh ()
 			}
 		}
         if ( FileFormat == null ) {
-            // Select default...
+            // Select default.
             __FileFormat_JComboBox.select ( 0 );
         }
         else {
@@ -483,7 +477,7 @@ private void refresh ()
             }
         }
         if ( SortOrder == null ) {
-            // Select default...
+            // Select default.
             __SortOrder_JComboBox.select ( 0 );
         }
         else {
@@ -498,7 +492,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	WriteMode = __WriteMode_JComboBox.getSelected();
@@ -532,16 +526,15 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -554,15 +547,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

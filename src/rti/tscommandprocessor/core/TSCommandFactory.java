@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,10 +23,7 @@ NoticeEnd */
 
 package rti.tscommandprocessor.core;
 
-// TODO SAM 2005-07-10 Need to evaluate where command classes should live to
-// avoid mixing with lower-level code.
-//import RTi.DataServices.Adapter.NDFD.openNDFD_Command;
-//import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
+// General imports.
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -38,38 +35,48 @@ import RTi.Util.IO.UnknownCommand;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
-import cdss.dmi.hydrobase.rest.commands.ReadColoradoHydroBaseRest_Command;
+
+// Access database commands.
 import rti.tscommandprocessor.commands.access.NewAccessDatabase_Command;
-import rti.tscommandprocessor.commands.check.CheckFile_Command;
-// Data checks (for now keep separate from logging and data tests)
+
+// Check time series commands (separate from testing).
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
-// Datastore commands
+// Datastore general commands.
 import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
-import rti.tscommandprocessor.commands.datastore.OpenDataStore_Command;
-import rti.tscommandprocessor.commands.datastore.ReadTableFromDataStore_Command;
-import rti.tscommandprocessor.commands.datastore.WriteTableToDataStore_Command;
-
-// Datastream commands
-import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
-// DateValue commands
 import rti.tscommandprocessor.commands.datastore.CreateDataStoreDataDictionary_Command;
 import rti.tscommandprocessor.commands.datastore.DeleteDataStoreTableRows_Command;
+import rti.tscommandprocessor.commands.datastore.OpenDataStore_Command;
+import rti.tscommandprocessor.commands.datastore.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.RunSql_Command;
+import rti.tscommandprocessor.commands.datastore.WriteTableToDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
+
+// Datastream commands.
+import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
+
+// DateValue commands.
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
+
+// Delft FEWS commands.
 import rti.tscommandprocessor.commands.delftfews.ReadDelftFewsPiXml_Command;
 import rti.tscommandprocessor.commands.delftfews.WriteDelftFewsPiXml_Command;
-// Delimited time series file commands
+
+// Delimited time series file commands.
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
+
+// Derby database commands.
 import rti.tscommandprocessor.commands.derby.NewDerbyDatabase_Command;
+
+// Email commands.
 import rti.tscommandprocessor.commands.email.SendEmailMessage_Command;
-// Ensemble commands
+
+// Ensemble commands.
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.CreateEnsembleFromOneTimeSeries_Command;
 import rti.tscommandprocessor.commands.ensemble.InsertTimeSeriesIntoEnsemble_Command;
@@ -78,23 +85,27 @@ import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.SetEnsembleProperty_Command;
 
-// GRTS commands (time series products).
-import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
-import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
-import rti.tscommandprocessor.commands.r.RunR_Command;
-// HEC-DSS commands.
+// File handling commands.
+import rti.tscommandprocessor.commands.check.CheckFile_Command;
+
+// HEC-DSS datastore commands.
 import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
 import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
 
-// HydroBase commands.
+// HydroBase datastore commands.
 import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
-import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
 import rti.tscommandprocessor.commands.json.FreeObject_Command;
 import rti.tscommandprocessor.commands.json.NewObject_Command;
 
-// JSON commands.
+// HydroBase REST datastore commands.
+import cdss.dmi.hydrobase.rest.commands.ReadColoradoHydroBaseRest_Command;
+
+// HydroJSON commands.
+import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
+
+// JSON object commands.
 import rti.tscommandprocessor.commands.json.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.SetObjectPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.json.SetObjectProperty_Command;
@@ -109,17 +120,17 @@ import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.StartLog_Command;
 
-// MODSIM commands
+// MODSIM commands.
 import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
-// Network commands
+// Network commands.
 import rti.tscommandprocessor.commands.network.AnalyzeNetworkPointFlow_Command;
 import rti.tscommandprocessor.commands.network.CreateNetworkFromTable_Command;
 
-// NRCS commands
+// NRCS web service datastore commands
 import rti.tscommandprocessor.commands.nrcs.awdb.ReadNrcsAwdb_Command;
 
-// NWSRFS commands.
+// NWSRFS datastore commands.
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsFS5Files_Command;
@@ -127,31 +138,35 @@ import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Co
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Command;
 
-// RCC ACIS commands
+// R (statistics) commands.
+import rti.tscommandprocessor.commands.r.RunR_Command;
+
+// RCC ACIS datastore commands.
 import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
 
-// Reclamation HDB commands
+// Reclamation HDB commands.
 import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
 
-//Reclamation Pisces commands
+//Reclamation Pisces commands.
 import rti.tscommandprocessor.commands.reclamationpisces.ReadReclamationPisces_Command;
 
-// RiverWare commands
+// RiverWare commands.
 import rti.tscommandprocessor.commands.riverware.ReadRiverWare_Command;
 import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 // SHEF commands.
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
-//import rti.tscommandprocessor.commands.socrata.ReadSocrata_Command;
-import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
+
 // Spatial commands.
+import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToShapefile_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToGeoJSON_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
+
+// Spreadsheet (Excel) commands.
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
-// Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadPropertiesFromExcel_Command;
@@ -218,7 +233,8 @@ import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToMarkdown_Command;
-// Template commands
+
+// Template commands.
 import rti.tscommandprocessor.commands.template.ExpandTemplateFile_Command;
 
 // Time-related commands.
@@ -308,7 +324,7 @@ import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesPropertiesToFile_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
-// USGS commands
+// USGS commands.
 import rti.tscommandprocessor.commands.usgs.nwis.rdb.ReadUsgsNwisRdb_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.ReadUsgsNwisDaily_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.groundwater.ReadUsgsNwisGroundwater_Command;
@@ -341,6 +357,7 @@ import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
 import rti.tscommandprocessor.commands.util.ProfileCommands_Command;
 import rti.tscommandprocessor.commands.util.ReadPropertiesFromFile_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
+import rti.tscommandprocessor.commands.util.RemoveFolder_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
@@ -359,12 +376,17 @@ import rti.tscommandprocessor.commands.util.WritePropertiesToFile_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 
-// WaterML commands
+// Visualization commands (time series products).
+import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
+import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
+
+// WaterML datastore commands.
 import rti.tscommandprocessor.commands.waterml.ReadWaterML_Command;
 import rti.tscommandprocessor.commands.waterml.WriteWaterML_Command;
 import rti.tscommandprocessor.commands.waterml2.ReadWaterML2_Command;
 import rti.tscommandprocessor.commands.waterml2.WriteWaterML2_Command;
-// WaterOneFlow commands
+
+// WaterOneFlow datastore commands
 import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
 /**
@@ -380,7 +402,7 @@ public class TSCommandFactory implements CommandFactory
  */
 @SuppressWarnings("rawtypes")
 List<Class> pluginCommandClassList = new ArrayList<>();
- 
+
 /**
 Constructor.
 */
@@ -422,15 +444,16 @@ This is useful for code that is being migrated to the full command class design.
 (and createUnknownCommandIfNotRecognized=false).
 */
 public Command newCommand ( String commandString, boolean createUnknownCommandIfNotRecognized )
-throws UnknownCommandException
-{	commandString = commandString.trim(); // Full command string, with no surrounding white space.
+throws UnknownCommandException {
+	commandString = commandString.trim(); // Full command string, with no surrounding white space.
+	// Upper case is used for checks.
+	String commandStringUpper = commandString.toUpperCase();
     String commandName = ""; // Command name without "(...parameters...)".
     String routine = getClass().getSimpleName() + ".newCommand";
 
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here.
 
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
-	//String commandStringUpper = commandString.toUpperCase();
 
 	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
 		// This allows aliases with spaces.
@@ -458,10 +481,14 @@ throws UnknownCommandException
 	if ( Message.isDebugOn ) {
 	    Message.printDebug(1,routine,"commandName=\"" + commandName + "\"" );
 	}
+
+	// Get the upper case command name:
+	// - then comparisons below don't have to repeatedly use equalIgnoreCase on 'commandName'
+	// - this speeds performance
+	String commandNameUpper = commandName.toUpperCase();
 	
-	// The following checks for a match for specific command name and if so an appropriate
-	// command instance is created and returned.  If nothing is matched and the command string is a TSID,
-	// a TSID command instance will be returned.
+	// The following checks for a match for specific command name and if so an appropriate command instance is created and returned.
+	// If nothing is matched and the command string is a TSID, a TSID command instance will be returned.
 	
 	// Comment commands.
 	
@@ -478,897 +505,904 @@ throws UnknownCommandException
 	// "A" commands.
 
     // Put the following before "Add".
-    else if ( commandName.equalsIgnoreCase("AddConstant") ) {
+    else if ( commandNameUpper.equals("ADDCONSTANT") ) { // "AddConstant"
         return new AddConstant_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Add") ) {
+    else if ( commandNameUpper.equals("ADD") ) { // "Add"
         return new Add_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("AdjustExtremes") ) {
+    else if ( commandNameUpper.equals("ADJUSTEXTREMES") ) { // "AdjustExtremes"
         return new AdjustExtremes_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("AnalyzeNetworkPointFlow") ) {
+    else if ( commandNameUpper.equals("ANALYZENETWORKPOINTFLOW") ) { // "AnalyzeNetworkPointFlow"
         return new AnalyzeNetworkPointFlow_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("AnalyzePattern") ) {
+    else if ( commandNameUpper.equals("ANALYZEPATTERN") ) { // "AnalyzePattern"
 		return new AnalyzePattern_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("AppendFile") ) {
+    else if ( commandNameUpper.equals("APPENDFILE") ) { // "AppendFile"
         return new AppendFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("AppendTable") ) {
+    else if ( commandNameUpper.equals("APPENDTABLE") ) { // "AppendTable"
         return new AppendTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ARMA") ) {
+    else if ( commandNameUpper.equals("ARMA") ) { // "ARMA"
         return new ARMA_Command ();
     }
-    
+
     // "B" commands.
-    
-    else if ( commandName.equalsIgnoreCase("Blend") ) {
+
+    else if ( commandNameUpper.equals("BLEND") ) { // "Blend"
         return new Blend_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Break") ) {
+    else if ( commandNameUpper.equals("BREAK") ) { // "Break"
         return new Break_Command ();
     }
 
 	// "C" commands.
 
-    else if ( commandName.equalsIgnoreCase("CalculateTimeSeriesStatistic") ) {
+    else if ( commandNameUpper.equals("CALCULATETIMESERIESSTATISTIC") ) { // "CalculateTimeSeriesStatistic"
         return new CalculateTimeSeriesStatistic_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("ChangeInterval") ) {
+	else if ( commandNameUpper.equals("CHANGEINTERVAL") ) { // "ChangeInterval"
 		return new ChangeInterval_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalIrregularToRegular") ) {
+	else if ( commandNameUpper.equals("CHANGEINTERVALIRREGULARTOREGULAR") ) { // "ChangeIntervalIrregularToRegular"
 		return new ChangeIntervalIrregularToRegular_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalRegularToIrregular") ) {
+	else if ( commandNameUpper.equals("CHANGEINTERVALREGULARTOIRREGULAR") ) { // "ChangeIntervalRegularToIrregular"
 		return new ChangeIntervalRegularToIrregular_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalToLarger") ) {
+	else if ( commandNameUpper.equals("CHANGEINTERVALTOLARGER") ) { // "ChangeIntervalToLarger"
 		return new ChangeIntervalToLarger_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ChangeIntervalToSmaller") ) {
+	else if ( commandNameUpper.equals("CHANGEINTERVALTOSMALLER") ) { // "ChangeIntervalToSmaller"
 		return new ChangeIntervalToSmaller_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ChangePeriod") ) {
+    else if ( commandNameUpper.equals("CHANGEPERIOD") ) { // "ChangePeriod"
         return new ChangePeriod_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CheckFile") ) {
+    else if ( commandNameUpper.equals("CHECKFILE") ) { // "CheckFile"
         return new CheckFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ChangeTimeZone") ) {
+    else if ( commandNameUpper.equals("CHANGETIMEZONE") ) { // "ChangeTimeZone"
         return new ChangeTimeZone_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CheckTimeSeries") ) {
+    else if ( commandNameUpper.equals("CHECKTIMESERIES") ) { // "CheckTimeSeries"
         return new CheckTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CheckTimeSeriesStatistic") ) {
+    else if ( commandNameUpper.equals("CHECKTIMESERIESSTATISTIC") ) { // "CheckTimeSeriesStatistic"
         return new CheckTimeSeriesStatistic_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("CloseDataStore") ) {
+	else if ( commandNameUpper.equals("CLOSEDATASTORE") ) { // "CloseDataStore"
 		return new CloseDataStore_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("CloseExcelWorkbook") ) {
+	else if ( commandNameUpper.equals("CLOSEEXCELWORKBOOK") ) { // "CloseExcelWorkbook"
 		return new CloseExcelWorkbook_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("CompareFiles") ) {
+	else if ( commandNameUpper.equals("COMPAREFILES") ) { // "CompareFiles"
 		return new CompareFiles_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("CompareTables") ) {
+    else if ( commandNameUpper.equals("COMPARETABLES") ) { // "CompareTables"
         return new CompareTables_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("CompareTimeSeries") ) {
+	else if ( commandNameUpper.equals("COMPARETIMESERIES") ) { // "CompareTimeSeries"
 		return new CompareTimeSeries_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ComputeErrorTimeSeries") ) {
+    else if ( commandNameUpper.equals("COMPUTEERRORTIMESERIES") ) { // "ComputeErrorTimeSeries"
         return new ComputeErrorTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ConfigureLogging") ) {
+    else if ( commandNameUpper.equals("CONFIGURELOGGING") ) { // "ConfigureLogging"
         return new ConfigureLogging_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Continue") ) {
+    else if ( commandNameUpper.equals("CONTINUE") ) { // "Continue"
         return new Continue_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ConvertDataUnits") ) {
+    else if ( commandNameUpper.equals("CONVERTDATAUNITS") ) { // "ConvertDataUnits"
         return new ConvertDataUnits_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("Copy") ) {
+	else if ( commandNameUpper.equals("COPY") ) { // "Copy"
 		return new Copy_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("CopyEnsemble") ) {
+    else if ( commandNameUpper.equals("COPYENSEMBLE") ) { // "CopyEnsemble"
         return new CopyEnsemble_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CopyFile") ) {
+    else if ( commandNameUpper.equals("COPYFILE") ) { // "CopyFile"
         return new CopyFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CopyPropertiesToTable") ) {
+    else if ( commandNameUpper.equals("COPYPROPERTIESTOTABLE") ) { // "CopyPropertiesToTable"
         return new CopyPropertiesToTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CopyTable") ) {
+    else if ( commandNameUpper.equals("COPYTABLE") ) { // "CopyTable"
         return new CopyTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CopyTimeSeriesPropertiesToTable") ) {
+    else if ( commandNameUpper.equals("COPYTIMESERIESPROPERTIESTOTABLE") ) { // "CopyTimeSeriesPropertiesToTable"
         return new CopyTimeSeriesPropertiesToTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateDataStoreDataDictionary") ) {
+    else if ( commandNameUpper.equals("CREATEDATASTOREDATADICTIONARY") ) { // "CreateDataStoreDataDictionary"
         return new CreateDataStoreDataDictionary_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateEnsembleFromOneTimeSeries") ||
-        commandName.equalsIgnoreCase("CreateEnsemble")) {
+    else if ( commandNameUpper.equals("CREATEENSEMBLEFROMONETIMESERIES") || // "CreateEnsembleFromOneTimeSeries"
+        commandNameUpper.equals("CREATEENSEMBLE") ) { // "CreateEnsemble"
         // The command name changed.
         return new CreateEnsembleFromOneTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateFolder") ) {
+    else if ( commandNameUpper.equals("CREATEFOLDER") ) { // "CreateFolder"
         return new CreateFolder_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateFromList") ) {
+    else if ( commandNameUpper.equals("CREATEFROMLIST") ) { // "CreateFromList"
         return new CreateFromList_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateNetworkFromTable") ) {
+    else if ( commandNameUpper.equals("CREATENETWORKFROMTABLE") ) { // "CreateNetworkFromTable"
         return new CreateNetworkFromTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("CreateTimeSeriesEventTable") ) {
+    else if ( commandNameUpper.equals("CREATETIMESERIESEVENTTABLE") ) { // "CreateTimeSeriesEventTable"
         return new CreateTimeSeriesEventTable_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("CreateRegressionTestCommandFile") ) {
+	else if ( commandNameUpper.equals("CREATEREGRESSIONTESTCOMMANDFILE") ) { // "CreateRegressionTestCommandFile"
 		return new CreateRegressionTestCommandFile_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("Cumulate") ) {
+	else if ( commandNameUpper.equals("CUMULATE") ) { // "Cumulate"
 		return new Cumulate_Command ();
 	}
-    
+
     // "D" commands.
 
-    else if ( commandName.equalsIgnoreCase("DeleteDataStoreTableRows") ) {
+    else if ( commandNameUpper.equals("DELETEDATASTORETABLEROWS") ) { // "DeleteDataStoreTableRows"
         return new DeleteDataStoreTableRows_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("DeleteTableColumns") ) {
+    else if ( commandNameUpper.equals("DELETETABLECOLUMNS") ) { // "DeleteTableColumns"
         return new DeleteTableColumns_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("DeleteTableRows") ) {
+    else if ( commandNameUpper.equals("DELETETABLEROWS") ) { // "DeleteTableRows"
         return new DeleteTableRows_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Delta") ) {
+    else if ( commandNameUpper.equals("DELTA") ) { // "Delta"
         return new Delta_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("DeselectTimeSeries") ) {
+	else if ( commandNameUpper.equals("DESELECTTIMESERIES") ) { // "DeselectTimeSeries"
         return new DeselectTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Disaggregate") ) {
+    else if ( commandNameUpper.equals("DISAGGREGATE") ) { // "Disaggregate"
         return new Disaggregate_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Divide") ) {
+    else if ( commandNameUpper.equals("DIVIDE") ) { // "Divide"
         return new Divide_Command ();
     }
 
 	// "E" commands.
 
-    else if ( commandName.equalsIgnoreCase("EndFor") ) {
+    else if ( commandNameUpper.equals("ENDFOR") ) { // "EndFor"
         return new EndFor_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("EndIf") ) {
+    else if ( commandNameUpper.equals("ENDIF") ) { // "EndIf"
         return new EndIf_Command ();
     }
-	else if ( StringUtil.startsWithIgnoreCase(commandString,"Exit") ||
-	    StringUtil.startsWithIgnoreCase(commandString,"Exit")) {
+	else if ( commandStringUpper.startsWith("EXIT") ) {
 		return new Exit_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ExpandTemplateFile") ) {
+    else if ( commandNameUpper.equals("EXPANDTEMPLATEFILE") ) { // "ExpandTemplateFile"
         return new ExpandTemplateFile_Command ();
     }
 
 	// "F" commands.
 
-	else if ( commandName.equalsIgnoreCase("FillConstant") ) {
+	else if ( commandNameUpper.equals("FILLCONSTANT") ) { // "FillConstant"
 		return new FillConstant_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("FillDayTSFrom2MonthTSAnd1DayTS") ) {
+    else if ( commandNameUpper.equals("FILLDAYTSFROM2MONTHTSAND1DAYTS") ) { // "FillDayTSFrom2MonthTSAnd1DayTS"
         return new FillDayTSFrom2MonthTSAnd1DayTS_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FillFromTS") ) {
+    else if ( commandNameUpper.equals("FILLFROMTS") ) { // "FillFromTS"
         return new FillFromTS_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FillHistMonthAverage") ) {
+	else if ( commandNameUpper.equals("FILLHISTMONTHAVERAGE") ) { // "FillHistMonthAverage"
 		return new FillHistMonthAverage_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("FillHistYearAverage") ) {
+	else if ( commandNameUpper.equals("FILLHISTYEARAVERAGE") ) { // "FillHistYearAverage"
 		return new FillHistYearAverage_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("FillInterpolate") ) {
+    else if ( commandNameUpper.equals("FILLINTERPOLATE") ) { // "FillInterpolate"
         return new FillInterpolate_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FillMixedStation") ) {
+	else if ( commandNameUpper.equals("FILLMIXEDSTATION") ) { // "FillMixedStation"
 		return new FillMixedStation_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("FillMOVE2") ) {
+	else if ( commandNameUpper.equals("FILLMOVE2") ) { // "FillMOVE2"
 		return new FillMOVE2_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("FillPattern") ) {
+    else if ( commandNameUpper.equals("FILLPATTERN") ) { // "FillPattern"
         return new FillPattern_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FillPrincipalComponentAnalysis") ) {
+	else if ( commandNameUpper.equals("FILLPRINCIPALCOMPONENTANALYSIS") ) { // "FillPrincipalComponentAnalysis"
 		return new FillPrincipalComponentAnalysis_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("FillProrate") ) {
+    else if ( commandNameUpper.equals("FILLPRORATE") ) { // "FillProrate"
         return new FillProrate_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FillRegression") ) {
+	else if ( commandNameUpper.equals("FILLREGRESSION") ) { // "FillRegression"
 		return new FillRegression_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("FillRepeat") ) {
+    else if ( commandNameUpper.equals("FILLREPEAT") ) { // "FillRepeat"
         return new FillRepeat_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FillUsingDiversionComments") ) {
+	else if ( commandNameUpper.equals("FILLUSINGDIVERSIONCOMMENTS") ) { // "FillUsingDiversionComments"
 		return new FillUsingDiversionComments_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("For") ) {
+    else if ( commandNameUpper.equals("FOR") ) { // "For"
         return new For_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
+    else if ( commandNameUpper.equals("FORMATDATETIMEPROPERTY") ) { // "FormatDateTimeProperty"
         return new FormatDateTimeProperty_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FormatFile") ) {
+    else if ( commandNameUpper.equals("FORMATFILE") ) { // "FormatFile"
         return new FormatFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FormatStringProperty") ) {
+    else if ( commandNameUpper.equals("FORMATSTRINGPROPERTY") ) { // "FormatStringProperty"
         return new FormatStringProperty_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FormatTableDateTime") ) {
+    else if ( commandNameUpper.equals("FORMATTABLEDATETIME") ) { // "FormatTableDateTime"
         return new FormatTableDateTime_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FormatTableString") ) {
+    else if ( commandNameUpper.equals("FORMATTABLESTRING") ) { // "FormatTableString"
         return new FormatTableString_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Free") ) {
+    else if ( commandNameUpper.equals("FREE") ) { // "Free"
         return new Free_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FreeObject") ) {
+    else if ( commandNameUpper.equals("FREEOBJECT") ) { // "FreeObject"
         return new FreeObject_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FreeTable") ) {
+    else if ( commandNameUpper.equals("FREETABLE") ) { // "FreeTable"
         return new FreeTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("FTPGet") ) {
+    else if ( commandNameUpper.equals("FTPGET") ) { // "FTPGet"
         return new FTPGet_Command ();
     }
     /*
-    else if ( commandName.equalsIgnoreCase("FreeEnsemble") ) {
+    else if ( commandNameUpper.equals("FREEENSEMBLE) ) { // "FreeEnsemble"
         return new FreeEnsemble_Command ();
     }
     */
-    
+
     // "I" commands.
 
-    else if ( commandName.equalsIgnoreCase("If") ) {
+    else if ( commandNameUpper.equals("IF") ) { // "If"
         return new If_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("InsertTableColumn") ) {
+    else if ( commandNameUpper.equals("INSERTTABLECOLUMN") ) { // "InsertTableColumn"
         return new InsertTableColumn_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("InsertTableRow") ) {
+    else if ( commandNameUpper.equals("INSERTTABLEROW") ) { // "InsertTableRow"
         return new InsertTableRow_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("InsertTimeSeriesIntoEnsemble") ) {
+    else if ( commandNameUpper.equals("INSERTTIMESERIESINTOENSEMBLE") ) { // "InsertTimeSeriesIntoEnsemble"
         return new InsertTimeSeriesIntoEnsemble_Command ();
     }
-    
+
     // "J" commands.
 
-    else if ( commandName.equalsIgnoreCase("JoinTables") ) {
+    else if ( commandNameUpper.equals("JOINTABLES") ) { // "JoinTables"
         return new JoinTables_Command ();
     }
 	
 	// "L" commands.
 
-	else if ( commandName.equalsIgnoreCase("LagK") ) {
+	else if ( commandNameUpper.equals("LAGK") ) { // "LagK"
 		return new LagK_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ListFiles") ) {
+    else if ( commandNameUpper.equals("LISTFILES") ) { // "ListFiles"
         return new ListFiles_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("LookupTimeSeriesFromTable") ) {
+    else if ( commandNameUpper.equals("LOOKUPTIMESERIESFROMTABLE") ) { // "LookupTimeSeriesFromTable"
         return new LookupTimeSeriesFromTable_Command ();
     }
 	
 	// "M" commands.
 	
-    else if ( commandName.equalsIgnoreCase("ManipulateTableString") ) {
+    else if ( commandNameUpper.equals("MANIPULATETABLESTRING") ) { // "ManipulateTableString"
         return new ManipulateTableString_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("MergeListFileColumns") ) {
+	else if ( commandNameUpper.equals("MERGELISTFILECOLUMNS") ) { // "MergeListFileColumns"
 		return new MergeListFileColumns_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("Message") ) {
+    else if ( commandNameUpper.equals("MESSAGE") ) { // "Message"
         return new Message_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Multiply") ) {
+    else if ( commandNameUpper.equals("MULTIPLY") ) { // "Multiply"
         return new Multiply_Command ();
     }
 
 	// "N" commands.
 
-    else if ( commandName.equalsIgnoreCase("NewAccessDatabase") ) {
+    else if ( commandNameUpper.equals("NEWACCESSDATABASE") ) { // "NewAccessDatabase"
         return new NewAccessDatabase_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
+    else if ( commandNameUpper.equals("NEWDAYTSFROMMONTHANDDAYTS") ) { // "NewDayTSFromMonthAndDayTS"
         return new NewDayTSFromMonthAndDayTS_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewDerbyDatabase") ) {
+    else if ( commandNameUpper.equals("NEWDERBYDATABASE") ) { // "NewDerbyDatabase"
         return new NewDerbyDatabase_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewEndOfMonthTSFromDayTS") ) {
+    else if ( commandNameUpper.equals("NEWENDOFMONTHTSFROMDAYTS") ) { // "NewEndOfMonthTSFromDayTS"
         return new NewEndOfMonthTSFromDayTS_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewEnsemble") ) {
+    else if ( commandNameUpper.equals("NEWENSEMBLE") ) { // "NewEnsemble"
         return new NewEnsemble_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewExcelWorkbook") ) {
+    else if ( commandNameUpper.equals("NEWEXCELWORKBOOK") ) { // "NewExcelWorkbook"
         return new NewExcelWorkbook_Command ();
     }
-    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewObject") ) {
+    else if ( commandNameUpper.equals("NEWOBJECT") ) { // "NewObject"
         return new NewObject_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewPatternTimeSeries") ) {
+    else if ( commandNameUpper.equals("NEWPATTERNTIMESERIES") ) { // "NewPatternTimeSeries"
         return new NewPatternTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewSQLiteDatabase") ) {
+    else if ( commandNameUpper.equals("NEWSQLITEDATABASE") ) { // "NewSQLiteDatabase"
         return new NewSQLiteDatabase_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewStatisticEnsemble") ) {
+    else if ( commandNameUpper.equals("NEWSTATISTICENSEMBLE") ) { // "NewStatisticEnsemble"
         return new NewStatisticEnsemble_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewStatisticMonthTimeSeries") ) {
+    else if ( commandNameUpper.equals("NEWSTATISTICMONTHTIMESERIES") ) { // "NewStatisticMonthTimeSeries"
         return new NewStatisticMonthTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {
+    else if ( commandNameUpper.equals("NEWSTATISTICTIMESERIESFROMENSEMBLE") ) { // "NewStatisticTimeSeriesFromEnsemble"
         return new NewStatisticTimeSeriesFromEnsemble_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("NewStatisticTimeSeries") ) {
+	else if ( commandNameUpper.equals("NEWSTATISTICTIMESERIES") ) { // "NewStatisticTimeSeries"
 		return new NewStatisticTimeSeries_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("NewStatisticYearTS") ) {
+	else if ( commandNameUpper.equals("NEWSTATISTICYEARTS") ) { // "NewStatisticYearTS"
 		return new NewStatisticYearTS_Command ();
 	}
-    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewTable") ) {
+    else if ( commandNameUpper.equals("NEWTABLE") ) { // "NewTable"
         return new NewTable_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("NewTimeSeries") ) {
+	else if ( commandNameUpper.equals("NEWTIMESERIES") ) { // "NewTimeSeries"
 		return new NewTimeSeries_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("NewTreeView") ) {
+    else if ( commandNameUpper.equals("NEWTREEVIEW") ) { // "NewTreeView"
         return new NewTreeView_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Normalize") ) {
+    else if ( commandNameUpper.equals("NORMALIZE") ) { // "Normalize"
         return new Normalize_Command ();
     }
 
 	// "O" commands.
 
-	else if ( commandName.equalsIgnoreCase("OpenDataStore") ) {
+	else if ( commandNameUpper.equals("OPENDATASTORE") ) { // "OpenDataStore"
 		return new OpenDataStore_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("OpenHydroBase") ) {
+	else if ( commandNameUpper.equals("OPENHYDROBASE") ) { // "OpenHydroBase"
 		return new OpenHydroBase_Command ();
 	}
 
 	// "P" commands.
 
-    else if ( commandName.equalsIgnoreCase("PrintTextFile") ) {
+    else if ( commandNameUpper.equals("PRINTTEXTFILE") ) { // "PrintTextFile"
         return new PrintTextFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ProcessRasterGraph") ) {
+    else if ( commandNameUpper.equals("PROCESSRASTERGRAPH") ) { // "ProcessRasterGraph"
         return new ProcessRasterGraph_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("ProcessTSProduct") ) {
+	else if ( commandNameUpper.equals("PROCESSTSPRODUCT") ) { // "ProcessTSProduct"
 		return new ProcessTSProduct_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ProfileCommands") ) {
+    else if ( commandNameUpper.equals("PROFILECOMMANDS") ) { // "ProfileCommands"
         return new ProfileCommands_Command ();
     }
 
 	// "R" commands.
 
-	else if ( commandName.equalsIgnoreCase("ReadColoradoHydroBaseRest") ) {
+	else if ( commandNameUpper.equals("READCOLORADOHYDROBASEREST") ) { // "ReadColoradoHydroBaseRest"
 		return new ReadColoradoHydroBaseRest_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ReadDateValue") ) {
+    else if ( commandNameUpper.equals("READDATEVALUE") ) { // "ReadDateValue"
         return new ReadDateValue_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadDelftFewsPiXml") ) {
+    else if ( commandNameUpper.equals("READDELFTFEWSPIXML") ) { // "ReadDelftFewsPiXml"
         return new ReadDelftFewsPiXml_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadDelimitedFile") ) {
+    else if ( commandNameUpper.equals("READDELIMITEDFILE") ) { // "ReadDelimitedFile"
         return new ReadDelimitedFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadExcelWorkbook") ) {
+    else if ( commandNameUpper.equals("READEXCELWORKBOOK") ) { // "ReadExcelWorkbook"
         return new ReadExcelWorkbook_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadHecDss") ) {
+    else if ( commandNameUpper.equals("READHECDSS") ) { // "ReadHecDss"
         return new ReadHecDss_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("ReadHydroBase") ) {
+	else if ( commandNameUpper.equals("READHYDROBASE") ) { // "ReadHydroBase"
 		return new ReadHydroBase_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ReadMODSIM") ) {
+    else if ( commandNameUpper.equals("READMODSIM") ) { // "ReadMODSIM"
         return new ReadMODSIM_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("ReadNDFD") ) {
+	else if ( commandNameUpper.equals("READNDFD") ) { // "ReadNDFD"
 		//return new readNDFD_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ReadNrcsAwdb") ) {
+	else if ( commandNameUpper.equals("READNRCSAWDB") ) { // "ReadNrcsAwdb"
 		return new ReadNrcsAwdb_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ReadNwsCard") ) {
+    else if ( commandNameUpper.equals("READNWSCARD") ) { // "ReadNwsCard"
         return new ReadNwsCard_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadNwsrfsFS5Files") ) {
+    else if ( commandNameUpper.equals("READNWSRFSFS5FILES") ) { // "ReadNwsrfsFS5Files"
         return new ReadNwsrfsFS5Files_Command();
     }
-    else if ( commandName.equalsIgnoreCase("ReadNwsrfsEspTraceEnsemble") ) {
+    else if ( commandNameUpper.equals("READNWSRFSESPTRACEENSEMBLE") ) { // "ReadNwsrfsEspTraceEnsemble"
         return new ReadNwsrfsEspTraceEnsemble_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadPatternFile") ) {
+    else if ( commandNameUpper.equals("READPATTERNFILE") ) { // "ReadPatternFile"
         return new ReadPatternFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadPropertiesFromExcel") ) {
+    else if ( commandNameUpper.equals("READPROPERTIESFROMEXCEL") ) { // "ReadPropertiesFromExcel"
         return new ReadPropertiesFromExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadPropertiesFromFile") ) {
+    else if ( commandNameUpper.equals("READPROPERTIESFROMFILE") ) { // "ReadPropertiesFromFile"
         return new ReadPropertiesFromFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadRccAcis") ) {
+    else if ( commandNameUpper.equals("READRCCACIS") ) { // "ReadRccAcis"
         return new ReadRccAcis_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadReclamationHDB") ) {
+    else if ( commandNameUpper.equals("READRECLAMATIONHDB") ) { // "ReadReclamationHDB"
         return new ReadReclamationHDB_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadReclamationPisces") ) {
+    else if ( commandNameUpper.equals("READRECLAMATIONPISCES") ) { // "ReadReclamationPisces"
         return new ReadReclamationPisces_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadRiverWare") ) {
+    else if ( commandNameUpper.equals("READRIVERWARE") ) { // "ReadRiverWare"
         return new ReadRiverWare_Command ();
     }
-    //else if ( commandName.equalsIgnoreCase("ReadSocrata") ) {
-    //    return new ReadSocrata_Command ();
-    //}
-    // Put before shorter command name.
-    else if ( commandName.equalsIgnoreCase("ReadStateCUB") ) {
-        return new ReadStateCUB_Command ();
-    }
-	else if ( commandName.equalsIgnoreCase("ReadStateCU") ) {
+	else if ( commandNameUpper.equals("READSTATECU") ) { // "ReadStateCU"
 		return new ReadStateCU_Command ();
 	}
-    // Put before shorter command name.
-    else if ( commandName.equalsIgnoreCase("ReadStateModB") ) {
-        return new ReadStateModB_Command ();
+    else if ( commandNameUpper.equals("READSTATECUB") ) { // "ReadStateCUB"
+        return new ReadStateCUB_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("ReadStateMod") ) {
+	else if ( commandNameUpper.equals("READSTATEMOD") ) { // "ReadStateMod"
 		return new ReadStateMod_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ReadTableCellsFromExcel") ) {
+    else if ( commandNameUpper.equals("READSTATEMODB") ) { // "ReadStateModB"
+        return new ReadStateModB_Command ();
+    }
+    else if ( commandNameUpper.equals("READTABLECELLSFROMEXCEL") ) { // "ReadTableCellsFromExcel"
         return new ReadTableCellsFromExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromDataStore") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMDATASTORE") ) { // "ReadTableFromDataStore"
         return new ReadTableFromDataStore_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromDBF") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMDBF") ) { // "ReadTableFromDBF"
         return new ReadTableFromDBF_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromDelimitedFile") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMDELIMITEDFILE") ) { // "ReadTableFromDelimitedFile"
         return new ReadTableFromDelimitedFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromExcel") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMEXCEL") ) { // "ReadTableFromExcel"
         return new ReadTableFromExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromFixedFormatFile") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMFIXEDFORMATFILE") ) { // "ReadTableFromFixedFormatFile"
         return new ReadTableFromFixedFormatFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromJSON") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMJSON") ) { // "ReadTableFromJSON"
         return new ReadTableFromJSON_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableFromXML") ) {
+    else if ( commandNameUpper.equals("READTABLEFROMXML") ) { // "ReadTableFromXML"
         return new ReadTableFromXML_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
+    else if ( commandNameUpper.equals("READTIMESERIES") ) { // "ReadTimeSeries"
         return new ReadTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTimeSeriesFromDataStore") ) {
+    else if ( commandNameUpper.equals("READTIMESERIESFROMDATASTORE") ) { // "ReadTimeSeriesFromDataStore"
         return new ReadTimeSeriesFromDataStore_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTimeSeriesList") ) {
+    else if ( commandNameUpper.equals("READTIMESERIESLIST") ) { // "ReadTimeSeriesList"
         return new ReadTimeSeriesList_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadUsgsNwis") || commandName.equalsIgnoreCase("ReadUsgsNwisRdb")) {
+    else if ( commandNameUpper.equals("READUSGSNWIS") // "ReadUsgsNwis"
+    	|| commandNameUpper.equals("READUSGSNWISRDB") ) { // "ReadUsgsNwisRdb"
         // Automatically convert legacy command to new name.
         return new ReadUsgsNwisRdb_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadUsgsNwisDaily") ) {
+    else if ( commandNameUpper.equals("READUSGSNWISDAILY") ) { // "ReadUsgsNwisDaily"
         return new ReadUsgsNwisDaily_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadUsgsNwisGroundwater") ) {
+    else if ( commandNameUpper.equals("READUSGSNWISGROUNDWATER") ) { // "ReadUsgsNwisGroundwater"
         return new ReadUsgsNwisGroundwater_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadUsgsNwisInstantaneous") ) {
+    else if ( commandNameUpper.equals("READUSGSNWISINSTANTANEOUS") ) { // "ReadUsgsNwisInstantaneous"
         return new ReadUsgsNwisInstantaneous_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadWaterML") ) {
+    else if ( commandNameUpper.equals("READWATERML") ) { // "ReadWaterML"
         return new ReadWaterML_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadWaterML2") ) {
+    else if ( commandNameUpper.equals("READWATERML2") ) { // "ReadWaterML2"
         return new ReadWaterML2_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadWaterOneFlow") ) {
+    else if ( commandNameUpper.equals("READWATERONEFLOW") ) { // "ReadWaterOneFlow"
         return new ReadWaterOneFlow_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RelativeDiff") ) {
+    else if ( commandNameUpper.equals("RELATIVEDIFF") ) { // "RelativeDiff"
         return new RelativeDiff_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RemoveFile") ) {
+    else if ( commandNameUpper.equals("REMOVEDATASTORETABLEROWS") || // "RemoveDataStoreTableRows"
+   		commandNameUpper.equals("DELETEDATASTORETABLEROWS") ) { // "DeleteDataStoreTableRows"
+        // Automatically change the name.
+        return new DeleteDataStoreTableRows_Command ();
+    }
+    else if ( commandNameUpper.equals("REMOVEFILE") ) { // "RemoveFile"
         return new RemoveFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RemoveDataStoreTableRows") ) {
+    else if ( commandNameUpper.equals("REMOVEFOLDER") ) { // "RemoveFolder"
+        return new RemoveFolder_Command ();
+    }
+    else if ( commandNameUpper.equals("REMOVETABLEROWSFROMDATASTORE") ) { // "RemoveTableRowsFromDataStore"
         // Automatically change the name.
         return new DeleteDataStoreTableRows_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
-        // Automatically change the name.
-        return new DeleteDataStoreTableRows_Command ();
-    }
-    else if ( commandName.equalsIgnoreCase("RenameTableColumns") ) {
+    else if ( commandNameUpper.equals("RENAMETABLECOLUMNS") ) { // "RenameTableColumns"
         return new RenameTableColumns_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReplaceValue") ) {
+    else if ( commandNameUpper.equals("REPLACEVALUE") ) { // "ReplaceValue"
         return new ReplaceValue_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ResequenceTimeSeriesData") ) {
+    else if ( commandNameUpper.equals("RESEQUENCETIMESERIESDATA") ) { // "ResequenceTimeSeriesData"
         return new ResequenceTimeSeriesData_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("RunCommands") ) {
+	else if ( commandNameUpper.equals("RUNCOMMANDS") ) { // "RunCommands"
 		return new RunCommands_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("RunDSSUTL") ) {
+    else if ( commandNameUpper.equals("RUNDSSUTL") ) { // "RunDSSUTL"
         return new RunDSSUTL_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunningAverage") ) {
+    else if ( commandNameUpper.equals("RUNNINGAVERAGE") ) { // "RunningAverage"
         return new RunningAverage_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunningStatisticTimeSeries") ) {
+    else if ( commandNameUpper.equals("RUNNINGSTATISTICTIMESERIES") ) { // "RunningStatisticTimeSeries"
         return new RunningStatisticTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunProgram") ) {
+    else if ( commandNameUpper.equals("RUNPROGRAM") ) { // "RunProgram"
         return new RunProgram_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunPython") ) {
+    else if ( commandNameUpper.equals("RUNPYTHON") ) { // "RunPython"
         return new RunPython_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunR") ) {
+    else if ( commandNameUpper.equals("RUNR") ) { // "RunR"
         return new RunR_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("RunSql") ) {
+    else if ( commandNameUpper.equals("RUNSQL") ) { // "RunSql"
         return new RunSql_Command ();
     }
 
 	// "S" commands.
 
-	else if ( commandName.equalsIgnoreCase("Scale") ) {
+	else if ( commandNameUpper.equals("SCALE") ) { // "Scale"
 		return new Scale_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("SelectTimeSeries") ) {
+    else if ( commandNameUpper.equals("SELECTTIMESERIES") ) { // "SelectTimeSeries"
         return new SelectTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SendEmailMessage") ) {
+    else if ( commandNameUpper.equals("SENDEMAILMESSAGE") ) { // "SendEmailMessage"
         return new SendEmailMessage_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetAutoExtendPeriod") ) {
+    else if ( commandNameUpper.equals("SETAUTOEXTENDPERIOD") ) { // "SetAutoExtendPeriod"
         return new SetAutoExtendPeriod_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetAveragePeriod") ) {
+    else if ( commandNameUpper.equals("SETAVERAGEPERIOD") ) { // "SetAveragePeriod"
         return new SetAveragePeriod_Command ();
     }
     // Obsolete SetConst() and SetConstantBefore() will be handled as an unknown command.
-    else if ( commandName.equalsIgnoreCase("SetConstant") ) {
+    else if ( commandNameUpper.equals("SETCONSTANT") ) { // "SetConstant"
         return new SetConstant_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetDataValue") ) {
+    else if ( commandNameUpper.equals("SETDATAVALUE") ) { // "SetDataValue"
         return new SetDataValue_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetDebugLevel") ) {
+    else if ( commandNameUpper.equals("SETDEBUGLEVEL") ) { // "SetDebugLevel"
         return new SetDebugLevel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetEnsembleProperty") ) {
+    else if ( commandNameUpper.equals("SETENSEMBLEPROPERTY") ) { // "SetEnsembleProperty"
         return new SetEnsembleProperty_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetExcelCell") ) {
+    else if ( commandNameUpper.equals("SETEXCELCELL") ) { // "SetExcelCell"
         return new SetExcelCell_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetExcelWorksheetViewProperties") ) {
+    else if ( commandNameUpper.equals("SETEXCELWORKSHEETVIEWPROPERTIES") ) { // "SetExcelWorksheetViewProperties"
         return new SetExcelWorksheetViewProperties_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetFromTS") ) {
+    else if ( commandNameUpper.equals("SETFROMTS") ) { // "SetFromTS"
         return new SetFromTS_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetIgnoreLEZero") ) {
+    else if ( commandNameUpper.equals("SETIGNORELEZERO") ) { // "SetIgnoreLEZero"
         return new SetIgnoreLEZero_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetIncludeMissingTS") ) {
+    else if ( commandNameUpper.equals("SETINCLUDEMISSINGTS") ) { // "SetIncludeMissingTS"
         return new SetIncludeMissingTS_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("SetInputPeriod") ) {
+	else if ( commandNameUpper.equals("SETINPUTPERIOD") ) { // "SetInputPeriod"
 		return new SetInputPeriod_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("SetObjectProperty") ) {
+	else if ( commandNameUpper.equals("SETOBJECTPROPERTY") ) { // "SetObjectProperty"
 		return new SetObjectProperty_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("SetObjectPropertiesFromTable") ) {
+	else if ( commandNameUpper.equals("SETOBJECTPROPERTIESFROMTABLE") ) { // "SetObjectPropertiesFromTable"
 		return new SetObjectPropertiesFromTable_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("SetOutputPeriod") ) {
+	else if ( commandNameUpper.equals("SETOUTPUTPERIOD") ) { // "SetOutputPeriod"
 		return new SetOutputPeriod_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("SetOutputYearType") ) {
+    else if ( commandNameUpper.equals("SETOUTPUTYEARTYPE") ) { // "SetOutputYearType"
         return new SetOutputYearType_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetPatternFile") ) {
+    else if ( commandNameUpper.equals("SETPATTERNFILE") ) { // "SetPatternFile"
         // Automatically convert to ReadPatternFile.
         return new ReadPatternFile_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
-    else if ( commandName.equalsIgnoreCase("SetPropertyFromEnsemble") ) {
+    else if ( commandNameUpper.equals("SETPROPERTYFROMENSEMBLE") ) { // "SetPropertyFromEnsemble"
         return new SetPropertyFromEnsemble_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetPropertyFromNwsrfsAppDefault") ) {
+    else if ( commandNameUpper.equals("SETPROPERTYFROMNWSRFSAPPDEFAULT") ) { // "SetPropertyFromNwsrfsAppDefault"
         return new SetPropertyFromNwsrfsAppDefault_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
-    else if ( commandName.equalsIgnoreCase("SetPropertyFromTable") ) {
+    else if ( commandNameUpper.equals("SETPROPERTYFROMTABLE") ) { // "SetPropertyFromTable"
         return new SetPropertyFromTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetPropertyFromObject") ) {
+    else if ( commandNameUpper.equals("SETPROPERTYFROMOBJECT") ) { // "SetPropertyFromObject"
         return new SetPropertyFromObject_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetPropertyFromTimeSeries") ) {
+    else if ( commandNameUpper.equals("SETPROPERTYFROMTIMESERIES") ) { // "SetPropertyFromTimeSeries"
         return new SetPropertyFromTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetProperty") ) {
+    else if ( commandNameUpper.equals("SETPROPERTY") ) { // "SetProperty"
         return new SetProperty_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("SetQueryPeriod") ) {
-		// Phasing into new syntax.
+	else if ( commandNameUpper.equals("SETQUERYPERIOD") ) { // "SetQueryPeriod"
+		// Use new syntax.
 		return new SetInputPeriod_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("SetTableColumnProperties") ) {
+    else if ( commandNameUpper.equals("SETTABLECOLUMNPROPERTIES") ) { // "SetTableColumnProperties"
         return new SetTableColumnProperties_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetTableValues") ) {
+    else if ( commandNameUpper.equals("SETTABLEVALUES") ) { // "SetTableValues"
         return new SetTableValues_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetTimeSeriesPropertiesFromTable") ) {
+    else if ( commandNameUpper.equals("SETTIMESERIESPROPERTIESFROMTABLE") ) { // "SetTimeSeriesPropertiesFromTable"
         return new SetTimeSeriesPropertiesFromTable_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("SetTimeSeriesProperty") ) {
+	else if ( commandNameUpper.equals("SETTIMESERIESPROPERTY") ) { // "SetTimeSeriesProperty"
 		return new SetTimeSeriesProperty_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("SetTimeSeriesValuesFromLookupTable") ) {
+    else if ( commandNameUpper.equals("SETTIMESERIESVALUESFROMLOOKUPTABLE") ) { // "SetTimeSeriesValuesFromLookupTable"
         return new SetTimeSeriesValuesFromLookupTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetTimeSeriesValuesFromTable") ) {
+    else if ( commandNameUpper.equals("SETTIMESERIESVALUESFROMTABLE") ) { // "SetTimeSeriesValuesFromTable"
         return new SetTimeSeriesValuesFromTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetMax") || commandName.equalsIgnoreCase("SetToMax") ) {
+    else if ( commandNameUpper.equals("SETMAX") // "SetMax")
+    	|| commandNameUpper.equals("SETTOMAX") ) { // "SetToMax"
         // Legacy is "SetMax" so translate on the fly.
         return new SetToMax_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetToMin") ) {
+    else if ( commandNameUpper.equals("SETTOMIN") ) { // "SetToMin"
         return new SetToMin_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetWarningLevel") ) {
+    else if ( commandNameUpper.equals("SETWARNINGLEVEL") ) { // "SetWarningLevel"
         return new SetWarningLevel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SetWorkingDir") ) {
+    else if ( commandNameUpper.equals("SETWORKINGDIR") ) { // "SetWorkingDir"
         return new SetWorkingDir_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ShiftTimeByInterval") ) {
+    else if ( commandNameUpper.equals("SHIFTTIMEBYINTERVAL") ) { // "ShiftTimeByInterval"
         return new ShiftTimeByInterval_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SortTable") ) {
+    else if ( commandNameUpper.equals("SORTTABLE") ) { // "SortTable"
         return new SortTable_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SortTimeSeries") ) {
+    else if ( commandNameUpper.equals("SORTTIMESERIES") ) { // "SortTimeSeries"
         return new SortTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SplitTableColumn") ) {
+    else if ( commandNameUpper.equals("SPLITTABLECOLUMN") ) { // "SplitTableColumn"
         return new SplitTableColumn_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SplitTableRow") ) {
+    else if ( commandNameUpper.equals("SPLITTABLEROW") ) { // "SplitTableRow"
         return new SplitTableRow_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("StartLog") ){
+	else if ( commandNameUpper.equals("STARTLOG") ) { // "StartLog"
 		return new StartLog_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("StartRegressionTestResultsReport") ){
+    else if ( commandNameUpper.equals("STARTREGRESSIONTESTRESULTSREPORT") ) { // "StartRegressionTestResultsReport"
         return new StartRegressionTestResultsReport_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("StateModMax") ){
+    else if ( commandNameUpper.equals("STATEMODMAX") ) { // "StateModMax"
         return new StateModMax_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("Subtract") ) {
+    else if ( commandNameUpper.equals("SUBTRACT") ) { // "Subtract"
         return new Subtract_Command ();
     }
 	
 	// "T" commands.
 
-    else if ( commandName.equalsIgnoreCase("TableMath") ) {
+    else if ( commandNameUpper.equals("TABLEMATH") ) { // "TableMath"
         return new TableMath_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("TableTimeSeriesMath") ) {
+    else if ( commandNameUpper.equals("TABLETIMESERIESMATH") ) { // "TableTimeSeriesMath"
         return new TableTimeSeriesMath_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("TableToTimeSeries") ) {
+    else if ( commandNameUpper.equals("TABLETOTIMESERIES") ) { // "TableToTimeSeries"
         return new TableToTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("TestCommand") ) {
+    else if ( commandNameUpper.equals("TESTCOMMAND") ) { // "TestCommand"
 		return new TestCommand_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("TextEdit") ) {
+    else if ( commandNameUpper.equals("TEXTEDIT") ) { // "TextEdit"
 		return new TextEdit_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("TimeSeriesToTable") ) {
+    else if ( commandNameUpper.equals("TIMESERIESTOTABLE") ) { // "TimeSeriesToTable"
         return new TimeSeriesToTable_Command ();
     }
-    
-    // "U" commands...
-    
-    else if ( commandName.equalsIgnoreCase("UnzipFile") ) {
+
+    // "U" commands.
+
+    else if ( commandNameUpper.equals("UNZIPFILE") ) { // "UnzipFile"
         return new UnzipFile_Command ();
     }
-    
-    // "V" commands...
 
-    else if ( commandName.equalsIgnoreCase("VariableLagK") ) {
+    // "V" commands.
+
+    else if ( commandNameUpper.equals("VARIABLELAGK") ) { // "VariableLagK"
         return new VariableLagK_Command ();
     }
 
-	// "W" commands...
+	// "W" commands.
 
-    else if ( commandName.equalsIgnoreCase("Wait") ) {
+    else if ( commandNameUpper.equals("WAIT") ) { // "Wait"
         return new Wait_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WebGet") ) {
+    else if ( commandNameUpper.equals("WEBGET") ) { // "WebGet"
         return new WebGet_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WeightTraces") ) {
+    else if ( commandNameUpper.equals("WEIGHTTRACES") ) { // "WeightTraces"
         return new WeightTraces_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteCheckFile") ) {
+    else if ( commandNameUpper.equals("WRITECHECKFILE") ) { // "WriteCheckFile"
         return new WriteCheckFile_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("WriteDateValue") ) {
+	else if ( commandNameUpper.equals("WRITEDATEVALUE") ) { // "WriteDateValue"
 		return new WriteDateValue_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("WriteDelftFewsPiXml") ) {
+    else if ( commandNameUpper.equals("WRITEDELFTFEWSPIXML") ) { // "WriteDelftFewsPiXml"
         return new WriteDelftFewsPiXml_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteDelimitedFile") ) {
+    else if ( commandNameUpper.equals("WRITEDELIMITEDFILE") ) { // "WriteDelimitedFile"
         return new WriteDelimitedFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteHecDss") ) {
+    else if ( commandNameUpper.equals("WRITEHECDSS") ) { // "WriteHecDss"
         return new WriteHecDss_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteNwsCard")) {
+    else if ( commandNameUpper.equals("WRITENWSCARD") ) { // "WriteNwsCard"
         return new WriteNwsCard_Command();
     }
-	else if ( commandName.equalsIgnoreCase("WriteNWSRFSESPTraceEnsemble")) {
+	else if ( commandNameUpper.equals("WRITENWSRFSESPTRACEENSEMBLE") ) { // "WriteNWSRFSESPTraceEnsemble"
 		return new WriteNWSRFSESPTraceEnsemble_Command();
 	}
-    else if ( commandName.equalsIgnoreCase("WriteObjectToJSON")) {
+    else if ( commandNameUpper.equals("WRITEOBJECTTOJSON") ) { // "WriteObjectToJSON"
         return new WriteObjectToJSON_Command();
     }
-    else if ( commandName.equalsIgnoreCase("WritePropertiesToFile") ) {
+    else if ( commandNameUpper.equals("WRITEPROPERTIESTOFILE") ) { // "WritePropertiesToFile"
         return new WritePropertiesToFile_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("WriteProperty") ) {
+	else if ( commandNameUpper.equals("WRITEPROPERTY") ) { // "WriteProperty"
 		return new WriteProperty_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("WriteReclamationHDB") ) {
+    else if ( commandNameUpper.equals("WRITERECLAMATIONHDB") ) { // "WriteReclamationHDB"
         return new WriteReclamationHDB_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("WriteRiverWare") ) {
+	else if ( commandNameUpper.equals("WRITERIVERWARE") ) { // "WriteRiverWare"
 		return new WriteRiverWare_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("WriteSHEF") ) {
+    else if ( commandNameUpper.equals("WRITESHEF") ) { // "WriteSHEF"
         return new WriteSHEF_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteStateCU") ) {
+    else if ( commandNameUpper.equals("WRITESTATECU") ) { // "WriteStateCU"
         return new WriteStateCU_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("WriteStateMod") ) {
+	else if ( commandNameUpper.equals("WRITESTATEMOD") ) { // "WriteStateMod"
 		return new WriteStateMod_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("WriteSummary") ) {
+	else if ( commandNameUpper.equals("WRITESUMMARY") ) { // "WriteSummary"
 		return new WriteSummary_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("WriteTableToDataStore") ) {
+    else if ( commandNameUpper.equals("WRITETABLETODATASTORE") ) { // "WriteTableToDataStore"
         return new WriteTableToDataStore_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToDelimitedFile") ) {
+    else if ( commandNameUpper.equals("WRITETABLETODELIMITEDFILE") ) { // "WriteTableToDelimitedFile"
         return new WriteTableToDelimitedFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToExcel") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOEXCEL") ) { // "WriteTableToExcel"
         return new WriteTableToExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableCellsToExcel") ) {
+    else if ( commandNameUpper.equals("WRITETABLECELLSTOEXCEL") ) { // "WriteTableCellsToExcel"
         return new WriteTableCellsToExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToGeoJSON") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOGEOJSON") ) { // "WriteTableToGeoJSON"
         return new WriteTableToGeoJSON_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOHTML") ) { // "WriteTableToHTML"
         return new WriteTableToHTML_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToMarkdown") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOMARKDOWN") ) { // "WriteTableToMarkdown"
         return new WriteTableToMarkdown_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToKml") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOKML") ) { // "WriteTableToKml"
         return new WriteTableToKml_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTableToShapefile") ) {
+    else if ( commandNameUpper.equals("WRITETABLETOSHAPEFILE") ) { // "WriteTableToShapefile"
         return new WriteTableToShapefile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesPropertiesToFile") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESPROPERTIESTOFILE") ) { // "WriteTimeSeriesPropertiesToFile"
         return new WriteTimeSeriesPropertiesToFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesProperty") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESPROPERTY") ) { // "WriteTimeSeriesProperty"
         return new WriteTimeSeriesProperty_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStore") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTODATASTORE") ) { // "WriteTimeSeriesToDataStore"
         return new WriteTimeSeriesToDataStore_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStream") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTODATASTREAM") ) { // "WriteTimeSeriesToDataStream"
         return new WriteTimeSeriesToDataStream_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcel") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOEXCEL") ) { // "WriteTimeSeriesToExcel"
         return new WriteTimeSeriesToExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcelBlock") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOEXCELBLOCK") ) { // "WriteTimeSeriesToExcelBlock"
         return new WriteTimeSeriesToExcelBlock_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToHydroJSON") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOHYDROJSON") ) { // "WriteTimeSeriesToHydroJSON"
         return new WriteTimeSeriesToHydroJSON_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOJSON") ) { // "WriteTimeSeriesToJson"
         return new WriteTimeSeriesToJson_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToGeoJSON") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOGEOJSON") ) { // "WriteTimeSeriesToGeoJSON"
         return new WriteTimeSeriesToGeoJSON_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToKml") ) {
+    else if ( commandNameUpper.equals("WRITETIMESERIESTOKML") ) { // "WriteTimeSeriesToKml"
         return new WriteTimeSeriesToKml_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteWaterML") ) {
+    else if ( commandNameUpper.equals("WRITEWATERML") ) { // "WriteWaterML"
         return new WriteWaterML_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteWaterML2") ) {
+    else if ( commandNameUpper.equals("WRITEWATERML2") ) { // "WriteWaterML2"
         return new WriteWaterML2_Command ();
     }
-    
-    // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name.
+
+    // TODO smalers 2016-04-02 Figure out more elegant approach for getting command name.
     // Check for plugin commands - for now brute force based on naming convention.
-    
-   	Message.printStatus(2,routine,"Did not match built-in command, checking plugin command classes.");
+
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1,routine,"Did not match built-in command, checking plugin command classes.");
+	}
     if ( this.pluginCommandClassList.size() > 0 ) {
-    	Message.printStatus(2,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
+    	if ( Message.isDebugOn ) {
+    		Message.printDebug(1,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
+    	}
     	for ( @SuppressWarnings("rawtypes") Class c : this.pluginCommandClassList ) {
 	    	String nameFromClass = c.getSimpleName(); // Should be like:  CommandName_Command
 	    	int pos = nameFromClass.indexOf("_Command");
 	    	if ( pos > 0 ) {
 	    		nameFromClass = nameFromClass.substring(0,pos);
-	    		Message.printStatus(2,routine,"Checking plugin command \"" + nameFromClass + "\" against command name \"" + commandName + "\"");
+	    		if ( Message.isDebugOn ) {
+	    			Message.printDebug(1,routine,"Checking plugin command \"" + nameFromClass + "\" against command name \"" + commandName + "\"");
+	    		}
 	    		if ( nameFromClass.equals(commandName) ) {
 	    	    	// Construct the command instance.
 	    	    	try {
-	    	    		Constructor<?> constructor = c.getConstructor();
+	    	    		@SuppressWarnings("unchecked")
+						Constructor<?> constructor = c.getConstructor();
 	    	    		Object command = constructor.newInstance();
 	    	    		// The object must be a Command if it follows implementation requirements.
 	    	    		return (Command)command;
@@ -1392,12 +1426,14 @@ throws UnknownCommandException
     	}
     }
     else {
-    	Message.printStatus(2,routine,"Plugin class list size is 0.");
+  		if ( Message.isDebugOn ) {
+  			Message.printDebug(1,routine,"Plugin class list size is 0.");
+  		}
     }
-    
+
     // Check for time series identifier:
     // - this is the fall through if no command was matched above but the string matches a TSID pattern
-    
+
 	if ( TSCommandProcessorUtil.isTSID(commandString) ) {
 	    return new TSID_Command ();
 	}

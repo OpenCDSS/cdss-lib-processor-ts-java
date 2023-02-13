@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2020 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public CreateFolder_Command ()
-{	super();
+public CreateFolder_Command () {
+	super();
 	setCommandName ( "CreateFolder" );
 }
 
@@ -78,8 +78,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Folder = parameters.getValue ( "Folder" );
+throws InvalidCommandParameterException {
+	String Folder = parameters.getValue ( "Folder" );
 	String CreateParentFolders = parameters.getValue ( "CreateParentFolders" );
 	String IfFolderExists = parameters.getValue ( "IfFolderExists" );
 	String warning = "";
@@ -87,7 +87,7 @@ throws InvalidCommandParameterException
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
@@ -118,7 +118,7 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
-	// Check for invalid parameters...
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(3);
 	validList.add ( "Folder" );
 	validList.add ( "CreateParentFolders" );
@@ -136,11 +136,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new CreateFolder_JDialog ( parent, this )).ok();
 }
 
@@ -151,18 +150,18 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -170,13 +169,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
-	String Folder = parameters.getValue ( "Folder" ); // Expand below
+
+	String Folder = parameters.getValue ( "Folder" ); // Expand below.
 	String CreateParentFolders = parameters.getValue ( "CreateParentFolders" );
 	if ( (CreateParentFolders == null) || CreateParentFolders.equals("")) {
 	    CreateParentFolders = _False; // Default
@@ -188,21 +187,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
-	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in
-	// append mode.
-    // TODO SAM 2014-02-03 Enable copying a list to a folder, etc. see AppendFile() for example
+
+	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in append mode.
+    // TODO SAM 2014-02-03 Enable copying a list to a folder, etc. see AppendFile() for example.
     String Folder_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor,this,Folder)));
 	try {
 	    File folder = new File(Folder_full);
 	    if ( folder.exists() ) {
-	        // Folder exists so generate a warning if requested
+	        // Folder exists so generate a warning if requested.
 	        message = "Folder exists: \"" + Folder_full + "\"";
 	        if ( IfFolderExists.equalsIgnoreCase(_Fail) ) {
 	            Message.printWarning ( warning_level,
@@ -218,8 +216,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        }
 	    }
 	    else {
-	    	// Create the folder
-	    	File parent =  folder.getParentFile();
+	    	// Create the folder.
+	    	File parent = folder.getParentFile();
 	    	if ( !parent.exists() ) {
 	    		if ( CreateParentFolders.equalsIgnoreCase(_True) ) {
 	    			folder.mkdirs();
@@ -233,14 +231,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    		}
 	    	}
 	    	else {
-	    		// Create the folder
+	    		// Create the folder.
 	    		folder.mkdir();
 	    	}
 	    }
 	}
     catch ( Exception e ) {
 		message = "Unexpected error creating folder \"" + Folder_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,
@@ -248,7 +246,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
-	
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -264,8 +262,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
 	String Folder = parameters.getValue("Folder");

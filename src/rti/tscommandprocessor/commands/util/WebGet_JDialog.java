@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -105,8 +105,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WebGet_JDialog ( JFrame parent, WebGet_Command command )
-{	super(parent, true);
+public WebGet_JDialog ( JFrame parent, WebGet_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -114,8 +114,8 @@ public WebGet_JDialog ( JFrame parent, WebGet_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
     if ( o == __browse_JButton ) {
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -199,7 +199,10 @@ public void actionPerformed( ActionEvent event )
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String HttpHeaders = __HttpHeaders_JTextArea.getText().trim();
         String [] notes = {
-            "HTTP header properties can be set for the request."
+            "HTTP header properties can be set for the request.",
+            "The PropertyValue can use ${Property} notation.",
+            "Use a property for PropertyValue if special characters generate warnings when used below.",
+            "It may also be necessary to surround the property value with single quotes."
         };
         String dict = (new DictionaryJDialog ( __parent, true, HttpHeaders,
             "Edit HttpHeaders Parameter", notes, "Property Name", "Property Value",10)).response();
@@ -267,11 +270,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
@@ -341,11 +344,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String URI = __URI_JTextArea.getText().trim();
+private void commitEdits () {
+	String URI = __URI_JTextArea.getText().trim();
 	String EncodeURI = __EncodeURI_JComboBox.getSelected();
 	String RequestMethod = __RequestMethod_JComboBox.getSelected();
 	String PayloadFile = __PayloadFile_JTextField.getText().trim();
@@ -380,11 +383,11 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WebGet_Command command )
-{	this.__command = command;
+private void initialize ( JFrame parent, WebGet_Command command ) {
+	this.__command = command;
 	this.__parent = parent;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
@@ -448,7 +451,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__EncodeURI_JComboBox.setToolTipText(
 		"Should the query part of the URI be encoded, for example space character becomes + and other special charactes are %-encoded.");
 	List<String> encodeChoices = new ArrayList<>();
-	encodeChoices.add ( "" );	// Default
+	encodeChoices.add ( "" );	// Default.
 	encodeChoices.add ( __command._False );
 	encodeChoices.add ( __command._True );
 	__EncodeURI_JComboBox.setData(encodeChoices);
@@ -466,7 +469,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__RequestMethod_JComboBox.setToolTipText(
 		"HTTP request method.");
 	List<String> methodChoices = new ArrayList<>();
-	methodChoices.add ( "" );	// Default
+	methodChoices.add ( "" );	// Default.
 	methodChoices.add ( __command.DELETE );
 	methodChoices.add ( __command.GET );
 	methodChoices.add ( __command.OPTIONS );
@@ -640,7 +643,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__IfHttpError_JComboBox = new SimpleJComboBox ( false );
 	__IfHttpError_JComboBox.setToolTipText("An HTTP error is any code other than 200, which indicates success.");
 	List<String> notFoundChoices = new ArrayList<>();
-	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -685,7 +688,7 @@ private void initialize ( JFrame parent, WebGet_Command command )
 	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
-	
+
     // Refresh the contents.
     refresh ();
 
@@ -701,16 +704,16 @@ private void initialize ( JFrame parent, WebGet_Command command )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
 public void keyTyped ( KeyEvent event ) {;}
@@ -718,15 +721,15 @@ public void keyTyped ( KeyEvent event ) {;}
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String URI = "";
     String EncodeURI = "";
     String RequestMethod = "";
@@ -912,11 +915,10 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.
-If true, the edit is committed and the dialog is closed.
+@param ok if false, then the edit is canceled. If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -934,15 +936,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

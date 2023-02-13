@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -63,8 +63,8 @@ protected final String _Fail = "Fail";
 /**
 Constructor.
 */
-public RemoveFile_Command ()
-{	super();
+public RemoveFile_Command () {
+	super();
 	setCommandName ( "RemoveFile" );
 }
 
@@ -76,15 +76,15 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String InputFile = parameters.getValue ( "InputFile" );
+throws InvalidCommandParameterException {
+	String InputFile = parameters.getValue ( "InputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
 
@@ -123,25 +123,21 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if parameters are changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if parameters are changed.
 	return (new RemoveFile_JDialog ( parent, this )).ok();
 }
 
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     // Call the base class method for basic parsing.
     super.parseCommand( command_string );
     // Update syntax for new parameter name.
@@ -152,7 +148,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         parameters.unSet( "WarnIfMissing" );
         String IfNotFound = _Ignore;
         if ( WarnIfMissing.equalsIgnoreCase("True") ) {
-            IfNotFound = _Warn; 
+            IfNotFound = _Warn;
         }
         parameters.set( "IfNotFound", IfNotFound );
     }
@@ -165,15 +161,14 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -189,7 +184,7 @@ CommandWarningException, CommandException
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-	
+
 	String InputFile = parameters.getValue ( "InputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
@@ -220,7 +215,7 @@ CommandWarningException, CommandException
 	}
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
@@ -232,7 +227,7 @@ CommandWarningException, CommandException
     	}
 	    catch ( SecurityException e ) {
             message = "Security (permissions) do not allow removing file \"" + InputFile_full + "\" (" + e + ").";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog(CommandPhaseType.RUN,
@@ -242,7 +237,7 @@ CommandWarningException, CommandException
         }
     	catch ( Exception e ) {
     		message = "Unexpected error removing file \"" + InputFile_full + "\" (" + e + ").";
-    		Message.printWarning ( warning_level, 
+    		Message.printWarning ( warning_level,
     		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     		Message.printWarning ( 3, routine, e );
     		status.addToLog(CommandPhaseType.RUN,
@@ -257,7 +252,7 @@ CommandWarningException, CommandException
     	if ( file.exists() ) {
     	    // The file was not removed.
             message = "Unable to remove file \"" + InputFile_full + "\".";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             status.addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -275,8 +270,8 @@ CommandWarningException, CommandException
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
 	String InputFile = parameters.getValue("InputFile");

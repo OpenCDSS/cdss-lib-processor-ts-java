@@ -457,7 +457,7 @@ The characters \" will be replaced by a literal quote (").  Properties that cann
 @return the expanded string or null if the input string was null
 */
 public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
-{   String routine = "TSCommandProcessorUtil.expandParameterValue";
+{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
     if ( (parameterValue == null) || (parameterValue.length() == 0) ||
     	(parameterValue.indexOf("${") < 0) ) {
     	// Nothing to expand:

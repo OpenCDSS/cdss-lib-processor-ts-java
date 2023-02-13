@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -94,8 +94,8 @@ protected String tmpInputFile2 = null;
 /**
 Constructor.
 */
-public CompareFiles_Command ()
-{	super();
+public CompareFiles_Command () {
+	super();
 	setCommandName ( "CompareFiles" );
 }
 
@@ -107,8 +107,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String InputFile1 = parameters.getValue ( "InputFile1" );
+throws InvalidCommandParameterException {
+	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String MatchCase = parameters.getValue ( "MatchCase" );
 	String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
@@ -126,7 +126,7 @@ throws InvalidCommandParameterException
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the parent directories or files is not checked
 	// because the files may be created dynamically after the command is edited.
 
@@ -213,7 +213,7 @@ throws InvalidCommandParameterException
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the parameter as " + _ModificationTime + 
+						message, "Specify the parameter as " + _ModificationTime +
 						", or " + _Size + "."));
 		}
 		// Also check the operator.
@@ -395,8 +395,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if edits are committed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if edits are committed.
 	String routine = getClass().getSimpleName() + ".editCommand";
 	String diffProgram = null;
 	Prop prop = IOUtil.getProp("DiffProgram");
@@ -491,9 +491,9 @@ Can't use base class method because of change in parameter names.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "CompareFiles_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
@@ -544,15 +544,20 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 Read a line from a file.  Skip over comments until the next non-comment line is found.
 Also skip lines that contain matching excludeText.
 @param in BufferedReader for open file to read.
-@param CommentLineChar character at start of line that indicates comment line.
+@param commentLineChar character at start of line that indicates comment line, can use <!-- for HTML.
 @param ignoreWhitespace if true, trim the lines.
 @param excludeText array of Java regular expressions - if matched, skip the line.
 @return the next line from the file, or null if at the end.
 */
-private String readLine ( BufferedReader in, String CommentLineChar, boolean ignoreWhitespace, String [] excludeText )
-{	String iline;
+private String readLine ( BufferedReader in, String commentLineChar, boolean ignoreWhitespace, String [] excludeText ) {
+	String iline;
 	int commentCount = 0;
 	int excludeCount = 0;
+	boolean doHtmlComment = false;
+	if ( (commentLineChar != null) && commentLineChar.equals("<!--") ) {
+		doHtmlComment = true;
+	}
+	String ilineTrimmed = null;
 	while ( true ) {
 		// Read until a non-comment line is found.
 		try {
@@ -564,8 +569,17 @@ private String readLine ( BufferedReader in, String CommentLineChar, boolean ign
 		if ( iline == null ) {
 			return null;
 		}
+		if ( doHtmlComment ) {
+			// Trim the line for HTML comment check.
+			ilineTrimmed = iline.trim();
+		}
+		// Check for HTML comments.
+		else if ( doHtmlComment && (iline.length() > 0) && ilineTrimmed.startsWith("<!--") && ilineTrimmed.endsWith("-->")) {
+			++commentCount;
+			continue;
+		}
 		// Check for comments.
-		else if ( (iline.length() > 0) && (CommentLineChar.indexOf(iline.charAt(0)) >= 0) ) {
+		else if ( (iline.length() > 0) && (commentLineChar.indexOf(iline.charAt(0)) >= 0) ) {
 			++commentCount;
 			continue;
 		}
@@ -603,15 +617,15 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int dl = 1;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
@@ -632,7 +646,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Reset temporary files to null so can check for null in the editor.
 	this.tmpInputFile1 = null;
 	this.tmpInputFile2 = null;
-	
+
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
@@ -763,12 +777,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
 	// If input is a URL, download to a temporary file and use that for the comparison:
 	// - reuse the filename so that only one or two files are created
 	// - use the command number and time to uniquely identify the files
@@ -803,12 +817,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			lineCountCompared = 0;
 			diffCount = 0;
 			// If URLs are used as input, download the files to temporary names:
-			// - don't specify a timeout as per historical conventions but may want to specify something
+			// - set the connect and read timeout to 2 minutes so the command does not hang
 			if ( inputFile1IsUrl ) {
-				int code = IOUtil.getUriContent(InputFile1_full, this.tmpInputFile1, null, -1, -1);
+				int connectTimeout = 120000; // 2 minutes.
+				int readTimeout = 120000;
+				int code = IOUtil.getUriContent(InputFile1_full, this.tmpInputFile1, null, connectTimeout, readTimeout);
 				if ( code != 200 ) {
 					message = "Error downloading: " + InputFile1_full;
-					Message.printWarning ( warning_level, 
+					Message.printWarning ( warning_level,
 						MessageUtil.formatMessageTag(command_tag, ++warning_count),
 						routine, message );
 					status.addToLog(CommandPhaseType.RUN,
@@ -823,7 +839,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				int code = IOUtil.getUriContent(InputFile2_full, this.tmpInputFile2, null, -1, -1);
 				if ( code != 200 ) {
 					message = "Error downloading: " + InputFile2_full;
-					Message.printWarning ( warning_level, 
+					Message.printWarning ( warning_level,
 						MessageUtil.formatMessageTag(command_tag, ++warning_count),
 						routine, message );
 					status.addToLog(CommandPhaseType.RUN,
@@ -964,9 +980,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					InputFile2, InputFile2_full, FileProperty, FilePropertyOperator,
 					FilePropertyAction_CommandStatusType, status, warning_level, command_tag);
 			}
-			
+
 			// Check for conditions to exit the "WaitUntil" while loop.
-			
+
 			if ( !doWaitUntil ) {
 				// Not waiting so exit the loop:
 				// - this is the default if no WaitUntil parameter is specified
@@ -1007,7 +1023,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing files (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );
@@ -1054,8 +1070,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
 	String InputFile1 = parameters.getValue("InputFile1");

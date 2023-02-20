@@ -430,7 +430,7 @@ private void refresh ()
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DatabaseFile=" + DatabaseFile );
 	props.add ( "Version=" + Version );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (DatabaseFile != null) && !DatabaseFile.isEmpty() ) {

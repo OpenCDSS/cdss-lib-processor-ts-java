@@ -808,103 +808,26 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-    if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String NewEnsembleID = props.getValue( "NewEnsembleID" );
-    String NewEnsembleName = props.getValue( "NewEnsembleName" );
-	String Alias = props.getValue( "Alias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String Statistic = props.getValue( "Statistic" );
-	String TestValue = props.getValue( "TestValue" );
-	String AllowMissingCount = props.getValue( "AllowMissingCount" );
-	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
-	String AnalysisStart = props.getValue( "AnalysisStart" );
-	String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"");
-    }
-    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"");
-    }
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (Statistic != null) && (Statistic.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Statistic=" + Statistic );
-	}
-	if ( (TestValue != null) && (TestValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TestValue=\"" + TestValue + "\"");
-	}
-	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AllowMissingCount=" + AllowMissingCount );
-	}
-    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
-    }
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"NewEnsembleID",
+    	"NewEnsembleName",
+		"Alias",
+		"NewTSID",
+		"Statistic",
+		"TestValue",
+		"AllowMissingCount",
+		"MinimumSampleSize",
+		"AnalysisStart",
+		"AnalysisEnd",
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

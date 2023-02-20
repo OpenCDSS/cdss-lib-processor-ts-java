@@ -248,21 +248,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue( "InputFile" );
-
-	StringBuffer b = new StringBuffer ();
-    if ( (InputFile != null) && (InputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputFile=\"" + InputFile + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+			"InputFile"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

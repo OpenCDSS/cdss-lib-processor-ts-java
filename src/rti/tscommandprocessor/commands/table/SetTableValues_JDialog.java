@@ -430,7 +430,7 @@ private void refresh ()
 	props.add ( "ColumnValues=" + ColumnValues );
 	props.add ( "Column=" + Column );
 	props.add ( "Value=" + Value );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

@@ -985,7 +985,7 @@ private void refresh ()
 	props.add ( "NewTSID=" + NewTSID );
     props.add ( "NewEnsembleID=" + NewEnsembleID );
     props.add ( "NewEnsembleName=" + NewEnsembleName );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

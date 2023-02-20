@@ -132,17 +132,14 @@ throws CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String Name = props.getValue( "Name" );
-    StringBuffer b = new StringBuffer ();
-    if ( (Name != null) && (Name.length() > 0) ) {
-        b.append ( "Name=\"" + Name + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"Name"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

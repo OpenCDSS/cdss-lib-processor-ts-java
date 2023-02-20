@@ -807,70 +807,21 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
-@param parameters the list of parameters to format to the final command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String InputStart = parameters.getValue("InputStart");
-	String InputEnd = parameters.getValue("InputEnd");
-	String TSID = parameters.getValue("TSID");
-	String NewScenario = parameters.getValue("NewScenario");
-	String Alias = parameters.getValue("Alias");
-	String AutoAdjust = parameters.getValue("AutoAdjust");
-	String CheckData = parameters.getValue("CheckData");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputStart=\"" + InputStart + "\"" );
-	}
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputEnd=\"" + InputEnd + "\"" );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (NewScenario != null) && (NewScenario.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewScenario=\"" + NewScenario + "\"");
-	}
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-	if ( (AutoAdjust != null) && (AutoAdjust.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AutoAdjust=" + AutoAdjust );
-	}
-	if ( (CheckData != null) && (CheckData.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "CheckData=" + CheckData );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"InputStart",
+		"InputEnd",
+		"TSID",
+		"NewScenario",
+		"Alias",
+		"AutoAdjust",
+		"CheckData"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

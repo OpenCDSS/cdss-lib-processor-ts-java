@@ -1053,70 +1053,23 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-	// Get the properties
-	String TSList = props.getValue ( "TSList" );
-	String TSID = props.getValue ( "TSID" );
-	String EnsembleID = props.getValue ( "EnsembleID" );
-	String Method = props.getValue ( "Method" );
-	String Percentile = props.getValue ( "Percentile");
-	String PatternID = props.getValue ( "PatternID" );
-	String OutputFile = props.getValue ( "OutputFile");
-    String TableID = props.getValue ( "TableID");
-    String DataRow = props.getValue ( "DataRow");
-    String Legacy = props.getValue ( "Legacy");
-
-	// Creating the command string
-	// This StringBuffer will contain all parameters for the command.
-	StringBuffer b = new StringBuffer();
-	if ( TSList != null && TSList.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "TSList=" + TSList );
-	}
-	if ( TSID != null && TSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( EnsembleID != null && EnsembleID.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( Method != null && Method.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "Method=" + Method );
-	}
-	if ( Percentile != null && Percentile.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "Percentile=\"" + Percentile + "\"" );
-	}
-	if ( PatternID != null && PatternID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "PatternID=\"" + PatternID + "\""  );
-	}
-	if ( OutputFile != null && OutputFile.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( TableID != null && TableID.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( DataRow != null && DataRow.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "DataRow=\"" + DataRow + "\"" );
-    }
-    if ( Legacy != null && Legacy.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "Legacy=\"" + Legacy + "\"" );
-    }
-	
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"Method",
+		"Percentile",
+		"PatternID",
+		"OutputFile",
+    	"TableID",
+    	"DataRow",
+    	"Legacy"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

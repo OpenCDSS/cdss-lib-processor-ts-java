@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,14 +78,14 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextArea __NewTSID_JTextArea=null;
 private SimpleJButton __edit_JButton = null;
 private SimpleJButton __clear_JButton = null;
-private SimpleJComboBox __IrregularInterval_JComboBox = null; // Interval used to initialize irregular time series
+private SimpleJComboBox __IrregularInterval_JComboBox = null;
 private JTextField __Description_JTextField = null;
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
-private JTextArea __PatternValues_JTextArea=null; // Value(s) to fill TS with.
-private JTextArea __PatternFlags_JTextArea=null; // Flags(s) to fill TS with.
+private JTextArea __PatternValues_JTextArea=null;
+private JTextArea __PatternFlags_JTextArea=null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -95,8 +95,8 @@ newPatternTimeSeries_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewPatternTimeSeries_JDialog ( JFrame parent, NewPatternTimeSeries_Command command )
-{	super(parent, true);
+public NewPatternTimeSeries_JDialog ( JFrame parent, NewPatternTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -104,8 +104,8 @@ public NewPatternTimeSeries_JDialog ( JFrame parent, NewPatternTimeSeries_Comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	String routine = getClass().getSimpleName() + ".actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	String routine = getClass().getSimpleName() + ".actionPerformed";
 	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
@@ -148,14 +148,13 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -163,8 +162,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -172,21 +170,19 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
 // ...End event handlers for DocumentListener
 
 /**
-Check the GUI state and adjust settings based on user selections.
+Check the UI state and adjust settings based on user selections.
 */
-private void checkUIState()
-{
+private void checkUIState() {
     String NewTSID = __NewTSID_JTextArea.getText().trim().toUpperCase();
     if ( NewTSID.indexOf("IRR") >= 0 ) {
-        // Irregular time series
+        // Irregular time series.
         __IrregularInterval_JComboBox.setEnabled(true);
     }
     else {
@@ -195,11 +191,12 @@ private void checkUIState()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
@@ -243,7 +240,8 @@ private void checkInput ()
     if ( (PatternFlags != null) && (PatternFlags.length() > 0) ) {
         props.set ( "PatternFlags", PatternFlags );
     }
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -253,11 +251,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	String Description = __Description_JTextField.getText().trim();
@@ -284,8 +282,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) {
+	__parent_JFrame = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -332,25 +330,25 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - specify unique TSID information to define time series."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - specify unique TSID information to define time series."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
     JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
     boolean padZeroes = true;
     boolean includeIrregular = false;
     List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
-    // Add a blank
+    // Add a blank.
     intervalChoices.add(0,"");
     __IrregularInterval_JComboBox.setData ( intervalChoices );
     __IrregularInterval_JComboBox.addItemListener ( this );
@@ -360,7 +358,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
         "Required for irregular time series - used to initialize data."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/name:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Description_JTextField = new JTextField ( "", 20 );
 	__Description_JTextField.setToolTipText("Specify description or use ${Property} notation");
@@ -382,7 +380,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
             "Optional - starting date/time for data (default=global start)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEnd_JTextField = new JTextField ( "", 20 );
 	__SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
@@ -393,7 +391,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
             "Optional - ending date/time for data (default=global end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 10 );
 	__Units_JTextField.setToolTipText("Specify the data units or use ${Property} notation");
@@ -403,8 +401,8 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - for example:  ACFT, CFS, IN."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 20 );
     __MissingValue_JTextField.setToolTipText("Specify the missing value number, NaN, or use ${Property} notation");
@@ -425,7 +423,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
 	__PatternValues_JTextArea.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, new JLabel("Required - separate by spaces or commas, blank for missing."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern flags:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PatternFlags_JTextArea = new JTextArea (4,60);
@@ -446,14 +444,14 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkUIState();
 	refresh();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -476,16 +474,16 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( (code == KeyEvent.VK_ENTER) || (code == KeyEvent.VK_TAB) ) {
 		refresh();
@@ -498,27 +496,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String Alias = "";
+private void refresh () {
+	String Alias = "";
 	String NewTSID = "";
 	String IrregularInterval = "";
 	String Description = "";
@@ -551,14 +548,14 @@ private void refresh ()
             __IrregularInterval_JComboBox.select ( IrregularInterval );
         }
         else {
-            // Automatically add to the list after the blank (might be a multiple)...
+            // Automatically add to the list after the blank (might be a multiple).
             if ( (IrregularInterval != null) && !IrregularInterval.isEmpty() ) {
                 __IrregularInterval_JComboBox.insertItemAt ( IrregularInterval, 1 );
                 // Select...
                 __IrregularInterval_JComboBox.select ( IrregularInterval );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __IrregularInterval_JComboBox.select ( 0 );
             }
         }
@@ -584,8 +581,8 @@ private void refresh ()
             __PatternFlags_JTextArea.setText ( PatternFlags );
         }
 	}
-	// Regardless, reset the command from the fields...
-	checkUIState(); // Enable/disable irregular interval
+	// Regardless, reset the command from the fields.
+	checkUIState(); // Enable/disable irregular interval.
 	Alias = __Alias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	IrregularInterval = __IrregularInterval_JComboBox.getSelected();
@@ -607,25 +604,24 @@ private void refresh ()
 	props.add ( "MissingValue=" + MissingValue );
 	props.add ( "PatternValues=" + PatternValues );
 	props.add ( "PatternFlags=" + PatternFlags );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+{	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -634,15 +630,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

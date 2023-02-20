@@ -567,7 +567,7 @@ private void refresh() {
         props.add("Alias=" + Alias);
     }
     
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 
     // Refresh the Path Control text.
     refreshPathControl();
@@ -576,8 +576,7 @@ private void refresh() {
 /**
 Refresh the PathControl text based on the contents of the input text field contents.
 */
-private void refreshPathControl()
-{
+private void refreshPathControl() {
     String InputFile = __InputFile_JTextField.getText().trim();
     if ( (InputFile == null) || (InputFile.trim().length() == 0) ) {
         if ( __path_JButton != null ) {

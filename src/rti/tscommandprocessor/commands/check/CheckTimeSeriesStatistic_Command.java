@@ -820,159 +820,33 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String Statistic = parameters.getValue( "Statistic" );
-    String StatisticValue1 = parameters.getValue( "StatisticValue1" );
-    String StatisticValue2 = parameters.getValue( "StatisticValue2" );
-    String StatisticValue3 = parameters.getValue( "StatisticValue3" );
-    String AnalysisStart = parameters.getValue( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
-    String CheckCriteria = parameters.getValue( "CheckCriteria" );
-    String CheckValue1 = parameters.getValue( "CheckValue1" );
-    String CheckValue2 = parameters.getValue( "CheckValue2" );
-    String IfCriteriaMet = parameters.getValue( "IfCriteriaMet" );
-    String ProblemType = parameters.getValue( "ProblemType" );
-    String PropertyName = parameters.getValue( "PropertyName" );
-    String PropertyValue = parameters.getValue( "PropertyValue" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (Statistic != null) && (Statistic.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Statistic=\"" + Statistic + "\"" );
-    }
-    if ( (StatisticValue1 != null) && (StatisticValue1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StatisticValue1=" + StatisticValue1 );
-    }
-    if ( (StatisticValue2 != null) && (StatisticValue2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StatisticValue2=" + StatisticValue2 );
-    }
-    if ( (StatisticValue3 != null) && (StatisticValue3.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StatisticValue3=" + StatisticValue3 );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
-    }
-    if ( (CheckCriteria != null) && (CheckCriteria.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckCriteria=\"" + CheckCriteria + "\"" );
-    }
-    if ( (CheckValue1 != null) && (CheckValue1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckValue1=" + CheckValue1 );
-    }
-    if ( (CheckValue2 != null) && (CheckValue2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckValue2=" + CheckValue2 );
-    }
-    if ( (IfCriteriaMet != null) && (IfCriteriaMet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfCriteriaMet=" + IfCriteriaMet );
-    }
-    if ( (ProblemType != null) && (ProblemType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProblemType=\"" + ProblemType + "\"" );
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Statistic",
+    	"StatisticValue1",
+    	"StatisticValue2",
+    	"StatisticValue3",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"TableStatisticColumn",
+    	"CheckCriteria",
+    	"CheckValue1",
+    	"CheckValue2",
+    	"IfCriteriaMet",
+    	"ProblemType",
+    	"PropertyName",
+    	"PropertyValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -884,104 +884,31 @@ CommandWarningException, CommandException
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue ( "TSID" );
-    String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableColumn = parameters.getValue ( "TableColumn" );
-    String TableRowStart = parameters.getValue ( "TableRowStart" );
-    String TableRowEnd = parameters.getValue ( "TableRowEnd" );
-    String OutputYearType = parameters.getValue("OutputYearType");
-    String OutputStart = parameters.getValue("OutputStart");
-    //String OutputEnd = parameters.getValue("OutputEnd");
-    String NewScenario = parameters.getValue ( "NewScenario" );
-    String Alias = parameters.getValue("Alias");
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (TableID != null) && (TableID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TableID=\"" + TableID + "\"" );
-	}
-    if ( (TableColumn != null) && (TableColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableColumn=\"" + TableColumn + "\"" );
-    }
-    if ( (TableRowStart != null) && (TableRowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableRowStart=\"" + TableRowStart + "\"" );
-    }
-    if ( (TableRowEnd != null) && (TableRowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableRowEnd=\"" + TableRowEnd + "\"" );
-    }
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-    /*
-    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-    }
-    */
-    if ( (NewScenario != null) && (NewScenario.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewScenario=\"" + NewScenario + "\"" );
-    }
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"TableID",
+    	"TableColumn",
+    	"TableRowStart",
+    	"TableRowEnd",
+    	"OutputYearType",
+    	"OutputStart",
+    	//"OutputEnd",
+    	"NewScenario",
+    	"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

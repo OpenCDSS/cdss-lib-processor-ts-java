@@ -784,90 +784,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the property defined in discovery phase.
 @param prop Property set during discovery phase.
 */
-private void setDiscoveryProp ( Prop prop )
-{
+private void setDiscoveryProp ( Prop prop ) {
     __discoveryProp = prop;
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
     __OutputFile_File = file;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String InputText = parameters.getValue("InputText");
-	String StringProperties = parameters.getValue("StringProperties");
-	String TableColumnProperties = parameters.getValue("TableColumnProperties");
-	String OutputFile = parameters.getValue("OutputFile");
-	String OutputProperty = parameters.getValue("OutputProperty");
-	String UseTables = parameters.getValue("UseTables");
-	String ListInResults = parameters.getValue("ListInResults");
-	//String IfNotFound = parameters.getValue("IfNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (InputText != null) && (InputText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "InputText=\"" + InputText + "\"" );
-    }
-    if ( (StringProperties != null) && (StringProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "StringProperties=\"" + StringProperties + "\"" );
-    }
-    if ( (TableColumnProperties != null) && (TableColumnProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "TableColumnProperties=\"" + TableColumnProperties + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (OutputProperty != null) && (OutputProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
-    }
-    if ( (UseTables != null) && (UseTables.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "UseTables=" + UseTables );
-    }   
-    if ( (ListInResults != null) && (ListInResults.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "ListInResults=" + ListInResults );
-    }
-	/*
-	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfNotFound=" + IfNotFound );
-	}
-	*/
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"InputText",
+		"StringProperties",
+		"TableColumnProperties",
+		"OutputFile",
+		"OutputProperty",
+		"UseTables",
+		"ListInResults"
+		//"IfNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

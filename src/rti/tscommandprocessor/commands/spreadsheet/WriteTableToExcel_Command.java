@@ -794,153 +794,33 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String IncludeColumns = props.getValue( "IncludeColumns" );
-    String ExcludeColumns = props.getValue( "ExcludeColumns" );
-	String OutputFile = props.getValue( "OutputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String ExcelAddress = props.getValue("ExcelAddress");
-	String ExcelNamedRange = props.getValue("ExcelNamedRange");
-	String ExcelTableName = props.getValue("ExcelTableName");
-	String ExcelColumnNames = props.getValue("ExcelColumnNames");
-	String ColumnIncludeFilters = props.getValue("ColumnIncludeFilters");
-	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
-	String ColumnNamedRanges = props.getValue("ColumnNamedRanges");
-	String KeepOpen = props.getValue("KeepOpen");
-	String ColumnCellTypes = props.getValue("ColumnCellTypes");
-	String ColumnWidths = props.getValue("ColumnWidths");
-	String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
-	String ConditionTableID = props.getValue( "ConditionTableID" );
-	String StyleTableID = props.getValue( "StyleTableID" );
-	String LegendWorksheet = props.getValue( "LegendWorksheet" );
-	String LegendAddress = props.getValue( "LegendAddress" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-    }
-    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-	if ( (ExcelAddress != null) && (ExcelAddress.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelAddress=\"" + ExcelAddress + "\"" );
-	}
-	if ( (ExcelNamedRange != null) && (ExcelNamedRange.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelNamedRange=\"" + ExcelNamedRange + "\"" );
-	}
-	if ( (ExcelTableName != null) && (ExcelTableName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelTableName=\"" + ExcelTableName + "\"" );
-	}
-    if ( (ExcelColumnNames != null) && (ExcelColumnNames.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelColumnNames=" + ExcelColumnNames );
-    }
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
-    }
-    if ( (ColumnNamedRanges != null) && (ColumnNamedRanges.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnNamedRanges=\"" + ColumnNamedRanges + "\"");
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (ColumnCellTypes != null) && (ColumnCellTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCellTypes=\"" + ColumnCellTypes + "\"");
-    }
-    if ( (ColumnWidths != null) && (ColumnWidths.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnWidths=\"" + ColumnWidths + "\"");
-    }
-    if ( (ColumnDecimalPlaces != null) && (ColumnDecimalPlaces.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnDecimalPlaces=\"" + ColumnDecimalPlaces + "\"");
-    }
-    if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ConditionTableID=\"" + ConditionTableID + "\"" );
-    }
-    if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
-    }
-    if ( (LegendWorksheet != null) && (LegendWorksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LegendWorksheet=\"" + LegendWorksheet + "\"" );
-    }
-    if ( (LegendAddress != null) && (LegendAddress.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LegendAddress=\"" + LegendAddress + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"IncludeColumns",
+    	"ExcludeColumns",
+		"OutputFile",
+		"Worksheet",
+		"ExcelAddress",
+		"ExcelNamedRange",
+		"ExcelTableName",
+		"ExcelColumnNames",
+		"ColumnIncludeFilters",
+		"ColumnExcludeFilters",
+		"ColumnNamedRanges",
+		"KeepOpen",
+		"ColumnCellTypes",
+		"ColumnWidths",
+		"ColumnDecimalPlaces",
+		"ConditionTableID",
+		"StyleTableID",
+		"LegendWorksheet",
+		"LegendAddress"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

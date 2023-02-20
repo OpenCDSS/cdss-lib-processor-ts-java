@@ -1412,108 +1412,27 @@ private void setIteratorPropertyValue ( Object iteratorPropertyValue )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String Name = props.getValue( "Name" );
-    String IteratorProperty = props.getValue( "IteratorProperty" );
-    String IteratorValueProperty = props.getValue( "IteratorValueProperty" );
-    String List = props.getValue( "List" );
-    String SequenceStart = props.getValue( "SequenceStart" );
-    String SequenceEnd = props.getValue( "SequenceEnd" );
-    String SequenceIncrement = props.getValue( "SequenceIncrement" );
-    String TableID = props.getValue( "TableID" );
-    String TableColumn = props.getValue( "TableColumn" );
-    String TablePropertyMap = props.getValue( "TablePropertyMap" );
-	String TSList = props.getValue ( "TSList" );
-	String TSID = props.getValue( "TSID" );
-	String EnsembleID = props.getValue( "EnsembleID" );
-    String TimeSeriesPropertyMap = props.getValue( "TimeSeriesPropertyMap" );
-    StringBuffer b = new StringBuffer ();
-    if ( (Name != null) && (Name.length() > 0) ) {
-        b.append ( "Name=\"" + Name + "\"" );
-    }
-    if ( (IteratorProperty != null) && (IteratorProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IteratorProperty=\"" + IteratorProperty + "\"" );
-    }
-    if ( (IteratorValueProperty != null) && (IteratorValueProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IteratorValueProperty=\"" + IteratorValueProperty + "\"" );
-    }
-    if ( (List != null) && (List.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "List=\"" + List + "\"" );
-    }
-    if ( (SequenceStart != null) && (SequenceStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SequenceStart=\"" + SequenceStart + "\"" );
-    }
-    if ( (SequenceEnd != null) && (SequenceEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SequenceEnd=\"" + SequenceEnd + "\"" );
-    }
-    if ( (SequenceIncrement != null) && (SequenceIncrement.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SequenceIncrement=\"" + SequenceIncrement + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableColumn != null) && (TableColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableColumn=\"" + TableColumn + "\"" );
-    }
-    if ( (TablePropertyMap != null) && (TablePropertyMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TablePropertyMap=\"" + TablePropertyMap + "\"" );
-    }
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (TimeSeriesPropertyMap != null) && (TimeSeriesPropertyMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeSeriesPropertyMap=\"" + TimeSeriesPropertyMap + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"Name",
+    	"IteratorProperty",
+    	"IteratorValueProperty",
+    	"List",
+    	"SequenceStart",
+    	"SequenceEnd",
+    	"SequenceIncrement",
+    	"TableID",
+    	"TableColumn",
+    	"TablePropertyMap",
+		"TSList",
+		"TSID",
+		"EnsembleID",
+    	"TimeSeriesPropertyMap"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

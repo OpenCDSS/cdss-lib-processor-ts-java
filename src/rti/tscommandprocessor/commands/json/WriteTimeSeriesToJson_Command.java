@@ -494,70 +494,21 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Precision = parameters.getValue("Precision");
-	String MissingValue = parameters.getValue("MissingValue");
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"OutputFile",
+		"Precision",
+		"MissingValue",
+		"OutputStart",
+		"OutputEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here

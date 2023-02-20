@@ -460,69 +460,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String InsertColumn = props.getValue( "InsertColumn" );
-    String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
-    String ColumnType = props.getValue( "ColumnType" );
-    String InitialValue = props.getValue( "InitialValue" );
-    String InitialFunction = props.getValue( "InitialFunction" );
-    String ColumnWidth = props.getValue( "ColumnWidth" );
-    String ColumnPrecision = props.getValue( "ColumnPrecision" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (InsertColumn != null) && (InsertColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertColumn=\"" + InsertColumn + "\"" );
-    }
-    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
-    }
-    if ( (ColumnType != null) && (ColumnType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnType=" + ColumnType );
-    }
-    if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InitialValue=\"" + InitialValue + "\"" );
-    }
-    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InitialFunction=\"" + InitialFunction + "\"" );
-    }
-    if ( (ColumnWidth != null) && (ColumnWidth.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnWidth=" + ColumnWidth );
-    }
-    if ( (ColumnPrecision != null) && (ColumnPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnPrecision=" + ColumnPrecision );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"InsertColumn",
+    	"InsertBeforeColumn",
+    	"ColumnType",
+    	"InitialValue",
+    	"InitialFunction",
+    	"ColumnWidth",
+    	"ColumnPrecision"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

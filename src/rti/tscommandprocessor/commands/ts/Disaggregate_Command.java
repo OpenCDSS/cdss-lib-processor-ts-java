@@ -524,75 +524,21 @@ public String toString ( PropList props )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer enabled
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
-	String Method = props.getValue( "Method" );
-	String NewInterval = props.getValue( "NewInterval" );
-	String NewDataType = props.getValue( "NewDataType" );
-	String NewUnits = props.getValue( "NewUnits" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-	if ( (Method != null) && (Method.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Method=" + Method );
-	}
-    if ( (NewInterval != null) && (NewInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewInterval=" + NewInterval );
-    }
-    if ( (NewDataType != null) && (NewDataType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewDataType=\"" + NewDataType + "\"" );
-    }
-    if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewUnits=\"" + NewUnits + "\"" );
-    }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"TSID",
+		"Alias",
+		"Method",
+		"NewInterval",
+		"NewDataType",
+		"NewUnits"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

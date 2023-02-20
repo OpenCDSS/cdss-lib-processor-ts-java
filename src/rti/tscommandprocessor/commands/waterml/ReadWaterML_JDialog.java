@@ -283,27 +283,6 @@ private void commitEdits() {
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-	__browse_JButton = null;
-	__path_JButton = null;
-	__cancel_JButton = null;
-	__ok_JButton = null;
-	__command = null;
-	__working_dir = null;
-	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
-	__InputFile_JTextField = null;
-	//__NewUnits_JTextField = null;
-	__Command_JTextArea = null;
-
-	super.finalize();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param app_PropList Properties from application.
@@ -602,7 +581,7 @@ private void refresh()
 	props.add("Alias=" + Alias);
 	props.add("Interval=" + Interval);
 	props.add("RequireDataToMatchInterval=" + RequireDataToMatchInterval);
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

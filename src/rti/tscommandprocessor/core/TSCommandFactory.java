@@ -462,6 +462,7 @@ throws UnknownCommandException {
 		    commandName = "";
 		}
 		else {
+			// Trim so that the indent does not impact the command lookup below.
 		    commandName = commandName.trim();
 		}
 	}
@@ -471,11 +472,13 @@ throws UnknownCommandException {
 	    // is not matched below and it fits the TSID pattern, treat as a TSID.
 	    int pos = commandString.indexOf("(");
 	    if ( pos > 0 ) {
+			// Trim so that the indent does not impact the command lookup below.
 	        commandName = commandString.substring(0,pos).trim();
 	    }
 	    else {
 	        // The command name is the entire string (e.g., new commands will not have the ()).
-	        commandName = commandString;
+			// Trim so that the indent does not impact the command lookup below.
+	        commandName = commandString.trim();
 	    }
 	}
 	if ( Message.isDebugOn ) {

@@ -621,7 +621,7 @@ private void refresh ()
     props.add ( "Password=" + Password );
     props.add ( "ConnectionProperties=" + ConnectionProperties );
 	props.add ( "IfFound=" + IfFound );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

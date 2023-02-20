@@ -468,7 +468,7 @@ private void refresh ()
 	props.add ( "OutputColumnOrder=" + OutputColumnOrder );
     props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
 	props.add ( "DeleteOriginalColumn=" + DeleteOriginalColumn );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

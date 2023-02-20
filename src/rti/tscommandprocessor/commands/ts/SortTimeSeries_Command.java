@@ -219,41 +219,17 @@ throws CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String TSIDFormat = props.getValue( "TSIDFormat" );
-    String Property = props.getValue( "Property" );
-    String PropertyFormat = props.getValue( "PropertyFormat" );
-    String SortOrder = props.getValue( "SortOrder" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TSIDFormat != null) && (TSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSIDFormat=\"" + TSIDFormat + "\"" );
-    }
-    if ( (Property != null) && (Property.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Property=\"" + Property + "\"" );
-    }
-    if ( (PropertyFormat != null) && (PropertyFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyFormat=\"" + PropertyFormat + "\"" );
-    }
-    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SortOrder=\"" + SortOrder + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSIDFormat",
+    	"Property",
+    	"PropertyFormat",
+    	"SortOrder"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

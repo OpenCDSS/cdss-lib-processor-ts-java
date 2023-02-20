@@ -687,95 +687,24 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String OutputFile = props.getValue( "OutputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String ColumnIncludeFilters = props.getValue("ColumnIncludeFilters");
-	//String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
-	//String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
-	//String NumberPrecision = props.getValue("NumberPrecision");
-	//String WriteAllAsText = props.getValue("WriteAllAsText");
-	String ColumnCellMap = props.getValue("ColumnCellMap");
-	String CellFormat = props.getValue("CellFormat");
-	String KeepOpen = props.getValue("KeepOpen");
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (ColumnCellMap != null) && (ColumnCellMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCellMap=\"" + ColumnCellMap + "\"");
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    // TODO SAM 2014-03-01 Enable the following if needed
-    /*
-    if ( (ExcelIntegerColumns != null) && (ExcelIntegerColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
-    }
-    if ( (ExcelDateTimeColumns != null) && (ExcelDateTimeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelDateTimeColumns=\"" + ExcelDateTimeColumns + "\"" );
-    }
-    */
-    /*
-    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NumberPrecision=" + NumberPrecision );
-    }
-    if ( (WriteAllAsText != null) && (WriteAllAsText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteAllAsText=" + WriteAllAsText );
-    }
-    */
-    if ( (CellFormat != null) && (CellFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CellFormat=" + CellFormat );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"ColumnIncludeFilters",
+		"ColumnCellMap",
+		"OutputFile",
+		"Worksheet",
+		//"ExcelIntegerColumns",
+		//"ExcelDateTimeColumns",
+		//"NumberPrecision",
+		//"WriteAllAsText",
+		"KeepOpen",
+		"CellFormat"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

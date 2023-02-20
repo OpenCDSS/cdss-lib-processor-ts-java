@@ -622,7 +622,7 @@ private void refresh ()
     props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "SetFlag=" + SetFlag );
 	props.add ( "SetFlagDesc=" + SetFlagDesc );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
@@ -677,4 +677,4 @@ public void windowOpened( WindowEvent evt )
 {
 }
 
-} // end adjustExtremes_JDialog
+}

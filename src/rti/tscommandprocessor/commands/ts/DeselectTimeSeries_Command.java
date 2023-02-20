@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ This class initializes, checks, and runs the DeselectTimeSeries() command.
 */
 public class DeselectTimeSeries_Command extends AbstractCommand implements Command
 {
-    
+
 /**
 Values for DeselectAllFirst.
 */
@@ -71,29 +71,27 @@ int [] TSPositionEnd = new int[0];
 /**
 Constructor.
 */
-public DeselectTimeSeries_Command ()
-{	super();
+public DeselectTimeSeries_Command () {
+	super();
 	setCommandName ( "DeselectTimeSeries" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	//String TSList = parameters.getValue ( "TSList" );
+throws InvalidCommandParameterException {
+	//String TSList = parameters.getValue ( "TSList" );
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
 	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -148,7 +146,7 @@ throws InvalidCommandParameterException
                     TSPositionStart[i] + "," + TSPositionEnd[i] );
         }
 	}
-	
+
 	if ( (SelectAllFirst != null) && !SelectAllFirst.equals("") &&
 	        !SelectAllFirst.equalsIgnoreCase(_True) && !SelectAllFirst.equalsIgnoreCase(_False) ) {
         message = "The SelectAllFirst (" + SelectAllFirst + ") parameter value is invalid.";
@@ -157,8 +155,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify as " + _False + " or " + _True + "." ) );
 	}
-    
-    // Check for invalid parameters...
+
+    // Check for invalid parameters.
 	List<String> validList = new ArrayList<>(5);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -166,58 +164,53 @@ throws InvalidCommandParameterException
     validList.add ( "TSPosition" );
     validList.add ( "SelectAllFirst" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new DeselectTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String TSID = parameters.getValue ( "TSID");
         String Pos = parameters.getValue ( "Pos");
 
         if ( (Pos != null) && (Pos.length() != 0) ) {
-            // Legacy Pos property is specified.  Switch to TSPosition
+            // Legacy Pos property is specified.  Switch to TSPosition.
             parameters.set ( "TSList", TSListType.TSPOSITION.toString() );
             parameters.set ( "TSPosition", Pos );
         }
-        else if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
-                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-            // Assume old-style where TSList was not specified but TSID was...
+        else if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified.
+                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified.
+            // Assume old-style where TSList was not specified but TSID was.
             parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
         }
     }
@@ -226,33 +219,30 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "DeselectTimeSeries_Command.runCommand", message;
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3;  // Level for non-use messages for log file.
 
-	// Make sure there are time series available to operate on...
-    
+	// Make sure there are time series available to operate on.
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
-	
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = parameters.getValue ( "TSList" );
 	if ( TSList == null ) {
-	    TSList = "" + TSListType.ALL_TS; // Default
+	    TSList = "" + TSListType.ALL_TS; // Default.
 	}
 	String TSID = parameters.getValue ( "TSID" );
 	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
@@ -260,15 +250,15 @@ CommandWarningException, CommandException
 	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	String TSPosition = parameters.getValue ( "TSPosition" );
 	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
-	boolean SelectAllFirst_boolean = false;  // Default
+	boolean SelectAllFirst_boolean = false;  // Default.
 	if ( (SelectAllFirst != null) && SelectAllFirst.equalsIgnoreCase("true") ) {
 	    SelectAllFirst_boolean = true;
 	}
-	
-	// If necessary, get the list of all time series...
+
+	// If necessary, get the list of all time series.
 	List<TS> tslistAll = new ArrayList<>();
 	if ( SelectAllFirst_boolean ) {
-	    // Select all first
+	    // Select all first.
 	    try {
 	    	@SuppressWarnings("unchecked")
 			List<TS> tslistAll0 = (List<TS>)processor.getPropContents("TSResultsList");
@@ -279,7 +269,7 @@ CommandWarningException, CommandException
                 ntsAll = tslistAll.size();
             }
             for ( int its = 0; its < ntsAll; its++ ) {
-                TS ts = (TS)tslistAll.get(its);    // Will throw Exception
+                TS ts = (TS)tslistAll.get(its);    // Will throw Exception.
                 ts.setSelected ( true );
             }
 	    }
@@ -294,8 +284,8 @@ CommandWarningException, CommandException
 	                        message, "Report the problem to software support." ) );
 	    }
 	}
-	
-	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
+
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -349,7 +339,7 @@ CommandWarningException, CommandException
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
-	
+
 	int nts = tslist.size();
 	if ( nts == 0 ) {
 		message = "Unable to find time series to deselect using TSList=\"" + TSList + "\" TSID=\"" + TSID +
@@ -364,7 +354,7 @@ CommandWarningException, CommandException
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Command parameter data has errors.  Unable to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -372,7 +362,7 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
 	TS ts = null;
 	Object o_ts = null;
@@ -392,9 +382,9 @@ CommandWarningException, CommandException
 			continue;
 		}
 		ts = (TS)o_ts;
-		
+
 		try {
-	        // Do the deselection...
+	        // Do the deselection.
 			Message.printStatus ( 2, routine, "Deselecting \"" + ts.getIdentifier()+ "\"" );
 			ts.setSelected ( false );
 		}
@@ -423,48 +413,18 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters command parameters to include in the command
+@return formatted command string
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String TSPosition = props.getValue("TSPosition");
-	String SelectAllFirst = props.getValue("SelectAllFirst");
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	if ( (TSPosition != null) && (TSPosition.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSPosition=\"" + TSPosition + "\"" );
-	}
-	if ( (SelectAllFirst != null) && (SelectAllFirst.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SelectAllFirst=" + SelectAllFirst );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+    	"EnsembleID",
+    	"TSPosition",
+	   	"SelectAllFirst"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

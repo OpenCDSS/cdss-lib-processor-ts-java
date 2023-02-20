@@ -697,128 +697,32 @@ throws FileNotFoundException, IOException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = props.getValue( "OutputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String ExcelAddress = props.getValue("ExcelAddress");
-	String ExcelNamedRange = props.getValue("ExcelNamedRange");
-	String ExcelTableName = props.getValue("ExcelTableName");
-	//String ExcelColumnNames = props.getValue("ExcelColumnNames");
-	String KeepOpen = props.getValue("KeepOpen");
-	String IncludeColumns = props.getValue("IncludeColumns");
-	String ExcludeColumns = props.getValue("ExcludeColumns");
-	String Rows = props.getValue("Rows");
-    String Value = props.getValue( "Value" );
-    String PropertyName = props.getValue( "PropertyName" );
-	String Author = props.getValue("Author");
-	String Comment = props.getValue("Comment");
-	String CommentWidth = props.getValue("CommentWidth");
-	String CommentHeight = props.getValue("CommentHeight");
-	//String ColumnCellTypes = props.getValue("ColumnCellTypes");
-	//String ColumnWidths = props.getValue("ColumnWidths");
-	//String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-	if ( (ExcelAddress != null) && (ExcelAddress.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelAddress=\"" + ExcelAddress + "\"" );
-	}
-	if ( (ExcelNamedRange != null) && (ExcelNamedRange.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelNamedRange=\"" + ExcelNamedRange + "\"" );
-	}
-	if ( (ExcelTableName != null) && (ExcelTableName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelTableName=\"" + ExcelTableName + "\"" );
-	}
-    //if ( (ExcelColumnNames != null) && (ExcelColumnNames.length() > 0) ) {
-    //    if ( b.length() > 0 ) {
-    //        b.append ( "," );
-    //    }
-    //    b.append ( "ExcelColumnNames=" + ExcelColumnNames );
-    //}
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"");
-    }
-    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"");
-    }
-    if ( (Rows != null) && (Rows.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Rows=\"" + Rows + "\"");
-    }
-    if ( (Value != null) && (Value.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value=\"" + Value + "\"" );
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (Author != null) && (Author.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Author=\"" + Author + "\"");
-    }
-    if ( (Comment != null) && (Comment.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Comment=\"" + Comment + "\"");
-    }
-    if ( (CommentWidth != null) && (CommentWidth.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommentWidth=\"" + CommentWidth + "\"");
-    }
-    if ( (CommentHeight != null) && (CommentHeight.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommentHeight=\"" + CommentHeight + "\"");
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"OutputFile",
+		"Worksheet",
+		"ExcelAddress",
+		"ExcelNamedRange",
+		"ExcelTableName",
+		//"ExcelColumnNames",
+		"KeepOpen",
+		"IncludeColumns",
+		"ExcludeColumns",
+		"Rows",
+    	"Value",
+    	"PropertyName",
+		"Author",
+		"Comment",
+		"CommentWidth",
+		"CommentHeight",
+		//"ColumnCellTypes",
+		//"ColumnWidths",
+		//"ColumnDecimalPlaces"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

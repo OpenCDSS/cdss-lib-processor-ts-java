@@ -660,7 +660,7 @@ private void refresh () {
     props.add ( "InputValue2=" + InputValue2 );
     props.add ( "InputValue3=" + InputValue3 );
     props.add ( "OutputColumn=" + OutputColumn );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

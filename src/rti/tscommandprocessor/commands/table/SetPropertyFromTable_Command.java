@@ -706,69 +706,21 @@ private void setDiscoveryProp ( Prop prop ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String Column = props.getValue( "Column" );
-	String ColumnIncludeFilters = props.getValue( "ColumnIncludeFilters" );
-	String ColumnExcludeFilters = props.getValue( "ColumnExcludeFilters" );
-    String PropertyName = props.getValue( "PropertyName" );
-    String DefaultValue = props.getValue( "DefaultValue" );
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	String ColumnCountProperty = props.getValue( "ColumnCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (Column != null) && (Column.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Column=\"" + Column + "\"" );
-	}
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (DefaultValue != null) && (DefaultValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DefaultValue=\"" + DefaultValue + "\"" );
-    }
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-    if ( (ColumnCountProperty != null) && (ColumnCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCountProperty=\"" + ColumnCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"Column",
+		"ColumnIncludeFilters",
+		"ColumnExcludeFilters",
+    	"PropertyName",
+    	"DefaultValue",
+		"RowCountProperty",
+		"ColumnCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

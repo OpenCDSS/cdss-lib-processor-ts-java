@@ -657,7 +657,7 @@ private void refresh ()
 	parameters.add ( "SetUnits=" + SetUnits );
 	parameters.add ( "SetScale=" + SetScale );
 	parameters.add ( "Precision=" + Precision );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {

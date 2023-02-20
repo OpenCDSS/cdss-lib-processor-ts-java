@@ -451,7 +451,7 @@ private void refresh ()
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
 	props.add ( "FillFlagDesc=" + FillFlagDesc );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );

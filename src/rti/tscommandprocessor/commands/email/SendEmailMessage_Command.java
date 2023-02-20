@@ -458,73 +458,22 @@ throws AddressException, MessagingException, FileNotFoundException {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String From = parameters.getValue("From");
-	String To = parameters.getValue("To");
-	String CC = parameters.getValue("CC");
-	String BCC = parameters.getValue("BCC");
-	String Subject = parameters.getValue("Subject");
-	String Message = parameters.getValue("Message");
-	String MessageFile = parameters.getValue("MessageFile");
-	String AttachmentFiles = parameters.getValue("AttachmentFiles");
-	String IfNotFound = parameters.getValue("IfNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (From != null) && (From.length() > 0) ) {
-		b.append ( "From=\"" + From + "\"" );
-	}
-	if ( (To != null) && (To.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-		b.append ( "To=\"" + To + "\"" );
-	}
-    if ( (CC != null) && (CC.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CC=\"" + CC + "\"");
-    }
-    if ( (BCC != null) && (BCC.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BCC=\"" + BCC + "\"" );
-    }
-    if ( (Subject != null) && (Subject.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Subject=\"" + Subject + "\"" );
-    }
-    if ( (Message != null) && (Message.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Message=\"" + Message + "\"" );
-    }
-    if ( (MessageFile != null) && (MessageFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MessageFile=\"" + MessageFile + "\"" );
-    }
-    if ( (AttachmentFiles != null) && (AttachmentFiles.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AttachmentFiles=\"" + AttachmentFiles + "\"" );
-    }
-	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfNotFound=" + IfNotFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"From",
+		"To",
+		"CC",
+		"BCC",
+		"Subject",
+		"Message",
+		"MessageFile",
+		"AttachmentFiles",
+		"IfNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

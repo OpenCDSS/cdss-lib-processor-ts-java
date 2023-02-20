@@ -381,70 +381,21 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    String TableID = parameters.getValue( "TableID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
-    String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
-    String ElevationColumn = parameters.getValue ( "ElevationColumn" );
-    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
-    String IncludeColumns = parameters.getValue ( "IncludeColumns" );
-    String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (LongitudeColumn != null) && (LongitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LongitudeColumn=\"" + LongitudeColumn + "\"" );
-    }
-    if ( (LatitudeColumn != null) && (LatitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LatitudeColumn=\"" + LatitudeColumn + "\"" );
-    }
-    if ( (ElevationColumn != null) && (ElevationColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationColumn=\"" + ElevationColumn + "\"" );
-    }
-    if ( (WKTGeometryColumn != null) && (WKTGeometryColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
-    }
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-    }
-    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"OutputFile",
+    	"LongitudeColumn",
+    	"LatitudeColumn",
+    	"ElevationColumn",
+    	"WKTGeometryColumn",
+    	"IncludeColumns",
+    	"ExcludeColumns",
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

@@ -668,7 +668,7 @@ private void refresh ()
     //props.add ( "SetEnd=" + SetEnd );
     props.add ( "ErrorMeasure=" + ErrorMeasure );
     props.add("Alias=" + Alias );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

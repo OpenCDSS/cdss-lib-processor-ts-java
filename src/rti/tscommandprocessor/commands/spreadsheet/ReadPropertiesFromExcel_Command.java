@@ -385,62 +385,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue( "InputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String KeepOpen = props.getValue("KeepOpen");
-	String PropertyCellMap = props.getValue("PropertyCellMap");
-	String BooleanProperties = props.getValue("BooleanProperties");
-	String DateTimeProperties = props.getValue("DateTimeProperties");
-	String IntegerProperties = props.getValue("IntegerProperties");
-	StringBuffer b = new StringBuffer ();
-    if ( (InputFile != null) && (InputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputFile=\"" + InputFile + "\"" );
-    }
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (PropertyCellMap != null) && (PropertyCellMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyCellMap=\"" + PropertyCellMap + "\"");
-    }
-    if ( (BooleanProperties != null) && (BooleanProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BooleanProperties=\"" + BooleanProperties + "\"" );
-    }
-    if ( (DateTimeProperties != null) && (DateTimeProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeProperties=\"" + DateTimeProperties + "\"" );
-    }
-    if ( (IntegerProperties != null) && (IntegerProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IntegerProperties=\"" + IntegerProperties + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"Worksheet",
+		"KeepOpen",
+		"PropertyCellMap",
+		"BooleanProperties",
+		"DateTimeProperties",
+		"IntegerProperties"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

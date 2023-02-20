@@ -414,69 +414,21 @@ private void setDiscoveryTable ( DataTable table ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String NewTableID = props.getValue( "NewTableID" );
-    String DistinctColumns = props.getValue( "DistinctColumns" );
-	String IncludeColumns = props.getValue( "IncludeColumns" );
-	String ColumnMap = props.getValue( "ColumnMap" );
-	String ColumnFilters = props.getValue( "ColumnFilters" );
-	String ColumnExcludeFilters = props.getValue( "ColumnExcludeFilters" );
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (NewTableID != null) && (NewTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTableID=\"" + NewTableID + "\"" );
-    }
-	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-	}
-    if ( (DistinctColumns != null) && (DistinctColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DistinctColumns=\"" + DistinctColumns + "\"" );
-    }
-    if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
-    }
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
-    }
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
-    }
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"NewTableID",
+		"IncludeColumns",
+    	"DistinctColumns",
+		"ColumnMap",
+		"ColumnFilters",
+		"ColumnExcludeFilters",
+		"RowCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

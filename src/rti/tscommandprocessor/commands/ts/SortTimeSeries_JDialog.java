@@ -449,7 +449,7 @@ private void refresh ()
     props.add("Property=" + Property);
     props.add("PropertyFormat=" + PropertyFormat);
     props.add("SortOrder=" + SortOrder);
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

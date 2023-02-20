@@ -245,31 +245,16 @@ throws CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String Message = props.getValue( "Message" );
-    String PromptActions = props.getValue( "PromptActions" );
-    String CommandStatus = props.getValue( "CommandStatus" );
-    StringBuffer b = new StringBuffer ();
-    if ( (Message != null) && (Message.length() > 0) ) {
-        b.append ( "Message=\"" + Message + "\"" );
-    }
-    if ( (PromptActions != null) && (PromptActions.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PromptActions=\"" + PromptActions + "\"" );
-    }
-    if ( (CommandStatus != null) && (CommandStatus.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommandStatus=" + CommandStatus );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"Message",
+  		"PromptActions",
+  		"CommandStatus"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -548,7 +548,7 @@ private void refresh ()
     props.add ( "NewEnsembleID=" + NewEnsembleID );
     props.add ( "NewEnsembleName=" + NewEnsembleName );
     props.add ( "CopyTimeSeries=" + CopyTimeSeries );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

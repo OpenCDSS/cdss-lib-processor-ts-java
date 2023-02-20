@@ -358,41 +358,17 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = props.getValue( "OutputFile" );
-	String NewOutputFile = props.getValue( "NewOutputFile" );
-	String WriteFile = props.getValue( "WriteFile" );
-	String RecalculateLimitsAtOpen = props.getValue( "RecalculateLimitsAtOpen" );
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (NewOutputFile != null) && (NewOutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewOutputFile=\"" + NewOutputFile + "\"" );
-	}
-	if ( (WriteFile != null) && (WriteFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WriteFile=" + WriteFile );
-	}
-	if ( (RecalculateLimitsAtOpen != null) && (RecalculateLimitsAtOpen.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RecalculateLimitsAtOpen=" + RecalculateLimitsAtOpen );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"OutputFile",
+		"NewOutputFile",
+		"WriteFile",
+		"RecalculateLimitsAtOpen"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

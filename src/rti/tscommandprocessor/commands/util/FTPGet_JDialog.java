@@ -537,7 +537,7 @@ private void refresh ()
 	props.add ( "TransferMode=" + TransferMode );
 	props.add ( "RetryCount=" + RetryCount );
 	props.add ( "RetryWait=" + RetryWait );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		if ( (DestinationFolder != null) && !DestinationFolder.isEmpty() ) {

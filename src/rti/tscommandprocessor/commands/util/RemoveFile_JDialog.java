@@ -357,7 +357,7 @@ private void refresh () {
 			__IfNotFound_JComboBox.select ( IfNotFound );
 		}
 		else {
-            if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
+            if ( (IfNotFound == null) || IfNotFound.equals("") ) {
 				// New command...select the default.
 				__IfNotFound_JComboBox.select ( 0 );
 			}
@@ -377,7 +377,7 @@ private void refresh () {
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "IfNotFound=" + IfNotFound );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {

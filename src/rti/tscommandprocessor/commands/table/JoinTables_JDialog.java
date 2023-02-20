@@ -597,7 +597,7 @@ private void refresh ()
 	props.add ( "JoinMethod=" + JoinMethod );
 	props.add ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
 	props.add ( "RowCountProperty=" + RowCountProperty );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

@@ -662,7 +662,7 @@ private void refresh ()
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "Alias=" + Alias );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 
 	// Check the GUI state to determine whether some controls should be disabled.
 

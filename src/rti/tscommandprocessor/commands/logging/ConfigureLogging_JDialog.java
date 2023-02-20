@@ -273,7 +273,7 @@ private void refresh ()
 	StartLogEnabled = __StartLogEnabled_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "StartLogEnabled=" + StartLogEnabled );
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

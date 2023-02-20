@@ -207,23 +207,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__Alias_JTextField = null;
-	__command_JTextArea = null;
-	__command = null;
-	__NewInterval_JTextField = null;
-	__NewDataType_JTextField = null;
-	__NewUnits_JTextField = null;
-	__Method_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -477,7 +460,7 @@ private void refresh ()
     props.add ( "NewInterval=" + NewInterval );
     props.add ( "NewDataType=" + NewDataType );
     props.add ( "NewUnits=" + NewUnits );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

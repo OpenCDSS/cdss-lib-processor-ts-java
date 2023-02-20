@@ -491,55 +491,19 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String InputFile = props.getValue( "InputFile" );
-	String DoubleColumns = props.getValue("DoubleColumns");
-	String IntegerColumns = props.getValue("IntegerColumns");
-	String TextColumns = props.getValue("TextColumns");
-	String Top = props.getValue( "Top" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (DoubleColumns != null) && (DoubleColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DoubleColumns=\"" + DoubleColumns + "\"" );
-	}
-	if ( (IntegerColumns != null) && (IntegerColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IntegerColumns=\"" + IntegerColumns + "\"" );
-	}
-	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TextColumns=\"" + TextColumns + "\"" );
-	}
-    if ( (Top != null) && (Top.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Top=" + Top );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"InputFile",
+		"DoubleColumns",
+		"IntegerColumns",
+		"TextColumns",
+		"Top"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

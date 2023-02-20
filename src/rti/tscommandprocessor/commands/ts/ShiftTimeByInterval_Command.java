@@ -520,41 +520,17 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String ShiftData = props.getValue( "ShiftData" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (ShiftData != null) && (ShiftData.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShiftData=\"" + ShiftData  + "\"");
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"ShiftData"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

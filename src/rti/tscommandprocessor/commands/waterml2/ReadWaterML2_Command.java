@@ -599,91 +599,23 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-
-	String Alias = props.getValue("Alias");
-	String InputFile = props.getValue("InputFile" );
-	String ReadMethod = props.getValue("ReadMethod" );
-	//String NewUnits = props.getValue("NewUnits");
-	String Interval = props.getValue("Interval");
-	String RequireDataToMatchInterval = props.getValue("RequireDataToMatchInterval");
-	String OutputTimeZoneOffset = props.getValue("OutputTimeZoneOffset");
-	String OutputTimeZone = props.getValue("OutputTimeZone");
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-
-	StringBuffer b = new StringBuffer ();
-
-	// Input File
-	if ((InputFile != null) && (InputFile.length() > 0)) {
-		b.append("InputFile=\"" + InputFile + "\"");
-	}
-	
-    if ( (ReadMethod != null) && (ReadMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReadMethod=" + ReadMethod );
-    }
-
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-    
-	// New Units
-    /*
-	if ((NewUnits != null) && (NewUnits.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("NewUnits=\"" + NewUnits + "\"");
-	}*/
-    if ((Interval != null) && (Interval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Interval=\"" + Interval + "\"");
-    }
-    if ((RequireDataToMatchInterval != null) && (RequireDataToMatchInterval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("RequireDataToMatchInterval=" + RequireDataToMatchInterval );
-    }
-    if ((OutputTimeZoneOffset != null) && (OutputTimeZoneOffset.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("OutputTimeZoneOffset=\"" + OutputTimeZoneOffset + "\"");
-    }
-    if ((OutputTimeZone != null) && (OutputTimeZone.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("OutputTimeZone=\"" + OutputTimeZone + "\"");
-    }
-	if ((InputStart != null) && (InputStart.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputStart=\"" + InputStart + "\"");
-	}
-	if ((InputEnd != null) && (InputEnd.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"ReadMethod",
+		"Alias",
+		//"NewUnits",
+		"Interval",
+		"RequireDataToMatchInterval",
+		"OutputTimeZoneOffset",
+		"OutputTimeZone",
+		"InputStart",
+		"InputEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -3408,253 +3408,47 @@ private void setValueColumnsRuntime ( List<String> valueColumnsRuntime ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-	String TableID = props.getValue("TableID" );
-    String DateTimeColumn = props.getValue("DateTimeColumn" );
-    String DateTimeFormat = props.getValue("DateTimeFormat" );
-    String DateColumn = props.getValue("DateColumn" );
-    String TimeColumn = props.getValue("TimeColumn" );
-    String LocationTypeColumn = props.getValue("LocationTypeColumn" );
-    String LocationColumn = props.getValue("LocationColumn" );
-    String DataSourceColumn = props.getValue("DataSourceColumn" );
-    String DataTypeColumn = props.getValue("DataTypeColumn" );
-    String ScenarioColumn = props.getValue("ScenarioColumn" );
-    String SequenceIDColumn = props.getValue("SequenceIDColumn" );
-    String UnitsColumn = props.getValue("UnitsColumn" );
-    String LocationType = props.getValue("LocationType" );
-    String LocationID = props.getValue("LocationID" );
-    String ValueColumn = props.getValue("ValueColumn" );
-    String FlagColumn = props.getValue("FlagColumn" );
-    //String SkipRows = props.getValue("SkipRows" );
-    String Interval = props.getValue("Interval" );
-    String IrregularIntervalPrecision = props.getValue("IrregularIntervalPrecision" );
-    String DataSource = props.getValue("DataSource" );
-    String DataType = props.getValue("DataType" );
-    String Scenario = props.getValue("Scenario" );
-    String SequenceID = props.getValue("SequenceID" );
-    String Units = props.getValue("Units" );
-    String Precision = props.getValue("Precision" );
-    String MissingValue = props.getValue("MissingValue" );
-    String HandleDuplicatesHow = props.getValue("HandleDuplicatesHow" );
-    String Alias = props.getValue("Alias" );
-	String BlockLayout = props.getValue ( "BlockLayout" );
-	String BlockLayoutColumns = props.getValue ( "BlockLayoutColumns" );
-	String BlockLayoutRows = props.getValue ( "BlockLayoutRows" );
-	String BlockOutputYearType = props.getValue ( "BlockOutputYearType" );
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-
-	StringBuffer b = new StringBuffer ();
-
-	if ((TableID != null) && (TableID.length() > 0)) {
-		b.append("TableID=\"" + TableID + "\"");
-	}
-    if ((DateTimeColumn != null) && (DateTimeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateTimeColumn=\"" + DateTimeColumn + "\"");
-    }
-    if ((DateTimeFormat != null) && (DateTimeFormat.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateTimeFormat=\"" + DateTimeFormat + "\"");
-    }
-    if ((DateColumn != null) && (DateColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateColumn=\"" + DateColumn + "\"");
-    }
-    if ((TimeColumn != null) && (TimeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeColumn=\"" + TimeColumn + "\"");
-    }
-    if ((LocationTypeColumn != null) && (LocationTypeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationTypeColumn=\"" + LocationTypeColumn + "\"");
-    }
-    if ((LocationColumn != null) && (LocationColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationColumn=\"" + LocationColumn + "\"");
-    }
-    if ((DataSourceColumn != null) && (DataSourceColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataSourceColumn=\"" + DataSourceColumn + "\"");
-    }
-    if ((DataTypeColumn != null) && (DataTypeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataTypeColumn=\"" + DataTypeColumn + "\"");
-    }
-    if ((ScenarioColumn != null) && (ScenarioColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("ScenarioColumn=\"" + ScenarioColumn + "\"");
-    }
-    if ((SequenceIDColumn != null) && (SequenceIDColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("SequenceIDColumn=\"" + SequenceIDColumn + "\"");
-    }
-    if ((UnitsColumn != null) && (UnitsColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("UnitsColumn=\"" + UnitsColumn + "\"");
-    }
-    if ((LocationID != null) && (LocationID.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationID=\"" + LocationID + "\"");
-    }
-    if ((LocationType != null) && (LocationType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationType=\"" + LocationType + "\"");
-    }
-    if ((ValueColumn != null) && (ValueColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("ValueColumn=\"" + ValueColumn + "\"");
-    }
-    if ((FlagColumn != null) && (FlagColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("FlagColumn=\"" + FlagColumn + "\"");
-    }
-    /**
-    if ((SkipRows != null) && (SkipRows.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("SkipRows=\"" + SkipRows + "\"");
-    }*/
-    if ((DataSource != null) && (DataSource.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataSource=\"" + DataSource + "\"");
-    }
-    if ((DataType != null) && (DataType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataType=\"" + DataType + "\"");
-    }
-    if ((Interval != null) && (Interval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Interval=" + Interval );
-    }
-    if ((IrregularIntervalPrecision != null) && (IrregularIntervalPrecision.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IrregularIntervalPrecision=" + IrregularIntervalPrecision );
-    }
-    if ((Scenario != null) && (Scenario.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Scenario=\"" + Scenario + "\"");
-    }
-    if ((SequenceID != null) && (SequenceID.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("SequenceID=\"" + SequenceID + "\"");
-    }
-	if ((Units != null) && (Units.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("Units=\"" + Units + "\"");
-	}
-	if ((Precision != null) && (Precision.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("Precision=\"" + Precision + "\"");
-	}
-    if ((MissingValue != null) && (MissingValue.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("MissingValue=" + MissingValue );
-    }
-    if ((HandleDuplicatesHow != null) && (HandleDuplicatesHow.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("HandleDuplicatesHow=" + HandleDuplicatesHow );
-    }
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-    if ( (BlockLayout != null) && !BlockLayout.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BlockLayout=" + BlockLayout );
-    }
-    if ( (BlockLayoutColumns != null) && !BlockLayoutColumns.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BlockLayoutColumns=" + BlockLayoutColumns );
-    }
-    if ( (BlockLayoutRows != null) && !BlockLayoutRows.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BlockLayoutRows=" + BlockLayoutRows );
-    }
-    if ( (BlockOutputYearType != null) && !BlockOutputYearType.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BlockOutputYearType=" + BlockOutputYearType );
-    }
-	if ((InputStart != null) && (InputStart.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputStart=\"" + InputStart + "\"");
-	}
-	if ((InputEnd != null) && (InputEnd.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TableID",
+    	"DateTimeColumn",
+    	"DateTimeFormat",
+    	"DateColumn",
+    	"TimeColumn",
+    	"LocationTypeColumn",
+    	"LocationColumn",
+    	"DataSourceColumn",
+    	"DataTypeColumn",
+    	"ScenarioColumn",
+    	"SequenceIDColumn",
+    	"UnitsColumn",
+    	"LocationType",
+    	"LocationID",
+    	"ValueColumn",
+    	"FlagColumn",
+    	//"SkipRows",
+    	"DataSource",
+    	"DataType",
+    	"Interval",
+    	"IrregularIntervalPrecision",
+    	"Scenario",
+    	"SequenceID",
+    	"Units",
+    	"Precision",
+    	"MissingValue",
+    	"HandleDuplicatesHow",
+    	"Alias",
+		"BlockLayout",
+		"BlockLayoutColumns",
+		"BlockLayoutRows",
+		"BlockOutputYearType",
+		"InputStart",
+		"InputEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

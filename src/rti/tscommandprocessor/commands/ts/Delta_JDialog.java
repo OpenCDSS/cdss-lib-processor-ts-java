@@ -619,7 +619,7 @@ private void refresh ()
 	props.add ( "Flag=" + Flag );
 	props.add ( "Alias=" + Alias );
 	//props.add ( "NewUnits=" + NewUnits );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

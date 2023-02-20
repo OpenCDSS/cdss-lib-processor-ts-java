@@ -854,7 +854,7 @@ private void refresh () {
 	props.add ( "Subtract=" + Subtract );
 	props.add ( "Multiply=" + Multiply );
 	props.add ( "Divide=" + Divide );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

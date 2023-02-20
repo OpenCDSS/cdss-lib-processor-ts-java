@@ -490,7 +490,7 @@ private void refresh () {
     props.add ( "IncludeColumns=" + IncludeColumns );
     props.add ( "MatchMap=" + MatchMap );
     props.add ( "PropertyMap=" + PropertyMap );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

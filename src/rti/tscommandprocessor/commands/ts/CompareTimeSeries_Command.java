@@ -2518,185 +2518,37 @@ private boolean setupOutputTable ( DataTable table )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSID1 = props.getValue("TSID1");
-	String TSID2 = props.getValue("TSID2");
-	String EnsembleID1 = props.getValue("EnsembleID1");
-	String EnsembleID2 = props.getValue("EnsembleID2");
-	String MatchLocation = props.getValue("MatchLocation");
-	String MatchDataType = props.getValue("MatchDataType");
-	String MatchAlias = props.getValue("MatchAlias");
-	String Precision = props.getValue("Precision");
-	String Tolerance = props.getValue("Tolerance");
-	String CompareFlags = props.getValue("CompareFlags");
-	String AnalysisStart = props.getValue("AnalysisStart");
-	String AnalysisEnd = props.getValue("AnalysisEnd");
-	String DiffFlag = props.getValue("DiffFlag");
-	String CreateDiffTS = props.getValue("CreateDiffTS");
-	String DifferenceFile = props.getValue ( "DifferenceFile" );
-	String SummaryFile = props.getValue ( "SummaryFile" );
-	String TableID = props.getValue ( "TableID" );
-	String DiffCountProperty = props.getValue ( "DiffCountProperty" );
-	String AllowedDiff = props.getValue("AllowedDiff");
-	//String AllowedDiffPerTS = props.getValue("AllowedDiffPerTS");
-	String IfDifferent = props.getValue("IfDifferent");
-	String IfSame = props.getValue("IfSame");
-	//String WarnIfDifferent = props.getValue("WarnIfDifferent");
-	//String WarnIfSame = props.getValue("WarnIfSame");
-	StringBuilder b = new StringBuilder ();
-	if ( (TSID1 != null) && (TSID1.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID1=\"" + TSID1 + "\"" );
-	}
-	if ( (TSID2 != null) && (TSID2.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID2=\"" + TSID2 + "\"" );
-	}
-	if ( (EnsembleID1 != null) && (EnsembleID1.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID1=\"" + EnsembleID1 + "\"" );
-	}
-	if ( (EnsembleID2 != null) && (EnsembleID2.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID2=\"" + EnsembleID2 + "\"" );
-	}
-	if ( (MatchLocation != null) && (MatchLocation.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MatchLocation=" + MatchLocation );
-	}
-	if ( (MatchDataType != null) && (MatchDataType.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MatchDataType=" + MatchDataType );
-	}
-	if ( (MatchAlias != null) && (MatchAlias.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MatchAlias=" + MatchAlias );
-	}
-	if ( (Precision != null) && (Precision.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Precision=" + Precision );
-	}
-	if ( (Tolerance != null) && (Tolerance.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Tolerance=\"" + Tolerance + "\"" );
-	}
-	if ( (CompareFlags != null) && (CompareFlags.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "CompareFlags=\"" + CompareFlags + "\"" );
-	}
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-	if ( (DiffFlag != null) && (DiffFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DiffFlag=\"" + DiffFlag + "\"" );
-	}
-	if ( (CreateDiffTS != null) && (CreateDiffTS.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "CreateDiffTS=" + CreateDiffTS );
-	}
-    if ( (DifferenceFile != null) && (DifferenceFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DifferenceFile=\"" + DifferenceFile + "\"" );
-    }
-    if ( (SummaryFile != null) && (SummaryFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SummaryFile=\"" + SummaryFile + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (DiffCountProperty != null) && (DiffCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DiffCountProperty=\"" + DiffCountProperty + "\"" );
-    }
-    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
-    }
-    /*
-    if ( (AllowedDiffPerTS != null) && (AllowedDiffPerTS.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowedDiffPerTS=\"" + AllowedDiffPerTS + "\"" );
-    }
-    */
-	if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfDifferent=" + IfDifferent );
-	}
-	if ( (IfSame != null) && (IfSame.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfSame=" + IfSame );
-	}
-	/*
-	if ( (WarnIfDifferent != null) && (WarnIfDifferent.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WarnIfDifferent=" + WarnIfDifferent );
-	}
-	if ( (WarnIfSame != null) && (WarnIfSame.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WarnIfSame=" + WarnIfSame );
-	}
-	*/
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSID1",
+		"TSID2",
+		"EnsembleID1",
+		"EnsembleID2",
+		"MatchLocation",
+		"MatchDataType",
+		"MatchAlias",
+		"Precision",
+		"Tolerance",
+		"CompareFlags",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"DiffFlag",
+		"CreateDiffTS",
+		"DifferenceFile",
+		"SummaryFile",
+		"TableID",
+		"DiffCountProperty",
+		"AllowedDiff",
+		//String AllowedDiffPerTS = props.getValue("AllowedDiffPerTS");
+		"IfDifferent",
+		"IfSame"
+		//String WarnIfDifferent = props.getValue("WarnIfDifferent");
+		//String WarnIfSame = props.getValue("WarnIfSame");
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /*

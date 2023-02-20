@@ -2098,175 +2098,36 @@ private void setTreatConsecutiveDelimitersAsOne ( boolean treatConsecutiveDelimi
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-	String InputFile = props.getValue("InputFile" );
-    String Delimiter = props.getValue("Delimiter" );
-    String ColumnNames = props.getValue("ColumnNames" );
-    String DateTimeColumn = props.getValue("DateTimeColumn" );
-    String DateTimeFormat = props.getValue("DateTimeFormat" );
-    String DateColumn = props.getValue("DateColumn" );
-    String TimeColumn = props.getValue("TimeColumn" );
-    String ValueColumn = props.getValue("ValueColumn" );
-    String FlagColumn = props.getValue("FlagColumn" );
-    String Comment = props.getValue("Comment" );
-    String SkipRows = props.getValue("SkipRows" );
-    String SkipRowsAfterComments = props.getValue("SkipRowsAfterComments" );
-    String TreatConsecutiveDelimitersAsOne = props.getValue("TreatConsecutiveDelimitersAsOne" );
-    String LocationID = props.getValue("LocationID" );
-    String Interval = props.getValue("Interval" );
-    String Provider = props.getValue("Provider" );
-    String DataType = props.getValue("DataType" );
-    String Scenario = props.getValue("Scenario" );
-    String Units = props.getValue("Units" );
-    String MissingValue = props.getValue("MissingValue" );
-    String Alias = props.getValue("Alias" );
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-
-	StringBuffer b = new StringBuffer ();
-
-	if ((InputFile != null) && (InputFile.length() > 0)) {
-		b.append("InputFile=\"" + InputFile + "\"");
-	}
-    if ((Delimiter != null) && (Delimiter.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Delimiter=\"" + Delimiter + "\"");
-    }
-    if ((TreatConsecutiveDelimitersAsOne != null) && (TreatConsecutiveDelimitersAsOne.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TreatConsecutiveDelimitersAsOne=" + TreatConsecutiveDelimitersAsOne );
-    }
-    if ((ColumnNames != null) && (ColumnNames.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("ColumnNames=\"" + ColumnNames + "\"");
-    }
-    if ((DateTimeColumn != null) && (DateTimeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateTimeColumn=\"" + DateTimeColumn + "\"");
-    }
-    if ((DateTimeFormat != null) && (DateTimeFormat.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateTimeFormat=\"" + DateTimeFormat + "\"");
-    }
-    if ((DateColumn != null) && (DateColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DateColumn=\"" + DateColumn + "\"");
-    }
-    if ((TimeColumn != null) && (TimeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeColumn=\"" + TimeColumn + "\"");
-    }
-    if ((ValueColumn != null) && (ValueColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("ValueColumn=\"" + ValueColumn + "\"");
-    }
-    if ((FlagColumn != null) && (FlagColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("FlagColumn=\"" + FlagColumn + "\"");
-    }
-    if ((Comment != null) && (Comment.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Comment=\"" + Comment + "\"");
-    }
-    if ((SkipRows != null) && (SkipRows.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("SkipRows=\"" + SkipRows + "\"");
-    }
-    if ((SkipRowsAfterComments != null) && (SkipRowsAfterComments.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("SkipRowsAfterComments=\"" + SkipRowsAfterComments + "\"");
-    }
-    if ((LocationID != null) && (LocationID.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationID=\"" + LocationID + "\"");
-    }
-    if ((Provider != null) && (Provider.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Provider=\"" + Provider + "\"");
-    }
-    if ((DataType != null) && (DataType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataType=\"" + DataType + "\"");
-    }
-    if ((Interval != null) && (Interval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Interval=" + Interval );
-    }
-    if ((Scenario != null) && (Scenario.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Scenario=\"" + Scenario + "\"");
-    }
-	if ((Units != null) && (Units.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("Units=\"" + Units + "\"");
-	}
-    if ((MissingValue != null) && (MissingValue.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("MissingValue=" + MissingValue );
-    }
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-	if ((InputStart != null) && (InputStart.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputStart=\"" + InputStart + "\"");
-	}
-	if ((InputEnd != null) && (InputEnd.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+    	"Delimiter",
+    	"TreatConsecutiveDelimitersAsOne",
+    	"ColumnNames",
+    	"DateTimeColumn",
+    	"DateTimeFormat",
+    	"DateColumn",
+    	"TimeColumn",
+    	"ValueColumn",
+    	"FlagColumn",
+    	"Comment",
+    	"SkipRows",
+    	"SkipRowsAfterComments",
+    	"LocationID",
+    	"Provider",
+    	"DataType",
+    	"Interval",
+    	"Scenario",
+    	"Units",
+    	"MissingValue",
+    	"Alias",
+		"InputStart",
+		"InputEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

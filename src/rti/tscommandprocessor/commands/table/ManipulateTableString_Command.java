@@ -475,81 +475,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-
-    String TableID = parameters.getValue( "TableID" );
-	String ColumnIncludeFilters = parameters.getValue("ColumnIncludeFilters");
-	String ColumnExcludeFilters = parameters.getValue("ColumnExcludeFilters");
-    String InputColumn1 = parameters.getValue( "InputColumn1" );
-    String Operator = parameters.getValue( "Operator" );
-    String InputColumn2 = parameters.getValue( "InputColumn2" );
-    String InputValue2 = parameters.getValue( "InputValue2" );
-    String InputValue3 = parameters.getValue( "InputValue3" );
-    String OutputColumn = parameters.getValue( "OutputColumn" );
-
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
-    }
-    if ( (InputColumn1 != null) && (InputColumn1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputColumn1=\"" + InputColumn1 + "\"" );
-    }
-    if ( (Operator != null) && (Operator.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Operator=\"" + Operator + "\"" );
-    }
-    if ( (InputColumn2 != null) && (InputColumn2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputColumn2=\"" + InputColumn2 + "\"");
-    }
-    if ( (InputValue2 != null) && (InputValue2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputValue2=\"" + InputValue2 + "\"");
-    }
-    if ( (InputValue3 != null) && (InputValue3.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputValue3=\"" + InputValue3 + "\"");
-    }
-    if ( (OutputColumn != null) && (OutputColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputColumn=\"" + OutputColumn + "\"" );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"TableID",
+		"ColumnIncludeFilters",
+		"ColumnExcludeFilters",
+    	"InputColumn1",
+    	"Operator",
+    	"InputColumn2",
+    	"InputValue2",
+    	"InputValue3",
+    	"OutputColumn"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

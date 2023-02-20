@@ -514,7 +514,7 @@ private void refresh()
     props.add ( "FillStart=" + FillStart );
     props.add ( "FillEnd=" + FillEnd );
     props.add ( "FillFlag=" + FillFlag );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

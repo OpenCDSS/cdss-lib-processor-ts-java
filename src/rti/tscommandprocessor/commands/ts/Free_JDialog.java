@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -88,8 +88,8 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Free_JDialog ( JFrame parent, Free_Command command )
-{   super(parent, true);
+public Free_JDialog ( JFrame parent, Free_Command command ) {
+    super(parent, true);
     initialize ( parent, command );
 }
 
@@ -97,15 +97,15 @@ public Free_JDialog ( JFrame parent, Free_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{   Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+    Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
         response ( false );
     }
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "Free");
-	} 
+	}
     else if ( o == __ok_JButton ) {
         refresh();
         checkInput();
@@ -118,8 +118,7 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
             TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -150,21 +149,22 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput()
-{   // Put together a list of parameters to check...
+private void checkInput() {
+    // Put together a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
 
     __error_wait = false;
-    
+
     if ( TSList.length() > 0 ) {
         parameters.set ( "TSList", TSList );
     }
@@ -184,7 +184,7 @@ private void checkInput()
         parameters.set ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -195,11 +195,11 @@ private void checkInput()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+    String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
@@ -218,8 +218,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Free_Command command )
-{   __command = command;
+private void initialize ( JFrame parent, Free_Command command ) {
+    __command = command;
 
     addWindowListener( this );
 
@@ -266,24 +266,24 @@ private void initialize ( JFrame parent, Free_Command command )
 
      __TSList_JComboBox = new SimpleJComboBox(false);
      y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
-     // Add the non-standard choice
+     // Add the non-standard choice.
      __TSList_JComboBox.add( "" + TSListType.TSPOSITION);
 
      __TSID_JLabel = new JLabel ("TSID (for TSList=matching TSID):");
-     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits.
      __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
      List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-     
+
      __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID + "):");
-     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
      __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
      List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
              this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-     
+
       __TSPosition_JLabel = new JLabel ("Time series position(s) (for TSList=" + TSListType.TSPOSITION + "):");
      JGUIUtil.addComponent(main_JPanel, __TSPosition_JLabel,
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -293,11 +293,11 @@ private void initialize ( JFrame parent, Free_Command command )
          1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
          JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use with TSList=TSPosition (e.g., 1,2,7-8)." ),
          2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-         
+
      JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-		List<String> notFoundChoices = new ArrayList<String>();
+		List<String> notFoundChoices = new ArrayList<>();
 		notFoundChoices.add ( "" );
 		notFoundChoices.add ( __command._Ignore );
 		notFoundChoices.add ( __command._Warn );
@@ -310,11 +310,11 @@ private void initialize ( JFrame parent, Free_Command command )
 	    JGUIUtil.addComponent(main_JPanel, new JLabel (
 			"Optional - how to handle time series that are not found (default=" + __command._Warn + ")."),
 			3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-         
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Free ensemble if empty?" ), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Free ensemble if empty?" ),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __FreeEnsembleIfEmpty_JComboBox = new SimpleJComboBox ( false );
-     List<String> emptyChoices = new ArrayList<String>();
+     List<String> emptyChoices = new ArrayList<>();
      emptyChoices.add ( "" );
      emptyChoices.add ( __command._False );
      emptyChoices.add ( __command._True );
@@ -323,10 +323,10 @@ private void initialize ( JFrame parent, Free_Command command )
      __FreeEnsembleIfEmpty_JComboBox.addItemListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FreeEnsembleIfEmpty_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - for ensembles (default=" + __command._True + ")."), 
+     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - for ensembles (default=" + __command._True + ")."),
              3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __command_JTextArea = new JTextArea ( 4, 50 );
      __command_JTextArea.setLineWrap ( true );
@@ -335,14 +335,14 @@ private void initialize ( JFrame parent, Free_Command command )
      JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
             1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    // Refresh the contents...
+    // Refresh the contents.
     checkGUIState();
     refresh ();
 
     // South Panel: North
     JPanel button_JPanel = new JPanel();
     button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+     JGUIUtil.addComponent(main_JPanel, button_JPanel,
         0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     __ok_JButton = new SimpleJButton("OK", this);
@@ -357,7 +357,7 @@ private void initialize ( JFrame parent, Free_Command command )
     setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
-    // Dialogs do not need to be resizable...
+    // Dialogs do not need to be resizable.
     setResizable ( false );
     super.setVisible( true );
 }
@@ -366,8 +366,8 @@ private void initialize ( JFrame parent, Free_Command command )
 Handle ItemEvent events.
 @param event ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent event )
-{   if ( event.getStateChange() != ItemEvent.SELECTED ) {
+public void itemStateChanged ( ItemEvent event ) {
+    if ( event.getStateChange() != ItemEvent.SELECTED ) {
         return;
     }
     checkGUIState();
@@ -377,39 +377,30 @@ public void itemStateChanged ( ItemEvent event )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{   int code = event.getKeyCode();
-
-    refresh ();
-    if ( code == KeyEvent.VK_ENTER ) {
-        checkInput();
-        if ( !__error_wait ) {
-            response ( true );
-        }
-    }
+public void keyPressed ( KeyEvent event ) {
+    response ( true );
 }
 
-public void keyReleased ( KeyEvent event )
-{   refresh();  
+public void keyReleased ( KeyEvent event ) {
+    refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{   String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+    String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -419,7 +410,7 @@ private void refresh ()
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
@@ -427,7 +418,7 @@ private void refresh ()
         IfNotFound = props.getValue ( "IfNotFound" );
         FreeEnsembleIfEmpty = props.getValue ( "FreeEnsembleIfEmpty" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -441,22 +432,23 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
                 __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+            	// Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -475,7 +467,7 @@ private void refresh ()
         }
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
-                // Select default...
+                // Select default.
                 __IfNotFound_JComboBox.select ( 0 );
             }
             else {
@@ -491,7 +483,7 @@ private void refresh ()
             }
         }
         if ( FreeEnsembleIfEmpty == null ) {
-            // Select default...
+            // Select default.
             __FreeEnsembleIfEmpty_JComboBox.select ( 0 );
         }
         else {
@@ -506,7 +498,7 @@ private void refresh ()
             }
         }
     }
-    // Regardless, reset the command from the fields...
+    // Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected().trim();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -520,25 +512,24 @@ private void refresh ()
     props.add ( "TSPosition=" + TSPosition );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "FreeEnsembleIfEmpty=" + FreeEnsembleIfEmpty );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+private void response ( boolean ok ) {
+    __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -547,15 +538,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{   response ( false );
+public void windowClosing( WindowEvent event ) {
+    response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

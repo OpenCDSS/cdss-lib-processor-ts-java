@@ -210,20 +210,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__browse_JButton = null;
-	__path_JButton = null;
-	__command_JTextArea = null;
-	__CheckFile_JTextField = null;
-	__Suffix_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-/**
 Get the working directory for a command (e.g., for editing).
 @param processor the TSCommandProcessor to use to get data.
 @param command Command for which to get the working directory.
@@ -416,7 +402,7 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "CheckFile=" + CheckFile );
 	props.add ( "Suffix=" + Suffix );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( (CheckFile == null) || (CheckFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

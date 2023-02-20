@@ -396,69 +396,26 @@ CommandWarningException, CommandException
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String InputFile = props.getValue( "InputFile" );
-	String DataFormat = props.getValue("DataFormat");
-	String SkipLines = props.getValue("SkipLines");
-	String SkipColumns = props.getValue("SkipColumns");
-	String HeaderLines = props.getValue("HeaderLines");
-	String ColumnNames = props.getValue("ColumnNames");
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (DataFormat != null) && (DataFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataFormat=\"" + DataFormat + "\"" );
-    }
-	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SkipLines=\"" + SkipLines + "\"" );
-	}
-	if ( (SkipColumns != null) && (SkipColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SkipColumns=\"" + SkipColumns + "\"" );
-	}
-	if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "HeaderLines=\"" + HeaderLines + "\"" );
-	}
-    if ( (ColumnNames != null) && (ColumnNames.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnNames=\"" + ColumnNames + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"InputFile",
+		"DataFormat",
+		"SkipLines",
+		"SkipColumns",
+		"HeaderLines",
+		"ColumnNames"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

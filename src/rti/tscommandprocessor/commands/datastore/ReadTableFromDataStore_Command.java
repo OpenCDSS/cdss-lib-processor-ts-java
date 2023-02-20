@@ -1110,132 +1110,30 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String DataStoreCatalog = props.getValue( "DataStoreCatalog" );
-	String DataStoreSchema = props.getValue( "DataStoreSchema" );
-	String DataStoreTable = props.getValue( "DataStoreTable" );
-	String DataStoreColumns = props.getValue( "DataStoreColumns" );
-	String OrderBy = props.getValue( "OrderBy" );
-	String Top = props.getValue( "Top" );
-	String Sql = props.getValue( "Sql" );
-	String SqlFile = props.getValue( "SqlFile" );
-	String DataStoreFunction = props.getValue( "DataStoreFunction" );
-	String FunctionParameters = props.getValue( "FunctionParameters" );
-	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
-	String ProcedureParameters = props.getValue( "ProcedureParameters" );
-	String ProcedureReturnProperty = props.getValue( "ProcedureReturnProperty" );
-	String OutputProperties = props.getValue( "OutputProperties" );
-    String TableID = props.getValue( "TableID" );
-    String RowCountProperty = props.getValue( "RowCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (DataStoreCatalog != null) && (DataStoreCatalog.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreCatalog=\"" + DataStoreCatalog + "\"" );
-    }
-    if ( (DataStoreSchema != null) && (DataStoreSchema.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreSchema=\"" + DataStoreSchema + "\"" );
-    }
-    if ( (DataStoreTable != null) && (DataStoreTable.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreTable=\"" + DataStoreTable + "\"" );
-    }
-    if ( (DataStoreColumns != null) && (DataStoreColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreColumns=\"" + DataStoreColumns + "\"" );
-    }
-    if ( (OrderBy != null) && (OrderBy.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OrderBy=\"" + OrderBy + "\"" );
-    }
-    if ( (Top != null) && (Top.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Top=" + Top );
-    }
-    if ( (Sql != null) && (Sql.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Sql=\"" + Sql + "\"" );
-    }
-    if ( (SqlFile != null) && (SqlFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SqlFile=\"" + SqlFile + "\"" );
-    }
-    if ( (DataStoreFunction != null) && (DataStoreFunction.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreFunction=\"" + DataStoreFunction + "\"" );
-    }
-    if ( (FunctionParameters != null) && (FunctionParameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FunctionParameters=\"" + FunctionParameters + "\"" );
-    }
-    if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreProcedure=\"" + DataStoreProcedure + "\"" );
-    }
-    if ( (ProcedureParameters != null) && (ProcedureParameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProcedureParameters=\"" + ProcedureParameters + "\"" );
-    }
-    if ( (ProcedureReturnProperty != null) && (ProcedureReturnProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProcedureReturnProperty=\"" + ProcedureReturnProperty + "\"" );
-    }
-    if ( (OutputProperties != null) && (OutputProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputProperties=\"" + OutputProperties + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty +"\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"DataStoreCatalog",
+		"DataStoreSchema",
+		"DataStoreTable",
+		"DataStoreColumns",
+		"OrderBy",
+		"Top",
+		"Sql",
+		"SqlFile",
+		"DataStoreFunction",
+		"FunctionParameters",
+		"DataStoreProcedure",
+		"ProcedureParameters",
+		"ProcedureReturnProperty",
+		"OutputProperties",
+    	"TableID",
+    	"RowCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

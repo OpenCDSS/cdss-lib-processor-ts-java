@@ -585,89 +585,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String Operator = parameters.getValue( "Operator" );
-    String TableID = parameters.getValue( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-    String TableInputColumn = parameters.getValue ( "TableInputColumn" );
-    String IfTableInputIsBlank = parameters.getValue ( "IfTableInputIsBlank" );
-    String IfTSListIsEmpty = parameters.getValue ( "IfTSListIsEmpty" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (Operator != null) && (Operator.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Operator=\"" + Operator + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableInputColumn != null) && (TableInputColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableInputColumn=\"" + TableInputColumn + "\"" );
-    }
-    if ( (IfTableInputIsBlank != null) && (IfTableInputIsBlank.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfTableInputIsBlank=" + IfTableInputIsBlank );
-    }
-    if ( (IfTSListIsEmpty != null) && (IfTSListIsEmpty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfTSListIsEmpty=" + IfTSListIsEmpty );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {   
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Operator",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"TableInputColumn",
+    	"IfTableInputIsBlank",
+    	"IfTSListIsEmpty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

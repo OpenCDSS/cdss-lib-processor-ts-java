@@ -1655,7 +1655,7 @@ private void refresh ()
 	props.add ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
 	IfMissing = __IfMissing_JComboBox.getSelected();
     props.add ( "IfMissing=" + IfMissing );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 
 	// Check the GUI state to determine whether some controls should be disabled.
 

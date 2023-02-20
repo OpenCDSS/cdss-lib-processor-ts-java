@@ -372,7 +372,7 @@ private void refresh ()
     props.add ( "KeepColumns=" + KeepColumns );
     props.add ( "DeleteColumns=" + DeleteColumns );
     //props.add ( "DeleteCountProperty=" + DeleteCountProperty );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

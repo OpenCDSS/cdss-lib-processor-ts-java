@@ -234,24 +234,15 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String WaitTime = props.getValue( "WaitTime" );
-    String ProgressIncrement = props.getValue( "ProgressIncrement" );
-    StringBuffer b = new StringBuffer ();
-    if ( (WaitTime != null) && (WaitTime.length() > 0) ) {
-        b.append ( "WaitTime=\"" + WaitTime + "\"" );
-    }
-    if ( (ProgressIncrement != null) && (ProgressIncrement.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-        b.append ( "ProgressIncrement=\"" + ProgressIncrement + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"WaitTime",
+		"ProgressIncrement"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -423,49 +423,18 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IncludeProperties = parameters.getValue ( "IncludeProperties" );
-	String WriteMode = parameters.getValue ( "WriteMode" );
-	String FileFormat = parameters.getValue ( "FileFormat" );
-	String SortOrder = parameters.getValue( "SortOrder" );
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeProperties=\"" + IncludeProperties + "\"" );
-	}
-	if ( (WriteMode != null) && (WriteMode.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WriteMode=" + WriteMode );
-	}
-    if ( (FileFormat != null) && (FileFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FileFormat=" + FileFormat );
-    }
-    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SortOrder=" + SortOrder );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"OutputFile",
+		"IncludeProperties",
+		"WriteMode",
+		"FileFormat",
+		"SortOrder"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 //TODO smalers 2015-05-16 Move this to generic shared code.

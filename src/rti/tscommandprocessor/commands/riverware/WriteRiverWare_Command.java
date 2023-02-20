@@ -595,74 +595,22 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = parameters.getValue("TSList");
-	String TSID = parameters.getValue("TSID");
-	String OutputFile = parameters.getValue("OutputFile");
-	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
-	String Units = parameters.getValue("Units");
-	String Scale = parameters.getValue("Scale");
-	String SetUnits = parameters.getValue("SetUnits");
-	String SetScale = parameters.getValue("SetScale");
-	String Precision = parameters.getValue("Precision");
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
-    }
-	if ( (Units != null) && (Units.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Units=\"" + Units + "\"" );
-	}
-	if ( (Scale != null) && (Scale.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Scale=" + Scale );
-	}
-	if ( (SetUnits != null) && (SetUnits.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetUnits=\"" + SetUnits + "\"" );
-	}
-	if ( (SetScale != null) && (SetScale.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetScale=" + SetScale );
-	}
-	if ( (Precision != null) && (Precision.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Precision=" + Precision );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"OutputFile",
+		"WriteHeaderComments",
+		"Units",
+		"Scale",
+		"SetUnits",
+		"SetScale",
+		"Precision",
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

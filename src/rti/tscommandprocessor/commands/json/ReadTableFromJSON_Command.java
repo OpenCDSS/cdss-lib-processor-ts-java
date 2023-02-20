@@ -1830,119 +1830,28 @@ private void setDiscoveryTable ( DataTable table ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue( "InputFile" );
-    String ObjectID = props.getValue( "ObjectID" );
-    String TableID = props.getValue( "TableID" );
-	String ArrayName = props.getValue( "ArrayName" );
-	String AppendArrays = props.getValue( "AppendArrays" );
-	String ExcludeNames = props.getValue("ExcludeNames");
-	String ArrayColumns = props.getValue("ArrayColumns");
-	String BooleanColumns = props.getValue("BooleanColumns");
-	String DateTimeColumns = props.getValue("DateTimeColumns");
-	String DoubleColumns = props.getValue("DoubleColumns");
-	String IntegerColumns = props.getValue("IntegerColumns");
-	String TextColumns = props.getValue("TextColumns");
-	String Top = props.getValue("Top");
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	String Append = props.getValue("Append");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (ObjectID != null) && !ObjectID.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectID=\"" + ObjectID + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (ArrayName != null) && (ArrayName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ArrayName=\"" + ArrayName + "\"" );
-	}
-	if ( (AppendArrays != null) && (AppendArrays.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AppendArrays=" + AppendArrays );
-	}
-	if ( (ExcludeNames != null) && (ExcludeNames.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcludeNames=\"" + ExcludeNames + "\"" );
-	}
-	if ( (ArrayColumns != null) && (ArrayColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ArrayColumns=\"" + ArrayColumns + "\"" );
-	}
-	if ( (BooleanColumns != null) && (BooleanColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "BooleanColumns=\"" + BooleanColumns + "\"" );
-	}
-	if ( (DateTimeColumns != null) && (DateTimeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DateTimeColumns=\"" + DateTimeColumns + "\"" );
-	}
-	if ( (DoubleColumns != null) && (DoubleColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DoubleColumns=\"" + DoubleColumns + "\"" );
-	}
-	if ( (IntegerColumns != null) && (IntegerColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IntegerColumns=\"" + IntegerColumns + "\"" );
-	}
-	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TextColumns=\"" + TextColumns + "\"" );
-	}
-	if ( (Top != null) && (Top.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Top=" + Top );
-	}
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+    	"ObjectID",
+    	"TableID",
+		"ArrayName",
+		"AppendArrays",
+		"ExcludeNames",
+		"ArrayColumns",
+		"BooleanColumns",
+		"DateTimeColumns",
+		"DoubleColumns",
+		"IntegerColumns",
+		"TextColumns",
+		"Top",
+		"RowCountProperty",
+		"Append"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

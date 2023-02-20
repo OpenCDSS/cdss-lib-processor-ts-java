@@ -635,7 +635,7 @@ try{
     //props.add ( "TableID=" + TableID );
 	//props.add ( "DataStoreColumns=" + DataStoreColumns );
 	props.add ( "DeleteAllRows=" + DeleteAllRows );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 catch ( Exception e ) {
     Message.printWarning ( 3, routine, e );

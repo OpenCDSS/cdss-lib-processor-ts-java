@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSData;
@@ -66,18 +65,18 @@ This class initializes, checks, and runs the NewTimeSeries() command.
 public class NewTimeSeries_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
-    
+
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.
+These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
 */
-public NewTimeSeries_Command ()
-{	super();
+public NewTimeSeries_Command () {
+	super();
 	setCommandName ( "NewTimeSeries" );
 }
 
@@ -89,8 +88,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Alias = parameters.getValue ( "Alias" );
+throws InvalidCommandParameterException {
+	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
@@ -99,7 +98,7 @@ throws InvalidCommandParameterException
 	String InitialFunction = parameters.getValue ( "InitialFunction" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -117,8 +116,9 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a new time series identifier." ) );
 	}
-	else { // if ( NewTSID.indexOf("${") < 0 ) {
-		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}
+	else {
+		// if ( NewTSID.indexOf("${") < 0 ) {
+		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}.
 		try { TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
 			try { TimeInterval.parseInterval(tsident.getInterval());
 			}
@@ -140,8 +140,8 @@ throws InvalidCommandParameterException
                             message, "Use the command editor to enter required fields." ) );
 		}
 	}
-	
-	// TODO SAM 2012-04-01 Evaluate whether range should be supported
+
+	// TODO SAM 2012-04-01 Evaluate whether range should be supported.
     if ( (MissingValue != null) && !MissingValue.isEmpty() && !MissingValue.startsWith("${") &&
         !StringUtil.isDouble(MissingValue) && !MissingValue.equalsIgnoreCase("NaN")) {
         message = "The missing value (" + MissingValue+ ") must be a number or NaN.";
@@ -153,24 +153,24 @@ throws InvalidCommandParameterException
     }
 
 	if ( (InitialValue != null) && !InitialValue.isEmpty() && !InitialValue.startsWith("${")) {
-		// If an initial value is specified, make sure it is a number...
+		// If an initial value is specified, make sure it is a number.
 		if ( !StringUtil.isDouble(InitialValue) ) {
             message = "The initial value (" + InitialValue + ") is not a number.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the initial value as a number." ) ); 
+                    message, "Specify the initial value as a number." ) );
 		}
 		if ( (InitialFunction != null) && !InitialFunction.isEmpty() ) {
 		    message = "The initial value and function cannot both be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the initial value OR function." ) ); 
+                    message, "Specify the initial value OR function." ) );
 		}
 	}
     if ( (InitialFunction != null) && !InitialFunction.isEmpty() ) {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         TSFunctionType functionType = null;
         try {
@@ -183,9 +183,9 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported function using the command editor." ) );
         }
-        
-        // Make sure that it is in the supported list for this command
-        
+
+        // Make sure that it is in the supported list for this command.
+
         if ( supported ) {
             supported = false;
             List<TSFunctionType> functionTypes = getFunctionChoices();
@@ -228,9 +228,9 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
-    
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(10);
+
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(10);
     validList.add ( "Alias" );
     validList.add ( "NewTSID" );
     validList.add ( "Description" );
@@ -242,7 +242,7 @@ throws InvalidCommandParameterException
     validList.add ( "InitialFlag" );
     validList.add ( "InitialFunction" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
@@ -257,25 +257,23 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new NewTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discoveryTSList;
 }
 
 /**
 Return the list of supported functions for the InitialFunction parameter.
 */
-protected List<TSFunctionType> getFunctionChoices()
-{
-    List<TSFunctionType> functionTypes = new Vector<TSFunctionType>();
+protected List<TSFunctionType> getFunctionChoices() {
+    List<TSFunctionType> functionTypes = new ArrayList<>();
     functionTypes.add ( TSFunctionType.DATE_YYYY );
     functionTypes.add ( TSFunctionType.DATE_YYYYMM );
     functionTypes.add ( TSFunctionType.DATE_YYYYMMDD );
@@ -288,18 +286,17 @@ protected List<TSFunctionType> getFunctionChoices()
 
 /**
 Return the list of data objects read by this object in discovery mode.
-Classes that can be requsted:  TS
+Classes that can be requested:  TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
     TS datats = discovery_TS_Vector.get(0);
-    // Use the most generic for the base class...
+    // Use the most generic for the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return (List<T>)discovery_TS_Vector;
     }
@@ -309,19 +306,19 @@ public <T> List<T> getObjectList ( Class<T> c )
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "NewTimeSeries.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
     if ( !command.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
+        // New style syntax using simple parameter=value notation.
         super.parseCommand(command);
     }
     else {
@@ -339,20 +336,20 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     		Message.printWarning ( warning_level, routine, message);
     		throw new InvalidCommandSyntaxException ( message );
     	}
-    
-    	// Alias is everything after "TS " (can include space in alias name)
+
+    	// Alias is everything after "TS " (can include space in alias name).
     	String Alias = token0.trim().substring(3).trim();
-    
-    	// Get the command parameters from the token on the right of the =...
-    
+
+    	// Get the command parameters from the token on the right of the =.
+
     	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
     	if ( (tokens == null) || (tokens.size() < 2) ) {
-    		// Must have at least the command name and its parameters...
+    		// Must have at least the command name and its parameters.
     		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewTimeSeries(...)";
     		Message.printWarning ( warning_level, routine, message);
     		throw new InvalidCommandSyntaxException ( message );
     	}
-    
+
     	try {
     	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
     		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -376,9 +373,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -389,8 +384,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -401,16 +395,15 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warningCount = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int logLevel = 3; // Level for non-user warnings to go to log file.
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
@@ -422,22 +415,22 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Initialize the list
+        // Initialize the list.
         setDiscoveryTSList ( null );
     }
 
-	String Alias = parameters.getValue ( "Alias" ); // Expanded below after creating time series
+	String Alias = parameters.getValue ( "Alias" ); // Expanded below after creating time series.
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
 	}
-	String Description = parameters.getValue ( "Description" ); // Expanded below
+	String Description = parameters.getValue ( "Description" ); // Expanded below.
 	if ( (Description != null) && (Description.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		Description = TSCommandProcessorUtil.expandParameterValue(processor, this, Description);
 	}
@@ -467,7 +460,7 @@ CommandWarningException, CommandException
 				MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
 			}
 			try {
-				// Handles numbers and NaN
+				// Handles numbers and NaN.
 				missingValue = Double.parseDouble(MissingValue);
 			}
 			catch ( Exception e ) {
@@ -510,7 +503,7 @@ CommandWarningException, CommandException
 	    initialFunction = TSFunctionType.valueOfIgnoreCase(InitialFunction);
 	}
 
-	// Determine the dates to use for the Set...
+	// Determine the dates to use for the Set.
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -519,7 +512,7 @@ CommandWarningException, CommandException
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warningCount;
 		}
 		try {
@@ -527,10 +520,10 @@ CommandWarningException, CommandException
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warningCount;
 		}
-		// Make sure that dates are not null 
+		// Make sure that dates are not null.
 	    if ( SetStart_DateTime == null ) {
 	        message = "SetStart is not set - cannot allocate time series data array.";
 	        Message.printWarning(logLevel,
@@ -548,21 +541,21 @@ CommandWarningException, CommandException
 	                message, "Specify the SetEnd parameter or use a SetOutputPeriod() command.") );
 	    }
     }
-    
+
     if ( warningCount > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog (commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-	
-	// Now process the time series...
+
+	// Now process the time series.
 
 	TS ts = null;
 	try {
-	    // Create the time series...
+	    // Create the time series.
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
             message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
@@ -587,7 +580,7 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 	try {
-        // Try to fill out the time series.  Allocate memory and set other information...
+        // Try to fill out the time series.  Allocate memory and set other information.
 		ts.setIdentifier ( NewTSID );
 		if ( (Description != null) && !Description.isEmpty() ) {
 			ts.setDescription ( Description );
@@ -614,16 +607,16 @@ CommandWarningException, CommandException
                                 message, "Verify that the period for the time series is not huge." ) );
     		}
     		if ( (InitialValue != null) && !InitialValue.isEmpty() ) {
-    		    // Assign values to the constant
+    		    // Assign values to the constant.
     			TSUtil.setConstant ( ts, InitialValue_double );
     		}
     		else if ( initialFunction != null ) {
-    		    // Assign values using the function
+    		    // Assign values using the function.
     		    TSUtil_SetDataValuesUsingFunction tsu = new TSUtil_SetDataValuesUsingFunction ( ts, initialFunction );
     		    tsu.setDataValuesUsingFunction ();
     		}
     		if ( (InitialFlag != null) && !InitialFlag.isEmpty() ) {
-    		    // Iterate through the data and set the flag
+    		    // Iterate through the data and set the flag.
     		    TSIterator it = ts.iterator();
     		    TSData tsdata = null;
     		    while ( (tsdata = it.next()) != null ) {
@@ -652,13 +645,13 @@ CommandWarningException, CommandException
 	}
 
 	if ( commandPhase == CommandPhaseType.RUN ) {
-    	// Update the data to the processor so that appropriate actions are taken...
+    	// Update the data to the processor so that appropriate actions are taken.
         TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts);
 	}
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Set in the discovery list
+        // Set in the discovery list.
         if ( ts != null ) {
-            List<TS> tslist = new ArrayList<TS>(1);
+            List<TS> tslist = new ArrayList<>(1);
             tslist.add(ts);
             setDiscoveryTSList(tslist);
         }
@@ -672,15 +665,14 @@ CommandWarningException, CommandException
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
@@ -688,108 +680,31 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
 allowing command files to be saved for older software.
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{	if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String Alias = props.getValue( "Alias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String Description = props.getValue( "Description" );
-	String SetStart = props.getValue( "SetStart" );
-	String SetEnd = props.getValue( "SetEnd" );
-	String Units = props.getValue( "Units" );
-	String MissingValue = props.getValue( "MissingValue" );
-	String InitialValue = props.getValue( "InitialValue" );
-	String InitialFlag = props.getValue( "InitialFlag" );
-	String InitialFunction = props.getValue( "InitialFunction" );
-	StringBuffer b = new StringBuffer ();
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (Description != null) && (Description.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Description=\"" + Description + "\"" );
-	}
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
-	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
-	}
-	if ( (Units != null) && (Units.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Units=\"" + Units + "\"" );
-	}
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitialValue=" + InitialValue );
-	}
-    if ( (InitialFlag != null) && (InitialFlag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InitialFlag=\"" + InitialFlag + "\"" );
-    }
-    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InitialFunction=\"" + InitialFunction + "\"" );
-    }
-    if ( majorVersion < 10 ) {
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.insert(0, "Alias=\"" + Alias + "\",");
-            }
-            else {
-                b.append ( "Alias=\"" + Alias + "\"" );
-            }
-        }
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"Alias",
+		"NewTSID",
+		"Description",
+		"SetStart",
+		"SetEnd",
+		"Units",
+		"MissingValue",
+		"InitialValue",
+		"InitialFlag",
+		"InitialFunction"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

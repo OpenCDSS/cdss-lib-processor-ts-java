@@ -561,34 +561,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
-{
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector ) {
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile1 = props.getValue("InputFile1");
-	String InputFile2 = props.getValue("InputFile2");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile1 != null) && (InputFile1.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile1=\"" + InputFile1 + "\"" );
-	}
-	if ( (InputFile2 != null) && (InputFile2.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile2=\"" + InputFile2 + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile1",
+		"InputFile2"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

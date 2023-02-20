@@ -323,55 +323,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String AppendTableID = props.getValue( "AppendTableID" );
-	String IncludeColumns = props.getValue( "IncludeColumns" );
-	String ColumnMap = props.getValue( "ColumnMap" );
-	String ColumnData = props.getValue( "ColumnData" );
-	String ColumnFilters = props.getValue( "ColumnFilters" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (AppendTableID != null) && (AppendTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AppendTableID=\"" + AppendTableID + "\"" );
-    }
-	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-	}
-    if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
-    }
-    if ( (ColumnData != null) && (ColumnData.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnData=\"" + ColumnData + "\"" );
-    }
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"AppendTableID",
+		"IncludeColumns",
+		"ColumnMap",
+		"ColumnData",
+		"ColumnFilters"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

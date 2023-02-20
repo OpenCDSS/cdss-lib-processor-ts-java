@@ -361,45 +361,18 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String SearchFor = parameters.getValue("SearchFor");
-	String ReplaceWith = parameters.getValue("ReplaceWith");
-	String OutputFile = parameters.getValue("OutputFile");
-	String IfInputNotFound = parameters.getValue("IfInputNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (SearchFor != null) && (SearchFor.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SearchFor=\"" + SearchFor + "\"");
-    }
-    if ( (ReplaceWith != null) && (ReplaceWith.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReplaceWith=\"" + ReplaceWith + "\"");
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"");
-    }
-	if ( (IfInputNotFound != null) && (IfInputNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfInputNotFound=" + IfInputNotFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"SearchFor",
+		"ReplaceWith",
+		"OutputFile",
+		"IfInputNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

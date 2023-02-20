@@ -400,45 +400,18 @@ private void setDiscoveryTable ( DataTable table ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String Folder = parameters.getValue("Folder");
-	String IncludeFiles = parameters.getValue("IncludeFiles");
-	String ExcludeFiles = parameters.getValue("ExcludeFiles");
-	String TableID = parameters.getValue("TableID");
-	String Append = parameters.getValue("Append");
-	StringBuffer b = new StringBuffer ();
-	if ( (Folder != null) && (Folder.length() > 0) ) {
-		b.append ( "Folder=\"" + Folder + "\"" );
-	}
-    if ( (IncludeFiles != null) && (IncludeFiles.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeFiles=\"" + IncludeFiles + "\"");
-    }
-    if ( (ExcludeFiles != null) && (ExcludeFiles.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeFiles=\"" + ExcludeFiles + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"Folder",
+		"IncludeFiles",
+		"ExcludeFiles",
+		"TableID",
+		"Append"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

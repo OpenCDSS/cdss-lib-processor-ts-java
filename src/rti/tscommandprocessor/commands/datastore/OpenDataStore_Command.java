@@ -514,83 +514,23 @@ private void setDiscoveryDataStore ( DataStore dataStore ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String DataStoreName = props.getValue("DataStoreName");
-    String DataStoreDescription = props.getValue("DataStoreDescription");
-    String DataStoreType = props.getValue("DataStoreType");
-    String DatabaseEngine = props.getValue("DatabaseEngine");
-    String ServerName = props.getValue("ServerName");
-    String DatabaseName = props.getValue("DatabaseName");
-    String Login = props.getValue("Login");
-    String Password = props.getValue("Password");
-    String ConnectionProperties = props.getValue("ConnectionProperties");
-	String IfFound = props.getValue("IfFound");
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStoreName != null) && (DataStoreName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreName=\"" + DataStoreName + "\"" );
-    }
-    if ( (DataStoreDescription != null) && (DataStoreDescription.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreDescription=\"" + DataStoreDescription + "\"" );
-    }
-    if ( (DataStoreType != null) && (DataStoreType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreType=\"" + DataStoreType + "\"" );
-    }
-    if ( (DatabaseEngine != null) && (DatabaseEngine.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DatabaseEngine=\"" + DatabaseEngine + "\"" );
-    }
-    if ( (ServerName != null) && (ServerName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ServerName=\"" + ServerName + "\"" );
-    }
-    if ( (DatabaseName != null) && (DatabaseName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DatabaseName=\"" + DatabaseName + "\"" );
-    }
-    if ( (Login != null) && (Login.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Login=\"" + Login + "\"" );
-    }
-    if ( (Password != null) && (Password.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Password=\"" + Password + "\"" );
-    }
-    if ( (ConnectionProperties != null) && (ConnectionProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ConnectionProperties=\"" + ConnectionProperties + "\"" );
-    }
-	if ( (IfFound != null) && (IfFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfFound=" + IfFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"DataStoreName",
+    	"DataStoreDescription",
+    	"DataStoreType",
+    	"DatabaseEngine",
+    	"ServerName",
+    	"DatabaseName",
+    	"Login",
+    	"Password",
+    	"ConnectionProperties",
+		"IfFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

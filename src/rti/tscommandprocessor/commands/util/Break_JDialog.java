@@ -228,7 +228,7 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
     props = new PropList ( __command.getCommandName() );
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

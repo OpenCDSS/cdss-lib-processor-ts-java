@@ -411,7 +411,7 @@ private void refresh ()
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "ShiftData=" + ShiftData );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

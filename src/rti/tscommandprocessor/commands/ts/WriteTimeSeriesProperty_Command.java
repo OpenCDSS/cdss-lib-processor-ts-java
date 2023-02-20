@@ -54,9 +54,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteTimeSeriesProperty() command.
-</p>
 */
 public class WriteTimeSeriesProperty_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -409,56 +407,19 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String PropertyName = parameters.getValue ( "PropertyName" );
-	String Append = parameters.getValue ( "Append" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PropertyName=\"" + PropertyName + "\"" );
-	}
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"OutputFile",
+		"PropertyName",
+		"Append"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -618,98 +618,25 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSID = parameters.getValue ( "TSID" );
-    String TraceLength = parameters.getValue ( "TraceLength" );
-    String TraceDescription = parameters.getValue ( "TraceDescription" );
-    String InputStart = parameters.getValue ( "InputStart" );
-    String InputEnd = parameters.getValue ( "InputEnd" );
-    String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String EnsembleName = parameters.getValue ( "EnsembleName" );
-    String Alias = parameters.getValue ( "Alias" );
-    String ReferenceDate = parameters.getValue ( "ReferenceDate" );
-    String OutputYearType = parameters.getValue ( "OutputYearType" );
-    String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
-    String TransferDataHow = parameters.getValue( "TransferDataHow" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (InputStart != null) && (InputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputStart=" + InputStart );
-    }
-    if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputEnd=" + InputEnd );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
-    }
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-	if ( (TraceLength != null) && (TraceLength.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TraceLength=" + TraceLength );
-	}
-	if ( (TraceDescription != null) && (TraceDescription.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TraceDescription=\"" + TraceDescription + "\"" );
-	}
-    if ( (ReferenceDate != null) && (ReferenceDate.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReferenceDate=\"" + ReferenceDate + "\"");
-    }
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-    if ( (ShiftDataHow != null) && (ShiftDataHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShiftDataHow=" + ShiftDataHow );
-    }
-    if ( (TransferDataHow != null) && (TransferDataHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TransferDataHow=" + TransferDataHow );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSID",
+    	"InputStart",
+    	"InputEnd",
+    	"EnsembleID",
+    	"EnsembleName",
+    	"Alias",
+    	"TraceLength",
+    	"TraceDescription",
+    	"ReferenceDate",
+    	"OutputYearType",
+    	"ShiftDataHow",
+    	"TransferDataHow"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

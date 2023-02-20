@@ -967,10 +967,11 @@ private void setConditionEval ( boolean conditionEval ) {
 
 /**
 Return the string representation of the command.
-@param props list of properties to format for output
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   String [] order = {
+public String toString ( PropList parameters ) {
+   String [] parameterOrder = {
 		"Name",
 		"Condition",
 		"CompareAsStrings",
@@ -984,7 +985,7 @@ public String toString ( PropList props )
 		"TableDoesNotExist",
 		"TSExists",
 		"TSDoesNotExist" };
-	return super.toString(props,order);
+	return super.toString(parameters,parameterOrder);
 }
 
 }

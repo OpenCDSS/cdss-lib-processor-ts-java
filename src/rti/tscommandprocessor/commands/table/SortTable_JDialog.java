@@ -359,7 +359,7 @@ private void refresh ()
     props.add ( "TableID=" + TableID );
 	props.add ( "SortColumns=" + SortColumns );
 	props.add ( "SortOrder=" + SortOrder );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

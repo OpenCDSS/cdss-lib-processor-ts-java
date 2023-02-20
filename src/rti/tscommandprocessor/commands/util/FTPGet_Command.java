@@ -365,73 +365,22 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String RemoteSite = parameters.getValue ( "RemoteSite" );
-    String Login = parameters.getValue ( "Login" );
-    String Password = parameters.getValue ( "Password" );
-    String RemoteFolder = parameters.getValue ( "RemoteFolder" );
-    String FilePattern = parameters.getValue ( "FilePattern" );
-    String DestinationFolder = parameters.getValue ( "DestinationFolder" );
-    String TransferMode = parameters.getValue ( "TransferMode" );
-    String RetryCount = parameters.getValue ( "RetryCount" );
-    String RetryWait = parameters.getValue ( "RetryWait" );
-	StringBuffer b = new StringBuffer ();
-	if ( (RemoteSite != null) && (RemoteSite.length() > 0) ) {
-		b.append ( "RemoteSite=\"" + RemoteSite + "\"" );
-	}
-	if ( (Login != null) && (Login.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Login=\"" + Login + "\"" );
-	}
-    if ( (Password != null) && (Password.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Password=\"" + Password + "\"" );
-    }
-    if ( (RemoteFolder != null) && (RemoteFolder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RemoteFolder=\"" + RemoteFolder + "\"" );
-    }
-    if ( (FilePattern != null) && (FilePattern.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FilePattern=\"" + FilePattern + "\"" );
-    }
-    if ( (DestinationFolder != null) && (DestinationFolder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DestinationFolder=\"" + DestinationFolder + "\"" );
-    }
-    if ( (TransferMode != null) && (TransferMode.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TransferMode=" + TransferMode );
-    }
-    if ( (RetryCount != null) && (RetryCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RetryCount=" + RetryCount );
-    }
-    if ( (RetryWait != null) && (RetryWait.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RetryWait=" + RetryWait );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"RemoteSite",
+    	"Login",
+    	"Password",
+    	"RemoteFolder",
+    	"FilePattern",
+    	"DestinationFolder",
+    	"TransferMode",
+    	"RetryCount",
+    	"RetryWait"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // Ian's code from Sentry follows, updated to work with TSCommandProcessor...

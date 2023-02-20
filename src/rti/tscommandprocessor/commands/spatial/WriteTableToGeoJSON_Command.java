@@ -532,133 +532,30 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    String TableID = parameters.getValue( "TableID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String Version = parameters.getValue ( "Version" );
-    String Append = parameters.getValue ( "Append" );
-    String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
-    String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
-    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
-    String ElevationColumn = parameters.getValue ( "ElevationColumn" );
-    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
-    String CRSText = parameters.getValue ( "CRSText" );
-    String IncludeBBox = parameters.getValue ( "IncludeBBox" );
-    String IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
-    String IncludeColumns = parameters.getValue ( "IncludeColumns" );
-    String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
-    String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
-    String PrependText = parameters.getValue ( "PrependText" );
-    String AppendText = parameters.getValue ( "AppendText" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (Version != null) && (Version.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Version=\"" + Version + "\"" );
-    }
-    if ( (Append != null) && (Append.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Append=\"" + Append + "\"" );
-    }
-    if ( (LongitudeColumn != null) && (LongitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LongitudeColumn=\"" + LongitudeColumn + "\"" );
-    }
-    if ( (LatitudeColumn != null) && (LatitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LatitudeColumn=\"" + LatitudeColumn + "\"" );
-    }
-    if ( (CoordinatePrecision != null) && (CoordinatePrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CoordinatePrecision=" + CoordinatePrecision );
-    }
-    if ( (ElevationColumn != null) && (ElevationColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationColumn=\"" + ElevationColumn + "\"" );
-    }
-    if ( (WKTGeometryColumn != null) && (WKTGeometryColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
-    }
-    if ( (CRSText != null) && (CRSText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CRSText=\"" + CRSText + "\"" );
-    }
-    if ( (IncludeBBox != null) && (IncludeBBox.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeBBox=" + IncludeBBox );
-    }
-    if ( (IncludeFeatureBBox != null) && (IncludeFeatureBBox.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeFeatureBBox=" + IncludeFeatureBBox );
-    }
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-    }
-    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
-    }
-    if ( (JavaScriptVar != null) && (JavaScriptVar.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "JavaScriptVar=\"" + JavaScriptVar + "\"" );
-    }
-    if ( (PrependText != null) && (PrependText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PrependText=\"" + PrependText + "\"" );
-    }
-    if ( (AppendText != null) && (AppendText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AppendText=\"" + AppendText + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"TableID",
+    	"OutputFile",
+    	"Version",
+    	"Append",
+    	"LongitudeColumn",
+    	"LatitudeColumn",
+    	"CoordinatePrecision",
+    	"ElevationColumn",
+    	"WKTGeometryColumn",
+    	"CRSText",
+    	"IncludeBBox",
+    	"IncludeFeatureBBox",
+    	"IncludeColumns",
+    	"ExcludeColumns",
+    	"JavaScriptVar",
+    	"PrependText",
+    	"AppendText"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2016-01-16 Need to evaluate GeoJSON Java toolkits once project is updated to use Maven.

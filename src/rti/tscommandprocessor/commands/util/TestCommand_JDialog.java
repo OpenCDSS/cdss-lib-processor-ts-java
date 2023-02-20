@@ -378,7 +378,7 @@ private void refresh ()
 	props.add ( "InitializeStatus=" + InitializeStatus );
 	props.add ( "DiscoveryStatus=" + DiscoveryStatus );
 	props.add ( "RunStatus=" + RunStatus );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

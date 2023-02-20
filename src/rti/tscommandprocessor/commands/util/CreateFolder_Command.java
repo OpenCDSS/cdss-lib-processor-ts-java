@@ -261,31 +261,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String Folder = parameters.getValue("Folder");
-	String CreateParentFolders = parameters.getValue("CreateParentFolders");
-	String IfFolderExists = parameters.getValue("IfFolderExists");
-	StringBuffer b = new StringBuffer ();
-	if ( (Folder != null) && (Folder.length() > 0) ) {
-		b.append ( "Folder=\"" + Folder + "\"" );
-	}
-	if ( (CreateParentFolders != null) && (CreateParentFolders.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "CreateParentFolders=" + CreateParentFolders );
-	}
-	if ( (IfFolderExists != null) && (IfFolderExists.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfFolderExists=" + IfFolderExists );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"Folder",
+		"CreateParentFolders",
+		"IfFolderExists"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

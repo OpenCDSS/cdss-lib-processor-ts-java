@@ -643,154 +643,33 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String Name = parameters.getValue ( "Name" );
-    String Description = parameters.getValue ( "Description" );
-    String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
-    String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
-    String ElevationProperty = parameters.getValue ( "ElevationProperty" );
-    String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
-    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
-    String PlacemarkName = parameters.getValue ( "PlacemarkName" );
-    String PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" );
-    String StyleInsert = parameters.getValue ( "StyleInsert" );
-    String StyleFile = parameters.getValue ( "StyleFile" );
-    String StyleUrl = parameters.getValue ( "StyleUrl" );
-    String Precision = parameters.getValue("Precision");
-    String MissingValue = parameters.getValue("MissingValue");
-    String OutputStart = parameters.getValue ( "OutputStart" );
-    String OutputEnd = parameters.getValue ( "OutputEnd" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (Name != null) && (Name.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Name=\"" + Name + "\"" );
-    }
-    if ( (Description != null) && (Description.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Description=\"" + Description + "\"" );
-    }
-    if ( (LongitudeProperty != null) && (LongitudeProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LongitudeProperty=\"" + LongitudeProperty + "\"" );
-    }
-    if ( (LatitudeProperty != null) && (LatitudeProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LatitudeProperty=\"" + LatitudeProperty + "\"" );
-    }
-    if ( (ElevationProperty != null) && (ElevationProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationProperty=\"" + ElevationProperty + "\"" );
-    }
-    if ( (WKTGeometryProperty != null) && (WKTGeometryProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WKTGeometryProperty=\"" + WKTGeometryProperty + "\"" );
-    }
-    if ( (GeometryInsert != null) && (GeometryInsert.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "GeometryInsert=\"" + GeometryInsert + "\"" );
-    }
-    if ( (PlacemarkName != null) && (PlacemarkName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PlacemarkName=\"" + PlacemarkName + "\"" );
-    }
-    if ( (PlacemarkDescription != null) && (PlacemarkDescription.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PlacemarkDescription=\"" + PlacemarkDescription + "\"" );
-    }
-    if ( (StyleInsert != null) && (StyleInsert.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleInsert=\"" + StyleInsert + "\"" );
-    }
-    if ( (StyleFile != null) && (StyleFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleFile=\"" + StyleFile + "\"" );
-    }
-    if ( (StyleUrl != null) && (StyleUrl.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleUrl=\"" + StyleUrl + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"OutputFile",
+    	"Name",
+    	"Description",
+    	"LongitudeProperty",
+    	"LatitudeProperty",
+    	"ElevationProperty",
+    	"WKTGeometryProperty",
+    	"GeometryInsert",
+    	"PlacemarkName",
+    	"PlacemarkDescription",
+    	"StyleInsert",
+    	"StyleFile",
+    	"StyleUrl",
+    	"Precision",
+    	"MissingValue",
+    	"OutputStart",
+    	"OutputEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here

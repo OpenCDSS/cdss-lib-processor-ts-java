@@ -502,231 +502,44 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = parameters.getValue ( "TSList" );
-	String TSID = parameters.getValue( "TSID" );
-	String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String MissingValue = parameters.getValue("MissingValue");
-	String Precision = parameters.getValue("Precision");
-	String TIdentifier = parameters.getValue("TIdentifier");
-    String THash = parameters.getValue("THash");
-    String TQualityType = parameters.getValue("TQualityType");
-    String TParameter = parameters.getValue("TParameter");
-    String TDuration = parameters.getValue("TDuration");
-    String TInterval = parameters.getValue("TInterval");
-    String TUnits = parameters.getValue("TUnits");
-    String SName = parameters.getValue("SName");
-    String SResponsibility = parameters.getValue("SResponsibility");
-    String SCoordLatitude = parameters.getValue("SCoordLatitude");
-    String SCoordLongitude = parameters.getValue("SCoordLongitude");
-    String SCoordDatum = parameters.getValue("SCoordDatum");
-    String SHUC = parameters.getValue("SHUC");
-    String SElevValue = parameters.getValue("SElevValue");
-    String SElevAccuracy = parameters.getValue("SElevAccuracy");
-    String SElevDatum = parameters.getValue("SElevDatum");
-    String SElevMethod = parameters.getValue("SElevMethod");
-	String STimeZone = parameters.getValue("STimeZone");
-	String STimeZoneOffset = parameters.getValue("STimeZoneOffset");
-	String STimeFormat = parameters.getValue("STimeFormat");
-	String SActiveFlag = parameters.getValue("SActiveFlag");
-	String SLocationType = parameters.getValue("SLocationType");
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String PrintNice = parameters.getValue ( "PrintNice" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-	if ( (TIdentifier != null) && (TIdentifier.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TIdentifier=\"" + TIdentifier + "\"" );
-	}
-	if ( (THash != null) && (THash.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "THash=\"" + THash + "\"" );
-	}
-	if ( (TQualityType != null) && (TQualityType.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TQualityType=\"" + TQualityType + "\"" );
-	}
-	if ( (TParameter != null) && (TParameter.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TParameter=\"" + TParameter + "\"" );
-	}
-	if ( (TDuration != null) && (TDuration.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TDuration=\"" + TDuration + "\"" );
-	}
-	if ( (TInterval != null) && (TInterval.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TInterval=\"" + TInterval + "\"" );
-	}
-	if ( (TUnits != null) && (TUnits.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TUnits=\"" + TUnits + "\"" );
-	}
-	if ( (SName != null) && (SName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SName=\"" + SName + "\"" );
-	}
-	if ( (SResponsibility != null) && (SResponsibility.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SResponsibility=\"" + SResponsibility + "\"" );
-	}
-	if ( (SCoordLatitude != null) && (SCoordLatitude.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SCoordLatitude=" + SCoordLatitude );
-	}
-	if ( (SCoordLongitude != null) && (SCoordLongitude.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SCoordLongitude=" + SCoordLongitude );
-	}
-	if ( (SCoordDatum != null) && (SCoordDatum.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SCoordDatum=\"" + SCoordDatum + "\"" );
-	}
-	if ( (SHUC != null) && (SHUC.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SHUC=\"" + SHUC + "\"" );
-	}
-	if ( (SElevValue != null) && (SElevValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SElevValue=" + SElevValue );
-	}
-	if ( (SElevAccuracy != null) && (SElevAccuracy.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SElevAccuracy=" + SElevAccuracy );
-	}
-	if ( (SElevDatum != null) && (SElevDatum.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SElevDatum=\"" + SElevDatum + "\"" );
-	}
-	if ( (SElevMethod != null) && (SElevMethod.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SElevMethod=\"" + SElevMethod + "\"" );
-	}
-	if ( (STimeZone != null) && (STimeZone.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "STimeZone=\"" + STimeZone + "\"" );
-	}
-	if ( (STimeZoneOffset != null) && (STimeZoneOffset.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "STimeZoneOffset=\"" + STimeZoneOffset + "\"" );
-	}
-	if ( (STimeFormat != null) && (STimeFormat.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "STimeFormat=\"" + STimeFormat + "\"" );
-	}
-	if ( (SActiveFlag != null) && (SActiveFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SActiveFlag=\"" + SActiveFlag + "\"" );
-	}
-	if ( (SLocationType != null) && (SLocationType.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SLocationType=\"" + SLocationType + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (PrintNice != null) && !PrintNice.isEmpty() ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PrintNice=" + PrintNice );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"OutputStart",
+		"OutputEnd",
+		"MissingValue",
+		"Precision",
+		"TIdentifier",
+    	"THash",
+    	"TQualityType",
+    	"TParameter",
+    	"TDuration",
+    	"TInterval",
+    	"TUnits",
+    	"SName",
+    	"SResponsibility",
+    	"SCoordLatitude",
+    	"SCoordLongitude",
+    	"SCoordDatum",
+    	"SHUC",
+    	"SElevValue",
+    	"SElevAccuracy",
+    	"SElevDatum",
+    	"SElevMethod",
+		"STimeZone",
+		"STimeZoneOffset",
+		"STimeFormat",
+		"SActiveFlag",
+		"SLocationType",
+		"OutputFile",
+		"PrintNice"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2015-08-24 Evaluate whether a separate package should be created - for now keep the code here

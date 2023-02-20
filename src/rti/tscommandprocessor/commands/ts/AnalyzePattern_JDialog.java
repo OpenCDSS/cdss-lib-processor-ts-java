@@ -799,7 +799,7 @@ private void refresh()
 	props.add ( "DataRow=" + DataRow );
 	props.add ( "Legacy=" + Legacy );
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**
@@ -807,8 +807,7 @@ React to the user response.
 @param ok if false, then the edit is cancelled.  If true, the edit is committed
 and the dialog is closed.
 */
-public void response ( boolean ok )
-{	
+public void response ( boolean ok ) {	
 	__ok = ok;
 	if ( ok ) {
 		// Commit the changes...
@@ -826,8 +825,7 @@ public void response ( boolean ok )
 /**
 Handle ListSelectionListener events.
 */
-public void valueChanged ( ListSelectionEvent e )
-{
+public void valueChanged ( ListSelectionEvent e ) {
 	if ( ignoreValueChanged ) {
 		return;
 	}

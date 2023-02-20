@@ -520,42 +520,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the detail table that is read by this class in discovery mode.
 */
-private void setDiscoveryDetailTable ( DataTable table )
-{
+private void setDiscoveryDetailTable ( DataTable table ) {
     __detailTable = table;
 }
 
 /**
 Set the summary table that is read by this class in discovery mode.
 */
-private void setDiscoverySummaryTable ( DataTable table )
-{
+private void setDiscoverySummaryTable ( DataTable table ) {
     __summaryTable = table;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String DetailTableID = props.getValue( "DetailTableID" );
-    String SummaryTableID = props.getValue( "SummaryTableID" );
-	StringBuffer b = new StringBuffer ();
-    if ( (SummaryTableID != null) && (SummaryTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SummaryTableID=\"" + SummaryTableID + "\"" );
-    }
-    if ( (DetailTableID != null) && (DetailTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DetailTableID=\"" + DetailTableID + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"SummaryTableID",
+		"DetailTableID"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

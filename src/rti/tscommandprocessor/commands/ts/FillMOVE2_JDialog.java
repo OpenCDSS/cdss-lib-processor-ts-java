@@ -331,22 +331,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__NumberOfEquations_JComboBox = null;
-	__command = null;
-	__command_JTextArea = null;
-	__IndependentTSID_JComboBox = null;
-	__ok_JButton = null;
-	__Transformation_JComboBox = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -1013,7 +997,7 @@ private void refresh ()
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

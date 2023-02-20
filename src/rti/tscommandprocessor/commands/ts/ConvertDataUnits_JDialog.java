@@ -514,7 +514,7 @@ private void refresh ()
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "NewUnits=" + NewUnits );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
@@ -540,8 +540,7 @@ private void refreshUnits ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

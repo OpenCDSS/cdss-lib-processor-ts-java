@@ -741,7 +741,7 @@ try{
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "DataStoreRelatedColumnsMap=" + DataStoreRelatedColumnsMap );
 	props.add ( "WriteMode=" + WriteMode );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 catch ( Exception e ) {
     Message.printWarning ( 3, routine, e );

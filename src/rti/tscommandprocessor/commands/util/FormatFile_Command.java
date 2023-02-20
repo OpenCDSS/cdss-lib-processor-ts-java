@@ -558,66 +558,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
     __OutputFile_File = file;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String PrependFile = parameters.getValue("PrependFile");
-	String AppendFile = parameters.getValue("AppendFile");
-	String ContentType = parameters.getValue("ContentType");
-	String AutoFormat = parameters.getValue("AutoFormat");
-	String OutputType = parameters.getValue("OutputType");
-	String OutputFile = parameters.getValue("OutputFile");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (PrependFile != null) && (PrependFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PrependFile=\"" + PrependFile + "\"" );
-	}
-	if ( (AppendFile != null) && (AppendFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AppendFile=\"" + AppendFile + "\"" );
-	}
-    if ( (ContentType != null) && (ContentType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ContentType=" + ContentType );
-    }
-    if ( (AutoFormat != null) && (AutoFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AutoFormat=" + AutoFormat );
-    }
-    if ( (OutputType != null) && (OutputType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputType=" + OutputType );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"PrependFile",
+		"AppendFile",
+		"ContentType",
+		"AutoFormat",
+		"OutputType",
+		"OutputFile"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

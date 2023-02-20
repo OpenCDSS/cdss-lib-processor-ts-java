@@ -785,105 +785,26 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String Statistic = props.getValue( "Statistic" );
-	String TestValue = props.getValue( "TestValue" );
-	String MonthTestValues = props.getValue( "MonthTestValues" );
-	String AllowMissingCount = props.getValue( "AllowMissingCount" );
-	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
-	String AnalysisStart = props.getValue( "AnalysisStart" );
-	String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
-	String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
-	String SearchStart = props.getValue( "SearchStart" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (Statistic != null) && (Statistic.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Statistic=" + Statistic );
-	}
-	if ( (TestValue != null) && (TestValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TestValue=" + TestValue );
-	}
-	if ( (MonthTestValues != null) && (MonthTestValues.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MonthTestValues=\"" + MonthTestValues + "\"");
-    }
-	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AllowMissingCount=" + AllowMissingCount );
-	}
-    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
-    }
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
-    }
-    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
-    }
-    if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SearchStart=\"" + SearchStart + "\"" );
-    }
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSID",
+		"Alias",
+		"NewTSID",
+		"Statistic",
+		"TestValue",
+		"MonthTestValues",
+		"AllowMissingCount",
+		"MinimumSampleSize",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"AnalysisWindowStart",
+		"AnalysisWindowEnd",
+		"SearchStart"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

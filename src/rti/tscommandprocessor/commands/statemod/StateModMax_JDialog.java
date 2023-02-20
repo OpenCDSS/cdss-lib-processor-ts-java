@@ -259,24 +259,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__browse1_JButton = null;
-	__browse2_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__InputFile1_JTextField = null;
-	__InputFile2_JTextField = null;
-	__command = null;
-	__ok_JButton = null;
-	__path1_JButton = null;
-	__path2_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -450,7 +432,7 @@ private void refresh ()
     props = new PropList ( __command.getCommandName() );
     props.add ( "InputFile1=" + InputFile1 );
     props.add ( "InputFile2=" + InputFile2 );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
     // Check the path and determine what the label on the path button should be...
     if ( __path1_JButton != null ) {
     	// Check the path and determine what the label on the path button should be...

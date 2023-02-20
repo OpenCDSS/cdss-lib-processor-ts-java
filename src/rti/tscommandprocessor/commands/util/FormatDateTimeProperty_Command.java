@@ -412,48 +412,18 @@ private void setDiscoveryProp ( Prop prop )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String PropertyName = props.getValue( "PropertyName" );
-    String DateTimePropertyName = props.getValue( "DateTimePropertyName" );
-	String FormatterType = props.getValue( "FormatterType" );
-    String Format = props.getValue( "Format" );
-    String PropertyType = props.getValue( "PropertyType" );
-	StringBuffer b = new StringBuffer ();
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (DateTimePropertyName != null) && (DateTimePropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimePropertyName=\"" + DateTimePropertyName + "\"" );
-    }
-    if ( (FormatterType != null) && (FormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FormatterType=" + FormatterType );
-    }
-	if ( (Format != null) && (Format.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Format=\"" + Format + "\"" );
-	}
-    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyType=" + PropertyType );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"PropertyName",
+    	"DateTimePropertyName",
+		"FormatterType",
+    	"Format",
+    	"PropertyType"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -1075,7 +1075,7 @@ private void refresh ()
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "TimeZoneMap=" + TimeZoneMap );
 	props.add ( "Alias=" + Alias );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 
 	// Check the GUI state to determine whether some controls should be disabled.
 

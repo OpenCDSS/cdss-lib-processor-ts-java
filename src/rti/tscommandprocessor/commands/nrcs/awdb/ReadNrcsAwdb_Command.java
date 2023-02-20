@@ -808,161 +808,34 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	StringBuffer b = new StringBuffer ();
-	if ( props == null ) {
-	    return getCommandName() + "()";
-	}
-    String DataStore = props.getValue("DataStore");
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    String Interval = props.getValue("Interval");
-    if ( (Interval != null) && (Interval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Interval=" + Interval );
-    }
-	String Stations = props.getValue("Stations");
-	if ( (Stations != null) && (Stations.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Stations=\"" + Stations + "\"" );
-	}
-    String States = props.getValue("States");
-    if ( (States != null) && (States.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "States=\"" + States + "\"" );
-    }
-    String Networks = props.getValue("Networks");
-    if ( (Networks != null) && (Networks.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Networks=\"" + Networks + "\"" );
-    }
-    String HUCs = props.getValue("HUCs");
-    if ( (HUCs != null) && (HUCs.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HUCs=\"" + HUCs + "\"" );
-    }
-    String BoundingBox = props.getValue("BoundingBox");
-    if ( (BoundingBox != null) && (BoundingBox.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BoundingBox=\"" + BoundingBox + "\"" );
-    }
-    String Counties = props.getValue("Counties");
-    if ( (Counties != null) && (Counties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Counties=\"" + Counties + "\"" );
-    }
-    String ReadForecast = props.getValue("ReadForecast");
-    if ( (ReadForecast != null) && (ReadForecast.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReadForecast=" + ReadForecast );
-    }
-    String ForecastTableID = props.getValue("ForecastTableID");
-    if ( (ForecastTableID != null) && (ForecastTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ForecastTableID=\"" + ForecastTableID + "\"" );
-    }
-    String ForecastPeriod = props.getValue("ForecastPeriod");
-    if ( (ForecastPeriod != null) && (ForecastPeriod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ForecastPeriod=\"" + ForecastPeriod + "\"" );
-    }
-    String ForecastPublicationDateStart = props.getValue("ForecastPublicationDateStart");
-    if ( (ForecastPublicationDateStart != null) && (ForecastPublicationDateStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ForecastPublicationDateStart=\"" + ForecastPublicationDateStart + "\"" );
-    }
-    String ForecastPublicationDateEnd = props.getValue("ForecastPublicationDateEnd");
-    if ( (ForecastPublicationDateEnd != null) && (ForecastPublicationDateEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ForecastPublicationDateEnd=\"" + ForecastPublicationDateEnd + "\"" );
-    }
-    String ForecastExceedanceProbabilities = props.getValue("ForecastExceedanceProbabilities");
-    if ( (ForecastExceedanceProbabilities != null) && (ForecastExceedanceProbabilities.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ForecastExceedanceProbabilities=\"" + ForecastExceedanceProbabilities + "\"" );
-    }
-    String Elements = props.getValue("Elements");
-    if ( (Elements != null) && (Elements.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Elements=\"" + Elements + "\"" );
-    }
-    String ElevationMin = props.getValue("ElevationMin");
-    if ( (ElevationMin != null) && (ElevationMin.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationMin=" + ElevationMin );
-    }
-    String ElevationMax = props.getValue("ElevationMax");
-    if ( (ElevationMax != null) && (ElevationMax.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationMax=" + ElevationMax );
-    }
-	String InputStart = props.getValue("InputStart");
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputStart=\"" + InputStart + "\"" );
-	}
-	String InputEnd = props.getValue("InputEnd");
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputEnd=\"" + InputEnd + "\"" );
-	}
-	String TimeZoneMap = props.getValue("TimeZoneMap");
-	if ( (TimeZoneMap != null) && (TimeZoneMap.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TimeZoneMap=\"" + TimeZoneMap + "\"" );
-	}
-    String Alias = props.getValue("Alias");
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"Interval",
+		"Stations",
+		"States",
+		"Networks",
+		"HUCs",
+		"BoundingBox",
+		"Counties",
+		"ReadForecast",
+		"ForecastTableID",
+		"ForecastPeriod",
+		"ForecastPublicationDateStart",
+		"ForecastPublicationDateEnd",
+		"ForecastExceedanceProbabilities",
+		"Elements",
+    	"ElevationMin",
+    	"ElevationMax",
+    	"InputStart",
+    	"InputEnd",
+    	"TimeZoneMap",
+    	"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

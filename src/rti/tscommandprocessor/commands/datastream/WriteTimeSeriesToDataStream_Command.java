@@ -655,147 +655,32 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Append = parameters.getValue ( "Append" );
-	String OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
-	String OutputFileHeaderFile = parameters.getValue ( "OutputFileHeaderFile" );
-	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
-	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
-	String LastOutputLineFormat = parameters.getValue ( "LastOutputLineFormat" );
-	String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
-	String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
-	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
-	String OutputFileFooterFile = parameters.getValue ( "OutputFileFooterFile" );
-	String Precision = parameters.getValue("Precision");
-	String MissingValue = parameters.getValue("MissingValue");
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String NonMissingOutputCount = parameters.getValue ( "NonMissingOutputCount" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Append != null) && (Append.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Append=" + Append );
-    }
-    if ( (OutputFileHeader != null) && (OutputFileHeader.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFileHeader=\"" + OutputFileHeader + "\"" );
-    }
-    if ( (OutputFileHeaderFile != null) && (OutputFileHeaderFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFileHeaderFile=\"" + OutputFileHeaderFile + "\"" );
-    }
-    if ( (OutputLineFormat != null) && (OutputLineFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputLineFormat=\"" + OutputLineFormat + "\"" );
-    }
-    if ( (OutputLineFormatFile != null) && (OutputLineFormatFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputLineFormatFile=\"" + OutputLineFormatFile + "\"" );
-    }
-    if ( (LastOutputLineFormat != null) && (LastOutputLineFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LastOutputLineFormat=\"" + LastOutputLineFormat + "\"" );
-    }
-    if ( (DateTimeFormatterType != null) && (DateTimeFormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormatterType=\"" + DateTimeFormatterType + "\"" );
-    }
-    if ( (DateTimeFormat != null) && (DateTimeFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormat=\"" + DateTimeFormat + "\"" );
-    }
-    if ( (OutputFileFooter != null) && (OutputFileFooter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFileFooter=\"" + OutputFileFooter + "\"" );
-    }
-    if ( (OutputFileFooterFile != null) && (OutputFileFooterFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFileFooterFile=\"" + OutputFileFooterFile + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (NonMissingOutputCount != null) && (NonMissingOutputCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NonMissingOutputCount=" + NonMissingOutputCount );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"OutputFile",
+		"Append",
+		"OutputFileHeader",
+		"OutputFileHeaderFile",
+		"OutputLineFormat",
+		"OutputLineFormatFile",
+		"LastOutputLineFormat",
+		"DateTimeFormatterType",
+		"DateTimeFormat",
+		"OutputFileFooter",
+		"OutputFileFooterFile",
+		"Precision",
+		"MissingValue",
+		"OutputStart",
+		"OutputEnd",
+		"NonMissingOutputCount"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

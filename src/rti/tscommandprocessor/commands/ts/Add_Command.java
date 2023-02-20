@@ -882,86 +882,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String AddTSList = props.getValue( "AddTSList" );
-    String AddTSID = props.getValue( "AddTSID" );
-    String AddEnsembleID = props.getValue( "AddEnsembleID" );
-    String HandleMissingHow = props.getValue( "HandleMissingHow" );
-    String IfTSListToAddIsEmpty = props.getValue ( "IfTSListToAddIsEmpty" );
-	String AnalysisStart = props.getValue("AnalysisStart");
-	String AnalysisEnd = props.getValue("AnalysisEnd");
-    //String TransferHow = props.getValue( "TransferHow" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (AddTSList != null) && (AddTSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AddTSList=" + AddTSList );
-    }
-    if ( (AddTSID != null) && (AddTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AddTSID=\"" + AddTSID + "\"" );
-    }
-    if ( (AddEnsembleID != null) && (AddEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AddEnsembleID=\"" + AddEnsembleID + "\"" );
-    }
-    if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HandleMissingHow=\"" + HandleMissingHow + "\"" );
-    }
-    if ( (IfTSListToAddIsEmpty != null) && (IfTSListToAddIsEmpty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfTSListToAddIsEmpty=" + IfTSListToAddIsEmpty );
-    }
-    /*
-    if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TransferHow=" + TransferHow );
-    }
-    */
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSID",
+    	"EnsembleID",
+    	"AddTSList",
+    	"AddTSID",
+    	"AddEnsembleID",
+    	"HandleMissingHow",
+    	"IfTSListToAddIsEmpty",
+		"AnalysisStart",
+		"AnalysisEnd",
+    	//"TransferHow"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

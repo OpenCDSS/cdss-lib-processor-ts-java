@@ -616,7 +616,7 @@ private void refresh ()
 	props.add ( "MessageFile=" + MessageFile );
 	props.add ( "AttachmentFiles=" + AttachmentFiles );
 	props.add ( "IfNotFound=" + IfNotFound );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __pathMessage_JButton != null ) {
 		if ( (MessageFile != null) && !MessageFile.isEmpty() ) {

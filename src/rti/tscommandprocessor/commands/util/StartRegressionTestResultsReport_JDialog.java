@@ -367,7 +367,7 @@ private void refresh ()
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "TestResultsTableID=" + TestResultsTableID );
-	__command_JTextArea.setText( __command.toString(parameters) );
+	__command_JTextArea.setText( __command.toString(parameters).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

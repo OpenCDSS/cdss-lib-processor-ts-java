@@ -592,7 +592,7 @@ private void refresh ()
 	props.add ( "K=" + K );
 	props.add ( "InflowStates=" + InflowStates );
 	props.add ( "OutflowStates=" + OutflowStates );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

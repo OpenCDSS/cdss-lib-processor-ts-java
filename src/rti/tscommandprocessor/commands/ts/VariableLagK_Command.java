@@ -1758,175 +1758,36 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param props PropList of Command properties
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-	// Get the properties from the command; 
-	String TSID = props.getValue( "TSID" );
-    String FlowUnits = props.getValue("FlowUnits");
-    String LagInterval = props.getValue("LagInterval");
-	String Lag = props.getValue("Lag");
-	String K = props.getValue("K");
-    String OutputStart = props.getValue( "OutputStart" );
-    String OutputEnd = props.getValue( "OutputEnd" );
-	String InitializeStatesFromTable = props.getValue("InitializeStatesFromTable");
-	String InitialLaggedInflow = props.getValue("InitialLaggedInflow");
-	String InitialOutflow = props.getValue("InitialOutflow");
-	String InitialStorage = props.getValue("InitialStorage");
-	String InitialQTLag = props.getValue("InitialQTLag");
-	String StateTableID = props.getValue ( "StateTableID" );
-	String StateTableObjectIDColumn = props.getValue ( "StateTableObjectIDColumn" );
-	String StateTableObjectID = props.getValue ( "StateTableObjectID" );
-	String StateTableDateTimeColumn = props.getValue ( "StateTableDateTimeColumn" );
-	String StateTableNameColumn = props.getValue ( "StateTableNameColumn" );
-	String StateTableValueColumn = props.getValue ( "StateTableValueColumn" );
-	String StateTableStateName = props.getValue ( "StateTableStateName" );
-	String StateSaveDateTime = props.getValue ( "StateSaveDateTime" );
-	String StateSaveInterval = props.getValue ( "StateSaveInterval" );
-	String NewTSID = props.getValue("NewTSID");
-	String Alias = props.getValue( "Alias" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (FlowUnits != null) && (FlowUnits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FlowUnits=\"" + FlowUnits + "\"" );
-    }
-    if ( (LagInterval != null) && (LagInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LagInterval=\"" + LagInterval + "\"");
-    }
-	if ( (Lag != null) && (Lag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Lag=\"" + Lag +"\"" );
-	}
-	if ( (K != null) && (K.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "K=\"" + K + "\"" );
-	}
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-    }
-	if ( (InitializeStatesFromTable != null) && (InitializeStatesFromTable.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitializeStatesFromTable=\"" + InitializeStatesFromTable + "\"");
-	}
-	if ( (InitialLaggedInflow != null) && (InitialLaggedInflow.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitialLaggedInflow=" + InitialLaggedInflow );
-	}
-	if ( (InitialOutflow != null) && (InitialOutflow.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitialOutflow=" + InitialOutflow );
-	}
-	if ( (InitialStorage != null) && (InitialStorage.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitialStorage=" + InitialStorage );
-	}
-	if ( (InitialQTLag != null) && (InitialQTLag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitialQTLag=\"" + InitialQTLag + "\"" );
-	}
-    if ( (StateTableID != null) && (StateTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableID=\"" + StateTableID + "\"" );
-    }
-    if ( (StateTableObjectIDColumn != null) && (StateTableObjectIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableObjectIDColumn=\"" + StateTableObjectIDColumn + "\"" );
-    }
-    if ( (StateTableObjectID != null) && (StateTableObjectID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableObjectID=\"" + StateTableObjectID + "\"" );
-    }
-    if ( (StateTableDateTimeColumn != null) && !StateTableDateTimeColumn.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableDateTimeColumn=\"" + StateTableDateTimeColumn + "\"" );
-    }
-    if ( (StateTableNameColumn != null) && (StateTableNameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableNameColumn=\"" + StateTableNameColumn + "\"" );
-    }
-    if ( (StateTableValueColumn != null) && (StateTableValueColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableValueColumn=\"" + StateTableValueColumn + "\"" );
-    }
-    if ( (StateTableStateName != null) && (StateTableStateName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableStateName=\"" + StateTableStateName + "\"" );
-    }
-    if ( (StateSaveDateTime != null) && (StateSaveDateTime.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateSaveDateTime=\"" + StateSaveDateTime + "\"" );
-    }
-    if ( (StateSaveInterval != null) && (StateSaveInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateSaveInterval=\"" + StateSaveInterval + "\"" );
-    }
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (Alias != null) && (Alias.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Alias=\"" + Alias + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSID",
+    	"FlowUnits",
+    	"LagInterval",
+		"Lag",
+		"K",
+    	"OutputStart",
+    	"OutputEnd",
+		"InitializeStatesFromTable",
+		"InitialLaggedInflow",
+		"InitialOutflow",
+		"InitialStorage",
+		"InitialQTLag",
+		"StateTableID",
+		"StateTableObjectIDColumn",
+		"StateTableObjectID",
+		"StateTableDateTimeColumn",
+		"StateTableNameColumn",
+		"StateTableValueColumn",
+		"StateTableStateName",
+		"StateSaveDateTime",
+		"StateSaveInterval",
+		"NewTSID",
+		"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

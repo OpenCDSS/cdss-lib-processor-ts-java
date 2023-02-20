@@ -589,104 +589,26 @@ private void setDiscoveryTable ( DataTable table ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String InputFile = props.getValue( "InputFile" );
-	String Delimiter = props.getValue( "Delimiter" );
-	String SkipLines = props.getValue("SkipLines");
-	String SkipColumns = props.getValue("SkipColumns");
-	String HeaderLines = props.getValue("HeaderLines");
-	String ColumnNames = props.getValue("ColumnNames");
-	String DateTimeColumns = props.getValue("DateTimeColumns");
-	String DoubleColumns = props.getValue("DoubleColumns");
-	String IntegerColumns = props.getValue("IntegerColumns");
-	String TextColumns = props.getValue("TextColumns");
-	String Top = props.getValue("Top");
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Delimiter=\"" + Delimiter + "\"" );
-	}
-	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SkipLines=\"" + SkipLines + "\"" );
-	}
-	if ( (SkipColumns != null) && (SkipColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SkipColumns=\"" + SkipColumns + "\"" );
-	}
-	if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "HeaderLines=\"" + HeaderLines + "\"" );
-	}
-	if ( (ColumnNames != null) && (ColumnNames.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ColumnNames=\"" + ColumnNames + "\"" );
-	}
-	if ( (DateTimeColumns != null) && (DateTimeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DateTimeColumns=\"" + DateTimeColumns + "\"" );
-	}
-	if ( (DoubleColumns != null) && (DoubleColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DoubleColumns=\"" + DoubleColumns + "\"" );
-	}
-	if ( (IntegerColumns != null) && (IntegerColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IntegerColumns=\"" + IntegerColumns + "\"" );
-	}
-	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TextColumns=\"" + TextColumns + "\"" );
-	}
-	if ( (Top != null) && (Top.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Top=" + Top );
-	}
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"InputFile",
+		"Delimiter",
+		"SkipLines",
+		"SkipColumns",
+		"HeaderLines",
+		"ColumnNames",
+		"DateTimeColumns",
+		"DoubleColumns",
+		"IntegerColumns",
+		"TextColumns",
+		"Top",
+		"RowCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

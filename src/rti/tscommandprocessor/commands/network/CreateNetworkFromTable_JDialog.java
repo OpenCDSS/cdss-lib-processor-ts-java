@@ -782,7 +782,7 @@ private void refresh ()
     props.add ( "NodeOutflowTypes=" + NodeOutflowTypes );
     props.add ( "NodeOutflowDataTypes=" + NodeOutflowDataTypes );
     props.add ( "NodeFlowThroughTypes=" + NodeFlowThroughTypes );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

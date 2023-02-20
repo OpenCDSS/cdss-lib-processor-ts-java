@@ -307,28 +307,15 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String TableID = parameters.getValue ( "TableID" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TableID != null) && (TableID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TableID=\"" + TableID + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TableID",
+		"OutputFile"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

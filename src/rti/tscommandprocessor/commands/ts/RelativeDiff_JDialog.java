@@ -191,22 +191,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__TSID1_JComboBox = null;
-	__TSID2_JComboBox = null;
-	__Divisor_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -434,7 +418,7 @@ private void refresh()
     props.add ( "TSID1=" + TSID1 );
     props.add ( "TSID2=" + TSID2 );
     props.add ( "Divisor=" + Divisor );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

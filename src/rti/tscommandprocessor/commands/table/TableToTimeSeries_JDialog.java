@@ -1431,7 +1431,7 @@ private void refresh()
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

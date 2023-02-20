@@ -540,62 +540,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String ColumnToSplit = props.getValue( "ColumnToSplit" );
-    String Delimiter = props.getValue( "Delimiter" );
-	String OutputColumns = props.getValue( "OutputColumns" );
-	String OutputColumnOrder = props.getValue( "OutputColumnOrder" );
-    String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
-	String DeleteOriginalColumn = props.getValue( "DeleteOriginalColumn" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (ColumnToSplit != null) && (ColumnToSplit.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnToSplit=\"" + ColumnToSplit + "\"" );
-    }
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Delimiter=\"" + Delimiter + "\"" );
-    }
-	if ( (OutputColumns != null) && (OutputColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputColumns=\"" + OutputColumns +"\"" );
-	}
-    if ( (OutputColumnOrder != null) && (OutputColumnOrder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputColumnOrder=" + OutputColumnOrder );
-    }
-    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
-    }
-    if ( (DeleteOriginalColumn != null) && (DeleteOriginalColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DeleteOriginalColumn=" + DeleteOriginalColumn );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"ColumnToSplit",
+    	"Delimiter",
+		"OutputColumns",
+		"OutputColumnOrder",
+    	"InsertBeforeColumn",
+		"DeleteOriginalColumn"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

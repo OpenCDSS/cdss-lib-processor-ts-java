@@ -809,69 +809,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
-{
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector ) {
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue("InputFile");
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-	String Alias = props.getValue("Alias");
-	String Interval = props.getValue("Interval");
-	String SpatialAggregation = props.getValue("SpatialAggregation");
-	String ParcelYear = props.getValue("ParcelYear");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputStart=\"" + InputStart + "\"" );
-	}
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputEnd=\"" + InputEnd + "\"" );
-	}
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-	if ( (Interval != null) && (Interval.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Interval=\"" + Interval + "\"" );
-	}
-	if ( (SpatialAggregation != null) && (SpatialAggregation.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SpatialAggregation=" + SpatialAggregation );
-	}
-	if ( (ParcelYear != null) && (ParcelYear.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ParcelYear=" + ParcelYear );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"InputStart",
+		"InputEnd",
+		"Alias",
+		"Interval",
+		"SpatialAggregation",
+		"ParcelYear"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

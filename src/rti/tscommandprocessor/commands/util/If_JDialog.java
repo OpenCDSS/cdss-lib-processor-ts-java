@@ -714,7 +714,7 @@ private void refresh ()
     props.add ( "TableDoesNotExist=" + TableDoesNotExist );
     props.add ( "TSExists=" + TSExists );
     props.add ( "TSDoesNotExist=" + TSDoesNotExist );
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

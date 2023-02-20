@@ -812,99 +812,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String IndependentTSList = props.getValue( "IndependentTSList" );
-    String IndependentTSID = props.getValue( "IndependentTSID" );
-    String IndependentEnsembleID = props.getValue( "IndependentEnsembleID" );
-	String FillStart = props.getValue("FillStart");
-	String FillEnd = props.getValue("FillEnd");
-	String FillFlag = props.getValue("FillFlag");
-	String FillFlagDesc = props.getValue("FillFlagDesc");
-    String TransferHow = props.getValue( "TransferHow" );
-	//String FillFlag = props.getValue("FillFlag");
-    String RecalcLimits = props.getValue( "RecalcLimits" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (IndependentTSList != null) && (IndependentTSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IndependentTSList=" + IndependentTSList );
-    }
-    if ( (IndependentTSID != null) && (IndependentTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IndependentTSID=\"" + IndependentTSID + "\"" );
-    }
-    if ( (IndependentEnsembleID != null) && (IndependentEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IndependentEnsembleID=\"" + IndependentEnsembleID + "\"" );
-    }
-	if ( (FillStart != null) && (FillStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillStart=\"" + FillStart + "\"" );
-	}
-	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillEnd=\"" + FillEnd + "\"" );
-	}
-    if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FillFlag=\"" + FillFlag + "\"" );
-    }
-    if ( (FillFlagDesc != null) && (FillFlagDesc.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FillFlagDesc=\"" + FillFlagDesc + "\"" );
-    }
-    if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TransferHow=" + TransferHow );
-    }
-    if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RecalcLimits=" + RecalcLimits );
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"IndependentTSList",
+    	"IndependentTSID",
+    	"IndependentEnsembleID",
+		"FillStart",
+		"FillEnd",
+		"FillFlag",
+		"FillFlagDesc",
+    	"TransferHow",
+		//"FillFlag",
+    	"RecalcLimits"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

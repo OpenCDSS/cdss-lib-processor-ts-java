@@ -565,89 +565,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TableID = parameters.getValue( "TableID" );
-    String InputColumn = parameters.getValue( "InputColumn" );
-    String IncrementStart = parameters.getValue( "IncrementStart" );
-    String IncrementBaseUnit = parameters.getValue( "IncrementBaseUnit" );
-    String FormatterType = parameters.getValue( "FormatterType" );
-    String DateTimeFormat = parameters.getValue( "DateTimeFormat" );
-    String OutputYearType = parameters.getValue( "OutputYearType" );
-    String OutputColumn = parameters.getValue( "OutputColumn" );
-    String OutputType = parameters.getValue( "OutputType" );
-    String InsertBeforeColumn = parameters.getValue( "InsertBeforeColumn" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (InputColumn != null) && (InputColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputColumn=\"" + InputColumn + "\"" );
-    }
-    if ( (IncrementStart != null) && !IncrementStart.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncrementStart=\"" + IncrementStart + "\"" );
-    }
-    if ( (IncrementBaseUnit != null) && !IncrementBaseUnit.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncrementBaseUnit=\"" + IncrementBaseUnit + "\"" );
-    }
-    if ( (FormatterType != null) && (FormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FormatterType=" + FormatterType );
-    }
-    if ( (DateTimeFormat != null) && (DateTimeFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormat=\"" + DateTimeFormat + "\"" );
-    }
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-    if ( (OutputColumn != null) && (OutputColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputColumn=\"" + OutputColumn + "\"" );
-    }
-    if ( (OutputType != null) && (OutputType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputType=" + OutputType );
-    }
-    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {   
+	String [] parameterOrder = {
+    	"TableID",
+    	"InputColumn",
+    	"IncrementStart",
+    	"IncrementBaseUnit",
+    	"FormatterType",
+    	"DateTimeFormat",
+    	"OutputYearType",
+    	"OutputColumn",
+    	"OutputType",
+    	"InsertBeforeColumn"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

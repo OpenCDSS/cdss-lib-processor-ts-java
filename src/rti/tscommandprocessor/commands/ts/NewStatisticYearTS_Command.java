@@ -928,159 +928,33 @@ public String toString ( PropList props )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, nolonger enabled
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-	String EnsembleID = props.getValue( "EnsembleID" );
-	String Statistic = props.getValue( "Statistic" );
-	String TestValue = props.getValue( "TestValue" );
-	String Value1 = props.getValue( "Value1" );
-	String AllowMissingCount = props.getValue( "AllowMissingCount" );
-	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
-	String OutputYearType = props.getValue( "OutputYearType" );
-	String AnalysisStart = props.getValue( "AnalysisStart" );
-	String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
-	String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
-	String SearchStart = props.getValue( "SearchStart" );
-	String Alias = props.getValue( "Alias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String NewEnsembleID = props.getValue( "NewEnsembleID" );
-	String NewEnsembleName = props.getValue( "NewEnsembleName" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	if ( (Statistic != null) && (Statistic.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Statistic=" + Statistic );
-	}
-	if ( (TestValue != null) && (TestValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TestValue=" + TestValue );
-	}
-	if ( (Value1 != null) && (Value1.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Value1=" + Value1 );
-	}
-	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AllowMissingCount=" + AllowMissingCount );
-	}
-    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
-    }
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
-    }
-    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
-    }
-    if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SearchStart=\"" + SearchStart + "\"" );
-    }
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"" );
-	}
-	if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
-	}
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"Statistic",
+		"TestValue",
+		"Value1",
+		"AllowMissingCount",
+		"MinimumSampleSize",
+		"OutputYearType",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"AnalysisWindowStart",
+		"AnalysisWindowEnd",
+		"SearchStart",
+		"Alias",
+		"NewTSID",
+		"NewEnsembleID",
+		"NewEnsembleName"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

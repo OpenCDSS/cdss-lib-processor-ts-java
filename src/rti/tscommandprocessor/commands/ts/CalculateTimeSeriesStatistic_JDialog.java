@@ -960,7 +960,7 @@ private void refresh ()
     props.add ( "TableStatisticDateTimeColumn=" + TableStatisticDateTimeColumn );
     props.add ( "TimeSeriesProperty=" + TimeSeriesProperty );
     props.add ( "StatisticValueProperty=" + StatisticValueProperty );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

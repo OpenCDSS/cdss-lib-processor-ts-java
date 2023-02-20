@@ -538,13 +538,12 @@ private void refresh ()
     props.add ( "SpecifyWeightsHow=" + SpecifyWeightsHow );
     props.add ( "Weights=" + Weights );
     props.add ( "NewTSID=" + NewTSID );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

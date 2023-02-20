@@ -357,32 +357,16 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSID = props.getValue( "TSID" );
-	String IndependentTSID = props.getValue("IndependentTSID");
-	String BlendMethod = props.getValue("BlendMethod");
-
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (IndependentTSID != null) && (IndependentTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IndependentTSID=\"" + IndependentTSID + "\"" );
-	}
-	if ( (BlendMethod != null) && (BlendMethod.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "BlendMethod=" + BlendMethod );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSID",
+		"IndependentTSID",
+		"BlendMethod"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

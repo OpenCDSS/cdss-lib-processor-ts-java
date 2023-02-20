@@ -962,129 +962,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String TableID = props.getValue( "TableID" );
-    String DateTimeColumn = props.getValue( "DateTimeColumn" );
-    String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
-    String IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
-    String ValueColumn = props.getValue( "ValueColumn" );
-    String OutputPrecision = props.getValue( "OutputPrecision" );
-    String FlagColumn = props.getValue( "FlagColumn" );
-	String OutputStart = props.getValue("OutputStart");
-	String OutputEnd = props.getValue("OutputEnd");
-    String OutputWindowStart = props.getValue( "OutputWindowStart" );
-    String OutputWindowEnd = props.getValue( "OutputWindowEnd" );
-	String IfTableNotFound = props.getValue("IfTableNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (TableID != null) && (TableID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TableID=\"" + TableID + "\"");
-	}
-    if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeColumn=\"" + DateTimeColumn + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (IncludeMissingValues != null) && (IncludeMissingValues.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeMissingValues=" + IncludeMissingValues );
-    }
-    if ( (ValueColumn != null) && (ValueColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ValueColumn=\"" + ValueColumn + "\"");
-    }
-    if ( (OutputPrecision != null) && (OutputPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputPrecision=" + OutputPrecision );
-    }
-    if ( (FlagColumn != null) && (FlagColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FlagColumn=\"" + FlagColumn + "\"");
-    }
-	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputStart=\"" + OutputStart + "\"" );
-	}
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputWindowStart=\"" + OutputWindowStart + "\"" );
-    }
-    if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputWindowEnd=\"" + OutputWindowEnd + "\"" );
-    }
-	if ( (IfTableNotFound != null) && (IfTableNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfTableNotFound=\"" + IfTableNotFound + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+    	"EnsembleID",
+		"TableID",
+    	"DateTimeColumn",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"IncludeMissingValues",
+    	"ValueColumn",
+    	"OutputPrecision",
+    	"FlagColumn",
+		"OutputStart",
+		"OutputEnd",
+    	"OutputWindowStart",
+    	"OutputWindowEnd",
+		"IfTableNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -472,7 +472,7 @@ private void refresh ()
 	props.add ( "Worksheets=" + Worksheets );
 	props.add ( "KeepOpen=" + KeepOpen );
 	//props.add ( "IfFound=" + IfFound );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
     if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {

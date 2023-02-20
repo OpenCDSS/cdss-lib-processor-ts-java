@@ -41,7 +41,6 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -328,31 +327,16 @@ implements Command {
 
 	/**
 	Return the string representation of the command.
+	@param parameters to include in the command
+	@return the string representation of the command
 	*/
 	public String toString ( PropList parameters ) {
-		if ( parameters == null ) {
-			return getCommandName() + "()";
-		}
-		String Folder = parameters.getValue("Folder");
-		String MinDepth = parameters.getValue("MinDepth");
-		String IfNotFound = parameters.getValue("IfNotFound");
-		StringBuffer b = new StringBuffer ();
-		if ( (Folder != null) && (Folder.length() > 0) ) {
-			b.append ( "Folder=\"" + Folder + "\"" );
-		}
-		if ( (MinDepth != null) && (MinDepth.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "MinDepth=" + MinDepth );
-		}
-		if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "IfNotFound=" + IfNotFound );
-		}
-		return getCommandName() + "(" + b.toString() + ")";
+		String [] parameterOrder = {
+			"Folder",
+			"MinDepth",
+			"IfNotFound"
+		};
+		return this.toString(parameters, parameterOrder);
 	}
 
 }

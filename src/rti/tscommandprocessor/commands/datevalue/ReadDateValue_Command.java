@@ -626,84 +626,21 @@ public String toString ( PropList props ) {
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer enabled
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-
-	String Alias = props.getValue("Alias");
-	String InputFile = props.getValue("InputFile" );
-	String NewUnits = props.getValue("NewUnits");
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-	String IfNotFound = props.getValue("IfNotFound");
-
-	StringBuffer b = new StringBuffer ();
-
-	// InputFile
-	if ((InputFile != null) && (InputFile.length() > 0)) {
-		b.append("InputFile=\"" + InputFile + "\"");
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter.
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-    
-	// NewUnits
-	if ((NewUnits != null) && (NewUnits.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("NewUnits=\"" + NewUnits + "\"");
-	}
-
-	// InputStart
-	if ((InputStart != null) && (InputStart.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputStart=\"" + InputStart + "\"");
-	}
-
-	// InputEnd
-	if ((InputEnd != null) && (InputEnd.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-
-	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfNotFound=" + IfNotFound );
-	}
-
-    if ( majorVersion < 10 ) {
-        // Old syntax.
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"Alias",
+		"NewUnits",
+		"InputStart",
+		"InputEnd",
+		"IfNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

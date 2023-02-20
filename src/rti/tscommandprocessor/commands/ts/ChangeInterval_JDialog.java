@@ -1294,7 +1294,7 @@ private void refresh ()
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	props.add ( "RecalcLimits=" + RecalcLimits);
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

@@ -122,10 +122,13 @@ throws CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   
-     return getCommandName() + "()";
+public String toString ( PropList parameters ) {   
+    String [] parameterOrder = {
+    };
+	return this.toString(parameters, parameterOrder);
 }
 
 }

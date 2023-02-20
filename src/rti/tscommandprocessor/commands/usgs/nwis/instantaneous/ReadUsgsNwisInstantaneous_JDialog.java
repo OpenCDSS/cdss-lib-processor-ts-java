@@ -1015,7 +1015,7 @@ private void refresh ()
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "WaterMLInterval=" + WaterMLInterval );
 	props.add ( "WaterMLRequireDataToMatchInterval=" + WaterMLRequireDataToMatchInterval );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {
             __path_JButton.setEnabled ( false );

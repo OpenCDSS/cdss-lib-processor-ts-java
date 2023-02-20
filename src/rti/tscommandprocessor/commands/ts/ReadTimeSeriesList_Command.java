@@ -944,197 +944,44 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-    String TableID = props.getValue ( "TableID" );
-    String ReadData = props.getValue ( "ReadData" );
-    String LocationTypeColumn = props.getValue ( "LocationTypeColumn" );
-    String LocationType = props.getValue ( "LocationType" );
-    String LocationColumn = props.getValue ( "LocationColumn" );
-    String DataSourceColumn = props.getValue ( "DataSourceColumn" );
-    String DataSource = props.getValue ( "DataSource" );
-    String DataTypeColumn = props.getValue ( "DataTypeColumn" );
-    String DataType = props.getValue ( "DataType" );
-    String Interval = props.getValue ( "Interval" );
-    String Scenario = props.getValue ( "Scenario" );
-    String DataStoreColumn = props.getValue ( "DataStoreColumn" );
-    String DataStore = props.getValue ( "DataStore" );
-    String InputName = props.getValue ( "InputName" );
-    String Alias = props.getValue ( "Alias" );
-    String ColumnProperties = props.getValue ( "ColumnProperties" );
-    String Properties = props.getValue ( "Properties" );
-    String IfNotFound = props.getValue ( "IfNotFound" );
-    String DefaultUnits = props.getValue ( "DefaultUnits" );
-    String DefaultOutputStart = props.getValue ( "DefaultOutputStart" );
-    String DefaultOutputEnd = props.getValue ( "DefaultOutputEnd" );
-    String TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
-    String TimeSeriesReadCountProperty = props.getValue ( "TimeSeriesReadCountProperty" );
-    String TimeSeriesDefaultCountProperty = props.getValue ( "TimeSeriesDefaultCountProperty" );
-    String TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
-
-	StringBuffer b = new StringBuffer ();
-
-    if ((ReadData != null) && (ReadData.length() > 0)) {
-        b.append("ReadData=" + ReadData );
-    }
-	if ((TableID != null) && (TableID.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-		b.append("TableID=\"" + TableID + "\"");
-	}
-    if ((LocationTypeColumn != null) && (LocationTypeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationTypeColumn=\"" + LocationTypeColumn + "\"");
-    }
-    if ((LocationType != null) && (LocationType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationType=\"" + LocationType + "\"");
-    }
-    if ((LocationColumn != null) && (LocationColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("LocationColumn=\"" + LocationColumn + "\"");
-    }
-    if ((DataSourceColumn != null) && (DataSourceColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataSourceColumn=\"" + DataSourceColumn + "\"");
-    }
-	if ((DataSource != null) && (DataSource.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("DataSource=\"" + DataSource + "\"");
-	}
-    if ((DataTypeColumn != null) && (DataTypeColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataTypeColumn=\"" + DataTypeColumn + "\"");
-    }
-    if ((DataType != null) && (DataType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataType=\"" + DataType + "\"");
-    }
-    if ((Interval != null) && (Interval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Interval=\"" + Interval + "\"");
-    }
-    if ((Scenario != null) && (Scenario.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Scenario=\"" + Scenario + "\"");
-    }
-    if ((DataStoreColumn != null) && (DataStoreColumn.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataStoreColumn=\"" + DataStoreColumn + "\"");
-    }
-    if ((DataStore != null) && (DataStore.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataStore=\"" + DataStore + "\"");
-    }
-    if ((InputName != null) && (InputName.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("InputName=\"" + InputName + "\"");
-    }
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-    if ((ColumnProperties != null) && (ColumnProperties.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("ColumnProperties=\"" + ColumnProperties + "\"");
-    }
-    if ((Properties != null) && (Properties.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Properties=\"" + Properties + "\"");
-    }
-    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IfNotFound=" + IfNotFound );
-    }
-    if ((DefaultUnits != null) && (DefaultUnits.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DefaultUnits=\"" + DefaultUnits + "\"");
-    }
-    if ((DefaultOutputStart != null) && (DefaultOutputStart.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DefaultOutputStart=\"" + DefaultOutputStart + "\"");
-    }
-    if ((DefaultOutputEnd != null) && (DefaultOutputEnd.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DefaultOutputEnd=\"" + DefaultOutputEnd + "\"");
-    }
-    if ((TimeSeriesCountProperty != null) && (TimeSeriesCountProperty.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeSeriesCountProperty=\"" + TimeSeriesCountProperty + "\"");
-    }
-    if ((TimeSeriesReadCountProperty != null) && (TimeSeriesReadCountProperty.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeSeriesReadCountProperty=\"" + TimeSeriesReadCountProperty + "\"");
-    }
-    if ((TimeSeriesDefaultCountProperty != null) && (TimeSeriesDefaultCountProperty.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeSeriesDefaultCountProperty=\"" + TimeSeriesDefaultCountProperty + "\"");
-    }
-    if ((TimeSeriesIndex1Property != null) && (TimeSeriesIndex1Property.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("TimeSeriesIndex1Property=\"" + TimeSeriesIndex1Property + "\"");
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"ReadData",
+    	"TableID",
+    	"LocationTypeColumn",
+    	"LocationType",
+    	"LocationColumn",
+    	"DataSourceColumn",
+    	"DataSource",
+    	"DataTypeColumn",
+    	"DataType",
+    	"Interval",
+    	"Scenario",
+    	"DataStoreColumn",
+    	"DataStore",
+    	"InputName",
+    	"Alias",
+    	"ColumnProperties",
+    	"Properties",
+    	"IfNotFound",
+    	"DefaultUnits",
+    	"DefaultOutputStart",
+    	"DefaultOutputEnd",
+    	"TimeSeriesCountProperty",
+    	"TimeSeriesReadCountProperty",
+    	"TimeSeriesDefaultCountProperty",
+    	"TimeSeriesIndex1Property"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

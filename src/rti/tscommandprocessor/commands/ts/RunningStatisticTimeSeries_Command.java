@@ -1009,183 +1009,37 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_List ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String Statistic = props.getValue("Statistic");
-    String Distribution = props.getValue("Distribution");
-    String DistributionParameters = props.getValue("DistributionParameters");
-    String ProbabilityUnits = props.getValue("ProbabilityUnits");
-    String SortOrder = props.getValue("SortOrder");
-    String AnalysisStart = props.getValue( "AnalysisStart" );
-    String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	String SampleMethod = props.getValue("SampleMethod");
-	String Bracket = props.getValue("Bracket");
-	String BracketByMonth = props.getValue("BracketByMonth");
-	String CustomBracketByMonth = props.getValue("CustomBracketByMonth");
-	//String SampleFilter = props.getValue("SampleFilter");
-	String AllowMissingCount = props.getValue("AllowMissingCount");
-	String MinimumSampleSize = props.getValue("MinimumSampleSize");
-    String NormalStart = props.getValue( "NormalStart" );
-    String NormalEnd = props.getValue( "NormalEnd" );
-	String Alias = props.getValue("Alias");
-	String OutputStart = props.getValue( "OutputStart" );
-    String OutputEnd = props.getValue( "OutputEnd" );
-    String Properties = props.getValue ( "Properties" );
-    String CopyProperties = props.getValue ( "CopyProperties" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (Statistic != null) && (Statistic.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Statistic=" + Statistic );
-    }
-    if ( (Distribution != null) && (Distribution.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Distribution=\"" + Distribution + "\"" );
-    }
-    if ( (DistributionParameters != null) && (DistributionParameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DistributionParameters=\"" + DistributionParameters + "\"");
-    }
-    if ( (ProbabilityUnits != null) && (ProbabilityUnits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProbabilityUnits=\"" + ProbabilityUnits + "\"" );
-    }
-    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SortOrder=" + SortOrder );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-	if ( (SampleMethod != null) && (SampleMethod.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SampleMethod=" + SampleMethod );
-	}
-	if ( (Bracket != null) && (Bracket.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Bracket=" + Bracket );
-	}
-	if ( (BracketByMonth != null) && (BracketByMonth.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "BracketByMonth=\"" + BracketByMonth + "\"" );
-	}
-	if ( (CustomBracketByMonth != null) && (CustomBracketByMonth.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "CustomBracketByMonth=\"" + CustomBracketByMonth + "\"" );
-	}
-	/*
-	if ( (SampleFilter != null) && (SampleFilter.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SampleFilter=" + SampleFilter );
-	}
-	*/
-    if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowMissingCount=" + AllowMissingCount );
-    }
-    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
-    }
-    if ( (NormalStart != null) && (NormalStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NormalStart=\"" + NormalStart + "\"" );
-    }
-    if ( (NormalEnd != null) && (NormalEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NormalEnd=\"" + NormalEnd + "\"" );
-    }
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-    }
-    if ((Properties != null) && (Properties.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Properties=\"" + Properties + "\"");
-    }
-    if ((CopyProperties != null) && (CopyProperties.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("CopyProperties=\"" + CopyProperties + "\"");
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Statistic",
+    	"Distribution",
+    	"DistributionParameters",
+    	"ProbabilityUnits",
+    	"SortOrder",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+		"SampleMethod",
+		"Bracket",
+		"BracketByMonth",
+		"CustomBracketByMonth",
+		//"SampleFilter",
+		"AllowMissingCount",
+		"MinimumSampleSize",
+    	"NormalStart",
+    	"NormalEnd",
+		"Alias",
+		"OutputStart",
+    	"OutputEnd",
+    	"Properties",
+    	"CopyProperties"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -242,19 +242,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Get the AddSpecifiedTSID parameter from the JList and put into a string.
 @return a String containing the selected specified time series, separated by commas.
 */
@@ -559,7 +546,7 @@ private void refresh ()
     props.add ( "IndependentEnsembleID=" + IndependentEnsembleID );
     //props.add ( "SetStart=" + SetStart );
     //props.add ( "SetEnd=" + SetEnd );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

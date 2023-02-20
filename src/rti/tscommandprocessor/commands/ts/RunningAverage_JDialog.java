@@ -465,7 +465,7 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "AverageMethod=" + AverageMethod );
     props.add ( "Bracket=" + Bracket );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

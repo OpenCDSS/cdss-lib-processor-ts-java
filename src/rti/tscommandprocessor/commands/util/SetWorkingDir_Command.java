@@ -340,31 +340,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String WorkingDir = props.getValue("WorkingDir");
-	String RunMode = props.getValue("RunMode");
-	String RunOnOS = props.getValue("RunOnOS");
-	StringBuffer b = new StringBuffer ();
-	if ( (WorkingDir != null) && (WorkingDir.length() > 0) ) {
-		b.append ( "WorkingDir=\"" + WorkingDir + "\"" );
-	}
-	if ( (RunMode != null) && (RunMode.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RunMode=" + RunMode );
-	}
-    if ( (RunOnOS != null) && (RunOnOS.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RunOnOS=" + RunOnOS );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"WorkingDir",
+		"RunMode",
+		"RunOnOS"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

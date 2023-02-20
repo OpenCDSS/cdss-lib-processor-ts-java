@@ -546,8 +546,7 @@ CommandWarningException, CommandException
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
@@ -555,68 +554,25 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer enabled.
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String Alias = props.getValue( "Alias" );
-	String TSID1 = props.getValue( "TSID1" );
-	String TSID2 = props.getValue( "TSID2" );
-	String Divisor = props.getValue( "Divisor" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID1 != null) && (TSID1.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID1=\"" + TSID1 + "\"" );
-	}
-    if ( (TSID2 != null) && (TSID2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID2=\"" + TSID2 + "\"" );
-    }
-	if ( (Divisor != null) && (Divisor.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Divisor=" + Divisor );
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"TSID1",
+		"TSID2",
+		"Divisor",
+		"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

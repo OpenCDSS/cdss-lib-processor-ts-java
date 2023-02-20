@@ -227,34 +227,16 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InitializeStatus = props.getValue ( "InitializeStatus" );
-	String DiscoveryStatus = props.getValue ( "DiscoveryStatus" );
-	String RunStatus = props.getValue ( "RunStatus" );
-	StringBuffer b = new StringBuffer();
-	if ( (InitializeStatus != null) && (InitializeStatus.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InitializeStatus=" + InitializeStatus );
-	}
-	if ( (DiscoveryStatus != null) && (DiscoveryStatus.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DiscoveryStatus=" + DiscoveryStatus );
-	}
-	if ( (RunStatus != null) && (RunStatus.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RunStatus=" + RunStatus );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InitializeStatus",
+		"DiscoveryStatus",
+		"RunStatus"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

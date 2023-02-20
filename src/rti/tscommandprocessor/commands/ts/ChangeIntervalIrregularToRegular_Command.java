@@ -783,137 +783,32 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-
-	// Get the properties from the command
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String Statistic = props.getValue( "Statistic" );
-	String Flag = props.getValue( "Flag" );
-	String FlagDescription = props.getValue( "FlagDescription" );
-	String PersistInterval = props.getValue( "PersistInterval" );
-	String PersistValue = props.getValue( "PersistValue" );
-	String PersistFlag = props.getValue( "PersistFlag" );
-	String PersistFlagDescription = props.getValue( "PersistFlagDescription" );
-	String Alias = props.getValue( "Alias" );
-	String NewInterval = props.getValue( "NewInterval" );
-	String OutputYearType = props.getValue("OutputYearType");
-	String NewDataType = props.getValue( "NewDataType" );
-	String NewUnits = props.getValue( "NewUnits" );
-	String ScaleValue = props.getValue( "ScaleValue" );
-	//String RecalcLimits = props.getValue( "RecalcLimits");
-	String NewEnsembleID = props.getValue( "NewEnsembleID" );
-	String NewEnsembleName = props.getValue( "NewEnsembleName" );
-	
-	StringBuffer b = new StringBuffer();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( Statistic != null && Statistic.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "Statistic=" + Statistic );
-    }
-    if ( Flag != null && Flag.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "Flag=\"" + Flag + "\"" );
-    }
-    if ( FlagDescription != null && FlagDescription.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "FlagDescription=\"" + FlagDescription + "\"" );
-    }
-    if ( PersistInterval != null && PersistInterval.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "PersistInterval=\"" + PersistInterval + "\"" );
-    }
-    if ( PersistValue != null && PersistValue.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "PersistValue=" + PersistValue );
-    }
-    if ( PersistFlag != null && PersistFlag.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "PersistFlag=\"" + PersistFlag + "\"" );
-    }
-    if ( PersistFlagDescription != null && PersistFlagDescription.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "PersistFlagDescription=\"" + PersistFlagDescription + "\"" );
-    }
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-	if ( NewInterval != null && NewInterval.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NewInterval=" + NewInterval );
-	}
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-	if ( NewDataType != null && NewDataType.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NewDataType=" + NewDataType );
-	}
-    if ( NewUnits != null && NewUnits.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "NewUnits=" + NewUnits );
-    }
-    if ( ScaleValue != null && ScaleValue.length() > 0 ) {
-        if ( b.length() > 0 ) {
-        	b.append ( "," );
-        }
-        b.append ( "ScaleValue=" + ScaleValue );
-    }
-    if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"" );
-    }
-    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
-    }
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"Statistic",
+		"Flag",
+		"FlagDescription",
+		"PersistInterval",
+		"PersistValue",
+		"PersistFlag",
+		"PersistFlagDescription",
+		"Alias",
+		"NewInterval",
+		"OutputYearType",
+		"NewDataType",
+		"NewUnits",
+		"ScaleValue",
+		//"RecalcLimits",
+		"NewEnsembleID",
+		"NewEnsembleName"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

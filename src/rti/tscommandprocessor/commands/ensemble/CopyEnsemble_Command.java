@@ -408,48 +408,18 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String NewEnsembleID = props.getValue( "NewEnsembleID" );
-    String NewEnsembleName = props.getValue( "NewEnsembleName" );
-	String EnsembleID = props.getValue( "EnsembleID" );
-	String NewAlias = props.getValue( "NewAlias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	StringBuffer b = new StringBuffer ();
-	if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"" );
-	}
-    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
-    }
-    if ( (NewAlias != null) && (NewAlias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewAlias=\"" + NewAlias + "\"" );
-    }
-    if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTSID=\"" + NewTSID + "\"" );
-    }
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"NewEnsembleID",
+    	"NewEnsembleName",
+		"NewAlias",
+		"NewTSID",
+		"EnsembleID"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

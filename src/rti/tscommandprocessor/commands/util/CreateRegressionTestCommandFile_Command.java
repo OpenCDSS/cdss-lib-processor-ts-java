@@ -973,94 +973,25 @@ private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus statu
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String SearchFolder = parameters.getValue("SearchFolder");
-	String OutputFile = parameters.getValue("OutputFile");
-	String SetupCommandFile = parameters.getValue("SetupCommandFile");
-	String TestResultsFile = parameters.getValue("TestResultsFile");
-	String EndCommandFile = parameters.getValue("EndCommandFile");
-	String FilenamePattern = parameters.getValue("FilenamePattern");
-	String Append = parameters.getValue("Append");
-	String IncludeTestSuite = parameters.getValue("IncludeTestSuite");
-	String ExcludeTestSuite = parameters.getValue("ExcludeTestSuite");
-	String IncludeOS = parameters.getValue("IncludeOS");
-	String UseOrder = parameters.getValue("UseOrder");
-	String TestResultsTableID = parameters.getValue("TestResultsTableID");
-	StringBuffer b = new StringBuffer ();
-	if ( (SearchFolder != null) && (SearchFolder.length() > 0) ) {
-		b.append ( "SearchFolder=\"" + SearchFolder + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"");
-	}
-    if ( (SetupCommandFile != null) && (SetupCommandFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetupCommandFile=\"" + SetupCommandFile + "\"");
-    }
-    if ( (TestResultsFile != null) && (TestResultsFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TestResultsFile=\"" + TestResultsFile + "\"");
-    }
-    if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EndCommandFile=\"" + EndCommandFile + "\"");
-    }
-    if ( (FilenamePattern != null) && (FilenamePattern.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FilenamePattern=\"" + FilenamePattern + "\"" );
-    }
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-    if ( (IncludeTestSuite != null) && (IncludeTestSuite.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeTestSuite=\"" + IncludeTestSuite + "\"" );
-    }
-    if ( (ExcludeTestSuite != null) && (ExcludeTestSuite.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeTestSuite=\"" + ExcludeTestSuite + "\"" );
-    }
-    if ( (IncludeOS != null) && (IncludeOS.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeOS=\"" + IncludeOS + "\"" );
-    }
-	if ( (UseOrder != null) && (UseOrder.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "UseOrder=" + UseOrder );
-	}
-    if ( (TestResultsTableID != null) && (TestResultsTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TestResultsTableID=\"" + TestResultsTableID + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"SearchFolder",
+		"OutputFile",
+		"SetupCommandFile",
+		"TestResultsFile",
+		"EndCommandFile",
+		"FilenamePattern",
+		"Append",
+		"IncludeTestSuite",
+		"ExcludeTestSuite",
+		"IncludeOS",
+		"UseOrder",
+		"TestResultsTableID"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

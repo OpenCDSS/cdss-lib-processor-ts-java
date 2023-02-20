@@ -758,129 +758,28 @@ private void setTimeSeriesFromTable (
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-	String TSList = props.getValue ( "TSList" );
-	String TSID = props.getValue ( "TSID" );
-	String EnsembleID = props.getValue ( "EnsembleID" );
-	String TSIDFormat = props.getValue ( "TSIDFormat" );
-	String SetStart = props.getValue ( "SetStart" );
-	String SetEnd = props.getValue ( "SetEnd" );
-	String SetFlag = props.getValue("SetFlag");
-	String SetFlagDesc = props.getValue("SetFlagDesc");
-	String TableID = props.getValue ( "TableID" );
-	String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-	String TableDateTimeColumn = props.getValue ( "TableDateTimeColumn" );
-	String TableValueColumn = props.getValue ( "TableValueColumn" );
-	String TableSetFlagColumn = props.getValue ( "TableSetFlagColumn" );
-	String TableSetFlagDescColumn = props.getValue ( "TableSetFlagDescColumn" );
-	String SortOrder = props.getValue ( "SortOrder" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (TSIDFormat != null) && (TSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSIDFormat=\"" + TSIDFormat + "\"" );
-    }
-    if ( (SetStart != null) && (SetStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetStart=\"" + SetStart + "\"" );
-    }
-    if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetEnd=\"" + SetEnd + "\"" );
-    }
-	if ( (SetFlag != null) && (SetFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetFlag=\"" + SetFlag + "\"" );
-	}
-    if ( (SetFlagDesc != null) && (SetFlagDesc.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetFlagDesc=\"" + SetFlagDesc + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableDateTimeColumn != null) && (TableDateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableDateTimeColumn=\"" + TableDateTimeColumn + "\"" );
-    }
-    if ( (TableValueColumn != null) && (TableValueColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValueColumn=\"" + TableValueColumn + "\"" );
-    }
-	if ( (TableSetFlagColumn != null) && (TableSetFlagColumn.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TableSetFlagColumn=\"" + TableSetFlagColumn + "\"" );
-	}
-    if ( (TableSetFlagDescColumn != null) && (TableSetFlagDescColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableSetFlagDescColumn=\"" + TableSetFlagDescColumn + "\"" );
-    }
-    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SortOrder=" + SortOrder );
-    }
-    /*
-    if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetWindowStart=\"" + SetWindowStart + "\"" );
-    }
-    if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetWindowEnd=\"" + SetWindowEnd + "\"" );
-    }*/
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"TSIDFormat",
+		"SetStart",
+		"SetEnd",
+		"SetFlag",
+		"SetFlagDesc",
+		"TableID",
+		"TableTSIDColumn",
+		"TableDateTimeColumn",
+		"TableValueColumn",
+		"TableSetFlagColumn",
+		"TableSetFlagDescColumn",
+		"SortOrder"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

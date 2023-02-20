@@ -820,53 +820,18 @@ private void setDiscoveryProp ( Prop prop ) {
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-
-    String ObjectID = parameters.getValue( "ObjectID" );
-    String ObjectProperty = parameters.getValue ( "ObjectProperty" );
-    String PropertyName = parameters.getValue ( "PropertyName" );
-    String PropertyType = parameters.getValue ( "PropertyType" );
-    String AllowNull = parameters.getValue ( "AllowNull" );
-
-    StringBuffer b = new StringBuffer ();
-
-    if ( (ObjectID != null) && (ObjectID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectID=\"" + ObjectID + "\"" );
-    }
-    if ( (ObjectProperty != null) && (ObjectProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectProperty=\"" + ObjectProperty + "\"" );
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyType=" + PropertyType );
-    }
-    if ( (AllowNull != null) && (AllowNull.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowNull=" + AllowNull );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"ObjectID",
+    	"ObjectProperty",
+    	"PropertyName",
+    	"PropertyType",
+    	"AllowNull"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

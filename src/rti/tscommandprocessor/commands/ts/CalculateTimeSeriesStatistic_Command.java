@@ -956,167 +956,45 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
 /**
 Set the property on the time series.
 */
-private void setProperty ( TS ts, String propertyName, TSUtil_CalculateTimeSeriesStatistic tsu )
-{
+private void setProperty ( TS ts, String propertyName, TSUtil_CalculateTimeSeriesStatistic tsu ) {
 	ts.setProperty(propertyName,tsu.getStatisticResult());
 }
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String Statistic = parameters.getValue( "Statistic" );
-    String Value1 = parameters.getValue( "Value1" );
-    String Value2 = parameters.getValue( "Value2" );
-    String Value3 = parameters.getValue( "Value3" );
-    String AnalysisStart = parameters.getValue( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
-    String AnalysisWindowStart = parameters.getValue( "AnalysisWindowStart" );
-    String AnalysisWindowEnd = parameters.getValue( "AnalysisWindowEnd" );
-    String IfNotFound = parameters.getValue ( "IfNotFound" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
-    String TableStatisticDateTimeColumn = parameters.getValue ( "TableStatisticDateTimeColumn" );
-    String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
-    String StatisticValueProperty = parameters.getValue ( "StatisticValueProperty" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (Statistic != null) && (Statistic.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Statistic=\"" + Statistic + "\"" );
-    }
-    if ( (Value1 != null) && (Value1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value1=" + Value1 );
-    }
-    if ( (Value2 != null) && (Value2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value2=" + Value2 );
-    }
-    if ( (Value3 != null) && (Value3.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value3=" + Value3 );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
-    }
-    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
-    }
-    if ( IfNotFound != null && IfNotFound.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfNotFound=" + IfNotFound );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
-    }
-    if ( (TableStatisticDateTimeColumn != null) && !TableStatisticDateTimeColumn.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticDateTimeColumn=\"" + TableStatisticDateTimeColumn + "\"" );
-    }
-    if ( (TimeSeriesProperty != null) && (TimeSeriesProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeSeriesProperty=\"" + TimeSeriesProperty + "\"" );
-    }
-    if ( (StatisticValueProperty != null) && (StatisticValueProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StatisticValueProperty=\"" + StatisticValueProperty + "\"" );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Statistic",
+    	"Value1",
+    	"Value2",
+    	"Value3",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+    	"AnalysisWindowStart",
+    	"AnalysisWindowEnd",
+    	"IfNotFound",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"TableStatisticColumn",
+    	"TableStatisticDateTimeColumn",
+    	"TimeSeriesProperty",
+    	"StatisticValueProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

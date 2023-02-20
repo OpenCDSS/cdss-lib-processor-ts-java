@@ -474,67 +474,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String TSList = parameters.getValue ( "TSList" );
-	String TSID = parameters.getValue ( "TSID" );
-	String EnsembleID = parameters.getValue ( "EnsembleID" );
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String OutputYearType = parameters.getValue ( "OutputYearType" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputStart=\"" + OutputStart + "\"" );
-	}
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"OutputFile",
+		"OutputStart",
+		"OutputEnd",
+		"OutputYearType"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

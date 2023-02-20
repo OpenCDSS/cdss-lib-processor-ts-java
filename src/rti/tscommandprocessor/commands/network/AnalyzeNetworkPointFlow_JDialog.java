@@ -885,7 +885,7 @@ private void refresh ()
     props.add ( "Units=" + Units );
     props.add ( "GainMethod=" + GainMethod );
     props.add ( "OutputTableID=" + OutputTableID );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

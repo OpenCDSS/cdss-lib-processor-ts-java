@@ -375,7 +375,7 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

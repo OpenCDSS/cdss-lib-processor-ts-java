@@ -503,57 +503,20 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSID_D1 = props.getValue( "TSID_D1" );
-    String TSID_M1 = props.getValue( "TSID_M1" );
-    String TSID_M2 = props.getValue( "TSID_M2" );
-    String TSID_D2 = props.getValue( "TSID_D2" );
-	String FillStart = props.getValue("FillStart");
-	String FillEnd = props.getValue("FillEnd");
-	//String FillFlag = props.getValue("FillFlag");
-	StringBuffer b = new StringBuffer ();
-    if ( (TSID_D1 != null) && (TSID_D1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID_D1=\"" + TSID_D1 + "\"");
-    }
-    if ( (TSID_M1 != null) && (TSID_M1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID_M1=\"" + TSID_M1 + "\"" );
-    }
-    if ( (TSID_M2 != null) && (TSID_M2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID_M2=\"" + TSID_M2 + "\"" );
-    }
-    if ( (TSID_D2 != null) && (TSID_D2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID_D2=\"" + TSID_D2 + "\"");
-    }
-	if ( (FillStart != null) && (FillStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillStart=\"" + FillStart + "\"" );
-	}
-	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillEnd=\"" + FillEnd + "\"" );
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSID_D1",
+    	"TSID_M1",
+    	"TSID_M2",
+    	"TSID_D2",
+		"FillStart",
+		"FillEnd"
+		//"FillFlag
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

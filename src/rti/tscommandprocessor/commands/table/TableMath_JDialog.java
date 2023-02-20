@@ -541,7 +541,7 @@ private void refresh ()
     props.add ( "Input2=" + Input2 );
     props.add ( "Output=" + Output );
     props.add ( "NonValue=" + NonValue );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

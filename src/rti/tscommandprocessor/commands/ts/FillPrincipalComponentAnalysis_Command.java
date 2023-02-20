@@ -983,111 +983,26 @@ public void setCommandMode(boolean commandMode) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	
-	// Get the properties
-	String DependentTSList  = props.getValue ( "DependentTSList"  );
-	String DependentTSID    = props.getValue ( "DependentTSID"    );
-	String IndependentTSList= props.getValue ( "IndependentTSList");
-	String IndependentTSID  = props.getValue ( "IndependentTSID"  );
-	String AnalysisStart	= props.getValue ( "AnalysisStart"    );
-	String AnalysisEnd	= props.getValue ( "AnalysisEnd"      );
-	String MinimumDataCount	= props.getValue ( "MinimumDataCount" );
-	String FillStart 	= props.getValue ( "FillStart"        );
-	String FillEnd 		= props.getValue ( "FillEnd"          );
-	String MaxCombinations = props.getValue ( "MaxCombinations"   );
-	String RegressionEquationFill = props.getValue ( "RegressionEquationFill"   );
-	String PCAOutputFile	= props.getValue ( "PCAOutputFile"       );
-	String FilledTSOutputFile	= props.getValue ( "FilledTSOutputFile"       );
-
-	// Creating the command string
-	// This StringBuffer will contain all parameters for the command.
-	StringBuffer b = new StringBuffer();
-
-	// Adding the DependentTSList
-	if ( DependentTSList != null && DependentTSList.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "DependentTSList=\"" + DependentTSList + "\"" );
-	}
-
-	// Adding the DependentTSID
-	if ( DependentTSID != null && DependentTSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "DependentTSID=\"" + DependentTSID + "\"" );
-	}
-
-	// Adding the IndependentTSList
-	if ( IndependentTSList != null && IndependentTSList.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "IndependentTSList=" + IndependentTSList );
-	}
-
-	/// Adding the IndependentTSID
-	if ( IndependentTSID != null && IndependentTSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ("IndependentTSID=\"" + IndependentTSID + "\"" );
-	}
-
-	// Adding the AnalysisStart
-	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisStart=" + AnalysisStart );
-	}
-
-	// Adding the AnalysisEnd
-	if ( AnalysisEnd != null && AnalysisEnd.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisEnd=" + AnalysisEnd );
-	}
-
-	// Adding the MinimumDataCount
-	if ( MinimumDataCount != null && MinimumDataCount.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "MinimumDataCount=" + MinimumDataCount);
-	}
-	
-	// Adding the FillStart
-	if ( FillStart != null && FillStart.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "FillStart=" + FillStart );
-	}
-
-	// Adding the FillEnd
-	if ( FillEnd != null && FillEnd.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "FillEnd=" + FillEnd );
-	}
-
-	// Adding the MaxCombinations
-	if ( MaxCombinations != null && MaxCombinations.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "MaxCombinations=" + MaxCombinations );
-	}
-
-	// Adding the RegressionEquationFill
-	if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "RegressionEquationFill=" + RegressionEquationFill );
-	}
-
-	// Adding the PCAOutputFile
-	if ( PCAOutputFile != null && PCAOutputFile.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "PCAOutputFile=\"" + PCAOutputFile + "\"" );
-	}
-
-	// Adding the FilledTSOutputFile
-	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "FilledTSOutputFile=\"" + FilledTSOutputFile +"\"" );
-	}
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DependentTSList",
+		"DependentTSID",
+		"IndependentTSList",
+		"IndependentTSID",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"MinimumDataCount",
+		"FillStart",
+		"FillEnd",
+		"MaxCombinations",
+		"RegressionEquationFill",
+		"PCAOutputFile",
+		"FilledTSOutputFile"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

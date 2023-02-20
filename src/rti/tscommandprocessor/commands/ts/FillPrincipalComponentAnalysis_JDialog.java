@@ -1779,7 +1779,7 @@ private void refresh()
 
 	// Update the __Command_JTextArea if running under the command mode. 
 	if ( __command.isCommandMode() ) {
-		__Command_JTextArea.setText( __command.toString(props) );
+		__Command_JTextArea.setText( __command.toString(props).trim() );
 	}
     // Check the path and determine what the label on the path buttons should be...
         if ( __pathPCA_JButton != null && PCAOutputFile != null ) {
@@ -1808,8 +1808,7 @@ private void refresh()
 Update the __DependentTSID_SimpleJList and __IndependentTSID_SimpleJList to
 have only the * selected, it the * is selected by the user.
 */
-private void resetTimeSeriesID_JLists()
-{
+private void resetTimeSeriesID_JLists() {
 	int size;
 
 	List<String> dependent = __DependentTSID_SimpleJList.getSelectedItems();
@@ -1844,8 +1843,7 @@ Enable or disable the selection of independent time series according to
 the settings of IndependentTSList parameter.
 Enabled only if ALL_MATCHING_TSID, FIRST_MATCHING_TSID, LAST_MATCHING_TSID or SPECIFIED_TSID.
 */
-private void resetTimeSeriesList()
-{
+private void resetTimeSeriesList() {
 	// Dependent time series list
     String dependentIDList = __DependentTSList_JComboBox.getSelected();
 	if ( dependentIDList.equalsIgnoreCase( TSListType.ALL_MATCHING_TSID.toString()) ||

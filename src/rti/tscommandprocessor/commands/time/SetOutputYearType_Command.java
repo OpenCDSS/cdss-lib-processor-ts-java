@@ -214,17 +214,14 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputYearType = parameters.getValue("OutputYearType");
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-		b.append ( "OutputYearType=" + OutputYearType );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"OutputYearType"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

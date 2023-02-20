@@ -354,7 +354,7 @@ private void refresh ()
     props.add ( "Message=" + Message0 );
     props.add ( "PromptActions=" + PromptActions );
     props.add ( "CommandStatus=" + CommandStatus );
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

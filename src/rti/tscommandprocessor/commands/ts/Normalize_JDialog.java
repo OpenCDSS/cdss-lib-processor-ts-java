@@ -199,23 +199,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__TSID_JComboBox = null;
-	__MaxValue_JTextField = null;
-	__MinValueMethod_JComboBox = null;
-	__MinValue_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -439,7 +422,7 @@ private void refresh ()
     props.add ( "MinValue=" + MinValue );
     props.add ( "MaxValue=" + MaxValue );
     props.add ( "MinValueMethod=" + MinValueMethod );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

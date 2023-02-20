@@ -628,121 +628,28 @@ private void setOutputSchemaFile ( File file ) {
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TableID = parameters.getValue ( "TableID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Append = parameters.getValue("Append");
-    String IncludeColumns = parameters.getValue( "IncludeColumns" );
-    String ExcludeColumns = parameters.getValue( "ExcludeColumns" );
-	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
-	//String WriteColumnNames = parameters.getValue ( "WriteColumnNames" );
-	//String Delimiter = parameters.getValue ( "Delimiter" );
-	//String AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
-	//String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
-	//String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
-	String LinkColumns = parameters.getValue ( "LinkColumns" );
-	String NaNValue = parameters.getValue ( "NaNValue" );
-	String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
-	String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TableID != null) && (TableID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TableID=\"" + TableID + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-    }
-    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
-    }
-    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
-    }
-    /*
-    if ( (WriteColumnNames != null) && (WriteColumnNames.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteColumnNames=" + WriteColumnNames );
-    }
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Delimiter=" + Delimiter );
-    }
-    if ( (AlwaysQuoteDateTimes != null) && (AlwaysQuoteDateTimes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AlwaysQuoteDateTimes=" + AlwaysQuoteDateTimes );
-    }
-    if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
-    }
-    if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewlineReplacement=\"" + NewlineReplacement + "\"" );
-    }
-    */
-    if ( (LinkColumns != null) && (LinkColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LinkColumns=\"" + LinkColumns + "\"" );
-    }
-    if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NaNValue=\"" + NaNValue + "\"" );
-    }
-	if ( (OutputSchemaFile != null) && (OutputSchemaFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputSchemaFile=\"" + OutputSchemaFile + "\"" );
-	}
-	if ( (OutputSchemaFormat != null) && (OutputSchemaFormat.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputSchemaFormat=\"" + OutputSchemaFormat + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"TableID",
+		"OutputFile",
+		"Append",
+    	"IncludeColumns",
+    	"ExcludeColumns",
+		"WriteHeaderComments",
+		//"WriteColumnNames",
+		//"Delimiter",
+		//"AlwaysQuoteDateTimes",
+		//"AlwaysQuoteStrings",
+		//"NewlineReplacement",
+		"LinkColumns",
+		"NaNValue",
+		"OutputSchemaFile",
+		"OutputSchemaFormat"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

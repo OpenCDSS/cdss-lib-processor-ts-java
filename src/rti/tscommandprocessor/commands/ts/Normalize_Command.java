@@ -509,8 +509,7 @@ CommandWarningException, CommandException
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created in discovery mode
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
@@ -518,75 +517,26 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer enabled.
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
-	String MinValue = props.getValue( "MinValue" );
-	String MaxValue = props.getValue( "MaxValue" );
-	String MinValueMethod = props.getValue( "MinValueMethod" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-    if ( (MinValueMethod != null) && (MinValueMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinValueMethod=" + MinValueMethod );
-    }
-	if ( (MinValue != null) && (MinValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MinValue=" + MinValue );
-	}
-    if ( (MaxValue != null) && (MaxValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MaxValue=" + MaxValue );
-    }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"TSID",
+		"Alias",
+		"MinValueMethod",
+		"MinValue",
+		"MaxValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

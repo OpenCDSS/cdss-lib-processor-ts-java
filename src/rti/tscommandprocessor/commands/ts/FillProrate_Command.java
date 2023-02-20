@@ -786,104 +786,25 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String IndependentTSID = props.getValue( "IndependentTSID" );
-	String FillStart = props.getValue("FillStart");
-	String FillEnd = props.getValue("FillEnd");
-	String FillFlag = props.getValue("FillFlag");
-    String FillDirection = props.getValue( "FillDirection" );
-    String FactorMethod = props.getValue( "FactorMethod" );
-    String AnalysisStart = props.getValue( "AnalysisStart" );
-    String AnalysisEnd = props.getValue( "AnalysisEnd" );
-    String InitialValue = props.getValue( "InitialValue" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (IndependentTSID != null) && (IndependentTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IndependentTSID=\"" + IndependentTSID + "\"" );
-    }
-	if ( (FillStart != null) && (FillStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillStart=\"" + FillStart + "\"" );
-	}
-	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillEnd=\"" + FillEnd + "\"" );
-	}
-    if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FillFlag=\"" + FillFlag + "\"" );
-    }
-    if ( ( FillDirection != null) && (FillDirection.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FillDirection=" + FillDirection );
-    }
-    if ( (FactorMethod != null) && (FactorMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FactorMethod=" + FactorMethod );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InitialValue=" + InitialValue );
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"IndependentTSID",
+		"FillStart",
+		"FillEnd",
+		"FillFlag",
+    	"FillDirection",
+    	"FactorMethod",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+    	"InitialValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -806,133 +806,30 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	StringBuffer b = new StringBuffer ();
-	if ( props == null ) {
-	    return getCommandName() + "()";
-	}
-    String DataStore = props.getValue("DataStore");
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    String Sites = props.getValue("Sites");
-    if ( (Sites != null) && (Sites.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Sites=\"" + Sites + "\"" );
-    }
-	String States = props.getValue("States");
-	if ( (States != null) && (States.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "States=\"" + States + "\"" );
-	}
-    String HUCs = props.getValue("HUCs");
-    if ( (HUCs != null) && (HUCs.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HUCs=\"" + HUCs + "\"" );
-    }
-    String BoundingBox = props.getValue("BoundingBox");
-    if ( (BoundingBox != null) && (BoundingBox.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "BoundingBox=\"" + BoundingBox + "\"" );
-    }
-    String Counties = props.getValue("Counties");
-    if ( (Counties != null) && (Counties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Counties=\"" + Counties + "\"" );
-    }
-    String Parameters = props.getValue("Parameters");
-    if ( (Parameters != null) && (Parameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Parameters=\"" + Parameters + "\"" );
-    }
-    String SiteStatus = props.getValue("SiteStatus");
-    if ( (SiteStatus != null) && (SiteStatus.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SiteStatus=\"" + SiteStatus + "\"" );
-    }
-    String SiteTypes = props.getValue("SiteTypes");
-    if ( (SiteTypes != null) && (SiteTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SiteTypes=\"" + SiteTypes + "\"" );
-    }
-    String Agency = props.getValue("Agency");
-    if ( (Agency != null) && (Agency.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Agency=\"" + Agency + "\"" );
-    }
-	String InputStart = props.getValue("InputStart");
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputStart=\"" + InputStart + "\"" );
-	}
-	String InputEnd = props.getValue("InputEnd");
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputEnd=\"" + InputEnd + "\"" );
-	}
-    String Alias = props.getValue("Alias");
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-    String Format = props.getValue("Format");
-    if ( (Format != null) && (Format.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Format=\"" + Format + "\"" );
-    }
-    String OutputFile = props.getValue("OutputFile");
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    String WaterMLInterval = props.getValue("WaterMLInterval");
-    if ((WaterMLInterval != null) && (WaterMLInterval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("WaterMLInterval=\"" + WaterMLInterval + "\"");
-    }
-	String WaterMLRequireDataToMatchInterval = props.getValue("WaterMLRequireDataToMatchInterval");
-    if ((WaterMLRequireDataToMatchInterval != null) && (WaterMLRequireDataToMatchInterval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("WaterMLRequireDataToMatchInterval=" + WaterMLRequireDataToMatchInterval );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"Sites",
+		"States",
+		"HUCs",
+		"BoundingBox",
+		"Counties",
+		"Parameters",
+		"SiteStatus",
+		"SiteTypes",
+		"Agency",
+		"InputStart",
+		"InputEnd",
+		"Alias",
+		"Format",
+		"OutputFile",
+		"WaterMLInterval",
+		"WaterMLRequireDataToMatchInterval"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

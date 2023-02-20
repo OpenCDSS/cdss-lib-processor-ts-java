@@ -749,131 +749,30 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
-	String NewTSID = props.getValue( "NewTSID" );
-    String TableID = props.getValue( "TableID" );
-    String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
-    String TableValue1Column = props.getValue ( "TableValue1Column" );
-    String TableValue2Column = props.getValue ( "TableValue2Column" );
-    String Units = props.getValue( "Units" );
-    String EffectiveDateColumn = props.getValue ( "EffectiveDateColumn" );
-    String LookupMethod = props.getValue ( "LookupMethod" );
-    String OutOfRangeLookupMethod = props.getValue ( "OutOfRangeLookupMethod" );
-    String OutOfRangeNotification = props.getValue ( "OutOfRangeNotification" );
-    String Transformation = props.getValue("Transformation");
-    String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-    String AnalysisStart = props.getValue( "AnalysisStart" );
-    String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableValue1Column != null) && (TableValue1Column.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValue1Column=\"" + TableValue1Column + "\"" );
-    }
-    if ( (TableValue2Column != null) && (TableValue2Column.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValue2Column=\"" + TableValue2Column + "\"" );
-    }
-    if ( (Units != null) && (Units.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Units=\"" + Units + "\"" );
-    }
-    if ( (EffectiveDateColumn != null) && (EffectiveDateColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EffectiveDateColumn=\"" + EffectiveDateColumn + "\"" );
-    }
-    if ( (LookupMethod != null) && (LookupMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LookupMethod=" + LookupMethod );
-    }
-    if ( (OutOfRangeLookupMethod != null) && (OutOfRangeLookupMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutOfRangeLookupMethod=" + OutOfRangeLookupMethod );
-    }
-    if ( (OutOfRangeNotification != null) && (OutOfRangeNotification.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutOfRangeNotification=" + OutOfRangeNotification );
-    }
-    if ( (Transformation != null) && (Transformation.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Transformation=" + Transformation );
-    }
-    if ( LEZeroLogValue != null && LEZeroLogValue.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "LEZeroLogValue=" + LEZeroLogValue);
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSID",
+		"NewTSID",
+		"Alias",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"TableValue1Column",
+    	"TableValue2Column",
+    	"Units",
+    	"EffectiveDateColumn",
+    	"LookupMethod",
+    	"OutOfRangeLookupMethod",
+    	"OutOfRangeNotification",
+    	"Transformation",
+    	"LEZeroLogValue",
+    	"AnalysisStart",
+    	"AnalysisEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

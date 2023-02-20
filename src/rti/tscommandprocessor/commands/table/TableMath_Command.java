@@ -476,74 +476,21 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TableID = parameters.getValue( "TableID" );
-    String Condition = parameters.getValue( "Condition" );
-    String ProcessRows = parameters.getValue( "ProcessRows" );
-    String Input1 = parameters.getValue( "Input1" );
-    String Operator = parameters.getValue( "Operator" );
-    String Input2 = parameters.getValue( "Input2" );
-    String Output = parameters.getValue( "Output" );
-    String NonValue = parameters.getValue( "NonValue" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (Condition != null) && (Condition.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Condition=\"" + Condition + "\"" );
-    }
-    if ( (ProcessRows != null) && (ProcessRows.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProcessRows=\"" + ProcessRows + "\"" );
-    }
-    if ( (Input1 != null) && (Input1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Input1=\"" + Input1 + "\"" );
-    }
-    if ( (Operator != null) && (Operator.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Operator=\"" + Operator + "\"" );
-    }
-    if ( (Input2 != null) && (Input2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Input2=\"" + Input2 + "\"");
-    }
-    if ( (Output != null) && (Output.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Output=\"" + Output + "\"" );
-    }
-    if ( (NonValue != null) && (NonValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NonValue=" + NonValue );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"TableID",
+    	"Condition",
+    	"ProcessRows",
+    	"Input1",
+    	"Operator",
+    	"Input2",
+    	"Output",
+    	"NonValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

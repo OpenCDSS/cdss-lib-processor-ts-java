@@ -680,92 +680,24 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-	String EnsembleID = props.getValue( "EnsembleID" );
-	String FillStart = props.getValue( "FillStart" );
-	String FillEnd = props.getValue( "FillEnd" );
-	String FillFlag = props.getValue( "FillFlag" );
-	String FillFlagDescription = props.getValue( "FillFlagDescription" );
-	String RecalcLimits = props.getValue( "RecalcLimits" );
-	String FillUsingCIU = props.getValue( "FillUsingCIU" );
-	String FillUsingCIUFlag = props.getValue( "FillUsingCIUFlag" );
-	String FillUsingCIUFlagDescription = props.getValue( "FillUsingCIUFlagDescription" );
-	StringBuffer b = new StringBuffer ();
-	
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	if ( (FillStart != null) && (FillStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillStart=\"" + FillStart + "\"" );
-	}
-	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillEnd=\"" + FillEnd + "\"" );
-	}
-	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillFlag=\"" + FillFlag + "\"" );
-	}
-	if ( (FillFlagDescription != null) && (FillFlagDescription.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillFlagDescription=\"" + FillFlagDescription + "\"" );
-	}
-	if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RecalcLimits=" + RecalcLimits );
-	}
-	if ( (FillUsingCIU != null) && (FillUsingCIU.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillUsingCIU=" + FillUsingCIU );
-	}
-	if ( (FillUsingCIUFlag != null) && (FillUsingCIUFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillUsingCIUFlag=\"" + FillUsingCIUFlag + "\"" );
-	}
-	if ( (FillUsingCIUFlagDescription != null) && (FillUsingCIUFlagDescription.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillUsingCIUFlagDescription=\"" + FillUsingCIUFlagDescription + "\"" );
-	}
-	
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"FillStart",
+		"FillEnd",
+		"FillFlag",
+		"FillFlagDescription",
+		"RecalcLimits",
+		"FillUsingCIU",
+		"FillUsingCIUFlag",
+		"FillUsingCIUFlagDescription"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

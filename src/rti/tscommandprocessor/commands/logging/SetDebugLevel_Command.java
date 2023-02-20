@@ -236,24 +236,15 @@ throws CommandWarningException, CommandException {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-    if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String ScreenLevel = props.getValue( "ScreenLevel" );
-    String LogFileLevel = props.getValue( "LogFileLevel" );
-    StringBuffer b = new StringBuffer ();
-    if ( (ScreenLevel != null) && (ScreenLevel.length() > 0) ) {
-        b.append ( "ScreenLevel=" + ScreenLevel );
-    }
-    if ( (LogFileLevel != null) && (LogFileLevel.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LogFileLevel=" + LogFileLevel );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"ScreenLevel",
+    	"LogFileLevel"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

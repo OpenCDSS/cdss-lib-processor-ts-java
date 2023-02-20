@@ -913,7 +913,7 @@ private void refresh ()
     props.add ( "OutputEnd=" + OutputEnd );
     props.add ( "OutputMinimum=" + OutputMinimum );
     props.add ( "OutputMaximum=" + OutputMaximum );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

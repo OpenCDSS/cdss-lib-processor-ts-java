@@ -1041,162 +1041,38 @@ public String toString ( PropList props ) {
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software.  This is ignored.
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-
-	// Get the properties from the command.
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String Alias = props.getValue( "Alias" );
-	String NewEnsembleID = props.getValue( "NewEnsembleID" );
-	String NewEnsembleName = props.getValue( "NewEnsembleName" );
-	String NewInterval = props.getValue( "NewInterval" );
-	String OldTimeScale = props.getValue( "OldTimeScale" );
-	String NewTimeScale = props.getValue( "NewTimeScale" );
-	String Statistic = props.getValue( "Statistic" );
-	String OutputYearType = props.getValue("OutputYearType");
-	String NewDataType = props.getValue( "NewDataType" );
-	String NewUnits = props.getValue( "NewUnits" );
-	String Tolerance = props.getValue( "Tolerance" );
-	String HandleEndpointsHow = props.getValue( "HandleEndpointsHow" );
-	String AllowMissingCount = props.getValue( "AllowMissingCount" );
-	/* TODO SAM 2005-02-18 may enable later.
-	String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
-	*/
-	String AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
-	String OutputFillMethod = props.getValue( "OutputFillMethod" );
-	String HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
-	String RecalcLimits = props.getValue( "RecalcLimits");
-	
-	// Creating the command string.
-	// This StringBuffer will contain all parameters for the command.
-	StringBuffer b = new StringBuffer();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"" );
-    }
-    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
-    }
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter.
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-	if ( NewInterval != null && NewInterval.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NewInterval=" + NewInterval );
-	}
-	if ( OldTimeScale != null && OldTimeScale.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "OldTimeScale=" + OldTimeScale );
-	}
-	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NewTimeScale=" + NewTimeScale  );
-	}
-    if ( Statistic != null && Statistic.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "Statistic=" + Statistic  );
-    }
-    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "OutputYearType=" + OutputYearType );
-    }
-	if ( NewDataType != null && NewDataType.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NewDataType=" + NewDataType );
-	}
-    if ( NewUnits != null && NewUnits.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "NewUnits=" + NewUnits );
-    }
-    if ( Tolerance != null && Tolerance.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "Tolerance=" + Tolerance );
-    }
-    if ( HandleEndpointsHow != null && HandleEndpointsHow.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "HandleEndpointsHow=" + HandleEndpointsHow );
-    }
-	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AllowMissingCount=" + AllowMissingCount );
-	}
-	// Adding the AllowMissingPercent.
-	/* TODO SAM 2005-02-18 may enable later.
-	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AllowMissingPercent=" + AllowMissingPercent );
-	} */
-    if ( AllowMissingConsecutive != null && AllowMissingConsecutive.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "AllowMissingConsecutive=" + AllowMissingConsecutive );
-    }
-	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "OutputFillMethod=" + OutputFillMethod );
-	}
-	if ( HandleMissingInputHow != null && HandleMissingInputHow.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "HandleMissingInputHow=" + HandleMissingInputHow );
-	}
-    if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RecalcLimits=" + RecalcLimits );
-    }
-    if ( majorVersion < 10 ) {
-        // Old syntax.
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"NewEnsembleID",
+		"NewEnsembleName",
+		"Alias",
+		"NewInterval",
+		"OldTimeScale",
+		"NewTimeScale",
+		"Statistic",
+		"OutputYearType",
+		"NewDataType",
+		"NewUnits",
+		"Tolerance",
+		"HandleEndpointsHow",
+		"AllowMissingCount",
+		/* TODO SAM 2005-02-18 may enable later.
+		String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
+		*/
+		"AllowMissingConsecutive",
+		"OutputFillMethod",
+		"HandleMissingInputHow",
+		"RecalcLimits"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

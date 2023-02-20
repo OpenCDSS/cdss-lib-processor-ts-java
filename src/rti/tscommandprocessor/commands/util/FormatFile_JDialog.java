@@ -769,7 +769,7 @@ private void refresh ()
 	props.add ( "AutoFormat=" + AutoFormat );
 	props.add ( "OutputType=" + OutputType );
 	props.add ( "OutputFile=" + OutputFile );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __pathInputFile_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {

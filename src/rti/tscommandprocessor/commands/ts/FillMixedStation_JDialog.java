@@ -1758,7 +1758,7 @@ Refresh the command from the other text field contents.
 		// FIXME SAM 2009-08-26 Evaluate whether FillMixedStation() command should always be used or
 		// add a checkbox to allow individual FillRegression(), etc. commands to be used (see createFillCommands() method).
 		// Update the __Command_JTextArea if running under the command mode. 
-		__Command_JTextArea.setText( __command.toString(props) );
+		__Command_JTextArea.setText( __command.toString(props).trim() );
 	}
 
 	/**

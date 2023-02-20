@@ -1266,7 +1266,7 @@ private void refresh ()
     props.add ( "OutputEnd=" + OutputEnd );
     props.add ( "Properties=" + Properties );
     props.add ( "CopyProperties=" + CopyProperties );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

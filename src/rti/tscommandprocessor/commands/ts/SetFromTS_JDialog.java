@@ -59,7 +59,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import RTi.TS.TSUtil;
 import RTi.TS.TransferDataHowType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -1004,7 +1003,7 @@ private void refresh ()
         props.add ( "SetWindowStart=" + SetWindowStart );
         props.add ( "SetWindowEnd=" + SetWindowEnd );
     }
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

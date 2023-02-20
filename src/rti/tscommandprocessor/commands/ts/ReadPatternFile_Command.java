@@ -406,27 +406,20 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<StringMonthTS> discovery_TS_Vector )
-{
+private void setDiscoveryTSList ( List<StringMonthTS> discovery_TS_Vector ) {
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String PatternFile = props.getValue( "PatternFile" );
-	StringBuffer b = new StringBuffer ();
-	if ( (PatternFile != null) && (PatternFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PatternFile=\"" + PatternFile + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"PatternFile"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

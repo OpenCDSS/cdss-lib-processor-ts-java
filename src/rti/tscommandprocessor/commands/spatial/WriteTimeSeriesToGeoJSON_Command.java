@@ -469,119 +469,28 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String Append = parameters.getValue ( "Append" );
-    String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
-    String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
-    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
-    String ElevationProperty = parameters.getValue ( "ElevationProperty" );
-    String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
-    String IncludeProperties = parameters.getValue ( "IncludeProperties" );
-    String ExcludeProperties = parameters.getValue ( "ExcludeProperties" );
-    String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
-    String PrependText = parameters.getValue ( "PrependText" );
-    String AppendText = parameters.getValue ( "AppendText" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (Append != null) && (Append.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Append=\"" + Append + "\"" );
-    }
-    if ( (LongitudeProperty != null) && (LongitudeProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LongitudeProperty=\"" + LongitudeProperty + "\"" );
-    }
-    if ( (LatitudeProperty != null) && (LatitudeProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LatitudeProperty=\"" + LatitudeProperty + "\"" );
-    }
-    if ( (CoordinatePrecision != null) && (CoordinatePrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CoordinatePrecision=" + CoordinatePrecision );
-    }
-    if ( (ElevationProperty != null) && (ElevationProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationProperty=\"" + ElevationProperty + "\"" );
-    }
-    if ( (WKTGeometryProperty != null) && (WKTGeometryProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WKTGeometryProperty=\"" + WKTGeometryProperty + "\"" );
-    }
-    if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeProperties=\"" + IncludeProperties + "\"" );
-    }
-    if ( (ExcludeProperties != null) && (ExcludeProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeProperties=\"" + ExcludeProperties + "\"" );
-    }
-    if ( (JavaScriptVar != null) && (JavaScriptVar.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "JavaScriptVar=\"" + JavaScriptVar + "\"" );
-    }
-    if ( (PrependText != null) && (PrependText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PrependText=\"" + PrependText + "\"" );
-    }
-    if ( (AppendText != null) && (AppendText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AppendText=\"" + AppendText + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"OutputFile",
+    	"Append",
+    	"LongitudeProperty",
+    	"LatitudeProperty",
+    	"CoordinatePrecision",
+    	"ElevationProperty",
+    	"WKTGeometryProperty",
+    	"IncludeProperties",
+    	"ExcludeProperties",
+    	"JavaScriptVar",
+    	"PrependText",
+    	"AppendText"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here

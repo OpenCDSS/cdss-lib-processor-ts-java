@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -102,8 +102,8 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SelectTimeSeries_JDialog ( JFrame parent, SelectTimeSeries_Command command )
-{	super(parent, true);
+public SelectTimeSeries_JDialog ( JFrame parent, SelectTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -111,8 +111,8 @@ public SelectTimeSeries_JDialog ( JFrame parent, SelectTimeSeries_Command comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -132,8 +132,7 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
             TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -164,15 +163,16 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -225,7 +225,7 @@ private void checkInput ()
         parameters.set ( "UpstreamNodeIDs", UpstreamNodeIDs );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -235,13 +235,13 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+    String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -272,14 +272,14 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, SelectTimeSeries_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -300,17 +300,17 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	
+
    	__main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	
+
     // Panel for TSList
     int yList = -1;
     JPanel list_JPanel = new JPanel();
     list_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "TS List", list_JPanel );
-    
+
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "When matching a time series identifier (TSID) pattern:"),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -331,7 +331,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(list_JPanel, new JLabel (
     "<html>When selecting time series by specifying time series positions (<b>not recommended for production" +
     " work because positions may change</b>):</html>"),
@@ -345,9 +345,9 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     yList = CommandEditorUtil.addTSListToEditorDialogPanel ( this, list_JPanel, __TSList_JComboBox, yList );
-    // Remove SelectedTS from list since it would be redundant with this command
+    // Remove SelectedTS from list since it would be redundant with this command.
     __TSList_JComboBox.remove ( TSListType.SELECTED_TS.toString() );
-    // Add the non-standard choice
+    // Add the non-standard choice.
     __TSList_JComboBox.add( TSListType.TSPOSITION.toString());
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
@@ -356,15 +356,15 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yList = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, list_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yList );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yList = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, list_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yList );
-    
+
     __TSPosition_JLabel = new JLabel ("Time series position(s) (for TSList=" + TSListType.TSPOSITION.toString() + "):");
     JGUIUtil.addComponent(list_JPanel, __TSPosition_JLabel,
 		0, ++yList, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -374,8 +374,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
 		1, yList, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel ( "For example, 1,2,7-8 (positions are 1+)." ),
 		3, yList, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
-    // Panel for property
+
+    // Panel for property.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
@@ -389,18 +389,18 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Comparisons are case-independent."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property name:" ), 
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property name:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.setToolTipText("Specify the property name to compare, can use ${Property} notation");
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyName_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - property name to match."), 
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - property name to match."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property criterion:" ), 
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property criterion:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyCriterion_JComboBox = new SimpleJComboBox ( false );
     List<String> critChoices = new ArrayList<String>();
@@ -413,20 +413,20 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     __PropertyCriterion_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyCriterion_JComboBox,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - creterion for to match property."), 
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - creterion for to match property."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property value:" ), 
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property value:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new JTextField ( 20 );
     __PropertyValue_JTextField.setToolTipText("Specify property value to match or specify with ${Property} notation");
     __PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyValue_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - property value to match."), 
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - property value to match."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for statistic
+
+    // Panel for statistic.
     int yStat = -1;
     JPanel stat_JPanel = new JPanel();
     stat_JPanel.setLayout( new GridBagLayout() );
@@ -441,9 +441,9 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
         "2) Select time series with the property using the parameters in the Match Property tab of this command."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for network
-    
+
+    // Panel for network.
+
     int yNet = -1;
     JPanel net_JPanel = new JPanel();
     net_JPanel.setLayout( new GridBagLayout() );
@@ -459,38 +459,38 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
         0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(net_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Network ID:" ), 
+
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Network ID:" ),
         0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NetworkID_JTextField = new JTextField ( 20 );
     __NetworkID_JTextField.setToolTipText("Specify the property name to compare, can use ${Property} notation");
     __NetworkID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(net_JPanel, __NetworkID_JTextField,
         1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(net_JPanel, new JLabel("Required - property name to match."), 
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Required - property name to match."),
         3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Downstream node ID:" ), 
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Downstream node ID:" ),
         0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DownstreamNodeID_JTextField = new JTextField ( 20 );
     __DownstreamNodeID_JTextField.setToolTipText("Specify the downstream node ID to begin network search, can use ${Property} notation, prefix with - to not include in result");
     __DownstreamNodeID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(net_JPanel, __DownstreamNodeID_JTextField,
         1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - downstream node to bound search."), 
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - downstream node to bound search."),
         3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Upstream node ID(s):" ), 
+
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Upstream node ID(s):" ),
         0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UpstreamNodeIDs_JTextField = new JTextField ( 20 );
     __UpstreamNodeIDs_JTextField.setToolTipText("Specify the upstream node ID(s) to bound network search, can use ${Property} notation, prefix with - to not include in result");
     __UpstreamNodeIDs_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(net_JPanel, __UpstreamNodeIDs_JTextField,
         1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - upstream nodes to bound search."), 
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - upstream nodes to bound search."),
         3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Remaining general parameters
+
+    // Remaining general parameters.
 
     List<String> select_all_first = new Vector<String> ( 3 );
 	select_all_first.add ( "" );
@@ -506,7 +506,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - eliminates need for separate deselect (default=" +
         __command._False + ")."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfNotFound_JComboBox = new SimpleJComboBox ( false );
@@ -523,7 +523,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - how to handle case of nothing matched (default=" + __command._Fail + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Select count property:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SelectCountProperty_JTextField = new JTextField ( "", 20 );
@@ -533,8 +533,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set for number selected." ),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 55 );
     __command_JTextArea.setLineWrap ( true );
@@ -543,14 +543,14 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -566,7 +566,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -575,8 +575,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent event )
-{	if ( event.getStateChange() != ItemEvent.SELECTED ) {
+public void itemStateChanged ( ItemEvent event ) {
+	if ( event.getStateChange() != ItemEvent.SELECTED ) {
 		return;
 	}
     checkGUIState();
@@ -586,37 +586,30 @@ public void itemStateChanged ( ItemEvent event )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
-
-	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
-	}
-	else {
-	    // Combo box...
-	    refresh();
-	}
+public void keyPressed ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = __command + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
 	String TSID = "";
 	String EnsembleID = "";
@@ -633,7 +626,7 @@ private void refresh ()
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
 		EnsembleID = props.getValue ( "EnsembleID" );
@@ -648,7 +641,7 @@ private void refresh ()
         DownstreamNodeID = props.getValue ( "DownstreamNodeID" );
         UpstreamNodeIDs = props.getValue ( "UpstreamNodeIDs" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -666,18 +659,20 @@ private void refresh ()
                 JGUIUtil.NONE, null, null ) ) {
                 __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+            	// Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -695,7 +690,7 @@ private void refresh ()
 			__TSPosition_JTextField.setText ( TSPosition );
 		}
 		if ( DeselectAllFirst == null ) {
-			// Select blank...
+			// Select blank.
 			__DeselectAllFirst_JComboBox.select ( 0 );
 		}
 		else {
@@ -711,7 +706,7 @@ private void refresh ()
 		}
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
-                // Select default...
+                // Select default.
                 __IfNotFound_JComboBox.select ( 0 );
             }
             else {
@@ -732,7 +727,7 @@ private void refresh ()
             __PropertyName_JTextField.setText ( PropertyName );
         }
         if ( PropertyCriterion == null ) {
-            // Select default...
+            // Select default.
             __PropertyCriterion_JComboBox.select ( 0 );
         }
         else {
@@ -759,7 +754,7 @@ private void refresh ()
             __UpstreamNodeIDs_JTextField.setText ( UpstreamNodeIDs );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -787,25 +782,24 @@ private void refresh ()
     props.add ( "NetworkID=" + NetworkID );
     props.add ( "DownstreamNodeID=" + DownstreamNodeID );
     props.add ( "UpstreamNodeIDs=" + UpstreamNodeIDs );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+private void response ( boolean ok ) {
+    __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -814,15 +808,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

@@ -308,11 +308,21 @@ throws CommandWarningException, CommandException
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
-// Can rely on base class for toString().
+/**
+Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
+*/
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"CheckFile",
+		"Suffix"
+	};
+	return this.toString(parameters, parameterOrder);
+}
 
 }

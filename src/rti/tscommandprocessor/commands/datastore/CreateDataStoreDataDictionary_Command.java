@@ -658,139 +658,31 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String ReferenceTables = props.getValue( "ReferenceTables" );
-	String ExcludeTables = props.getValue( "ExcludeTables" );
-	String DataStoreMetaTableForTables = props.getValue( "DataStoreMetaTableForTables" );
-	String DataStoreMetaTableForColumns = props.getValue( "DataStoreMetaTableForColumns" );
-	String MetaTableForTables = props.getValue( "MetaTableForTables" );
-	String MetaTableForColumns = props.getValue( "MetaTableForColumns" );
-	String OutputFile = props.getValue( "OutputFile" );
-	String Newline = props.getValue( "Newline" );
-	String SurroundWithPre = props.getValue( "SurroundWithPre" );
-	String EncodeHtmlChars = props.getValue( "EncodeHtmlChars" );
-	String ERDiagramLayoutTableID = props.getValue( "ERDiagramLayoutTableID" );
-	String ERDiagramLayoutTableNameColumn = props.getValue( "ERDiagramLayoutTableNameColumn" );
-	String ERDiagramLayoutTableXColumn = props.getValue( "ERDiagramLayoutTableXColumn" );
-	String ERDiagramLayoutTableYColumn = props.getValue( "ERDiagramLayoutTableYColumn" );
-	String ERDiagramPageSize = props.getValue( "ERDiagramPageSize" );
-	String ERDiagramOrientation = props.getValue( "ERDiagramOrientation" );
-	String ViewERDiagram = props.getValue( "ViewERDiagram" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (ReferenceTables != null) && (ReferenceTables.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReferenceTables=\"" + ReferenceTables + "\"" );
-    }
-    if ( (ExcludeTables != null) && (ExcludeTables.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeTables=\"" + ExcludeTables + "\"" );
-    }
-    if ( (DataStoreMetaTableForTables != null) && (DataStoreMetaTableForTables.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreMetaTableForTables=\"" + DataStoreMetaTableForTables + "\"" );
-    }
-    if ( (DataStoreMetaTableForColumns != null) && (DataStoreMetaTableForColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreMetaTableForColumns=\"" + DataStoreMetaTableForColumns + "\"" );
-    }
-    if ( (MetaTableForTables != null) && (MetaTableForTables.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MetaTableForTables=\"" + MetaTableForTables + "\"" );
-    }
-    if ( (MetaTableForColumns != null) && (MetaTableForColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MetaTableForColumns=\"" + MetaTableForColumns + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (SurroundWithPre != null) && (SurroundWithPre.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SurroundWithPre=" + SurroundWithPre );
-    }
-    if ( (Newline != null) && (Newline.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Newline=\"" + Newline + "\"" );
-    }
-    if ( (EncodeHtmlChars != null) && (EncodeHtmlChars.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EncodeHtmlChars=" + EncodeHtmlChars );
-    }
-    if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramLayoutTableID=\"" + ERDiagramLayoutTableID + "\"" );
-    }
-    if ( (ERDiagramLayoutTableNameColumn != null) && !ERDiagramLayoutTableNameColumn.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramLayoutTableNameColumn=\"" + ERDiagramLayoutTableNameColumn + "\"" );
-    }
-    if ( (ERDiagramLayoutTableXColumn != null) && !ERDiagramLayoutTableXColumn.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramLayoutTableXColumn=\"" + ERDiagramLayoutTableXColumn + "\"" );
-    }
-    if ( (ERDiagramLayoutTableYColumn != null) && !ERDiagramLayoutTableYColumn.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramLayoutTableYColumn=\"" + ERDiagramLayoutTableYColumn + "\"" );
-    }
-    if ( (ERDiagramPageSize != null) && !ERDiagramPageSize.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramPageSize=\"" + ERDiagramPageSize + "\"" );
-    }
-    if ( (ERDiagramOrientation != null) && !ERDiagramOrientation.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ERDiagramOrientation=" + ERDiagramOrientation );
-    }
-    if ( (ViewERDiagram != null) && (ViewERDiagram.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ViewERDiagram=" + ViewERDiagram );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"ReferenceTables",
+		"ExcludeTables",
+		"DataStoreMetaTableForTables",
+		"DataStoreMetaTableForColumns",
+		"MetaTableForTables",
+		"MetaTableForColumns",
+		"OutputFile",
+		"SurroundWithPre",
+		"Newline",
+		"EncodeHtmlChars",
+		"ERDiagramLayoutTableID",
+		"ERDiagramLayoutTableNameColumn",
+		"ERDiagramLayoutTableXColumn",
+		"ERDiagramLayoutTableYColumn",
+		"ERDiagramPageSize",
+		"ERDiagramOrientation",
+		"ViewERDiagram"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -573,7 +573,7 @@ private void refresh ()
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "OutputYearType=" + OutputYearType );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {

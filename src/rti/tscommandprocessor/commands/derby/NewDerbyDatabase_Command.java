@@ -318,34 +318,21 @@ CommandWarningException, CommandException
 /**
 Set the data store that is read by this class in discovery mode.
 */
-private void setDiscoveryDataStore ( DataStore dataStore )
-{
+private void setDiscoveryDataStore ( DataStore dataStore ) {
     __discoveryDataStore = dataStore;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String DatabaseDir = props.getValue( "DatabaseDir" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (DatabaseDir != null) && (DatabaseDir.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DatabaseDir=\"" + DatabaseDir + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"DatabaseDir"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

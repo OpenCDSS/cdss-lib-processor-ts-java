@@ -613,7 +613,7 @@ private void refresh ()
 	props.add ( "MinimumStartSegmentLength=" + MinimumStartSegmentLength );
 	props.add ( "MinimumEndSegmentLength=" + MinimumEndSegmentLength );
 	props.add ( "DeleteOriginalRow=" + DeleteOriginalRow );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

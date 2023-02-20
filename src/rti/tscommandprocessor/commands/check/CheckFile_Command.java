@@ -872,131 +872,29 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String InputFile = parameters.getValue( "InputFile" );
-    String IfNotFound = parameters.getValue( "IfNotFound" );
-    String Statistic = parameters.getValue( "Statistic" );
-    String SearchPattern = parameters.getValue( "SearchPattern" );
-    String CheckCriteria = parameters.getValue( "CheckCriteria" );
-    String CheckValue1 = parameters.getValue( "CheckValue1" );
-    String CheckValue2 = parameters.getValue( "CheckValue2" );
-    String IfCriteriaMet = parameters.getValue( "IfCriteriaMet" );
-    String ProblemType = parameters.getValue( "ProblemType" );
-    String CheckResultPropertyName = parameters.getValue( "CheckResultPropertyName" );
-    String CriteriaMetPropertyValue = parameters.getValue( "CriteriaMetPropertyValue" );
-    String CriteriaNotMetPropertyValue = parameters.getValue( "CriteriaNotMetPropertyValue" );
-    String TableID = parameters.getValue ( "TableID" );
-    String TableFilenameColumn = parameters.getValue ( "TableFilenameColumn" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
-    String TableStatisticValueColumn = parameters.getValue ( "TableStatisticValueColumn" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (InputFile != null) && (InputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputFile=\"" + InputFile + "\"" );
-    }
-    if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfNotFound=\"" + IfNotFound + "\"" );
-    }
-    if ( (Statistic != null) && (Statistic.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Statistic=\"" + Statistic + "\"" );
-    }
-    if ( (SearchPattern != null) && (SearchPattern.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SearchPattern=\"" + SearchPattern + "\"" );
-    }
-    if ( (CheckCriteria != null) && (CheckCriteria.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckCriteria=\"" + CheckCriteria + "\"" );
-    }
-    if ( (CheckValue1 != null) && (CheckValue1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckValue1=" + CheckValue1 );
-    }
-    if ( (CheckValue2 != null) && (CheckValue2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckValue2=" + CheckValue2 );
-    }
-    if ( (IfCriteriaMet != null) && (IfCriteriaMet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfCriteriaMet=" + IfCriteriaMet );
-    }
-    if ( (ProblemType != null) && (ProblemType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProblemType=\"" + ProblemType + "\"" );
-    }
-    if ( (CheckResultPropertyName != null) && (CheckResultPropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckResultPropertyName=\"" + CheckResultPropertyName + "\"" );
-    }
-    if ( (CriteriaMetPropertyValue != null) && (CriteriaMetPropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CriteriaMetPropertyValue=\"" + CriteriaMetPropertyValue + "\"" );
-    }
-    if ( (CriteriaNotMetPropertyValue != null) && (CriteriaNotMetPropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CriteriaNotMetPropertyValue=\"" + CriteriaNotMetPropertyValue + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableFilenameColumn != null) && (TableFilenameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableFilenameColumn=\"" + TableFilenameColumn + "\"" );
-    }
-    if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
-    }
-    if ( (TableStatisticValueColumn != null) && (TableStatisticValueColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableStatisticValueColumn=\"" + TableStatisticValueColumn + "\"" );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+    String [] parameterOrder = { 
+    	"InputFile",
+    	"IfNotFound",
+    	"Statistic",
+    	"SearchPattern",
+    	"CheckCriteria",
+    	"CheckValue1",
+    	"CheckValue2",
+    	"IfCriteriaMet",
+    	"ProblemType",
+    	"CheckResultPropertyName",
+    	"CriteriaMetPropertyValue",
+    	"CriteriaNotMetPropertyValue",
+    	"TableID",
+    	"TableFilenameColumn",
+    	"TableStatisticColumn",
+    	"TableStatisticValueColumn"
+    };
+	return this.toString(parameters, parameterOrder);
 }
 
 }

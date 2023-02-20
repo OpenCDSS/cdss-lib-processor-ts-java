@@ -1029,7 +1029,7 @@ private void refresh ()
 	props.add ( "ScaleValue=" + ScaleValue );
 	//props.add ( "RecalcLimits=" + RecalcLimits);
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

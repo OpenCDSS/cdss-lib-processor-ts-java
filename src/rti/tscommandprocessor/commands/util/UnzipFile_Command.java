@@ -423,52 +423,19 @@ private void setOutputFileList ( List<File> fileList )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String OutputFile = parameters.getValue("OutputFile");
-	String OutputFolder = parameters.getValue("OutputFolder");
-	String IfInputNotFound = parameters.getValue("IfInputNotFound");
-	String RemoveOutputFolder = parameters.getValue("RemoveOutputFolder");
-	String ListInResults = parameters.getValue("ListInResults");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"");
-    }
-    if ( (OutputFolder != null) && (OutputFolder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFolder=\"" + OutputFolder + "\"");
-    }
-	if ( (IfInputNotFound != null) && (IfInputNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfInputNotFound=" + IfInputNotFound );
-	}
-    if ( (RemoveOutputFolder != null) && (RemoveOutputFolder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "RemoveOutputFolder=" + RemoveOutputFolder );
-    }
-    if ( (ListInResults != null) && (ListInResults.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append(",");
-        }
-        b.append ( "ListInResults=" + ListInResults );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"OutputFile",
+		"OutputFolder",
+		"IfInputNotFound",
+		"RemoveOutputFolder",
+		"ListInResults"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

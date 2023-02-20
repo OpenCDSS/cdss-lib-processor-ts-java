@@ -345,7 +345,7 @@ private void refresh()
     props.add ( "TSID=" + TSID );
     props.add ( "MultiplierTSID=" + MultiplierTSID );
     props.add ( "NewUnits=" + NewUnits );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

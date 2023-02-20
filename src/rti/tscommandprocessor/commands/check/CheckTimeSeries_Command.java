@@ -774,201 +774,39 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String CheckCriteria = parameters.getValue( "CheckCriteria" );
-    String Value1 = parameters.getValue( "Value1" );
-    String Value2 = parameters.getValue( "Value2" );
-    String ProblemType = parameters.getValue( "ProblemType" );
-    String MaxWarnings = parameters.getValue( "MaxWarnings" );
-    String Flag = parameters.getValue( "Flag" );
-    String FlagDesc = parameters.getValue( "FlagDesc" );
-    String Action = parameters.getValue ( "Action" );
-    String AnalysisStart = parameters.getValue( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
-    String AnalysisWindowStart = parameters.getValue( "AnalysisWindowStart" );
-    String AnalysisWindowEnd = parameters.getValue( "AnalysisWindowEnd" );
-	String TableID = parameters.getValue ( "TableID" );
-	String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-	String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-	String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
-	String TableValueColumn = parameters.getValue ( "TableValueColumn" );
-	String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
-	String TableFlagColumn = parameters.getValue ( "TableFlagColumn" );
-	String TableCheckTypeColumn = parameters.getValue ( "TableCheckTypeColumn" );
-	String TableCheckMessageColumn = parameters.getValue ( "TableCheckMessageColumn" );
-    String CheckCountProperty = parameters.getValue ( "CheckCountProperty" );
-    String CheckCountTimeSeriesProperty = parameters.getValue ( "CheckCountTimeSeriesProperty" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (CheckCriteria != null) && (CheckCriteria.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckCriteria=\"" + CheckCriteria + "\"" );
-    }
-    if ( (Value1 != null) && (Value1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value1=" + Value1 );
-    }
-    if ( (Value2 != null) && (Value2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value2=" + Value2 );
-    }
-    if ( (ProblemType != null) && (ProblemType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProblemType=\"" + ProblemType + "\"" );
-    }
-    if ( (MaxWarnings != null) && (MaxWarnings.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MaxWarnings=" + MaxWarnings  );
-    }
-    if ( (Flag != null) && (Flag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Flag=\"" + Flag + "\"" );
-    }
-    if ( (FlagDesc != null) && (FlagDesc.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FlagDesc=\"" + FlagDesc + "\"" );
-    }
-    if ( Action != null && Action.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Action=" + Action );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
-    }
-    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableDateTimeColumn != null) && (TableDateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableDateTimeColumn=\"" + TableDateTimeColumn + "\"" );
-    }
-    if ( (TableValueColumn != null) && (TableValueColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValueColumn=\"" + TableValueColumn + "\"" );
-    }
-    if ( (TableValuePrecision != null) && (TableValuePrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValuePrecision=" + TableValuePrecision );
-    }
-    if ( (TableFlagColumn != null) && (TableFlagColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableFlagColumn=\"" + TableFlagColumn + "\"" );
-    }
-    if ( (TableCheckTypeColumn != null) && (TableCheckTypeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableCheckTypeColumn=\"" + TableCheckTypeColumn + "\"" );
-    }
-    if ( (TableCheckMessageColumn != null) && (TableCheckMessageColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableCheckMessageColumn=\"" + TableCheckMessageColumn + "\"" );
-    }
-    if ( CheckCountProperty != null && CheckCountProperty.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckCountProperty=\"" + CheckCountProperty + "\"");
-    }
-    if ( CheckCountTimeSeriesProperty != null && CheckCountTimeSeriesProperty.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CheckCountTimeSeriesProperty=\"" + CheckCountTimeSeriesProperty + "\"");
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"CheckCriteria",
+    	"Value1",
+    	"Value2",
+    	"ProblemType",
+    	"MaxWarnings",
+    	"Flag",
+    	"FlagDesc",
+    	"Action",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+    	"AnalysisWindowStart",
+    	"AnalysisWindowEnd",
+		"TableID",
+		"TableTSIDColumn",
+		"TableTSIDFormat",
+		"TableDateTimeColumn",
+		"TableValueColumn",
+		"TableValuePrecision",
+		"TableFlagColumn",
+		"TableCheckTypeColumn",
+		"TableCheckMessageColumn",
+    	"CheckCountProperty",
+    	"CheckCountTimeSeriesProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

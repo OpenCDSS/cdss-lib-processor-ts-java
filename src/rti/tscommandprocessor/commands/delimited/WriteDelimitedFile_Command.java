@@ -632,140 +632,31 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
-	String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
-    String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
-    String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
-	String ValueColumns = parameters.getValue ( "ValueColumns" );
-	String DataFlagColumns = parameters.getValue ( "DataFlagColumns" );
-	String HeadingSurround = parameters.getValue ( "HeadingSurround" );
-	String Delimiter = parameters.getValue ( "Delimiter" );
-	String Precision = parameters.getValue("Precision");
-	String MissingValue = parameters.getValue("MissingValue");
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String WriteHeaderComments = parameters.getValue("WriteHeaderComments");
-	String HeaderComments = parameters.getValue ( "HeaderComments" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (WriteSeparateFiles != null) && (WriteSeparateFiles.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteSeparateFiles=\"" + WriteSeparateFiles + "\"" );
-    }
-    if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeColumn=\"" + DateTimeColumn + "\"" );
-    }
-    if ( (DateTimeFormatterType != null) && (DateTimeFormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormatterType=\"" + DateTimeFormatterType + "\"" );
-    }
-    if ( (DateTimeFormat != null) && (DateTimeFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormat=\"" + DateTimeFormat + "\"" );
-    }
-    if ( (ValueColumns != null) && (ValueColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ValueColumns=\"" + ValueColumns + "\"" );
-    }
-    if ( (DataFlagColumns != null) && (DataFlagColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataFlagColumns=\"" + DataFlagColumns + "\"" );
-    }
-    if ( (HeadingSurround != null) && (HeadingSurround.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HeadingSurround=\"" + HeadingSurround + "\"" );
-    }
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Delimiter=\"" + Delimiter + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteHeaderComments=" + WriteHeaderComments);
-    }
-	if ( (HeaderComments != null) && (HeaderComments.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "HeaderComments=\"" + HeaderComments + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"OutputFile",
+		"WriteSeparateFiles",
+		"DateTimeColumn",
+    	"DateTimeFormatterType",
+    	"DateTimeFormat",
+		"ValueColumns",
+		"DataFlagColumns",
+		"HeadingSurround",
+		"Delimiter",
+		"Precision",
+		"MissingValue",
+		"OutputStart",
+		"OutputEnd",
+		"WriteHeaderComments",
+		"HeaderComments"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

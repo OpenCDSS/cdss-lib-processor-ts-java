@@ -587,97 +587,50 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
-// FIXME SAM 2010-10-20 Enable correct properties
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	StringBuffer b = new StringBuffer ();
-	if ( props == null ) {
-	    return getCommandName() + "()";
-	}
-    String DataStore = props.getValue("DataStore");
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    String DataType = props.getValue("DataType");
-    if ( (DataType != null) && (DataType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataType=\"" + DataType + "\"" );
-    }
-	String Interval = props.getValue("Interval");
-	if ( (Interval != null) && (Interval.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Interval=\"" + Interval + "\"" );
-	}
-    String LocationType = props.getValue("LocationType");
-    if ( (LocationType != null) && (LocationType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LocationType=\"" + LocationType + "\"" );
-    }
-    String LocationID = props.getValue("LocationID");
-    if ( (LocationID != null) && (LocationID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LocationID=\"" + LocationID + "\"" );
-    }
-    String DataSource = props.getValue("DataSource");
-    if ( (DataSource != null) && (DataSource.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataSource=\"" + DataSource + "\"" );
-    }
-    String Scenario = props.getValue("Scenario");
-    if ( (Scenario != null) && (Scenario.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Scenario=\"" + Scenario + "\"" );
-    }
+public String toString ( PropList parameters ) {
+	String [] parameterOrder1 = {
+    	"DataStore",
+    	"DataType",
+    	"Interval",
+    	"LocationType",
+    	"LocationID",
+    	"DataSource",
+    	"Scenario"
+	};
+
 	String delim = ";";
+    List<String> whereParameters = new ArrayList<>();
     for ( int i = 1; i <= __numFilterGroups; i++ ) {
-    	String where = props.getValue("Where" + i);
+    	String where = parameters.getValue("Where" + i);
     	if ( (where != null) && (where.length() > 0) && !where.startsWith(delim) ) {
-    		if ( b.length() > 0 ) {
-    			b.append ( "," );
-    		}
-    		b.append ( "Where" + i + "=\"" + where + "\"" );
+    		whereParameters.add ( "Where" + i );
     	}
     }
-	String InputStart = props.getValue("InputStart");
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputStart=\"" + InputStart + "\"" );
-	}
-	String InputEnd = props.getValue("InputEnd");
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputEnd=\"" + InputEnd + "\"" );
-	}
-    String Alias = props.getValue("Alias");
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
 
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder2 = {
+		"InputStart",
+		"InputEnd",
+		"Alias"
+	};
+
+	// Form the final property list.
+	String [] parameterOrder = new String[parameterOrder1.length + whereParameters.size() + parameterOrder2.length];
+	int iparam = 0;
+	for ( int i = 0; i < parameterOrder1.length; i++ ) {
+		parameterOrder[iparam++] = parameterOrder1[i];
+	}
+	for ( int i = 0; i < whereParameters.size(); i++ ) {
+		parameterOrder[iparam++] = whereParameters.get(i);
+	}
+	for ( int i = 0; i < parameterOrder2.length; i++ ) {
+		parameterOrder[iparam++] = parameterOrder2[i];
+	}
+	return this.toString(parameters, parameterOrder);
 }
 
 }

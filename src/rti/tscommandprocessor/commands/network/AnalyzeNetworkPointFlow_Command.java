@@ -1923,160 +1923,34 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String NodeIDColumn = props.getValue( "NodeIDColumn" );
-    String NodeNameColumn = props.getValue( "NodeNameColumn" );
-    String NodeTypeColumn = props.getValue( "NodeTypeColumn" );
-    String NodeDistanceColumn = props.getValue( "NodeDistanceColumn" );
-    String NodeWeightColumn = props.getValue( "NodeWeightColumn" );
-    String DownstreamNodeIDColumn = props.getValue( "DownstreamNodeIDColumn" );
-    String NodeAddTypes = props.getValue( "NodeAddTypes" );
-    String NodeAddDataTypes = props.getValue( "NodeAddDataTypes" );
-	String NodeSubtractTypes = props.getValue( "NodeSubtractTypes" );
-	String NodeSubtractDataTypes = props.getValue( "NodeSubtractDataTypes" );
-    String NodeOutflowTypes = props.getValue( "NodeOutflowTypes" );
-    String NodeOutflowDataTypes = props.getValue( "NodeOutflowDataTypes" );
-    String NodeFlowThroughTypes = props.getValue( "NodeFlowThroughTypes" );
-    String TSIDColumn = props.getValue( "TSIDColumn" );
-	String Interval = props.getValue( "Interval" );
-    String AnalysisStart = props.getValue( "AnalysisStart" );
-    String AnalysisEnd = props.getValue( "AnalysisEnd" );
-    String Units = props.getValue( "Units" );
-    String GainMethod = props.getValue( "GainMethod" );
-    String OutputTableID = props.getValue( "OutputTableID" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (NodeIDColumn != null) && (NodeIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeIDColumn=\"" + NodeIDColumn + "\"" );
-    }
-    if ( (NodeNameColumn != null) && (NodeNameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeNameColumn=\"" + NodeNameColumn + "\"" );
-    }
-    if ( (NodeTypeColumn != null) && (NodeTypeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeTypeColumn=\"" + NodeTypeColumn + "\"" );
-    }
-    if ( (NodeDistanceColumn != null) && (NodeDistanceColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeDistanceColumn=\"" + NodeDistanceColumn + "\"" );
-    }
-    if ( (NodeWeightColumn != null) && (NodeWeightColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeWeightColumn=\"" + NodeWeightColumn + "\"" );
-    }
-    if ( (DownstreamNodeIDColumn != null) && (DownstreamNodeIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DownstreamNodeIDColumn=\"" + DownstreamNodeIDColumn + "\"" );
-    }
-    if ( (NodeAddTypes != null) && (NodeAddTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeAddTypes=\"" + NodeAddTypes + "\"" );
-    }
-    if ( (NodeAddDataTypes != null) && (NodeAddDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeAddDataTypes=\"" + NodeAddDataTypes + "\"" );
-    }
-	if ( (NodeSubtractTypes != null) && (NodeSubtractTypes.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NodeSubtractTypes=\"" + NodeSubtractTypes + "\"" );
-	}
-    if ( (NodeSubtractDataTypes != null) && (NodeSubtractDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeSubtractDataTypes=\"" + NodeSubtractDataTypes + "\"" );
-    }
-    if ( (NodeOutflowTypes != null) && (NodeOutflowTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeOutflowTypes=\"" + NodeOutflowTypes + "\"" );
-    }
-    if ( (NodeOutflowDataTypes != null) && (NodeOutflowDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeOutflowDataTypes=\"" + NodeOutflowDataTypes + "\"" );
-    }
-    if ( (NodeFlowThroughTypes != null) && (NodeFlowThroughTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeFlowThroughTypes=\"" + NodeFlowThroughTypes + "\"" );
-    }
-    if ( (TSIDColumn != null) && (TSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSIDColumn=\"" + TSIDColumn + "\"");
-    }
-    if ( (Interval != null) && (Interval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Interval=" + Interval );
-    }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( (Units != null) && (Units.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Units=\"" + Units + "\"" );
-    }
-    if ( (GainMethod != null) && (GainMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "GainMethod=\"" + GainMethod + "\"" );
-    }
-    if ( (OutputTableID != null) && (OutputTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputTableID=\"" + OutputTableID + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"NodeIDColumn",
+    	"NodeNameColumn",
+    	"NodeTypeColumn",
+    	"NodeDistanceColumn",
+    	"NodeWeightColumn",
+    	"DownstreamNodeIDColumn",
+    	"NodeAddTypes",
+    	"NodeAddDataTypes",
+		"NodeSubtractTypes",
+		"NodeSubtractDataTypes",
+    	"NodeOutflowTypes",
+    	"NodeOutflowDataTypes",
+    	"NodeFlowThroughTypes",
+    	"TSIDColumn",
+		"Interval",
+    	"AnalysisStart",
+    	"AnalysisEnd",
+    	"Units",
+    	"GainMethod",
+    	"OutputTableID"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

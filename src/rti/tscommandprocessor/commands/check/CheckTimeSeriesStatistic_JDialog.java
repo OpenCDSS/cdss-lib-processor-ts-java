@@ -949,7 +949,7 @@ private void refresh ()
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
 	//props.add ( "Action=" + Action );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

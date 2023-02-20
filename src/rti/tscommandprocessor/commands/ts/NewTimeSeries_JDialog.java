@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -91,8 +91,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewTimeSeries_JDialog ( JFrame parent, NewTimeSeries_Command command )
-{	super(parent, true);
+public NewTimeSeries_JDialog ( JFrame parent, NewTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -100,8 +100,8 @@ public NewTimeSeries_JDialog ( JFrame parent, NewTimeSeries_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	String routine = "NewTimeSeries_JDialog.actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	String routine = getClass().getSimpleName() + ".actionPerformed";
 	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
@@ -144,7 +144,7 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else {
-	    // Change in choice
+	    // Change in choice.
 	    refresh();
 	}
 }
@@ -155,8 +155,7 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -164,8 +163,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -173,19 +171,19 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
 // ...End event handlers for DocumentListener
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
@@ -230,7 +228,7 @@ private void checkInput ()
         props.set ( "InitialFunction", InitialFunction );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -240,11 +238,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
 	String SetStart = __SetStart_JTextField.getText().trim();
@@ -271,8 +269,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, NewTimeSeries_Command command )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, NewTimeSeries_Command command ) {
+	__parent_JFrame = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -311,14 +309,14 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
 	__NewTSID_JTextArea.setToolTipText("Specify new time series ID, can include ${Property} notation for TSID parts");
-	__NewTSID_JTextArea.setEditable(false); // Force users to use the custom editor
+	__NewTSID_JTextArea.setEditable(false); // Force users to use the custom editor.
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - specify unique TSID information to define time series."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - specify unique TSID information to define time series."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
     JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
@@ -328,7 +326,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Description_JTextField = new JTextField ( "", 10 );
 	__Description_JTextField.setToolTipText("Specify description or use ${Property} notation");
@@ -350,7 +348,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 		"Optional - starting date/time for data (default=global start)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEnd_JTextField = new JTextField ( "", 20 );
 	__SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
@@ -361,7 +359,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 		"Optional - ending date/time for data (default=global end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 20 );
 	__Units_JTextField.setToolTipText("Specify the data units or use ${Property} notation");
@@ -371,8 +369,8 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - for example:  ACFT, CFS, IN (default=no units)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 20 );
     __MissingValue_JTextField.setToolTipText("Specify the missing value number, NaN, or use ${Property} notation");
@@ -393,7 +391,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - default is to initialize with the missing value."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial flag:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialFlag_JTextField = new JTextField ( "", 20 );
@@ -403,7 +401,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     __InitialFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - default is no flag is set."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial function:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialFunction_JComboBox = new SimpleJComboBox(false);
@@ -429,13 +427,13 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -458,48 +456,37 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
-
-	if ( (code == KeyEvent.VK_ENTER) || (code == KeyEvent.VK_TAB) ) {
-		refresh();
-	}
-	if ( code == KeyEvent.VK_ENTER ) {
-		checkInput();
-		if ( !__error_wait ) {
-			response ( true );
-		}
-	}
+public void keyPressed ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String Alias = "";
 	String NewTSID = "";
 	String Description = "";
@@ -551,7 +538,7 @@ private void refresh ()
             __InitialFlag_JTextField.setText ( InitialFlag );
         }
         if ( InitialFunction == null ) {
-            // Select default...
+            // Select default.
             __InitialFunction_JComboBox.select ( 0 );
         }
         else {
@@ -566,7 +553,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Alias = __Alias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	Description = __Description_JTextField.getText().trim();
@@ -588,25 +575,24 @@ private void refresh ()
 	props.add ( "InitialValue=" + InitialValue );
 	props.add ( "InitialFlag=" + InitialFlag );
 	props.add ( "InitialFunction=" + InitialFunction );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -615,15 +601,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

@@ -1088,139 +1088,31 @@ private void setFirstDataRow ( int row )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String InputFile = props.getValue( "InputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String ExcelAddress = props.getValue("ExcelAddress");
-	String ExcelNamedRange = props.getValue("ExcelNamedRange");
-	String ExcelTableName = props.getValue("ExcelTableName");
-	String ExcelColumnNames = props.getValue("ExcelColumnNames");
-	String ColumnIncludeFilters = props.getValue("ColumnIncludeFilters");
-	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
-	String Comment = props.getValue("Comment");
-	String ExcelDoubleColumns = props.getValue("ExcelDoubleColumns");
-	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
-	String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
-	String ExcelTextColumns = props.getValue("ExcelTextColumns");
-	String NumberPrecision = props.getValue("NumberPrecision");
-	String ReadAllAsText = props.getValue("ReadAllAsText");
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	String KeepOpen = props.getValue("KeepOpen");
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NumberPrecision=" + NumberPrecision );
-    }
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-	if ( (ExcelAddress != null) && (ExcelAddress.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelAddress=\"" + ExcelAddress + "\"" );
-	}
-	if ( (ExcelNamedRange != null) && (ExcelNamedRange.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelNamedRange=\"" + ExcelNamedRange + "\"" );
-	}
-	if ( (ExcelTableName != null) && (ExcelTableName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelTableName=\"" + ExcelTableName + "\"" );
-	}
-    if ( (ExcelColumnNames != null) && (ExcelColumnNames.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelColumnNames=" + ExcelColumnNames );
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
-    }
-    if ( (Comment != null) && (Comment.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Comment=\"" + Comment + "\"" );
-    }
-    if ( (ExcelDoubleColumns != null) && (ExcelDoubleColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelDoubleColumns=\"" + ExcelDoubleColumns + "\"" );
-    }
-    if ( (ExcelIntegerColumns != null) && (ExcelIntegerColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
-    }
-    if ( (ExcelDateTimeColumns != null) && (ExcelDateTimeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelDateTimeColumns=\"" + ExcelDateTimeColumns + "\"" );
-    }
-    if ( (ExcelTextColumns != null) && (ExcelTextColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelTextColumns=\"" + ExcelTextColumns + "\"" );
-    }
-    if ( (ReadAllAsText != null) && (ReadAllAsText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReadAllAsText=" + ReadAllAsText );
-    }
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TableID",
+		"NumberPrecision",
+		"InputFile",
+		"Worksheet",
+		"ExcelAddress",
+		"ExcelNamedRange",
+		"ExcelTableName",
+		"ExcelColumnNames",
+		"KeepOpen",
+		"ColumnIncludeFilters",
+		"ColumnExcludeFilters",
+		"Comment",
+		"ExcelDoubleColumns",
+		"ExcelIntegerColumns",
+		"ExcelDateTimeColumns",
+		"ExcelTextColumns",
+		"ReadAllAsText",
+		"RowCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -1152,15 +1152,14 @@ private void refresh ()
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	props.add ( "RecalcLimits=" + RecalcLimits);
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	
+public void response ( boolean ok ) {	
 	__ok = ok;
 	if ( ok ) {
 		// Commit the changes...
@@ -1179,8 +1178,7 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	
+public void windowClosing( WindowEvent event ) {	
 	response ( false );
 }
 

@@ -685,68 +685,25 @@ private void setUsingMonthAndDay ( DayTS ts, MonthTS monthts, DayTS dayts )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer enabled. 
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-	String Alias = props.getValue( "Alias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String MonthTSID = props.getValue( "MonthTSID" );
-	String DayTSID = props.getValue( "DayTSID" );
-	StringBuffer b = new StringBuffer ();
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-    if ( (MonthTSID != null) && (MonthTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MonthTSID=\"" + MonthTSID + "\"" );
-    }
-    if ( (DayTSID != null) && (DayTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DayTSID=\"" + DayTSID + "\"" );
-    }
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"NewTSID",
+		"MonthTSID",
+		"DayTSID",
+		"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

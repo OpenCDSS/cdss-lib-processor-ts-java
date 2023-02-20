@@ -844,7 +844,7 @@ private void refresh ()
     parameters.add ( "StyleInsert=" + StyleInsert );
     parameters.add ( "StyleFile=" + StyleFile );
     parameters.add ( "StyleUrl=" + StyleUrl );
-    __command_JTextArea.setText( __command.toString ( parameters ) );
+    __command_JTextArea.setText( __command.toString ( parameters ).trim() );
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {
             __path_JButton.setEnabled ( false );

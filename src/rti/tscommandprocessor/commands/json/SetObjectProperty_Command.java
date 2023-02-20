@@ -535,53 +535,18 @@ private boolean setObjectProperty ( Map<?,?> map,
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-
-    String ObjectID = parameters.getValue( "ObjectID" );
-    String ObjectProperty = parameters.getValue ( "ObjectProperty" );
-    String Property = parameters.getValue ( "Property" );
-    String SetAsString = parameters.getValue ( "SetAsString" );
-    String AllowNull = parameters.getValue ( "AllowNull" );
-
-    StringBuffer b = new StringBuffer ();
-
-    if ( (ObjectID != null) && (ObjectID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectID=\"" + ObjectID + "\"" );
-    }
-    if ( (ObjectProperty != null) && (ObjectProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectProperty=\"" + ObjectProperty + "\"" );
-    }
-    if ( (Property != null) && (Property.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Property=\"" + Property + "\"" );
-    }
-    if ( (SetAsString != null) && (SetAsString.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetAsString=" + SetAsString );
-    }
-    if ( (AllowNull != null) && (AllowNull.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowNull=" + AllowNull );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"ObjectID",
+    	"ObjectProperty",
+    	"Property",
+    	"SetAsString",
+    	"AllowNull"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -135,19 +135,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__IgnoreLEZero_JComboBox = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -296,7 +283,7 @@ private void refresh ()
     IgnoreLEZero = __IgnoreLEZero_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "IgnoreLEZero=" + IgnoreLEZero );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

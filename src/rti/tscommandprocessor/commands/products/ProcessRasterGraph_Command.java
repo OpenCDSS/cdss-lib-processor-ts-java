@@ -509,66 +509,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
     __OutputFile_File = file;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSProductFile = props.getValue("TSProductFile");
-	String RunMode = props.getValue("RunMode");
-	String View = props.getValue("View");
-	String OutputFile = props.getValue("OutputFile");
-	String DefaultSaveFile = props.getValue("DefaultSaveFile");
-    String VisibleStart = props.getValue ( "VisibleStart" );
-    String VisibleEnd = props.getValue ( "VisibleEnd" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSProductFile != null) && (TSProductFile.length() > 0) ) {
-		b.append ( "TSProductFile=\"" + TSProductFile + "\"" );
-	}
-	if ( (RunMode != null) && (RunMode.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RunMode=" + RunMode );
-	}
-	if ( (View != null) && (View.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "View=" + View );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DefaultSaveFile=\"" + DefaultSaveFile + "\"" );
-    }
-    if ( (VisibleStart != null) && (VisibleStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "VisibleStart=\"" + VisibleStart + "\"" );
-    }
-    if ( (VisibleEnd != null) && (VisibleEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "VisibleEnd=\"" + VisibleEnd + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSProductFile",
+		"RunMode",
+		"View",
+		"OutputFile",
+		"DefaultSaveFile",
+    	"VisibleStart",
+    	"VisibleEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

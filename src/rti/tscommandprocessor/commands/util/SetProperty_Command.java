@@ -29,7 +29,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -798,111 +797,27 @@ private void setDiscoveryProp ( Prop prop ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String PropertyName = props.getValue( "PropertyName" );
-	String PropertyType = props.getValue( "PropertyType" );
-    String PropertyValue = props.getValue( "PropertyValue" );
-    String EnvironmentVariable = props.getValue( "EnvironmentVariable" );
-    String JavaProperty = props.getValue( "JavaProperty" );
-    String IfJavaPropertyUndefined = props.getValue( "IfJavaPropertyUndefined" );
-    String SetEmpty = props.getValue ( "SetEmpty" );
-    String SetNaN = props.getValue ( "SetNaN" );
-    String SetNull = props.getValue ( "SetNull" );
-    String RemoveProperty = props.getValue ( "RemoveProperty" );
-    String Add = props.getValue ( "Add" );
-    String Subtract = props.getValue ( "Subtract" );
-    String Multiply = props.getValue ( "Multiply" );
-    String Divide = props.getValue ( "Divide" );
-	StringBuffer b = new StringBuffer ();
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyType=" + PropertyType );
-    }
-	if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
-	}
-	if ( (EnvironmentVariable != null) && (EnvironmentVariable.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnvironmentVariable=\"" + EnvironmentVariable + "\"" );
-	}
-	if ( (JavaProperty != null) && (JavaProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "JavaProperty=\"" + JavaProperty + "\"" );
-	}
-	if ( (IfJavaPropertyUndefined != null) && (IfJavaPropertyUndefined.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfJavaPropertyUndefined=\"" + IfJavaPropertyUndefined + "\"" );
-	}
-	if ( (SetEmpty != null) && (SetEmpty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetEmpty=" + SetEmpty );
-	}
-	if ( (SetNaN != null) && (SetNaN.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetNaN=" + SetNaN );
-	}
-	if ( (SetNull != null) && (SetNull.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetNull=" + SetNull );
-	}
-	if ( (RemoveProperty != null) && (RemoveProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RemoveProperty=" + RemoveProperty );
-	}
-	if ( (Add != null) && (Add.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Add=\"" + Add + "\"" ); // Need quotes because string could have whitespace.
-	}
-	if ( (Subtract != null) && (Subtract.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Subtract=\"" + Subtract + "\"" ); // Need quotes because string could have whitespace.
-	}
-	if ( (Multiply != null) && (Multiply.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Multiply=" + Multiply );
-	}
-	if ( (Divide != null) && (Divide.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Divide=" + Divide );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"PropertyName",
+		"PropertyType",
+    	"PropertyValue",
+    	"EnvironmentVariable",
+    	"JavaProperty",
+    	"IfJavaPropertyUndefined",
+    	"SetEmpty",
+    	"SetNaN",
+    	"SetNull",
+    	"RemoveProperty",
+    	"Add",
+    	"Subtract",
+    	"Multiply",
+    	"Divide"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

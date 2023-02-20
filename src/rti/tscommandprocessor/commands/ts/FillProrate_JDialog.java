@@ -255,27 +255,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__IndependentTSID_JComboBox = null;
-	__FillDirection_JComboBox = null;
-	__FactorMethod_JComboBox = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__InitialValue_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -708,7 +687,7 @@ private void refresh ()
     props.add ( "AnalysisStart=" + AnalysisStart);
     props.add ( "AnalysisEnd=" + AnalysisEnd);
     props.add ( "InitialValue=" + InitialValue);
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

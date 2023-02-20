@@ -320,53 +320,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String EnsembleList = parameters.getValue ( "EnsembleList" );
-    String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String Name = parameters.getValue ( "Name" );
-    String PropertyName = parameters.getValue( "PropertyName" );
-    String PropertyType = parameters.getValue( "PropertyType" );
-    String PropertyValue = parameters.getValue( "PropertyValue" );
-	StringBuffer b = new StringBuffer ();
-	if ( (EnsembleList != null) && (EnsembleList.length() > 0) ) {
-		b.append ( "EnsembleList=" + EnsembleList );
-	}
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (Name != null) && (Name.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Name=\"" + Name + "\"" );
-	}
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-	    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-	        if ( b.length() > 0 ) {
-	            b.append ( "," );
-	        }
-	        b.append ( "PropertyType=" + PropertyType );
-	    }
-	    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-	        if ( b.length() > 0 ) {
-	            b.append ( "," );
-	        }
-	        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
-	    }
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"EnsembleList",
+    	"EnsembleID",
+    	"Name",
+    	"PropertyName",
+    	"PropertyType",
+    	"PropertyValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

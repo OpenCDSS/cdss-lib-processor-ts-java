@@ -638,99 +638,25 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-    String ListFile = props.getValue ( "ListFile" );
-    String IDCol = props.getValue ( "IDCol" );
-    String Delim = props.getValue ( "Delim" );
-    String ID = props.getValue ( "ID" );
-    String DataSource = props.getValue ( "DataSource" );
-    String DataType = props.getValue ( "DataType" );
-    String Interval = props.getValue ( "Interval" );
-    String Scenario = props.getValue ( "Scenario" );
-    String InputType = props.getValue ( "InputType" );
-    String InputName = props.getValue ( "InputName" );
-    String IfNotFound = props.getValue ( "IfNotFound" );
-    String DefaultUnits = props.getValue ( "DefaultUnits" );
-
-	StringBuffer b = new StringBuffer ();
-
-	if ((ListFile != null) && (ListFile.length() > 0)) {
-		b.append("ListFile=\"" + ListFile + "\"");
-	}
-    if ((IDCol != null) && (IDCol.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IDCol=" + IDCol );
-    }
-	if ((Delim != null) && (Delim.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("Delim=\"" + Delim + "\"");
-	}
-	if ((ID != null) && (ID.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("ID=\"" + ID + "\"");
-	}
-	if ((DataSource != null) && (DataSource.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("DataSource=\"" + DataSource + "\"");
-	}
-    if ((DataType != null) && (DataType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DataType=\"" + DataType + "\"");
-    }
-    if ((Interval != null) && (Interval.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Interval=\"" + Interval + "\"");
-    }
-    if ((Scenario != null) && (Scenario.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Scenario=\"" + Scenario + "\"");
-    }
-    if ((InputType != null) && (InputType.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("InputType=\"" + InputType + "\"");
-    }
-    if ((InputName != null) && (InputName.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("InputName=\"" + InputName + "\"");
-    }
-    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IfNotFound=" + IfNotFound );
-    }
-    if ((DefaultUnits != null) && (DefaultUnits.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("DefaultUnits=\"" + DefaultUnits + "\"");
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"ListFile",
+    	"IDCol",
+    	"Delim",
+    	"ID",
+    	"DataSource",
+    	"DataType",
+    	"Interval",
+    	"Scenario",
+    	"InputType",
+    	"InputName",
+    	"IfNotFound",
+    	"DefaultUnits"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

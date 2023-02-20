@@ -269,24 +269,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String IfNotFound = parameters.getValue("IfNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfNotFound=" + IfNotFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"InputFile",
+		"IfNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

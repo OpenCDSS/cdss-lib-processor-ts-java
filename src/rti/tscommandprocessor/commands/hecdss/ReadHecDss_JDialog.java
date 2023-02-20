@@ -714,7 +714,7 @@ private void refresh() {
 	props.add("Alias=" + Alias);
 	props.add("CloseAfterReading=" + CloseAfterReading);
 
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 
 	if ( (InputFile != null) && !InputFile.isEmpty() ) {
 		__path_JButton.setEnabled ( true );

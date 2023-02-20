@@ -441,112 +441,27 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    String TableID = parameters.getValue( "TableID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String Name = parameters.getValue ( "Name" );
-    String Description = parameters.getValue ( "Description" );
-    String PlacemarkNameColumn = parameters.getValue ( "PlacemarkNameColumn" );
-    String PlacemarkDescriptionColumn = parameters.getValue ( "PlacemarkDescriptionColumn" );
-    String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
-    String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
-    String ElevationColumn = parameters.getValue ( "ElevationColumn" );
-    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
-    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
-    String StyleInsert = parameters.getValue ( "StyleInsert" );
-    String StyleFile = parameters.getValue ( "StyleFile" );
-    String StyleUrl = parameters.getValue ( "StyleUrl" );
-    StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (Name != null) && (Name.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Name=\"" + Name + "\"" );
-    }
-    if ( (Description != null) && (Description.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Description=\"" + Description + "\"" );
-    }
-    if ( (PlacemarkNameColumn != null) && (PlacemarkNameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PlacemarkNameColumn=\"" + PlacemarkNameColumn + "\"" );
-    }
-    if ( (PlacemarkDescriptionColumn != null) && (PlacemarkDescriptionColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PlacemarkDescriptionColumn=\"" + PlacemarkDescriptionColumn + "\"" );
-    }
-    if ( (LongitudeColumn != null) && (LongitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LongitudeColumn=\"" + LongitudeColumn + "\"" );
-    }
-    if ( (LatitudeColumn != null) && (LatitudeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LatitudeColumn=\"" + LatitudeColumn + "\"" );
-    }
-    if ( (ElevationColumn != null) && (ElevationColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ElevationColumn=\"" + ElevationColumn + "\"" );
-    }
-    if ( (WKTGeometryColumn != null) && (WKTGeometryColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
-    }
-    if ( (GeometryInsert != null) && (GeometryInsert.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "GeometryInsert=\"" + GeometryInsert + "\"" );
-    }
-    if ( (StyleInsert != null) && (StyleInsert.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleInsert=\"" + StyleInsert + "\"" );
-    }
-    if ( (StyleFile != null) && (StyleFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleFile=\"" + StyleFile + "\"" );
-    }
-    if ( (StyleUrl != null) && (StyleUrl.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleUrl=\"" + StyleUrl + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"OutputFile",
+    	"Name",
+    	"Description",
+    	"PlacemarkNameColumn",
+    	"PlacemarkDescriptionColumn",
+    	"LongitudeColumn",
+    	"LatitudeColumn",
+    	"ElevationColumn",
+    	"WKTGeometryColumn",
+    	"GeometryInsert",
+    	"StyleInsert",
+    	"StyleFile",
+    	"StyleUrl"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 // TODO SAM 2013-07-01 Evaluate whether a separate package should be created - for now keep the code here

@@ -316,41 +316,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String InsertRow = props.getValue( "InsertRow" );
-    String InsertCount = props.getValue( "InsertCount" );
-	String ColumnValues = props.getValue( "ColumnValues" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (InsertRow != null) && (InsertRow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertRow=" + InsertRow );
-    }
-    if ( (InsertCount != null) && (InsertCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertCount=" + InsertCount );
-    }
-    if ( (ColumnValues != null) && (ColumnValues.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnValues=\"" + ColumnValues + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"InsertRow",
+    	"InsertCount",
+		"ColumnValues"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

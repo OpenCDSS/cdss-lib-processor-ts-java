@@ -1088,125 +1088,29 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String InputPreviousValues = props.getValue( "InputPreviousValues" );
-	String OutputPreviousValues = props.getValue( "OutputPreviousValues" );
-	String ARMAInterval = props.getValue( "ARMAInterval" );
-    String a = props.getValue( "a" );
-	String b = props.getValue("b");
-	String RequireCoefficientsSumTo1 = props.getValue( "RequireCoefficientsSumTo1" );
-	String Alias = props.getValue( "Alias" );
-	String NewTSID = props.getValue( "NewTSID" );
-	String Description = props.getValue( "Description" );
-	String OutputStart = props.getValue ( "OutputStart" );
-	String OutputEnd = props.getValue ( "OutputEnd" );
-	String OutputMinimum = props.getValue( "OutputMinimum" );
-	String OutputMaximum = props.getValue( "OutputMaximum" );
-	StringBuffer b2 = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (InputPreviousValues != null) && (InputPreviousValues.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "InputPreviousValues=\"" + InputPreviousValues + "\"");
-    }
-	if ( (ARMAInterval != null) && (ARMAInterval.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "ARMAInterval=" + ARMAInterval );
-	}
-    if ( (a != null) && (a.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "a=\"" + a + "\"");
-    }
-    if ( (b != null) && (b.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "b=\"" + b + "\"");
-    }
-    if ( (RequireCoefficientsSumTo1 != null) && (RequireCoefficientsSumTo1.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "RequireCoefficientsSumTo1=" + RequireCoefficientsSumTo1 );
-    }
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-	if ( (Alias != null) && (Alias.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "Alias=\"" + Alias + "\"" );
-	}
-	if ( (Description != null) && (Description.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "Description=\"" + Description + "\"" );
-	}
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (OutputPreviousValues != null) && (OutputPreviousValues.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "OutputPreviousValues=\"" + OutputPreviousValues + "\"");
-    }
-    if ( (OutputMinimum != null) && (OutputMinimum.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "OutputMinimum=" + OutputMinimum );
-    }
-    if ( (OutputMaximum != null) && (OutputMaximum.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "OutputMaximum=" + OutputMaximum );
-    }
-	return getCommandName() + "(" + b2.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"InputPreviousValues",
+		"ARMAInterval",
+    	"a",
+		"b",
+		"RequireCoefficientsSumTo1",
+		"NewTSID",
+		"Alias",
+		"Description",
+		"OutputStart",
+		"OutputEnd",
+		"OutputPreviousValues",
+		"OutputMinimum",
+		"OutputMaximum"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

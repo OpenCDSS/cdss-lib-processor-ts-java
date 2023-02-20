@@ -880,7 +880,7 @@ private void refresh ()
 	parameters.add ( "DataStoreUnits=" + DataStoreUnits );
 	parameters.add ( "DataStoreMissingValue=" + DataStoreMissingValue );
 	parameters.add ( "WriteMode=" + WriteMode );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 }
 
 /**

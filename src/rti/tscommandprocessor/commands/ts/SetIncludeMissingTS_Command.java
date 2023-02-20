@@ -216,17 +216,14 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String IncludeMissingTS = parameters.getValue("IncludeMissingTS");
-	StringBuffer b = new StringBuffer ();
-	if ( (IncludeMissingTS != null) && (IncludeMissingTS.length() > 0) ) {
-		b.append ( "IncludeMissingTS=" + IncludeMissingTS );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"IncludeMissingTS"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

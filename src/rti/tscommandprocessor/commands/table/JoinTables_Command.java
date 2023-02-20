@@ -503,83 +503,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String TableToJoinID = props.getValue( "TableToJoinID" );
-    String JoinColumns = props.getValue( "JoinColumns" );
-	String IncludeColumns = props.getValue( "IncludeColumns" );
-	String ColumnMap = props.getValue( "ColumnMap" );
-	String ColumnFilters = props.getValue( "ColumnFilters" );
-	String JoinMethod = props.getValue( "JoinMethod" );
-	String HandleMultipleJoinMatchesHow = props.getValue( "HandleMultipleJoinMatchesHow" );
-	String RowCountProperty = props.getValue( "RowCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableToJoinID != null) && (TableToJoinID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableToJoinID=\"" + TableToJoinID + "\"" );
-    }
-    if ( (JoinColumns != null) && (JoinColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "JoinColumns=\"" + JoinColumns + "\"" );
-    }
-	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-	}
-    if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
-    }
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
-    }
-    if ( (JoinMethod != null) && (JoinMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "JoinMethod=" + JoinMethod );
-    }
-    if ( (HandleMultipleJoinMatchesHow != null) && (HandleMultipleJoinMatchesHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
-    }
-    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"TableToJoinID",
+    	"JoinColumns",
+		"IncludeColumns",
+		"ColumnMap",
+		"ColumnFilters",
+		"JoinMethod",
+		"HandleMultipleJoinMatchesHow",
+		"RowCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

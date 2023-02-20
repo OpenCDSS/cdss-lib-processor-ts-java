@@ -824,279 +824,51 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = props.getValue ( "TSList" );
-	String TSID = props.getValue ( "TSID" );
-	String EnsembleID = props.getValue ( "EnsembleID" );
-	String MissingValue = props.getValue("MissingValue");
-	String Precision = props.getValue ( "Precision" );
-	String OutputStart = props.getValue ( "OutputStart" );
-	String OutputEnd = props.getValue ( "OutputEnd" );
-	String OutputFile = props.getValue ( "OutputFile" );
-	String Append = props.getValue ( "Append" );
-	String Worksheet = props.getValue ( "Worksheet" );
-	String ExcelAddress = props.getValue ( "ExcelAddress" );
-	String ExcelNamedRange = props.getValue ( "ExcelNamedRange" );
-	String ExcelTableName = props.getValue ( "ExcelTableName" );
-	String KeepOpen = props.getValue ( "KeepOpen" );
-	String DateTimeColumn = props.getValue ( "DateTimeColumn" );
-	String dateTimeFormatterType = props.getValue ( "DateTimeFormatterType" );
-	String DateTimeFormat = props.getValue ( "DateTimeFormat" );
-	String DateColumn = props.getValue ( "DateColumn" );
-	String DateFormatterType = props.getValue ( "DateFormatterType" );
-	String DateFormat = props.getValue ( "DateFormat" );
-	String TimeColumn = props.getValue ( "TimeColumn" );
-	String TimeFormatterType = props.getValue ( "TimeFormatterType" );
-	String TimeFormat = props.getValue ( "TimeFormat" );
-	String ValueColumns = props.getValue ( "ValueColumns" );
-	String Author = props.getValue ( "Author" );
-	String ColumnComment = props.getValue ( "ColumnComment" );
-	String ColumnCommentWidth = props.getValue("ColumnCommentWidth");
-	String ColumnCommentHeight = props.getValue("ColumnCommentHeight");
-	String ValueComment = props.getValue ( "ValueComment" );
-	String SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
-	String CommentWidth = props.getValue("CommentWidth");
-	String CommentHeight = props.getValue("CommentHeight");
-	String ColumnConditionTableID = props.getValue( "ColumnConditionTableID" );
-	String ColumnStyleTableID = props.getValue( "ColumnStyleTableID" );
-	String ConditionTableID = props.getValue( "ConditionTableID" );
-	String StyleTableID = props.getValue( "StyleTableID" );
-	String LegendWorksheet = props.getValue( "LegendWorksheet" );
-	String LegendAddress = props.getValue( "LegendAddress" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-	    if ( b.length() > 0 ) {
-	        b.append ( "," );
-	    }
-	    b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-	    if ( b.length() > 0 ) {
-	        b.append ( "," );
-	    }
-	    b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-	    if ( b.length() > 0 ) {
-	        b.append ( "," );
-	    }
-	    b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-	if ( (Precision != null) && (Precision.length() > 0) ) {
-	    if ( b.length() > 0 ) {
-	        b.append ( "," );
-	    }
-	    b.append ( "Precision=" + Precision );
-	}
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (Append != null) && (Append.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Append=" + Append );
-	}
-	if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-	    if ( b.length() > 0 ) {
-	        b.append ( "," );
-	    }
-	    b.append ( "Worksheet=\"" + Worksheet + "\"" );
-	}
-	if ( (ExcelAddress != null) && (ExcelAddress.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelAddress=\"" + ExcelAddress + "\"" );
-	}
-	if ( (ExcelNamedRange != null) && (ExcelNamedRange.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelNamedRange=\"" + ExcelNamedRange + "\"" );
-	}
-	if ( (ExcelTableName != null) && (ExcelTableName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ExcelTableName=\"" + ExcelTableName + "\"" );
-	}
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeColumn=\"" + DateTimeColumn + "\"" );
-    }
-    if ( (dateTimeFormatterType != null) && (dateTimeFormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormatterType=\"" + dateTimeFormatterType + "\"" );
-    }
-    if ( (DateTimeFormat != null) && (DateTimeFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateTimeFormat=\"" + DateTimeFormat + "\"" );
-    }
-    if ( (DateColumn != null) && (DateColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateColumn=\"" + DateColumn + "\"" );
-    }
-    if ( (DateFormatterType != null) && (DateFormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateFormatterType=\"" + DateFormatterType + "\"" );
-    }
-    if ( (DateFormat != null) && (DateFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DateFormat=\"" + DateFormat + "\"" );
-    }
-    if ( (TimeColumn != null) && (TimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeColumn=\"" + TimeColumn + "\"" );
-    }
-    if ( (TimeFormatterType != null) && (TimeFormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeFormatterType=\"" + TimeFormatterType + "\"" );
-    }
-    if ( (TimeFormat != null) && (TimeFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeFormat=\"" + TimeFormat + "\"" );
-    }
-    if ( (ValueColumns != null) && (ValueColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ValueColumns=\"" + ValueColumns + "\"" );
-    }
-    if ( (Author != null) && (Author.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Author=\"" + Author + "\"" );
-    }
-    if ( (ColumnComment != null) && (ColumnComment.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnComment=\"" + ColumnComment + "\"" );
-    }
-    if ( (ValueComment != null) && (ValueComment.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ValueComment=\"" + ValueComment + "\"" );
-    }
-    if ( (ColumnCommentWidth != null) && (ColumnCommentWidth.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCommentWidth=\"" + ColumnCommentWidth + "\"");
-    }
-    if ( (ColumnCommentHeight != null) && (ColumnCommentHeight.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCommentHeight=\"" + ColumnCommentHeight + "\"");
-    }
-    if ( (SkipValueCommentIfNoFlag != null) && !SkipValueCommentIfNoFlag.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
-    }
-    if ( (CommentWidth != null) && (CommentWidth.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommentWidth=\"" + CommentWidth + "\"");
-    }
-    if ( (CommentHeight != null) && (CommentHeight.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommentHeight=\"" + CommentHeight + "\"");
-    }
-    if ( (ColumnConditionTableID != null) && (ColumnConditionTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnConditionTableID=\"" + ColumnConditionTableID + "\"" );
-    }
-    if ( (ColumnStyleTableID != null) && (ColumnStyleTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnStyleTableID=\"" + ColumnStyleTableID + "\"" );
-    }
-    if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ConditionTableID=\"" + ConditionTableID + "\"" );
-    }
-    if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
-    }
-    if ( (LegendWorksheet != null) && (LegendWorksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LegendWorksheet=\"" + LegendWorksheet + "\"" );
-    }
-    if ( (LegendAddress != null) && (LegendAddress.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LegendAddress=\"" + LegendAddress + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"MissingValue",
+		"Precision",
+		"OutputStart",
+		"OutputEnd",
+		"OutputFile",
+		"Append",
+		"Worksheet",
+		"ExcelAddress",
+		"ExcelNamedRange",
+		"ExcelTableName",
+		"KeepOpen",
+		"DateTimeColumn",
+		"DateTimeFormatterType",
+		"DateTimeFormat",
+		"DateColumn",
+		"DateFormatterType",
+		"DateFormat",
+		"TimeColumn",
+		"TimeFormatterType",
+		"TimeFormat",
+		"ValueColumns",
+		"Author",
+		"ColumnComment",
+		"ValueComment",
+		"ColumnCommentWidth",
+		"ColumnCommentHeight",
+		"SkipValueCommentIfNoFlag",
+		"CommentWidth",
+		"CommentHeight",
+		"ColumnConditionTableID",
+		"ColumnStyleTableID",
+		"ConditionTableID",
+		"StyleTableID",
+		"LegendWorksheet",
+		"LegendAddress"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

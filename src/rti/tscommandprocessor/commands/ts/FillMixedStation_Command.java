@@ -922,169 +922,38 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	
-	// Get the properties
-    String DependentTSList = props.getValue ( "DependentTSList" );
-	String DependentTSID = props.getValue ( "DependentTSID" );
-	String IndependentTSList = props.getValue ( "IndependentTSList" );
-	String IndependentTSID = props.getValue ( "IndependentTSID" );
-	String AnalysisMethod = props.getValue ( "AnalysisMethod" );
-	String NumberOfEquations = props.getValue ( "NumberOfEquations" );
-	String AnalysisMonth = props.getValue ( "AnalysisMonth" );
-	String Transformation = props.getValue ( "Transformation" );
-	String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-	//String IgnoreIndependentZeroes = props.getValue( "IgnoreIndependentZeroes" );
-	String AnalysisStart = props.getValue ( "AnalysisStart" );
-	String AnalysisEnd = props.getValue ( "AnalysisEnd" );
-	String MinimumDataCount = props.getValue ( "MinimumDataCount" );
-	String MinimumR = props.getValue ( "MinimumR" );
-	String BestFitIndicator = props.getValue ( "BestFitIndicator" );
-	String Fill = props.getValue ( "Fill" );
-	String FillStart = props.getValue ( "FillStart" );
-	String FillEnd = props.getValue ( "FillEnd" );
-	String Intercept = props.getValue ( "Intercept" );
-	String ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
-	String FillFlag = props.getValue( "FillFlag" );
-	String FillFlagDesc = props.getValue ( "FillFlagDesc" );
-    String TableID = props.getValue ( "TableID" );
-    String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
-	
-	StringBuffer b = new StringBuffer();
-
-	if ( DependentTSList != null && DependentTSList.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "DependentTSList=" + DependentTSList );
-	}
-
-	if ( DependentTSID != null && DependentTSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "DependentTSID=\"" + DependentTSID + "\"" );
-	}
-
-	if ( IndependentTSList != null && IndependentTSList.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "IndependentTSList=" + IndependentTSList );
-	}
-
-	if ( IndependentTSID != null && IndependentTSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ("IndependentTSID=\"" + IndependentTSID + "\"" );
-	}
-	
-    if ( BestFitIndicator!= null && BestFitIndicator.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "BestFitIndicator=" + BestFitIndicator );
-    }
- 
-	if ( AnalysisMethod != null && AnalysisMethod.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisMethod=\"" + AnalysisMethod + "\"");
-	}
-
-	if ( NumberOfEquations != null && NumberOfEquations.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "NumberOfEquations=\"" + NumberOfEquations + "\"" );
-	}
-
-	if ( AnalysisMonth != null && AnalysisMonth.length() > 0) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisMonth=" + AnalysisMonth );
-	}
-	
-	if ( Transformation != null && Transformation.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "Transformation=\"" + Transformation + "\"");
-	}
-	
-	if ( LEZeroLogValue != null && LEZeroLogValue.length() > 0) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "LEZeroLogValue=" + LEZeroLogValue );
-	}
-	
-    if ( Intercept != null && Intercept.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "Intercept=" + Intercept );
-    }
-    
-    if ( ConfidenceInterval != null && ConfidenceInterval.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "ConfidenceInterval=" + ConfidenceInterval );
-    }
-    
-	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-
-	if ( AnalysisEnd != null && AnalysisEnd.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"");
-	}
-	
-	if ( Fill != null && Fill.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "Fill=" + Fill );
-	}
-	
-    if ( FillStart != null && FillStart.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "FillStart=\"" + FillStart + "\"");
-    }
-
-    if ( FillEnd != null && FillEnd.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "FillEnd=\"" + FillEnd + "\"");
-    }
-
-	if ( MinimumDataCount != null && MinimumDataCount.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "MinimumDataCount=" + MinimumDataCount);
-	}
-
-	if ( MinimumR != null && MinimumR.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "MinimumR="+ MinimumR );
-	}
-	
-    if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FillFlag=\"" + FillFlag + "\"" );
-    }
-    
-    if ( FillFlagDesc != null && FillFlagDesc.length() > 0 ) {
-    	if ( b.length() > 0 ) b.append( "," );
-    	b.append ( "FillFlagDesc=\"" + FillFlagDesc + "\"" );
-    }
-
-	if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"DependentTSList",
+		"DependentTSID",
+		"IndependentTSList",
+		"IndependentTSID",
+		"BestFitIndicator",
+		"AnalysisMethod",
+		"NumberOfEquations",
+		"AnalysisMonth",
+		"Transformation",
+		"LEZeroLogValue",
+		//"IgnoreIndependentZeroes",
+		"Intercept",
+		"ConfidenceInterval",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"Fill",
+		"FillStart",
+		"FillEnd",
+		"MinimumDataCount",
+		"MinimumR",
+		"FillFlag",
+		"FillFlagDesc",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

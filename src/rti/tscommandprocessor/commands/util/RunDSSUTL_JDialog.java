@@ -533,7 +533,7 @@ private void refresh ()
 	props.add ( "DssutlProgram=" + DssutlProgram );
 	//props.add ( "Arguments=" + Arguments );
 	props.add ( "Interpreter=" + Interpreter );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 	// Check the path and determine what the label on the path buttons should be...
 	if ( __pathDssFile_JButton != null ) {
 		__pathDssFile_JButton.setEnabled ( true );

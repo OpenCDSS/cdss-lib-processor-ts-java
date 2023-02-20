@@ -116,8 +116,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Return the string representation of the command.
 */
-public String toString ( PropList parameters )
-{
+public String toString ( PropList parameters ) {
 	return "";
 }
 

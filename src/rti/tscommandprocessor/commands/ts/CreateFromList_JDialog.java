@@ -663,7 +663,7 @@ private void refresh ()
     props.add ( "InputName=" + InputName );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
 	if ( __path_JButton != null ) {
 		if ( (ListFile != null) && !ListFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );

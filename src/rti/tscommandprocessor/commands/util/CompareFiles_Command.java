@@ -1069,115 +1069,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile1 = parameters.getValue("InputFile1");
-	String InputFile2 = parameters.getValue("InputFile2");
-	String CommentLineChar = parameters.getValue("CommentLineChar");
-	String MatchCase = parameters.getValue("MatchCase");
-	String IgnoreWhitespace = parameters.getValue("IgnoreWhitespace");
-	String ExcludeText = parameters.getValue("ExcludeText");
-	String AllowedDiff = parameters.getValue("AllowedDiff");
-	String IfDifferent = parameters.getValue("IfDifferent");
-	String IfSame = parameters.getValue("IfSame");
-	String FileProperty = parameters.getValue("FileProperty");
-	String FilePropertyOperator = parameters.getValue("FilePropertyOperator");
-	String FilePropertyAction = parameters.getValue("FilePropertyAction");
-	String WaitUntil = parameters.getValue("WaitUntil");
-	String WaitTimeout = parameters.getValue("WaitTimeout");
-	String WaitInterval = parameters.getValue("WaitInterval");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile1 != null) && (InputFile1.length() > 0) ) {
-		b.append ( "InputFile1=\"" + InputFile1 + "\"" );
-	}
-	if ( (InputFile2 != null) && (InputFile2.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile2=\"" + InputFile2 + "\"" );
-	}
-    if ( (CommentLineChar != null) && (CommentLineChar.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
-    }
-    if ( (MatchCase != null) && (MatchCase.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MatchCase=" + MatchCase );
-    }
-    if ( (IgnoreWhitespace != null) && (IgnoreWhitespace.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IgnoreWhitespace=" + IgnoreWhitespace );
-    }
-    if ( (ExcludeText != null) && (ExcludeText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeText=\"" + ExcludeText + "\"" );
-    }
-    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
-    }
-	if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfDifferent=" + IfDifferent );
-	}
-	if ( (IfSame != null) && (IfSame.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfSame=" + IfSame );
-	}
-	if ( (FileProperty != null) && (FileProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FileProperty=" + FileProperty );
-	}
-	if ( (FilePropertyOperator != null) && (FilePropertyOperator.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FilePropertyOperator=\"" + FilePropertyOperator + "\"" );
-	}
-	if ( (FilePropertyAction != null) && (FilePropertyAction.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FilePropertyAction=" + FilePropertyAction );
-	}
-	if ( (WaitUntil != null) && (WaitUntil.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WaitUntil=" + WaitUntil );
-	}
-	if ( (WaitTimeout != null) && (WaitTimeout.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WaitTimeout=" + WaitTimeout );
-	}
-	if ( (WaitInterval != null) && (WaitInterval.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "WaitInterval=" + WaitInterval );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"InputFile1",
+		"InputFile2",
+		"CommentLineChar",
+		"MatchCase",
+		"IgnoreWhitespace",
+		"ExcludeText",
+		"AllowedDiff",
+		"IfDifferent",
+		"IfSame",
+		"FileProperty",
+		"FilePropertyOperator",
+		"FilePropertyAction",
+		"WaitUntil",
+		"WaitTimeout",
+		"WaitInterval"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

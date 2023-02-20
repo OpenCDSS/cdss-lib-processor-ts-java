@@ -686,7 +686,7 @@ private void refresh ()
     parameters.add ( "PropertyName=" + PropertyName );
     parameters.add ( "PropertyType=" + PropertyType );
     parameters.add ( "PropertyValue=" + PropertyValue );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 }
 
 /**

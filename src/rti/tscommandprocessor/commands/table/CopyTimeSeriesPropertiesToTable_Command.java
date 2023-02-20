@@ -757,82 +757,22 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-    
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String IncludeProperties = parameters.getValue( "IncludeProperties" );
-    String TableID = parameters.getValue( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-    String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
-    String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
-        
-    StringBuffer b = new StringBuffer ();
-
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeProperties=\"" + IncludeProperties + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (AllowDuplicates != null) && (AllowDuplicates.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowDuplicates=\"" + AllowDuplicates + "\"" );
-    }
-    if ( (TableOutputColumns != null) && (TableOutputColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableOutputColumns=\"" + TableOutputColumns + "\"" );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {   
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"IncludeProperties",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"AllowDuplicates",
+    	"TableOutputColumns"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

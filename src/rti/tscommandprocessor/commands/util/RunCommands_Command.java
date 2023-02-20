@@ -601,64 +601,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue("InputFile");
-    String ExpectedStatus = props.getValue("ExpectedStatus");
-    //String ShareProperties = props.getValue("ShareProperties");
-    String ShareDataStores = props.getValue("ShareDataStores");
-    String AppendOutputFiles = props.getValue("AppendOutputFiles");
-    String WarningCountProperty = props.getValue("WarningCountProperty");
-    String FailureCountProperty = props.getValue("FailureCountProperty");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (ExpectedStatus != null) && (ExpectedStatus.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExpectedStatus=" + ExpectedStatus );
-    }
-    /*
-    if ( (ShareProperties != null) && (ShareProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShareProperties=" + ShareProperties );
-    }
-    */
-    if ( (ShareDataStores != null) && (ShareDataStores.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShareDataStores=" + ShareDataStores );
-    }
-    if ( (AppendOutputFiles != null) && (AppendOutputFiles.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AppendOutputFiles=" + AppendOutputFiles );
-    }
-    if ( (WarningCountProperty != null) && (WarningCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WarningCountProperty=\"" + WarningCountProperty + "\"" );
-    }
-    if ( (FailureCountProperty != null) && (FailureCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FailureCountProperty=\"" + FailureCountProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+    	"ExpectedStatus",
+    	//"ShareProperties",
+    	"ShareDataStores",
+    	"AppendOutputFiles",
+    	"WarningCountProperty",
+    	"FailureCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

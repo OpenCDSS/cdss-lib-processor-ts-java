@@ -1019,7 +1019,7 @@ private void refresh () {
 	props.add ( "WaitUntil=" + WaitUntil );
 	props.add ( "WaitTimeout=" + WaitTimeout );
 	props.add ( "WaitInterval=" + WaitInterval );
-	__command_JTextArea.setText( __command.toString(props) );
+	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path1_JButton != null ) {
 		if ( (InputFile1 != null) && !InputFile1.isEmpty() ) {

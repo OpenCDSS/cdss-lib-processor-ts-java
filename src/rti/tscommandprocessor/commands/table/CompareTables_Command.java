@@ -746,104 +746,26 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String Table1ID = props.getValue( "Table1ID" );
-    String Table2ID = props.getValue( "Table2ID" );
-	String CompareColumns1 = props.getValue( "CompareColumns1" );
-	String ExcludeColumns1 = props.getValue( "ExcludeColumns1" );
-	String CompareColumns2 = props.getValue( "CompareColumns2" );
-	String MatchColumnsHow = props.getValue("MatchColumnsHow");
-    String Precision = props.getValue("Precision");
-    String Tolerance = props.getValue("Tolerance");
-    String AllowedDiff = props.getValue("AllowedDiff");
-    String NewTableID = props.getValue( "NewTableID" );
-    String OutputFile = props.getValue ( "OutputFile" );
-    String IfDifferent = props.getValue("IfDifferent");
-    String IfSame = props.getValue("IfSame");
-	StringBuffer b = new StringBuffer ();
-    if ( (Table1ID != null) && (Table1ID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Table1ID=\"" + Table1ID + "\"" );
-    }
-    if ( (CompareColumns1 != null) && (CompareColumns1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CompareColumns1=\"" + CompareColumns1 + "\"" );
-    }
-    if ( (ExcludeColumns1 != null) && (ExcludeColumns1.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcludeColumns1=\"" + ExcludeColumns1 + "\"" );
-    }
-    if ( (Table2ID != null) && (Table2ID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Table2ID=\"" + Table2ID + "\"" );
-    }
-    if ( (CompareColumns2 != null) && (CompareColumns2.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CompareColumns2=\"" + CompareColumns2 + "\"" );
-    }
-    if ( (MatchColumnsHow != null) && (MatchColumnsHow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MatchColumnsHow=" + MatchColumnsHow );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (Tolerance != null) && (Tolerance.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Tolerance=" + Tolerance );
-    }
-    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
-    }
-    if ( (NewTableID != null) && (NewTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTableID=\"" + NewTableID + "\"" );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfDifferent=" + IfDifferent );
-    }
-    if ( (IfSame != null) && (IfSame.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfSame=" + IfSame );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"Table1ID",
+		"CompareColumns1",
+		"ExcludeColumns1",
+    	"Table2ID",
+		"CompareColumns2",
+		"MatchColumnsHow",
+    	"Precision",
+    	"Tolerance",
+    	"AllowedDiff",
+    	"NewTableID",
+    	"OutputFile",
+    	"IfDifferent",
+    	"IfSame"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

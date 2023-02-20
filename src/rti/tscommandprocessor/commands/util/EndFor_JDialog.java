@@ -244,7 +244,7 @@ private void refresh ()
 	Name = __Name_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
-    __command_JTextArea.setText( __command.toString(props) );
+    __command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**

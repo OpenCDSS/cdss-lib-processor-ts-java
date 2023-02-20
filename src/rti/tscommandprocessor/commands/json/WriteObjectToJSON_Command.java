@@ -383,42 +383,17 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String ObjectID = parameters.getValue ( "ObjectID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String PrettyPrint = parameters.getValue( "PrettyPrint" );
-	String Indent = parameters.getValue ( "Indent" );
-	StringBuffer b = new StringBuffer ();
-	if ( (ObjectID != null) && (ObjectID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ObjectID=\"" + ObjectID + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (PrettyPrint != null) && (PrettyPrint.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PrettyPrint=" + PrettyPrint );
-    }
-	if ( (Indent != null) && (Indent.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Indent=" + Indent );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"ObjectID",
+		"OutputFile",
+		"PrettyPrint",
+		"Indent"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

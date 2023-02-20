@@ -574,105 +574,26 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = parameters.getValue ( "TSList" );
-	String TSID = parameters.getValue( "TSID" );
-	String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Delimiter = parameters.getValue ( "Delimiter" );
-	String Precision = parameters.getValue("Precision");
-	String MissingValue = parameters.getValue("MissingValue");
-	String IncludeProperties = parameters.getValue("IncludeProperties");
-	String WriteDataFlagDescriptions = parameters.getValue("WriteDataFlagDescriptions");
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-    String IrregularInterval = parameters.getValue( "IrregularInterval" );
-    String Version = parameters.getValue( "Version" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Delimiter=\"" + Delimiter + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeProperties=\"" + IncludeProperties + "\"");
-    }
-    if ( (WriteDataFlagDescriptions != null) && (WriteDataFlagDescriptions.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteDataFlagDescriptions=" + WriteDataFlagDescriptions);
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IrregularInterval=" + IrregularInterval );
-    }
-    if ( (Version != null) && (Version.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Version=" + Version );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"OutputFile",
+		"Delimiter",
+		"Precision",
+		"MissingValue",
+		"IncludeProperties",
+		"WriteDataFlagDescriptions",
+		"OutputStart",
+		"OutputEnd",
+    	"IrregularInterval",
+    	"Version",
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

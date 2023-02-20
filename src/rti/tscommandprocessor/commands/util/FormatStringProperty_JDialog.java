@@ -587,7 +587,7 @@ private void refresh ()
     props.add ( "NumBytes=" + NumBytes );
     props.add ( "OutputProperty=" + OutputProperty );
     props.add ( "PropertyType=" + PropertyType );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

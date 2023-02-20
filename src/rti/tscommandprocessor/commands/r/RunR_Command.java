@@ -476,4 +476,21 @@ private int runR ( String command_tag, int warning_count, String rProgram, Strin
     return warning_count;
 }
 
+/**
+Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
+*/
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"RProgram",
+		"ROptions",
+		//"PythonPath",
+		"ScriptFile",
+		"ScriptArguments",
+		"SetwdHow"
+	};
+	return this.toString(parameters, parameterOrder);
+}
+
 }

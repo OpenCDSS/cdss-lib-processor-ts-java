@@ -303,50 +303,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String DataStoreTable = props.getValue( "DataStoreTable" );
-    //String TableID = props.getValue( "TableID" );
-	//String DataStoreColumns = props.getValue( "DataStoreColumns" );
-	String DeleteAllRows = props.getValue( "DeleteAllRows" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (DataStoreTable != null) && (DataStoreTable.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreTable=\"" + DataStoreTable + "\"" );
-    }
-    /*
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (DataStoreColumns != null) && (DataStoreColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreColumns=\"" + DataStoreColumns + "\"" );
-    }
-    */
-    if ( (DeleteAllRows != null) && (DeleteAllRows.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DeleteAllRows=\"" + DeleteAllRows + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"DataStoreTable",
+    	//"TableID",
+		//"DataStoreColumns",
+		"DeleteAllRows"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

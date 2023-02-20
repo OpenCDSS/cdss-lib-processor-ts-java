@@ -544,119 +544,28 @@ private void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String Precision = parameters.getValue( "Precision" );
-    String Type = parameters.getValue( "Type" );
-    String A = parameters.getValue( "A" );
-    String B = parameters.getValue( "B" );
-    String C = parameters.getValue( "C" );
-    String E = parameters.getValue( "E" );
-    String F = parameters.getValue( "F" );
-    String Replace = parameters.getValue( "Replace" );
-    String Close = parameters.getValue( "Close" );
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (Type != null) && (Type.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Type=" + Type );
-    }
-    if ( (A != null) && (A.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "A=\"" + A + "\"");
-    }
-    if ( (B != null) && (B.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "B=\"" + B + "\"");
-    }
-    if ( (C != null) && (C.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "C=\"" + C + "\"");
-    }
-    if ( (E != null) && (E.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "E=\"" + E + "\"");
-    }
-    if ( (F != null) && (F.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "F=\"" + F + "\"");
-    }
-    if ( (Replace != null) && (Replace.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Replace=" + Replace );
-    }
-    if ( (Close != null) && (Close.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Close=" + Close );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"OutputFile",
+		"OutputStart",
+		"OutputEnd",
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Precision",
+    	"Type",
+    	"A",
+    	"B",
+    	"C",
+    	"E",
+    	"F",
+    	"Replace",
+    	"Close"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

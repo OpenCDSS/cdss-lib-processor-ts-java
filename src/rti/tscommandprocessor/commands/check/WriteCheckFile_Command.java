@@ -689,36 +689,16 @@ protected void setOutputFile ( File file )
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{   
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String Title = parameters.getValue ( "Title" );
-    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
-
-    StringBuffer b = new StringBuffer ();
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-    if ( (Title != null) && (Title.length() > 0) ) {
-    	if ( b.length() > 0 ) {
-    		b.append ( "," );
-    	}
-        b.append ( "Title=\"" + Title + "\"" );
-    }
-    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
-    }
-    
-    return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {   
+	String [] parameterOrder = {
+		"OutputFile",
+    	"Title",
+    	"WriteHeaderComments"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

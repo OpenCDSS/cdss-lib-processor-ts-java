@@ -397,88 +397,24 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue ( "TSID" );
-    String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String Description = parameters.getValue ( "Description" );
-    String Units = parameters.getValue ( "Units" );
-    String Precision = parameters.getValue ( "Precision" );
-    String MissingValue = parameters.getValue("MissingValue");
-    String Editable = parameters.getValue ( "Editable" );
-    String PropertyName = parameters.getValue( "PropertyName" );
-    String PropertyType = parameters.getValue( "PropertyType" );
-    String PropertyValue = parameters.getValue( "PropertyValue" );
-	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (Description != null) && (Description.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Description=\"" + Description + "\"" );
-	}
-    if ( (Units != null) && (Units.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Units=\"" + Units + "\"" );
-    }
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Precision=" + Precision );
-    }
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MissingValue=" + MissingValue );
-    }
-    if ( (Editable != null) && (Editable.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Editable=" + Editable );
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-	    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-	        if ( b.length() > 0 ) {
-	            b.append ( "," );
-	        }
-	        b.append ( "PropertyType=" + PropertyType );
-	    }
-	    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-	        if ( b.length() > 0 ) {
-	            b.append ( "," );
-	        }
-	        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
-	    }
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"Description",
+    	"Units",
+    	"Precision",
+    	"MissingValue",
+    	"Editable",
+    	"PropertyName",
+    	"PropertyType",
+    	"PropertyValue"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -457,54 +457,19 @@ throws CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String OdbcDsn = props.getValue ( "OdbcDsn" );
-	String DatabaseServer = props.getValue ( "DatabaseServer" );
-	String DatabaseName = props.getValue ( "DatabaseName" );
-	String RunMode = props.getValue ( "RunMode" );
-	String UseStoredProcedures = props.getValue ( "UseStoredProcedures" );
-	String InputName = props.getValue ( "InputName" );
-
-	StringBuffer b = new StringBuffer ();
-	if ( (OdbcDsn != null) && (OdbcDsn.length() > 0) ) {
-		b.append ( "OdbcDsn=\"" + OdbcDsn + "\"" );
-	}
-	if ( (DatabaseServer != null) && (DatabaseServer.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DatabaseServer=\"" + DatabaseServer + "\"" );
-	}
-	if ( (DatabaseName != null) && (DatabaseName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DatabaseName=\"" + DatabaseName + "\"" );
-	}
-	if ( (RunMode != null) && (RunMode.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RunMode=" + RunMode );
-	}
-	if (	(UseStoredProcedures != null) &&
-		(UseStoredProcedures.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "UseStoredProcedures=" + UseStoredProcedures );
-	}
-	if ( (InputName != null) && (InputName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputName=\"" + InputName + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"OdbcDsn",
+		"DatabaseServer",
+		"DatabaseName",
+		"RunMode",
+		"UseStoredProcedures",
+		"InputName"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

@@ -216,17 +216,14 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String IgnoreLEZero = parameters.getValue("IgnoreLEZero");
-	StringBuffer b = new StringBuffer ();
-	if ( (IgnoreLEZero != null) && (IgnoreLEZero.length() > 0) ) {
-		b.append ( "IgnoreLEZero=" + IgnoreLEZero );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"IgnoreLEZero"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

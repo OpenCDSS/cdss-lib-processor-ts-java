@@ -2289,7 +2289,9 @@ throws Exception
     		if ( commandString == null ) {
     			continue;
     		}
-    		commandString = commandString.trim();
+    		// As of TSTool 14.6.0 do not trim because indentation is allowed:
+    		// - the end will be trimmed automatically because toString() does not retain trailing spaces
+    		//commandString = commandString.trim();
     		// All commands implement CommandStatusProvider via AbstractCommand so get an instance of CommandStatusProvider.
     		commandStatusProvider = null;
     		commandStatus = null;

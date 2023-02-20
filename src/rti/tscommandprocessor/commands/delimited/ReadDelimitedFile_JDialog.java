@@ -1073,7 +1073,7 @@ private void refresh()
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	
-	__Command_JTextArea.setText( __command.toString(props) );
+	__Command_JTextArea.setText( __command.toString(props).trim() );
 
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {

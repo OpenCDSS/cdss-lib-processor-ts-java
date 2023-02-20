@@ -565,69 +565,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String Sql = props.getValue( "Sql" );
-	String SqlFile = props.getValue( "SqlFile" );
-	String DataStoreFunction = props.getValue( "DataStoreFunction" );
-	String FunctionParameters = props.getValue( "FunctionParameters" );
-	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
-	String ProcedureParameters = props.getValue( "ProcedureParameters" );
-	String ProcedureReturnProperty = props.getValue( "ProcedureReturnProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (Sql != null) && (Sql.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Sql=\"" + Sql + "\"" );
-    }
-    if ( (SqlFile != null) && (SqlFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SqlFile=\"" + SqlFile + "\"" );
-    }
-    if ( (DataStoreFunction != null) && (DataStoreFunction.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreFunction=\"" + DataStoreFunction + "\"" );
-    }
-    if ( (FunctionParameters != null) && (FunctionParameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FunctionParameters=\"" + FunctionParameters + "\"" );
-    }
-    if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreProcedure=\"" + DataStoreProcedure + "\"" );
-    }
-    if ( (ProcedureParameters != null) && (ProcedureParameters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProcedureParameters=\"" + ProcedureParameters + "\"" );
-    }
-    if ( (ProcedureReturnProperty != null) && (ProcedureReturnProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ProcedureReturnProperty=\"" + ProcedureReturnProperty + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"Sql",
+		"SqlFile",
+		"DataStoreFunction",
+		"FunctionParameters",
+		"DataStoreProcedure",
+		"ProcedureParameters",
+		"ProcedureReturnProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

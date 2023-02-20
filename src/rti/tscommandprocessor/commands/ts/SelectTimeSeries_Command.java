@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.Util.Message.Message;
@@ -66,7 +65,7 @@ Values for IfNotFound parameter.
 protected final String _Ignore = "Ignore";
 protected final String _Fail = "Fail";
 protected final String _Warn = "Warn";
-    
+
 /**
 Values for DeselectAllFirst.
 */
@@ -82,8 +81,8 @@ private int [] __TSPositionEnd = new int[0];
 /**
 Constructor.
 */
-public SelectTimeSeries_Command ()
-{	super();
+public SelectTimeSeries_Command () {
+	super();
 	setCommandName ( "SelectTimeSeries" );
 }
 
@@ -95,8 +94,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	//String TSList = parameters.getValue ( "TSList" );
+throws InvalidCommandParameterException {
+	//String TSList = parameters.getValue ( "TSList" );
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
@@ -106,7 +105,7 @@ throws InvalidCommandParameterException
     String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -121,7 +120,7 @@ throws InvalidCommandParameterException
         for ( int i = 0; i < npos; i++ ) {
             String token = (String)tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
-                // Range...
+                // Range.
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
                 if ( !StringUtil.isInteger(posString) ) {
                     message = "The TSPosition range (" + token + ") contains an invalid position.";
@@ -161,7 +160,7 @@ throws InvalidCommandParameterException
                     __TSPositionStart[i] + "," + __TSPositionEnd[i] );
         }
 	}
-	
+
 	if ( (DeselectAllFirst != null) && !DeselectAllFirst.equals("") &&
 	        !DeselectAllFirst.equalsIgnoreCase(_True) && !DeselectAllFirst.equalsIgnoreCase(_False) ) {
         message = "The DeselectAllFirst (" + DeselectAllFirst + ") parameter value is invalid.";
@@ -170,7 +169,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify as " + _False + " or " + _True + "." ) );
 	}
-	
+
     if ( (IfNotFound != null) && !IfNotFound.equals("") && !IfNotFound.equalsIgnoreCase(_Ignore) &&
         !IfNotFound.equalsIgnoreCase(_Fail) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
         message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
@@ -178,11 +177,11 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the IfNotFound as " + _Ignore + ", " +
-                _Warn + ", or " + _Fail + " (default)." ) );                    
+                _Warn + ", or " + _Fail + " (default)." ) );
     }
-	
+
     if ( (PropertyName != null) && !PropertyName.equals("") ) {
-        // Check for allowed characters...
+        // Check for allowed characters.
         if ( StringUtil.containsAny(PropertyName,"() \t", true)) {
             message = "The property name contains invalid characters () space, tab.";
             warning += "\n" + message;
@@ -198,7 +197,7 @@ throws InvalidCommandParameterException
                             message, "Provide a property condition." ) );
         }
         else {
-            // Make sure that the condition is known in general
+            // Make sure that the condition is known in general.
             try {
                 InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
             }
@@ -243,9 +242,9 @@ throws InvalidCommandParameterException
             */
         }
     }
-    
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(13);
+
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(13);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -260,13 +259,13 @@ throws InvalidCommandParameterException
     validList.add ( "DownstreamNodeID" );
     validList.add ( "UpstreamNodeIDs" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -275,38 +274,37 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SelectTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String TSID = parameters.getValue ( "TSID");
         String Pos = parameters.getValue ( "Pos");
 
         if ( (Pos != null) && (Pos.length() != 0) ) {
-            // Legacy Pos property is specified.  Switch to TSPosition
+            // Legacy Pos property is specified.  Switch to TSPosition.
             parameters.set ( "TSList", TSListType.TSPOSITION.toString() );
             parameters.set ( "TSPosition", Pos );
         }
-        else if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
-                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-            // Assume old-style where TSList was not specified but TSID was...
+        else if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified.
+                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified.
+            // Assume old-style where TSList was not specified but TSID was.
             parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
         }
     }
@@ -320,18 +318,18 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages for log file.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -339,17 +337,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-	
+
 	PropList parameters = getCommandParameters();
 
 	String TSList = parameters.getValue ( "TSList" );
 	if ( (TSList == null) || TSList.equals("") ) {
-	    TSList = "" + TSListType.ALL_TS; // Default
+	    TSList = "" + TSListType.ALL_TS; // Default.
 	}
 	String TSID = parameters.getValue ( "TSID" );
 	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
@@ -357,20 +355,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
-	boolean DeselectAllFirst_boolean = false;  // Default
+	boolean DeselectAllFirst_boolean = false;  // Default.
 	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
 	    DeselectAllFirst_boolean = true;
 	}
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
-        IfNotFound = _Fail; // default
+        IfNotFound = _Fail; // Default.
     }
 	String SelectCountProperty = parameters.getValue ( "SelectCountProperty" );
 	SelectCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectCountProperty);
     String PropertyName = parameters.getValue ( "PropertyName" );
 	PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
-    // TODO SAM 2010-09-21 Need to enable numeric property checks
+    // TODO SAM 2010-09-21 Need to enable numeric property checks.
     InputFilterStringCriterionType propertyStringConditionType = null;
     if ( (PropertyCriterion != null) && !PropertyCriterion.equals("") ) {
         propertyStringConditionType = InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
@@ -391,11 +389,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			upstreamNodeIds.add(parts[i].trim());
 		}
 	}
-	
-	// If necessary, get the list of all time series...
-	List<TS> tslistAll = new Vector<TS>();
+
+	// If necessary, get the list of all time series.
+	List<TS> tslistAll = new ArrayList<>();
 	if ( DeselectAllFirst_boolean ) {
-	    // Deselect all first
+	    // Deselect all first.
 	    try {
 	    	@SuppressWarnings("unchecked")
 			List<TS> tslistAll0 = (List<TS>)processor.getPropContents("TSResultsList");
@@ -406,7 +404,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 ntsAll = tslistAll.size();
             }
             for ( int its = 0; its < ntsAll; its++ ) {
-                TS ts = (TS)tslistAll.get(its);    // Will throw Exception
+                TS ts = (TS)tslistAll.get(its);    // Will throw Exception.
                 ts.setSelected ( false );
             }
 	    }
@@ -421,8 +419,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                        message, "Report the problem to software support." ) );
 	    }
 	}
-	
-	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
+
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -482,7 +480,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 	}
-	
+
 	int nts = tslist.size();
 	if ( nts == 0 ) {
 		message = "Unable to find time series to select using TSList=\"" + TSList + "\" TSID=\"" + TSID +
@@ -506,22 +504,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Command parameter data has errors.  Unable to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 		throw new CommandException ( message );
 	}
-	
-	// Get the network
-	
+
+	// Get the network.
+
 	HydrologyNodeNetwork network = null;
 	List<HydrologyNode> foundNetworkNodes = null;
 	if ( (NetworkID != null) && !NetworkID.equals("") ) {
 	    request_params = null;
 	    bean = null;
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "NetworkID", NetworkID );
         try {
@@ -549,7 +547,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	}
         }
         if ( network != null ) {
-    		// First find the requested node
+    		// First find the requested node.
         	HydrologyNode downstreamNode = null;
         	if ( DownstreamNodeID.startsWith("-") ) {
         		downstreamNode = network.findNode(DownstreamNodeID.substring(1));
@@ -557,7 +555,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	else {
         		downstreamNode = network.findNode(DownstreamNodeID);
         	}
-        	// Also check the upstream nodes to make sure they exist in the network
+        	// Also check the upstream nodes to make sure they exist in the network.
         	if ( upstreamNodeIds != null ) {
 	        	for ( String upstreamNodeId : upstreamNodeIds ) {
 	        		HydrologyNode upstreamNode = null;
@@ -590,7 +588,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         "Verify that the downstream node is in the network." ) );
     		}
     		else {
-	    		// Get the nodes upstream of the requested node
+	    		// Get the nodes upstream of the requested node:
     			// - upstream nodes will limit the search if specified
 	    		foundNetworkNodes = new ArrayList<HydrologyNode>();
 	    		boolean addFirstNode = true;
@@ -606,7 +604,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
 	}
 
-	// Now process the time series returned for the initial selection (nts could be zero if ignoring no match)...
+	// Now process the time series returned for the initial selection (nts could be zero if ignoring no match).
 
 	TS ts = null;
 	Object o_ts = null;
@@ -627,17 +625,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			continue;
 		}
 		ts = (TS)o_ts;
-		
+
 		try {
 		    boolean selected = false;
 		    int filterCount = 0;
-		    // Further filter based on the property (property selection is additive to above selection)
+		    // Further filter based on the property (property selection is additive to above selection).
 		    if ( (PropertyName != null) && !PropertyName.equals("") ) {
-		        // Have a property to check
+		        // Have a property to check.
 		    	++filterCount;
 		        Object property = ts.getProperty(PropertyName);
 		        if ( property != null ) {
-		            // Check the property by type
+		            // Check the property by type.
 		            if ( (property instanceof String) && (propertyStringConditionType != null) ) {
 		                selected = InputFilter.evaluateCriterion(
 		                    (String)property, propertyStringConditionType, PropertyValue );
@@ -649,23 +647,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		        }
 		    }
 		    if ( (NetworkID != null) && !NetworkID.equals("") && (network != null) ) {
-		        // Match nodes in the network
+		        // Match nodes in the network.
 		    	++filterCount;
 		    	if ( (DownstreamNodeID != null) && !DownstreamNodeID.equals("") && (foundNetworkNodes != null) ) {
 		    		for ( HydrologyNode node : foundNetworkNodes ) {
 		    			if ( node.getCommonID().equalsIgnoreCase(ts.getLocation()) ) {
-		    				// Matched the location so select
+		    				// Matched the location so select.
 		    				selected = true;
 		    			}
 		    		}
 		    	}
 		    }
 		    if ( filterCount == 0 ) {
-		        // Only TSList criteria were used to filter to matching time series
+		        // Only TSList criteria were used to filter to matching time series.
 		        Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() + "\" based on TSList parameter." );
 		        selected = true;
 		    }
-	        // Do the selection...
+	        // Do the selection.
 			ts.setSelected ( selected );
 		}
 		catch ( Exception e ) {
@@ -679,8 +677,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
-	
-    // Set the SelectCountProperty
+
+    // Set the SelectCountProperty.
     if ( (SelectCountProperty != null) && !SelectCountProperty.equals("") ) {
         Object o = null;
         try {
@@ -708,8 +706,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
             try {
                 processor.processRequest( "SetProperty", request_params);
-                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode
-                // Set the 
+                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
                 //if ( command_phase == CommandPhaseType.DISCOVERY ) {
                 //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
                 //}
@@ -739,104 +736,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String TSPosition = props.getValue("TSPosition");
-	String DeselectAllFirst = props.getValue("DeselectAllFirst");
-	String IfNotFound = props.getValue ( "IfNotFound" );
-	String SelectCountProperty = props.getValue("SelectCountProperty");
-    String PropertyName = props.getValue( "PropertyName" );
-    String PropertyCriterion = props.getValue( "PropertyCriterion" );
-    String PropertyValue = props.getValue( "PropertyValue" );
-    String NetworkID = props.getValue( "NetworkID" );
-    String DownstreamNodeID = props.getValue( "DownstreamNodeID" );
-    String UpstreamNodeIDs = props.getValue( "UpstreamNodeIDs" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	if ( (TSPosition != null) && (TSPosition.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSPosition=\"" + TSPosition + "\"" );
-	}
-	if ( (DeselectAllFirst != null) && (DeselectAllFirst.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DeselectAllFirst=" + DeselectAllFirst );
-	}
-    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IfNotFound=" + IfNotFound );
-    }
-    if ( (SelectCountProperty != null) && (SelectCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SelectCountProperty=\"" + SelectCountProperty + "\"");
-    }
-    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyCriterion != null) && (PropertyCriterion.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyCriterion=\"" + PropertyCriterion + "\"");
-    }
-    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
-    }
-    if ( (NetworkID != null) && (NetworkID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NetworkID=\"" + NetworkID + "\"" );
-    }
-    if ( (DownstreamNodeID != null) && (DownstreamNodeID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DownstreamNodeID=\"" + DownstreamNodeID + "\"" );
-    }
-    if ( (UpstreamNodeIDs != null) && (UpstreamNodeIDs.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "UpstreamNodeIDs=\"" + UpstreamNodeIDs + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"TSPosition",
+		"DeselectAllFirst",
+		"IfNotFound",
+		"SelectCountProperty",
+		"PropertyName",
+		"PropertyCriterion",
+		"PropertyValue",
+		"NetworkID",
+		"DownstreamNodeID",
+		"UpstreamNodeIDs"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

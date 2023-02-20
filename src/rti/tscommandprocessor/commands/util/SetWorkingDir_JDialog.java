@@ -423,7 +423,7 @@ private void refresh ()
     props.add ( "WorkingDir=" + WorkingDir );
     props.add ( "RunMode=" + RunMode );
     props.add ( "RunOnOS=" + RunOnOS );
-    __command_JTextArea.setText(__command.toString(props) );
+    __command_JTextArea.setText(__command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		if ( (WorkingDir != null) && !WorkingDir.isEmpty() ) {

@@ -604,92 +604,24 @@ private void setDiscoveryTable ( DataTable table )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue( "InputFile" );
-	String Worksheet = props.getValue( "Worksheet" );
-	String KeepOpen = props.getValue("KeepOpen");
-	String ColumnCellMap = props.getValue("ColumnCellMap");
-    String TableID = props.getValue( "TableID" );
-    String ColumnIncludeFilters = props.getValue( "ColumnIncludeFilters" );
-    String IfTableRowNotFound = props.getValue( "IfTableRowNotFound" );
-	//String ExcelIntegerCells = props.getValue("ExcelIntegerCells");
-	//String ExcelDateTimeCells = props.getValue("ExcelDateTimeCells");
-	//String NumberPrecision = props.getValue("NumberPrecision");
-	//String ReadAllAsText = props.getValue("ReadAllAsText");
-	StringBuffer b = new StringBuffer ();
-    if ( (InputFile != null) && (InputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputFile=\"" + InputFile + "\"" );
-    }
-    if ( (Worksheet != null) && (Worksheet.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Worksheet=\"" + Worksheet + "\"" );
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
-    }
-    if ( (ColumnCellMap != null) && (ColumnCellMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnCellMap=\"" + ColumnCellMap + "\"");
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
-    }
-    if ( (IfTableRowNotFound != null) && (IfTableRowNotFound.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfTableRowNotFound=" + IfTableRowNotFound );
-    }
-    /*
-    if ( (ExcelIntegerCells != null) && (ExcelIntegerCells.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelIntegerCells=\"" + ExcelIntegerCells + "\"" );
-    }
-    if ( (ExcelDateTimeCells != null) && (ExcelDateTimeCells.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelDateTimeCells=\"" + ExcelDateTimeCells + "\"" );
-    }
-    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NumberPrecision=" + NumberPrecision );
-    }
-    if ( (ReadAllAsText != null) && (ReadAllAsText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ReadAllAsText=" + ReadAllAsText );
-    }
-    */
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"Worksheet",
+		"KeepOpen",
+		"ColumnCellMap",
+    	"TableID",
+    	"ColumnIncludeFilters",
+    	"IfTableRowNotFound"
+		//"ExcelIntegerCells",
+		//"ExcelDateTimeCells",
+		//"NumberPrecision",
+		//"ReadAllAsText"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

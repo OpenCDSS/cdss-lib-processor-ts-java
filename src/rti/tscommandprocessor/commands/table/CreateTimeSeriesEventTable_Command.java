@@ -1254,132 +1254,30 @@ private void setDiscoveryTable ( DataTable table ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-    String TimeSeriesLocations = props.getValue( "TimeSeriesLocations" );
-    String TableID = props.getValue( "TableID" );
-	String IncludeColumns = props.getValue( "IncludeColumns" );
-	String InputTableEventIDColumn = props.getValue( "InputTableEventIDColumn" );
-	String InputTableEventTypeColumn = props.getValue( "InputTableEventTypeColumn" );
-	String IncludeInputTableEventTypes = props.getValue( "IncludeInputTableEventTypes" );
-	String InputTableEventStartColumn = props.getValue( "InputTableEventStartColumn" );
-	String InputTableEventEndColumn = props.getValue( "InputTableEventEndColumn" );
-	String InputTableEventLocationColumns = props.getValue( "InputTableEventLocationColumns" );
-	String InputTableEventLabelColumn = props.getValue( "InputTableEventLabelColumn" );
-	String InputTableEventDescriptionColumn = props.getValue( "InputTableEventDescriptionColumn" );
-    String NewTableID = props.getValue( "NewTableID" );
-    String OutputTableTSIDColumn = props.getValue ( "OutputTableTSIDColumn" );
-    String OutputTableTSIDFormat = props.getValue ( "OutputTableTSIDFormat" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (TimeSeriesLocations != null) && (TimeSeriesLocations.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TimeSeriesLocations=\"" + TimeSeriesLocations + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-	}
-    if ( (InputTableEventIDColumn != null) && (InputTableEventIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventIDColumn=\"" + InputTableEventIDColumn + "\"" );
-    }
-    if ( (InputTableEventTypeColumn != null) && (InputTableEventTypeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventTypeColumn=\"" + InputTableEventTypeColumn + "\"" );
-    }
-    if ( (IncludeInputTableEventTypes != null) && (IncludeInputTableEventTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeInputTableEventTypes=\"" + IncludeInputTableEventTypes + "\"" );
-    }
-    if ( (InputTableEventStartColumn != null) && (InputTableEventStartColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventStartColumn=\"" + InputTableEventStartColumn + "\"" );
-    }
-    if ( (InputTableEventEndColumn != null) && (InputTableEventEndColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventEndColumn=\"" + InputTableEventEndColumn + "\"" );
-    }
-    if ( (InputTableEventLocationColumns != null) && (InputTableEventLocationColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventLocationColumns=\"" + InputTableEventLocationColumns + "\"" );
-    }
-    if ( (InputTableEventLabelColumn != null) && (InputTableEventLabelColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventLabelColumn=\"" + InputTableEventLabelColumn + "\"" );
-    }
-    if ( (InputTableEventDescriptionColumn != null) && (InputTableEventDescriptionColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputTableEventDescriptionColumn=\"" + InputTableEventDescriptionColumn + "\"" );
-    }
-    if ( (NewTableID != null) && (NewTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTableID=\"" + NewTableID + "\"" );
-    }
-    if ( (OutputTableTSIDColumn != null) && (OutputTableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputTableTSIDColumn=\"" + OutputTableTSIDColumn + "\"" );
-    }
-    if ( (OutputTableTSIDFormat != null) && (OutputTableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputTableTSIDFormat=\"" + OutputTableTSIDFormat + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+    	"TimeSeriesLocations",
+    	"TableID",
+		"IncludeColumns",
+		"InputTableEventIDColumn",
+		"InputTableEventTypeColumn",
+		"IncludeInputTableEventTypes",
+		"InputTableEventStartColumn",
+		"InputTableEventEndColumn",
+		"InputTableEventLocationColumns",
+		"InputTableEventLabelColumn",
+		"InputTableEventDescriptionColumn",
+    	"NewTableID",
+    	"OutputTableTSIDColumn",
+    	"OutputTableTSIDFormat"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

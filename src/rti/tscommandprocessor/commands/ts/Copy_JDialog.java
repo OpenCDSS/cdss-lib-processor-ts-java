@@ -485,7 +485,7 @@ private void refresh ()
 	props.add ( "NewTSID=" + NewTSID );
     props.add ( "CopyDataFlags=" + CopyDataFlags );
     props.add ( "CopyHistory=" + CopyHistory );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

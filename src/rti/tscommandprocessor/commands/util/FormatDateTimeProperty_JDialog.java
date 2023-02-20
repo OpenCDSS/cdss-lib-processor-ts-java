@@ -486,7 +486,7 @@ private void refresh ()
     props.add ( "FormatterType=" + FormatterType );
 	props.add ( "Format=" + Format );
 	props.add ( "PropertyType=" + PropertyType );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

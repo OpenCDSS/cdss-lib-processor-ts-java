@@ -779,139 +779,31 @@ private void setDiscoveryNetwork ( NodeNetwork network )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String NetworkID = props.getValue( "NetworkID" );
-	String NetworkName = props.getValue( "NetworkName" );
-	String DefaultDownstreamNodeID = props.getValue( "DefaultDownstreamNodeID" );
-    String TableID = props.getValue( "TableID" );
-    String NodeIDColumn = props.getValue( "NodeIDColumn" );
-    String NodeNameColumn = props.getValue( "NodeNameColumn" );
-    String NodeTypeColumn = props.getValue( "NodeTypeColumn" );
-    String NodeGroupColumn = props.getValue( "NodeGroupColumn" );
-    String NodeDistanceColumn = props.getValue( "NodeDistanceColumn" );
-    String NodeWeightColumn = props.getValue( "NodeWeightColumn" );
-    String DownstreamNodeIDColumn = props.getValue( "DownstreamNodeIDColumn" );
-    String NodeAddTypes = props.getValue( "NodeAddTypes" );
-    String NodeAddDataTypes = props.getValue( "NodeAddDataTypes" );
-	String NodeSubtractTypes = props.getValue( "NodeSubtractTypes" );
-	String NodeSubtractDataTypes = props.getValue( "NodeSubtractDataTypes" );
-    String NodeOutflowTypes = props.getValue( "NodeOutflowTypes" );
-    String NodeOutflowDataTypes = props.getValue( "NodeOutflowDataTypes" );
-    String NodeFlowThroughTypes = props.getValue( "NodeFlowThroughTypes" );
-	StringBuffer b = new StringBuffer ();
-    if ( (NetworkID != null) && (NetworkID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NetworkID=\"" + NetworkID + "\"" );
-    }
-    if ( (NetworkName != null) && (NetworkName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NetworkName=\"" + NetworkName + "\"" );
-    }
-    if ( (DefaultDownstreamNodeID != null) && (DefaultDownstreamNodeID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DefaultDownstreamNodeID=\"" + DefaultDownstreamNodeID + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (NodeIDColumn != null) && (NodeIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeIDColumn=\"" + NodeIDColumn + "\"" );
-    }
-    if ( (NodeNameColumn != null) && (NodeNameColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeNameColumn=\"" + NodeNameColumn + "\"" );
-    }
-    if ( (NodeTypeColumn != null) && (NodeTypeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeTypeColumn=\"" + NodeTypeColumn + "\"" );
-    }
-    if ( (NodeGroupColumn != null) && (NodeGroupColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeGroupColumn=\"" + NodeGroupColumn + "\"" );
-    }
-    if ( (NodeDistanceColumn != null) && (NodeDistanceColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeDistanceColumn=\"" + NodeDistanceColumn + "\"" );
-    }
-    if ( (NodeWeightColumn != null) && (NodeWeightColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeWeightColumn=\"" + NodeWeightColumn + "\"" );
-    }
-    if ( (DownstreamNodeIDColumn != null) && (DownstreamNodeIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DownstreamNodeIDColumn=\"" + DownstreamNodeIDColumn + "\"" );
-    }
-    if ( (NodeAddTypes != null) && (NodeAddTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeAddTypes=\"" + NodeAddTypes + "\"" );
-    }
-    if ( (NodeAddDataTypes != null) && (NodeAddDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeAddDataTypes=\"" + NodeAddDataTypes + "\"" );
-    }
-	if ( (NodeSubtractTypes != null) && (NodeSubtractTypes.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NodeSubtractTypes=\"" + NodeSubtractTypes + "\"" );
-	}
-    if ( (NodeSubtractDataTypes != null) && (NodeSubtractDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeSubtractDataTypes=\"" + NodeSubtractDataTypes + "\"" );
-    }
-    if ( (NodeOutflowTypes != null) && (NodeOutflowTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeOutflowTypes=\"" + NodeOutflowTypes + "\"" );
-    }
-    if ( (NodeOutflowDataTypes != null) && (NodeOutflowDataTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeOutflowDataTypes=\"" + NodeOutflowDataTypes + "\"" );
-    }
-    if ( (NodeFlowThroughTypes != null) && (NodeFlowThroughTypes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NodeFlowThroughTypes=\"" + NodeFlowThroughTypes + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"NetworkID",
+		"NetworkName",
+		"DefaultDownstreamNodeID",
+    	"TableID",
+    	"NodeIDColumn",
+    	"NodeNameColumn",
+    	"NodeTypeColumn",
+    	"NodeGroupColumn",
+    	"NodeDistanceColumn",
+    	"NodeWeightColumn",
+    	"DownstreamNodeIDColumn",
+    	"NodeAddTypes",
+    	"NodeAddDataTypes",
+		"NodeSubtractTypes",
+		"NodeSubtractDataTypes",
+    	"NodeOutflowTypes",
+    	"NodeOutflowDataTypes",
+    	"NodeFlowThroughTypes"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

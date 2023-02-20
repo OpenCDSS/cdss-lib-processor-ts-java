@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -77,22 +77,21 @@ private int [] __TSPositionEnd = new int[0];
 /**
 Constructor.
 */
-public Free_Command ()
-{	super();
+public Free_Command () {
+	super();
 	setCommandName ( "Free" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TSPosition = parameters.getValue ( "TSPosition" );
+throws InvalidCommandParameterException {
+	String TSPosition = parameters.getValue ( "TSPosition" );
 	String IfNotFound = parameters.getValue("IfNotFound");
     String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
 	String warning = "";
@@ -111,9 +110,9 @@ throws InvalidCommandParameterException
         __TSPositionStart = new int[npos];
         __TSPositionEnd = new int[npos];
         for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.get(i);
+            String token = tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
-                // Range...
+                // Range.
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
                 if ( !StringUtil.isInteger(posString) ) {
                     message = "The TSPosition range (" + token + ") contains an invalid position.";
@@ -177,8 +176,8 @@ throws InvalidCommandParameterException
         }
     }
 	
-	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(5);
+	// Check for invalid parameters.
+    List<String> validList = new ArrayList<>(5);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -198,11 +197,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new Free_JDialog ( parent, this )).ok();
 }
 
@@ -213,13 +211,13 @@ Parse the command string into a PropList of parameters.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{   String routine = "Free_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+    String routine = "Free_Command.parseCommand", message;
     int warning_level = 2;
     if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-        // New syntax, can be blank parameter list for new command...
+        // New syntax, can be blank parameter list for new command.
         super.parseCommand ( command_string );
-        // Support legacy (but newer than oldest version below) where only TSID= was specified (no TSList)
+        // Support legacy (but newer than oldest version below) where only TSID= was specified (no TSList).
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList" );
         String TSID = parameters.getValue ( "TSID" );
@@ -235,7 +233,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
     }
     else {
-        // Parse the old command...
+        // Parse the old command.
     	List<String> tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
         if ( tokens.size() != 2 ) {
             message = "Invalid syntax for command.  Expecting Free(TSID).";
@@ -246,7 +244,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         PropList parameters = new PropList ( getCommandName() );
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         if ( TSID.length() > 0 ) {
-            // Legacy behavior was to match last matching TSID if no wildcard
+            // Legacy behavior was to match last matching TSID if no wildcard.
             if ( TSID.indexOf("*") >= 0 ) {
                 parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
             }
@@ -266,12 +264,12 @@ Remove a time series at the indicated index.
 */
 private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
         Object o_Index, String FreeEnsembleIfEmpty, CommandStatus status,
-        int warning_count, int warning_level, String command_tag )
-{   String message;
+        int warning_count, int warning_level, String command_tag ) {
+    String message;
     String routine = getClass().getName() + ".removeTimeSeriesAtIndex";
     
-    // Have the index of the single time series to free.  Get the time series so a relevant
-    // status message can be printed.
+    // Have the index of the single time series to free.
+    // Get the time series so a relevant status message can be printed.
     
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", o_Index );
@@ -288,7 +286,7 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
         return warning_count;
     }
 
-    // Get the time series out of the results bean...
+    // Get the time series out of the results bean.
     
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TS = bean_PropList.getContents ( "TS" );
@@ -302,23 +300,23 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     }
     TS ts = (TS)o_TS;
 
-    // Now actually remove the time series...
+    // Now actually remove the time series.
     
     PropList request_params2 = new PropList ( "" );
     request_params2.setUsingObject ( "Index", o_Index );
-    // By here should be True or False
+    // By here should be True or False.
     Boolean FreeEnsembleIfEmpty_Boolean = new Boolean(FreeEnsembleIfEmpty);
     request_params2.setUsingObject ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty_Boolean );
     try {
         processor.processRequest( "RemoveTimeSeriesFromResultsList", request_params2 );
         if ( ts.getAlias().length() > 0 ) {
-            // Print alias and identifier...
+            // Print alias and identifier.
             Message.printStatus ( 2, routine,
             "Freed time series resources for \"" + ts.getAlias() + "\" \"" +
             ts.getIdentifierString() + "\" at [" + o_Index +"]");
         }
         else {  
-            // Print only the identifier
+            // Print only the identifier.
             Message.printStatus ( 2, routine, "Freed time series resources for \"" +
             ts.getIdentifierString() + "\" at [" + o_Index +"]");
         }
@@ -342,8 +340,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -351,7 +349,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -360,7 +358,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -382,15 +380,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String TSPosition = parameters.getValue ( "TSPosition" );
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
-        IfNotFound = _Warn; // default
+        IfNotFound = _Warn; // Default.
     }
     String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
     if ( (FreeEnsembleIfEmpty == null) || FreeEnsembleIfEmpty.equals("")) {
-        FreeEnsembleIfEmpty = _True;    // Default
+        FreeEnsembleIfEmpty = _True;    // Default.
     }
 	
     int countRemoved = 0;  // Number of time series removed.
-    // Get the original count of time series...
+    // Get the original count of time series.
     Object o = null;
     try {
         o = processor.getPropContents ( "TSResultsListSize" );
@@ -410,9 +408,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message, "Report problem to software support." ) );
     }
     
-    // Get the time series to process.
-    // - Allow TSID to be a pattern or specific time series
-    // - If time series are not found, handle using the IfNotFound preference
+    // Get the time series to process:
+    // - allow TSID to be a pattern or specific time series
+    // - if time series are not found, handle using the IfNotFound preference
     CommandStatusType notFoundStatus = CommandStatusType.FAILURE;
     if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
     	notFoundStatus = CommandStatusType.WARNING;
@@ -468,7 +466,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         	}
         }
-        // Also get the array positions...
+        // Also get the array positions.
         tsposArray = (int [])bean_PropList.getContents ( "Indices" );
     }
     
@@ -485,7 +483,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
     if ( warning_count > 0 ) {
-        // Input error (e.g., missing time series)...
+        // Input error (e.g., missing time series).
         message = "Command parameter data has errors.  Unable to run command.";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
@@ -493,13 +491,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
 
-    // Now process the time series.  Remove them in the order of maximum index to minimum
-    // so that the indices don't change in the list to be removed.  Can't count on the TSList results
-    // to be in any specific order so search for the maximum index each time.
+    // Now process the time series.
+    // Remove them in the order of maximum index to minimum so that the indices don't change in the list to be removed.
+    // Can't count on the TSList results to be in any specific order so search for the maximum index each time.
     // Loop through the number of matched time series.
     for ( int its = 0; its < nts; its++ ) {
-        // Loop through the time series position array and find the largest one.  After detecting,
-        // set the array content to -1 to know that it has been processed.
+        // Loop through the time series position array and find the largest one.
+    	// After detecting, set the array content to -1 to know that it has been processed.
         // This is brute force but hopefully pretty fast under normal circumstances.
         int tspos = -1;
         int iposMax = -1;
@@ -513,11 +511,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         if ( tspos == -1 ) {
-            // done processing
+            // Done processing.
             break;
         }
-        // Indicate that a position has been processed (assuming no error below, but need to do this
-        // otherwise an infinite loop).
+        // Indicate that a position has been processed (assuming no error below,
+        // but need to do this otherwise an infinite loop).
         tsposArray[iposMax] = -1;
         try {
             notifyCommandProgressListeners ( its, nts, (float)-1.0, "Freeing time series [" + tspos + "]" );
@@ -526,7 +524,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             warning_count += warning_count2;
             if ( warning_count2 == 0 ) {
                 // Able to remove so increment the count of removed and decrement other
-                // loop variables to process the next time series...
+                // loop variables to process the next time series.
                 ++countRemoved;
             }
         }
@@ -556,56 +554,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = parameters.getValue( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-    String TSPosition = parameters.getValue("TSPosition");
-    String IfNotFound = parameters.getValue ( "IfNotFound" );
-    String FreeEnsembleIfEmpty = parameters.getValue("FreeEnsembleIfEmpty");
-    StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (TSPosition != null) && (TSPosition.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSPosition=\"" + TSPosition + "\"" );
-    }
-    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("IfNotFound=" + IfNotFound );
-    }
-    if ( (FreeEnsembleIfEmpty != null) && (FreeEnsembleIfEmpty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FreeEnsembleIfEmpty=" + FreeEnsembleIfEmpty );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+		"EnsembleID",
+		"TSPosition",
+		"IfNotFound",
+		"FreeEnsembleIfEmpty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

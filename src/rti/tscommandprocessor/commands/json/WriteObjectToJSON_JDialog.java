@@ -455,7 +455,7 @@ private void refresh () {
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "PrettyPrint=" + PrettyPrint );
 	parameters.add ( "Indent=" + Indent );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );

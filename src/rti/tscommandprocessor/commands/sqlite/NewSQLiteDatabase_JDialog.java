@@ -389,7 +389,7 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DatabaseFile=" + DatabaseFile );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (DatabaseFile != null) && !DatabaseFile.isEmpty() ) {

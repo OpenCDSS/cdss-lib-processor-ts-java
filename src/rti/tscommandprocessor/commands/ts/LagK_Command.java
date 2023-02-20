@@ -1458,95 +1458,24 @@ public String toString ( PropList props )
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
 @param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
+allowing command files to be saved for older software, no longer used
+@return the string representation of the command
 */
-public String toString ( PropList props, int majorVersion )
-{   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
-    }
-
-	// Get the properties from the command; 
-	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
-	String ObsTSID = props.getValue("ObsTSID");
-	String DefaultFlow = props.getValue("DefaultFlow");
-	String FillNearest = props.getValue("FillNearest");
-	String K = props.getValue("K");
-	String Lag = props.getValue("Lag");
-	String InflowStates = props.getValue("InflowStates");
-	String OutflowStates = props.getValue("OutflowStates");
-	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (ObsTSID != null) && (ObsTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ObsTSID=\"" + ObsTSID + "\"" );
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    }
-	if ( (FillNearest != null) && (FillNearest.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillNearest=" + FillNearest );
-	}
-	if ( (DefaultFlow != null) && (DefaultFlow.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DefaultFlow=" + DefaultFlow );
-	}
-	if ( (Lag != null) && (Lag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Lag=" + Lag );
-	}
-	if ( (K != null) && (K.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "K=" + K );
-	}
-	if ( (InflowStates != null) && (InflowStates.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InflowStates=\"" + InflowStates + "\"" );
-	}
-	if ( (OutflowStates != null) && (OutflowStates.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutflowStates=\"" + OutflowStates + "\"" );
-	}
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+public String toString ( PropList parameters, int majorVersion ) {
+	String [] parameterOrder = {
+		"TSID",
+		"ObsTSID",
+		"Alias",
+		"FillNearest",
+		"DefaultFlow",
+		"Lag",
+		"K",
+		"InflowStates",
+		"OutflowStates"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

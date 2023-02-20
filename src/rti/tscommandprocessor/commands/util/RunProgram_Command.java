@@ -899,128 +899,62 @@ private void setStdoutFile ( File file ) {
 
 /**
 Return the string representation of this command.
-@return the string representation of this command
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String CommandLine = parameters.getValue("CommandLine");
-	String Program = parameters.getValue("Program");
-	String [] ProgramArg = new String[_ProgramArg_SIZE];
+	String [] parameterOrder1 = {
+		"CommandLine",
+		"Program"
+	};
+	// Determine program parameters that are not empty:
+	// - TODO smalers 2023-02-20 use all because need to overwrite previous parameters
+	/*
+	List<String> programParameters = new ArrayList<>();
+	String parameterName;
+	String parameterValue;
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
-	    ProgramArg[i] = parameters.getValue("ProgramArg" + (i + 1));
-	}
-	String UseCommandShell = parameters.getValue("UseCommandShell");
-	String CommandShell = parameters.getValue("CommandShell");
-	String EnvVars = parameters.getValue("EnvVars");
-	String Timeout = parameters.getValue("Timeout");
-	String IfNonZeroExitCode = parameters.getValue("IfNonZeroExitCode");
-	String ExitStatusIndicator = parameters.getValue("ExitStatusIndicator");
-	String ExitCodeProperty = parameters.getValue("ExitCodeProperty");
-	String StdoutFile = parameters.getValue("StdoutFile");
-	String StdoutProperty = parameters.getValue("StdoutProperty");
-	String StderrFile = parameters.getValue("StderrFile");
-	String OutputCheckTableID = parameters.getValue("OutputCheckTableID");
-	String OutputCheckWarningCountProperty = parameters.getValue("OutputCheckWarningCountProperty");
-	String OutputCheckFailureCountProperty = parameters.getValue("OutputCheckFailureCountProperty");
-	StringBuffer b = new StringBuffer ();
-	if ( (CommandLine != null) && (CommandLine.length() > 0) ) {
-		b.append ( "CommandLine=\"" + CommandLine + "\"" );
-	}
-    if ( (Program != null) && (Program.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Program=\"" + Program + "\"");
-    }
-    for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
-        if ( (ProgramArg[i] != null) && (ProgramArg[i].length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "ProgramArg" + (i + 1) + "=\"" + ProgramArg[i] + "\"");
-        }
-    }
-    if ( (UseCommandShell != null) && (UseCommandShell.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "UseCommandShell=" + UseCommandShell );
-    }
-    if ( (CommandShell != null) && (CommandShell.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CommandShell=\"" + CommandShell + "\"" );
-    }
-    if ( (EnvVars != null) && (EnvVars.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnvVars=\"" + EnvVars + "\"" );
-    }
-	if ( (Timeout != null) && (Timeout.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
+		parameterName = "ProgramArg" + (i + 1);
+		parameterValue = parameters.getValue(parameterName);
+		if ( (parameterValue != null) && !parameterValue.isEmpty() ) {
+			programParameters.add(parameterName);
 		}
-		b.append ( "Timeout=" + Timeout );
 	}
-    if ( (IfNonZeroExitCode != null) && (IfNonZeroExitCode.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfNonZeroExitCode=\"" + IfNonZeroExitCode + "\"");
-    }
-    if ( (ExitStatusIndicator != null) && (ExitStatusIndicator.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExitStatusIndicator=\"" + ExitStatusIndicator + "\"");
-    }
-    if ( (ExitCodeProperty != null) && (ExitCodeProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExitCodeProperty=\"" + ExitCodeProperty + "\"");
-    }
-    if ( (StdoutFile != null) && (StdoutFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StdoutFile=\"" + StdoutFile +"\"" );
-    }
-    if ( (StdoutProperty != null) && (StdoutProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StdoutProperty=\"" + StdoutProperty +"\"" );
-    }
-    if ( (StderrFile != null) && (StderrFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StderrFile=\"" + StderrFile +"\"" );
-    }
-    if ( (OutputCheckTableID != null) && (OutputCheckTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputCheckTableID=\"" + OutputCheckTableID +"\"" );
-    }
-    if ( (OutputCheckWarningCountProperty != null) && (OutputCheckWarningCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputCheckWarningCountProperty=\"" + OutputCheckWarningCountProperty +"\"" );
-    }
-    if ( (OutputCheckFailureCountProperty != null) && (OutputCheckFailureCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputCheckFailureCountProperty=\"" + OutputCheckFailureCountProperty +"\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+	*/
+	String [] parameterOrder2 = {
+		"UseCommandShell",
+		"CommandShell",
+		"EnvVars",
+		"Timeout",
+		"IfNonZeroExitCode",
+		"ExitStatusIndicator",
+		"ExitCodeProperty",
+		"StdoutFile",
+		"StdoutProperty",
+		"StderrFile",
+		"OutputCheckTableID",
+		"OutputCheckWarningCountProperty",
+		"OutputCheckFailureCountProperty"
+	};
+	// Merge the parameters, some of which is dynamic.
+	String [] parameterOrder = new String[parameterOrder1.length + _ProgramArg_SIZE + parameterOrder2.length];
+	int iparam = 0;
+	for ( int i = 0; i < parameterOrder1.length; i++ ) {
+		parameterOrder[iparam++] = parameterOrder1[i];
+	}
+	/*
+	for ( int i = 0; i < programParameters.size(); i++ ) {
+		parameterOrder[iparam++] = programParameters.get(i);
+	}
+	*/
+	// Add all even if null or blank.
+	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
+		parameterOrder[iparam++] = "ProgramArg" + (i + 1);
+	}
+	for ( int i = 0; i < parameterOrder2.length; i++ ) {
+		parameterOrder[iparam++] = parameterOrder2[i];
+	}
+	return this.toString(parameters, parameterOrder);
 }
 
 }

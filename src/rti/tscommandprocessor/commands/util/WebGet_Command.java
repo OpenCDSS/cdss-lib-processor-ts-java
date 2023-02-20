@@ -1028,101 +1028,26 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String URI = parameters.getValue ( "URI" );
-    String EncodeURI = parameters.getValue ( "EncodeURI" );
-    String RequestMethod = parameters.getValue ( "RequestMethod" );
-    String PayloadFile = parameters.getValue ( "PayloadFile" );
-    String HttpHeaders = parameters.getValue ( "HttpHeaders" );
-    String ConnectTimeout = parameters.getValue ( "ConnectTimeout" );
-    String ReadTimeout = parameters.getValue ( "ReadTimeout" );
-    String RetryMax = parameters.getValue ( "RetryMax" );
-    String RetryWait = parameters.getValue ( "RetryWait" );
-    String LocalFile = parameters.getValue ( "LocalFile" );
-    String OutputProperty = parameters.getValue ( "OutputProperty" );
-    String IfHttpError = parameters.getValue ( "IfHttpError" );
-    String ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
-	StringBuffer b = new StringBuffer ();
-	if ( (URI != null) && (URI.length() > 0) ) {
-		b.append ( "URI=\"" + URI + "\"" );
-	}
-	if ( (EncodeURI != null) && (EncodeURI.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EncodeURI=" + EncodeURI );
-	}
-	if ( (RequestMethod != null) && (RequestMethod.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RequestMethod=" + RequestMethod );
-	}
-	if ( (PayloadFile != null) && (PayloadFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "PayloadFile=\"" + PayloadFile + "\"" );
-	}
-	if ( (HttpHeaders != null) && (HttpHeaders.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "HttpHeaders=\"" + HttpHeaders + "\"" );
-	}
-	if ( (ConnectTimeout != null) && (ConnectTimeout.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ConnectTimeout=" + ConnectTimeout );
-	}
-	if ( (ReadTimeout != null) && (ReadTimeout.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ReadTimeout=" + ReadTimeout );
-	}
-	if ( (RetryMax != null) && (RetryMax.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RetryMax=" + RetryMax );
-	}
-	if ( (RetryWait != null) && (RetryWait.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "RetryWait=" + RetryWait );
-	}
-	if ( (LocalFile != null) && (LocalFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "LocalFile=\"" + LocalFile + "\"" );
-	}
-	if ( (OutputProperty != null) && (OutputProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
-	}
-	if ( (IfHttpError != null) && (IfHttpError.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfHttpError=\"" + IfHttpError + "\"" );
-	}
-	if ( (ResponseCodeProperty != null) && (ResponseCodeProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ResponseCodeProperty=\"" + ResponseCodeProperty + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"URI",
+    	"EncodeURI",
+    	"RequestMethod",
+    	"PayloadFile",
+    	"HttpHeaders",
+    	"ConnectTimeout",
+    	"ReadTimeout",
+    	"RetryMax",
+    	"RetryWait",
+    	"LocalFile",
+    	"OutputProperty",
+    	"IfHttpError",
+    	"ResponseCodeProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

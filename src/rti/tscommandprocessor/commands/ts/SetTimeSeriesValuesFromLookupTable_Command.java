@@ -772,138 +772,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
-@param props parameters for the command
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-	String InputTSID = props.getValue( "InputTSID" );
-	String OutputTSID = props.getValue( "OutputTSID" );
-    String TableID = props.getValue( "TableID" );
-    String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-    String SortInput = props.getValue ( "SortInput" );
-    String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
-    String TableValue1Column = props.getValue ( "TableValue1Column" );
-    String TableValue2Column = props.getValue ( "TableValue2Column" );
-    String EffectiveDateColumn = props.getValue ( "EffectiveDateColumn" );
-    String LookupMethod = props.getValue ( "LookupMethod" );
-    String OutOfRangeLookupMethod = props.getValue ( "OutOfRangeLookupMethod" );
-    String OutOfRangeNotification = props.getValue ( "OutOfRangeNotification" );
-    String Transformation = props.getValue("Transformation");
-    String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-    String SetStart = props.getValue( "SetStart" );
-    String SetEnd = props.getValue( "SetEnd" );
-    String SetWindowStart = props.getValue( "SetWindowStart" );
-    String SetWindowEnd = props.getValue( "SetWindowEnd" );
-	StringBuffer b = new StringBuffer ();
-	if ( (InputTSID != null) && (InputTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputTSID=\"" + InputTSID + "\"" );
-	}
-	if ( (OutputTSID != null) && (OutputTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputTSID=\"" + OutputTSID + "\"" );
-	}
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
-    }
-    if ( (TableValue1Column != null) && (TableValue1Column.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValue1Column=\"" + TableValue1Column + "\"" );
-    }
-    if ( (SortInput != null) && (SortInput.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SortInput=" + SortInput );
-    }
-    if ( (TableValue2Column != null) && (TableValue2Column.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableValue2Column=\"" + TableValue2Column + "\"" );
-    }
-    if ( (EffectiveDateColumn != null) && (EffectiveDateColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EffectiveDateColumn=\"" + EffectiveDateColumn + "\"" );
-    }
-    if ( (LookupMethod != null) && (LookupMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LookupMethod=" + LookupMethod );
-    }
-    if ( (OutOfRangeLookupMethod != null) && (OutOfRangeLookupMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutOfRangeLookupMethod=" + OutOfRangeLookupMethod );
-    }
-    if ( (OutOfRangeNotification != null) && (OutOfRangeNotification.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutOfRangeNotification=" + OutOfRangeNotification );
-    }
-    if ( (Transformation != null) && (Transformation.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Transformation=" + Transformation );
-    }
-    if ( LEZeroLogValue != null && LEZeroLogValue.length() > 0 ) {
-        if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "LEZeroLogValue=" + LEZeroLogValue);
-    }
-    if ( (SetStart != null) && (SetStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetStart=\"" + SetStart + "\"" );
-    }
-    if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetEnd=\"" + SetEnd + "\"" );
-    }
-    if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetWindowStart=\"" + SetWindowStart + "\"" );
-    }
-    if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SetWindowEnd=\"" + SetWindowEnd + "\"" );
-    }
-    return getCommandName() + "("+ b.toString()+")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputTSID",
+		"OutputTSID",
+    	"TableID",
+    	"TableTSIDColumn",
+    	"TableTSIDFormat",
+    	"TableValue1Column",
+    	"SortInput",
+    	"TableValue2Column",
+    	"EffectiveDateColumn",
+    	"LookupMethod",
+    	"OutOfRangeLookupMethod",
+    	"OutOfRangeNotification",
+    	"Transformation",
+    	"LEZeroLogValue",
+    	"SetStart",
+    	"SetEnd",
+    	"SetWindowStart",
+    	"SetWindowEnd"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

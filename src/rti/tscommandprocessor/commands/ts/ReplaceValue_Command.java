@@ -690,111 +690,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String MinValue = props.getValue( "MinValue" );
-    String MaxValue = props.getValue( "MaxValue" );
-    String MatchFlag = props.getValue( "MatchFlag" );
-    String NewValue = props.getValue( "NewValue" );
-    String Action = props.getValue( "Action" );
-	String SetStart = props.getValue("SetStart");
-	String SetEnd = props.getValue("SetEnd");
-    String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
-    String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
-	String SetFlag = props.getValue("SetFlag");
-	String SetFlagDesc = props.getValue("SetFlagDesc");
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-	if ( (MinValue != null) && (MinValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MinValue=" + MinValue );
-	}
-    if ( (MaxValue != null) && (MaxValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MaxValue=" + MaxValue );
-    }
-    if ( (MatchFlag != null) && (MatchFlag.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MatchFlag=\"" + MatchFlag + "\"" );
-    }
-    if ( (NewValue != null) && (NewValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewValue=" + NewValue );
-    }
-    if ( Action != null && Action.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Action=" + Action );
-    }
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
-	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
-	}
-    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
-    }
-    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
-    }
-	if ( (SetFlag != null) && (SetFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetFlag=\"" + SetFlag + "\"" );
-	}
-	if ( (SetFlagDesc != null) && (SetFlagDesc.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetFlagDesc=\"" + SetFlagDesc + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"MinValue",
+    	"MaxValue",
+    	"MatchFlag",
+    	"NewValue",
+    	"Action",
+		"SetStart",
+		"SetEnd",
+    	"AnalysisWindowStart",
+    	"AnalysisWindowEnd",
+		"SetFlag",
+		"SetFlagDesc"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

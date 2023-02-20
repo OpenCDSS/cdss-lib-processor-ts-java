@@ -525,38 +525,17 @@ private void setProcess ( Process process )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String DssFile = parameters.getValue("DssFile");
-	String InputFile = parameters.getValue("InputFile");
-	String OutputFile = parameters.getValue("OutputFile");
-	String DssutlProgram = parameters.getValue("DssutlProgram");
-	StringBuffer b = new StringBuffer ();
-	if ( (DssFile != null) && (DssFile.length() > 0) ) {
-		b.append ( "DssFile=\"" + DssFile + "\"" );
-	}
-    if ( (InputFile != null) && (InputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputFile=\"" + InputFile + "\"");
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"");
-    }
-    if ( (DssutlProgram != null) && (DssutlProgram.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DssutlProgram=\"" + DssutlProgram + "\"");
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DssFile",
+		"InputFile",
+		"OutputFile",
+		"DssutlProgram"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

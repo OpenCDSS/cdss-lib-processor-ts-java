@@ -156,14 +156,27 @@ public <T> List<T> getObjectList ( Class<T> c ) {
 /**
 Parse the command string into a PropList of parameters.
 This method currently supports old syntax and new parameter-based syntax.
-@param command A string command to parse.
+@param commandString A string TSID command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
-public void parseCommand ( String command )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+
+	// Determine if the command has spaces for indentation.
+	this.indentSpaceCount = 0;
+	for ( int i = 0; i < commandString.length(); i++ ) {
+		if ( commandString.charAt(i) == ' ' ) {
+			++this.indentSpaceCount;
+		}
+		else {
+			// Done processing initial spaces.
+			break;
+		}
+	}
+
 	// The entire command string is the time series identifier.
-	String TSID = command;
+	String TSID = commandString.trim();
 	PropList parameters = getCommandParameters();
 	// Since the a command name is not used in output, an internal parameter matching the TSID is tracked and used by toString().
 	parameters.set ( "TSID", TSID );
@@ -424,13 +437,16 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
+public String toString ( PropList parameters ) {
+	if ( parameters == null ) {
 		return "";
 	}
-	String TSID = props.getValue( "TSID" );
-	return TSID;
+	String TSID = parameters.getValue( "TSID" );
+	// Command string is the TSID, possibly indented.
+	return getIndentSpaces() + TSID;
 }
 
 }

@@ -210,24 +210,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__PropertyName_JComboBox = null;
-	__Append_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__browse_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -436,7 +418,7 @@ private void refresh ()
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "PropertyName=" + PropertyName );
 	parameters.add ( "Append=" + Append );
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
 			__path_JButton.setEnabled ( false );

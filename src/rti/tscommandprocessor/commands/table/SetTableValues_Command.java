@@ -288,48 +288,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String ColumnFilters = props.getValue( "ColumnFilters" );
-	String ColumnValues = props.getValue( "ColumnValues" );
-	String Column = props.getValue( "Column" );
-	String Value = props.getValue( "Value" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
-    }
-    if ( (ColumnValues != null) && (ColumnValues.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnValues=\"" + ColumnValues + "\"" );
-    }
-    if ( (Column != null) && (Column.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Column=\"" + Column + "\"" );
-    }
-    if ( (Value != null) && (Value.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Value=\"" + Value + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+		"ColumnFilters",
+		"ColumnValues",
+		"Column",
+		"Value"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

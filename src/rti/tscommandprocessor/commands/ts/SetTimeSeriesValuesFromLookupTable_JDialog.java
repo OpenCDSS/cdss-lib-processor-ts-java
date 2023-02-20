@@ -1044,7 +1044,7 @@ private void refresh ()
         props.add ( "SetWindowStart=" + SetWindowStart );
         props.add ( "SetWindowEnd=" + SetWindowEnd );
     }
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

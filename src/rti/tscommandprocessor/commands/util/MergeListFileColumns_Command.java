@@ -555,55 +555,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String ListFile = props.getValue( "ListFile" );
-	String OutputFile = props.getValue("OutputFile");
-	String Columns = props.getValue("Columns");
-	String NewColumnName = props.getValue("NewColumnName");
-	String SimpleMergeFormat = props.getValue("SimpleMergeFormat");
-	StringBuffer b = new StringBuffer ();
-	if ( (ListFile != null) && (ListFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ListFile=\"" + ListFile + "\"" );
-	}
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-	if ( (Columns != null) && (Columns.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Columns=\"" + Columns + "\"" );
-	}
-	if ( (NewColumnName != null) && (NewColumnName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewColumnName=\"" + NewColumnName + "\"" );
-	}
-	if ( (SimpleMergeFormat != null) && (SimpleMergeFormat.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SimpleMergeFormat=\"" + SimpleMergeFormat + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"ListFile",
+		"OutputFile",
+		"Columns",
+		"NewColumnName",
+		"SimpleMergeFormat"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

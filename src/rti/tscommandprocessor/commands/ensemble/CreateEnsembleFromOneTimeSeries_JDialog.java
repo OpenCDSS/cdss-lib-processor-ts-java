@@ -674,7 +674,7 @@ private void refresh ()
     parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "ShiftDataHow=" + ShiftDataHow );
     parameters.add ( "TransferDataHow=" + TransferDataHow );
-    __command_JTextArea.setText( __command.toString ( parameters ) );
+    __command_JTextArea.setText( __command.toString ( parameters ).trim() );
 }
 
 /**

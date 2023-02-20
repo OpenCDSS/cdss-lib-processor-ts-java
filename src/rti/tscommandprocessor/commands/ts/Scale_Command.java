@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -67,8 +67,8 @@ protected final String _DaysInMonthInverse = "DaysInMonthInverse";
 /**
 Constructor.
 */
-public Scale_Command ()
-{	super();
+public Scale_Command () {
+	super();
 	setCommandName ( "Scale" );
 }
 
@@ -80,25 +80,25 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	//String TSID = parameters.getValue ( "TSID" );
+throws InvalidCommandParameterException {
+	//String TSID = parameters.getValue ( "TSID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
     if ( ScaleValue == null ) {
-        ScaleValue = ""; // To simplify checks below
+        ScaleValue = ""; // To simplify checks below.
     }
     String MonthValues = parameters.getValue ( "MonthValues" );
     if ( MonthValues == null ) {
-        MonthValues = ""; // To simplify checks below
+        MonthValues = ""; // To simplify checks below.
     }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    /* TODO SAM 2008-01-03 Evaluate whether need to check combinations
+    /* TODO SAM 2008-01-03 Evaluate whether need to check combinations.
 	if ( (TSID == null) || TSID.equals("") ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
@@ -175,9 +175,9 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
-    
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -187,12 +187,12 @@ throws InvalidCommandParameterException
     validList.add ( "AnalysisEnd" );
     validList.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level, MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -201,31 +201,30 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new Scale_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String TSID = parameters.getValue ( "TSID");
-        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
-                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-            // Assume old-style where TSList was not specified but TSID was...
+        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified.
+            ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified.
+            // Assume old-style where TSList was not specified but TSID was.
             if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
                 parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
             }
@@ -245,28 +244,28 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String AnalysisStart = "";
 		String AnalysisEnd = "";
 		if ( (v != null) && (v.size() >= 3) ) {
-			// Second field is identifier...
+			// Second field is identifier.
 			TSID = v.get(1).trim();
-			// Third field has scale...
+			// Third field has scale.
 			ScaleValue = v.get(2).trim();
-			// Fourth and fifth fields optionally have analysis period...
+			// Fourth and fifth fields optionally have analysis period.
 			if ( v.size() >= 4 ) {
 				AnalysisStart = v.get(3).trim();
 				if ( AnalysisStart.equals("*") ) {
-					// Change to new default...
+					// Change to new default.
 					AnalysisStart = "";
 				}
 			}
 			if ( v.size() >= 5 ) {
 				AnalysisEnd = v.get(4).trim();
 				if ( AnalysisEnd.equals("*") ) {
-					// Change to new default...
+					// Change to new default.
 					AnalysisEnd = "";
 				}
 			}
 		}
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -301,19 +300,19 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3;  // Level for non-use messages for log file.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -321,12 +320,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
 	PropList parameters = getCommandParameters();
 
 	String TSList = parameters.getValue ( "TSList" );
@@ -369,7 +368,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
-	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below.
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String NewUnits = parameters.getValue ( "NewUnits" );
 	if ( (NewUnits != null) && (NewUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
@@ -380,13 +379,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Default of null means to analyze the full period.
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
-	
+
 	try {
 		AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
 	try {
@@ -394,11 +393,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
 
-	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -451,7 +450,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
-	
+
 	int nts = tslist.size();
 	if ( nts == 0 ) {
 		message = "Unable to find time series to scale using TSList=\"" + TSList + "\" TSID=\"" + TSID +
@@ -466,7 +465,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Command parameter data has errors.  Unable to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -474,7 +473,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandException ( message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
 	TS ts = null;
 	Object o_ts = null;
@@ -494,23 +493,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			continue;
 		}
 		ts = (TS)o_ts;
-		
+
 		try {
-		    // Do the scaling...
+		    // Do the scaling.
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Scaling " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Scaling \"" + ts.getIdentifier()+ "\" by " + ScaleValue );
 			if ( MonthValues_double == null ) {
-			    // Scaling by a single value
+			    // Scaling by a single value.
 			    TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, -1, ScaleValue );
 			}
 			else {
-			    // Scaling by monthly values
+			    // Scaling by monthly values.
 			    for ( int i = 1; i <= 12; i++ ) {
 			        TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, i, MonthValues_double[i - 1] );
 			    }
 			}
-			// If requested, change the data units...
+			// If requested, change the data units.
 			if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
 				ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
 				ts.setDataUnits ( NewUnits );
@@ -542,69 +541,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = props.getValue( "TSList" );
-	String TSID = props.getValue( "TSID" );
-    String EnsembleID = props.getValue( "EnsembleID" );
-	String ScaleValue = props.getValue("ScaleValue");
-	String MonthValues = props.getValue( "MonthValues" );
-	String AnalysisStart = props.getValue("AnalysisStart");
-	String AnalysisEnd = props.getValue("AnalysisEnd");
-	String NewUnits = props.getValue("NewUnits");
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-	}
-	if ( (ScaleValue != null) && (ScaleValue.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "ScaleValue=" + ScaleValue );
-	}
-    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MonthValues=\"" + MonthValues + "\"");
-    }
-	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-	}
-	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-	}
-	if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewUnits=\"" + NewUnits + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"TSList",
+		"TSID",
+    	"EnsembleID",
+		"ScaleValue",
+		"MonthValues",
+		"AnalysisStart",
+		"AnalysisEnd",
+		"NewUnits"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

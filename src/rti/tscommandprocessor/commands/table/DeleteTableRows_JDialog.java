@@ -422,7 +422,7 @@ private void refresh ()
     props.set ( "Condition", Condition );
     props.add ( "DeleteRowNumbers=" + DeleteRowNumbers );
     //props.add ( "DeleteCountProperty=" + DeleteCountProperty );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
 /**

@@ -686,97 +686,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-	String DeleteOriginalRow = props.getValue( "DeleteOriginalRow" );
-    String TupleColumns = props.getValue( "TupleColumns" );
-    String TupleDateTimes = props.getValue( "TupleDateTimes" );
-    String NewTupleColumns = props.getValue( "NewTupleColumns" );
-    String NewTupleDateTimeColumn = props.getValue( "NewTupleDateTimeColumn" );
-    String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
-    String MeasureStartColumn = props.getValue( "MeasureStartColumn" );
-    String MeasureEndColumn = props.getValue( "MeasureEndColumn" );
-	String MeasureIncrement = props.getValue( "MeasureIncrement" );
-	String MinimumStartSegmentLength = props.getValue( "MinimumStartSegmentLength" );
-	String MinimumEndSegmentLength = props.getValue( "MinimumEndSegmentLength" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (TupleColumns != null) && (TupleColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TupleColumns=\"" + TupleColumns + "\"" );
-    }
-    if ( (TupleDateTimes != null) && (TupleDateTimes.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TupleDateTimes=\"" + TupleDateTimes + "\"" );
-    }
-    if ( (NewTupleColumns != null) && (NewTupleColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTupleColumns=\"" + NewTupleColumns + "\"" );
-    }
-    if ( (NewTupleDateTimeColumn != null) && (NewTupleDateTimeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NewTupleDateTimeColumn=\"" + NewTupleDateTimeColumn + "\"" );
-    }
-    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
-    }
-    if ( (MeasureStartColumn != null) && (MeasureStartColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MeasureStartColumn=\"" + MeasureStartColumn + "\"" );
-    }
-    if ( (MeasureEndColumn != null) && (MeasureEndColumn.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MeasureEndColumn=\"" + MeasureEndColumn + "\"" );
-    }
-	if ( (MeasureIncrement != null) && (MeasureIncrement.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "MeasureIncrement=" + MeasureIncrement );
-	}
-    if ( (MinimumStartSegmentLength != null) && (MinimumStartSegmentLength.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumStartSegmentLength=\"" + MinimumStartSegmentLength + "\"" );
-    }
-    if ( (MinimumEndSegmentLength != null) && (MinimumEndSegmentLength.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MinimumEndSegmentLength=\"" + MinimumEndSegmentLength + "\"" );
-    }
-    if ( (DeleteOriginalRow != null) && (DeleteOriginalRow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DeleteOriginalRow=\"" + DeleteOriginalRow + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"TupleColumns",
+    	"TupleDateTimes",
+    	"NewTupleColumns",
+    	"NewTupleDateTimeColumn",
+    	"InsertBeforeColumn",
+    	"MeasureStartColumn",
+    	"MeasureEndColumn",
+		"MeasureIncrement",
+		"MinimumStartSegmentLength",
+		"MinimumEndSegmentLength",
+		"DeleteOriginalRow"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

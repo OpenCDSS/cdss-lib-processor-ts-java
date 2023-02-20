@@ -319,43 +319,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String TableID = props.getValue( "TableID" );
-    String Condition = props.getValue( "Condition" );
-    String DeleteRowNumbers = props.getValue( "DeleteRowNumbers" );
-    //String DeleteCountProperty = props.getValue( "DeleteCountProperty" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (Condition != null) && (Condition.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Condition=\"" + Condition + "\"" );
-    }
-    if ( (DeleteRowNumbers != null) && (DeleteRowNumbers.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DeleteRowNumbers=\"" + DeleteRowNumbers + "\"" );
-    }
-    /*
-    if ( (DeleteCountProperty != null) && (DeleteCountProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DeleteCountProperty=" + DeleteCountProperty );
-    }
-    */
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TableID",
+    	"Condition",
+    	"DeleteRowNumbers"
+    	//"DeleteCountProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

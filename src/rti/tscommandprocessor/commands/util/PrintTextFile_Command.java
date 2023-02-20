@@ -484,143 +484,32 @@ private void setRequestedPages ( int[][] requestedPages )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-    String PrinterName = parameters.getValue ( "PrinterName" );
-    String PaperSize = parameters.getValue ( "PaperSize" );
-    String PaperSource = parameters.getValue ( "PaperSource" );
-    String Orientation = parameters.getValue ( "Orientation" );
-    String MarginLeft = parameters.getValue ( "MarginLeft" );
-    String MarginRight = parameters.getValue ( "MarginRight" );
-    String MarginTop = parameters.getValue ( "MarginTop" );
-    String MarginBottom = parameters.getValue ( "MarginBottom" );
-    String LinesPerPage = parameters.getValue ( "LinesPerPage" );
-    String Header = parameters.getValue ( "Header" );
-    String Footer = parameters.getValue ( "Footer" );
-    String ShowLineCount = parameters.getValue ( "ShowLineCount" );
-    String ShowPageCount = parameters.getValue ( "ShowPageCount" );
-    String Pages = parameters.getValue ( "Pages" );
-    String DoubleSided = parameters.getValue ( "DoubleSided" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String ShowDialog = parameters.getValue ( "ShowDialog" );
-	String IfNotFound = parameters.getValue("IfNotFound");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (PrinterName != null) && (PrinterName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PrinterName=\"" + PrinterName + "\"" );
-    }
-    if ( (PaperSize != null) && (PaperSize.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PaperSize=\"" + PaperSize + "\"");
-    }
-    if ( (PaperSource != null) && (PaperSource.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PaperSource=\"" + PaperSource + "\"");
-    }
-    if ( (Orientation != null) && (Orientation.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Orientation=" + Orientation );
-    }
-    if ( (MarginLeft != null) && (MarginLeft.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MarginLeft=" + MarginLeft );
-    }
-    if ( (MarginRight != null) && (MarginRight.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MarginRight=" + MarginRight );
-    }
-    if ( (MarginTop != null) && (MarginTop.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MarginTop=" + MarginTop );
-    }
-    if ( (MarginBottom != null) && (MarginBottom.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MarginBottom=" + MarginBottom );
-    }
-    if ( (LinesPerPage != null) && (LinesPerPage.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "LinesPerPage=" + LinesPerPage );
-    }
-    if ( (Header != null) && (Header.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Header=\"" + Header + "\"" );
-    }
-    if ( (Footer != null) && (Footer.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Footer=\"" + Footer + "\"" );
-    }
-    if ( (ShowLineCount != null) && (ShowLineCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShowLineCount=" + ShowLineCount );
-    }
-    if ( (ShowPageCount != null) && (ShowPageCount.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShowPageCount=" + ShowPageCount );
-    }
-    if ( (Pages != null) && (Pages.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Pages=\"" + Pages + "\"");
-    }
-    if ( (DoubleSided != null) && (DoubleSided.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DoubleSided=" + DoubleSided );
-    }
-    if ( (ShowDialog != null) && (ShowDialog.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ShowDialog=" + ShowDialog );
-    }
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
-    }
-	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfNotFound=" + IfNotFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+    	"PrinterName",
+    	"PaperSize",
+    	"PaperSource",
+    	"Orientation",
+    	"MarginLeft",
+    	"MarginRight",
+    	"MarginTop",
+    	"MarginBottom",
+    	"LinesPerPage",
+    	"Header",
+    	"Footer",
+    	"ShowLineCount",
+    	"ShowPageCount",
+    	"Pages",
+    	"DoubleSided",
+    	"ShowDialog",
+    	"OutputFile",
+		"IfNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

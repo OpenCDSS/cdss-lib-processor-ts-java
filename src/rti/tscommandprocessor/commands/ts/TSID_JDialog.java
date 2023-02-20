@@ -360,7 +360,7 @@ private void refresh () {
     props = new PropList ( __command.getCommandName() );
     // Don't use props.add() because quoted substrings will be discarded by default.
     props.set ( "TSID", TSID );
-    __command_JTextArea.setText( __command.toString ( props ) );
+    __command_JTextArea.setText( __command.toString ( props ).trim() );
     // Refresh the Path Control text.
     refreshPathControl();
 }

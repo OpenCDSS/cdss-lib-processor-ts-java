@@ -570,35 +570,16 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue ( "InputFile" );
-	String FileFormat = parameters.getValue ( "FileFormat" );
-	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
-	StringBuilder b = new StringBuilder ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (FileFormat != null) && (FileFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FileFormat=" + FileFormat );
-    }
-	if ( (IncludeProperty != null) && (IncludeProperty.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IncludeProperty=\"" + IncludeProperty + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+		"FileFormat",
+		"IncludeProperty"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

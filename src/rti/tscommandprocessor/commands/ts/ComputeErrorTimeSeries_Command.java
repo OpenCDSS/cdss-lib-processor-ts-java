@@ -799,86 +799,23 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-    String ObservedTSList = props.getValue( "ObservedTSList" );
-    String ObservedTSID = props.getValue( "ObservedTSID" );
-    String ObservedEnsembleID = props.getValue( "ObservedEnsembleID" );
-    String SimulatedTSList = props.getValue( "SimulatedTSList" );
-    String SimulatedTSID = props.getValue( "SimulatedTSID" );
-    String SimulatedEnsembleID = props.getValue( "SimulatedEnsembleID" );
-	//String SetStart = props.getValue("SetStart");
-	//String SetEnd = props.getValue("SetEnd");
-    String ErrorMeasure = props.getValue( "ErrorMeasure" );
-    String Alias = props.getValue( "Alias" );
-	StringBuffer b = new StringBuffer ();
-    if ( (ObservedTSList != null) && (ObservedTSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObservedTSList=" + ObservedTSList );
-    }
-    if ( (ObservedTSID != null) && (ObservedTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObservedTSID=\"" + ObservedTSID + "\"" );
-    }
-    if ( (ObservedEnsembleID != null) && (ObservedEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObservedEnsembleID=\"" + ObservedEnsembleID + "\"" );
-    }
-    if ( (SimulatedTSList != null) && (SimulatedTSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SimulatedTSList=" + SimulatedTSList );
-    }
-    if ( (SimulatedTSID != null) && (SimulatedTSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SimulatedTSID=\"" + SimulatedTSID + "\"" );
-    }
-    if ( (SimulatedEnsembleID != null) && (SimulatedEnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SimulatedEnsembleID=\"" + SimulatedEnsembleID + "\"" );
-    }
-    /*
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
-	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
-	}
-	*/
-    if ( (ErrorMeasure != null) && (ErrorMeasure.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ErrorMeasure=" + ErrorMeasure );
-    }
-    if ( (Alias != null) && (Alias.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Alias=\"" + Alias + "\"" );
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"ObservedTSList",
+    	"ObservedTSID",
+    	"ObservedEnsembleID",
+    	"SimulatedTSList",
+    	"SimulatedTSID",
+    	"SimulatedEnsembleID",
+		//"SetStart",
+		//"SetEnd"),
+    	"ErrorMeasure",
+    	"Alias"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

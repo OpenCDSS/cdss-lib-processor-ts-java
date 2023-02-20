@@ -188,6 +188,16 @@ throws CommandWarningException, CommandException
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
-// OK to use parent toString()
+/**
+Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
+*/
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"StartLogEnabled"
+	};
+	return this.toString(parameters, parameterOrder);
+}
 
 }

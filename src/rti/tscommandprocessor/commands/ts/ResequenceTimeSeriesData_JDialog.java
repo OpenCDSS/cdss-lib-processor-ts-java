@@ -279,19 +279,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Put together a list of row/column numbers (a list of numbers) for use in choices.
 */
 private List<String> getRowNumberList ()
@@ -733,7 +720,7 @@ private void refresh ()
     parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "NewScenario=" + NewScenario );
     parameters.add("Alias=" + Alias);
-	__command_JTextArea.setText( __command.toString ( parameters ) );
+	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 }
 
 /**

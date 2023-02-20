@@ -363,34 +363,16 @@ private void setDiscoveryDataStore ( DataStore dataStore ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String DataStore = props.getValue( "DataStore" );
-	String DatabaseFile = props.getValue( "DatabaseFile" );
-	String Version = props.getValue( "Version" );
-	StringBuffer b = new StringBuffer ();
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (DatabaseFile != null) && (DatabaseFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DatabaseFile=\"" + DatabaseFile + "\"" );
-    }
-    if ( (Version != null) && (Version.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Version=\"" + Version + "\"" );
-    }
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"DataStore",
+		"DatabaseFile",
+		"Version"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

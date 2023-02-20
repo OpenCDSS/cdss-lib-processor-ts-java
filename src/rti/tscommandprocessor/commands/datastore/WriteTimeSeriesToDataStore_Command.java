@@ -534,120 +534,28 @@ private void setPreparedStatement ( String key, PreparedStatement ps )
 
 /**
 Return the string representation of the command.
-@param parameters Command parameters as strings.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String DataStore = parameters.getValue ( "DataStore" );
-	String DataStoreLocationType = parameters.getValue( "DataStoreLocationType" );
-	String DataStoreLocationID = parameters.getValue( "DataStoreLocationID" );
-    String DataStoreDataSource = parameters.getValue( "DataStoreDataSource" );
-    String DataStoreDataType = parameters.getValue( "DataStoreDataType" );
-    String DataStoreInterval = parameters.getValue( "DataStoreInterval" );
-    String DataStoreScenario= parameters.getValue( "DataStoreScenario" );
-    String DataStoreUnits = parameters.getValue( "DataStoreUnits" );
-	String DataStoreMissingValue = parameters.getValue("DataStoreMissingValue");
-	String WriteMode = parameters.getValue( "WriteMode" );
-	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputStart=\"" + OutputStart + "\"" );
-    }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (DataStore != null) && (DataStore.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStore=\"" + DataStore + "\"" );
-    }
-    if ( (DataStoreLocationType != null) && (DataStoreLocationType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreLocationType=\"" + DataStoreLocationType + "\"" );
-    }
-    if ( (DataStoreLocationID != null) && (DataStoreLocationID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreLocationID=\"" + DataStoreLocationID + "\"");
-    }
-    if ( (DataStoreDataSource != null) && (DataStoreDataSource.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreDataSource=\"" + DataStoreDataSource + "\"");
-    }
-    if ( (DataStoreDataType != null) && (DataStoreDataType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreDataType=\"" + DataStoreDataType + "\"");
-    }
-    if ( (DataStoreInterval != null) && (DataStoreInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreInterval=\"" + DataStoreInterval + "\"" );
-    }
-    if ( (DataStoreScenario != null) && (DataStoreScenario.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreScenario=\"" + DataStoreScenario + "\"");
-    }
-    if ( (DataStoreUnits != null) && (DataStoreUnits.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreUnits=\"" + DataStoreUnits + "\"" );
-    }
-    if ( (DataStoreMissingValue != null) && (DataStoreMissingValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataStoreMissingValue=" + DataStoreMissingValue );
-    }
-    if ( (WriteMode != null) && (WriteMode.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteMode=" + WriteMode );
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+    	"TSList",
+    	"TSID",
+    	"EnsembleID",
+		"OutputStart",
+		"OutputEnd",
+		"DataStore",
+		"DataStoreLocationType",
+		"DataStoreLocationID",
+    	"DataStoreDataSource",
+    	"DataStoreDataType",
+    	"DataStoreInterval",
+    	"DataStoreScenario",
+    	"DataStoreUnits",
+		"DataStoreMissingValue",
+		"WriteMode"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 /**

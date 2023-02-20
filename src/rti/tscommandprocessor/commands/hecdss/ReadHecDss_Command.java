@@ -707,112 +707,26 @@ private void setDiscoveryTSList ( List<TS> discovery_TS_List ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
-public String toString ( PropList props ) {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-
-	String InputFile = props.getValue("InputFile" );
-    String A = props.getValue("A");
-    String B = props.getValue("B");
-    String C = props.getValue("C");
-    String E = props.getValue("E");
-    String F = props.getValue("F");
-    String Pathname = props.getValue("Pathname");
-	String NewUnits = props.getValue("NewUnits");
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-	String Location = props.getValue("Location");
-	String Alias = props.getValue("Alias");
-	String CloseAfterReading = props.getValue("CloseAfterReading");
-
-	StringBuffer b = new StringBuffer ();
-
-	if ((InputFile != null) && (InputFile.length() > 0)) {
-		b.append("InputFile=\"" + InputFile + "\"");
-	}
-
-    if ((A != null) && (A.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("A=\"" + A + "\"");
-    }
-    if ((B != null) && (B.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("B=\"" + B + "\"");
-    }
-    if ((C != null) && (C.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("C=\"" + C + "\"");
-    }
-    if ((E != null) && (E.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("E=\"" + E + "\"");
-    }
-    if ((F != null) && (F.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("F=\"" + F + "\"");
-    }
-    if ((Pathname != null) && (Pathname.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Pathname=\"" + Pathname + "\"");
-    }
-
-	if ((NewUnits != null) && (NewUnits.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("NewUnits=\"" + NewUnits + "\"");
-	}
-
-	if ((InputStart != null) && (InputStart.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputStart=\"" + InputStart + "\"");
-	}
-
-	if ((InputEnd != null) && (InputEnd.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-	
-    if ((Location != null) && (Location.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Location=\"" + Location + "\"");
-    }
-
-    if ((Alias != null) && (Alias.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("Alias=\"" + Alias + "\"");
-    }
-
-    if ((CloseAfterReading != null) && (CloseAfterReading.length() > 0)) {
-        if (b.length() > 0) {
-            b.append(",");
-        }
-        b.append("CloseAfterReading=\"" + CloseAfterReading + "\"");
-    }
-
-	return getCommandName() + "(" + b.toString() + ")";
+public String toString ( PropList parameters ) {
+	String [] parameterOrder = {
+		"InputFile",
+    	"A",
+    	"B",
+    	"C",
+    	"E",
+    	"F",
+    	"Pathname",
+		"NewUnits",
+		"InputStart",
+		"InputEnd",
+		"Location",
+		"Alias",
+		"CloseAfterReading"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

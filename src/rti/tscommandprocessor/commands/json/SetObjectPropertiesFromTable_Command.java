@@ -704,53 +704,18 @@ private void setObjectProperty ( Map<?,?> map,
 
 /**
 Return the string representation of the command.
-@param parameters parameters for the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    if ( parameters == null ) {
-        return getCommandName() + "()";
-    }
-
-    String ObjectID = parameters.getValue( "ObjectID" );
-    String TableID = parameters.getValue( "TableID" );
-    String IncludeColumns = parameters.getValue ( "IncludeColumns" );
-    String MatchMap = parameters.getValue ( "MatchMap" );
-    String PropertyMap = parameters.getValue ( "PropertyMap" );
-
-    StringBuffer b = new StringBuffer ();
-
-    if ( (ObjectID != null) && (ObjectID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ObjectID=\"" + ObjectID + "\"" );
-    }
-    if ( (TableID != null) && (TableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableID=\"" + TableID + "\"" );
-    }
-    if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
-    }
-    if ( (MatchMap != null) && (MatchMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MatchMap=\"" + MatchMap + "\"" );
-    }
-    if ( (PropertyMap != null) && (PropertyMap.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyMap=\"" + PropertyMap + "\"" );
-    }
-
-    return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+    	"ObjectID",
+    	"TableID",
+    	"IncludeColumns",
+    	"MatchMap",
+    	"PropertyMap"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

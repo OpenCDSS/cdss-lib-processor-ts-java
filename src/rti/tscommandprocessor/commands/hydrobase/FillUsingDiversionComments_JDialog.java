@@ -626,7 +626,7 @@ private void refresh()
 	props.add ( "FillUsingCIU=" + FillUsingCIU );
 	props.add ( "FillUsingCIUFlag=" + FillUsingCIUFlag );
 	props.add ( "FillUsingCIUFlagDescription=" + FillUsingCIUFlagDescription );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	__command_JTextArea.setText( __command.toString ( props ).trim() );
 	
 	}
 	catch ( Exception e ) {

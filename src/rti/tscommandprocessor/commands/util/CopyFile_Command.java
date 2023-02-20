@@ -367,60 +367,20 @@ private void setOutputFile ( File file ) {
 
 /**
 Return the string representation of the command.
+@param parameters to include in the command
+@return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = parameters.getValue("InputFile");
-	String OutputFile = parameters.getValue("OutputFile");
-	String TempFolder = parameters.getValue("TempFolder");
-	String TempFilePrefix = parameters.getValue("TempFilePrefix");
-	String TempFileSuffix = parameters.getValue("TempFileSuffix");
-	String TempFileProperty = parameters.getValue("TempFileProperty");
-	String IfInputNotFound = parameters.getValue("IfInputNotFound");
-
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "OutputFile=\"" + OutputFile + "\"");
-    }
-    if ( (TempFolder != null) && (TempFolder.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TempFolder=\"" + TempFolder + "\"");
-    }
-    if ( (TempFilePrefix != null) && (TempFilePrefix.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TempFilePrefix=\"" + TempFilePrefix + "\"");
-    }
-    if ( (TempFileSuffix != null) && (TempFileSuffix.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TempFileSuffix=\"" + TempFileSuffix + "\"");
-    }
-    if ( (TempFileProperty != null) && (TempFileProperty.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TempFileProperty=\"" + TempFileProperty + "\"");
-    }
-	if ( (IfInputNotFound != null) && (IfInputNotFound.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "IfInputNotFound=" + IfInputNotFound );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
+	String [] parameterOrder = {
+		"InputFile",
+		"OutputFile",
+		"TempFolder",
+		"TempFilePrefix",
+		"TempFileSuffix",
+		"TempFileProperty",
+		"IfInputNotFound"
+	};
+	return this.toString(parameters, parameterOrder);
 }
 
 }

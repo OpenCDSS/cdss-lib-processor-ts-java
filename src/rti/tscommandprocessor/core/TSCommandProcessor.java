@@ -519,11 +519,13 @@ throws IOException
         // FIXME SAM 2009-01-20 Is desirable to trim later so the original representation of commands is not changed.
         // In particular people may want to indent the commands.  Need to make sure that trim() is included when
         // the command strings are interpreted.  For now this is more trouble than it is worth.
-        line = line.trim();
+        //
+        // TODO smalers 2022-02-23 as of TSTool 14.6.0 indentation is allowed so don't trim when loading commands.
+        //line = line.trim();
         // Create a command from the line.
         // Normally will create the command even if not recognized.
         if ( Message.isDebugOn ) {
-            Message.printDebug( 10, routine, "Creating command using trimmed string \"" + line + "\"" );
+            Message.printDebug( 10, routine, "Creating command using untrimmed string \"" + line + "\"" );
         }
         if ( createUnknownCommandIfNotRecognized ) {
             try {
@@ -4091,31 +4093,33 @@ throws IOException, FileNotFoundException
         	if ( line == null ) {
         		break;
         	}
+        	// The line may contain spaces at the front due to indentation.
         	commandStrings.add ( line );
         } // Looping over commands in file.
         // Search for comment annotations in the file and set global settings.
         // Search for "@runDiscoveryOnLoad" at the start of the comment and if found change runDiscoveryOnLoad to false.
     	boolean inBlockComment = false;
         for ( String commandString: commandStrings ) {
-        	commandString = commandString.trim();
+        	// Trim because the command may contain spaces at the front due to indentation.
+        	String commandStringTrimmed = commandString.trim();
         	if ( commandString.startsWith("#") ) {
         		continue;
         	}
         	// Put the following after the above because #/* comments out a block start.
-        	else if ( commandString.startsWith("/*") ) {
+        	else if ( commandStringTrimmed.startsWith("/*") ) {
         		inBlockComment = true;
         	}
-        	else if ( commandString.startsWith("*/") ) {
+        	else if ( commandStringTrimmed.startsWith("*/") ) {
         		inBlockComment = false;
         	}
         	if ( inBlockComment ) {
         		continue;
         	}
-        	commandString = commandString.toUpperCase();
-        	int pos = commandString.indexOf("@RUNDISCOVERYONLOAD");
+        	String commandStringTrimmedUpper = commandStringTrimmed.toUpperCase();
+        	int pos = commandStringTrimmedUpper.indexOf("@RUNDISCOVERYONLOAD");
         	if ( pos > 0 ) {
         		// Check to see if true or false after the annotation.
-        		if ( commandString.indexOf("FALSE",(pos+19)) >= 0 ) {
+        		if ( commandStringTrimmedUpper.indexOf("FALSE",(pos+19)) >= 0 ) {
         			runDiscoveryOnLoad = false;
         		}
         	}

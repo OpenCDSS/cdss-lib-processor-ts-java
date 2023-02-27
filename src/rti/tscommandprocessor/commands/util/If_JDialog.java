@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -98,8 +98,8 @@ Command dialog editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public If_JDialog ( JFrame parent, If_Command command )
-{ 	super(parent, true);
+public If_JDialog ( JFrame parent, If_Command command ) {
+ 	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -107,8 +107,8 @@ public If_JDialog ( JFrame parent, If_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -129,8 +129,8 @@ public void actionPerformed( ActionEvent event )
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check.
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().trim();
@@ -197,8 +197,8 @@ private void checkInput ()
 /**
 Commit the edits to the command.
 */
-private void commitEdits ()
-{   String Name = __Name_JTextField.getText().trim();
+private void commitEdits () {
+    String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     String FileExists = __FileExists_JTextField.getText().trim();
@@ -231,8 +231,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, If_Command command )
-{   __command = command;
+private void initialize ( JFrame parent, If_Command command ) {
+    __command = command;
 
 	addWindowListener( this );
 
@@ -533,16 +533,16 @@ private void initialize ( JFrame parent, If_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	//checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	//checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -553,24 +553,25 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Name = "";
 	String Condition = "";
 	String CompareAsStrings = "";
@@ -721,8 +722,8 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{   __ok = ok;
+public void response ( boolean ok ) {
+    __ok = ok;
     if ( ok ) {
         // Commit the changes.
         commitEdits ();
@@ -740,8 +741,8 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ) {

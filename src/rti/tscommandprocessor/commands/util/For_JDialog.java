@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -99,8 +99,8 @@ Command dialog editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public For_JDialog ( JFrame parent, For_Command command, List<String> tableIDChoices )
-{ 	super(parent, true);
+public For_JDialog ( JFrame parent, For_Command command, List<String> tableIDChoices ) {
+ 	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -108,8 +108,8 @@ public For_JDialog ( JFrame parent, For_Command command, List<String> tableIDCho
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -157,8 +157,7 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -179,7 +178,7 @@ private void checkGUIState ()
         __EnsembleID_JLabel.setEnabled ( false );
     }
 
-    /* TODO smalers 2021-06-06 don't need as long as parameter is only used with time series
+    /* TODO smalers 2021-06-06 don't need as long as parameter is only used with time series.
     if ( (TSList == null) || TSList.isEmpty() ) {
     	__IteratorValueProperty_JTextField.setEnabled(false);
     }
@@ -190,11 +189,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input. If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
@@ -253,7 +252,7 @@ private void checkInput ()
         props.set ( "TimeSeriesPropertyMap", TimeSeriesPropertyMap );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -265,8 +264,8 @@ private void checkInput ()
 /**
 Commit the edits to the command.
 */
-private void commitEdits ()
-{   String Name = __Name_JTextField.getText().trim();
+private void commitEdits () {
+    String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
     String IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
@@ -278,7 +277,7 @@ private void commitEdits ()
     String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
@@ -301,8 +300,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, For_Command command, List<String> tableIDChoices )
-{   __command = command;
+private void initialize ( JFrame parent, For_Command command, List<String> tableIDChoices ) {
+    __command = command;
 	__parent = parent;
 
 	addWindowListener( this );
@@ -310,7 +309,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -330,8 +329,8 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Name_JTextField = new JTextField ( 20 );
     __Name_JTextField.setToolTipText("Name for the 'For' loop, must be unique for all 'For' commands and match and 'EndFor' command.");
@@ -339,36 +338,36 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(main_JPanel, __Name_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - the name will be matched against an EndFor() command name."), 
+        "Required - the name will be matched against an EndFor() command name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop iterator property:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop iterator property:" ),
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IteratorProperty_JTextField = new JTextField (20);
     __IteratorProperty_JTextField.setToolTipText("Property name for property that will contain iterator value in each iteration.");
     __IteratorProperty_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(main_JPanel, __IteratorProperty_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - name of iterator property for iteration (default=for loop name)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - name of iterator property for iteration (default=for loop name)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    // Panel for list iteration
+    // Panel for list iteration.
     int yList = -1;
     JPanel list_JPanel = new JPanel();
     list_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "List", list_JPanel );
-    
+
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "The for loop can iterate over a list of values, separated by commas.  Currently the values are treated as strings."),
         0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(list_JPanel, new JLabel ( "List:" ), 
+
+    JGUIUtil.addComponent(list_JPanel, new JLabel ( "List:" ),
         0, ++yList, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __List_JTextArea = new JTextArea ( 4, 60 );
     __List_JTextArea.setLineWrap ( true );
@@ -376,15 +375,15 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __List_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(list_JPanel, new JScrollPane(__List_JTextArea),
         1, yList, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(list_JPanel, new JLabel("Required - list of values for iterator."), 
+    JGUIUtil.addComponent(list_JPanel, new JLabel("Required - list of values for iterator."),
         3, yList, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel to use sequence for iteration
+
+    // Panel to use sequence for iteration.
     int ySeq = -1;
     JPanel seq_JPanel = new JPanel();
     seq_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Sequence", seq_JPanel );
-    
+
     JGUIUtil.addComponent(seq_JPanel, new JLabel (
         "The for loop can iterate using a sequence of values, given a start, end, and increment."),
         0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -393,40 +392,40 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(seq_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence start:" ), 
+
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence start:" ),
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceStart_JTextField = new JTextField (20);
     __SequenceStart_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceStart_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence start."), 
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence start."),
         3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence end:" ), 
+
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence end:" ),
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceEnd_JTextField = new JTextField (20);
     __SequenceEnd_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceEnd_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence end."), 
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence end."),
         3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence increment:" ), 
+
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence increment:" ),
         0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceIncrement_JTextField = new JTextField (20);
     __SequenceIncrement_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(seq_JPanel, __SequenceIncrement_JTextField,
         1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(seq_JPanel, new JLabel("Optional - sequence increment (default=1)."), 
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Optional - sequence increment (default=1)."),
         3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     
-    // Panel to use table column for iteration
+
+    // Panel to use table column for iteration.
     int yTable = -1;
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Table", table_JPanel );
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "The for loop can iterate using the values from a table column."),
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -441,29 +440,29 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - identifier for table."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - identifier for table."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column:" ),
         0, ++yTable, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableColumn_JTextField = new JTextField (20);
     __TableColumn_JTextField.setToolTipText("Table column to use for iterator values.");
     __TableColumn_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(table_JPanel, __TableColumn_JTextField,
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Table property map:"),
         0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TablePropertyMap_JTextArea = new JTextArea (6,35);
@@ -478,7 +477,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTablePropertyMap",this),
         3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    // Panel to use time series list for iteration
+    // Panel to use time series list for iteration.
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
@@ -499,7 +498,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "For loop iterator value:" ), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "For loop iterator value:" ),
         0, ++yTs, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IteratorValueProperty_JTextField = new JTextField (20);
     __IteratorValueProperty_JTextField.setToolTipText("Optional - iterator value property, "
@@ -507,7 +506,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __IteratorValueProperty_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(ts_JPanel, __IteratorValueProperty_JTextField,
         1, yTs, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel("Optional - iteration property value from time series (default=alias or TSID)."), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel("Optional - iteration property value from time series (default=alias or TSID)."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -515,14 +514,14 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     	__TSList_JComboBox, yTs, new JLabel("Required for time series - indicates the time series to process.") );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -542,7 +541,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(ts_JPanel, new SimpleJButton ("Edit","EditTimeSeriesPropertyMap",this),
         3, ++yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __command_JTextArea = new JTextArea ( 4, 60 );
@@ -552,14 +551,14 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -590,8 +589,8 @@ public void itemStateChanged (ItemEvent e) {
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -602,24 +601,25 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String Name = "";
     String IteratorProperty = "";
     String IteratorValueProperty = "";
@@ -718,19 +718,19 @@ private void refresh ()
                 __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -748,7 +748,7 @@ private void refresh ()
             __TimeSeriesPropertyMap_JTextArea.setText ( TimeSeriesPropertyMap );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Name = __Name_JTextField.getText().trim();
     IteratorProperty = __IteratorProperty_JTextField.getText().trim();
     IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
@@ -771,7 +771,7 @@ private void refresh ()
     props.add ( "SequenceStart=" + SequenceStart );
     props.add ( "SequenceEnd=" + SequenceEnd );
     props.add ( "SequenceIncrement=" + SequenceIncrement );
-    props.set ( "TableID", TableID ); // May contain = so handle differently
+    props.set ( "TableID", TableID ); // May contain = so handle differently.
     props.add ( "TableColumn=" + TableColumn );
     props.add ( "TablePropertyMap=" + TablePropertyMap );
 	props.add ( "TSList=" + TSList );
@@ -785,17 +785,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{   __ok = ok;
+public void response ( boolean ok ) {
+    __ok = ok;
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -804,15 +804,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

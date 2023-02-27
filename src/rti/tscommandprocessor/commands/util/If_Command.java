@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,22 +69,22 @@ private boolean conditionEval = true;
 /**
 Constructor.
 */
-public If_Command ()
-{	super();
+public If_Command () {
+	super();
 	setCommandName ( "If" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages,
+to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String routine = getCommandName() + "_checkCommandParameters";
+throws InvalidCommandParameterException {
+	String routine = getCommandName() + "_checkCommandParameters";
 	String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
@@ -100,17 +100,17 @@ throws InvalidCommandParameterException
 	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	boolean conditionProvided = false;
 	boolean fileExistsProvided = false;
 	boolean objectExistsProvided = false;
 	boolean propertyDefinedProvided = false;
 	boolean tableExistsProvided = false;
 	boolean tsExistsProvided = false;
-	
+
 	if ( (Condition != null) && !Condition.isEmpty() ) {
 		conditionProvided = true;
 	}
@@ -171,21 +171,21 @@ throws InvalidCommandParameterException
 	validList.add ( "TSExists" );
 	validList.add ( "TSDoesNotExist" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-	
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent ) {
 	// The command will be modified if changed.
@@ -215,14 +215,14 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
     CommandProcessor processor = getCommandProcessor();
 	PropList parameters = getCommandParameters();
-	
+
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     Boolean clearStatus = new Boolean(true); // default
@@ -233,12 +233,12 @@ throws CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
 	//String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
 	String conditionUpper = null;
@@ -295,8 +295,8 @@ throws CommandWarningException, CommandException
 	    boolean conditionEval = false;
 	    setConditionEval ( conditionEval );
 	    if ( (Condition != null) && !Condition.isEmpty() ) {
-    	    // TODO SAM 2013-12-07 Figure out if there is a more elegant way to do this
-    	    // Currently only Value1 Operator Value2 is allowed.  Brute force split by finding the operator
+    	    // TODO SAM 2013-12-07 Figure out if there is a more elegant way to do this.
+    	    // Currently only Value1 Operator Value2 is allowed.  Brute force split by finding the operator.
     	    int pos, pos1 = -1, pos2 = -1;
     	    String value1 = "", value2 = "";
     	    String op = "??";
@@ -337,19 +337,19 @@ throws CommandWarningException, CommandException
                 pos2 = pos + 2;
             }
             else if ( conditionUpper.indexOf("!CONTAINS") > 0 ) {
-            	// Put this before the next "CONTAINS" operator
+            	// Put this before the next "CONTAINS" operator.
                 pos = conditionUpper.indexOf("!CONTAINS");
                 op = "!CONTAINS";
                 pos1 = pos;
                 pos2 = pos + 9;
-                compareAsStrings = true; // "!contains" is only used on strings
+                compareAsStrings = true; // "!contains" is only used on strings.
             }
             else if ( conditionUpper.indexOf("CONTAINS") > 0 ) {
                 pos = conditionUpper.indexOf("CONTAINS");
                 op = "CONTAINS";
                 pos1 = pos;
                 pos2 = pos + 8;
-                compareAsStrings = true; // "contains" is only used on strings
+                compareAsStrings = true; // "contains" is only used on strings.
             }
             else if ( Condition.indexOf("=") > 0 ) {
                 message = "Bad use of = in condition.";
@@ -379,7 +379,7 @@ throws CommandWarningException, CommandException
     	    		Message.printStatus(2, routine, "Left side after expansion: " + value1 );
     	    	}
     	    	if ( value1.indexOf("${") >= 0 ) {
-    	    		// Expansion did not match property
+    	    		// Expansion did not match property.
     	    		int p1 = value1.indexOf("${");
     	    		int p2 = value1.indexOf("}",p1);
     	    		String missingProp = value1.substring(p1,(p2+1));
@@ -405,7 +405,7 @@ throws CommandWarningException, CommandException
     	    		Message.printStatus(2, routine, "Right side after expansion: " + value2 );
     	    	}
     	    	if ( value2.indexOf("${") >= 0 ) {
-    	    		// Expansion did not match property
+    	    		// Expansion did not match property.
     	    		int p1 = value2.indexOf("${");
     	    		int p2 = value2.indexOf("}",p1);
     	    		String missingProp = value2.substring(p1,(p2+1));
@@ -421,18 +421,18 @@ throws CommandWarningException, CommandException
     	    else {
     	    	value2 = arg2;
     	    }
-    	    // If the arguments are quoted, then all of the following will be false
+    	    // If the arguments are quoted, then all of the following will be false.
             boolean isValue1Integer = StringUtil.isInteger(value1);
             boolean isValue2Integer = StringUtil.isInteger(value2);
             boolean isValue1Double = StringUtil.isDouble(value1);
             boolean isValue2Double = StringUtil.isDouble(value2);
             boolean isValue1Boolean = StringUtil.isBoolean(value1);
             boolean isValue2Boolean = StringUtil.isBoolean(value2);
-            // Strip surrounding double quotes for comparisons below - do after above checks for type
+            // Strip surrounding double quotes for comparisons below - do after above checks for type.
             value1 = value1.replace("\"", "");
             value2 = value2.replace("\"", "");
             if ( !compareAsStrings && isValue1Integer && isValue2Integer ) {
-            	// Do an integer comparison
+            	// Do an integer comparison.
 	    	    int ivalue1 = Integer.parseInt(value1);
 	    	    int ivalue2 = Integer.parseInt(value2);
 	    	    if ( op.equals("<=") ) {
@@ -443,7 +443,7 @@ throws CommandWarningException, CommandException
 	    	    else if ( op.equals("<") ) {
 	                if ( ivalue1 < ivalue2 ) {
 	                    conditionEval = true;
-	                } 
+	                }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( ivalue1 >= ivalue2 ) {
@@ -467,7 +467,7 @@ throws CommandWarningException, CommandException
 	    	    }
             }
             else if ( !compareAsStrings && isValue1Double && isValue2Double ) {
-            	// Compare doubles
+            	// Compare doubles.
 	    	    double dvalue1 = Double.parseDouble(value1);
 	    	    double dvalue2 = Double.parseDouble(value2);
 	    	    if ( op.equals("<=") ) {
@@ -478,7 +478,7 @@ throws CommandWarningException, CommandException
 	    	    else if ( op.equals("<") ) {
 	                if ( dvalue1 < dvalue2 ) {
 	                    conditionEval = true;
-	                } 
+	                }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( dvalue1 >= dvalue2 ) {
@@ -502,30 +502,30 @@ throws CommandWarningException, CommandException
 	    	    }
             }
             else if ( !compareAsStrings && isValue1Boolean && isValue2Boolean ) {
-            	// Do a boolean comparison
+            	// Do a boolean comparison.
 	    	    boolean bvalue1 = Boolean.parseBoolean(value1);
 	    	    boolean bvalue2 = Boolean.parseBoolean(value2);
 	    	    if ( op.equals("<=") ) {
 	    	        if ( !bvalue1 ) {
-	    	        	// false <= false or true
+	    	        	// false <= false or true.
 	    	            conditionEval = true;
 	    	        }
 	    	    }
 	    	    else if ( op.equals("<") ) {
 	                if ( !bvalue1 && bvalue2 ) {
-	                	// false < true
+	                	// false < true.
 	                    conditionEval = true;
-	                } 
+	                }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( bvalue1 ) {
-	                	// true >= false or true
+	                	// true >= false or true.
 	                    conditionEval = true;
 	                }
 	    	    }
 	    	    else if ( op.equals(">") ) {
 	                if ( bvalue1 && !bvalue2 ) {
-	                	// true > false
+	                	// true > false.
 	                    conditionEval = true;
 	                }
 	    	    }
@@ -542,7 +542,7 @@ throws CommandWarningException, CommandException
             }
             else if ( compareAsStrings || (!isValue1Integer && !isValue2Integer &&
             	!isValue1Double && !isValue2Double && !isValue1Boolean && !isValue2Boolean) ) {
-            	// Always compare the string values or the input is not other types so assume strings
+            	// Always compare the string values or the input is not other types so assume strings.
  	    	    if ( op.equals("CONTAINS") ) {
  	    	    	if ( value1.indexOf(value2) >= 0 ) {
  	    	    	     conditionEval = true;
@@ -563,7 +563,7 @@ throws CommandWarningException, CommandException
 	 	    	    else if ( op.equals("<") ) {
 	 	                if ( comp < 0 ) {
 	 	                    conditionEval = true;
-	 	                } 
+	 	                }
 	 	    	    }
 	 	    	    else if ( op.equals(">=") ) {
 	 	                if ( comp >= 0 ) {
@@ -597,19 +597,19 @@ throws CommandWarningException, CommandException
 	                    message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
             }
     	    if ( Condition.indexOf("${") >= 0 ) {
-    	        // Show the original
+    	        // Show the original.
     	        status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.SUCCESS,
                         Condition + " (showing ${Property} notation) evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    }
-    	    // Always also show the expanded
+    	    // Always also show the expanded.
     	    status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.SUCCESS,
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
 	    }
 	    if ( (FileExists != null) && !FileExists.isEmpty() ) {
-	        // Check whether a file exists - this is ANDed to the condition.
+	        // Check whether a file exists - this is ANDed to the condition..
 	    	String FileExists_full = IOUtil.verifyPathForOS(
 	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists) ) );
@@ -727,32 +727,32 @@ throws CommandWarningException, CommandException
             setConditionEval(conditionEval);
 	    }
 	    if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
-	    	// Check to see whether the specified property exists
+	    	// Check to see whether the specified property exists.
 	    	Object o = processor.getPropContents(PropertyIsNotDefinedOrIsEmpty);
-	    	conditionEval = false; // Assume property is defined and is not null
+	    	conditionEval = false; // Assume property is defined and is not null.
 	    	if ( o == null ) {
-	    		// Property is null so condition evaluates to true
+	    		// Property is null so condition evaluates to true.
 	    		conditionEval = true;
 	    	}
 	    	else {
 		    	if ( o instanceof String ) {
 		    		String s = (String)o;
 		    		if ( s.isEmpty() ) {
-		    			// Property is empty string so condition evaluates to true
+		    			// Property is empty string so condition evaluates to true.
 		    			conditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
-		    			// Property is Double NaN so condition evaluates to true
+		    			// Property is Double NaN so condition evaluates to true.
 		    			conditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
-		    			// Property is Float NaN so condition evaluates to true
+		    			// Property is Float NaN so condition evaluates to true.
 		    			conditionEval = true;
 		    		}
 		    	}
@@ -760,25 +760,25 @@ throws CommandWarningException, CommandException
             setConditionEval(conditionEval);
 	    }
 	    if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
-	    	// Check to see whether the specified property exists
+	    	// Check to see whether the specified property exists.
 	    	Object o = processor.getPropContents(PropertyIsDefined);
-	    	conditionEval = true; // Assume property is defined and is not null
+	    	conditionEval = true; // Assume property is defined and is not null.
 	    	if ( o == null ) {
-	    		// Property is null so condition evaluates to false
+	    		// Property is null so condition evaluates to false.
 	    		conditionEval = false;
 	    	}
 	    	else {
 		    	if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
-		    			// Property is Double NaN so condition evaluates to false
+		    			// Property is Double NaN so condition evaluates to false.
 		    			conditionEval = false;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
-		    			// Property is Float NaN so condition evaluates to false
+		    			// Property is Float NaN so condition evaluates to false.
 		    			conditionEval = false;
 		    		}
 		    	}
@@ -946,7 +946,7 @@ throws CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error executing If (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,

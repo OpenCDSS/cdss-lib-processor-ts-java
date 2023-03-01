@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ import cdss.dmi.hydrobase.rest.ColoradoHydroBaseRestDataStore;
 
 public class TSEngine implements TSSupplier, WindowListener
 {
-	
+
 public final int OUTPUT_NONE = 0;		// Initial value for _output_format.
 public final int OUTPUT_STATEMOD = 1;		// Formats for outputting the time series.
 public final int OUTPUT_SUMMARY = 2;		// Time series summary.
@@ -175,8 +175,7 @@ public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 // Data members.
 
 /**
-If true, then if the output period is specified, time series will be extended to
-at least include the output period.
+If true, then if the output period is specified, time series will be extended to at least include the output period.
 */
 private boolean __AutoExtendPeriod_boolean = true;
 
@@ -194,7 +193,7 @@ private DateTime __AverageEnd_DateTime = null;
 /**
 List of DateTime initialized from commands.
 */
-private Hashtable<String,DateTime> __datetime_Hashtable = new Hashtable<String,DateTime> ();
+private Hashtable<String,DateTime> __datetime_Hashtable = new Hashtable<>();
 
 // TODO 2007-11-16 - why can't this be local in the method that uses it?
 /**
@@ -218,15 +217,15 @@ Indicates whether missing time series should be added automatically.
 */
 private boolean __IncludeMissingTS_boolean = false;
 
-// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
-// implemented for the ReadTimeSeriesList command.
+// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated.
+// This is a kludge implemented for the ReadTimeSeriesList command.
 /**
 Start date/time when reading time series and returning empty missing time series.
 */
 private DateTime __IncludeMissingTSOutputStart = null;
 
-// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
-// implemented for the ReadTimeSeriesList command.
+// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated.
+// This is a kludge implemented for the ReadTimeSeriesList command.
 /**
 End date/time when reading time series and returning empty missing time series.
 */
@@ -240,7 +239,7 @@ private DateTime __InputStart_DateTime = null;
 /**
 End date for read.
 */
-private DateTime __InputEnd_DateTime = null;        
+private DateTime __InputEnd_DateTime = null;
 
 /**
 List of time series identifiers that are not found.
@@ -278,10 +277,10 @@ Indicates whether exported output should be previewed.  The default is false.
 private	boolean	__PreviewExportedOutput_boolean = false;
 
 /**
-Properties generated/maintained by the processor.  These are initialized when calling
-processCommands() and may be modified during command processing.  There are
-methods to return key values such as the end result WorkingDir.  This is available to
-allow the GUI to process setWorkingDir() commands prior to displaying a command editor,
+Properties generated/maintained by the processor.
+These are initialized when calling processCommands() and may be modified during command processing.
+There are methods to return key values such as the end result WorkingDir.
+This is available to allow the GUI to process setWorkingDir() commands prior to displaying a command editor,
 which requires the working directory at that point of the workflow.
 */
 private PropList __processor_PropList = null;
@@ -298,8 +297,7 @@ private List<DataStore> __dataStoreList = new Vector<>();
 
 /**
  * List of datastore substitutes.
- * This is used, for example, when running test suites that use one datastore name but
- * another datastore needs to be used for the test.
+ * This is used, for example, when running test suites that use one datastore name but another datastore needs to be used for the test.
  * For example, the TSTool parameter would contain:
  *   --datastore-substitute=DatastoreNameToUse,CommandFileDatastoreName
  */
@@ -339,8 +337,8 @@ Add the annotation provider property to TSView properties.
 This examines DMI instances to see if they implement TSProductAnnotationProvider.
 If so, call the TSViewJFrame.addTSProductAnnotationProvider() method with the instance.
 */
-private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
-{	List<TSProductAnnotationProvider> apList = getTSProductAnnotationProviders();
+private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view ) {
+	List<TSProductAnnotationProvider> apList = getTSProductAnnotationProviders();
 	int size = apList.size();
 	for ( int i = 0; i < size; i++ ) {
 		view.addTSProductAnnotationProvider(apList.get(i), null );
@@ -354,8 +352,8 @@ Make the TSProductDMI instances known to a TSViewJFrame.
 This examines DMI instances to see if they implement TSProductDMI, which is used to persist TSProduct information to a database.
 If the implementation is detected, the TSView.addTSProductDMI() method is called with the instance.
 */
-private void addTSViewTSProductDMIs ( TSViewJFrame view )
-{	// Check the HydroBase instances.
+private void addTSViewTSProductDMIs ( TSViewJFrame view ) {
+	// Check the HydroBase instances.
     // First add the new datastore list.
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
     // Disable HydroBase datastores as TSProduct providers:
@@ -393,8 +391,8 @@ Currently only one listener can be set.
 This is needed to be able to close down the application when simple plot interfaces are displayed.
 @param listener WindowListener to listen to TSViewJFrame WindowEvents.
 */
-public void addTSViewWindowListener ( WindowListener listener )
-{	_tsview_window_listener = listener;
+public void addTSViewWindowListener ( WindowListener listener ) {
+	_tsview_window_listener = listener;
 }
 
 /**
@@ -422,8 +420,8 @@ The overloaded method is called with a time series counter having the return val
 @exception Exception if there is an error getting the limits.
 */
 protected TSLimits calculateTSAverageLimits ( TS ts )
-throws Exception
-{	// Find the position of the time series.
+throws Exception {
+	// Find the position of the time series.
     int size = 0;
     if ( __tslist != null ) {
         size = __tslist.size();
@@ -437,7 +435,9 @@ throws Exception
     return calculateTSAverageLimits ( pos, ts );
 }
 
+// Static value used with the following function.
 static int calculateTSAverageLimits_warningPrintCount = 0;
+
 /**
 Calculate the average data limits for a time series using the averaging period if specified (otherwise use the available period).
 @return the average data for a time series.
@@ -448,8 +448,8 @@ Currently only limits for monthly time series are supported.
 @exception Exception if there is an error getting the limits.
 */
 private TSLimits calculateTSAverageLimits ( int i, TS ts )
-throws Exception
-{	String message, routine = getClass().getSimpleName() + ".calculateTSAverageLimits";
+throws Exception {
+	String message, routine = getClass().getSimpleName() + ".calculateTSAverageLimits";
 	TSLimits average_limits = null;
 
 	if ( ts == null ) {
@@ -544,16 +544,16 @@ Clear the time series results.  The commands will need to be rerun to regenerate
 protected void clearTimeSeriesResults ( ) {
 	if ( __tslist != null ) {
 		__tslist.clear();
-	} 
+	}
 }
 
 /**
-Create data limits report.  Currently this creates a report for the available
-period for the time series (it does not check the output period).
+Create data limits report.
+Currently this creates a report for the available period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 */
-private List<String> createDataLimitsReport ( List<TS> tslist )
-{	int size = tslist.size();
+private List<String> createDataLimitsReport ( List<TS> tslist ) {
+	int size = tslist.size();
 	List<String> report = new ArrayList<> ();
 
 	report.add ( "" );
@@ -586,9 +586,8 @@ private List<String> createDataLimitsReport ( List<TS> tslist )
 		report.add ( ts.getIdentifierString() );
 		report.add ( "" );
 		// The limits come back as a string with line breaks.
-		// This apparently is displayed correctly but does not print
-		// correctly so break into separate strings here in order to
-		// keep the strings consistent.
+		// This apparently is displayed correctly but does not print correctly so break into
+		// separate strings here in order to keep the strings consistent.
 		StringUtil.addListToStringList ( report, StringUtil.breakStringList(limits.toString(), "\n", 0) );
 		report.add ( "" );
 	}
@@ -596,18 +595,18 @@ private List<String> createDataLimitsReport ( List<TS> tslist )
 }
 
 /**
-Create monthly summary reports.  Currently this creates a report for the
-available period for the time series (it does not check the output period).
+Create monthly summary reports.
+Currently this creates a report for the available period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 @param props Properties to control report (see TSUtil.createMonthSummary()).
 */
-private List<String> createMonthSummaryReport ( List<TS> tslist, PropList props )
-{	int size = tslist.size();
+private List<String> createMonthSummaryReport ( List<TS> tslist, PropList props ) {
+	int size = tslist.size();
 	List<String> report = new ArrayList<> ();
 	String routine = getClass().getSimpleName() + ".createMonthSummaryReport";
 
 	String prop_val = props.getValue ( "DayType" );
-	
+
 	report.add ( "" );
 	if ( (prop_val != null) && prop_val.equalsIgnoreCase("Total") ) {
 		report.add ( "MONTHLY SUMMARY REPORT (Daily Totals)" );
@@ -668,8 +667,8 @@ Handle real-time and historic.  But only CFS units.
 @param end_date Ending date for annual total (precision day!).
 @param props Properties to control output (currently the only property is SortTotals=true/false).
 */
-private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date, PropList props )
-{	int size = tslist.size();
+private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date, PropList props ) {
+	int size = tslist.size();
 	List<String> report = new ArrayList<> ();
 
 	report.add ( "" );
@@ -806,10 +805,10 @@ Create the data coverage report dialog.
 @exception Exception if there is an error.
 */
 private List<String> createDataCoverageReport ( List<TS> orig_tslist )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".createDataCoverageReport";
-	// If the output is to be a data coverage time series, convert each
-	// time series to the monthly statistics format and feed into the report.
+throws Exception {
+	String routine = getClass().getSimpleName() + ".createDataCoverageReport";
+	// If the output is to be a data coverage time series,
+	// convert each time series to the monthly statistics format and feed into the report.
 	// This may be slower than before TSTool 05.00.xx but is
 	// consistent with how TSTool handles time series in memory now.
 
@@ -865,8 +864,8 @@ createYearStatisticsReport(OutputFile="x",TSOutputFile="x")
 @exception Exception if there is an error.
 */
 private void do_createYearStatisticsReport ( String command )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".do_createYearStatisticsReport", message;
+throws Exception {
+	String routine = getClass().getSimpleName() + ".do_createYearStatisticsReport", message;
 	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
 		// Should never happen because the command name was parsed before.
@@ -993,8 +992,8 @@ Helper method to execute the fillMixedStation() command.
 */
 /* TODO SAM 2005-05-27 Delete when in the command class
 private void do_fillMixedStation ( String command_tag, String command )
-throws Exception
-{	String message, routine = "TSEngine.do_fillMixedStation";
+throws Exception {
+	String message, routine = "TSEngine.do_fillMixedStation";
 	Vector tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || tokens.size() < 2 ) {
@@ -1019,23 +1018,21 @@ throws Exception
 	}
 
 	// Most of the work is done by the MixedStationAnalysis object.
-	// Determine the dependent and independent time series lists and pass
-	// in all the properties...
+	// Determine the dependent and independent time series lists and pass in all the properties.
 
 	try {	Vector dependent_tslist = null;
 		Vector independent_tslist = null;
 		// Get the list of dependent time series to process...
-		if (	DependentTSList.equalsIgnoreCase("AllTS") ||
-			((DependentTSID != null) && DependentTSID.equals("*"))){
-			// All the time series...
+		if ( DependentTSList.equalsIgnoreCase("AllTS") || ((DependentTSID != null) && DependentTSID.equals("*"))){
+			// All the time series.
 			dependent_tslist = getTimeSeriesList(null);
 		}
 		else if ( DependentTSList.equalsIgnoreCase("SelectedTS") ) {
-			// Get the selected time series...
+			// Get the selected time series.
 			dependent_tslist = getSelectedTimeSeries( false );
 		}
 		else if ( DependentTSList.equalsIgnoreCase("SpecifiedTS") ) {
-			// Get the specified matching time series...
+			// Get the specified matching time series.
 			dependent_tslist = getSpecifiedTimeSeries(
 				command_tag,
 				StringUtil.breakStringList(DependentTSID,
@@ -1043,19 +1040,18 @@ throws Exception
 				routine, command );
 			// TODO SAM 2005-04-12 how should errors be handled?
 		}
-		// Get the list of independent time series to process...
-		if (	IndependentTSList.equalsIgnoreCase("AllTS") ||
-			((IndependentTSID != null) &&
+		// Get the list of independent time series to process.
+		if ( IndependentTSList.equalsIgnoreCase("AllTS") || ((IndependentTSID != null) &&
 			IndependentTSID.equals("*"))){
-			// All the time series...
+			// All the time series.
 			independent_tslist = getTimeSeriesList(null);
 		}
 		else if ( IndependentTSList.equalsIgnoreCase("SelectedTS") ) {
-			// Get the selected time series...
+			// Get the selected time series.
 			independent_tslist = getSelectedTimeSeries( false );
 		}
 		else if ( IndependentTSList.equalsIgnoreCase("SpecifiedTS") ) {
-			// Get the specified matching time series...
+			// Get the specified matching time series.
 			independent_tslist = getSpecifiedTimeSeries(
 				command_tag,
 				StringUtil.breakStringList(IndependentTSID,
@@ -1063,15 +1059,13 @@ throws Exception
 				routine, command );
 			// TODO SAM 2005-04-12 how should errors be handled?
 		}
-		// Create the analysis object and analyze...
-		MixedStationAnalysis msa = new MixedStationAnalysis (
-			dependent_tslist, independent_tslist, props );
+		// Create the analysis object and analyze.
+		MixedStationAnalysis msa = new MixedStationAnalysis ( dependent_tslist, independent_tslist, props );
 		// TODO SAM 2005-04-12
 		// Separate method to fill??
 	}
 	catch ( Exception e ) {
-		message =
-		"There were warnings performing the mixed station analysis.";
+		message = "There were warnings performing the mixed station analysis.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -1086,15 +1080,15 @@ Execute the shift() command.
 */
 /*
 private void do_shift ( String command )
-throws Exception
-{	String routine = "TSEngine.do_shift";
-	Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
+throws Exception {
+	String routine = "TSEngine.do_shift";
+	List<String> tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	if ( tokens.size() != 4 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	// Parse the name and dates.
-	String alias = (String)tokens.elementAt(1);
-	DateTime olddate = (DateTime)__datetime_Hashtable.get( (String)tokens.elementAt(2));
+	String alias = tokens.elementAt(1);
+	DateTime olddate = (DateTime)__datetime_Hashtable.get( tokens.elementAt(2));
 	if ( olddate == null ) {
 		Message.printStatus(1,routine, "Unable to look up date \"" +
 		(String)tokens.elementAt(2) + "\"" );
@@ -1145,8 +1139,8 @@ The leading comment character is NOT included since it will be added before fina
 @param commands The commands that are being processed, may be a subset of all the commands.
 @return a String array with output comments.
 */
-protected String [] formatOutputHeaderComments ( List<Command> commands )
-{	List<String> comments = new ArrayList<>();
+protected String [] formatOutputHeaderComments ( List<Command> commands ) {
+	List<String> comments = new ArrayList<>();
 	// Commands.  Show the file name but all commands may be in memory.
 	comments.add ( "-----------------------------------------------------------------------" );
 	String commands_filename = __ts_processor.getCommandFileName();
@@ -1204,28 +1198,27 @@ protected String [] formatOutputHeaderComments ( List<Command> commands )
 }
 
 /**
-Indicate whether a time series' data period should automatically be extended
-to the output period (to allow for filling).
+Indicate whether a time series' data period should automatically be extended to the output period (to allow for filling).
 @return True if the period should be automatically extended.
 */
-protected boolean getAutoExtendPeriod()
-{   return __AutoExtendPeriod_boolean;
+protected boolean getAutoExtendPeriod() {
+    return __AutoExtendPeriod_boolean;
 }
 
 /**
 Return the average period end, or null if all available data are to be used.
 @return the average period end, or null if all available data are to be used.
 */
-protected DateTime getAverageEnd()
-{   return __AverageEnd_DateTime;
+protected DateTime getAverageEnd() {
+    return __AverageEnd_DateTime;
 }
 
 /**
 Return the average start, or null if all available data are to be used.
 @return the average period start, or null if all available data are to be used.
 */
-protected DateTime getAverageStart()
-{   return __AverageStart_DateTime;
+protected DateTime getAverageStart() {
+    return __AverageStart_DateTime;
 }
 
 /**
@@ -1267,7 +1260,7 @@ matching property name is used to determine the date/time using the following ru
 <li> If the string is null, "*" or "", return null.</li>
 <li> If the string uses a standard name InputStart (QueryStart), InputEnd (QueryEnd), OutputStart, OutputEnd, return the corresponding DateTime.</li>
 <li> Check the processor date/time hash table for user-defined date/time properties.</li>
-<li> Parse the string using DateTime.parse().
+<li> Parse the string using DateTime.parse().</li>
 </ol>
 @param dtString Date/time string to parse.
 @exception if the date/time cannot be determined using the defined procedure.
@@ -1289,7 +1282,7 @@ throws Exception {
 		// Found date in the hash table so use it.
 		return date;
 	}
-	
+
 	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively.
 	// Handle built-in property ${InputStart} etc. below so that nulls don't cause an issue (nulls are OK for full period).
 	// Check for named DateTime instances.
@@ -1308,7 +1301,7 @@ throws Exception {
 		dtString.equalsIgnoreCase("QueryPeriodStart") ) {
 		return __InputStart_DateTime;
 	}
-	
+
 	// Check for requested user-defined property.
 	if ( dtString.startsWith("${") && dtString.endsWith("}") ) {
 		String propName = dtString.substring(2,dtString.length() - 1);
@@ -1336,8 +1329,8 @@ Return the HydroBaseDMI that corresponds to the input name.  Use a blank input n
 @param inputName Input name for the DMI, can be blank.
 @return the HydroBaseDMI that is being used (may return null).
 */
-protected HydroBaseDMI getHydroBaseDMI ( String inputName )
-{	int size = __hbdmi_Vector.size();
+protected HydroBaseDMI getHydroBaseDMI ( String inputName ) {
+	int size = __hbdmi_Vector.size();
 	if ( inputName == null ) {
 		inputName = "";
 	}
@@ -1364,62 +1357,62 @@ protected HydroBaseDMI getHydroBaseDMI ( String inputName )
 Return the list of HydroBaseDMI.
 @return List of open HydroBaseDMI.
 */
-protected List<HydroBaseDMI> getHydroBaseDMIList ()
-{	return __hbdmi_Vector;
+protected List<HydroBaseDMI> getHydroBaseDMIList () {
+	return __hbdmi_Vector;
 }
 
 /**
 Indicate whether a values less than or equal zero should be excluded when computing historical averages.
 @return True if values <= 0 should be excluded when computing historical averages.
 */
-protected boolean getIgnoreLEZero()
-{   return __IgnoreLEZero_boolean;
+protected boolean getIgnoreLEZero() {
+    return __IgnoreLEZero_boolean;
 }
 
 /**
 Indicate whether missing time series should result in an empty time series (rather than a warning and no time series).
 @return True if blank time series should be generated when they cannot be read.
 */
-protected boolean getIncludeMissingTS()
-{   return __IncludeMissingTS_boolean;
+protected boolean getIncludeMissingTS() {
+    return __IncludeMissingTS_boolean;
 }
 
 /**
 Return the default output start to be used with processing missing time series.
 */
-protected DateTime getIncludeMissingTSOutputEnd()
-{   return __IncludeMissingTSOutputEnd;
+protected DateTime getIncludeMissingTSOutputEnd() {
+    return __IncludeMissingTSOutputEnd;
 }
 
 /**
 Return the default output start to be used with processing missing time series.
 */
-protected DateTime getIncludeMissingTSOutputStart()
-{   return __IncludeMissingTSOutputStart;
+protected DateTime getIncludeMissingTSOutputStart() {
+    return __IncludeMissingTSOutputStart;
 }
 
 /**
 Return the input period end, or null if all available data are to be queried.
 @return the input period end, or null if all available data are to be queried.
 */
-protected DateTime getInputEnd()
-{	return __InputEnd_DateTime;
+protected DateTime getInputEnd() {
+	return __InputEnd_DateTime;
 }
 
 /**
 Return the input start, or null if all available data are to be read at input.
 @return the input period start, or null if all available data are to be read.
 */
-protected DateTime getInputStart()
-{	return __InputStart_DateTime;
+protected DateTime getInputStart() {
+	return __InputStart_DateTime;
 }
 
 /**
 Return the list of TSID strings for which time series could not be read.
 @return the list of TSID strings for which time series could not be read.
 */
-protected List<String> getMissingTS()
-{   return __missing_ts;
+protected List<String> getMissingTS() {
+    return __missing_ts;
 }
 
 /**
@@ -1427,8 +1420,8 @@ Return the NWSRFS_DMI that is being used.  Use a blank input name to get the def
 @param input_name Input name for the DMI, can be blank.  Typically is the path to the FS5Files.
 @return the NWSRFS_DMI that is being used (may return null).
 */
-protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_not_found )
-{	String routine = getClass().getName() + ".getNWSRFSFS5FilesDMI";
+protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_not_found ) {
+	String routine = getClass().getName() + ".getNWSRFSFS5FilesDMI";
 	int size = __nwsrfs_dmi_Vector.size();
 	if ( input_name == null ) {
 		input_name = "";
@@ -1451,7 +1444,7 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 			    Message.printStatus( 2, routine, "Opening new NWSRFS FS5Files DMI using path \"" + input_name + "\"" );
 				nwsrfs_dmi = new NWSRFS_DMI( input_name );
 				nwsrfs_dmi.open();
-				// Save so we can get to it again when we need it...
+				// Save so we can get to it again when we need it.
 				setNWSRFSFS5FilesDMI ( nwsrfs_dmi, true );
 				return nwsrfs_dmi;
 			}
@@ -1467,23 +1460,23 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 Return the output period end, or null if all data are to be output.
 @return the output period end, or null if all data are to be output.
 */
-protected DateTime getOutputEnd()
-{	return __OutputEnd_DateTime;
+protected DateTime getOutputEnd() {
+	return __OutputEnd_DateTime;
 }
 
 /**
 Return the output period start, or null if all data are to be output.
 @return the output period start, or null if all data are to be output.
 */
-protected DateTime getOutputStart()
-{	return __OutputStart_DateTime;
+protected DateTime getOutputStart() {
+	return __OutputStart_DateTime;
 }
 
 /**
 Return the output year type, to be used for commands that create output.
 @return the output year type enumeration.
 */
-protected YearType getOutputYearType() {   
+protected YearType getOutputYearType() {
     return __outputYearType;
 }
 
@@ -1491,8 +1484,8 @@ protected YearType getOutputYearType() {
 Indicate whether output that is exported should be previewed first.
 @return True if output that is exported should be previewed first.
 */
-protected boolean getPreviewExportedOutput()
-{   return __PreviewExportedOutput_boolean;
+protected boolean getPreviewExportedOutput() {
+    return __PreviewExportedOutput_boolean;
 }
 
 /**
@@ -1506,8 +1499,8 @@ For this version of the method, the sequence identifier is ignored.
 @exception Exception if there is an error getting the time series.
 */
 protected TS getTimeSeries ( String command_tag, String id )
-throws Exception
-{	return getTimeSeries ( command_tag, id, null );
+throws Exception {
+	return getTimeSeries ( command_tag, id, null );
 }
 
 /**
@@ -1537,8 +1530,8 @@ Return a time series from either the __tslist list.
 @exception Exception if there is an error reading the time series.
 */
 protected TS getTimeSeries ( int position )
-throws Exception
-{	if ( position < 0 ) {
+throws Exception {
+	if ( position < 0 ) {
 		return null;
 	}
     if ( __tslist == null ) {
@@ -1557,8 +1550,8 @@ Return the list of time series.  See also getSelectedTimeSeriesList().
 @param indices a list of indices to return or null to return all.
 Only indices within the time series list size will be returned.
 */
-protected List<TS> getTimeSeriesList ( int [] indices )
-{	if ( indices == null ){
+protected List<TS> getTimeSeriesList ( int [] indices ) {
+	if ( indices == null ){
 		return __tslist;
 	}
 	else {
@@ -1581,14 +1574,14 @@ protected List<TS> getTimeSeriesList ( int [] indices )
 Return number of time series that have been processed and are available for output.
 @return number of time series available for output.
 */
-protected int getTimeSeriesSize ()
-{	return __tslist.size();
+protected int getTimeSeriesSize () {
+	return __tslist.size();
 }
 
 /**
 Return the list of time series to process, based on information that indicates how the list can be determined.
-@param TSList Indicates how the list of time series for processing is to be
-determined, with one of the following values (see TSListType):
+@param TSList Indicates how the list of time series for processing is to be determined,
+with one of the following values (see TSListType):
 <ol>
 <li>    "AllMatchingTSID" will use the TSID value to match time series.</li>
 <li>	"AllTS" will result in true being returned.</li>
@@ -1605,8 +1598,8 @@ determined, with one of the following values (see TSListType):
         internally the values are zero indexed.  In the future Python notation slices may
         be enabled.</li>
 </ol>
-@param TSID A time series identifier (pattern) when used with TSList=AllMatchingTSID and
-TSList=LastMatchingTSID, or a list of time series separated by commas when used with TSList=SpecifiedTSID.
+@param TSID A time series identifier (pattern) when used with TSList=AllMatchingTSID and TSList=LastMatchingTSID,
+or a list of time series separated by commas when used with TSList=SpecifiedTSID.
 @param EnsembleID A time series ensemble identifier (no pattern currently allowed).
 @return A list that has as its first element a list of TS to process and as
 its second element an int[] indicating the positions in the time series list,
@@ -1615,8 +1608,7 @@ Use the size of the list (in the first element) to determine the number of time 
 The order of the time series will be from first to last.
 A non-null list is guaranteed to be returned.
 */
-protected TimeSeriesToProcess getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID,
-    String TSPosition )
+protected TimeSeriesToProcess getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID, String TSPosition )
 throws Exception {
     @SuppressWarnings("unchecked")
 	List<TSEnsemble> ensembleList = (List<TSEnsemble>)__ts_processor.getPropContents("EnsembleResultsList");
@@ -1630,8 +1622,8 @@ See documentation for fully loaded method.  The list is not sorted
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands )
-{	return getTraceIdentifiersFromCommands ( commands, false );
+protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands ) {
+	return getTraceIdentifiersFromCommands ( commands, false );
 }
 
 /**
@@ -1642,8 +1634,8 @@ These strings are suitable for drop-down lists, etc.
 @param sort Should output be sorted by identifier.
 @return list of time series identifiers or an empty non-null string if nothing found.
 */
-protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands, boolean sort )
-{	if ( commands == null ) {
+protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands, boolean sort ) {
+	if ( commands == null ) {
 		return new ArrayList<>();
 	}
 	List<String> v = new ArrayList<>();
@@ -1680,8 +1672,8 @@ Return a list of objects (currently open DMI instances) that implement TSProduct
 This is a helper method for other methods.
 @return a non-null list of TSProductAnnotationProviders.
 */
-protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
-{	List<TSProductAnnotationProvider> apList = new ArrayList<>();
+protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders () {
+	List<TSProductAnnotationProvider> apList = new ArrayList<>();
 	// Check the HydroBase instances.
     // First do the new datastores.
     List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
@@ -1707,8 +1699,8 @@ protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 Return the TSSupplier name.
 @return the TSSupplier name ("TSEngine").
 */
-public String getTSSupplierName()
-{	return "TSEngine";
+public String getTSSupplierName() {
+	return "TSEngine";
 }
 
 /**
@@ -1716,18 +1708,16 @@ Return the WindowListener that wants to track TSView windows.
 This is used when the TSCommandProcessor is run as a supporting tool (e.g., in TSTool with no main GUI).
 @return the WindowListener for TSView windows.
 */
-protected WindowListener getTSViewWindowListener ()
-{	return _tsview_window_listener;
+protected WindowListener getTSViewWindowListener () {
+	return _tsview_window_listener;
 }
 
 /**
-Determine whether the averaging period is set (start and end dates need to be
-non-null and years not equal to zero).
-@return true if the averaging period has been specified (and we can use its
-dates without fear of nulls or zero years).
+Determine whether the averaging period is set (start and end dates need to be non-null and years not equal to zero).
+@return true if the averaging period has been specified (and we can use its dates without fear of nulls or zero years).
 */
-private boolean haveAveragingPeriod ()
-{	if ( (getAverageStart() == null) || (getAverageEnd() == null) ) {
+private boolean haveAveragingPeriod () {
+	if ( (getAverageStart() == null) || (getAverageEnd() == null) ) {
 		return false;
 	}
 	if ( (getAverageStart().getYear() == 0) || (getAverageEnd().getYear() == 0) ) {
@@ -1738,11 +1728,10 @@ private boolean haveAveragingPeriod ()
 
 /**
 Indicate whether the output period has been specified.
-@return true if the output period has been specified (and we can use its
-dates without fear of nulls or zero years).
+@return true if the output period has been specified (and we can use its dates without fear of nulls or zero years).
 */
-protected boolean haveOutputPeriod ()
-{	if ((__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null)){
+protected boolean haveOutputPeriod () {
+	if ((__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null)){
 		return false;
 	}
 	if ( (__OutputStart_DateTime.getYear() == 0) || (__OutputEnd_DateTime.getYear() == 0) ) {
@@ -1757,8 +1746,8 @@ See the overloaded method for full documentation.  This version assumes that no 
 @param string the alias and/or time series identifier to look for.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
-protected int indexOf ( String string )
-{	return indexOf ( string, null );
+protected int indexOf ( String string ) {
+	return indexOf ( string, null );
 }
 
 /**
@@ -1777,8 +1766,8 @@ intuitively be referring to the latest instance in the list.
 @param traceID If specified as non-null and non-blank, the trace identifier is also checked to find a match.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
-private int indexOf ( String string, String traceID )
-{	// First search the aliases in the BinaryTS and in memory list.
+private int indexOf ( String string, String traceID ) {
+	// First search the aliases in the BinaryTS and in memory list.
 	int pos = -1;
 	if ( (string == null) || string.equals("") ) {
 		return -1;
@@ -1814,7 +1803,7 @@ private int indexOf ( String string, String traceID )
 				else {
                     return i;
 				}
-			}		
+			}
 		}
 	}
 	return -1;
@@ -1826,10 +1815,10 @@ If a datastore substitute name is used, look up the original datastore.
 @param dataStoreName name for the data store to find.
 @return the data store that matches the given name (will return null if not matched).
 */
-protected DataStore lookupDataStore ( String dataStoreName )
-{   //String routine = "TSEngine.lookupDataStore";
+protected DataStore lookupDataStore ( String dataStoreName ) {
+    //String routine = "TSEngine.lookupDataStore";
     //Message.printStatus(2, routine, "Getting data store for \"" + dataStoreID + "\"" );
-	
+
 	// If the datastore name is a substitute, use the original datastore name.
     for ( DataStoreSubstitute dsSubstitute : this.__dataStoreSubstituteList ) {
    		if ( dataStoreName.equals(dsSubstitute.getDatastoreNameInCommands()) ) {
@@ -1837,7 +1826,7 @@ protected DataStore lookupDataStore ( String dataStoreName )
    			dataStoreName = dsSubstitute.getDatastoreNameToUse();
    		}
     }
-	
+
 	// Look up the matching datastore from the name.
     for ( DataStore ds : __dataStoreList ) {
         if ( ds.getName().equalsIgnoreCase(dataStoreName) ) {
@@ -1865,7 +1854,7 @@ private EndFor_Command lookupEndForCommand(List<Command> commandList, int iStart
 }
 
 /**
-Lookup the command index for the EndFor() command with requested name
+Lookup the command index for the EndFor() command with requested name.
 @param commandList list of commands to check
 @param forName the name of the "for" name to find
 */
@@ -2022,8 +2011,8 @@ Process the events from the MessageJDialog class.
 If the "Cancel" button has been pressed, then indicate that the time series processing should stop.
 @param command If "Cancel", then a request will be made to cancel processing.
 */
-public void messageJDialogAction ( String command )
-{	if ( command.equalsIgnoreCase("Cancel") ) {
+public void messageJDialogAction ( String command ) {
+	if ( command.equalsIgnoreCase("Cancel") ) {
 		__ts_processor.setCancelProcessingRequested(true);
 	}
 }
@@ -2070,8 +2059,8 @@ not the original one that started processing.
 </table>
 */
 protected void processCommands ( List<Command> commandList, PropList appPropList )
-throws Exception
-{	String message, routine = getClass().getSimpleName() + ".processCommands";
+throws Exception {
+	String message, routine = getClass().getSimpleName() + ".processCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0; // For errors during time series retrieval.
 	int update_count = 0; // For warnings about command updates.
@@ -2080,10 +2069,10 @@ throws Exception
 		// Process all commands if a subset has not been provided.
 		commandList = __ts_processor.getCommands();
 	}
-	
+
 	// Save the passed in properties (formed in the TSCommandProcessor) request call,
 	// so that they can be retrieved with other requests.
-	
+
 	if ( appPropList == null ) {
 		appPropList = new PropList ( "TSEngine" );
 	}
@@ -2093,14 +2082,14 @@ throws Exception
 	// Initialize the working directory to the initial directory that is passed in.
 	// Do this because software may request the working directory that
 	// is the result of processing and the initial directory may never have been changed dynamically.
-	
+
 	// FIXME SAM 2008-07-09 Need to reset global properties to defaults before running.
 	// This includes output period, etc.
 	// Otherwise, the settings will be those of the previous run.
 	// Probably need a parameter to control (do it by default) so that
 	// when running RunCommands() it is possible to retain previously set values or clear.
 	// This is done in the TSCommandProcessor instance before calling this method.
-	
+
 	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
 	// FIXME SAM 2008-07-31 Remove redundant location of properties in TSEngine and TSCommandProcessor.
 	if ( InitialWorkingDir != null ) {
@@ -2109,7 +2098,7 @@ throws Exception
 	    __ts_processor.setPropContents ( "WorkingDir", InitialWorkingDir );
 	}
 	Message.printStatus(2, routine,"InitialWorkingDir=" + __processor_PropList.getValue("InitialWorkingDir"));
-	
+
 	// Indicate whether output products/files should be created, or just time series (to allow interactive graphing).
 	boolean CreateOutput_boolean = __ts_processor.getCreateOutput().booleanValue();
 	if ( __processor_PropList != null ) {
@@ -2124,7 +2113,7 @@ throws Exception
 	}
 	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput") +
 			" => " + CreateOutput_boolean );
-	
+
 	// Indicate whether time series should be cleared between runs.
 	// If true, do not clear the time series between recursive calls.
 	// This is somewhat experimental to evaluate a master commands file that runs other commands files.
@@ -2160,9 +2149,9 @@ throws Exception
 
     // Turn off interactive warnings to prevent overload on user in loops.
     Message.setPropValue ( "ShowWarningDialog=false" );
-    
+
     // Clear any settings that may have been left over from the previous run and which can impact the current run.
-    
+
     processCommands_ResetDataForRunStart ( AppendResults_boolean );
 
 	// Now loop through the commands, query time series, and manipulate to produce a list of final time series.
@@ -2315,7 +2304,7 @@ throws Exception
             commandProfile.setStartHeap(Runtime.getRuntime().totalMemory());
     		// Notify any listeners that the command is running.
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( iCommand, size, command );
-    
+
     		if ( command instanceof Comment_Command ) {
     			// Comment.  Mark as processing successful unless requirements were not met.
                 String commandStringUpper = commandString.toUpperCase();
@@ -2420,10 +2409,10 @@ throws Exception
             //    commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     		//	break;
     		//}
-    	
+
     		// Check for obsolete commands (do this last to minimize the amount of processing through this code).
     		// Do this at the end because this logic may seldom be hit if valid commands are processed above.
-    		
+
     		else if ( processCommands_CheckForObsoleteCommands(commandString, commandStatusProvider, message_tag, i_for_message) ) {
     			// Had a match so increment the counters.
     			++update_count;
@@ -2989,7 +2978,7 @@ throws Exception
 		}
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( iCommand, size, command );
 	}
-	
+
 	// Indicate that processing is done and now there is no need to handle canceling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
@@ -2997,7 +2986,7 @@ throws Exception
 		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled ( iCommand, size, command );
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
-	
+
     // Make sure that important warnings are shown to the user.
     Message.setPropValue ( "ShowWarningDialog=true" );
 
@@ -3083,20 +3072,20 @@ Handling of warning increments is done in the calling code.
 */
 private boolean processCommands_CheckForObsoleteCommands(
         String command_String, CommandStatusProvider command, String message_tag, int i_for_message)
-throws Exception
-{	String routine = getClass().getName() + ".processCommands_CheckForObsoleteCommands";
+throws Exception {
+	String routine = getClass().getName() + ".processCommands_CheckForObsoleteCommands";
     String message = null;  // Problem - non-null will indicate obsolete command for return value.
     String suggest = null;  // Suggestion to fix.
 	// Print at level 1 or set in command status because these messages need to be addressed.
-	
+
 	if (command_String.regionMatches(true,0,"-averageperiod",0,14)){
 		message = "-averageperiod is obsolete.";
 		suggest = "Use SetAveragePeriod()";
 	}
 	else if ( command_String.regionMatches(true,0,"-batch",0,6)) {
 		// Old syntax command.
-		// Leave around because this functionality has never really been implemented but
-		// needs to be (e.g., call TSTool from web site and tell it to create a plot?).
+		// Leave around because this functionality has never really been implemented but needs to be
+		// (e.g., call TSTool from web site and tell it to create a plot?).
 	    message = "-batch has never been enabled.";
 	    suggest = "Use -commmands (and -nomaingui)";
 		IOUtil.isBatch ( true );
@@ -3263,7 +3252,7 @@ throws Exception
 		message = "SetRegressionPeriod() is obsolete.";
 		suggest = "Set dates in FillRegression() instead.";
 	}
-	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String," \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
+	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String," \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) {
 		// Old-style date.
 		message = "Setting output period with MM/YYYY MM/YYYY is obsolete.";
 		suggest = "Use SetOutputPeriod().";
@@ -3277,7 +3266,7 @@ throws Exception
         // An obsolete command was detected.
         return true;
 	}
-	// The command is not obsolete
+	// The command is not obsolete.
 	return false;
 }
 
@@ -3339,8 +3328,8 @@ If null, all are processed. The indices do not have to be in order.
 @exception IOException if there is an error generating the results.
 */
 protected void processTimeSeries ( int ts_indices[], PropList proplist )
-throws IOException
-{	String message = null;
+throws IOException {
+	String message = null;
 	String routine = getClass().getSimpleName() + ".processTimeSeries";
 
     // List of time series to output, determined from the time series in memory
@@ -3352,7 +3341,7 @@ throws IOException
 		message = "No time series to process.";
 		Message.printWarning ( 1, routine, message );
 		throw new IOException ( message );
-	} 
+	}
 	Message.printStatus ( 1, routine, "Creating output from previously queried time series..." );
 
 	// Put together the list of time series to process/output, given the requested ts_indices.
@@ -3381,8 +3370,7 @@ throws IOException
 
 /**
 Process a list of time series to produce an output product.
-The time series are typically generated from a previous call to
-processCommands() or processTimeSeriesCommands().
+The time series are typically generated from a previous call to processCommands() or processTimeSeriesCommands().
 However, the list of time series may also originate in an application like TSTool,
 for example when a single time series is converted to a time series ensemble
 on the fly and is then processed here, independent of time series maintained with the processor.
@@ -3616,7 +3604,7 @@ throws IOException {
     			units = tspt.getDataUnits();
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
-    
+
     		// Format the comments to add to the top of the file.
     		// In this case, add the commands used to generate the file.
     		if ( TSUtil.intervalsMatch ( tslist_output )) {
@@ -3633,13 +3621,12 @@ throws IOException {
     			//if ( _date2 != null ) {
     			//	date2 = new DateTime ( _date2 );
     			//	date2.setPrecision (DateTime.PRECISION_DAY);
-    			//	date2.setDay ( TimeUtil.numDaysInMonth(
-    			//		date2.getMonth(), date2.getYear() ));
+    			//	date2.setDay ( TimeUtil.numDaysInMonth(date2.getMonth(), date2.getYear() ));
     			//}
     			//DateValueTS.writeTimeSeries ( __tslist_output,
     			//	_output_file,
     			//	date1, date2, units, true );
-    			
+
     			DateValueTS.writeTimeSeriesList ( tslist_output,
     				__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, true );
     		}
@@ -3654,7 +3641,7 @@ throws IOException {
 		}
 	}
 	else if ( output_format == OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE ) {
-		try {	
+		try {
 			PropList esp_props = new PropList ( "esp" );
 			NWSRFS_ESPTraceEnsemble esp = new NWSRFS_ESPTraceEnsemble (	tslist_output, esp_props );
 			esp.writeESPTraceEnsembleFile ( __output_file );
@@ -3728,7 +3715,7 @@ throws IOException {
     			units = tspt.getDataUnits();
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
-    
+
     		// Format the comments to add to the top of the file.
     		// In this case, add the commands used to generate the file.
     		int interval_mult = 1;
@@ -3777,7 +3764,7 @@ throws IOException {
     			units = tspt.getDataUnits();
     			Message.printStatus ( 1, "", "Data units are " + units);
     		}
-    
+
     		// Format the comments to add to the top of the file.
     		// In this case, add the commands used to generate the file.
     		RiverWareTS.writeTimeSeries ( (TS)tslist_output.get(0),
@@ -3826,10 +3813,10 @@ throws IOException {
     			sumprops.set ( "PrintMeanStats", "true" );
     			sumprops.set ( "PrintNotes", "true" );
     		}
-    
+
     		if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
     			try {
-    				List<String> summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
+    				List<String> summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );
     				// Just write the summary to the given file.
     				IOUtil.printStringList ( __output_file, summary);
     			}
@@ -3856,7 +3843,7 @@ throws IOException {
     			if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
     				reportProps.setUsingObject("ParentUIComponent", uiComponent);
     			}
-    
+
     			try {
     				List<String> summary = TSUtil.formatOutput ( tslist_output, sumprops );
     				// Now display (the user can save as a file, etc.).
@@ -3882,7 +3869,7 @@ throws IOException {
                 null, // start
                 null, // end
                 null ); // precision
-     
+
             if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
                 PrintWriter ofp = null;
                 try {
@@ -3951,7 +3938,7 @@ throws IOException {
     			Message.printWarning ( 1, routine, "Can only generate a table from GUI" );
     			return;
     		}
-    
+
     		PropList graphprops = new PropList ( "Table" );
     		// Set graph properties for a simple graph.
     		graphprops.set ( "ExtendedLegend", "true" );
@@ -3962,10 +3949,10 @@ throws IOException {
     		// Set the total size of the graph window.
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
-    
+
     		// Default properties.
     		graphprops.set("GraphType=Line");
-    
+
     		graphprops.set ( "InitialView", "Table" );
     		// Summary properties for secondary displays (copy from summary output).
     		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
@@ -4044,7 +4031,7 @@ throws IOException {
     			Message.printWarning ( 1, routine, "Can only graph from GUI" );
     			return;
     		}
-    
+
     		PropList graphprops = new PropList ( "Graph" );
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
@@ -4054,7 +4041,7 @@ throws IOException {
     		// Set the total size of the graph window.
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
-    
+
     		if ( (tslist != null) && (output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
     /* Currently disabled.
     			// Go through each time series in the list and break
@@ -4125,7 +4112,7 @@ throws IOException {
     		}
             else if ( output_format == OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH ) {
                 graphprops.set("GraphType=ExceedanceProbability");
-                // TODO SAM 2011-11-24 Need to set default properties here? 
+                // TODO SAM 2011-11-24 Need to set default properties here?
             }
     		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
     			graphprops.set("YAxisType=Log");
@@ -4172,7 +4159,7 @@ throws IOException {
     			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
     			*/
     		}
-    
+
     		// For now always use new graph.
     		graphprops.set ( "InitialView", "Graph" );
     		// Summary properties for secondary displays (copy from summary output).
@@ -4188,6 +4175,9 @@ throws IOException {
     		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component.
     		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
     		if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
+    			if ( Message.isDebugOn ) {
+    				Message.printStatus(2,routine,"In TSEngine setting TSViewParentUIComponent=" + uiComponent);
+    			}
     			graphprops.setUsingObject("TSViewParentUIComponent", uiComponent);
     		}
     		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
@@ -4217,8 +4207,8 @@ Typically this will be 1 if mimicking the old processing, and 2+ during transiti
 @exception Exception if there is an error reading the time series.
 */
 protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean readData )
-throws Exception
-{	return readTimeSeries ( wl, command_tag, tsident_string, false, readData );
+throws Exception {
+	return readTimeSeries ( wl, command_tag, tsident_string, false, readData );
 }
 
 /**
@@ -4244,10 +4234,10 @@ FIXME - need to phase out "full_period".
 @exception Exception if there is an error reading the time series.
 */
 private TS readTimeSeries (	int wl, String commandTag, String tsidentString, boolean fullPeriod, boolean readData )
-throws Exception
-{	TS ts = null;
+throws Exception {
+	TS ts = null;
 	String routine = getClass().getSimpleName() + ".readTimeSeries";
-	
+
 	// Figure out what dates to use for the query.
 
 	DateTime inputStart = null;	// Default is to read all data.
@@ -4321,8 +4311,8 @@ throws Exception
 }
 
 /**
-Read a time series.  This method is called internally by TSEngine code and when
-TSEngine serves as a TSSupplier when processing TSProducts.
+Read a time series.
+This method is called internally by TSEngine code and when TSEngine serves as a TSSupplier when processing TSProducts.
 It actually tries to read a time series from a file or database.
 @param tsidentString Time series identifier to read.
 @param readStart First date to read.  If specified as null the entire period will be read.
@@ -4333,8 +4323,8 @@ It actually tries to read a time series from a file or database.
 @exception Exception if there is an error reading the time series.
 */
 private TS readTimeSeries0 ( String tsidentString, DateTime readStart, DateTime readEnd, String units, boolean readData )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".readTimeSeries0";
+throws Exception {
+	String routine = getClass().getSimpleName() + ".readTimeSeries0";
 
 	if ( Message.isDebugOn ) {
 		Message.printDebug ( 10, routine, "Getting time series \"" + tsidentString + "\"" );
@@ -4361,12 +4351,12 @@ throws Exception
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),inputName) );
         Message.printStatus(2, routine, "Absolute path to input name is \"" + inputNameFull + "\"" );
 	}
-	
+
 	// New approach uses DataStore concept to manage input types.
 	// In this case, look up the data store using the input type string.
-	// If matched, then the DataStore object information below (e.g., for
-	// HydroBase, RccAcis, ReclamationHDB, UsgsNwis).
-	
+	// If matched, then the DataStore object information below
+	// (e.g., for HydroBase, RccAcis, ReclamationHDB, UsgsNwis).
+
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
 	// TSIdent uses only the first part of the identifier.
@@ -4427,11 +4417,10 @@ throws Exception
 		}
 	}
 	/* TODO SAM Re-enable services code.
-	else if (	(input_type != null) &&
-		input_type.equalsIgnoreCase(PersistenceType.DATE_VALUES.getTSIdentString()) ) {
+	else if ( (input_type != null) && input_type.equalsIgnoreCase(PersistenceType.DATE_VALUES.getTSIdentString()) ) {
 		// Test new data services for DateValue file...
 		try {	TSIdent tsident_full = new TSIdent ( tsident_string );
-		        TSRequestTO tsRequestTO = new TSRequestTO ();// tsident_full 
+		        TSRequestTO tsRequestTO = new TSRequestTO ();// tsident_full
 		        TSIdentityTO tsIdentityTO = new TSIdentityTO();
 		        tsIdentityTO.setPersistenceTypeStr(PersistenceType.DATE_VALUES.toString());
 		        tsIdentityTO.setTsIdentString(tsident_full.toString());
@@ -4445,7 +4434,7 @@ throws Exception
 			ts = null;
 		}
 	}
-*/
+	*/
     else if ((dataStore != null) && (dataStore instanceof GenericDatabaseDataStore) ) {
         GenericDatabaseDataStore ds = (GenericDatabaseDataStore)dataStore;
         if ( ds.getDMI() == null ) {
@@ -4866,8 +4855,8 @@ If specified as null or an empty string the units will not be converted.
 */
 public TS readTimeSeries (	String tsident_string,
 				DateTime req_date1, DateTime req_date2,	String req_units, boolean read_data )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".readTimeSeries";
+throws Exception {
+	String routine = getClass().getSimpleName() + ".readTimeSeries";
 	Message.printStatus ( 2, routine,"Reading \"" + tsident_string + "\"" );
 
 	// First look for time series in the in-memory list.
@@ -4879,8 +4868,8 @@ throws Exception
 		size = __tslist.size();
 	}
 
-	// If the tsident_string contains a ~, then use the full identifier with
-	// input fields to search below.  Otherwise, just use the main part of the identifier.
+	// If the tsident_string contains a ~, then use the full identifier with input fields to search below.
+	// Otherwise, just use the main part of the identifier.
 
 	boolean full_tsid_check = false;
 	if ( tsident_string.indexOf("~") >= 0 ) {
@@ -4959,14 +4948,14 @@ If specified as null or an empty string the units will not be converted.
 */
 public TS readTimeSeries (	TS req_ts, String fname, DateTime date1, DateTime date2,
 				String req_units, boolean read_data )
-throws Exception
-{	return null;
+throws Exception {
+	return null;
 }
 
 /**
 Method for TSSupplier interface.
-Read a time series list from a file (this is typically used used where a time
-series file can contain one or more time series).
+Read a time series list from a file
+(this is typically used used where a time series file can contain one or more time series).
 The specified period is read.  The data are converted to the requested units.
 @param fname File to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
@@ -4977,17 +4966,15 @@ If specified as null or an empty string the units will not be converted.
 @return List of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public List<TS> readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
-					String req_units, boolean read_data )
-throws Exception
-{	return null;
+public List<TS> readTimeSeriesList ( String fname, DateTime date1, DateTime date2, String req_units, boolean read_data )
+throws Exception {
+	return null;
 }
 
 /**
 Method for TSSupplier interface.
-Read a time series list from a file or database using the time series identifier
-information as a query pattern.  The specified period is
-read.  The data are converted to the requested units.
+Read a time series list from a file or database using the time series identifier information as a query pattern.
+The specified period is read.  The data are converted to the requested units.
 @param tsident A TSIdent instance that indicates which time series to query.
 If the identifier parts are empty, they will be ignored in the selection.
 If set to "*", then any time series identifier matching the field will be selected.
@@ -5024,15 +5011,12 @@ This method does the following:
 <li>	If a missing data range has been set, indicate it to the time series.
 	This may be phased out.</li>
 <li>	If the time series identifier needs to be reset to something known to
-	the read code, reset it (using the non-null tsident_string parameter
-	that is passed in).</li>
-<li>	Compute the historic averages for the raw data so that it is available
-	later for filling.</li>
-<li>	If the output period is specified, make sure that the time series
-	period includes the output period.  For important time series, the
-	available period may already include the output period.  For time series
-	that are being filled, it is likely that the available period will need
-	to be extended to include the output period.</li>
+	the read code, reset it (using the non-null tsident_string parameter that is passed in).</li>
+<li>	Compute the historic averages for the raw data so that it is available later for filling.</li>
+<li>	If the output period is specified, make sure that the time series period includes the output period.
+	For important time series, the available period may already include the output period.
+	For time series that are being filled,
+	it is likely that the available period will need to be extended to include the output period.</li>
 </ol>
 @param ts Time series to process.
 @param tsident_string Time series identifier string.  If null, take from the time series.
@@ -5041,8 +5025,8 @@ If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
 */
 private void readTimeSeries2 ( TS ts, String tsident_string, boolean full_period, boolean readData )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".readTimeSeries2";
+throws Exception {
+	String routine = getClass().getSimpleName() + ".readTimeSeries2";
 	if ( ts == null ) {
 		return;
 	}
@@ -5066,7 +5050,7 @@ throws Exception
     	}
     	catch ( Exception e ) {
     		Message.printWarning ( 3, routine,
-    		"Error getting original data limits for \"" + ts.getIdentifierString() + "\""  );
+    		"Error getting original data limits for \"" + ts.getIdentifierString() + "\"" );
     		Message.printWarning ( 3, routine, e );
     	}
 	}
@@ -5124,8 +5108,8 @@ full_period parameter having a value of true.  This version is called by read co
 @exception Exception if there is an error processing the time series.
 */
 protected void readTimeSeries2 ( List<TS> tslist )
-throws Exception
-{	readTimeSeries2 ( tslist, true, true );
+throws Exception {
+	readTimeSeries2 ( tslist, true, true );
 }
 
 /**
@@ -5137,8 +5121,8 @@ If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
 */
 private void readTimeSeries2 ( List<TS> tslist, boolean full_period, boolean readData )
-throws Exception
-{	int size = 0;
+throws Exception {
+	int size = 0;
 	if ( tslist != null ) {
 		size = tslist.size();
 	}
@@ -5169,8 +5153,8 @@ protected void removeTimeSeries ( int index ) {
 }
 
 /**
-Set the value of the AutoExtendPeriod property.  If true, the period for time series
-will automatically be extended to the output period at read.
+Set the value of the AutoExtendPeriod property.
+If true, the period for time series will automatically be extended to the output period at read.
 @param AutoExtendPeriod_boolean Value of property.
 */
 protected void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean ) {
@@ -5181,16 +5165,16 @@ protected void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean ) {
 Set the average period end.
 @param end Average period end.
 */
-protected void setAverageEnd ( DateTime end )
-{   __AverageEnd_DateTime = end;
+protected void setAverageEnd ( DateTime end ) {
+   __AverageEnd_DateTime = end;
 }
 
 /**
 Set the average period start.
 @param start Average period start.
 */
-protected void setAverageStart ( DateTime start )
-{   __AverageStart_DateTime = start;
+protected void setAverageStart ( DateTime start ) {
+    __AverageStart_DateTime = start;
 }
 
 /**
@@ -5203,8 +5187,8 @@ The new instance is added at the end.
 The main issue is that if something else is using a DMI instance (e.g., the TSTool GUI)
 it may be necessary to leave the old instance open.
 */
-protected void setDataStore ( DataStore dataStore, boolean closeOld )
-{   String routine = getClass().getSimpleName() + ".setDataStore";
+protected void setDataStore ( DataStore dataStore, boolean closeOld ) {
+    String routine = getClass().getSimpleName() + ".setDataStore";
     if ( dataStore == null ) {
         return;
     }
@@ -5282,8 +5266,8 @@ If a match is not found, the new instance is added at the end.
 The main issue is that if something else is using the DMI instance (e.g., the TSTool GUI)
 it may be necessary to leave the old instance open.
 */
-protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
-{	if ( hbdmi == null ) {
+protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old ) {
+	if ( hbdmi == null ) {
 		return;
 	}
 	int size = __hbdmi_Vector.size();
@@ -5315,8 +5299,8 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() command.
 @param dmilist list of HydroBaseDMI.
 */
-protected void setHydroBaseDMIList ( List<HydroBaseDMI> dmilist )
-{	__hbdmi_Vector = dmilist;
+protected void setHydroBaseDMIList ( List<HydroBaseDMI> dmilist ) {
+	__hbdmi_Vector = dmilist;
 }
 
 /**
@@ -5338,35 +5322,35 @@ protected void setIncludeMissingTS ( boolean IncludeMissingTS_boolean ) {
 /**
 Set the default output end to be used with processing missing time series.
 */
-protected void setIncludeMissingTSOutputEnd ( DateTime dt )
-{   __IncludeMissingTSOutputEnd = dt;
+protected void setIncludeMissingTSOutputEnd ( DateTime dt ) {
+    __IncludeMissingTSOutputEnd = dt;
 }
 
 /**
 Set the default output start to be used with processing missing time series.
 */
-protected void setIncludeMissingTSOutputStart ( DateTime dt )
-{   __IncludeMissingTSOutputStart = dt;
+protected void setIncludeMissingTSOutputStart ( DateTime dt ) {
+    __IncludeMissingTSOutputStart = dt;
 }
 
 /**
 Set the input period end.
 @param end Input period end.
 */
-protected void setInputEnd ( DateTime end )
-{	__InputEnd_DateTime = end;
+protected void setInputEnd ( DateTime end ) {
+ 	__InputEnd_DateTime = end;
 }
 
 /**
 Set the input period start.
 @param start Input period start.
 */
-protected void setInputStart ( DateTime start )
-{	__InputStart_DateTime = start;
+protected void setInputStart ( DateTime start ) {
+ 	__InputStart_DateTime = start;
 }
 
 /**
-Set a NWSRFS_DMI (NWSRFS FS5Files DMI) instance in the Vector that is being maintained for use.
+Set a NWSRFS_DMI (NWSRFS FS5Files DMI) instance in the list that is being maintained for use.
 The input name in the DMI is used to lookup the instance.
 If a match is found, the old instance is optionally closed and the new instance is set in the same location.
 If a match is not found, the new instance is added at the end.
@@ -5375,8 +5359,8 @@ If a match is not found, the new instance is added at the end.
 The main issue is that if something else is using the DMI instance (e.g., the TSTool GUI)
 it may be necessary to leave the old instance open.
 */
-protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
-{	if ( nwsrfs_dmi == null ) {
+protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old ) {
+ 	if ( nwsrfs_dmi == null ) {
 		return;
 	}
 	int size = __nwsrfs_dmi_Vector.size();
@@ -5407,8 +5391,8 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 Set the output period end.
 @param end Output period end.
 */
-protected void setOutputEnd ( DateTime end )
-{	__OutputEnd_DateTime = end;
+protected void setOutputEnd ( DateTime end ) {
+ 	__OutputEnd_DateTime = end;
 }
 
 /**
@@ -5425,16 +5409,16 @@ throws Exception {
 Set the output period start.
 @param start Output period start.
 */
-protected void setOutputStart ( DateTime start )
-{	__OutputStart_DateTime = start;
+protected void setOutputStart ( DateTime start ) {
+ 	__OutputStart_DateTime = start;
 }
 
 /**
 Set the output year type.
 @param outputYearType Output year type as a YearType enumeration.
 */
-protected void setOutputYearType ( YearType outputYearType )
-{   __outputYearType = outputYearType;
+protected void setOutputYearType ( YearType outputYearType ) {
+    __outputYearType = outputYearType;
 }
 
 /**
@@ -5541,25 +5525,25 @@ private void setProcessorRunEndProperties ( StopWatch stopwatch, List<Command> c
 }
 
 /**
-Set the time series in either the __tslist vector.
+Set the time series in either the __tslist list.
 @param id Identifier for time series (alias or TSIdent string).
 @exception Exception if there is an error saving the time series.
 */
 protected void setTimeSeries ( String id, TS ts )
-throws Exception
-{	int position = indexOf ( id );
+throws Exception {
+	int position = indexOf ( id );
 	setTimeSeries ( ts, position );
 }
 
 /**
-Set the time series in either the __tslist vector.
+Set the time series in either the __tslist list.
 @param ts time series to set.
 @param position Position in time series list (0 index).
 @exception Exception if there is an error saving the time series.
 */
 protected void setTimeSeries ( TS ts, int position )
-throws Exception
-{	String routine = getClass().getSimpleName() + ".setTimeSeries";
+throws Exception {
+	String routine = getClass().getSimpleName() + ".setTimeSeries";
 
 	if ( ts == null ) {
 		Message.printStatus ( 2, routine, "Setting null time series at position " + (position + 1) +
@@ -5594,8 +5578,8 @@ throws Exception
 Set the time series list, for example, when being processed through TSCommandsProcessor.
 @param tslist List of time series results, as list of TS.
 */
-protected void setTimeSeriesList ( List<TS> tslist )
-{	__tslist = tslist;
+protected void setTimeSeriesList ( List<TS> tslist ) {
+	__tslist = tslist;
 }
 
 /**
@@ -5605,8 +5589,8 @@ This method is needed because the comments are often used in the header and comm
 Currently only the units are updated.  THIS METHOD IS HIGHLY DEPENDENT ON THE SPECIFIC TIME SERIES COMMENTS USED WITH CDSS.
 @param ts Time series to update.
 */
-private void updateHydroBaseComments ( TS ts )
-{	if ( ts == null ) {
+private void updateHydroBaseComments ( TS ts ) {
+	if ( ts == null ) {
         return;
     }
 	List<String> comments = ts.getComments();
@@ -5640,8 +5624,8 @@ If an integer, use as the precision parameter for StateMod.writePersistent().
 @param comments Comments to include at the top of the StateMod file, consisting
 of the commands as text and database version information.
 */
-private void writeStateModTS ( List<TS> tslist, String output_file, String precision_string, String[] comments )
-{	String routine = getClass().getSimpleName() + ".writeStateModTS";
+private void writeStateModTS ( List<TS> tslist, String output_file, String precision_string, String[] comments ) {
+	String routine = getClass().getSimpleName() + ".writeStateModTS";
 	// Set the precision default precision for output (-2 generally works OK).
 	int	precision = -2;
 	if ( !precision_string.equals("*") && !precision_string.equals("") &&
@@ -5724,37 +5708,30 @@ private void writeStateModTS ( List<TS> tslist, String output_file, String preci
 	}
 }
 
-public void windowActivated ( WindowEvent e )
-{
+public void windowActivated ( WindowEvent e ) {
 }
 
 /**
 TODO SAM 2004-07-22 - not needed since _graph_list was removed?
 */
-public void windowClosed ( WindowEvent e )
-{	
+public void windowClosed ( WindowEvent e ) {
 }
 
 /**
 */
-public void windowClosing ( WindowEvent e )
-{
+public void windowClosing ( WindowEvent e ) {
 }
 
-public void windowDeactivated ( WindowEvent e )
-{
+public void windowDeactivated ( WindowEvent e ) {
 }
 
-public void windowDeiconified ( WindowEvent e )
-{
+public void windowDeiconified ( WindowEvent e ) {
 }
 
-public void windowIconified ( WindowEvent e )
-{
+public void windowIconified ( WindowEvent e ) {
 }
 
-public void windowOpened ( WindowEvent e )
-{
+public void windowOpened ( WindowEvent e ) {
 }
 
 }

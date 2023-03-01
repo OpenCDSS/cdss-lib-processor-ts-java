@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -99,8 +99,8 @@ private List<TS> __discovery_TS_List = null;
 /**
 Constructor.
 */
-public ReadColoradoHydroBaseRest_Command ()
-{	super();
+public ReadColoradoHydroBaseRest_Command () {
+	super();
 	setCommandName ( "ReadColoradoHydroBaseRest" );
 }
 
@@ -113,8 +113,8 @@ to allow a cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String warning = "";
+throws InvalidCommandParameterException {
+	String warning = "";
     String message;
 
     CommandStatus status = getCommandStatus();
@@ -130,7 +130,7 @@ throws InvalidCommandParameterException
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
     String InputFiltersCheck = parameters.getValue ( "InputFiltersCheck" ); // Passed in from the editor, not an actual parameter.
-    
+
 	if ( (DataStore == null) || DataStore.isEmpty() ) {
         message = "The datastore must be specified.";
 		warning += "\n" + message;
@@ -231,7 +231,7 @@ throws InvalidCommandParameterException
 	}
 
 	// TODO smalers 2022-03-20 Need to check the WhereN parameters.
-	
+
 	// Make sure that either TSID or one Where parameter is specified:
 	// - otherwise only DataType and Interval being selected will result in an open ended slow query
 	// - the input filter panel should warn about other constraints if it is used at all
@@ -324,12 +324,12 @@ throws InvalidCommandParameterException
                         message, "Specify " + _Ignore + ", " + _Warn +
                         ", or blank for default of " + _Warn + "." ) );
     }
-    
+
     // If any issues were detected in the input filter add to the message string.
     if ( (InputFiltersCheck != null) && !InputFiltersCheck.isEmpty() ) {
     	warning += InputFiltersCheck;
     }
-    
+
     // Check for invalid parameters.
     List<String> validList = new ArrayList<>();
     validList.add ( "DataStore" );
@@ -338,7 +338,7 @@ throws InvalidCommandParameterException
     validList.add ( "DataType" );
     validList.add ( "WaterClass" );
     validList.add ( "Interval" );
-    for ( int i = 1; i <= numFilters; i++ ) { 
+    for ( int i = 1; i <= numFilters; i++ ) {
         validList.add ( "Where" + i );
     }
     validList.add ( "InputStart" );
@@ -356,7 +356,7 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -391,11 +391,10 @@ public <T> List<T> getObjectList ( Class<T> c ) {
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new ReadColoradoHydroBaseRest_JDialog ( parent, this )).ok();
 }
 
@@ -408,7 +407,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -430,8 +429,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -441,7 +440,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
-    
+
     Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -455,7 +454,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
+
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
@@ -464,7 +463,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String DataStore = parameters.getValue ("DataStore" );
 	DataStore = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStore);
-    
+
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
 		InputStart = "${InputStart}";
@@ -483,13 +482,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		FillUsingDivComments = _False;	// Default is to NOT fill, which is consistent with ReadHydroBase command.
 	}
 	String FillUsingDivCommentsFlag = parameters.getValue ( "FillUsingDivCommentsFlag" );
-	
+
     String IfMissing = parameters.getValue ("IfMissing" );
-    boolean IfMissingWarn = true;  // Default>
+    boolean IfMissingWarn = true;  // Default.
     if ( (IfMissing != null) && IfMissing.equalsIgnoreCase(_Ignore) ) {
         IfMissingWarn = false;  // Ignore when time series are not found.
     }
-    
+
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -527,7 +526,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
@@ -618,9 +617,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						whereNList.add ( WhereN );
 					}
 				}
-	
+
 				// Initialize an input filter based on the data type.
-	
+
 				InputFilter_JPanel filterPanel = null;
 				boolean isClimateStation = false;
 				boolean isStructure = false;
@@ -628,7 +627,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				boolean isWaterClass = false;
 				boolean isTelemetryStation = false;
 				boolean isWell = false;
-	
+
 				// Create the input filter panel.
 				// Data type is the part after the dash (e.g., "Structure - DivTotal").
 				String dataType = dataStore.getDataTypeWithoutGroup(DataType);
@@ -639,7 +638,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    else {
 			        dataType = DataType.trim();
 			    }
-	
+
 				if ( dataStore.isClimateStationTimeSeriesDataType ( dataTypeWithGroup ) ){
 					// Climate stations.
 					isClimateStation = true;
@@ -683,9 +682,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                        message, "Verify that the datatype can be used with ColoradoHydroBaseRest web services (see documentation)." ) );
 					throw new Exception ( message );
 				}
-	
+
 				// Populate with the where information from the command.
-	
+
 				String filter_delim = ";";
 				for ( int ifg = 0; ifg < nfg; ifg ++ ) {
 					WhereN = whereNList.get(ifg);
@@ -706,19 +705,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                            message, "Report the problem to software support - also see the log file." ) );
 					}
 				}
-			
+
 				// Read the list of objects from which identifiers can be obtained.
 				// This code is similar to that in TSTool_JFrame.readHydroBaseHeaders.
-			
+
 				Message.printStatus ( 2, routine, "Getting the list of time series..." );
-			
+
 				// Create empty lists for catalogs from each major data category.
 				List<ClimateStationDataType> climateStationCatalog = new ArrayList<>();
 				List<DiversionWaterClass> structureCatalog = new ArrayList<>();
 				List<SurfaceWaterStationDataType> surfaceWaterStationCatalog = new ArrayList<>();
 				List<TelemetryStationDataType> telemetryStationCatalog = new ArrayList<>();
 				List<WaterLevelsWell> wellCatalog = new ArrayList<>();
-				
+
 				// Read the time series catalog.
 				int size = 0;
 				if ( isClimateStation ) {
@@ -804,14 +803,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						Message.printWarning(3, routine, e);
 					}
 				}
-				
+
 				// Make sure that size is set.
 	       		if ( size == 0 ) {
 					Message.printStatus ( 2, routine,"No HydroBase REST web service time series were found." );
 			        // Warn if nothing was retrieved (can be overridden to ignore).
 		            if ( IfMissingWarn ) {
 		                message = "No time series were read from HydroBase REST web service.";
-		                Message.printWarning ( warning_level, 
+		                Message.printWarning ( warning_level,
 		                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 	                    status.addToLog ( commandPhase,
 	                        new CommandLogRecord(CommandStatusType.FAILURE,
@@ -828,11 +827,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                        Class.forName("RTi.TS.TS"),"Time Series", this));
 					return;
 	       		}
-			
+
 				// Else, convert each header object to a TSID string and read the time series.
-	
+
 				Message.printStatus ( 2, "", "Reading " + size + " time series..." );
-	
+
 				String tsidentString = null; // TSIdent string.
 				TS ts; // Time series to read.
 	            ClimateStationDataType csta;
@@ -876,22 +875,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 								// Water class includes a period for extended SFUT coding so add single quotes data type.
 								tsidentString = str.getWdid()
 										+ "." + "DWR"
-										+ ".'" + DataType 
+										+ ".'" + DataType
 										+ "-" + wcIdentifier
 										+ "'." + Interval
 										+ inputName;
 							} else {
 								tsidentString = str.getWdid()
 										+ "." + "DWR"
-										+ "." + DataType 
+										+ "." + DataType
 										+ "-" + wcIdentifier
 										+ "." + Interval
-										+ inputName;	
+										+ inputName;
 							}
 						} else {
 							tsidentString = str.getWdid()
 								+ "." + "DWR"
-								+ "." + DataType 
+								+ "." + DataType
 								+ "." + Interval
 								+ inputName;
 						}
@@ -926,8 +925,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                else if ( isWell ) {
 	                    // Well time series.
 	                    well = (WaterLevelsWell)wellCatalog.get(i);
-	                    tsidentString = "wellid:" + well.getWellId() 
-	                        + "." + well.getDataSource() 
+	                    tsidentString = "wellid:" + well.getWellId()
+	                        + "." + well.getDataSource()
 	                        + "." + DataType
 	                        + "." + Interval
 	                        + inputName;
@@ -959,7 +958,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					}
 				}
 			} // End reading using input filter.
-    
+
         int size = 0;
         if ( tslist != null ) {
             size = tslist.size();
@@ -974,7 +973,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                 if ( wc > 0 ) {
                     message = "Error post-processing HydroBase REST web service time series after read.";
-                    Message.printWarning ( warning_level, 
+                    Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
                         status.addToLog ( commandPhase,
@@ -982,13 +981,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
                 }
-    
+
                 // Now add the list in the processor.
-                
+
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                 if ( wc2 > 0 ) {
                     message = "Error adding HydroBase REST web service time series after read.";
-                    Message.printWarning ( warning_level, 
+                    Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
                         status.addToLog ( commandPhase,
@@ -1005,7 +1004,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (tslist == null) || (size == 0) ) {
             if ( IfMissingWarn ) {
                 message = "No time series were read from HydroBase REST web service.";
-                Message.printWarning ( warning_level, 
+                Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -1019,7 +1018,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message ="Unexpected error reading time series from HydroBase REST web service (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
         status.addToLog ( commandPhase,
@@ -1037,7 +1036,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 

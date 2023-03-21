@@ -860,7 +860,8 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass ) {
 /**
 Return the datastore for the requested name, or null if not found.
 @param name the data store name to match (case is ignored in the comparison)
-@param dataStoreClass the class of the data store to match, useful when ensuring that the data store
+@param dataStoreClass the class of the data store to match,
+useful when ensuring that the data store
 is compatible with intended use - specify as null to not match class
 @param activeOnly if true, only active datastores are returned (status = 0)
 @return the data store for the requested name, or null if not found.

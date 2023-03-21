@@ -52,6 +52,7 @@ import rti.tscommandprocessor.commands.datastore.OpenDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.RunSql_Command;
+import rti.tscommandprocessor.commands.datastore.SetPropertyFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTableToDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
 
@@ -1144,6 +1145,9 @@ throws UnknownCommandException {
         return new ReadPatternFile_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
+    else if ( commandNameUpper.equals("SETPROPERTYFROMDATASTORE") ) { // "SetPropertyFromDataStore"
+        return new SetPropertyFromDataStore_Command ();
+    }
     else if ( commandNameUpper.equals("SETPROPERTYFROMENSEMBLE") ) { // "SetPropertyFromEnsemble"
         return new SetPropertyFromEnsemble_Command ();
     }

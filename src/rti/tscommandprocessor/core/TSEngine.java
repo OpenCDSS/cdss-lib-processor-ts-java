@@ -4291,7 +4291,8 @@ throws Exception {
 		    // Not able to query the time series and requested to not create empty time series.
 			String message = "Null TS from read and not creating blank - unable to" +
 				" process command:\n\""+ tsidentString +"\".\nYou must correct the command.  " +
-				"Make sure that the data are in the database or input file.";
+				"Make sure that the data are in the database or input file and that the requested "
+				+ "(or default input period) overlaps the data period.";
 			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(commandTag,++_fatal_error_count), routine, message );
 			getMissingTS().add(tsidentString);

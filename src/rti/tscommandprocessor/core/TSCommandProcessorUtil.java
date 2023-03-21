@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -125,8 +125,8 @@ Append a time series to the processor time series results list.
 @param ts Time series to append.
 @param return the number of warnings generated.
 */
-public static int appendEnsembleToResultsEnsembleList ( CommandProcessor processor, Command command, TSEnsemble tsensemble )
-{   String routine = "TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList";
+public static int appendEnsembleToResultsEnsembleList ( CommandProcessor processor, Command command, TSEnsemble tsensemble ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".appendEnsembleToResultsEnsembleList";
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "TSEnsemble", tsensemble );
     int warning_level = 3;
@@ -169,8 +169,8 @@ The data table is a table maintained by the processor to report on test results.
 @param isEnabled whether the command file is enabled (it is useful to list all tests even if not
 enabled in order to generate an inventory of disabled tests that need cleanup)
 @param runTimeMs run time for the command in milliseconds
-@param testPassFail whether the test was a success or failure (it is possible for the test to
-be a successful even if the command file failed, if failure was expected)
+@param testPassFail whether the test was a success or failure
+(it is possible for the test to be a successful even if the command file failed, if failure was expected)
 @param expectedStatus the expected status (as a string)
 @param maxSeverity the maximum severity from the command file that was run.
 @param testCommandFile the full path to the command file that was run.
@@ -255,7 +255,7 @@ public static int appendTimeSeriesListToResultsList ( CommandProcessor processor
     }
     return wc;
 }
-	
+
 /**
 Append a time series to the processor time series results list.
 @param processor the CommandProcessor to use to get data.
@@ -263,8 +263,8 @@ Append a time series to the processor time series results list.
 @param ts Time series to append.
 @param return the number of warnings generated.
 */
-public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts )
-{	String routine = TSCommandProcessor.class.getSimpleName() + ".appendTimeSeriesToResultsList";
+public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts ) {
+	String routine = TSCommandProcessor.class.getSimpleName() + ".appendTimeSeriesToResultsList";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "TS", ts );
     int warning_level = 3;
@@ -296,7 +296,7 @@ public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Co
 
 /**
 Close the regression test report file.
-Also create a file that is the same but with name including '.nonum' a the end that
+Also create a file that is the same but with name including '.nonum' at the end that
 does not have test numbers, which facilitates comparing the results, for example in KDiff3.
 */
 public static void closeRegressionTestReportFile () {
@@ -315,9 +315,10 @@ public static void closeRegressionTestReportFile () {
     	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalCount,"%7.3f")+ "%");
     __regression_test_fp.println ( "#--------------------------------" );
     __regression_test_fp.println ( "Total          = " + StringUtil.formatString(totalCount, "%5d") );
-    
+
+    // Close the normal results file.
     __regression_test_fp.close();
-    
+
     // Create the report file with no test numbers.
     // The 'sed' command that works is as follows but is cumbersome because
     // have to determine a bash shell to run and the report file is not closed and therefore the following output is incomplete:
@@ -328,7 +329,7 @@ public static void closeRegressionTestReportFile () {
     //
     // Need to replace numbers in lines like the following with spaces:
     //     1|
-    
+
     // Create a filename that has extension: .nonum.ext
     String ext = IOUtil.getFileExtension(__regression_test_file);
     String outputFile = null;
@@ -341,7 +342,7 @@ public static void closeRegressionTestReportFile () {
    	PrintWriter ofp = null;
    	BufferedReader ifp = null;
     try {
-    	// Read the normal report file.
+    	// Read the normal report file, which contains the test number in the left column.
 	    ifp = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream( __regression_test_file) ));
     	// Open a second report file for 'nonum' output.
     	ofp = new PrintWriter ( new FileOutputStream ( outputFile, false ) );
@@ -376,8 +377,7 @@ Convert a time series identifier to a read command.
 to convert to the more general ReadTimeSeries() command.
 */
 public static Command convertTSIDToReadCommand ( TSCommandProcessor processor, String tsid, boolean requireSpecific )
-throws Exception
-{
+throws Exception {
     // First create a TSIdent object.
     //TSIdent tsident = new TSIdent ( tsid );
     // Figure out if there is an input type and name.
@@ -456,8 +456,8 @@ The characters \" will be replaced by a literal quote (").  Properties that cann
 @param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
 @return the expanded string or null if the input string was null
 */
-public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
+public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
     if ( (parameterValue == null) || (parameterValue.length() == 0) ||
     	(parameterValue.indexOf("${") < 0) ) {
     	// Nothing to expand:
@@ -588,7 +588,7 @@ public static int expandTemplateFile ( CommandProcessor processor, String inputF
         message = "Freemarker error expanding command template file \"" + inputFile +
             "\" + (" + e1 + ") template text (with internal inserts at ends) =" + nl +
             formatTemplateForWarning(templateLines,nl);
-        Message.printWarning ( warningLevel, 
+        Message.printWarning ( warningLevel,
         MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
         Message.printWarning ( 3, routine, e1 );
         status.addToLog(CommandPhaseType.RUN,
@@ -644,7 +644,7 @@ public static int expandTemplateFile ( CommandProcessor processor, String inputF
                 message = "Freemarker error expanding command template file \"" + inputFile +
                     "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
                     formatTemplateForWarning(templateLines,nl);
-                Message.printWarning ( warningLevel, 
+                Message.printWarning ( warningLevel,
                 MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
                 Message.printWarning ( 3, routine, e1 );
                 status.addToLog(CommandPhaseType.RUN,
@@ -664,8 +664,8 @@ Format the template for a warning message.  Add line numbers before.
 @param templateLines template file as a list of String
 @param nl newline character
 */
-private static StringBuffer formatTemplateForWarning ( List<String> templateLines, String nl )
-{   StringBuffer templateFormatted = new StringBuffer();
+private static StringBuffer formatTemplateForWarning ( List<String> templateLines, String nl ) {
+    StringBuffer templateFormatted = new StringBuffer();
     new StringBuffer();
     int lineNumber = 1;
     // Don't use space after number because HTML viewer may split and make harder to read.
@@ -692,8 +692,8 @@ the processor property won't be expanded)
 @param commandPhase command phase (for logging), can be null to ignore logging.
 */
 public static String expandTimeSeriesEnsembleMetadataString ( CommandProcessor processor, TSEnsemble ensemble, String s,
-    CommandStatus status, CommandPhaseType commandPhase )
-{   String routine = "TSCommandProcessorUtil.expandTimeSeriesEnsembleMetadataString";
+    CommandStatus status, CommandPhaseType commandPhase ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandTimeSeriesEnsembleMetadataString";
     if ( s == null ) {
         return "";
     }
@@ -843,8 +843,8 @@ the processor property won't be expanded)
 @param commandPhase command phase (for logging), can be null to ignore logging.
 */
 public static String expandTimeSeriesMetadataString ( CommandProcessor processor, TS ts, String s,
-    CommandStatus status, CommandPhaseType commandPhase )
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandTimeSeriesMetadataString";
+    CommandStatus status, CommandPhaseType commandPhase ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandTimeSeriesMetadataString";
     if ( s == null ) {
         return "";
     }
@@ -1029,7 +1029,7 @@ public static String getAnnotationCommandParameter ( Command command, int index 
 		}
 	}
 }
-	
+
 /**
  * Get commands that match an annotation.
  * @param processing command processor
@@ -1082,19 +1082,18 @@ Get the commands before the indicated index position.
 Only the requested commands are returned.
 Use this, for example, to get the SetWorkingDir() commands above the insert position for a readXXX() command,
 so the working directory can be defined and used in the editor dialog.
-@return List of commands before the index that match the commands in
-the neededCommandsList.  This will always return a non-null list, even if no commands are found.
+@return List of commands before the index that match the commands in the neededCommandsList.
+This will always return a non-null list, even if no commands are found.
 @param index The index in the command list before which to search for other commands.
 @param processor A TSCommandProcessor with commands to search.
 @param neededCommandsList List of commands (as String) that need to be processed
 (e.g., "SetWorkingDir").  Only the main command name should be defined.
-@param last_only if true, only the last item above the insert point
-is returned.  If false, all matching commands above the point are returned in
-the order from top to bottom.
+@param last_only if true, only the last item above the insert point is returned.
+If false, all matching commands above the point are returned in the order from top to bottom.
 */
 public static List<Command> getCommandsBeforeIndex ( int index, TSCommandProcessor processor,
-	List<String> neededCommandsList, boolean last_only )
-{	// Now search backwards matching commands for each of the requested commands.
+	List<String> neededCommandsList, boolean last_only ) {
+	// Now search backwards matching commands for each of the requested commands.
 	int size = 0;
 	if ( neededCommandsList != null ) {
 		size = neededCommandsList.size();
@@ -1131,15 +1130,15 @@ public static List<Command> getCommandsBeforeIndex ( int index, TSCommandProcess
 	}
 	return found_commands_sorted;
 }
-	
+
 /**
 Get the commands above an index position.
 @param processor The processor that is managing commands.
-@param pos Index (0+) before which to get commands.  The command at the indicated
-position is NOT included in the search.
+@param pos Index (0+) before which to get commands.
+The command at the indicated position is NOT included in the search.
 */
-private static List<Command> getCommandsBeforeIndex ( TSCommandProcessor processor, int pos )
-{	List<Command> commands = new ArrayList<>();
+private static List<Command> getCommandsBeforeIndex ( TSCommandProcessor processor, int pos ) {
+	List<Command> commands = new ArrayList<>();
 	int size = processor.size();
 	if ( pos > size ) {
 		pos = size;
@@ -1151,8 +1150,8 @@ private static List<Command> getCommandsBeforeIndex ( TSCommandProcessor process
 }
 
 /**
-Get the maximum command status severity for the processor.  This is used, for example, when
-determining an overall status for a runCommands() command.
+Get the maximum command status severity for the processor.
+This is used, for example, when determining an overall status for a runCommands() command.
 @param processor Command processor to check status.
 @return most severe command status from all commands in a processor.
 */
@@ -1178,8 +1177,8 @@ This is a processor level property.  If there is a problem, return true (create 
 @param processor the CommandProcessor to use to get data.
 @return true if output should be created when processing commands, false if not.
 */
-public static boolean getCreateOutput ( CommandProcessor processor )
-{	String routine = "TSCommandProcessorUtil.getCreateOutput";
+public static boolean getCreateOutput ( CommandProcessor processor ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getCreateOutput";
 	try {
 		Object o = processor.getPropContents ( "CreateOutput" );
 		if ( o != null ) {
@@ -1196,8 +1195,8 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 }
 
 /**
-Return the datastore names for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of names to editor dialogs.
+Return the datastore names for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of names to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which datastore names are needed.
 @param includeDatabases indicate whether to include DatabaseDataStore names.
@@ -1205,8 +1204,8 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of name
 @return a list of String containing the datastore names, or an empty list.
 */
 public static List<String> getDataStoreNamesFromCommandsBeforeCommand(
-	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices )
-{	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand";
+	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommandsBeforeCommand";
 	// Get the position of the command in the list.
 	int pos = processor.indexOf(command);
 	if ( Message.isDebugOn ) {
@@ -1238,7 +1237,7 @@ Datastore names are determined as follows:
 */
 protected static List<String> getDataStoreNamesFromCommands ( List<Command> commands,
 	boolean includeDatabases, boolean includeWebServices, boolean sort ) {
-	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommands";
 	if ( commands == null ) {
 		return new ArrayList<>();
 	}
@@ -1295,8 +1294,8 @@ protected static List<String> getDataStoreNamesFromCommands ( List<Command> comm
                 for ( int ids = 0; ids < dssize; ids++ ) {
                     ds = list.get(ids);
                     if ( ds == null ) {
-                    	// This should not happen and is symptomatic of a command not fully handling a
-                    	// datastore in discovery mode, more of an issue with ${property} use in parameters.
+                    	// This should not happen and is symptomatic of a command not fully handling a datastore in discovery mode,
+                    	// more of an issue with ${property} use in parameters.
                     	// Log a message so the issue can be tracked down.
                     	Message.printWarning(3, routine,
                     		"Null datastore in discovery mode - need to check code for command to improve handling: " + commandString);
@@ -1344,9 +1343,8 @@ protected static List<String> getDataStoreNamesFromCommands ( List<Command> comm
 }
 
 /**
- * Get a list of datastores for command editors that need datastore instances.
- * This includes datastores configured at startup in the processor,
- * and datastores from discovery.
+ * Get a list of database datastores for command editors that need datastore instances.
+ * This includes datastores configured at startup in the processor and datastores from discovery.
  * @param tsProcessor TSCommandProcessor to use to retrieve the datastores
  * @param command the command being edited
  * @return the list of DatabaseDataStore that can be used in editors.
@@ -1420,6 +1418,70 @@ public static List<DatabaseDataStore> getDatabaseDataStoresForEditors ( TSComman
 }
 
 /**
+ * Get a list of datastores for command editors that need datastore instances.
+ * This includes datastores configured at startup in the processor and datastores from discovery.
+ * @param tsProcessor TSCommandProcessor to use to retrieve the datastores
+ * @param command the command being edited
+ * @return the list of DatabaseDataStore that can be used in editors.
+ */
+public static List<DataStore> getDataStoresForEditors ( TSCommandProcessor tsProcessor, Command command ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoresForEditors";
+	// Get the list of datastores, to list as choices in command editors.
+    // Datastores could be those active at startup and opened with OpenDataStore commands:
+    // - since runtime datastores may not known when editing the command, merge the two lists
+    // - any datastores opened with OpenDataStore commands could be closed later with CloseDataStore,
+    //   in which case the corresponding discovery datastore can be used for editing
+	boolean debug = true;
+	//boolean debug = Message.isDebugOn;
+	// Get all the datastores:
+	// - can't call getDataStoresByType because it ignores the base class so that it can check for specific types
+    List<DataStore> dataStoreList0 = tsProcessor.getDataStores();
+    List<DataStore> dataStoreList = new ArrayList<>();
+    for ( DataStore dataStore : dataStoreList0 ) {
+		dataStoreList.add(dataStore);
+    }
+	if ( debug ) {
+		Message.printDebug(1,routine,"There are " + dataStoreList.size() + " matching datastores that are active.");
+	}
+    // Get the datastores from discovery mode:
+    // - get all datastores
+	// - these are discovery datastores from OpenDataStore and NewSQLiteDatabase commands
+	List<DataStore> dataStoreList2 =
+        TSCommandProcessorUtil.getDataStoresFromCommandsBeforeCommand( tsProcessor, command, true, false);
+	if ( debug ) {
+		Message.printDebug(1,routine,"There are " + dataStoreList2.size() + " datastores from discovery before checking for matches.");
+	}
+    // Merge the lists:
+	// - sort alphabetically in the editor
+	for ( DataStore dataStore2 : dataStoreList2 ) {
+		boolean found = false;
+		// Loop through the the list from active datastores and add if not already in the list.
+		for ( DataStore dataStore : dataStoreList ) {
+			if ( debug ) {
+				Message.printDebug(1,routine,"Comparing discovery datastore \"" + dataStore2.getName() +
+					"\" with active datastore \"" + dataStore.getName() + "\"");
+			}
+			if ( dataStore2.getName().equals(dataStore.getName()) ) {
+				if ( debug ) {
+					Message.printDebug(1,routine,"  Datastore \"" + dataStore2.getName() +
+						"\" exists in active datastores list - don't add again.");
+				}
+				found = true;
+				break;
+			}
+		}
+		if ( !found ) {
+			if ( debug ) {
+				Message.printDebug(1,routine,"  Discovery datastore \"" + dataStore2.getName() +
+					"\" does not exist in active datastores list - adding to list, status=" + dataStore2.getStatus() );
+			}
+			dataStoreList.add(dataStore2);
+		}
+	}
+	return dataStoreList;
+}
+
+/**
 Get a list of datastores from a list of commands.
 The datastores are suitable for editors that need datastore metadata.
 Datastores are determined as follows:
@@ -1435,7 +1497,7 @@ Datastores are determined as follows:
 */
 public static List<DataStore> getDataStoresFromCommands ( List<Command> commands,
 	boolean includeDatabases, boolean includeWebServices, boolean sort ) {
-	String routine = "TSCommandProcessorUtil.getDataStoreNamesFromCommands";
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommands";
 	if ( commands == null ) {
 		return new ArrayList<>();
 	}
@@ -1548,8 +1610,8 @@ This is used, for example, to provide a list of names to editor dialogs and brow
 @return a list of String containing the datastore names, or an empty list.
 */
 public static List<DataStore> getDataStoresFromCommandsBeforeCommand(
-	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices )
-{	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommandsBeforeCommand";
+	TSCommandProcessor processor, Command command, boolean includeDatabases, boolean includeWebServices ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDataStoreNamesFromCommandsBeforeCommand";
 	// Get the position of the command in the list.
 	int pos = processor.indexOf(command);
 	if ( Message.isDebugOn ) {
@@ -1584,8 +1646,8 @@ Additionally, if the parameter string is invalid an exception will be thrown
 */
 public static DateTime getDateTime ( String dtString, String parameterName, CommandProcessor processor,
     CommandStatus status, int warningLevel, String commandTag )
-throws InvalidCommandParameterException
-{   String routine = "TSCommandProcessorUtil.getDateTime", message;
+throws InvalidCommandParameterException {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDateTime", message;
     DateTime dt = null;
     int logLevel = 3;
     int warningCount = 0; // Only has local scope and limited meaning.
@@ -1652,16 +1714,17 @@ throws InvalidCommandParameterException
 }
 
 /**
-Get a list of TSEnsemble (ensemble) from a list of commands.  These ensemble are suitable for passing to code
-run in discovery mode, which itself produces new ensembles or time series with identifiers that are dynamically
-determined from the input time series.  Commands that implement ObjectListProvider have their
-getObjectList(TS) method called and the returned time series are added to the list.
+Get a list of TSEnsemble (ensemble) from a list of commands.
+These ensemble are suitable for passing to code run in discovery mode,
+which itself produces new ensembles or time series with identifiers that are dynamically determined from the input time series.
+Commands that implement ObjectListProvider have their getObjectList(TS) method called and
+the returned time series are added to the list.
 @param commands time series commands to search.
 @param sort Should output time series be sorted by identifier - currently not enabled
 @return list of time series or an empty non-null list if nothing found.
 */
-protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<TSEnsemble> tsEnsembleList = new ArrayList<>();
@@ -1692,15 +1755,15 @@ protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Comman
 }
 
 /**
-Return the time series ensemble (TSEnsemble) for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
+Return the time series ensemble (TSEnsemble) for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
 @return a list of time series ensemble, or an empty list.
 */
 public static List<TSEnsemble> getDiscoveryEnsembleFromCommandsBeforeCommand(
-    TSCommandProcessor processor, Command command )
-{   String routine = "getDiscoveryEnsembleFromCommandsBeforeCommand";
+    TSCommandProcessor processor, Command command ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDiscoveryEnsembleFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -1717,15 +1780,16 @@ public static List<TSEnsemble> getDiscoveryEnsembleFromCommandsBeforeCommand(
 }
 
 /**
-Get a list of Prop (properties) from a list of commands.  These properties are suitable for passing to code
-run in discovery mode.  Commands that implement ObjectListProvider have their getObjectList(Prop) method
+Get a list of Prop (properties) from a list of commands.
+These properties are suitable for passing to code run in discovery mode.
+Commands that implement ObjectListProvider have their getObjectList(Prop) method
 called and the returned time series are added to the list.
 @param commands commands to search.
 @param sort Should properties be sorted by property name - currently not enabled
 @return list of properties an empty non-null list if nothing found.
 */
-protected static List<Prop> getDiscoveryPropFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<Prop> getDiscoveryPropFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<Prop> proplist = new ArrayList<>();
@@ -1759,14 +1823,14 @@ protected static List<Prop> getDiscoveryPropFromCommands ( List<Command> command
 }
 
 /**
-Return the properties for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of property names to editor dialogs.
+Return the properties for commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of property names to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which properties are needed.
 @return a list of time series (containing only information populated during discovery), or an empty list.
 */
-public static List<Prop> getDiscoveryPropFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
-{   String routine = "getDiscoveryPropFromCommandsBeforeCommand";
+public static List<Prop> getDiscoveryPropFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+    String routine = "getDiscoveryPropFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -1784,16 +1848,17 @@ public static List<Prop> getDiscoveryPropFromCommandsBeforeCommand( TSCommandPro
 }
 
 /**
-Get a list of TS (time series) from a list of commands.  These time series are suitable for passing to code
-run in discovery mode, which itself produces new time series with identifiers that are dynamically determined
-from the input time series.  Commands that implement ObjectListProvider have their getObjectList(TS) method
+Get a list of TS (time series) from a list of commands.
+These time series are suitable for passing to code run in discovery mode,
+which itself produces new time series with identifiers that are dynamically determined from the input time series.
+Commands that implement ObjectListProvider have their getObjectList(TS) method
 called and the returned time series are added to the list.
 @param commands time series commands to search.
 @param sort Should output time series be sorted by identifier - currently not enabled
 @return list of time series or an empty non-null list if nothing found.
 */
-protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<TS> tslist = new ArrayList<>();
@@ -1831,9 +1896,9 @@ protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, b
         }
         else if ( command.getCommandName().equalsIgnoreCase("Free") ) {
             // Need to remove matching time series identifiers that are in the list
-            // (otherwise editing commands will show extra time series as of that point in the workflow, which will
-            // be confusing and may lead to errors, e.g., if consistent units are expected but the units are not consistent).
-            // First get the matching time series for the Free() command parameters
+            // (otherwise editing commands will show extra time series as of that point in the workflow,
+        	// which will be confusing and may lead to errors, e.g., if consistent units are expected but the units are not consistent).
+            // First get the matching time series for the Free() command parameters.
             PropList parameters = command.getCommandParameters();
             // TODO SAM 2011-04-04 Need to get ensembles above command.
             List<TSEnsemble> ensemblesFromCommands = new ArrayList<>();
@@ -1870,8 +1935,8 @@ This is used, for example, to provide a list of identifiers to editor dialogs.
 @return a list of time series (containing only information populated during discovery), or an empty list.
 */
 public static List<TS> getDiscoveryTSFromCommandsBeforeCommand( TSCommandProcessor processor, Command command,
-    String tsList, String tsid, String tsPosition, String ensembleId )
-{   String routine = "getDiscoveryTSFromCommandsBeforeCommand";
+    String tsList, String tsid, String tsPosition, String ensembleId ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getDiscoveryTSFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -1887,8 +1952,9 @@ public static List<TS> getDiscoveryTSFromCommandsBeforeCommand( TSCommandProcess
     List<TS> availableTS = getDiscoveryTSFromCommands ( commands, true );
     // Get the ensembles from the commands (sort on the identifiers).
     List<TSEnsemble> availableEnsembles = getDiscoveryEnsembleFromCommands ( commands, true );
-    // Now filter out the ones that match the TSList criteria.  This code is essentially the same
-    // as TSEngine.getTimeSeriesToProcess(); however, the TSEngine code works on instances in the processor
+    // Now filter out the ones that match the TSList criteria.
+    // This code is essentially the same as TSEngine.getTimeSeriesToProcess();
+    // however, the TSEngine code works on instances in the processor
     // whereas the code below works on skeleton time series from the commands.
     TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters ( availableTS,
         availableEnsembles, tsList, tsid, tsPosition, ensembleId );
@@ -1901,8 +1967,8 @@ See documentation for fully loaded method.  The output list is not sorted.
 @param commands Commands to search.
 @return list of table identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands )
-{   // Default behavior.
+private static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands ) {
+    // Default behavior.
     return getEnsembleIdentifiersFromCommands ( commands, false );
 }
 
@@ -1915,8 +1981,8 @@ The getEnsembleID() method on the TSEnsemble is then returned.
 @param sort Should output be sorted by identifier.
 @return list of ensemble identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<String> v = new ArrayList<>(10);
@@ -1970,8 +2036,8 @@ This is used, for example, to provide a list of identifiers to editor dialogs.
 @param command the command above which time series identifiers are needed.
 @return a list of String containing the ensemble identifiers, or an empty list.
 */
-public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getEnsembleIdentifiersFromCommandsBeforeCommand";
+public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getEnsembleIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -1992,8 +2058,8 @@ Get a list of object identifiers from a list of commands.  See documentation for
 @param commands commands to search
 @return list of object identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getObjectIdentifiersFromCommands ( List<Command> commands )
-{   // Default behavior.
+private static List<String> getObjectIdentifiersFromCommands ( List<Command> commands ) {
+    // Default behavior.
     return getObjectIdentifiersFromCommands ( commands, false );
 }
 
@@ -2006,8 +2072,8 @@ The getObjectID() method on the JSONObject is then returned.
 @param sort Should output be sorted by identifier.
 @return list of object identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getObjectIdentifiersFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<String> getObjectIdentifiersFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<String> objectIDList = new ArrayList<> ();
@@ -2103,8 +2169,8 @@ This is used, for example, to provide a list of identifiers to editor dialogs.
 @param inclusive if true also search the current specified command.
 @return a list of String containing the object identifiers, or an empty list.
 */
-public static List<String> getObjectIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive )
-{   String routine = "TSCommandProcessorUtil.getObjectIdentifiersFromCommandsBeforeCommand";
+public static List<String> getObjectIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getObjectIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -2149,8 +2215,8 @@ public static DateTimeRange getOutputPeriodForCommand ( Command command, Command
     String startParameter, String periodStart, String endParameter, String periodEnd,
     boolean defaultToGlobalOutputPeriod,
     int logLevel, String commandTag, int warningLevel, WarningCount warningCount )
-throws InvalidCommandParameterException
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getOutputPeriodForCommand";
+throws InvalidCommandParameterException {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getOutputPeriodForCommand";
     String message;
     CommandStatus status = null;
     if ( command instanceof AbstractCommand ) {
@@ -2195,7 +2261,7 @@ throws InvalidCommandParameterException
                     message, "This is likely a software error - contact software support." ) );
         }
     }
-    
+
     try {
         if ( (periodStart == null) || periodStart.equals("") ) {
             // Parameter is empty.
@@ -2250,7 +2316,7 @@ throws InvalidCommandParameterException
                 message, "Specify a valid " + startParameter + " date/time, or as OutputStart or OutputEnd." ) );
         throw new InvalidCommandParameterException ( message );
     }
-    
+
     try {
         if ( (periodEnd == null) || periodEnd.equals("") ) {
             if ( defaultToGlobalOutputPeriod ) {
@@ -2314,8 +2380,8 @@ using information determined during discovery.
 @param command the command above which time series are needed.
 @return a List of pattern time series.
 */
-public static List<TS> getPatternTSListFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
-{   //String routine = "TSCommandProcessorUtil.getPatternTSFromCommandsBeforeCommand";
+public static List<TS> getPatternTSListFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+    //String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getPatternTSFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     //Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
@@ -2342,8 +2408,8 @@ Time series are determined as follows:
 @param commands Commands to search.
 @param List of pattern time series provided by commands.
 */
-protected static List<TS> getPatternTSListFromCommands ( List<Command> commands )
-{   if ( commands == null ) {
+protected static List<TS> getPatternTSListFromCommands ( List<Command> commands ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<TS> v = new ArrayList<>(10);
@@ -2394,8 +2460,8 @@ If it is ${Property} syntax the surrounding characters will be stripped.
 @exception NumberFormatException if the property has a value but cannot be converted to a Double.
 */
 public static Double getPropertyValueAsDouble ( TSCommandProcessor processor, String propName )
-throws NumberFormatException
-{	propName = propName.replace("${", "").replace("}","");
+throws NumberFormatException {
+	propName = propName.replace("${", "").replace("}","");
 	Object o = null;
 	try {
 		o = processor.getPropContents ( propName );
@@ -2413,7 +2479,7 @@ throws NumberFormatException
 		return new Double((Float)o);
 	}
 	else {
-		// Integers, strings, etc. try to parse Double and throw exception if an error
+		// Integers, strings, etc. try to parse Double and throw exception if an error.
 		return Double.parseDouble(""+o);
 	}
 }
@@ -2473,17 +2539,16 @@ public static long getRunTimeTotal ( List<Command> commands ) {
 
 // FIXME SAM 2008-01-31 Need to sort the column names.
 /**
-Return the table column names, searching commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of
-column names to editor dialogs.
+Return the table column names, searching commands before a specific command in the TSCommandProcessor.
+This is used, for example, to provide a list of column names to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
 @param sort Indicates whether column names should be sorted (NOT YET IMPLEMENTED).
 @return a list of String containing the ensemble identifiers, or an empty list.
 */
 public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
-        TSCommandProcessor processor, Command command, String table_id, boolean sort )
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTableColumnNamesFromCommandsBeforeCommand";
+        TSCommandProcessor processor, Command command, String table_id, boolean sort ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTableColumnNamesFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -2531,8 +2596,8 @@ Get a list of table identifiers from a list of commands.  See documentation for 
 @param commands Time series commands to search.
 @return list of table identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getTableIdentifiersFromCommands ( List<Command> commands )
-{   // Default behavior.
+private static List<String> getTableIdentifiersFromCommands ( List<Command> commands ) {
+    // Default behavior.
     return getTableIdentifiersFromCommands ( commands, false );
 }
 
@@ -2545,8 +2610,8 @@ The getTableID() method on the DataTable is then returned.
 @param sort Should output be sorted by identifier.
 @return list of table identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getTableIdentifiersFromCommands ( List<Command> commands, boolean sort )
-{   if ( commands == null ) {
+protected static List<String> getTableIdentifiersFromCommands ( List<Command> commands, boolean sort ) {
+    if ( commands == null ) {
         return new ArrayList<>();
     }
     List<String> tableIDList = new ArrayList<> ( 10 );
@@ -2642,8 +2707,8 @@ This is used, for example, to provide a list of identifiers to editor dialogs.
 @param inclusive if true also search the current specified command.
 @return a list of String containing the table identifiers, or an empty list.
 */
-public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive )
-{   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
+public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command, boolean inclusive ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTableIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list.
     int pos = processor.indexOf(command);
     if ( Message.isDebugOn ) {
@@ -2722,13 +2787,13 @@ throws IOException, FileNotFoundException {
 }
 
 /**
-Get a list of time series identifiers from a list of commands.  See documentation for
-fully loaded method.  The output list is not sorted and does NOT contain the input type or name.
+Get a list of time series identifiers from a list of commands.  See documentation for fully loaded method.
+The output list is not sorted and does NOT contain the input type or name.
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getTSIdentifiersFromCommands ( List<Command> commands )
-{	// Default behavior.
+private static List<String> getTSIdentifiersFromCommands ( List<Command> commands ) {
+	// Default behavior.
 	return getTSIdentifiersFromCommands ( commands, false, false );
 }
 
@@ -2740,8 +2805,8 @@ The output list does NOT contain the input type or name.
 @param sort Should output be sorted by identifier.
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean sort )
-{	// Return the identifiers without the input type and name.
+protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean sort ) {
+	// Return the identifiers without the input type and name.
 	return getTSIdentifiersFromCommands ( commands, false, sort );
 }
 
@@ -2751,9 +2816,8 @@ These strings are suitable for drop-down lists, etc.
 Time series identifiers are determined as follows:
 <ol>
 <li>    Commands that implement ObjectListProvider have their getObjectList(TS) method called.
-        The time series identifiers from the time series list are examined and those with alias
-        will have the alias returned.  Otherwise, the full time series identifier is returned with or
-        with input path as requested.</li>
+        The time series identifiers from the time series list are examined and those with alias will have the alias returned.
+        Otherwise, the full time series identifier is returned with or with input path as requested.</li>
 <li>    Command strings that start with "TS ? = " have the alias (?) returned.</li>
 <li>    Lines that are time series identifiers are returned, including the full path as requested.</li>
 </ol>
@@ -2764,8 +2828,8 @@ If an alias is returned, it is not impacted by this parameter.
 @param sort Should output be sorted by identifier (currently ignored)
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort )
-{	if ( commands == null ) {
+protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort ) {
+	if ( commands == null ) {
 		return new ArrayList<>();
 	}
 	List<String> tsidsFromCommands = new ArrayList<>(); // The String TSID or alias.
@@ -2911,7 +2975,7 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 		    // Loop through the list of matching time series and remove identifiers at the matching positions
 		    // (the time series list and identifier lists should match in position).
 		    int [] pos = tsToProcess.getTimeSeriesPositions();
-		    //Message.printStatus(2,"", "Detected Free() command, have " + pos.length + " time series to check." ); 
+		    //Message.printStatus(2,"", "Detected Free() command, have " + pos.length + " time series to check." );
 		    // Loop backwards so that position values don't need to be adjusted.
 		    for ( int ipos = pos.length - 1; ipos >= 0; ipos--  ) {
 	            //Message.printStatus(2,"", "Removing time series " + pos[ipos] + ": " + tsidsFromCommands.get(pos[ipos]));
@@ -2930,8 +2994,8 @@ This is used, for example, to provide a list of identifiers to editor dialogs.
 @param command the command above which time series identifiers are needed.
 @return a list of String containing the time series identifiers, or an empty list.
 */
-public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
-{	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";
+public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTSIdentifiersNoInputFromCommandsBeforeCommand";
 	// Get the position of the command in the list.
 	int pos = processor.indexOf(command);
 	if ( Message.isDebugOn ) {
@@ -2960,8 +3024,8 @@ TSListType.ALL_TS will be used by default
 @param EnsembleID ensemble identifier to match
 */
 public static TimeSeriesToProcess getTSMatchingTSListParameters ( List<TS> tsCandidateList,
-    List<TSEnsemble> ensembleCandidateList, String TSList, String TSID, String TSPosition, String EnsembleID )
-{   String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTimeSeriesToProcess";
+    List<TSEnsemble> ensembleCandidateList, String TSList, String TSID, String TSPosition, String EnsembleID ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getTimeSeriesToProcess";
     if ( (TSList == null) || TSList.equals("") ) {
         // Default is to match all.
         TSList = "" + TSListType.ALL_TS;
@@ -3282,8 +3346,8 @@ Get the current working directory for the processor.
 @param processor the CommandProcessor to use to get data.
 @return The working directory in effect for a command.
 */
-public static String getWorkingDir ( CommandProcessor processor )
-{	String routine = "TSCommandProcessorUtil.getWorkingDir";
+public static String getWorkingDir ( CommandProcessor processor ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getWorkingDir";
 	try {
 	    Object o = processor.getPropContents ( "WorkingDir" );
 		if ( o != null ) {
@@ -3307,8 +3371,8 @@ TODO smalers 2021-10-24 this code may be phased out since SetWorkingDir is disco
 @param command Command for which to get the working directory.
 @return The working directory in effect for a command.
 */
-public static String getWorkingDirForCommand ( CommandProcessor processor, Command command )
-{	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getWorkingDirForCommand";
+public static String getWorkingDirForCommand ( CommandProcessor processor, Command command ) {
+	String routine = TSCommandProcessorUtil.class.getSimpleName() + ".getWorkingDirForCommand";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "Command", command );
 	CommandProcessorRequestResultsBean bean = null;
@@ -3330,8 +3394,8 @@ Determine the index of a command in the processor.  A reference comparison occur
 @param startIndex the starting index for processing.
 @return the index (0+) of the matching command, or -1 if not found.
 */
-public static int indexOf ( CommandProcessor processor, Command command, int startIndex )
-{   List<Command> commands = processor.getCommands();
+public static int indexOf ( CommandProcessor processor, Command command, int startIndex ) {
+    List<Command> commands = processor.getCommands();
     int size = commands.size();
     Command c;
     for ( int i = startIndex; i < size; i++ ) {
@@ -3344,8 +3408,8 @@ public static int indexOf ( CommandProcessor processor, Command command, int sta
 }
 
 /**
-Evaluate whether a command appears to be a pure time series identifier (not a
-command that uses a time series identifier).  The string is checked to see if:
+Evaluate whether a command appears to be a pure time series identifier
+(not a command that uses a time series identifier).  The string is checked to see if:
 <ol>
 <li>    it has at least three "."</li>
 <li>    parentheses are allowed in any part due to various data sources requirements</li>
@@ -3355,8 +3419,8 @@ know if the command is in a comment block.
 @param command Command to evaluate.
 @return true if the command appears to be a pure TSID, false if not.
 */
-protected static boolean isTSID ( String command )
-{	String commandTrimmed = command.trim();
+protected static boolean isTSID ( String command ) {
+	String commandTrimmed = command.trim();
     if ( commandTrimmed.startsWith( "TS " ) ) {
 	    // TS Alias command.
 	    return false;
@@ -3379,12 +3443,12 @@ protected static boolean isTSID ( String command )
 }
 
 /**
-Kill any processes associated with the list of commands.  Any commands that implements the
-ProcessRunner interface are checked.
+Kill any processes associated with the list of commands.
+Any commands that implements the ProcessRunner interface are checked.
 @param commandList the list of commands to check.
 */
-public static void killCommandProcesses ( List<Command>commandList )
-{   String routine = "TSCommandProcessorUtil.killCommandProcesses";
+public static void killCommandProcesses ( List<Command>commandList ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".killCommandProcesses";
     int size = 0;
     if ( commandList != null ) {
         // Use all commands.
@@ -3413,8 +3477,8 @@ Open a new regression test report file.
 @param append indicates whether the file should be opened in append mode.
 */
 public static void openNewRegressionTestReportFile ( String outputFile, DataTable table, boolean append )
-throws FileNotFoundException
-{   // Initialize the report counts.
+throws FileNotFoundException {
+    // Initialize the report counts.
     __regressionTestLineCount = 0;
     __regressionTestFailCount = 0;
     __regressionTestPassCount = 0;
@@ -3471,10 +3535,10 @@ public static int processTimeSeriesAfterRead( CommandProcessor processor, Comman
 Process a list of time series after reading.  This calls the command processor readTimeSeries2() method.
 Command status messages will be added if problems arise but exceptions are not thrown.
 */
-public static int processTimeSeriesListAfterRead( CommandProcessor processor, Command command, List<TS> tslist )
-{   int log_level = 3;
+public static int processTimeSeriesListAfterRead( CommandProcessor processor, Command command, List<TS> tslist ) {
+    int log_level = 3;
     int warning_count = 0;
-    String routine = "TSCommandProcessorUtil.processTimeSeriesListAfterRead";
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".processTimeSeriesListAfterRead";
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "TSList", tslist );
     CommandStatus status = null;
@@ -3496,16 +3560,17 @@ public static int processTimeSeriesListAfterRead( CommandProcessor processor, Co
 }
 
 /**
-Validate command parameter names and generate standard feedback.  A list of allowed parameter
-names is provided.  If a name is not recognized, it is removed so as to prevent the user from continuing.
+Validate command parameter names and generate standard feedback.
+A list of allowed parameter names is provided.
+If a name is not recognized, it is removed so as to prevent the user from continuing.
 @param validList List of valid parameter names (others will be flagged as invalid).
 @param command The command being checked.
-@param warning A warning String that is receiving warning messages, for logging.  It
-will be appended to if there are more issues.
+@param warning A warning String that is receiving warning messages, for logging.
+It will be appended to if there are more issues.
 @return the warning string, longer if invalid parameters are detected.
 */
-public static String validateParameterNames ( List<String> validList, Command command, String warning )
-{	if ( command == null ) {
+public static String validateParameterNames ( List<String> validList, Command command, String warning ) {
+	if ( command == null ) {
 		return warning;
 	}
 	PropList parameters = command.getCommandParameters();
@@ -3529,7 +3594,7 @@ public static String validateParameterNames ( List<String> validList, Command co
 			warning += "\n" + warningList.get (i);
 			b.append ( warningList.get(i));
 		}
-		if ( command instanceof CommandStatusProvider ) { 
+		if ( command instanceof CommandStatusProvider ) {
 			CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.WARNING, b.toString(),

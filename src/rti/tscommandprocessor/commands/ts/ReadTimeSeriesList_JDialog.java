@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -110,8 +110,8 @@ Editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadTimeSeriesList_JDialog (	JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices )
-{	super ( parent, true );
+public ReadTimeSeriesList_JDialog (	JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices ) {
+	super ( parent, true );
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -119,8 +119,8 @@ public ReadTimeSeriesList_JDialog (	JFrame parent, ReadTimeSeriesList_Command co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -173,8 +173,7 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -182,8 +181,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -191,19 +189,18 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
 // ...End event handlers for DocumentListener
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
+    // Create a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String ReadData = __ReadData_JComboBox.getSelected();
@@ -230,7 +227,7 @@ private void checkInput ()
     String TimeSeriesReadCountProperty = __TimeSeriesReadCountProperty_JTextField.getText().trim();
     String TimeSeriesDefaultCountProperty = __TimeSeriesDefaultCountProperty_JTextField.getText().trim();
     String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
-    
+
     __error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -309,7 +306,7 @@ private void checkInput ()
         parameters.set ( "TimeSeriesIndex1Property", TimeSeriesIndex1Property );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -319,11 +316,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+    String TableID = __TableID_JComboBox.getSelected();
 	String ReadData = __ReadData_JComboBox.getSelected();
     String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     String LocationType = __LocationType_JTextField.getText().trim();
@@ -382,15 +379,15 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices ) {
+	__command = command;
     __parent = parent;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -407,29 +404,29 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __TableID_JComboBox.setToolTipText("Specify the table that is providing the list of time series or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table containing list of location IDs."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table containing list of location IDs."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for General
+
+    // Panel for General.
     int yGen = -1;
     JPanel gen_JPanel = new JPanel();
     gen_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "General", gen_JPanel );
-    
+
     JGUIUtil.addComponent(gen_JPanel, new JLabel (
         "The default is to read time series data."),
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -438,12 +435,12 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(gen_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(gen_JPanel,new JLabel("Read data?:"),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ReadData_JComboBox = new SimpleJComboBox ( false );
     __ReadData_JComboBox.setToolTipText("Read data (true) or only read properties (false).");
-    List<String> readDataChoices = new ArrayList<String>();
+    List<String> readDataChoices = new ArrayList<>();
     readDataChoices.add ( "" );
     readDataChoices.add ( __command._False );
     readDataChoices.add ( __command._True );
@@ -455,13 +452,13 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(gen_JPanel, new JLabel (
         "Optional - read data (default="+ __command._True + ")."),
         3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-    // Panel for TSID
+
+    // Panel for TSID.
     int yTsid = -1;
     JPanel tsid_JPanel = new JPanel();
     tsid_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "TSID Parts", tsid_JPanel );
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "The information specified below is used to create time series identifiers, which are then used to read the time series."),
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -480,8 +477,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Location type column:" ), 
+
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Location type column:" ),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationTypeColumn_JTextField = new JTextField ( "", 20 );
     __LocationTypeColumn_JTextField.addKeyListener ( this );
@@ -489,8 +486,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional or required depending on datastore."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR location type:" ), 
+
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR location type:" ),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationType_JTextField = new JTextField ( "", 20 );
     __LocationType_JTextField.addKeyListener ( this );
@@ -499,7 +496,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional or required depending on datastore."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Location ID column:"), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Location ID column:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationColumn_JTextField = new JTextField (10);
     __LocationColumn_JTextField.addKeyListener ( this );
@@ -508,7 +505,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Required - name of column containing location IDs."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Data source column:" ), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Data source column:" ),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSourceColumn_JTextField = new JTextField ( "", 20 );
     __DataSourceColumn_JTextField.addKeyListener ( this );
@@ -516,8 +513,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional or required depending on datastore."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR data source:" ), 
+
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR data source:" ),
 		0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataSource_JTextField = new JTextField ( "", 20 );
 	__DataSource_JTextField.setToolTipText("Specify more than one data source separated by columns to try multiple data sources.");
@@ -527,7 +524,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional or required depending on datastore."),
 		3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Data type column:" ), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Data type column:" ),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataTypeColumn_JTextField = new JTextField ( "", 20 );
     __DataTypeColumn_JTextField.addKeyListener ( this );
@@ -535,8 +532,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional or required depending on datastore."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR data type:" ), 
+
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR data type:" ),
 		0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataType_JTextField = new JTextField ( "", 20 );
 	__DataType_JTextField.addKeyListener ( this );
@@ -553,10 +550,10 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(tsid_JPanel, __Interval_JComboBox,
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel("Required - data interval (time step) for time series."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Scenario:" ), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Scenario:" ),
 		0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Scenario_JTextField = new JTextField ( "", 20 );
 	__Scenario_JTextField.addKeyListener ( this );
@@ -565,7 +562,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional."),
 		3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Datastore column:" ), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Datastore column:" ),
 		0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataStoreColumn_JTextField = new JTextField ( "", 20 );
 	__DataStoreColumn_JTextField.addKeyListener ( this );
@@ -573,8 +570,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 		1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Required - needed to identify input database, file, etc."),
 		3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR datastore:" ), 
+
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "OR datastore:" ),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JTextField = new JTextField ( "", 20 );
     __DataStore_JTextField.addKeyListener ( this );
@@ -583,7 +580,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Required - needed to identify input database, file, etc."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Input name:" ), 
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Input name:" ),
 		0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputName_JTextField = new JTextField ( "", 20 );
 	__InputName_JTextField.addKeyListener ( this );
@@ -592,7 +589,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
 		"Optional - file name if required for datastore."),
 		3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel("Alias to assign:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -602,19 +599,19 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for properties
+
+    // Panel for properties.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Time Series Properties", prop_JPanel );
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "Properties can be assigned to the time series from the list table or with data below to facilitate later processing steps and for output."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Column properties:"),
         0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnProperties_JTextArea = new JTextArea (3,35);
@@ -628,7 +625,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(prop_JPanel, new SimpleJButton ("Edit","EditColumnProperties",this),
         3, ++yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Properties:"),
         0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Properties_JTextArea = new JTextArea (3,35);
@@ -643,13 +640,13 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(prop_JPanel, new SimpleJButton ("Edit","EditProperties",this),
         3, ++yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for if not found
+
+    // Panel for if not found.
     int yIfNotFound = -1;
     JPanel ifNotFound_JPanel = new JPanel();
     ifNotFound_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "If Time Series is Not Found?", ifNotFound_JPanel );
-    
+
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
         "The following command parameters control behavior if the time series matching a TSID is not found."),
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -673,11 +670,11 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(ifNotFound_JPanel,new JLabel("If time series not found?:"),
 		0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	List<String> notFoundChoices = new ArrayList<String>();
+	List<String> notFoundChoices = new ArrayList<>();
 	notFoundChoices.add ( __command._Default );
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
@@ -689,8 +686,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
 		"Required - how to handle time series that are not found."),
 		3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default units:" ), 
+
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default units:" ),
         0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultUnits_JTextField = new JTextField ( "", 20 );
     __DefaultUnits_JTextField.addKeyListener ( this );
@@ -699,8 +696,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
 	    "Optional - units when IfNotFound=" + __command._Default + "."),
 	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output start:" ), 
+
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output start:" ),
         0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultOutputStart_JTextField = new JTextField ( "", 20 );
     __DefaultOutputStart_JTextField.setToolTipText("Specify the default output start using a date/time string or ${Property} notation");
@@ -710,8 +707,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
 	    "Optional - period start when IfNotFound=" + __command._Default + " to initialize time series."),
 	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output end:" ), 
+
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output end:" ),
         0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultOutputEnd_JTextField = new JTextField ( "", 20 );
     __DefaultOutputEnd_JTextField.setToolTipText("Specify the default output end using a date/time string or ${Property} notation");
@@ -721,13 +718,13 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
 	    "Optional - period end when IfNotFound=" + __command._Default + " to initialize time series."),
 	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for count properties
+
+    // Panel for count properties.
     int yCount = -1;
     JPanel count_JPanel = new JPanel();
     count_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Count Properties", count_JPanel );
-    
+
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "Counts of output time series can be assigned to properties for data checks and output."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -736,8 +733,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series count property:" ), 
+
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series count property:" ),
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesCountProperty_JTextField = new JTextField ( "", 20 );
     __TimeSeriesCountProperty_JTextField.setToolTipText("Specify time series count property to set, can use ${Property} notation");
@@ -747,8 +744,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "Optional - name of property to set to time series total count."),
         3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series read count property:" ), 
+
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series read count property:" ),
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesReadCountProperty_JTextField = new JTextField ( "", 20 );
     __TimeSeriesReadCountProperty_JTextField.setToolTipText("Specify time series read count property to set, can use ${Property} notation");
@@ -758,8 +755,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "Optional - name of property to set to time series read count."),
         3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series default count property:" ), 
+
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series default count property:" ),
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesDefaultCountProperty_JTextField = new JTextField ( "", 20 );
     __TimeSeriesDefaultCountProperty_JTextField.setToolTipText("Specify time series default count property to set, can use ${Property} notation");
@@ -769,15 +766,15 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "Optional - name of property to set to time series default count."),
         3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "The index (1+) of time series being read can be set to a property."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "This is useful for outputting time series sequentially, for example to a table column with the number."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series index property:" ), 
+
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series index property:" ),
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesIndex1Property_JTextField = new JTextField ( "", 20 );
     __TimeSeriesIndex1Property_JTextField.setToolTipText("Specify time series index property to set, can use ${Property} notation");
@@ -788,7 +785,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         "Optional - name of property to set for time series read index (1+)."),
         3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 55 );
     __command_JTextArea.setLineWrap ( true );
@@ -800,7 +797,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -815,7 +812,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -824,15 +821,15 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
     refresh();
 	if ( code == KeyEvent.VK_ENTER ) {
@@ -843,25 +840,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{   String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+    String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String ReadData = "";
     String LocationTypeColumn = "";
@@ -890,9 +888,10 @@ private void refresh ()
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         TableID = props.getValue ( "TableID" );
         LocationTypeColumn = props.getValue ( "LocationTypeColumn" );
+        ReadData = __ReadData_JComboBox.getSelected();
         LocationType = props.getValue ( "LocationType" );
         LocationColumn = props.getValue ( "LocationColumn" );
         DataSourceColumn = props.getValue ( "DataSourceColumn" );
@@ -916,7 +915,7 @@ private void refresh ()
         TimeSeriesDefaultCountProperty = props.getValue ( "TimeSeriesDefaultCountProperty" );
         TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -932,15 +931,15 @@ private void refresh ()
         }
         if ( __ReadData_JComboBox != null ) {
             if ( ReadData == null ) {
-                // Select default...
+                // Select default.
                 __ReadData_JComboBox.select ( __command._Warn );
             }
-            else {  if (    JGUIUtil.isSimpleJComboBoxItem(
-                    __ReadData_JComboBox,
-                    ReadData, JGUIUtil.NONE, null, null ) ) {
+            else {
+            	if ( JGUIUtil.isSimpleJComboBoxItem( __ReadData_JComboBox, ReadData, JGUIUtil.NONE, null, null ) ) {
                     __ReadData_JComboBox.select ( ReadData );
                 }
-                else {  Message.printWarning ( 1, routine,
+                else {
+                	Message.printWarning ( 1, routine,
                     "Existing command references an invalid\n"+
                     "ReadData \"" + ReadData + "\".  Select a different value or Cancel." );
                 }
@@ -972,13 +971,13 @@ private void refresh ()
         }
         else {
             if ( (Interval == null) || Interval.equals("") ) {
-                // New command...select the default...
+                // New command.  Select the default.
                 __Interval_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
+                // Bad user command.
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
+                    "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         if ( Scenario != null ) {
@@ -1004,15 +1003,15 @@ private void refresh ()
         }
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
-                // Select default...
+                // Select default.
                 __IfNotFound_JComboBox.select ( __command._Warn );
             }
-            else {  if (    JGUIUtil.isSimpleJComboBoxItem(
-                    __IfNotFound_JComboBox,
-                    IfNotFound, JGUIUtil.NONE, null, null ) ) {
+            else {
+            	if ( JGUIUtil.isSimpleJComboBoxItem( __IfNotFound_JComboBox, IfNotFound, JGUIUtil.NONE, null, null ) ) {
                     __IfNotFound_JComboBox.select ( IfNotFound );
                 }
-                else {  Message.printWarning ( 1, routine,
+                else {
+                	Message.printWarning ( 1, routine,
                     "Existing command references an invalid\n"+
                     "IfNotFound \"" + IfNotFound + "\".  Select a\ndifferent value or Cancel." );
                 }
@@ -1040,7 +1039,7 @@ private void refresh ()
             __TimeSeriesIndex1Property_JTextField.setText ( TimeSeriesIndex1Property );
         }
     }
-    // Regardless, reset the command from the fields...
+    // Regardless, reset the command from the fields.
     TableID = __TableID_JComboBox.getSelected();
     ReadData = __ReadData_JComboBox.getSelected();
     LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
@@ -1099,17 +1098,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+private void response ( boolean ok ) {
+    __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -1118,32 +1117,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt )
-{
+public void windowActivated( WindowEvent evt ) {
 }
 
-public void windowClosed( WindowEvent evt )
-{
+public void windowClosed( WindowEvent evt ) {
 }
 
-public void windowDeactivated( WindowEvent evt )
-{
+public void windowDeactivated( WindowEvent evt ) {
 }
 
-public void windowDeiconified( WindowEvent evt )
-{
+public void windowDeiconified( WindowEvent evt ) {
 }
 
-public void windowIconified( WindowEvent evt )
-{
+public void windowIconified( WindowEvent evt ) {
 }
 
-public void windowOpened( WindowEvent evt )
-{
+public void windowOpened( WindowEvent evt ) {
 }
 
 }

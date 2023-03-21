@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,8 +87,8 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private ReadHydroBase_Command __command = null;
-private SimpleJComboBox __InputName_JComboBox; // Legacy
-private SimpleJComboBox __DataStore_JComboBox = null; // New approach
+private SimpleJComboBox __InputName_JComboBox; // Legacy.
+private SimpleJComboBox __DataStore_JComboBox = null; // New approach.
 private SimpleJComboBox __DataType_JComboBox;
 private JTextField __WaterClass_JTextField;
 private SimpleJComboBox __Interval_JComboBox;
@@ -99,7 +99,7 @@ private JTextField __Location_JTextField;
 private JTextField __DataSource_JTextField;
 private JTextField __TSID_JTextField;
 private JTextField __InputStart_JTextField;
-private JTextField __InputEnd_JTextField;	
+private JTextField __InputEnd_JTextField;
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			__FillDailyDivFlag_JTextField,
@@ -120,30 +120,30 @@ private SimpleJComboBox	__FillDailyDiv_JComboBox,
 			*/
 private SimpleJComboBox	__FillUsingDivComments_JComboBox;
 private SimpleJComboBox __IfMissing_JComboBox;
-			
+
 private JTextArea __command_JTextArea = null;
-// Contains all input filter panels.  Use the HydroBaseDataStore name/description and data type for each to
-// figure out which panel is active at any time.
+// Contains all input filter panels.
+// Use the HydroBaseDataStore name/description and data type for each to figure out which panel is active at any time.
 private List<InputFilter_JPanel> __inputFilterJPanelList = new ArrayList<>();
-private HydroBaseDataStore __dataStore = null; // selected HydroBaseDataStore
-private boolean __error_wait = false; // Is there an error to be cleared up
+private HydroBaseDataStore __dataStore = null;
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Was OK pressed when closing the dialog.
 /*
-Number of visible where fields to not overload stored procedure
-Number of filters is the maximum - 2 (data type and interval)
+Number of visible where fields to not overload stored procedure.
+Number of filters is the maximum - 2 (data type and interval).
 */
 private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2);
 
-private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
+private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components.
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadHydroBase_JDialog ( JFrame parent, ReadHydroBase_Command command )
-{	super(parent, true);
+public ReadHydroBase_JDialog ( JFrame parent, ReadHydroBase_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -151,12 +151,12 @@ public ReadHydroBase_JDialog ( JFrame parent, ReadHydroBase_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	if ( __ignoreEvents ) {
+public void actionPerformed( ActionEvent event ) {
+	if ( __ignoreEvents ) {
         return; // Startup.
     }
     Object o = event.getSource();
-    
+
     if ( o == __cancel_JButton ) {
         response ( false );
     }
@@ -171,54 +171,54 @@ public void actionPerformed( ActionEvent event )
         }
     }
     else {
-        // combo boxes...
+        // Combo boxes.
         refresh();
     }
 }
 
 /**
 Refresh the data type choices in response to the currently selected HydroBase data store.
-@param value if non-null, then the selection is from the command initialization, in which case the
-specified data type should be selected
+@param value if non-null, then the selection is from the command initialization,
+in which case the specified data type should be selected
 */
 private void actionPerformedDataStoreSelected ( ) {
     if ( __DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization.
         return;
     }
     setDataStoreForSelectedInput();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
+    // Now populate the data type choices corresponding to the data store.
     populateDataTypeChoices ( getDMI() );
 }
 
 /**
 Refresh the query choices for the currently selected HydroBase data store.
-@param value if non-null, then the selection is from the command initialization, in which case the
-specified data type should be selected
+@param value if non-null, then the selection is from the command initialization,
+in which case the specified data type should be selected
 */
 private void actionPerformedDataTypeSelected ( ) {
     if ( __DataType_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization.
         return;
     }
-    // Now populate the interval choices corresponding to the data type
+    // Now populate the interval choices corresponding to the data type.
     populateIntervalChoices ( getDMI() );
 }
 
 /**
 Refresh the data type choices in response to the currently selected HydroBase input name.
-@param value if non-null, then the selection is from the command initialization, in which case the
-specified data type should be selected
+@param value if non-null, then the selection is from the command initialization,
+in which case the specified data type should be selected.
 */
 private void actionPerformedInputNameSelected ( ) {
     if ( __InputName_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization.
         return;
     }
     setDataStoreForSelectedInput();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
+    // Now populate the data type choices corresponding to the data store.
     populateDataTypeChoices ( getDMI() );
 }
 
@@ -227,10 +227,10 @@ Set visible the appropriate input filter, based on the interval and other previo
 */
 private void actionPerformedIntervalSelected ( ) {
     if ( __Interval_JComboBox.getSelected() == null ) {
-        // Startup initialization
+        // Startup initialization.
         return;
     }
-    // Now populate the filters corresponding to the data type and interval
+    // Now populate the filters corresponding to the data type and interval.
     selectInputFilter ( getDataStore() );
 }
 
@@ -240,8 +240,8 @@ private void actionPerformedIntervalSelected ( ) {
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -249,8 +249,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -258,8 +258,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -268,13 +268,13 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
-	// Otherwise, clear and disable...
+private void checkGUIState() {
+	// If "AllMatchingTSID", enable the list.
+	// Otherwise, clear and disable.
 	if ( __DataType_JComboBox != null ) {
 		String DataType = getSelectedDataType();
 		if ( DataType == null ) {
-		    // Initialization
+		    // Initialization.
 		    DataType = "";
 		}
 		// TODO SAM 2007-02-17 Add checks for interval
@@ -282,16 +282,14 @@ private void checkGUIState()
 		//if (  __Interval_JTextField != null ) {
 		//	Interval = __Interval_JTextField.getText().trim();
 		//}
-		// TODO SAM 2006-04-25 Remove hard-coded types
-		// Should not need to hard-code these data types but there
-		// is no better way to do it at the moment.
+		// TODO SAM 2006-04-25 Remove hard-coded types.
+		// Should not need to hard-code these data types but there is no better way to do it at the moment.
 		if ( DataType.equalsIgnoreCase("DivTotal") ||
 			DataType.equalsIgnoreCase("DivClass") ||
 			DataType.equalsIgnoreCase("RelTotal") ||
 			DataType.equalsIgnoreCase("RelClass") ) {
-			/* TODO SAM 2006-04-28 Review code
-			As per Ray Bennett always do the fill
-			However, this may change so allow user to change.
+			/* TODO SAM 2006-04-28 Review code.
+			As per Ray Bennett always do the fill. However, this may change so allow user to change.
 			*/
 			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, true );
 			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, true );
@@ -299,9 +297,8 @@ private void checkGUIState()
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
 		}
 		else {
-		    /* TODO SAM 2006-04-28 Review code
-			As per Ray Bennett always do the fill
-			However, this may change so allow user to change.
+		    /* TODO SAM 2006-04-28 Review code.
+			As per Ray Bennett always do the fill. However, this may change so allow user to change.
 			*/
 			JGUIUtil.setEnabled ( __FillDivRecordsCarryForward_JComboBox, false );
 			JGUIUtil.setEnabled ( __FillDivRecordsCarryForwardFlag_JTextField, false );
@@ -312,17 +309,17 @@ private void checkGUIState()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	if ( __ignoreEvents ) {
+private void checkInput () {
+	if ( __ignoreEvents ) {
         return; // Startup.
     }
-    // Put together a list of parameters to check...
+    // Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	__error_wait = false;
-	// Check parameters for the two command versions...
+	// Check parameters for the two command versions.
     String InputName = __InputName_JComboBox.getSelected();
     if ( InputName.length() > 0 ) {
         props.set ( "InputName", InputName );
@@ -360,7 +357,7 @@ private void checkInput ()
     	    }
         }
 	}
-	// Both command types use these...
+	// Both command types use these.
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	if ( InputStart.length() > 0 ) {
@@ -369,9 +366,9 @@ private void checkInput ()
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
 	}
-	// Additional parameters used to help provide additional data...
-	/* TODO SAM 2006-04-28 Review code
-	As per Ray Bennett always do the fill
+	// Additional parameters used to help provide additional data.
+	/* TODO SAM 2006-04-28 Review code.
+	As per Ray Bennett always do the fill.
 	*/
 	String FillDivRecordsCarryForward = __FillDivRecordsCarryForward_JComboBox.getSelected();
 	if ( FillDivRecordsCarryForward.length() > 0 ) {
@@ -394,7 +391,7 @@ private void checkInput ()
         props.set ("IfMissing",IfMissing);
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -404,11 +401,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String InputName = __InputName_JComboBox.getSelected();
+private void commitEdits () {
+    String InputName = __InputName_JComboBox.getSelected();
     __command.setCommandParameter ( "InputName", InputName );
     String DataStore = __DataStore_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
@@ -431,13 +428,13 @@ private void commitEdits ()
 	    }
 	    __command.setCommandParameter ( "Where" + i, where );
 	}
-	// Both versions of the commands use these...
+	// Both versions of the commands use these.
 	String InputStart = __InputStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputEnd", InputEnd );
-	/* TODO SAM 2006-04-28 Review code
-	As per Ray Bennett always do the fill
+	/* TODO SAM 2006-04-28 Review code.
+	As per Ray Bennett always do the fill.
 	String FillDailyDiv = __FillDailyDiv_JComboBox.getSelected();
 	__command.setCommandParameter ( "FillDailyDiv", FillDailyDiv );
 	String FillDailyDivFlag =__FillDailyDivFlag_JTextField.getText().trim();
@@ -485,7 +482,7 @@ private List<InputFilter_JPanel> getInputFilterJPanelList () {
 Get the input name to use for the TSID.
 */
 private String getInputNameForTSID() {
-    // Use the data store name if specified
+    // Use the data store name if specified.
     String DataStore = __DataStore_JComboBox.getSelected();
     if ( (DataStore != null) && !DataStore.equals("") ) {
         return DataStore;
@@ -496,7 +493,7 @@ private String getInputNameForTSID() {
             return InputName;
         }
         else {
-            return "HydroBase"; // Default
+            return "HydroBase"; // Default.
         }
     }
 }
@@ -504,8 +501,8 @@ private String getInputNameForTSID() {
 /**
 Get the selected data store from the processor.
 */
-private HydroBaseDataStore getSelectedDataStore ()
-{   String routine = getClass().getName() + ".getSelectedDataStore";
+private HydroBaseDataStore getSelectedDataStore () {
+    String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     HydroBaseDataStore dataStore = (HydroBaseDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName( DataStore, HydroBaseDataStore.class );
@@ -545,7 +542,7 @@ private HydroBaseDataStore getSelectedDataStoreFromInputName ()
     try {
         Object o = __command.getCommandProcessor().getPropContents("HydroBaseDMIList");
         if ( o != null ) {
-            // Loop through and match the input name
+            // Loop through and match the input name.
             @SuppressWarnings("unchecked")
 			List<HydroBaseDMI> dmiList = (List<HydroBaseDMI>)o;
             String inputName2;
@@ -582,7 +579,7 @@ private InputFilter_JPanel getVisibleInputFilterPanel() {
     List<InputFilter_JPanel> panelList = getInputFilterJPanelList();
     String panelName;
     for ( InputFilter_JPanel panel : panelList ) {
-        // Skip default
+        // Skip default.
         panelName = panel.getName();
         if ( (panelName != null) && panelName.equalsIgnoreCase("Default") ) {
             continue;
@@ -601,7 +598,7 @@ Return the "WhereN" parameter for the requested input filter.
 @param ifg the Input filter to process (zero index).
 */
 private String getWhere ( int ifg ) {
-	String delim = ";";	// To separate input filter parts
+	String delim = ";";	// To separate input filter parts.
 	InputFilter_JPanel filter_panel = getVisibleInputFilterPanel();
     String where = "";
     if ( filter_panel != null ) {
@@ -615,8 +612,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadHydroBase_Command command )
-{	String routine = getClass().getSimpleName() + ".initialize";
+private void initialize ( JFrame parent, ReadHydroBase_Command command ) {
+	String routine = getClass().getSimpleName() + ".initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	addWindowListener( this );
@@ -638,15 +635,15 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
         "<html><b>If the Where parameter values do not properly display, resize the dialog larger - this is a display bug.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the HydroBase documentation for information about data types." ), 
+		"Refer to the HydroBase documentation for information about data types." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
-		"for later commands but can increase performance." ), 
+		"for later commands but can increase performance." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
-   	__ignoreEvents = true; // So that a full pass of initialization can occur
-   	
+
+   	__ignoreEvents = true; // So that a full pass of initialization can occur.
+
    	JPanel dbJPanel = new JPanel();
    	int ydb = -1;
    	dbJPanel.setLayout(new GridBagLayout());
@@ -657,8 +654,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     try {
         Object o = processor.getPropContents("HydroBaseDMIList");
         if ( o != null ) {
-            // Use the first HydroBaseDMI instance, since input filter
-            // information should be relatively consistent...
+            // Use the first HydroBaseDMI instance, since input filter information should be relatively consistent.
         	@SuppressWarnings("unchecked")
 			List<HydroBaseDMI> legacyDmiList0 = (List<HydroBaseDMI>)o;
             legacyDmiList = legacyDmiList0;
@@ -675,13 +671,13 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(dbJPanel, new JLabel ("Input name:"),
         0, ++ydb, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputName_JComboBox = new SimpleJComboBox ( false );
-    // Add a blank because the input type/name is not required
+    // Add a blank because the input type/name is not required.
     List<String> nameChoices = new ArrayList<>();
     nameChoices.add ( "" );
     for ( HydroBaseDMI hbdmi: legacyDmiList ) {
         String inputName = hbdmi.getInputName();
         if ( (inputName == null) || inputName.equals("") ) {
-            inputName = "HydroBase"; // Default
+            inputName = "HydroBase"; // Default.
         }
         nameChoices.add ( inputName );
     }
@@ -693,13 +689,13 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(dbJPanel, new JLabel (
         "Optional - HydroBase connection name (default=HydroBase if no datastore specified)."),
         3, ydb, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(dbJPanel, new JLabel ( "Datastore:"),
         0, ++ydb, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( HydroBaseDataStore.class );
-    // Add a blank because the data store is not required
+    // Add a blank because the data store is not required.
     List<String> datastoreChoices = new ArrayList<>();
     datastoreChoices.add ( "" );
     for ( DataStore dataStore: dataStoreList ) {
@@ -710,9 +706,9 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(dbJPanel, __DataStore_JComboBox,
         1, ydb, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dbJPanel, new JLabel("Optional - HydroBase datastore to read (phasing in datastores)."), 
+    JGUIUtil.addComponent(dbJPanel, new JLabel("Optional - HydroBase datastore to read (phasing in datastores)."),
         3, ydb, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
+
     //JGUIUtil.addComponent(main_JPanel, inputFilterJPanel,
     //    0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -744,7 +740,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval (time step) for time series."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __tsInfo_JTabbedPane = new JTabbedPane ();
     __tsInfo_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -773,7 +769,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
         1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "For example: USGS, DWR."),
         3, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "TSID (full):"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JTextField = new JTextField ( "" );
@@ -787,14 +783,14 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     __multipleTS_JPanel = new JPanel();
     __multipleTS_JPanel.setLayout(new GridBagLayout());
     __tsInfo_JTabbedPane.addTab ( "Match 1+ Time Series", __multipleTS_JPanel );
-    // Note to warn about performance
+    // Note to warn about performance.
     int yMult = -1;
     JGUIUtil.addComponent(__multipleTS_JPanel, new JLabel("Use filters (\"where\" clauses) to limit result size and " +
         "increase performance.  Filters are AND'ed."),
         0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // Initialize all the filters (selection will be based on data store)
+    // Initialize all the filters (selection will be based on data store).
     initializeInputFilters ( __multipleTS_JPanel, ++yMult, legacyDmiList, dataStoreList );
-	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -807,7 +803,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.addKeyListener (this);
@@ -816,7 +812,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"),
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.addKeyListener (this);
@@ -825,10 +821,8 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-	/* TODO SAM 2006-04-27
-	As per Ray Bennett this should always be done.
-	*/
-    
+	// TODO SAM 2006-04-27 As per Ray Bennett this should always be done.
+
     JPanel divJPanel = new JPanel();
     int ydiv = -1;
     divJPanel.setLayout(new GridBagLayout());
@@ -854,7 +848,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(divJPanel, new JLabel (
 		"Optional - fill daily diversion records using carry forward (default=" + __command._True + ")."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(divJPanel, new JLabel ( "Flag for diversion carry forward filled values:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillDivRecordsCarryForwardFlag_JTextField = new JTextField ( "", 5 );
@@ -867,7 +861,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(divJPanel, new JLabel (
 		"Optional - flag for filled carry forward values (default=\"c\")."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill diversion records using comments:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<String> FillUsingDivComments_List = new ArrayList<>( 3 );
@@ -896,7 +890,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(divJPanel, new JLabel (
 		"Optional - flag for filled diversion comment values (default=\"Auto\" to use \"notUsed\" value)."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<String> IfMissing_List = new ArrayList<>( 3 );
@@ -922,13 +916,13 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents (still ignoring events)...
+	// Refresh the contents (still ignoring events).
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -942,46 +936,47 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-    // Because it is necessary to select the proper input filter during initialization (to transfer an old command's
-    // parameter values), the selected input filter may not be desirable for dialog sizing.  Therefore, manually set
-    // all panels to visible and then determine the preferred size as the maximum.  Then reselect the appropriate input
-    // filter before continuing.
+    // Because it is necessary to select the proper input filter during initialization
+	// (to transfer an old command's parameter values),
+	// the selected input filter may not be desirable for dialog sizing.
+	// Therefore, manually set all panels to visible and then determine the preferred size as the maximum.
+	// Then reselect the appropriate input filter before continuing.
     setAllFiltersVisible();
-    // All filters are visible at this point so pack chooses good sizes...
+    // All filters are visible at this point so pack chooses good sizes.
     pack();
-    setPreferredSize(getSize()); // Will reflect all filters being visible
-    __multipleTS_JPanel.setPreferredSize(__multipleTS_JPanel.getSize()); // So initial height is maximum height
-    selectInputFilter( getDataStore()); // Now go back to the filter for the selected input type and intern
-    //setSize(810,740); // TODO SAM 2012-09-25 Need to not hard-code size.  However, in order to properly initialize the
-    // input filter have to select the correct one at initialization - this may lead to NOT the biggest one being
-    // selected - needs more TLC - DivTotal is likely the biggest filter panel
+    setPreferredSize(getSize()); // Will reflect all filters being visible.
+    __multipleTS_JPanel.setPreferredSize(__multipleTS_JPanel.getSize()); // So initial height is maximum height.
+    selectInputFilter( getDataStore()); // Now go back to the filter for the selected input type and intern.
+    //setSize(810,740); // TODO SAM 2012-09-25 Need to not hard-code size.
+    // However, in order to properly initialize the input filter have to select the correct one at initialization.
+    // This may lead to NOT the biggest one being selected - needs more TLC - DivTotal is likely the biggest filter panel.
     JGUIUtil.center( this );
-    __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
-    // Now refresh once more
+    __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade.
+    // Now refresh once more.
 	refresh();
-	checkGUIState(); // Do this again because it may not have happened due to the special event handling
+	checkGUIState(); // Do this again because it may not have happened due to the special event handling.
 	setResizable ( false );
     super.setVisible( true );
 }
 
 /**
 Initialize input filters for all of the available HydroBase input/names and data stores.
-The input filter panels will be layered on top of each other, but only one will be set visible, based on the
-other visible selections.
+The input filter panels will be layered on top of each other, but only one will be set visible,
+based on the other visible selections.
 @param parent_JPanel the panel to receive the input filter panels
 @param legacyDMIList the list of available legacy HydroBaseDMI that are handled outside of data stores
 @param dataStoreList the list of available HydroBaseDataStore
 */
 private void initializeInputFilters ( JPanel parent_JPanel, int y, List<HydroBaseDMI> legacyDMIList,
-    List<DataStore> dataStoreList ) {   
-    // Loop through data stores and add filters for all data groups
+    List<DataStore> dataStoreList ) {
+    // Loop through data stores and add filters for all data groups.
     for ( DataStore ds : dataStoreList ) {
         initializeInputFilters_OneFilter ( parent_JPanel, y, (HydroBaseDataStore)ds);
     }
-    
-    // Loop through the legacy DMIs and add filters for all data groups.  Put after new datastores
-    // because datastores take precedence over the DMI approach
-    
+
+    // Loop through the legacy DMIs and add filters for all data groups.
+    // Put after new datastores because datastores take precedence over the DMI approach.
+
     String name;
     for ( HydroBaseDMI dmi : legacyDMIList ) {
         name = dmi.getInputName();
@@ -991,9 +986,9 @@ private void initializeInputFilters ( JPanel parent_JPanel, int y, List<HydroBas
         initializeInputFilters_OneFilter ( parent_JPanel, y,
             new HydroBaseDataStore(name, "State of Colorado HydroBase", dmi, true ) );
     }
-    
-    // Blank panel indicating data type was not matched (software problem or unknown HydroBase features?)
-    // Add in the same position as the other filter panels
+
+    // Blank panel indicating data type was not matched (software problem or unknown HydroBase features?).
+    // Add in the same position as the other filter panels.
 
     int buffer = 3;
     Insets insets = new Insets(1,buffer,1,buffer);
@@ -1011,17 +1006,17 @@ Initialize input filters for one HydroBase datastore.
 @param y for layout
 @param dataStore datastore to use with the filter
 */
-private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, HydroBaseDataStore dataStore )
-{   String routine = getClass().getSimpleName() + ".initializeInputFilters_OneFilter";
+private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, HydroBaseDataStore dataStore ) {
+    String routine = getClass().getSimpleName() + ".initializeInputFilters_OneFilter";
     int buffer = 3;
     Insets insets = new Insets(1,buffer,1,buffer);
     List<InputFilter_JPanel> inputFilterJPanelList = getInputFilterJPanelList();
 
-    boolean visibility = true; // Set this so that the layout manager will figure out the size of the dialog at startup
-    int x = 0; // Position in layout manager, same for all since overlap
-    int numVisibleChoices = -1; // For the combobox choices, -1 means size to data list size
+    boolean visibility = true; // Set this so that the layout manager will figure out the size of the dialog at startup.
+    int x = 0; // Position in layout manager, same for all since overlap.
+    int numVisibleChoices = -1; // For the combobox choices, -1 means size to data list size.
     try {
-        // Stations...
+        // Stations.
         HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ( dataStore );
         panel.setName(dataStore.getName() + "_Stations" );
@@ -1032,14 +1027,13 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         panel.setVisible ( visibility );
     }
     catch ( Exception e ) {
-        Message.printWarning ( 2, routine,
-        "Unable to initialize input filter for HydroBase stations (" + e + ")." );
+        Message.printWarning ( 2, routine, "Unable to initialize input filter for HydroBase stations (" + e + ")." );
         Message.printWarning ( 3, routine, e );
     }
 
     try {
-        // Structure with SFUT...
-        // Number of filters is the maximum - 2 (data type and interval)
+        // Structure with SFUT.
+        // Number of filters is the maximum - 2 (data type and interval).
         boolean enableSFUT = true;
         HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
@@ -1057,9 +1051,9 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
             "Unable to initialize input filter for HydroBase structures with SFUT (" + e + ")." );
         Message.printWarning ( 3, routine, e );
     }
-    
+
     try {
-        // Structure total (no SFUT)...
+        // Structure total (no SFUT).
         boolean enableSFUT = false;
         HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel ( dataStore, enableSFUT, __numWhere,
@@ -1079,7 +1073,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
     }
 
     try {
-        // CASS agricultural statistics...
+        // CASS agricultural statistics.
 
         HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel panel = new
             HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel ( dataStore );
@@ -1091,14 +1085,14 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         panel.setVisible(visibility );
     }
     catch ( Exception e ) {
-        // Agricultural_CASS_crop_stats probably not in HydroBase...
+        // Agricultural_CASS_crop_stats probably not in HydroBase.
         Message.printWarning ( 2, routine,
         "Unable to initialize input filter for HydroBase agricultural_CASS_crop_stats (" + e + ")." );
         Message.printWarning ( 3, routine, e );
     }
 
     try {
-        // CASS livestock statistics...
+        // CASS livestock statistics.
 
         HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel panel = new
             HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel ( dataStore );
@@ -1110,7 +1104,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         panel.setVisible(visibility );
     }
     catch ( Exception e ) {
-        // Agricultural_CASS_livestock_stats probably not in HydroBase...
+        // Agricultural_CASS_livestock_stats probably not in HydroBase.
         Message.printWarning ( 2, routine,
         "Unable to initialize input filter for HydroBase agricultural_CASS_livestock_stats (" + e + ")." );
         Message.printWarning ( 3, routine, e );
@@ -1129,13 +1123,13 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         panel.setVisible( visibility);
     }
     catch ( Exception e ) {
-        // CUPopulation probably not in HydroBase...
+        // CUPopulation probably not in HydroBase.
         Message.printWarning ( 2, routine,
                 "Unable to initialize input filter for HydroBase CU population data (" + e + ")." );
         Message.printWarning ( 3, routine, e );
     }
-    
-    // NASS agricultural statistics...
+
+    // NASS agricultural statistics.
 
     try {
         HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel panel = new
@@ -1149,14 +1143,14 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         panel.setVisible( visibility);
     }
     catch ( Exception e ) {
-        // Agricultural_NASS_crop_stats probably not in HydroBase...
+        // Agricultural_NASS_crop_stats probably not in HydroBase.
         Message.printWarning ( 2, routine,
         "Unable to initialize input filter for HydroBase agricultural_NASS_crop_stats (" + e + ")." );
         Message.printWarning ( 3, routine, e );
     }
 
     try {
-        // Structure irrig summary TS...
+        // Structure irrigation summary TS.
         HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( dataStore );
         panel.setName(dataStore.getName() + "_IrrigSummary" );
@@ -1197,7 +1191,8 @@ Respond to ItemEvents.
 */
 public void itemStateChanged ( ItemEvent event ) {
     if ( __ignoreEvents ) {
-        return; // Startup
+        // Startup.
+        return;
     }
     if ( (event.getSource() == __InputName_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
         // User has selected an input name.
@@ -1221,33 +1216,32 @@ public void itemStateChanged ( ItemEvent event ) {
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	refresh();
+public void keyPressed ( KeyEvent event ) {
+	refresh();
 }
 
 /**
 Need this to properly capture key events, especially deletes.
 */
-public void keyReleased ( KeyEvent event )
-{	refresh();	
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
-//TODO SAM 2012-09-13 Evaluate if can share code with TSTool main interface
+//TODO SAM 2012-09-13 Evaluate if can share code with TSTool main interface.
 /**
 Set the data type choices in response to a new data store being selected.
-This should match the main TSTool interface
+This should match the main TSTool interface.
 */
 private void populateDataTypeChoices ( HydroBaseDMI dmi ) {
     List<String> dataTypes =
@@ -1257,9 +1251,9 @@ private void populateDataTypeChoices ( HydroBaseDMI dmi ) {
         HydroBase_Util.DATA_TYPE_HARDWARE |
         HydroBase_Util.DATA_TYPE_STATION_ALL |
         HydroBase_Util.DATA_TYPE_STRUCTURE_ALL,
-        true ); // Add notes
+        true ); // Add notes.
     __DataType_JComboBox.setData ( dataTypes );
-    // Select the default...
+    // Select the default.
     __DataType_JComboBox.select(HydroBase_Util.getDefaultTimeSeriesDataType(dmi, true ) );
 }
 
@@ -1267,8 +1261,8 @@ private void populateDataTypeChoices ( HydroBaseDMI dmi ) {
 Populate the data interval choices in response to a new data type being selected.
 This code matches the TSTool main interface code
 */
-private void populateIntervalChoices ( HydroBaseDMI dmi )
-{   String selectedDataType = getSelectedDataType();
+private void populateIntervalChoices ( HydroBaseDMI dmi ) {
+    String selectedDataType = getSelectedDataType();
     //Message.printStatus ( 2, "", "Populating intervals for selected data type \"" + selectedDataType + "\"" );
     List<String> timeSteps = HydroBase_Util.getTimeSeriesTimeSteps ( dmi,
         selectedDataType,
@@ -1278,14 +1272,14 @@ private void populateIntervalChoices ( HydroBaseDMI dmi )
         HydroBase_Util.DATA_TYPE_STATION_ALL |
         HydroBase_Util.DATA_TYPE_STRUCTURE_ALL );
     __Interval_JComboBox.setData ( timeSteps );
-    // Select monthly as the default if available...
+    // Select monthly as the default if available.
     if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox,"Month", JGUIUtil.NONE, null, null ) ) {
         __Interval_JComboBox.select ( "Month" );
     }
     else {
-        // Select the first item...
+        // Select the first item.
         try {
-            __Interval_JComboBox.select ( null ); // To force event
+            __Interval_JComboBox.select ( null ); // To force event.
             __Interval_JComboBox.select ( 0 );
         }
         catch ( Exception e ) {
@@ -1299,8 +1293,8 @@ private void populateIntervalChoices ( HydroBaseDMI dmi )
 /**
 Refresh the command string from the dialog contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
 	__error_wait = false;
 	String DataStore = "";
@@ -1312,9 +1306,7 @@ private void refresh ()
 	String filterDelim = ";";
 	String InputStart = "";
 	String InputEnd = "";
-	/* TODO SAM 2006-04-28 Review code
-	As per Ray Bennett always do the fill
-	*/
+	// TODO SAM 2006-04-28 As per Ray Bennett always do the fill.
 	String FillDivRecordsCarryForward = "";
 	String FillDivRecordsCarryForwardFlag = "";
 	String FillUsingDivComments = "";
@@ -1323,7 +1315,7 @@ private void refresh ()
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		props = __command.getCommandParameters();
 	    InputName = props.getValue ( "InputName" );
 	    DataStore = props.getValue ( "DataStore" );
@@ -1334,73 +1326,71 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
-		/* TODO SAM 2006-04-28 Review code
-		As per Ray Bennett always do the fill
-		*/
+		// TODO SAM 2006-04-28 As per Ray Bennett always do the fill.
 		FillDivRecordsCarryForward = props.getValue ( "FillDivRecordsCarryForward" );
 		FillDivRecordsCarryForwardFlag = props.getValue ( "FillDivRecordsCarryForwardFlag" );
 		FillUsingDivComments = props.getValue ( "FillUsingDivComments" );
 		FillUsingDivCommentsFlag = props.getValue ( "FillUsingDivCommentsFlag" );
 		IfMissing = props.getValue ( "IfMissing" );
-        // The input name list is set up in initialize() but is selected here
-		// It may also be reset below from the TSID
+        // The input name list is set up in initialize() but is selected here.
+		// It may also be reset below from the TSID.
         if ( JGUIUtil.isSimpleJComboBoxItem(__InputName_JComboBox, InputName, JGUIUtil.NONE, null, null ) ) {
-            __InputName_JComboBox.select ( null ); // To ensure that following causes an event
-            __InputName_JComboBox.select ( InputName ); // This will trigger getting the DMI for use in the editor
+            __InputName_JComboBox.select ( null ); // To ensure that following causes an event.
+            __InputName_JComboBox.select ( InputName ); // This will trigger getting the DMI for use in the editor.
         }
         else {
             if ( (InputName == null) || InputName.equals("") ) {
-                // New command...select the default...
-                __InputName_JComboBox.select ( null ); // To ensure that following causes an event
+                // New command...select the default.
+                __InputName_JComboBox.select ( null ); // To ensure that following causes an event.
                 __InputName_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "InputName parameter \"" + InputName + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // The data store list is set up in initialize() but is selected here
+        // The data store list is set up in initialize() but is selected here.
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
-            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
-            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor
+            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor.
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
-                // New command...select the default...
-                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
+                // New command...select the default.
+                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
                 __DataStore_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // 
-        // Also need to make sure that the input type and DMI are actually selected
-        // Call manually because events are disabled at startup to allow cascade to work properly
+
+        // Also need to make sure that the input type and DMI are actually selected.
+        // Call manually because events are disabled at startup to allow cascade to work properly.
         setDataStoreForSelectedInput();
-        // Data types as displayed are verbose:  "Climate - Precip"
-        // Therefore, select in the list based only on the second token (position 2 since two spaces around dash)
-        // First populate the data type choices...
+        // Data types as displayed are verbose:  "Climate - Precip".
+        // Therefore, select in the list based only on the second token (position 2 since two spaces around dash).
+        // First populate the data type choices.
         populateDataTypeChoices(getDMI() );
         // Then set to the value from the command.
         int [] index = new int[1];
         //Message.printStatus(2,routine,"Checking to see if DataType=\"" + DataType + "\" is a choice.");
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 2, index, true ) ) {
-            // Existing command so select the matching choice
+            // Existing command so select the matching choice.
             //Message.printStatus(2,routine,"DataType=\"" + DataType + "\" was a choice, selecting index " + index[0] + "...");
             __DataType_JComboBox.select(index[0]);
         }
         else {
             Message.printStatus(2,routine,"DataType=\"" + DataType + "\" was not a choice.");
             if ( (DataType == null) || DataType.equals("") ) {
-                // New command...select the default...
-                // Populating the list above selects the default that is appropriate so no need to do here
+                // New command...select the default.
+                // Populating the list above selects the default that is appropriate so no need to do here.
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataType parameter \"" + DataType + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -1408,19 +1398,19 @@ private void refresh ()
 	    if ( WaterClass != null ) {
 		    __WaterClass_JTextField.setText ( WaterClass );
 	    }
-        // Populate the interval choices based on the selected data type...
+        // Populate the interval choices based on the selected data type.
         populateIntervalChoices(getDMI() );
-        // Now select what the command had previously (if specified)...
+        // Now select what the command had previously (if specified).
         if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
             __Interval_JComboBox.select ( Interval );
         }
         else {
             if ( (Interval == null) || Interval.equals("") ) {
-                // New command...select the default (done when populating the list so no need to do here)...
+                // New command...select the default (done when populating the list so no need to do here).
                 //__Interval_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "Interval parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -1429,7 +1419,7 @@ private void refresh ()
 		    __Alias_JTextField.setText ( Alias );
 	    }
 		if ( (TSID != null) && !TSID.equals("") ) {
-		    // Input type is selected from the TSID
+		    // Input type is selected from the TSID.
 			try {
 			    TSIdent tsident = new TSIdent ( TSID );
 				if ( __Location_JTextField != null ) {
@@ -1440,25 +1430,25 @@ private void refresh ()
 				}
 				String dataType = tsident.getType();
 				if ( dataType.startsWith("WaterClass") || dataType.startsWith("'WaterClass") ) {
-					// DataType choice is only "WaterClass"
+					// DataType choice is only "WaterClass":
 					// - set after processing out the water class
-					// WaterClass is the part after "WaterClass-"
+					// - WaterClass is the part after "WaterClass-"
 					int pos = dataType.indexOf("-");
 					if ( pos > 0 ) {
-						// Remove single quotes in the water class that the user sees
+						// Remove single quotes in the water class that the user sees.
 						String waterClass = dataType.substring(pos + 1).replace("'", "");
 						__WaterClass_JTextField.setText ( waterClass );
 					}
 					else {
 						__WaterClass_JTextField.setText ( "" );
 					}
-					// Will set the data type below
+					// Will set the data type below.
 					dataType = "WaterClass";
 				}
 				__DataType_JComboBox.setText ( dataType );
 				__Interval_JComboBox.setText ( tsident.getInterval() );
 				__InputName_JComboBox.select ( tsident.getInputName() );
-			    // Make the single time series tab visible
+			    // Make the single time series tab visible.
 			    __tsInfo_JTabbedPane.setSelectedIndex(0);
 			}
 			catch ( Exception e ) {
@@ -1466,7 +1456,7 @@ private void refresh ()
 			}
 		}
 		else {
-            // Make the multiple time series tab visible
+            // Make the multiple time series tab visible.
             __tsInfo_JTabbedPane.setSelectedIndex(1);
 		}
 		// Selecting the data type and interval will result in the corresponding filter group being selected.
@@ -1481,7 +1471,7 @@ private void refresh ()
     		for ( int ifg = 0; ifg < nfg; ifg++ ) {
     			where = props.getValue ( "Where" + (ifg + 1) );
     			if ( (where != null) && (where.length() > 0) ) {
-    				// Set the filter...
+    				// Set the filter.
     				try {
     				    Message.printStatus(2,routine,"Setting filter Where" + (ifg + 1) + "=\"" + where + "\" from panel " + filterPanel );
     				    filterPanel.setInputFilter (ifg, where, filterDelim );
@@ -1493,8 +1483,8 @@ private void refresh ()
     				}
     			}
     		}
-		    // For some reason the values do not always show up so invalidate the component to force redraw
-		    // TODO SAM 2016-08-20 This still does not work
+		    // For some reason the values do not always show up so invalidate the component to force redraw.
+		    // TODO SAM 2016-08-20 This still does not work.
     		Message.printStatus(2,routine,"Revalidating component to force redraw.");
 		    filterPanel.revalidate();
 		    //filterPanel.repaint();
@@ -1505,11 +1495,9 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
-		/* TODO SAM 2006-04-28 Review code
-		As per Ray Bennett always do the fill
-		*/
+		// TODO SAM 2006-04-28 As per Ray Bennett always do the fill.
 		if ( FillDivRecordsCarryForward == null ) {
-			// Select default...
+			// Select default.
 			__FillDivRecordsCarryForward_JComboBox.select ( 0 );
 		}
 		else {
@@ -1528,7 +1516,7 @@ private void refresh ()
 			__FillDivRecordsCarryForwardFlag_JTextField.setText(FillDivRecordsCarryForwardFlag);
 		}
 		if ( FillUsingDivComments == null ) {
-			// Select default...
+			// Select default.
 			__FillUsingDivComments_JComboBox.select ( 0 );
 		}
 		else {
@@ -1547,7 +1535,7 @@ private void refresh ()
 			__FillUsingDivCommentsFlag_JTextField.setText(FillUsingDivCommentsFlag);
 		}
         if ( IfMissing == null ) {
-            // Select default...
+            // Select default.
             __IfMissing_JComboBox.select ( 0 );
         }
         else {
@@ -1564,7 +1552,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	InputName = __InputName_JComboBox.getSelected();
     if ( InputName == null ) {
         InputName = "";
@@ -1606,11 +1594,11 @@ private void refresh ()
 	TSID = b.toString();
 	if ( Location.equals("") || DataSource.equals("") || (DataType == null) || DataType.equals("") ||
 	    (Interval == null) || Interval.equals("")) {
-	    // Not enough information so assume using the where filters
+	    // Not enough information so assume using the where filters.
 	    TSID = "";
 	}
 	__TSID_JTextField.setText ( TSID );
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	props = new PropList ( __command.getCommandName() );
     props.add ( "InputName=" + InputName );
     props.add ( "DataStore=" + DataStore );
@@ -1619,18 +1607,18 @@ private void refresh ()
     props.add ( "DataType=" + DataType );
 	props.add ( "WaterClass=" + WaterClass );
 	props.add ( "Interval=" + Interval );
-	// Set the where clauses...
-	// Since numbers may cause problems, first unset and then set
+	// Set the where clauses.
+	// Since numbers may cause problems, first unset and then set.
 	InputFilter_JPanel filterPanel = getVisibleInputFilterPanel();
 	if ( filterPanel != null ) {
     	int nfg = filterPanel.getNumFilterGroups();
     	String where;
     	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
     		where = filterPanel.toString(ifg,filterDelim).trim();
-    		// Make sure there is a field that is being checked in a where clause...
+    		// Make sure there is a field that is being checked in a where clause.
     		props.unSet("Where" + (ifg + 1) );
     		if ( (where.length() > 0) && !where.startsWith(filterDelim) ) {
-                // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+                // FIXME SAM 2010-11-01 The following discards '=' in the quoted string.
                 //props.add ( "Where" + (ifg + 1) + "=" + where );
                 props.set ( "Where" + (ifg + 1), where );
                 //Message.printStatus(2,routine,"Setting command parameter from visible input filter:  Where" +
@@ -1642,9 +1630,7 @@ private void refresh ()
 	props.add ( "InputStart=" + InputStart );
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
-	/* TODO SAM 2006-04-28 Review code
-	As per Ray Bennett always do the fill
-	*/
+	// TODO SAM 2006-04-28 As per Ray Bennett always do the fill.
 	FillDivRecordsCarryForward = __FillDivRecordsCarryForward_JComboBox.getSelected();
 	props.add ( "FillDivRecordsCarryForward=" + FillDivRecordsCarryForward );
 	FillDivRecordsCarryForwardFlag = __FillDivRecordsCarryForwardFlag_JTextField.getText();
@@ -1664,37 +1650,36 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Select (set visible) the appropriate input filter based on the other data choices.
-@param dataStore the data store from the DataStore and InputName parameters. 
+@param dataStore the data store from the DataStore and InputName parameters.
 */
-private void selectInputFilter ( HydroBaseDataStore dataStore )
-{   String routine = getClass().getSimpleName() + ".selectInputFilter";
-    // Selected datastore name...
+private void selectInputFilter ( HydroBaseDataStore dataStore ) {
+    String routine = getClass().getSimpleName() + ".selectInputFilter";
+    // Selected datastore name.
     if ( dataStore == null ) {
         return;
     }
     String dataStoreName = dataStore.getName();
-    // Selected data type and interval must be converted to HydroBase internal convention
-    // The following lookups are currently hard coded and not read from HydroBase
+    // Selected data type and interval must be converted to HydroBase internal convention.
+    // The following lookups are currently hard coded and not read from HydroBase.
     String selectedDataType = getSelectedDataType();
     String selectedTimeStep = __Interval_JComboBox.getSelected();
     String [] hb_mt = HydroBase_Util.convertToHydroBaseMeasType( selectedDataType, selectedTimeStep );
@@ -1709,9 +1694,9 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
         "\" selectedDataType=\"" + selectedDataType + "\" hbMeasType=\"" + hbMeasType + "\" selectedTimeStep=\"" +
         selectedTimeStep + "\"" );
     for ( InputFilter_JPanel panel : inputFilterJPanelList ) {
-        matched = false; // Does selected data store name match the filter data store & does data type match
+        matched = false; // Does selected data store name match the filter data store & does data type match.
         if ( panel instanceof HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ) {
-            // Station time series
+            // Station time series.
             HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1735,19 +1720,19 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
                 //Message.printStatus(2, routine, "Panel includeSFUT=" + hbpanel.getIncludeSFUT());
                 if ( !hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureTimeSeriesDataType ( hbdmi, hbMeasType) &&
                     !HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                    // Normal structure time series (not SFUT)
+                    // Normal structure time series (not SFUT).
                     matched = true;
                     Message.printStatus(2, routine, "Setting structure (no SFUT) input filter panel visible.");
                 }
                 else if ( hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                    // SFUT time series
+                    // SFUT time series.
                     matched = true;
                     Message.printStatus(2, routine, "Setting structure SFUT input filter panel visible.");
                 }
             }
         }
         else if ( panel instanceof HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel ) {
-            // CASS crop time series
+            // CASS crop time series.
             HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1758,7 +1743,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             }
         }
         else if ( panel instanceof HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel ) {
-            // CASS livestock time series
+            // CASS livestock time series.
             HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1769,7 +1754,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             }
         }
         else if ( panel instanceof HydroBase_GUI_CUPopulation_InputFilter_JPanel ) {
-            // CU population time series
+            // CU population time series.
             HydroBase_GUI_CUPopulation_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_CUPopulation_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1780,7 +1765,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             }
         }
         else if ( panel instanceof HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel ) {
-            // NASS time series
+            // NASS time series.
             HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1791,7 +1776,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             }
         }
         else if ( panel instanceof HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ) {
-            // Irrig summary time series
+            // Irrig summary time series.
             HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1802,8 +1787,8 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             }
         }
         else if ( panel instanceof HydroBase_GUI_GroundWater_InputFilter_JPanel ) {
-            // Groundwater wells time series
-            // Note that irregular data are matched under the station time series above
+            // Groundwater wells time series.
+            // Note that irregular data are matched under the station time series above.
             HydroBase_GUI_GroundWater_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_GroundWater_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
@@ -1813,13 +1798,13 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
                 Message.printStatus(2, routine, "Setting groundwater wells input filter panel visible.");
             }
         }
-        // If the panel was matched, set it visible...
+        // If the panel was matched, set it visible.
         panel.setVisible(matched);
         if ( matched ) {
             ++matchCount;
         }
     }
-    // No normal panels were matched enable the generic panel, which will be last panel in list
+    // No normal panels were matched enable the generic panel, which will be last panel in list.
     InputFilter_JPanel defaultPanel = inputFilterJPanelList.get(inputFilterJPanelList.size() - 1);
     if ( matchCount == 0 ) {
         defaultPanel.setVisible(true);
@@ -1833,8 +1818,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
 /**
 Set all the filters visible, necessary to help compute layout dimensions and dialog size.
 */
-private void setAllFiltersVisible()
-{
+private void setAllFiltersVisible() {
     List<InputFilter_JPanel> panelList = getInputFilterJPanelList();
     for ( InputFilter_JPanel panel : panelList ) {
         panel.setVisible(true);
@@ -1844,8 +1828,7 @@ private void setAllFiltersVisible()
 /**
 Set the datastore to use for queries based on the selected data store and input name.
 */
-private void setDataStoreForSelectedInput()
-{
+private void setDataStoreForSelectedInput() {
     // Data store will be used if set.  Otherwise input name is used.
     String dataStoreString = __DataStore_JComboBox.getSelected();
     if ( dataStoreString == null ) {
@@ -1856,11 +1839,11 @@ private void setDataStoreForSelectedInput()
         inputNameString = "";
     }
     if ( !dataStoreString.equals("") ) {
-        // Use the selected data store
+        // Use the selected data store.
         __dataStore = getSelectedDataStore();
     }
     else {
-        // Use the DMI from the input name
+        // Use the DMI from the input name.
         __dataStore = getSelectedDataStoreFromInputName();
     }
 }
@@ -1869,15 +1852,26 @@ private void setDataStoreForSelectedInput()
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

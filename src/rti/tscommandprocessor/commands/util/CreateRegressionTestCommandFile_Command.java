@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -75,8 +75,8 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public CreateRegressionTestCommandFile_Command ()
-{	super();
+public CreateRegressionTestCommandFile_Command () {
+	super();
 	setCommandName ( "CreateRegressionTestCommandFile" );
 }
 
@@ -88,8 +88,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String commandTag, int warningLevel )
-throws InvalidCommandParameterException
-{	String routine = getClass().getSimpleName() + ".checkCommandParameters";
+throws InvalidCommandParameterException {
+	String routine = getClass().getSimpleName() + ".checkCommandParameters";
     String SearchFolder = parameters.getValue ( "SearchFolder" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String SetupCommandFile = parameters.getValue ( "SetupCommandFile" );
@@ -102,7 +102,7 @@ throws InvalidCommandParameterException
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the parent directories or files is not checked
 	// because the files may be created dynamically after the command is edited.
 
@@ -128,9 +128,9 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report the problem to software support." ) );
             }
-    
+
         try {
-            //String adjusted_path = 
+            //String adjusted_path =
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,SearchFolder)));
         }
@@ -144,7 +144,7 @@ throws InvalidCommandParameterException
                 message, "Verify that search folder and working directory paths are compatible." ) );
         }
     }
-	
+
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         message = "The output file must be specified.";
 		warning += "\n" + message;
@@ -190,7 +190,7 @@ throws InvalidCommandParameterException
                 message, "Verify that output file and working directory paths are compatible." ) );
         }
     }
-	
+
     if ( (SetupCommandFile != null) && (SetupCommandFile.length() != 0) && (SetupCommandFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
@@ -207,9 +207,9 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report problem to software support." ) );
             }
-    
+
         try {
-            //String adjusted_path = 
+            //String adjusted_path =
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,SetupCommandFile)));
         }
@@ -223,7 +223,7 @@ throws InvalidCommandParameterException
                 message, "Verify that setup command file and working directory paths are compatible." ) );
         }
     }
-    
+
     if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() && (EndCommandFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
@@ -240,9 +240,9 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Report problem to software support." ) );
         }
-    
+
         try {
-            //String adjusted_path = 
+            //String adjusted_path =
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,EndCommandFile)));
         }
@@ -256,7 +256,7 @@ throws InvalidCommandParameterException
                 message, "Verify that end command file and working directory paths are compatible." ) );
         }
     }
-	
+
 	if ( (Append != null) && !Append.equals("") ) {
 		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
             message = "The Append parameter \"" + Append + "\" must be False or True.";
@@ -283,13 +283,13 @@ throws InvalidCommandParameterException
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     // Throw an InvalidCommandParameterException in case of errors.
-    if ( warning.length() > 0 ) {       
+    if ( warning.length() > 0 ) {
         Message.printWarning ( warningLevel,
             MessageUtil.formatMessageTag(
                 commandTag, warningLevel ), warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -300,8 +300,8 @@ Determine the expected status parameter by searching the command file for an "@e
 used for the command file (default expected status is success).
 */
 private String determineExpectedStatusParameter ( CommandFile commandFile )
-throws FileNotFoundException
-{   // Default is success, which will not add an ExpectedStatus parameter.
+throws FileNotFoundException {
+    // Default is success, which will not add an ExpectedStatus parameter.
 	String expectedStatusParameter = "";
     CommandStatusType expectedStatus = commandFile.getExpectedStatus();
    	// Translate variations to the official name recognized by RunCommands().
@@ -317,11 +317,10 @@ throws FileNotFoundException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new CreateRegressionTestCommandFile_JDialog ( parent, this )).ok();
 }
 
@@ -343,22 +342,19 @@ the file matches a valid commands file it is added to the test list.
 All commands file that end with ".<product_name>" will be added to the list.
 @param commandFileList List of command files that are matched, to be appended to.
 @param path Folder in which to start searching for command files.
-@param patterns Array of pattern to match when searching files, for example "test*.TSTool",
-Java regular expressions.
-@param includedTestSuites the test suites for test cases that
-should be included, indicated by "@testSuite ABC" tags in the comments of command files,
-will be compare ignoring case
+@param patterns Array of pattern to match when searching files, for example "test*.TSTool", Java regular expressions.
+@param includedTestSuites the test suites for test cases that should be included,
+indicated by "@testSuite ABC" tags in the comments of command files, will be compared ignoring case
 @param excludedTestSuites the test suites for test cases that
-should be excluded, indicated by "@testSuite ABC" tags in the comments of command files,
-will be compare ignoring case
-@param includedOS the operating systems for test cases that
-should be included, indicated by "@os Windows", "@os linux", and "@os UNIX" tags in the comments of command files.
-@throws IOException 
+should be excluded, indicated by "@testSuite ABC" tags in the comments of command files, will be compared ignoring case
+@param includedOS the operating systems for test cases that should be included,
+indicated by "@os Windows", "@os linux", and "@os UNIX" tags in the comments of command files.
+@throws IOException
  */
 private void getMatchingFilenamesInTree ( List<String> commandFileList, File path, String[] patterns,
-        String[] includedTestSuites, String[] excludedTestSuites, String[] includedOS ) 
-throws IOException
-{   String routine = getClass().getSimpleName() + ".getMatchingFilenamesInTree";
+        String[] includedTestSuites, String[] excludedTestSuites, String[] includedOS )
+throws IOException {
+    String routine = getClass().getSimpleName() + ".getMatchingFilenamesInTree";
     // Determine if UNIX, linux, and Windows tests have been requested.
     // Check the OS only if the specific.
     boolean needToCheckForUnixOS = false;
@@ -403,8 +399,7 @@ throws IOException
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, "", "    File matched." );
     	    	}
-        	    // Exclude the command file if tag in the file indicates that it is not compatible with
-        	    // this command's parameters.
+        	    // Exclude the command file if tag in the file indicates that it is not compatible with this command's parameters.
         	    boolean doAddForOS = false;
         	    List<Object> tagValues = TSCommandProcessorUtil.getTagValues ( path.toString(), "os" );
         	    if ( !needToCheckForUnixOS && !needToCheckForWindowsOS ) {
@@ -521,8 +516,7 @@ throws IOException
 /**
 Return the output file generated by this file.  This method is used internally.
 */
-private File getOutputFile ()
-{
+private File getOutputFile () {
     return __OutputFile_File;
 }
 
@@ -534,8 +528,8 @@ Include the setup command file in the regression test command file.
 @exception IOException if there is an error including the file.
 */
 private void includeCommandFile ( PrintWriter out, String includeCommandFile, String label )
-throws IOException
-{   //String routine = getClass().getSimpleName() + ".includeSetupCommandFile";
+throws IOException {
+    //String routine = getClass().getSimpleName() + ".includeSetupCommandFile";
     if ( includeCommandFile == null ) {
         return;
     }
@@ -565,18 +559,18 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int commandNumber )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warningLevel = 2;
 	String commandTag = "" + commandNumber;
 	int warningCount = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -589,7 +583,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
 	String SearchFolder = parameters.getValue ( "SearchFolder" ); // Expanded below.
     String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
     String SetupCommandFile = parameters.getValue ( "SetupCommandFile" ); // Expanded below.
@@ -615,7 +609,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 	String Append = parameters.getValue ( "Append" );
-	boolean append = true; // Default
+	boolean append = true; // Default.
 	if ( (Append != null) && Append.equalsIgnoreCase(_False)){
 		append = false;
 	}
@@ -693,7 +687,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	if ( warningCount > 0 ) {
 		message = "There were " + warningCount + " warnings about command parameters.";
-		Message.printWarning ( warningLevel, 
+		Message.printWarning ( warningLevel,
 		MessageUtil.formatMessageTag(commandTag, ++warningCount),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
@@ -792,8 +786,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		for ( CommandFile commandFile: commandFiles ) {
 			// The command files to run are relative to the commands file being created.
 			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), commandFile.getFilename() );
-			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
-			// parameter for the command.
+			// Determine if the command file has @expectedStatus in it.
+			// If so, define an ExpectedStatus parameter for the command.
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
 		        determineExpectedStatusParameter(commandFile) + ")");
 		}
@@ -806,22 +800,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error creating regression command file \"" + OutputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warningLevel, 
+		Message.printWarning ( warningLevel,
 	        MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
     __OutputFile_File = file;
 }
 
@@ -849,7 +842,7 @@ private int sortBasedOnOrder(List<CommandFile> commandFiles, CommandStatus statu
 	boolean needToProcessOrder = false; // Used to indicate that 'order' needs to be processed.
 	while ( true ) {
 		Message.printStatus(2, routine, "Processing tests for 'order' starting at index " +
-			startingIndex + ", max index = " + (commandFiles.size() - 1) ); 
+			startingIndex + ", max index = " + (commandFiles.size() - 1) );
 		++loopCount;
 		if ( loopCount >= commandFiles.size()) {
 			String message = "Checking @order has logic problem - reached maximum number of tests (" +

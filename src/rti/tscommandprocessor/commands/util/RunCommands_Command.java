@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import javax.swing.JFrame;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -100,22 +99,21 @@ private List<File> outputFileList = new ArrayList<>();
 /**
 Constructor.
 */
-public RunCommands_Command ()
-{	super();
+public RunCommands_Command () {
+	super();
 	setCommandName ( "RunCommands" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String InputFile = parameters.getValue ( "InputFile" );
+throws InvalidCommandParameterException {
+	String InputFile = parameters.getValue ( "InputFile" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
     //String ShareProperties = parameters.getValue ( "ShareProperties" );
     String ShareDataStores = parameters.getValue ( "ShareDataStores" );
@@ -124,11 +122,11 @@ throws InvalidCommandParameterException
     String FailureCountProperty = parameters.getValue ( "FailureCountProperty" );
 	String warning = "";
     String message;
-	
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
 		warning += "\n" + message;
@@ -138,7 +136,7 @@ throws InvalidCommandParameterException
 	}
 	else if ( InputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
-	
+
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it.
@@ -153,7 +151,7 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Software error - report problem to support." ) );
 		}
-	
+
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, InputFile));
 			File f = new File ( adjusted_path );
@@ -164,7 +162,6 @@ throws InvalidCommandParameterException
                         new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Verify that the command file to run exists - may be OK if file is created at run time." ) );
             }
-			f = null;
 		}
 		catch ( Exception e ) {
             message = "The input file \"" + InputFile +
@@ -176,7 +173,7 @@ throws InvalidCommandParameterException
                             message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
-    
+
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() == 0) &&
         !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
         !ExpectedStatus.equalsIgnoreCase(_Success) &&
@@ -202,7 +199,7 @@ throws InvalidCommandParameterException
                 _DoNotShare + " (default if blank), " + " or " + _Share) );
     }
     */
-    
+
     if ( (ShareDataStores != null) && (ShareDataStores.length() == 0) &&
         !ShareDataStores.equalsIgnoreCase(_Copy) &&
         !ShareDataStores.equalsIgnoreCase(_DoNotShare) &&
@@ -263,11 +260,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if edits are saved.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if edits are saved.
 	return (new RunCommands_JDialog ( parent, this )).ok();
 }
 
@@ -291,13 +287,13 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages for log file.
-	
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -342,14 +338,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     WarningCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, WarningCountProperty);
     String FailureCountProperty = parameters.getValue ( "FailureCountProperty" );
     FailureCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, FailureCountProperty);
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
 	// Get the working directory from the processor that is running the commands.
 
 	String InputFile_full = null;
@@ -359,7 +355,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
 		Message.printStatus ( 2, routine,
 			"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
-		
+
 		// Create a runner for the commands, which will create a new command processor:
 		// - the initial application properties from the current processor are passed to the new processor
 		TSCommandFileRunner runner = new TSCommandFileRunner (
@@ -403,7 +399,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
             }
             */
-            
+
             /*
              * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
              * handled explicitly whereas user-defined properties are in a list that can be easily shared.
@@ -417,7 +413,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 setProcessorProperties(processor,runnerProcessor,false);
             }
             */
-            
+
             // Need to share the built-in StartLogEnabled property because it is used in troubleshooting
             // to ensure all logging goes to the main log file.
             Prop prop = processor.getProp("StartLogEnabled");
@@ -481,7 +477,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         	message, "Report the problem to software support." ) );
             	}
         	}
-    		
+
     		// Set the CommandStatus for this command:
             // - if have "@expectedStatus", add an additional fail message if the expected status does not
             //   agree with the actual status
@@ -556,10 +552,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
             TSCommandProcessorUtil.appendToRegressionTestReport(processor,isEnabled,runTimeTotal,
                  testPassFail,expectedStatus,maxSeverity,InputFile_full);
-    
-    		// If it was requested to append the results to the calling processor, get
-    		// the results from the runner and do so.
-    		
+
+    		// If it was requested to append the results to the calling processor,
+            // get the results from the runner and do so.
+
     		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
     			TSCommandProcessor processor2 = runner.getProcessor();
     			Object o_tslist = processor2.getPropContents("TSResultsList");
@@ -576,7 +572,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				}
     			}
     		}
-    		
+
     		Message.printStatus ( 2, routine,"...done processing commands from file." );
 	    }
         else {
@@ -591,7 +587,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error processing command file \"" + InputFile + "\", full path=\"" +
 		    InputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new CommandException ( message );

@@ -113,11 +113,11 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
     if ( (DataStore == null) || (DataStore.length() == 0) ) {
-        message = "The data store must be specified.";
+        message = "The datastore must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store." ) );
+                message, "Specify the datastore." ) );
     }
     int specCount = 0;
     if ( (Sql != null) && !Sql.equals("") ) {

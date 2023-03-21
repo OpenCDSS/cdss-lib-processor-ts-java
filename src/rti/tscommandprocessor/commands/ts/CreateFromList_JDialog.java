@@ -303,6 +303,9 @@ private void initialize ( JFrame parent, Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"<html><b>The ReadTimeSeriesList command replaces this command.</b></html>"),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a list of time series from a list of location identifiers in a file." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (

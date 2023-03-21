@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,15 +26,15 @@ package rti.tscommandprocessor.commands.rccacis;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.IO.IOUtil;
 import RTi.Util.Message.Message;
 
 /**
-Class to read and manage USA Federal Information Processing System (FIPS)
-state data.  These are used in some data query tasks.
+Class to read and manage USA Federal Information Processing System (FIPS) state data.
+These are used in some data query tasks.
 @TODO SAM 2011-09-06 Decide whether this should live somewhere else so that it can be used by other packages
 that deal with State and County data.
 */
@@ -43,7 +43,7 @@ public class FIPSState {
 /**
 Static singleton list of state FIPS data, read on first access.
 */
-private static List<FIPSState> __dataList = new Vector<FIPSState>();
+private static List<FIPSState> __dataList = new ArrayList<>();
 
 /**
 The FIPS state code as a two-digit zero-padded string.
@@ -63,21 +63,19 @@ private String __name;
 /**
 Constructor for immutable data object.
 */
-public FIPSState ( String code, String abbreviation, String name )
-{
+public FIPSState ( String code, String abbreviation, String name ) {
     this.__code = code;
     this.__abbreviation = abbreviation;
     this.__name = name;
 }
 
 /**
-Check to see whether the data file needs to be read.  It is assumed to be in the "system" folder
-under the software install home in a file named "FIPS-state.csv".
+Check to see whether the data file needs to be read.
+It is assumed to be in the "system" folder under the software install home in a file named "FIPS-state.csv".
 */
-private static void checkStaticData ()
-{
+private static void checkStaticData () {
     if ( __dataList.size() == 0 ) {
-        // Try reading the FIPS data
+        // Try reading the FIPS data.
         String filename = IOUtil.getApplicationHomeDir() + File.separator + "system" + File.separator + "FIPS-state.csv";
         BufferedReader fp = null;
         try {
@@ -91,15 +89,15 @@ private static void checkStaticData ()
                     break;
                 }
                 else if ( s.startsWith("#") ) {
-                    // Comment
+                    // Comment.
                     continue;
                 }
                 else if ( s.startsWith ("\"") ) {
-                    // Quotes around column headings
+                    // Quotes around column headings.
                     continue;
                 }
                 else {
-                    // Data row
+                    // Data row.
                     tokens = s.split(",");
                     if ( tokens.length > 2 ) {
                         fips = new FIPSState ( tokens[0].trim(), tokens[1].trim(), tokens[2].trim() );
@@ -122,24 +120,21 @@ private static void checkStaticData ()
 /**
 Return the FIPS abbreviation for the state.
 */
-public String getAbbreviation ()
-{
+public String getAbbreviation () {
     return this.__abbreviation;
 }
 
 /**
 Return the FIPS code for the state.
 */
-public String getCode ()
-{
+public String getCode () {
     return this.__code;
 }
 
 /**
 Return the full data list.
 */
-public static List<FIPSState> getData ()
-{
+public static List<FIPSState> getData () {
     checkStaticData();
     return __dataList;
 }
@@ -147,8 +142,7 @@ public static List<FIPSState> getData ()
 /**
 Return the FIPS name for the state.
 */
-public String getName ()
-{
+public String getName () {
     return this.__name;
 }
 
@@ -156,8 +150,7 @@ public String getName ()
 Look up the FIPS entry from the FIPS abbreviation.
 @return the matching FIPS entry for the state abbreviation
 */
-public static FIPSState lookupByAbbreviation ( String abbreviation )
-{
+public static FIPSState lookupByAbbreviation ( String abbreviation ) {
     checkStaticData ();
     String abbreviationUpper = abbreviation.toUpperCase();
     for ( FIPSState fips : __dataList ) {
@@ -172,8 +165,7 @@ public static FIPSState lookupByAbbreviation ( String abbreviation )
 Look up the FIPS entry from the FIPS code.
 @return the matching FIPS entry for the state code
 */
-public static FIPSState lookupByCode ( String code )
-{
+public static FIPSState lookupByCode ( String code ) {
     checkStaticData ();
     String codeUpper = code.toUpperCase();
     for ( FIPSState fips : __dataList ) {
@@ -188,8 +180,7 @@ public static FIPSState lookupByCode ( String code )
 Look up the FIPS entry from the FIPS name.
 @return the matching FIPS entry for the state name
 */
-public static FIPSState lookupByName ( String name )
-{
+public static FIPSState lookupByName ( String name ) {
     checkStaticData ();
     String nameUpper = name.toUpperCase();
     for ( FIPSState fips : __dataList ) {

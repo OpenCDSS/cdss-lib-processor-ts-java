@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -84,8 +84,8 @@ Command dialog constructor.
 @param tableIDChoices choices for TableID value.
 */
 public SetObjectPropertiesFromTable_JDialog ( JFrame parent, SetObjectPropertiesFromTable_Command command,
-	List<String> objectIDChoices, List<String> tableIDChoices )
-{	super(parent, true);
+	List<String> objectIDChoices, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, objectIDChoices, tableIDChoices );
 }
 
@@ -179,8 +179,8 @@ private void checkGUIState () {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput () {
 	// Put together a list of parameters to check.
@@ -220,8 +220,8 @@ private void checkInput () {
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits () {
     String ObjectID = __ObjectID_JComboBox.getSelected();
@@ -245,8 +245,8 @@ Instantiates the GUI components.
 @param tableIDChoices list of choices for table identifiers
 */
 private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command command,
-	List<String> objectIDChoices, List<String> tableIDChoices )
-{	__command = command;
+	List<String> objectIDChoices, List<String> tableIDChoices ) {
+	__command = command;
     __parent = parent;
 
 	addWindowListener( this );
@@ -262,46 +262,48 @@ private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command co
 		"<html><b>This command is under development.</b></html>"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set object properties using matching input from a table." ), 
+		"Set object properties using matching input from a table." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The table value is determined by matching object property with table column value."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "For example, set properties for a location." ), 
+        "For example, set properties for a location." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "The properties type from the table is retained in the object property (e.g., float retained as float, string as string)." ), 
+       "The properties type from the table is retained in the object property (e.g., float retained as float, string as string)." ),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Object ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Object ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ObjectID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     objectIDChoices.add(0,""); // Add blank to ignore object.
     __ObjectID_JComboBox.setData ( objectIDChoices );
     __ObjectID_JComboBox.addItemListener ( this );
+    __ObjectID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__ObjectID_JComboBox.setMaximumRowCount(objectIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __ObjectID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - object process."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - object process."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include table columns:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include table columns:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField ( 10 );
     __IncludeColumns_JTextField.setToolTipText("List of table column names to include, can use ${Property}, use * for all.");
@@ -309,7 +311,7 @@ private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command co
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - table column names from which to set properties (default=*)."), 
+        "Optional - table column names from which to set properties (default=*)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match map:" ),
@@ -322,11 +324,11 @@ private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command co
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__MatchMap_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - how to match table rows to object property names."), 
+        "Required - how to match table rows to object property names."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditMatchMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property map:" ),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyMap_JTextArea = new JTextArea (3,35);
@@ -337,12 +339,12 @@ private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command co
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__PropertyMap_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - map of table rows to object property names (default=table columns)."), 
+        "Optional - map of table rows to object property names (default=table columns)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditPropertyMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -358,7 +360,7 @@ private void initialize ( JFrame parent, SetObjectPropertiesFromTable_Command co
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );

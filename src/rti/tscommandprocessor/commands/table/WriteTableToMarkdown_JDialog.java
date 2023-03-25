@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
-	
+
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __browse_schema_JButton = null;
 private SimpleJButton __cancel_JButton = null;
@@ -131,11 +131,11 @@ public void actionPerformed( ActionEvent event ) {
 		fc.setDialogTitle("Select Markdown File to Write");
 	    SimpleFileFilter sff_csv = new SimpleFileFilter("md", "Markdown File");
 	    fc.addChoosableFileFilter(sff_csv);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
 					// Enforce extension.
@@ -165,11 +165,11 @@ public void actionPerformed( ActionEvent event ) {
 		fc.setDialogTitle("Select Schema File to Write");
 	    SimpleFileFilter sff_csv = new SimpleFileFilter("json", "Table Schema File (JSON)");
 	    fc.addChoosableFileFilter(sff_csv);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
 					// Enforce extension.
@@ -279,7 +279,7 @@ private void checkInput () {
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
 
 	__error_wait = false;
-	
+
     if ( (TableID != null) && TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
     }
@@ -420,10 +420,11 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits.
+    __TableID_JComboBox = new SimpleJComboBox ( true ); // Allow edits for ${Property}.
     __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
     __TableID_JComboBox.setData(tableIDChoices);
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
@@ -632,7 +633,7 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
 	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
-	
+
     refresh();
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
@@ -685,7 +686,7 @@ public boolean ok () {
 Refresh the command from the other text field contents.
 */
 private void refresh () {
-	String routine = getClass().getSimpleName() + "_JDialog.refresh";
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
 	String OutputFile = "";
 	String Append = "";
@@ -935,8 +936,8 @@ private void refresh () {
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -954,8 +955,8 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ) {

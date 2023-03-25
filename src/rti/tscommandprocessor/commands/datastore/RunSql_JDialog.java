@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ Command parameter editor.
 public class RunSql_JDialog extends JDialog
 implements ActionListener, ChangeListener, ItemListener, KeyListener, WindowListener
 {
-    
+
 private final String __RemoveWorkingDirectory = "Rel";
 private final String __AddWorkingDirectory = "Abs";
 
@@ -94,7 +94,7 @@ private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTabbedPane __sql_JTabbedPane = null;
 private JTextArea __Sql_JTextArea = null;
@@ -138,17 +138,17 @@ public RunSql_JDialog ( JFrame parent, RunSql_Command command, List<DatabaseData
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	//String routine = getClass().getSimpleName() + ".actionPerformed";
+public void actionPerformed(ActionEvent event) {
+	//String routine = getClass().getSimpleName() + ".actionPerformed";
 	Object o = event.getSource();
 
     if ( o == __browse_JButton ) {
-        // Browse for the file to read...
+        // Browse for the file to read.
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle( "Select SQL File");
         SimpleFileFilter sff = new SimpleFileFilter("sql","SQL File");
         fc.addChoosableFileFilter(sff);
-        
+
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
         if ( last_directory_selected != null ) {
             fc.setCurrentDirectory( new File(last_directory_selected));
@@ -158,13 +158,13 @@ public void actionPerformed(ActionEvent event)
         }
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -311,8 +311,9 @@ private void actionPerformedDataStoreSelected ( ) {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput ()
 {	// Put together a list of parameters to check.
@@ -371,8 +372,8 @@ private void checkInput ()
 Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String DataStore = __DataStore_JComboBox.getSelected();
+private void commitEdits () {
+	String DataStore = __DataStore_JComboBox.getSelected();
     // Allow newlines in the dialog to be saved as escaped newlines.
     String Sql = __Sql_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String SqlFile = __SqlFile_JTextField.getText().trim();
@@ -403,8 +404,8 @@ private DMI getDMI () {
 Get the selected data store.
 */
 /*
-private DatabaseDataStore getSelectedDataStore ()
-{   String routine = getClass().getName() + ".getSelectedDataStore";
+private DatabaseDataStore getSelectedDataStore () {
+    String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     DatabaseDataStore dataStore = (DatabaseDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
@@ -465,8 +466,8 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 @param datastores list of database datastores.
 */
-private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDataStore> datastores )
-{	this.__command = command;
+private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDataStore> datastores ) {
+	this.__command = command;
 	this.__parent = parent;
 	this.datastores = datastores;
 	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
@@ -514,7 +515,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
         JGUIUtil.addComponent(paragraph, new JLabel (
-        "        The working directory is: " + __working_dir ), 
+        "        The working directory is: " + __working_dir ),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(paragraph, new JLabel (
@@ -529,12 +530,12 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     // List available data stores of the correct type.
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
@@ -568,7 +569,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore containing data to read."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore containing data to read."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __sql_JTabbedPane = new JTabbedPane ();
@@ -578,13 +579,13 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         "Specify SQL" ));
     JGUIUtil.addComponent(main_JPanel, __sql_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
+
     // Panel for SQL via SQL statement.
     int ySql = -1;
     JPanel sql_JPanel = new JPanel();
     sql_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "SQL string", sql_JPanel );
-    
+
     JGUIUtil.addComponent(sql_JPanel, new JLabel (
         "Specify the SQL statement string as a command parameter below."),
         0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -594,8 +595,8 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(sql_JPanel, new JLabel (
         "Use 'Enter' to insert a new line, which is shown as \\n in the command parameter."),
         0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"), 
+
+    JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"),
         0, ++ySql, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Sql_JTextArea = new JTextArea (9,50);
     __Sql_JTextArea.setLineWrap ( true );
@@ -603,7 +604,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     __Sql_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(sql_JPanel, new JScrollPane(__Sql_JTextArea),
         1, ySql, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     // Panel for SQL via SQL file.
     int yFile = -1;
     JPanel file_JPanel = new JPanel();
@@ -618,10 +619,10 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
         0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
         JGUIUtil.addComponent(file_JPanel, new JLabel (
-        "The working directory is: " + __working_dir ), 
+        "The working directory is: " + __working_dir ),
         0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
-    JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ), 
+    JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ),
         0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SqlFile_JTextField = new JTextField ( 50 );
     __SqlFile_JTextField.addKeyListener ( this );
@@ -642,7 +643,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 	}
 	JGUIUtil.addComponent(file_JPanel, SqlFile_JPanel,
 		1, yFile, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     // Panel for functions.
 
     int yFunc = -1;
@@ -674,7 +675,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     __DataStoreFunction_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(func_JPanel, __DataStoreFunction_JComboBox,
         1, yFunc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(func_JPanel, new JLabel("Optional - database function to run."), 
+    JGUIUtil.addComponent(func_JPanel, new JLabel("Optional - database function to run."),
         3, yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(func_JPanel, new JLabel ("Function parameters:"),
@@ -691,7 +692,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(func_JPanel, new SimpleJButton ("Edit","EditFunctionParameters",this),
         3, ++yFunc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (6,50);
 	__command_JTextArea.setLineWrap ( true );
@@ -730,7 +731,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     __DataStoreProcedure_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(proc_JPanel, __DataStoreProcedure_JComboBox,
         1, yProc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(proc_JPanel, new JLabel("Optional - database procedure to run."), 
+    JGUIUtil.addComponent(proc_JPanel, new JLabel("Optional - database procedure to run."),
         3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("Procedure parameters:"),
@@ -762,7 +763,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -787,8 +788,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent event)
-{
+public void itemStateChanged (ItemEvent event) {
     if ( !__ignoreItemEvents ) {
         if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
             // User has selected a datastore.
@@ -849,8 +849,8 @@ public boolean ok ()
 Populate the function list based on the selected database.
 @param dmi DMI to use when selecting procedure list
 */
-private void populateDataStoreFunctionChoices ( DMI dmi )
-{   String routine = getClass().getSimpleName() + ".populateDataStoreFunctionChoices";
+private void populateDataStoreFunctionChoices ( DMI dmi ) {
+    String routine = getClass().getSimpleName() + ".populateDataStoreFunctionChoices";
     Message.printStatus(2, routine, "Populating function choices for datastore=\"" +
     	__DataStore_JComboBox.getSelected() + "\" last datastore=\"" + this.lastDataStoreForFunctions + "\"." );
 	if ( this.lastDataStoreForFunctions.equals(__DataStore_JComboBox.getSelected()) ) {
@@ -1149,8 +1149,8 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             			DMI.closeResultSet(rs2);
             		}
             		else {
-            			// Just add the procedure name.
-            			// - SQL Server has names like the following so remove after the semi-colon:
+            			// Just add the procedure name:
+            			// - SQL Server has names like the following so remove after the semicolon:
             			//      usp_CDSS_MeasType_Sel_Distinct;1)
             			int pos2 = procName.indexOf(";");
             			if ( pos2 < 0 ) {
@@ -1218,8 +1218,8 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 try{
     String DataStore = "";
     String Sql = "";
@@ -1383,8 +1383,8 @@ catch ( Exception e ) {
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -1422,18 +1422,29 @@ public void stateChanged ( ChangeEvent event ) {
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
 // The following methods are all necessary because this class implements WindowListener.
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

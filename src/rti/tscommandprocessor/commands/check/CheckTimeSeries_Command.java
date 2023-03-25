@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.CheckType;
 import RTi.TS.TS;
@@ -65,10 +64,10 @@ public class CheckTimeSeries_Command extends AbstractCommand implements CommandD
 
 /**
 Analysis window year, since users do not supply this information.
-This allows for leap year in case the analysis window start or end is on Feb 29.
+This allows for leap year in case the analysis window start or end is on February 29.
 */
 private final int __ANALYSIS_WINDOW_YEAR = 2000;
-    
+
 /**
 Values for Action parameter.
 */
@@ -83,8 +82,8 @@ private DataTable __discoveryTable = null;
 /**
 Constructor.
 */
-public CheckTimeSeries_Command ()
-{   super();
+public CheckTimeSeries_Command () {
+    super();
     setCommandName ( "CheckTimeSeries" );
 }
 
@@ -96,8 +95,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   //String TSID = parameters.getValue ( "TSID" );
+throws InvalidCommandParameterException {
+    //String TSID = parameters.getValue ( "TSID" );
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -124,7 +123,7 @@ throws InvalidCommandParameterException
             message, "Provide the check criteria to evaluate." ) );
     }
     else {
-        // Make sure that it is in the supported list
+        // Make sure that it is in the supported list.
         CheckType checkType = CheckType.valueOfIgnoreCase(CheckCriteria);
         if ( checkType == null ) {
             message = "The check criteria (" + CheckCriteria + ") is not recognized.";
@@ -133,7 +132,7 @@ throws InvalidCommandParameterException
                 message, "Select a supported criteria using the command editor." ) );
         }
 
-        // Additional checks that depend on the criteria
+        // Additional checks that depend on the criteria.
         
         int nRequiredValues = 0;
         if ( checkType != null ) {
@@ -262,8 +261,8 @@ throws InvalidCommandParameterException
         }
     }
     
-    // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(26);
+    // Check for invalid parameters.
+    List<String> validList = new ArrayList<>(26);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -307,8 +306,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+public boolean editCommand ( JFrame parent ) {
+    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)getCommandProcessor(), this);
 	return (new CheckTimeSeries_JDialog ( parent, this, tableIDChoices )).ok();
 }
@@ -316,8 +315,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __discoveryTable;
 }
 
@@ -325,17 +323,17 @@ private DataTable getDiscoveryTable()
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
 }
 
-// Parse command is in the base class
+// Parse command is in the base class.
 
 /**
 Run the command.
@@ -344,8 +342,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -356,8 +353,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -370,8 +366,8 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String message, routine = getClass().getSimpleName() + ".runCommandInternal";
+CommandWarningException, CommandException {
+    String message, routine = getClass().getSimpleName() + ".runCommandInternal";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -379,7 +375,7 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -387,14 +383,14 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
     PropList parameters = getCommandParameters();
     
-    // Get the input parameters...
+    // Get the input parameters.
     
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
@@ -426,7 +422,7 @@ CommandWarningException, CommandException
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     String ProblemType = parameters.getValue ( "ProblemType" );
     if ( (ProblemType ==null) || ProblemType.equals("") ) {
-        ProblemType = CheckCriteria; // Default
+        ProblemType = CheckCriteria; // Default.
     }
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
     int MaxWarnings_int = -1;
@@ -436,6 +432,7 @@ CommandWarningException, CommandException
     String Flag = parameters.getValue ( "Flag" );
     String FlagDesc = parameters.getValue ( "FlagDesc" );
     String Action = parameters.getValue ( "Action" );
+
     String TableID = parameters.getValue ( "TableID" );
 	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
@@ -470,7 +467,7 @@ CommandWarningException, CommandException
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -478,16 +475,16 @@ CommandWarningException, CommandException
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
 
-    // Get the time series to process.  Allow TSID to be a pattern or specific time series...
+    // Get the time series to process.  Allow TSID to be a pattern or specific time series.
     
     List<TS> tslist = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
+        // Get the discovery time series list from all time series above this command.
         tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, null );
     }
@@ -535,7 +532,7 @@ CommandWarningException, CommandException
     }
 
     if ( tslist == null ) {
-    	tslist = new ArrayList<TS>();
+    	tslist = new ArrayList<>();
     }
     int nts = tslist.size();
     if ( nts == 0 ) {
@@ -555,7 +552,7 @@ CommandWarningException, CommandException
     DataTable table = null;
     boolean doTable = false;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be used as input
+        // Get the table to be used as input.
     	doTable = true;
     	PropList request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
@@ -578,7 +575,7 @@ CommandWarningException, CommandException
     }
     
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( CommandPhaseType.RUN,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -586,12 +583,12 @@ CommandWarningException, CommandException
         throw new CommandException ( message );
     }
     
-    // Now process...
+    // Now process.
     
     DateTime AnalysisWindowStart_DateTime = null;
     if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             AnalysisWindowStart_DateTime =
                 DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
         }
@@ -607,7 +604,7 @@ CommandWarningException, CommandException
     DateTime AnalysisWindowEnd_DateTime = null;
     if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             AnalysisWindowEnd_DateTime =
                 DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
         }
@@ -625,8 +622,8 @@ CommandWarningException, CommandException
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	if ( doTable ) {
 	            if ( table == null ) {
-	                // Did not find table so is being created in this command
-	                // Create an empty table and set the ID
+	                // Did not find table so is being created in this command.
+	                // Create an empty table and set the ID.
 	                table = new DataTable();
 	                table.setTableID ( TableID );
 	                setDiscoveryTable ( table );
@@ -636,12 +633,12 @@ CommandWarningException, CommandException
         else if ( commandPhase == CommandPhaseType.RUN ) {
         	if ( doTable ) {
 	            if ( table == null ) {
-	                // Did not find the table above so create it
+	                // Did not find the table above so create it.
 	                table = new DataTable( /*columnList*/ );
 	                table.setTableID ( TableID );
 	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
 	                
-	                // Set the table in the processor...
+	                // Set the table in the processor.
 	                PropList request_params = null;
 	                request_params = new PropList ( "" );
 	                request_params.setUsingObject ( "Table", table );
@@ -678,26 +675,27 @@ CommandWarningException, CommandException
 	                ts.getIdentifier().toStringAliasAndTSID() );
 	            
 	            try {
-	                // Do the check...
+	                // Do the check.
 	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
 	                    AnalysisStart_DateTime, AnalysisEnd_DateTime,
 	                    AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
 	                    Value1_Double, Value2_Double, ProblemType,
-	                    Flag, FlagDesc, Action, table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
+	                    Flag, FlagDesc, Action,
+	                    table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
 	                    TableValueColumn, tableValuePrecision, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
 	                check.checkTimeSeries();
 	                List<String> problems = check.getProblems();
 	                int problemsSize = problems.size();
 	                int problemsSizeOutput = problemsSize;
 	                if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
-	                    // Limit the warnings to the maximum
+	                    // Limit the warnings to the maximum.
 	                    problemsSizeOutput = MaxWarnings_int;
 	                }
 	                if ( problemsSizeOutput < problemsSize ) {
 	                    message = "Time series had " + problemsSize + " check warnings - only " + problemsSizeOutput + " are listed.";
 	                    Message.printWarning ( warning_level,
 	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	                    // No recommendation since it is a user-defined check
+	                    // No recommendation since it is a user-defined check.
 	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
 	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
 	                }
@@ -705,7 +703,7 @@ CommandWarningException, CommandException
 	                    message = problems.get(iprob);
 	                    Message.printWarning ( warning_level,
 	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	                    // No recommendation since it is a user-defined check
+	                    // No recommendation since it is a user-defined check.
 	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
 	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
 	                }
@@ -767,8 +765,7 @@ CommandWarningException, CommandException
 /**
 Set the table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __discoveryTable = table;
 }
 

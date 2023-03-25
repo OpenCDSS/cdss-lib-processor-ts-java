@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,12 +27,13 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyListener;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 
 import rti.tscommandprocessor.core.EnsembleListType;
 import rti.tscommandprocessor.core.TSListType;
@@ -57,17 +58,16 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> EnsembleIDs, int y )
-{
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> EnsembleIDs, int y ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     int size = 0;
     if ( EnsembleIDs == null ) {
-        EnsembleIDs = new Vector<String> ();
+        EnsembleIDs = new ArrayList<> ();
     }
     size = EnsembleIDs.size();
-    // Blank for default (not used)
+    // Blank for default (not used).
     if ( size > 0 ) {
         EnsembleIDs.add ( 0, "" );
     }
@@ -94,13 +94,11 @@ It is assumed that GridBagLayout is used for the layout.
 @param y The GridBagLayout vertical position.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
-public static int addEnsembleListToEditorDialogPanel (
-    ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y )
-{
+public static int addEnsembleListToEditorDialogPanel ( ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y ) {
     return addEnsembleListToEditorDialogPanel ( dialog, panel, null, choices, y, null );
 }
 
-// TODO SAM 2016-02-26 Enable these in code
+// TODO SAM 2016-02-26 Enable these in code.
 /**
 Add the EnsembleList parameter components to a command dialog.
 It is assumed that GridBagLayout is used for the layout.
@@ -112,27 +110,26 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addEnsembleListToEditorDialogPanel (
-    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y, JLabel note )
-{
+    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y, JLabel note ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     if ( label == null ) {
         label = new JLabel ("Ensemble list:");
     }
     JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> ensembleListChoices = new ArrayList<String>();
+    List<String> ensembleListChoices = new ArrayList<>();
     //ensembleListChoices.add ( "" );
     //ensembleListChoices.add ( EnsembleListType.ALL_MATCHING_ENSEMBLEID.toString() );
     //ensembleListChoices.add ( EnsembleListType.ALL_ENSEMBLE.toString() );
     ensembleListChoices.add ( EnsembleListType.FIRST_MATCHING_ENSEMBLEID.toString() );
     //ensembleListChoices.add ( EnsembleListType.LAST_MATCHING_ENSEMBLEID.toString() );
     //ensembleListChoices.add ( EnsembleListType.SELECTED_ENSEMBLE.toString() );
-    
+
     choices.setData ( ensembleListChoices );
     choices.addItemListener (dialog);
     JGUIUtil.addComponent(panel, choices,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( note == null ) {
-        // Use a default note
+        // Use a default note.
         note = new JLabel ( "Optional - indicates the time series ensembles to process." );
     }
     JGUIUtil.addComponent(panel, note,
@@ -141,7 +138,24 @@ public static int addEnsembleListToEditorDialogPanel (
 }
 
 /**
-Add the TSID parameter components to a command dialog.  A "*" will automatically be added.
+Add the TSID parameter components to a command dialog.
+A "*" will automatically be added.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param label Label for the TSID component (typically can be enabled/disabled elsewhere).
+@param choices Choices for the TSID, as String.
+@param y The GridBagLayout vertical position.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener, DocumentListener documentListener,
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y ) {
+    return addTSIDToEditorDialogPanel ( itemlistener, keylistener, documentListener, panel, label, choices, tsids, y, true );
+}
+
+/**
+Add the TSID parameter components to a command dialog.
+A "*" will automatically be added.
 It is assumed that GridBagLayout is used for the layout.
 @param dialog The dialog that is being added to.
 @param panel The JPanel to which the controls are being added.
@@ -151,11 +165,11 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y )
-{
-    return addTSIDToEditorDialogPanel ( itemlistener, keylistener, panel, label, choices, tsids, y, true );
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y ) {
+	DocumentListener documentListener = null;
+    return addTSIDToEditorDialogPanel ( itemlistener, keylistener, documentListener, panel, label, choices, tsids, y, true );
 }
-    
+
 /**
 Add the TSID parameter components to a command dialog.
 It is assumed that GridBagLayout is used for the layout.
@@ -169,17 +183,35 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y, boolean add_asterisk )
-{
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y, boolean add_asterisk ) {
+	DocumentListener documentListener = null;
+	return addTSIDToEditorDialogPanel ( itemlistener, keylistener, documentListener,
+		panel, label, choices, tsids, y, add_asterisk );
+}
+
+/**
+Add the TSID parameter components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param label Label for the TSID component (typically can be enabled/disabled elsewhere).
+@param choices Choices for the TSID, as String.
+@param tsids the time series identifiers to use for choices, as a list of String
+@param y The GridBagLayout vertical position.
+@param add_asterisk If true, a "*" will be added to the list.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSIDToEditorDialogPanel ( ItemListener itemListener, KeyListener keyListener, DocumentListener documentListener,
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y, boolean add_asterisk ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     int size = 0;
     if ( tsids == null ) {
-        tsids = new Vector<String> ();
+        tsids = new ArrayList<> ();
     }
     size = tsids.size();
-    // Blank for default
+    // Blank for default.
     if ( size > 0 ) {
         tsids.add ( 0, "" );
     }
@@ -194,15 +226,19 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
         }
     }
     if ( add_asterisk && !asteriskFound) {
-        // Add a "*" to let all time series be filled (put at end), if not already found...
+        // Add a "*" to let all time series be filled (put at end), if not already found.
         tsids.add ( "*" );
     }
     choices.setData ( tsids );
-    if ( itemlistener != null ) {
-        choices.addItemListener ( itemlistener );
+    if ( itemListener != null ) {
+        choices.addItemListener ( itemListener );
     }
-    if ( keylistener != null ) {
-        choices.getEditor().getEditorComponent().addKeyListener ( keylistener );
+    if ( keyListener != null ) {
+        choices.getEditor().getEditorComponent().addKeyListener ( keyListener );
+    }
+    if ( documentListener != null ) {
+		JTextComponent tc = (JTextComponent)choices.getEditor().getEditorComponent();
+		tc.getDocument().addDocumentListener ( documentListener );
     }
     JGUIUtil.addComponent(panel, choices,
     1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -217,8 +253,7 @@ It is assumed that GridBagLayout is used for the layout.
 @param y The GridBagLayout vertical position.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
-public static int addTSListNotesToEditorDialogPanel ( JPanel panel, int y )
-{
+public static int addTSListNotesToEditorDialogPanel ( JPanel panel, int y ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, new JLabel (
         "  " + TSListType.ALL_MATCHING_TSID + " - add all previous time series with matching identifiers."),
@@ -250,8 +285,7 @@ It is assumed that GridBagLayout is used for the layout.
 @param y The GridBagLayout vertical position.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
-public static int addTSListNotesWithSpecifiedTSIDToEditorDialogPanel ( JPanel panel, int y )
-{
+public static int addTSListNotesWithSpecifiedTSIDToEditorDialogPanel ( JPanel panel, int y ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     y = addTSListNotesToEditorDialogPanel ( panel, y );
     JGUIUtil.addComponent(panel, new JLabel (
@@ -269,8 +303,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSListToEditorDialogPanel (
-    ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y )
-{
+    ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y ) {
     return addTSListToEditorDialogPanel ( dialog, panel, null, choices, y, null );
 }
 
@@ -284,8 +317,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSListToEditorDialogPanel (
-    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y )
-{
+    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y ) {
     return addTSListToEditorDialogPanel ( dialog, panel, label, choices, y, null );
 }
 
@@ -300,28 +332,27 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSListToEditorDialogPanel (
-    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y, JLabel note )
-{
+    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y, JLabel note ) {
     Insets insetsTLBR = new Insets(2,2,2,2);
     if ( label == null ) {
         label = new JLabel ("TS list:");
     }
     JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> TSList_Vector = new Vector<String>();
-    TSList_Vector.add ( "" );
-    TSList_Vector.add ( TSListType.ALL_MATCHING_TSID.toString() );
-    TSList_Vector.add ( TSListType.ALL_TS.toString() );
-    TSList_Vector.add ( TSListType.ENSEMBLE_ID.toString() );
-    TSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString() );
-    TSList_Vector.add ( TSListType.LAST_MATCHING_TSID.toString() );
-    TSList_Vector.add ( TSListType.SELECTED_TS.toString() );
-    
-    choices.setData ( TSList_Vector );
+    List<String> TSList_List = new ArrayList<>();
+    TSList_List.add ( "" );
+    TSList_List.add ( TSListType.ALL_MATCHING_TSID.toString() );
+    TSList_List.add ( TSListType.ALL_TS.toString() );
+    TSList_List.add ( TSListType.ENSEMBLE_ID.toString() );
+    TSList_List.add ( TSListType.FIRST_MATCHING_TSID.toString() );
+    TSList_List.add ( TSListType.LAST_MATCHING_TSID.toString() );
+    TSList_List.add ( TSListType.SELECTED_TS.toString() );
+
+    choices.setData ( TSList_List );
     choices.addItemListener (dialog);
     JGUIUtil.addComponent(panel, choices,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( note == null ) {
-        // Use a default note
+        // Use a default note.
         note = new JLabel ( "Optional - indicates the time series to process (default=AllTS)." );
     }
     JGUIUtil.addComponent(panel, note,

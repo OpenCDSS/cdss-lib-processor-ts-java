@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,12 +71,12 @@ Editor dialog for the CompareTables() command.
 public class CompareTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-    
+
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __Table1ID_JComboBox = null;
 private SimpleJComboBox __Table2ID_JComboBox = null;
@@ -106,8 +106,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices table ID choices from the processor.
 */
-public CompareTables_JDialog ( JFrame parent, CompareTables_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public CompareTables_JDialog ( JFrame parent, CompareTables_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -115,8 +115,8 @@ public CompareTables_JDialog ( JFrame parent, CompareTables_Command command, Lis
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __browse_JButton ) {
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -130,19 +130,19 @@ public void actionPerformed(ActionEvent event)
         fc.setDialogTitle("Select HTML File to Write");
         SimpleFileFilter sff_html = new SimpleFileFilter("html", "HTML File");
         fc.addChoosableFileFilter(sff_html);
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
                 if ( fc.getFileFilter() == sff_html ) {
-                    // Enforce extension...
+                    // Enforce extension.
                     path = IOUtil.enforceFileExtension(path, "html");
                 }
 				// Convert path to relative path by default.
@@ -167,7 +167,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -194,11 +194,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Table1ID = __Table1ID_JComboBox.getSelected();
 	String Table2ID = __Table2ID_JComboBox.getSelected();
@@ -255,7 +255,7 @@ private void checkInput ()
         props.set ( "IfSame", IfSame );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -266,11 +266,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Table1ID = __Table1ID_JComboBox.getSelected();
+private void commitEdits () {
+	String Table1ID = __Table1ID_JComboBox.getSelected();
     String Table2ID = __Table2ID_JComboBox.getSelected();
     String CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
     String ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
@@ -303,8 +303,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, CompareTables_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, CompareTables_Command command, List<String> tableIDChoices ) {
+	__command = command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -312,7 +312,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -322,7 +322,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command compares two tables and optionally creates a new comparison table."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -344,18 +344,19 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table1 ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table1 ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Table1ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __Table1ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __Table1ID_JComboBox.setData ( tableIDChoices );
     __Table1ID_JComboBox.addItemListener ( this );
+    __Table1ID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Table1ID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - first table to compare."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - first table to compare."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 1 columns to compare:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareColumns1_JTextField = new JTextField (10);
@@ -364,7 +365,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 1 columns to exclude:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns1_JTextField = new JTextField (10);
@@ -373,19 +374,20 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table2 ID:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table2 ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Table2ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit
+    __Table2ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit.
     __Table2ID_JComboBox.setData ( tableIDChoices );
     __Table2ID_JComboBox.addItemListener ( this );
+    __Table2ID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__Table2D_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Table2ID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - second table to compare."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - second table to compare."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 2 columns to compare:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 2 columns to compare:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareColumns2_JTextField = new JTextField (10);
     __CompareColumns2_JTextField.addKeyListener ( this );
@@ -393,12 +395,12 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match columns how:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchColumnsHow_JComboBox = new SimpleJComboBox ( false );
-    List<String> matchChoices = new ArrayList<String>();
-    matchChoices.add ( "" ); // Default
+    List<String> matchChoices = new ArrayList<>();
+    matchChoices.add ( "" ); // Default.
     matchChoices.add ( __command._Name );
     matchChoices.add ( __command._Order );
     __MatchColumnsHow_JComboBox.setData(matchChoices);
@@ -407,36 +409,36 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(main_JPanel, __MatchColumnsHow_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - how to match columns in tables (default=" + __command._Name + ")."), 
+        "Optional - how to match columns in tables (default=" + __command._Name + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Precision_JTextField = new JTextField ( 5 );
     __Precision_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - digits after decimal to compare (default=use precision from table column)."), 
+        "Optional - digits after decimal to compare (default=use precision from table column)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Tolerance_JTextField = new JTextField ( 15 );
     __Tolerance_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."), 
+        "Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allowed # of different values:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AllowedDiff_JTextField = new JTextField ( 5 );
     __AllowedDiff_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AllowedDiff_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - when checking for differences (default=0)"),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
@@ -447,13 +449,13 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - unique identifier for the comparison table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __OutputFile_JTextField = new JTextField ( 50 );
      __OutputFile_JTextField.setToolTipText ( "Optional output file - specify .html extension." );
      __OutputFile_JTextField.addKeyListener ( this );
-     // Output file layout fights back with other rows so put in its own panel
+     // Output file layout fights back with other rows so put in its own panel.
  	JPanel OutputFile_JPanel = new JPanel();
  	OutputFile_JPanel.setLayout(new GridBagLayout());
      JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -463,19 +465,19 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
  		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
  	if ( __working_dir != null ) {
- 		// Add the button to allow conversion to/from relative path...
+ 		// Add the button to allow conversion to/from relative path.
  		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
  		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
  			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
  	}
  	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
  		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
+
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __IfDifferent_JComboBox = new SimpleJComboBox ( false );
-     List<String> diffChoices = new ArrayList<String>();
-     diffChoices.add ( "" ); // Default
+     List<String> diffChoices = new ArrayList<>();
+     diffChoices.add ( "" ); // Default.
      diffChoices.add ( __command._Ignore );
      diffChoices.add ( __command._Warn );
      diffChoices.add ( __command._Fail );
@@ -485,14 +487,14 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel(
-         "Optional - action if tables are different (default=" + __command._Ignore + ")."), 
+         "Optional - action if tables are different (default=" + __command._Ignore + ")."),
          3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __IfSame_JComboBox = new SimpleJComboBox ( false );
-     List<String> sameChoices = new ArrayList<String>();
-     sameChoices.add ( "" );  // Default
+     List<String> sameChoices = new ArrayList<>();
+     sameChoices.add ( "" );  // Default.
      sameChoices.add ( __command._Ignore );
      sameChoices.add ( __command._Warn );
      sameChoices.add ( __command._Fail );
@@ -502,10 +504,10 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel(
-         "Optional - action if tables are the same (default=" + __command._Ignore + ")."), 
+         "Optional - action if tables are the same (default=" + __command._Ignore + ")."),
          3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __command_JTextArea = new JTextArea (4,40);
      __command_JTextArea.setLineWrap ( true );
@@ -514,15 +516,15 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
          1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -535,7 +537,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -567,21 +569,22 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String Table1ID = "";
     String Table2ID = "";
     String CompareColumns1 = "";
@@ -612,7 +615,7 @@ private void refresh ()
         IfDifferent = props.getValue ( "IfDifferent" );
         IfSame = props.getValue ( "IfSame" );
         if ( Table1ID == null ) {
-            // Select default...
+            // Select default.
             __Table1ID_JComboBox.select ( 0 );
         }
         else {
@@ -627,7 +630,7 @@ private void refresh ()
             }
         }
         if ( Table2ID == null ) {
-            // Select default...
+            // Select default.
             __Table2ID_JComboBox.select ( 0 );
         }
         else {
@@ -655,11 +658,11 @@ private void refresh ()
         }
         else {
             if ( (MatchColumnsHow == null) || MatchColumnsHow.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __MatchColumnsHow_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                 "MatchColumnsHow parameter \"" + MatchColumnsHow + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -684,33 +687,31 @@ private void refresh ()
         }
         else {
             if ( (IfDifferent == null) || IfDifferent.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __IfDifferent_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                 "IfDifferent parameter \"" + IfDifferent + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem(
-            __IfSame_JComboBox, IfSame,
-            JGUIUtil.NONE, null, null ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem( __IfSame_JComboBox, IfSame, JGUIUtil.NONE, null, null ) ) {
             __IfSame_JComboBox.select ( IfSame );
         }
         else {
             if ( (IfSame == null) || IfSame.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __IfSame_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                 "IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Table1ID = __Table1ID_JComboBox.getSelected();
 	Table2ID = __Table2ID_JComboBox.getSelected();
     CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
@@ -739,7 +740,7 @@ private void refresh ()
     props.add ( "IfDifferent=" + IfDifferent );
     props.add ( "IfSame=" + IfSame );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -763,35 +764,46 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,8 +48,8 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -87,7 +87,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private SimpleJComboBox __TableColumn_JComboBox = null;
 private SimpleJComboBox __TableRowStart_JComboBox = null;
 private SimpleJComboBox __TableRowEnd_JComboBox = null;
-private JTextField __OutputStart_JTextField = null;// Start of period for output
+private JTextField __OutputStart_JTextField = null; // Start of period for output.
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private JTextField __NewScenario_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -100,8 +100,8 @@ WriteDateValue_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ResequenceTimeSeriesData_JDialog ( JFrame parent, ResequenceTimeSeriesData_Command command )
-{	super(parent, true);
+public ResequenceTimeSeriesData_JDialog ( JFrame parent, ResequenceTimeSeriesData_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -109,8 +109,8 @@ public ResequenceTimeSeriesData_JDialog ( JFrame parent, ResequenceTimeSeriesDat
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -133,8 +133,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -142,8 +142,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -151,8 +151,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -161,8 +161,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -185,11 +184,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -204,7 +203,7 @@ private void checkInput ()
     String Alias = __Alias_JTextField.getText().trim();
 
 	__error_wait = false;
-	
+
 	if ( TSList.length() > 0 ) {
 		parameters.set ( "TSList", TSList );
 	}
@@ -239,7 +238,7 @@ private void checkInput ()
         parameters.set("Alias", Alias);
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -250,13 +249,13 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected(); 
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JComboBox.getSelected();
     String TableRowStart = __TableRowStart_JComboBox.getSelected();
@@ -281,9 +280,8 @@ private void commitEdits ()
 /**
 Put together a list of row/column numbers (a list of numbers) for use in choices.
 */
-private List<String> getRowNumberList ()
-{
-	List<String> v = new Vector<String>();
+private List<String> getRowNumberList () {
+	List<String> v = new ArrayList<>();
     v.add( "");
     for ( int i = 1; i <= 200; i++ ) {
         v.add("" + i);
@@ -296,8 +294,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -322,34 +320,34 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If not specified, the output start is taken from the global output start or the time series." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits.
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // Allow edits...
+    // Allow edits.
     List<String> tableids = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TableID_JComboBox = new SimpleJComboBox ( true );
     if ( tableids == null ) {
-        tableids = new Vector<String>();
+        tableids = new ArrayList<>();
     }
     // No blank (default) or wildcard is allowed.
     __TableID_JComboBox.setData ( tableids );
@@ -360,20 +358,21 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     __TableID_JComboBox.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column name in table for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // Allow edits...
+    // Allow edits.
     __TableColumn_JComboBox = new SimpleJComboBox ( true );
-    // Use discovery data to fill in column names
+    // Use discovery data to fill in column names.
     setTableColumnData ( __TableID_JComboBox.getSelected() );
     __TableColumn_JComboBox.addItemListener ( this );
     __TableColumn_JComboBox.addKeyListener ( this );
+    __TableColumn_JComboBox.getJTextComponent().addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column name for year sequence."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New scenario:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewScenario_JTextField = new JTextField (10);
@@ -382,34 +381,36 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - for TSID of new time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("First row number in table for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Allow edits...
     __TableRowStart_JComboBox = new SimpleJComboBox ( true );
     __TableRowStart_JComboBox.setData ( getRowNumberList() );
-    __TableRowStart_JComboBox.select( 0 ); // Default
+    __TableRowStart_JComboBox.select( 0 ); // Default.
     __TableRowStart_JComboBox.addItemListener ( this );
     __TableRowStart_JComboBox.addKeyListener ( this );
+    __TableRowStart_JComboBox.getJTextComponent().addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableRowStart_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is first row in column."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-            
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Last row number in table for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // Allow edits...
+    // Allow edits.
     __TableRowEnd_JComboBox = new SimpleJComboBox ( true );
     __TableRowEnd_JComboBox.setData ( getRowNumberList() );
     __TableRowEnd_JComboBox.select( 0 ); // Default
     __TableRowEnd_JComboBox.addItemListener ( this );
     __TableRowEnd_JComboBox.addKeyListener ( this );
+    __TableRowEnd_JComboBox.getJTextComponent().addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableRowEnd_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is last row in column."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputYearType_JComboBox = new SimpleJComboBox ( false );
     __OutputYearType_JComboBox.add ( "" );
@@ -422,8 +423,8 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - output year type (default=" +
         YearType.CALENDAR + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
     __OutputStart_JTextField.addKeyListener (this);
@@ -432,7 +433,7 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - starting year of resequenced time series, consistent with output year type."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -443,7 +444,7 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -452,14 +453,14 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
     		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -486,7 +487,7 @@ Handle ItemEvent events.
 public void itemStateChanged (ItemEvent e) {
     checkGUIState();
     if ( (e.getSource() == __TableID_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
-        // Update the list
+        // Update the list.
         setTableColumnData ( __TableID_JComboBox.getSelected() );
     }
 	refresh();
@@ -495,8 +496,8 @@ public void itemStateChanged (ItemEvent e) {
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -507,27 +508,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = "ResequenceTimeSeriesData_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -543,7 +543,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
@@ -557,7 +557,7 @@ private void refresh ()
         NewScenario = parameters.getValue ( "NewScenario" );
         Alias = parameters.getValue("Alias");
 		if ( TSList == null ) {
-			// Select default...
+			// Select default.
 			__TSList_JComboBox.select ( 0 );
 		}
 		else {
@@ -572,7 +572,7 @@ private void refresh ()
 			}
 		}
         if ( TSID == null ) {
-            // Select default...
+            // Select default.
             __TSID_JComboBox.select ( 0 );
         }
         else {
@@ -588,7 +588,7 @@ private void refresh ()
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -603,7 +603,7 @@ private void refresh ()
             }
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             if ( __TableID_JComboBox.getItemCount() > 0 ) {
                 __TableID_JComboBox.select ( 0 );
             }
@@ -621,7 +621,7 @@ private void refresh ()
             }
         }
         if ( TableColumn == null ) {
-            // Select default...
+            // Select default.
             if ( __TableColumn_JComboBox.getItemCount() > 0 ) {
                 __TableColumn_JComboBox.select ( 0 );
             }
@@ -638,7 +638,7 @@ private void refresh ()
             }
         }
         if ( TableRowStart == null ) {
-            // Select default...
+            // Select default.
             if ( __TableRowStart_JComboBox.getItemCount() > 0 ) {
                 __TableRowStart_JComboBox.select ( 0 );
             }
@@ -656,7 +656,7 @@ private void refresh ()
             }
         }
         if ( TableRowEnd == null ) {
-            // Select default...
+            // Select default.
             if ( __TableRowEnd_JComboBox.getItemCount() > 0 ) {
                 __TableRowEnd_JComboBox.select ( 0 );
             }
@@ -674,7 +674,7 @@ private void refresh ()
             }
         }
         if ( OutputYearType == null ) {
-            // Select default...
+            // Select default.
             __OutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -698,7 +698,7 @@ private void refresh ()
             __Alias_JTextField.setText(Alias.trim());
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     TableID = __TableID_JComboBox.getSelected();
@@ -725,20 +725,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -746,8 +745,8 @@ private void response ( boolean ok )
 /**
 Set the table column data based on the selected table.
 */
-private void setTableColumnData ( String selected_tableid )
-{   List<String> column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
+private void setTableColumnData ( String selected_tableid ) {
+    List<String> column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command, __TableID_JComboBox.getSelected(), false );
     __TableColumn_JComboBox.setData ( column_names );
     if ( column_names.size() > 0 ) {
@@ -759,15 +758,26 @@ private void setTableColumnData ( String selected_tableid )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

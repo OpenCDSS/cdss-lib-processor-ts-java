@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,9 +46,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -63,8 +62,8 @@ public class AnalyzeNetworkPointFlow_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __NodeIDColumn_JTextField = null;
@@ -99,8 +98,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public AnalyzeNetworkPointFlow_JDialog ( JFrame parent, AnalyzeNetworkPointFlow_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public AnalyzeNetworkPointFlow_JDialog ( JFrame parent, AnalyzeNetworkPointFlow_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -108,8 +107,8 @@ public AnalyzeNetworkPointFlow_JDialog ( JFrame parent, AnalyzeNetworkPointFlow_
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -121,18 +120,18 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String NodeIDColumn = __NodeIDColumn_JTextField.getText().trim();
@@ -221,7 +220,7 @@ private void checkInput ()
         props.set ( "OutputTableID", OutputTableID );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -232,11 +231,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
     String NodeIDColumn = __NodeIDColumn_JTextField.getText().trim();
     String NodeNameColumn = __NodeNameColumn_JTextField.getText().trim();
     String NodeTypeColumn = __NodeTypeColumn_JTextField.getText().trim();
@@ -285,14 +284,14 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command, List<String> tableIDChoices ) {
+	__command = command;
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -302,7 +301,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command analyzes a flow network to compute point flows at all nodes in the network."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -315,9 +314,9 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    // Tabbed pane for parameters
-	 
+
+    // Tabbed pane for parameters.
+
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -340,20 +339,21 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "   NodeDistance and NodeWeight - are used to distribute reach gain/loss back to nodes in the reach (see the \"Analysis\" tab)"),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table containing network node information."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table containing network node information."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node ID column:"), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node ID column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeIDColumn_JTextField = new JTextField (10);
     __NodeIDColumn_JTextField.addKeyListener ( this );
@@ -361,8 +361,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for node IDs."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node name column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node name column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeNameColumn_JTextField = new JTextField (10);
     __NodeNameColumn_JTextField.addKeyListener ( this );
@@ -370,8 +370,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - column name for node names."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node type column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node type column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeTypeColumn_JTextField = new JTextField (10);
     __NodeTypeColumn_JTextField.addKeyListener ( this );
@@ -379,8 +379,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for node types."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node distance column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node distance column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeDistanceColumn_JTextField = new JTextField (10);
     __NodeDistanceColumn_JTextField.addKeyListener ( this );
@@ -388,8 +388,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires distance."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node weight column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node weight column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeWeightColumn_JTextField = new JTextField (10);
     __NodeWeightColumn_JTextField.addKeyListener ( this );
@@ -397,8 +397,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires weight."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Downstream node ID column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Downstream node ID column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DownstreamNodeIDColumn_JTextField = new JTextField (10);
     __DownstreamNodeIDColumn_JTextField.addKeyListener ( this );
@@ -406,7 +406,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for downstream node IDs."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel nodeType_JPanel = new JPanel ();
     nodeType_JPanel.setLayout( new GridBagLayout() );
     int yNodeType = -1;
@@ -430,7 +430,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         "for example to handle reservoirs."),
         0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that add:"), 
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that add:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeAddTypes_JTextField = new JTextField (10);
     __NodeAddTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -439,8 +439,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that add."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that add flow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that add flow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeAddDataTypes_JTextField = new JTextField (10);
     __NodeAddDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -449,11 +449,11 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that add."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that subtract flow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that subtract flow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeSubtractTypes_JTextField = new JTextField (10);
     __NodeSubtractTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -462,8 +462,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that subtract."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that subtract:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that subtract:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeSubtractDataTypes_JTextField = new JTextField (10);
     __NodeSubtractDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -472,11 +472,11 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that subtract."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that set outflow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that set outflow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeOutflowTypes_JTextField = new JTextField (10);
     __NodeOutflowTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -485,8 +485,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that set outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Defalt node time series data types that set outflow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Defalt node time series data types that set outflow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeOutflowDataTypes_JTextField = new JTextField (10);
     __NodeOutflowDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -495,11 +495,11 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that set outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types with no change:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types with no change:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeFlowThroughTypes_JTextField = new JTextField (10);
     __NodeFlowThroughTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -508,7 +508,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types where inflow=outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel analysis_JPanel = new JPanel ();
     analysis_JPanel.setLayout( new GridBagLayout() );
     int yAnalysis = -1;
@@ -519,7 +519,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Interval - will be used to find time series for each node (TSIDColumn parameter with %I will substitue this interval)."),
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data interval:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
@@ -528,9 +528,9 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __Interval_JComboBox,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Required - data interval (time step) for time series."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
@@ -541,7 +541,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         "Optional - analysis start date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
@@ -550,8 +550,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data units:" ), 
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data units:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Units_JTextField = new JTextField ( "", 10 );
     JGUIUtil.addComponent(analysis_JPanel, __Units_JTextField,
@@ -560,11 +560,11 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - units for output time series (default=no units)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Gain method:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __GainMethod_JComboBox = new SimpleJComboBox ( false );
-    List<String> gainChoices = new Vector<String>();
+    List<String> gainChoices = new ArrayList<>();
     gainChoices.add ( "" );
     gainChoices.add ( "" + NetworkGainMethodType.NONE );
     gainChoices.add ( "" + NetworkGainMethodType.DISTANCE );
@@ -574,9 +574,9 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     __GainMethod_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __GainMethod_JComboBox,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Optional - how to compute gains (default=" + NetworkGainMethodType.NONE + ")."), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Optional - how to compute gains (default=" + NetworkGainMethodType.NONE + ")."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Output table ID:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputTableID_JTextField = new JTextField (10);
@@ -585,7 +585,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - identifier for output summary table."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel ts_JPanel = new JPanel ();
     ts_JPanel.setLayout( new GridBagLayout() );
     int yTs = -1;
@@ -610,8 +610,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "Specify %I in the TSID or alias in the network column to substitute the data interval (e.g., substitue \"Day\") at runtime."),
         0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "TSIDColumn:" ), 
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "TSIDColumn:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSIDColumn_JTextField = new JTextField ( "", 20 );
     __TSIDColumn_JTextField.addKeyListener ( this );
@@ -620,8 +620,8 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
         "Recommended - time series identifier column in network table (default=construct TSID from time series data type column)."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (7,60);
 	__command_JTextArea.setLineWrap ( true );
@@ -630,15 +630,15 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -651,7 +651,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -683,21 +683,22 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String NodeIDColumn = "";
     String NodeNameColumn = "";
@@ -744,7 +745,7 @@ private void refresh ()
         GainMethod = props.getValue ( "GainMethod" );
         OutputTableID = props.getValue ( "OutputTableID" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -805,11 +806,11 @@ private void refresh ()
         }
         else {
             if ( (Interval == null) || Interval.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __Interval_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -828,11 +829,11 @@ private void refresh ()
         }
         else {
             if ( (GainMethod == null) || GainMethod.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __GainMethod_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "GainMethod parameter \"" + GainMethod + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -841,7 +842,7 @@ private void refresh ()
             __OutputTableID_JTextField.setText ( OutputTableID );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	NodeIDColumn = __NodeIDColumn_JTextField.getText().trim();
 	NodeNameColumn = __NodeNameColumn_JTextField.getText().trim();
@@ -892,35 +893,46 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

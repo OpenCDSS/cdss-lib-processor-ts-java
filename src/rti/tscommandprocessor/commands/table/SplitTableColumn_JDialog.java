@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ public class SplitTableColumn_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __ColumnToSplit_JTextField = null;
@@ -83,8 +83,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public SplitTableColumn_JDialog ( JFrame parent, SplitTableColumn_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public SplitTableColumn_JDialog ( JFrame parent, SplitTableColumn_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -92,8 +92,8 @@ public SplitTableColumn_JDialog ( JFrame parent, SplitTableColumn_Command comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -105,18 +105,18 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String ColumnToSplit = __ColumnToSplit_JTextField.getText().trim();
@@ -149,7 +149,7 @@ private void checkInput ()
         props.set ( "DeleteOriginalColumn", DeleteOriginalColumn );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -160,11 +160,10 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.  In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
 	String ColumnToSplit = __ColumnToSplit_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String OutputColumns = __OutputColumns_JTextField.getText().trim();
@@ -185,15 +184,15 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, SplitTableColumn_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, SplitTableColumn_Command command, List<String> tableIDChoices ) {
+	__command = command;
     //__parent = parent;
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -203,7 +202,7 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command splits a table column containing delimited content into multiple columns."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -219,23 +218,24 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Name of column to split:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Name of column to split:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnToSplit_JTextField = new JTextField (20);
     __ColumnToSplit_JTextField.addKeyListener ( this );
@@ -243,8 +243,8 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - name of column to be split."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Delimiter_JTextField = new JTextField (10);
     __Delimiter_JTextField.addKeyListener ( this );
@@ -252,8 +252,8 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - delimiter to split column contents."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output column name(s):"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output column name(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumns_JTextField = new JTextField (30);
     __OutputColumns_JTextField.addKeyListener ( this );
@@ -261,11 +261,11 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - name(s) of output columns."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column order:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column order:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumnOrder_JComboBox = new SimpleJComboBox ( 12, false );
-    List<String> orderChoices = new ArrayList<String>();
+    List<String> orderChoices = new ArrayList<>();
     orderChoices.add("");
     orderChoices.add("" + __command._SequenceOrder);
     orderChoices.add("" + __command._UniqueValues);
@@ -276,20 +276,20 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - output value order in output columns (default=" + __command._SequenceOrder + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertBeforeColumn_JTextField = new JTextField ( 30 );
     __InsertBeforeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - column to insert before (default=at end)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - column to insert before (default=at end)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete original column:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete original column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteOriginalColumn_JComboBox = new SimpleJComboBox ( 12, false );
-    List<String> choices = new ArrayList<String>();
+    List<String> choices = new ArrayList<>();
     choices.add("");
     choices.add("" + __command._False);
     choices.add("" + __command._True);
@@ -297,10 +297,10 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
     __DeleteOriginalColumn_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DeleteOriginalColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - delete original column (default=" + __command._False + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - delete original column (default=" + __command._False + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -309,13 +309,13 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -330,7 +330,7 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -362,7 +362,8 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -375,8 +376,8 @@ public boolean ok ()
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String ColumnToSplit = "";
     String Delimiter = "";
@@ -395,7 +396,7 @@ private void refresh ()
 		InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         DeleteOriginalColumn = props.getValue ( "DeleteOriginalColumn" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -419,7 +420,7 @@ private void refresh ()
 			__OutputColumns_JTextField.setText ( OutputColumns );
 		}
         if ( OutputColumnOrder == null ) {
-            // Select default...
+            // Select default.
             __OutputColumnOrder_JComboBox.select ( 0 );
         }
         else {
@@ -437,7 +438,7 @@ private void refresh ()
             __InsertBeforeColumn_JTextField.setText ( InsertBeforeColumn );
         }
         if ( DeleteOriginalColumn == null ) {
-            // Select default...
+            // Select default.
             __DeleteOriginalColumn_JComboBox.select ( 0 );
         }
         else {
@@ -452,7 +453,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	ColumnToSplit = __ColumnToSplit_JTextField.getText().trim();
 	Delimiter = __Delimiter_JTextField.getText().trim();
@@ -475,35 +476,46 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt){}
-public void windowClosed(WindowEvent evt){}
-public void windowDeactivated(WindowEvent evt){}
-public void windowDeiconified(WindowEvent evt){}
-public void windowIconified(WindowEvent evt){}
-public void windowOpened(WindowEvent evt){}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

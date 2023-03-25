@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,8 +103,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit
 */
-public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -112,8 +112,8 @@ public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedF
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -130,11 +130,11 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String path = fc.getSelectedFile().getPath(); 
+			String path = fc.getSelectedFile().getPath();
 	
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
-					// Enforce extension...
+					// Enforce extension.
 					path = IOUtil.enforceFileExtension(path, "csv");
 				}
 				// Convert path to relative path by default.
@@ -164,11 +164,11 @@ public void actionPerformed( ActionEvent event )
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String path = fc.getSelectedFile().getPath(); 
+			String path = fc.getSelectedFile().getPath();
 	
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
-					// Enforce extension...
+					// Enforce extension.
 					path = IOUtil.enforceFileExtension(path, "json");
 				}
 
@@ -234,11 +234,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -296,7 +296,7 @@ private void checkInput ()
         parameters.set ( "OutputSchemaFormat", OutputSchemaFormat );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -307,11 +307,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TableID = __TableID_JComboBox.getSelected();   
+private void commitEdits () {
+    String TableID = __TableID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
@@ -344,8 +344,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -374,31 +374,32 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " ), 
+		"The working directory is: " ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "    " + __working_dir ), 
+     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "    " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 }
   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
+    __TableID_JComboBox = new SimpleJComboBox ( true ); // Allow edits for ${Property}.
     __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
     __TableID_JComboBox.setData(tableIDChoices);
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
 	JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -408,7 +409,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -424,7 +425,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=write all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to NOT write:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns_JTextField = new JTextField (30);
@@ -433,8 +434,8 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=write all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
      List<String> writeHeaderCommentsList = new ArrayList<>();
@@ -449,8 +450,8 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - should header comments be written? (default=" + __command._True + ")."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write column names?:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write column names?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteColumnNames_JComboBox = new SimpleJComboBox ( false );
      List<String> writeColumnNamesList = new ArrayList<>();
@@ -475,8 +476,8 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - delimiter character (default=,)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote date/times?:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote date/times?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __AlwaysQuoteDateTimes_JComboBox = new SimpleJComboBox ( false );
      __AlwaysQuoteDateTimes_JComboBox.setToolTipText("Should date/times always be quotes?  Useful to help Excel date/time handling.");
@@ -492,8 +493,8 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - always date/times? (default=" + __command._False + ", only quote if delimiter in string)."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote strings?:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote strings?:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __AlwaysQuoteStrings_JComboBox = new SimpleJComboBox ( false );
      List<String> alwaysQuoteStringsList = new ArrayList<>();
@@ -508,7 +509,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - always quote strings? (default=" + __command._False + ", only quote if delimiter in string)."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
+
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Newline replacement:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __NewlineReplacement_JTextField = new JTextField (10);
@@ -518,7 +519,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - replacement for newline character (use \\t for tab or \\s for space)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
+
      JGUIUtil.addComponent(main_JPanel, new JLabel ("NaN value:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __NaNValue_JTextField = new JTextField (10);
@@ -529,13 +530,13 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - value to use for NaN (use " + __command._Blank + " to write a blank)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output schema file to write:" ), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output schema file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	 __OutputSchemaFile_JTextField = new JTextField ( 50 );
 	 __OutputSchemaFile_JTextField.setToolTipText("Specify the path to the output schema file or use ${Property} notation");
 	 __OutputSchemaFile_JTextField.addKeyListener ( this );
-	 // Output file layout fights back with other rows so put in its own panel
+	 // Output file layout fights back with other rows so put in its own panel.
 	 JPanel OutputSchemaFile_JPanel = new JPanel();
 	 OutputSchemaFile_JPanel.setLayout(new GridBagLayout());
 	 JGUIUtil.addComponent(OutputSchemaFile_JPanel, __OutputSchemaFile_JTextField,
@@ -545,18 +546,18 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	JGUIUtil.addComponent(OutputSchemaFile_JPanel, __browse_schema_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_schema_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputSchemaFile_JPanel, __path_schema_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputSchemaFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output schema format:"), 
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output schema format:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __OutputSchemaFormat_JComboBox = new SimpleJComboBox ( false );
-     List<String> schemaFormatChoices = new ArrayList<String>();
+     List<String> schemaFormatChoices = new ArrayList<>();
      schemaFormatChoices.add("");
      schemaFormatChoices.add(__command._GoogleBigQuery);
      schemaFormatChoices.add(__command._JSONTableSchema);
@@ -568,8 +569,8 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - schema format (default=" + __command._JSONTableSchema + ")."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -581,7 +582,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -606,16 +607,15 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e)
-{
+public void itemStateChanged (ItemEvent e) {
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -626,26 +626,27 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	// Only refresh if the event is in the file TextField...
+public void keyReleased ( KeyEvent event ) {
+	// Only refresh if the event is in the file TextField.
 	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + "_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
 	String OutputFile = "";
     String IncludeColumns = "";
@@ -663,7 +664,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
         TableID = parameters.getValue ( "TableID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
@@ -679,7 +680,7 @@ private void refresh ()
         OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
         OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             if ( __TableID_JComboBox.getItemCount() > 0 ) {
                 __TableID_JComboBox.select ( 0 );
             }
@@ -709,13 +710,13 @@ private void refresh ()
         }
         else {
             if ( (WriteHeaderComments == null) || WriteHeaderComments.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 if ( __WriteHeaderComments_JComboBox.getItemCount() > 0 ) {
                     __WriteHeaderComments_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
             }
@@ -725,13 +726,13 @@ private void refresh ()
         }
         else {
             if ( (WriteColumnNames == null) || WriteColumnNames.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 if ( __WriteColumnNames_JComboBox.getItemCount() > 0 ) {
                     __WriteColumnNames_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "WriteColumnNames parameter \"" + WriteColumnNames + "\".  Select a different value or Cancel." );
             }
@@ -744,13 +745,13 @@ private void refresh ()
         }
         else {
             if ( (AlwaysQuoteDateTimes == null) || AlwaysQuoteDateTimes.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 if ( __AlwaysQuoteDateTimes_JComboBox.getItemCount() > 0 ) {
                     __AlwaysQuoteDateTimes_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "AlwaysQuoteDateTimes parameter \"" + AlwaysQuoteDateTimes + "\".  Select a different value or Cancel." );
             }
@@ -760,13 +761,13 @@ private void refresh ()
         }
         else {
             if ( (AlwaysQuoteStrings == null) || AlwaysQuoteStrings.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 if ( __AlwaysQuoteStrings_JComboBox.getItemCount() > 0 ) {
                     __AlwaysQuoteStrings_JComboBox.select ( 0 );
                 }
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "AlwaysQuoteStrings parameter \"" + AlwaysQuoteStrings + "\".  Select a different value or Cancel." );
             }
@@ -781,7 +782,7 @@ private void refresh ()
 			__OutputSchemaFile_JTextField.setText (OutputSchemaFile);
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TableID = __TableID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
@@ -862,17 +863,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -881,15 +882,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

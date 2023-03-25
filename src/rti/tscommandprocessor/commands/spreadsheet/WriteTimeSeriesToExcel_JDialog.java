@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,12 +82,12 @@ public class WriteTimeSeriesToExcel_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-// Used for button labels...
+// Used for button labels.
 
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rele";
 
-private boolean __error_wait = false; // To track errors
+private boolean __error_wait = false; // To track errors.
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private JTabbedPane __main_JTabbedPane = null;
@@ -136,7 +136,7 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
-private String __working_dir = null;	
+private String __working_dir = null;
 private WriteTimeSeriesToExcel_Command __command = null;
 private boolean __ok = false;
 //private JFrame __parent = null;
@@ -147,8 +147,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public WriteTimeSeriesToExcel_JDialog ( JFrame parent, WriteTimeSeriesToExcel_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public WriteTimeSeriesToExcel_JDialog ( JFrame parent, WriteTimeSeriesToExcel_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -156,8 +156,8 @@ public WriteTimeSeriesToExcel_JDialog ( JFrame parent, WriteTimeSeriesToExcel_Co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -178,11 +178,11 @@ public void actionPerformed(ActionEvent event)
 			String directory = fc.getSelectedFile().getParent();
 			String filename = fc.getSelectedFile().getName();
 			String path = fc.getSelectedFile().getPath();
-			
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -206,7 +206,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -221,7 +221,7 @@ public void actionPerformed(ActionEvent event)
                         __OutputFile_JTextField.getText()));
 			}
 			catch (Exception e) {
-				Message.printWarning (1, 
+				Message.printWarning (1,
 				__command.getCommandName() + "_JDialog", "Error converting file to relative path.");
 			}
 		}
@@ -241,42 +241,41 @@ public void actionPerformed(ActionEvent event)
     */
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
-  refresh();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
-  refresh();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
-  refresh();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
-//...End event handlers for DocumentListener
+//...End event handlers for DocumentListener.
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -299,11 +298,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -460,7 +459,7 @@ private void checkInput ()
         props.set ( "LegendAddress", LegendAddress );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -471,11 +470,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -558,8 +557,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command, List<String> tableIDChoices ) {
+	__command = command;
     //__parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -568,7 +567,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -590,23 +589,23 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for time series
+
+    // Panel for time series.
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Time Series to Write", ts_JPanel );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
 		"Specify the time series to output.  Each time series will be output as a column."),
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(ts_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yTs, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTs );
 
@@ -616,7 +615,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
@@ -624,7 +623,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTs );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Missing value:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 10 );
@@ -635,7 +634,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "Optional - value to write for missing data (default=initial missing value)."),
         3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output precision:"),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Precision_JTextField = new JTextField (10);
@@ -646,7 +645,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         new JLabel ("Optional - precision for data values (default=based on units)."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
     __OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
@@ -657,7 +656,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         "Optional - override the global output start (default=write all data)."),
         3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"),
         0, ++yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
     __OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
@@ -667,13 +666,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "Optional - override the global output end (default=write all data)."),
         3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for Excel output (column location in output, etc.)
+
+    // Panel for Excel output (column location in output, etc.).
     int yExcelOutput = -1;
     JPanel excelOutput_JPanel = new JPanel();
     excelOutput_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Excel Output", excelOutput_JPanel );
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
 		"Time series will be output in a block of cells with the upper left indicated by the address information."),
 		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -683,23 +682,23 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
 		"It is recommended that the location of the Excel file be " +
 		"specified using a path relative to the working directory."),
-		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
+		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( ""),
-		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
+		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	if (__working_dir != null) {
     	JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
-		"The working directory is: " + __working_dir), 
+		"The working directory is: " + __working_dir),
 		0, ++yExcelOutput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(excelOutput_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yExcelOutput, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
 	__OutputFile_JTextField.setToolTipText("Specify the Excel workbook file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener (this);
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -709,18 +708,18 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(excelOutput_JPanel, OutputFile_JPanel,
 		1, yExcelOutput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Append?:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
-	List<String> appendChoices = new ArrayList<String>();
+	List<String> appendChoices = new ArrayList<>();
 	appendChoices.add ( "" );	// Default
 	appendChoices.add ( __command._False );
 	appendChoices.add ( __command._True );
@@ -730,9 +729,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, __Append_JComboBox,
 		1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel(
-		"Optional - whether to append to Excel file (default=" + __command._False + " or " + __command._True + " if open)."), 
+		"Optional - whether to append to Excel file (default=" + __command._False + " or " + __command._True + " if open)."),
 		3, yExcelOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Worksheet:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
@@ -743,7 +742,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel,
         new JLabel ("Optional - worksheet name (default=first sheet if appending to existing)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     __excelSpace_JTabbedPane = new JTabbedPane ();
     __excelSpace_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -754,7 +753,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     address_JPanel.setLayout(new GridBagLayout());
     __excelSpace_JTabbedPane.addTab ( "by Excel Address", address_JPanel );
     int yAddress = -1;
-        
+
     JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel address:"),
         0, ++yAddress, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelAddress_JTextField = new JTextField (20);
@@ -763,12 +762,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yAddress, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel cell block address in format A1, A1:B2, etc."),
         3, yAddress, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel range_JPanel = new JPanel();
     range_JPanel.setLayout(new GridBagLayout());
     __excelSpace_JTabbedPane.addTab ( "by Named Range", range_JPanel );
     int yRange = -1;
-    
+
     JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range:"),
         0, ++yRange, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelNamedRange_JTextField = new JTextField (20);
@@ -777,12 +776,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yRange, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range."),
         3, yRange, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout(new GridBagLayout());
     __excelSpace_JTabbedPane.addTab ( "by Table Name", table_JPanel );
     int yTable = -1;
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelTableName_JTextField = new JTextField (20);
@@ -791,7 +790,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Keep file open?:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __KeepOpen_JComboBox = new SimpleJComboBox ( false );
@@ -804,7 +803,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
         3, yExcelOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Date/time column:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeColumn_JTextField = new JTextField (10);
@@ -814,20 +813,20 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
         "Optional - name for date/time column (default=Date or DateTime)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
-    // is supported by the panel
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date/time format:" ), 
+
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format,
+    // which is supported by the panel.
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date/time format:" ),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __DateTimeFormat_JPanel.addKeyListener ( this );
-    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice.
     __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(excelOutput_JPanel, __DateTimeFormat_JPanel,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for data date/time formatter (default=ISO)."), 
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for data date/time formatter (default=ISO)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Date column:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateColumn_JTextField = new JTextField (10);
@@ -837,20 +836,20 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
         "Optional - name for date column (default=use date/time column only)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
-    // is supported by the panel
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date format:" ), 
+
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format,
+    // which is supported by the panel.
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date format:" ),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __DateFormat_JPanel.addKeyListener ( this );
-    __DateFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice.
     __DateFormat_JPanel.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(excelOutput_JPanel, __DateFormat_JPanel,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for date formatter (default=ISO)."), 
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for date formatter (default=ISO)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Time column:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeColumn_JTextField = new JTextField (10);
@@ -860,20 +859,20 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
         "Optional - name for time column (default=use date/time column only)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
-    // is supported by the panel
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Time format:" ), 
+
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format,
+    // which is supported by the panel.
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Time format:" ),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __TimeFormat_JPanel.addKeyListener ( this );
-    __TimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __TimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice.
     __TimeFormat_JPanel.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(excelOutput_JPanel, __TimeFormat_JPanel,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for time formatter (default=ISO)."), 
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for time formatter (default=ISO)."),
         3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel("Value column(s):"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumns_JTextField = new TSFormatSpecifiersJPanel(30);
@@ -885,13 +884,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property (default=%L_%T)."),
         3, yExcelOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for Excel output (location in output, etc.)
+
+    // Panel for Excel output (location in output, etc.).
     int yComments = -1;
     JPanel comment_JPanel = new JPanel();
     comment_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Column and Cell Comments", comment_JPanel );
-    
+
     JGUIUtil.addComponent(comment_JPanel, new JLabel (
 		"Comments can be added to column headings and data value cells."),
 		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -910,12 +909,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - author for comments (default=none)."),
         3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JTabbedPane __comments_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(comment_JPanel, __comments_JTabbedPane,
         0, ++yComments, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for column comments
+
+    // Panel for column comments.
     int yColComment = -1;
     JPanel colComment_JPanel = new JPanel();
     colComment_JPanel.setLayout( new GridBagLayout() );
@@ -935,7 +934,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(colComment_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment:"),
         0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnComment_JTextField = new TSFormatSpecifiersJPanel(30);
@@ -947,7 +946,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - see above for formatting options."),
         3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment width (columns):"),
         0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnCommentWidth_JTextField = new JTextField(10);
@@ -956,7 +955,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - comment width in columns (default=6)."),
         3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment height (rows):"),
         0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnCommentHeight_JTextField = new JTextField(10);
@@ -965,13 +964,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - number of rows for comment (default=lines of comment)."),
         3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for cell value comments
+
+    // Panel for cell value comments.
     int yValComment = -1;
     JPanel valComment_JPanel = new JPanel();
     valComment_JPanel.setLayout( new GridBagLayout() );
     __comments_JTabbedPane.addTab ( "Value Comments", valComment_JPanel );
-    
+
     JGUIUtil.addComponent(valComment_JPanel, new JLabel (
 		"For data cells, format the comment using the following specifiers:"),
 		0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -995,7 +994,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     	0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(valComment_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yValComment, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(valComment_JPanel, new JLabel("Value comment:"),
         0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueComment_JTextField = new TSFormatSpecifiersJPanel(30);
@@ -1007,7 +1006,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - see above for formatting options."),
         3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(valComment_JPanel, new JLabel( "Skip value comment if no flag?:"),
         0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SkipValueCommentIfNoFlag_JComboBox = new SimpleJComboBox ( false );
@@ -1020,7 +1019,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(valComment_JPanel, new JLabel ( "Optional - skip comment if no flag? (default=" + __command._True + ")."),
         3, yValComment, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(valComment_JPanel, new JLabel("Comment width (columns):"),
         0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommentWidth_JTextField = new JTextField(10);
@@ -1029,7 +1028,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - comment width in columns (default=6)."),
         3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(valComment_JPanel, new JLabel("Comment height (rows):"),
         0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommentHeight_JTextField = new JTextField(10);
@@ -1038,8 +1037,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - number of rows for comment (default=lines of comment)."),
         3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for column style formatting 
+
+    // Panel for column style formatting.
     int yColStyle = -1;
     JPanel colStyle_JPanel = new JPanel();
     colStyle_JPanel.setLayout( new GridBagLayout() );
@@ -1062,35 +1061,37 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(colStyle_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
    	    0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	
-    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column condition table ID:" ), 
+
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column condition table ID:" ),
         0, ++yColStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ColumnConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available.
     __ColumnConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
+    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over.
     __ColumnConditionTableID_JComboBox.setData ( tableIDChoices );
     __ColumnConditionTableID_JComboBox.addItemListener ( this );
     __ColumnConditionTableID_JComboBox.addKeyListener ( this );
+    __ColumnConditionTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(colStyle_JPanel, __ColumnConditionTableID_JComboBox,
         1, yColStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - conditions to determine styles."), 
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - conditions to determine styles."),
         3, yColStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column style table ID:" ), 
+
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column style table ID:" ),
         0, ++yColStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnStyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ColumnStyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available.
     __ColumnStyleTableID_JComboBox.setToolTipText("Select the style table or use ${Property} notation");
     __ColumnStyleTableID_JComboBox.setData ( tableIDChoices );
     __ColumnStyleTableID_JComboBox.addItemListener ( this );
     __ColumnStyleTableID_JComboBox.addKeyListener ( this );
+    __ColumnStyleTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(colStyle_JPanel, __ColumnStyleTableID_JComboBox,
         1, yColStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - style definitions."), 
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - style definitions."),
         3, yColStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for cell style formatting 
+
+    // Panel for cell style formatting.
     int yStyle = -1;
     JPanel style_JPanel = new JPanel();
     style_JPanel.setLayout( new GridBagLayout() );
@@ -1113,34 +1114,36 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(style_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
    	    0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Condition table ID:" ), 
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Condition table ID:" ),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available.
     __ConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
     __ConditionTableID_JComboBox.setData ( tableIDChoices );
     __ConditionTableID_JComboBox.addItemListener ( this );
     __ConditionTableID_JComboBox.addKeyListener ( this );
+    __ConditionTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(style_JPanel, __ConditionTableID_JComboBox,
         1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - conditions to determine styles."), 
+    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - conditions to determine styles."),
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style table ID:" ), 
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style table ID:" ),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __StyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available.
     __StyleTableID_JComboBox.setToolTipText("Select the style table or use ${Property} notation");
     __StyleTableID_JComboBox.setData ( tableIDChoices );
     __StyleTableID_JComboBox.addItemListener ( this );
     __StyleTableID_JComboBox.addKeyListener ( this );
+    __StyleTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(style_JPanel, __StyleTableID_JComboBox,
         1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."), 
+    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."),
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend worksheet:"), 
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend worksheet:"),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LegendWorksheet_JTextField = new JTextField (40);
     __LegendWorksheet_JTextField.setToolTipText("Name of worksheet for legend or use ${Property}.");
@@ -1150,8 +1153,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "Optional - worksheet for legend (default=same as for time series)."),
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend address:"), 
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend address:"),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LegendAddress_JTextField = new JTextField (40);
     __LegendAddress_JTextField.setToolTipText("Address of upper-left cell for legend.  Use R[${Property}+1]C[${Property}+1] to position relative to data block.");
@@ -1161,8 +1164,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "Optional - upper-left address for legend (default=no legend)."),
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -1171,13 +1174,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -1193,7 +1196,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     pack();
     JGUIUtil.center(this);
     checkGUIState();
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -1226,21 +1229,22 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -1321,7 +1325,7 @@ private void refresh ()
 		LegendWorksheet = props.getValue ( "LegendWorksheet" );
 		LegendAddress = props.getValue ( "LegendAddress" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -1339,19 +1343,19 @@ private void refresh ()
                 __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -1385,10 +1389,11 @@ private void refresh ()
 		}
 		else {
             if ( (Append == null) || Append.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__Append_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\nAppend parameter \"" +	Append + "\".  Select a\n value or Cancel." );
 			}
@@ -1398,7 +1403,7 @@ private void refresh ()
         }
 		if ( ExcelAddress != null ) {
 			__ExcelAddress_JTextField.setText ( ExcelAddress );
-			// Also select the tab to be visible
+			// Also select the tab to be visible.
 			__excelSpace_JTabbedPane.setSelectedIndex(0);
 		}
 		if ( ExcelNamedRange != null ) {
@@ -1410,9 +1415,9 @@ private void refresh ()
             __excelSpace_JTabbedPane.setSelectedIndex(2);
         }
         if ( KeepOpen == null || KeepOpen.equals("") ) {
-            // Select a default...
+            // Select a default.
             __KeepOpen_JComboBox.select ( 0 );
-        } 
+        }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __KeepOpen_JComboBox, KeepOpen, JGUIUtil.NONE, null, null ) ) {
                 __KeepOpen_JComboBox.select ( KeepOpen );
@@ -1426,7 +1431,7 @@ private void refresh ()
             __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
         if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
-            // Select default...
+            // Select default.
             __DateTimeFormat_JPanel.selectFormatterType(null);
         }
         else {
@@ -1447,7 +1452,7 @@ private void refresh ()
             __DateColumn_JTextField.setText(DateColumn);
         }
         if ( (DateFormatterType == null) || DateFormatterType.equals("") ) {
-            // Select default...
+            // Select default.
             __DateFormat_JPanel.selectFormatterType(null);
         }
         else {
@@ -1468,7 +1473,7 @@ private void refresh ()
             __TimeColumn_JTextField.setText(DateTimeColumn);
         }
         if ( (TimeFormatterType == null) || TimeFormatterType.equals("") ) {
-            // Select default...
+            // Select default.
             __TimeFormat_JPanel.selectFormatterType(null);
         }
         else {
@@ -1504,9 +1509,9 @@ private void refresh ()
             __ColumnCommentHeight_JTextField.setText ( ColumnCommentHeight );
         }
         if ( SkipValueCommentIfNoFlag == null || SkipValueCommentIfNoFlag.equals("") ) {
-            // Select a default...
+            // Select a default.
             __SkipValueCommentIfNoFlag_JComboBox.select ( 0 );
-        } 
+        }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __SkipValueCommentIfNoFlag_JComboBox, SkipValueCommentIfNoFlag, JGUIUtil.NONE, null, null ) ) {
                 __SkipValueCommentIfNoFlag_JComboBox.select ( SkipValueCommentIfNoFlag );
@@ -1523,7 +1528,7 @@ private void refresh ()
             __CommentHeight_JTextField.setText ( CommentHeight );
         }
         if ( ColumnConditionTableID == null ) {
-            // Select default...
+            // Select default.
         	__ColumnConditionTableID_JComboBox.select ( 0 );
         }
         else {
@@ -1538,7 +1543,7 @@ private void refresh ()
             }
         }
         if ( ColumnStyleTableID == null ) {
-            // Select default...
+            // Select default.
         	__ColumnStyleTableID_JComboBox.select ( 0 );
         }
         else {
@@ -1553,7 +1558,7 @@ private void refresh ()
             }
         }
         if ( ConditionTableID == null ) {
-            // Select default...
+            // Select default.
         	__ConditionTableID_JComboBox.select ( 0 );
         }
         else {
@@ -1568,7 +1573,7 @@ private void refresh ()
             }
         }
         if ( StyleTableID == null ) {
-            // Select default...
+            // Select default.
         	__StyleTableID_JComboBox.select ( 0 );
         }
         else {
@@ -1589,7 +1594,7 @@ private void refresh ()
 			__LegendAddress_JTextField.setText ( LegendAddress );
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -1668,7 +1673,7 @@ private void refresh ()
 	props.add ( "LegendWorksheet=" + LegendWorksheet );
 	props.add ( "LegendAddress=" + LegendAddress );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if (__path_JButton != null) {
 		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -1692,35 +1697,46 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt) {}
-public void windowClosed(WindowEvent evt) {}
-public void windowDeactivated(WindowEvent evt) {}
-public void windowDeiconified(WindowEvent evt) {}
-public void windowIconified(WindowEvent evt) {}
-public void windowOpened(WindowEvent evt) {}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

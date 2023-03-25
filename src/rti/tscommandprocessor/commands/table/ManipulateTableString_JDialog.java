@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -338,6 +338,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -381,6 +382,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     __InputColumn1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __InputColumn1_JComboBox.addItemListener ( this );
     __InputColumn1_JComboBox.addKeyListener ( this );
+    __InputColumn1_JComboBox.getJTextComponent().addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __InputColumn1_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -409,6 +411,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     __InputColumn2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __InputColumn2_JComboBox.addItemListener ( this );
     __InputColumn2_JComboBox.addKeyListener ( this );
+    __InputColumn2_JComboBox.getJTextComponent().addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __InputColumn2_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -444,6 +447,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
     __OutputColumn_JComboBox.addItemListener ( this );
     __OutputColumn_JComboBox.addKeyListener ( this );
+    __OutputColumn_JComboBox.getJTextComponent().addKeyListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __OutputColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

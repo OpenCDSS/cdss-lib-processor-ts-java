@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -116,8 +116,8 @@ Command editor constructor.
 @param command Command to edit.
 @param StateTableIDChoices choices for StateTableID value.
 */
-public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices )
-{	super(parent, true);
+public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, StateTableIDChoices );
 }
 
@@ -125,8 +125,8 @@ public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command, List<
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
     String routine = getClass().getSimpleName() + ".actionPerformed";
 
 	if ( o == __cancel_JButton ) {
@@ -178,8 +178,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -187,8 +187,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -196,26 +196,26 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
-// ...End event handlers for DocumentListener
+// ...End event handlers for DocumentListener.
 
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	// TODO SAM 2005-09-08 - Evaluate need
+private void checkGUIState() {
+	// TODO SAM 2005-09-08 - Evaluate need.
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -312,7 +312,7 @@ private void checkInput ()
     	props.set ( "StateSaveInterval", StateSaveInterval );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -322,11 +322,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
     String TSID = __TSID_JComboBox.getSelected();
     String NewTSID = __NewTSID_JTextArea.getText().trim();
     String Lag = __Lag_JTextArea.getText().trim();
@@ -381,8 +381,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 @param StateTableIDChoices choices for StateTableID value.
 */
-private void initialize ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices ) {
+	__parent_JFrame = parent;
     __command = command;
 
 	addWindowListener( this );
@@ -402,12 +402,12 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 	       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for input time series
+
+    // Panel for input time series.
     int yInputTS = -1;
     JPanel inputTS_JPanel = new JPanel();
     inputTS_JPanel.setLayout( new GridBagLayout() );
@@ -424,32 +424,32 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 
     JGUIUtil.addComponent(inputTS_JPanel, new JLabel( "Time series to lag (TSID):"),
 		0, ++yInputTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit.
 	__TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsids == null ) {
 		// User will not be able to select anything.
-		tsids = new ArrayList<String>();
+		tsids = new ArrayList<>();
 	}
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(inputTS_JPanel, __TSID_JComboBox,
 		1, yInputTS, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for analysis parameters series
+
+    // Panel for analysis parameters series.
     int yAnalysis = -1;
     JPanel analysis_JPanel = new JPanel();
     analysis_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Analysis Parameters", analysis_JPanel );
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Specify the parameters to control the analysis.  The Lag (flow/lag) and attenuation K (flow/K) data can have different number of points." ),
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(analysis_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Flow units:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlowUnits_JTextField = new JTextField (10);
@@ -486,7 +486,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - flow,Lag;flow,Lag pairs."),
         3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("K:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __K_JTextArea = new JTextArea (3, 40);
@@ -499,7 +499,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - flow,K;flow,K pairs."),
         3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output start:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField ( "", 20 );
@@ -511,7 +511,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         "Optional - output start date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output end:" ), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output end:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField ( "", 20 );
     __OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
@@ -521,8 +521,8 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - output end date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for input states
+
+    // Panel for input states.
     int yStatesIn = -1;
     JPanel statesIn_JPanel = new JPanel();
     statesIn_JPanel.setLayout( new GridBagLayout() );
@@ -542,24 +542,25 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesIn_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel("Initialize states from table?: "),
         0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InitializeStatesFromTable_JComboBox = new SimpleJComboBox(true); // Allow edit to use property
+    __InitializeStatesFromTable_JComboBox = new SimpleJComboBox(true); // Allow edit to use property.
     __InitializeStatesFromTable_JComboBox.setToolTipText("Indicate whether to initialize states from table, can use ${Property}");
-    List<String> choiceList = new ArrayList<String>();
+    List<String> choiceList = new ArrayList<>();
     choiceList.add ( "" );
     choiceList.add ( __command._False );
     choiceList.add ( __command._True );
     __InitializeStatesFromTable_JComboBox.setData ( choiceList );
     __InitializeStatesFromTable_JComboBox.addActionListener ( this );
+	__InitializeStatesFromTable_JComboBox.getJTextComponent().addKeyListener ( this );
     //__InitializeStatesFromTable_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
     __InitializeStatesFromTable_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(statesIn_JPanel, __InitializeStatesFromTable_JComboBox,
         1, yStatesIn, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel("Optional - use if states available (default=" + __command._False + ")."),
         3, yStatesIn, 1, 1, 0, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel ("Initial lagged inflow:"),
         0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialLaggedInflow_JTextField = new JTextField (10);
@@ -570,7 +571,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
         "Optional - initial lagged inflow state (default=0)."),
         3, yStatesIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel ("Initial outflow:"),
         0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialOutflow_JTextField = new JTextField (10);
@@ -581,7 +582,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
         "Optional - initial outflow state (default=0)."),
         3, yStatesIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel ("Initial storage:"),
         0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialStorage_JTextField = new JTextField (10);
@@ -599,14 +600,14 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     __InitialQTLag_JTextArea.setLineWrap ( true );
     __InitialQTLag_JTextArea.setWrapStyleWord ( true );
     __InitialQTLag_JTextArea.addKeyListener ( this );
-    // Make 3-high
+    // Make 3-high.
     JGUIUtil.addComponent(statesIn_JPanel, new JScrollPane(__InitialQTLag_JTextArea),
         1, yStatesIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel(
-        "Optional - separate values by commas (default=0 for all)."), 
+        "Optional - separate values by commas (default=0 for all)."),
         3, yStatesIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for output states
+
+    // Panel for output states.
     int yStatesOut = -1;
     JPanel statesOut_JPanel = new JPanel();
     statesOut_JPanel.setLayout( new GridBagLayout() );
@@ -626,33 +627,34 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
        0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesOut_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save date/time:" ), 
+
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save date/time:" ),
         0, ++yStatesOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateSaveDateTime_JTextField = new JTextField ( 20 );
     __StateSaveDateTime_JTextField.setToolTipText("Specify the date/time when states should be saved, can use ${Property} notation");
     __StateSaveDateTime_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesOut_JPanel, __StateSaveDateTime_JTextField,
         1, yStatesOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesOut_JPanel, new JLabel( "Optional (default=no states saved)."), 
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel( "Optional (default=no states saved)."),
         3, yStatesOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save interval:" ), 
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save interval:" ),
         0, ++yStatesOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StateSaveInterval_JComboBox = new SimpleJComboBox ( true ); // Allow editing to allow property to be specified
+    __StateSaveInterval_JComboBox = new SimpleJComboBox ( true ); // Allow editing to allow property to be specified.
     __StateSaveInterval_JComboBox.setToolTipText("Specify the interval to save states, can use ${Property}");
-    // TODO SAM 2016-08-28 Evaluate whether to allow saving more frequently
+    // TODO SAM 2016-08-28 Evaluate whether to allow saving more frequently.
     //boolean padZeroes = true;
     //boolean includeIrregular = false;
     //List<String> stateSaveIntervalList = TimeInterval.getTimeIntervalChoices(
     //    TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
-    // Add a blank
-    List<String> stateSaveIntervalList = new ArrayList<String>();
+    // Add a blank.
+    List<String> stateSaveIntervalList = new ArrayList<>();
     stateSaveIntervalList.add(TimeInterval.getName(TimeInterval.HOUR, 0));
     stateSaveIntervalList.add(TimeInterval.getName(TimeInterval.DAY, 0));
     stateSaveIntervalList.add(0,"");
     __StateSaveInterval_JComboBox.setData ( stateSaveIntervalList );
     __StateSaveInterval_JComboBox.addItemListener ( this );
+	__StateSaveInterval_JComboBox.getJTextComponent().addKeyListener ( this );
     //__StateSaveInterval_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
     __StateSaveInterval_JComboBox.getJTextComponent().addKeyListener ( this );
         JGUIUtil.addComponent(statesOut_JPanel, __StateSaveInterval_JComboBox,
@@ -660,12 +662,12 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesOut_JPanel, new JLabel("Optional (default=save only on StateSaveDateTime)."),
         3, yStatesOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for state table
+    // Panel for state table.
     int yStatesTable = -1;
     JPanel statesTable_JPanel = new JPanel();
     statesTable_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "States (Table)", statesTable_JPanel );
-    
+
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
         "States can be initialized using a table, and the same table can be written to when saving states." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -681,41 +683,42 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table ID:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table ID:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StateTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __StateTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __StateTableID_JComboBox.setToolTipText("Specify the table ID for states or use ${Property} notation");
-    StateTableIDChoices.add(0,""); // Add blank to ignore table
+    StateTableIDChoices.add(0,""); // Add blank to ignore table.
     __StateTableID_JComboBox.setData ( StateTableIDChoices );
     __StateTableID_JComboBox.addItemListener ( this );
+	__StateTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__StateTableID_JComboBox.setMaximumRowCount(StateTableIDChoices.size());
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableID_JComboBox,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Optional - use if are read from table."), 
+        "Optional - use if are read from table."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Object ID column:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Object ID column:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableObjectIDColumn_JTextField = new JTextField ( 20 );
     __StateTableObjectIDColumn_JTextField.setToolTipText("Specify the object ID column or use ${Property} notation");
     __StateTableObjectIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectIDColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=not used)."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=not used)."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table object ID:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table object ID:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableObjectID_JTextField = new JTextField ( 20 );
     __StateTableObjectID_JTextField.setToolTipText("Specify the object ID column or use ${Property} notation");
     __StateTableObjectID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectID_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required - if object ID column is used."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required - if object ID column is used."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Date/time column:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableDateTimeColumn_JTextField = new JTextField ( 20 );
@@ -724,10 +727,10 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableDateTimeColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - column name for state date/time."), 
+        "Required if using table - column name for state date/time."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State name column:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State name column:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableNameColumn_JTextField = new JTextField ( 20 );
     __StateTableNameColumn_JTextField.setToolTipText("Specify the state name column or use ${Property} notation");
@@ -735,10 +738,10 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableNameColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-    	"Optional - column name for state name (default=not used)."), 
+    	"Optional - column name for state name (default=not used)."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State value column:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State value column:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableValueColumn_JTextField = new JTextField ( 20 );
     __StateTableValueColumn_JTextField.setToolTipText("Specify the state value column or use ${Property} notation");
@@ -746,10 +749,10 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableValueColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - column name for state value."), 
+        "Required if using table - column name for state value."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table state name:" ), 
+
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table state name:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StateTableStateName_JTextField = new JTextField ( 20 );
     __StateTableStateName_JTextField.setToolTipText("Specify the name of the states as JSON, can use ${Property} notation");
@@ -757,15 +760,15 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableStateName_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Optional if using table - name of states as JSON (default=state name column not used)."), 
+        "Optional if using table - name of states as JSON (default=state name column not used)."),
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for output time series
+
+    // Panel for output time series.
     int yOutputTS = -1;
     JPanel outputTS_JPanel = new JPanel();
     outputTS_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Output Time Series", outputTS_JPanel );
-    
+
     JGUIUtil.addComponent(outputTS_JPanel, new JLabel (
         "Specify information to identify the new output time series." ),
         0, ++yOutputTS, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -774,7 +777,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         0, ++yOutputTS, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(outputTS_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yOutputTS, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(outputTS_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++yOutputTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     	__NewTSID_JTextArea = new JTextArea ( 3, 40 );
@@ -783,7 +786,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(outputTS_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, yOutputTS, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(outputTS_JPanel, new JLabel(
@@ -794,7 +797,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 		3, yOutputTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(outputTS_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, yOutputTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(outputTS_JPanel, new JLabel("Alias to assign:"),
         0, ++yOutputTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -814,13 +817,13 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -842,16 +845,16 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -864,25 +867,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from component contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
 	String TSID = "";
     String NewTSID = "";
@@ -909,7 +913,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		Alias = props.getValue ( "Alias" );
         TSID = props.getValue ( "TSID" );
         NewTSID = props.getValue ( "NewTSID" );
@@ -938,14 +942,14 @@ private void refresh ()
 			__TSID_JComboBox.select ( TSID );
 		}
 		else {
-		    // Automatically add to the list
+		    // Automatically add to the list.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 0 );
-				// Select...
+				// Select.
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {
-			    // Do not select anything...
+			    // Do not select anything.
 			}
 		}
         if ( NewTSID != null ) {
@@ -958,7 +962,7 @@ private void refresh ()
             __FlowUnits_JTextField.setText ( FlowUnits );
         }
         if ( LagInterval == null ) {
-            // Select default...
+            // Select default.
             __LagInterval_JComboBox.select ( 0 );
         }
         else {
@@ -972,7 +976,7 @@ private void refresh ()
             }
         }
         if ( InitializeStatesFromTable == null ) {
-            // Select default...
+            // Select default.
             __InitializeStatesFromTable_JComboBox.select ( 0 );
         }
         else {
@@ -980,7 +984,7 @@ private void refresh ()
                 __InitializeStatesFromTable_JComboBox.select ( InitializeStatesFromTable );
             }
             else if ( InitializeStatesFromTable.indexOf("${") >= 0 ) {
-        		// OK to add as first position and select
+        		// OK to add as first position and select.
         		__InitializeStatesFromTable_JComboBox.insertItemAt(InitializeStatesFromTable, 1);
         		__InitializeStatesFromTable_JComboBox.select(1);
         	}
@@ -1015,7 +1019,7 @@ private void refresh ()
             __InitialQTLag_JTextArea.setText ( InitialQTLag );
         }
         if ( StateTableID == null ) {
-            // Select default...
+            // Select default.
             __StateTableID_JComboBox.select ( 0 );
         }
         else {
@@ -1023,7 +1027,7 @@ private void refresh ()
                 __StateTableID_JComboBox.select ( StateTableID );
             }
             else {
-                // Creating new table so add in the first position
+                // Creating new table so add in the first position.
                 if ( __StateTableID_JComboBox.getItemCount() == 0 ) {
                     __StateTableID_JComboBox.add(StateTableID);
                 }
@@ -1055,7 +1059,7 @@ private void refresh ()
             __StateSaveDateTime_JTextField.setText ( StateSaveDateTime );
         }
         if ( StateSaveInterval == null ) {
-            // Select default...
+            // Select default.
             __StateSaveInterval_JComboBox.select ( 0 );
         }
         else {
@@ -1063,7 +1067,7 @@ private void refresh ()
                 __StateSaveInterval_JComboBox.select ( StateSaveInterval );
             }
             else if ( StateSaveInterval.indexOf("${") >= 0 ) {
-        		// OK to add as first position and select
+        		// OK to add as first position and select.
         		__StateSaveInterval_JComboBox.insertItemAt(StateSaveInterval, 1);
         		__StateSaveInterval_JComboBox.select(1);
         	}
@@ -1074,7 +1078,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TSID = __TSID_JComboBox.getSelected();
     NewTSID = __NewTSID_JTextArea.getText().trim();
     FlowUnits = __FlowUnits_JTextField.getText().trim();
@@ -1127,20 +1131,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1149,15 +1152,25 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {;}
 
 }

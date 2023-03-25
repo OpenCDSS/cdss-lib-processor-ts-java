@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -89,8 +89,8 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetPropertyFromTimeSeries_JDialog ( JFrame parent, SetPropertyFromTimeSeries_Command command )
-{	super(parent, true);
+public SetPropertyFromTimeSeries_JDialog ( JFrame parent, SetPropertyFromTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -98,8 +98,8 @@ public SetPropertyFromTimeSeries_JDialog ( JFrame parent, SetPropertyFromTimeSer
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -122,27 +122,27 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
- refresh();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
- refresh();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
- refresh();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
+    refresh();
 }
 
 //...End event handlers for DocumentListener
@@ -150,8 +150,7 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
             TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -174,11 +173,11 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -203,7 +202,7 @@ private void checkInput ()
 	    parameters.set ( "PropertyValue", PropertyValue );
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -213,13 +212,13 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
@@ -235,8 +234,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -248,17 +247,32 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set a processor property from time series properties." ), 
+		"Set a processor property from time series properties." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"One processor property can be set for each time series that is processed (but currently the property name is constant)."),
+		"One processor property can be set for each \"TS list\" time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is useful when setting a processor property in a For() loop."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The property value can include a combination of:"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    - literal text"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    - processor properties using ${Property} syntax"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    - built-in time series properties using % syntax"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    - ${ts:Property} syntax for dynamic time series properties set by previous commands"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -268,7 +282,7 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
@@ -277,16 +291,16 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - do not use spaces $, { or } in name."), 
+        "Required - do not use spaces $, { or } in name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Property value:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -298,7 +312,7 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -307,14 +321,14 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -335,16 +349,16 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -354,30 +368,31 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -386,14 +401,14 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         PropertyName = props.getValue ( "PropertyName" );
         PropertyValue = props.getValue ( "PropertyValue" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -411,19 +426,19 @@ private void refresh ()
 			__TSID_JComboBox.select ( TSID );
 		}
 		else {
-		    // Automatically add to the list after the blank...
+		    // Automatically add to the list after the blank.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
+				// Select.
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {
-			    // Select the blank...
+			    // Select the blank.
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -444,7 +459,7 @@ private void refresh ()
 	         __PropertyValue_JTextField.setText ( PropertyValue );
 	    }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -463,17 +478,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -482,15 +497,25 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {;}
 
 }

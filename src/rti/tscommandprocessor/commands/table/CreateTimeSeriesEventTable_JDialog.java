@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -107,8 +107,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public CreateTimeSeriesEventTable_JDialog ( JFrame parent, CreateTimeSeriesEventTable_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public CreateTimeSeriesEventTable_JDialog ( JFrame parent, CreateTimeSeriesEventTable_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -116,8 +116,8 @@ public CreateTimeSeriesEventTable_JDialog ( JFrame parent, CreateTimeSeriesEvent
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -129,7 +129,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -192,11 +192,11 @@ private void checkGUIState () {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -280,11 +280,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TimeSeriesLocations = __TimeSeriesLocations_JTextArea.getText().trim().replace("\n"," ");
@@ -325,8 +325,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command command, List<String> tableIDChoices ) {
+	__command = command;
     __parent = parent;
 
 	addWindowListener(this);
@@ -343,7 +343,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = 0;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates a new time series event table, which contains time series events " +
         "that have temporal and spatial properties."),
@@ -356,7 +356,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -365,14 +365,14 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-	
+
     __main_JTabbedPane = new JTabbedPane ();
     __main_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -409,7 +409,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(analysis_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     // Panel for creating the event table from an input table.
     int yTable = -1;
     JPanel table_JPanel = new JPanel();
@@ -421,7 +421,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Time series location type and ID:"),
         0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesLocations_JTextArea = new JTextArea (4,35);
@@ -436,19 +436,20 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTimeSeriesLocations",this),
         3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - input event table."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - input event table."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Column names to copy:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Column names to copy:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
     __IncludeColumns_JTextField.addKeyListener ( this );
@@ -456,8 +457,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - names of columns to copy (default=copy all)."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event ID column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event ID column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventIDColumn_JTextField = new JTextField (10);
     __InputTableEventIDColumn_JTextField.addKeyListener ( this );
@@ -465,8 +466,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event ID."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event type column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event type column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventTypeColumn_JTextField = new JTextField (10);
     __InputTableEventTypeColumn_JTextField.addKeyListener ( this );
@@ -474,8 +475,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event type."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event types to include:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event types to include:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeInputTableEventTypes_JTextField = new JTextField (10);
     __IncludeInputTableEventTypes_JTextField.addKeyListener ( this );
@@ -483,8 +484,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - input table event types to include (default=all)."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event start column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event start column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventStartColumn_JTextField = new JTextField (10);
     __InputTableEventStartColumn_JTextField.addKeyListener ( this );
@@ -492,8 +493,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event start."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event end column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event end column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventEndColumn_JTextField = new JTextField (10);
     __InputTableEventEndColumn_JTextField.addKeyListener ( this );
@@ -501,7 +502,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event end."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Event location type and ID columns:"),
         0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventLocationColumns_JTextArea = new JTextArea (4,35);
@@ -515,8 +516,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditInputTableEventLocationColumns",this),
         3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event label column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event label column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventLabelColumn_JTextField = new JTextField (10);
     __InputTableEventLabelColumn_JTextField.addKeyListener ( this );
@@ -524,8 +525,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event label."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event description column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event description column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventDescriptionColumn_JTextField = new JTextField (10);
     __InputTableEventDescriptionColumn_JTextField.addKeyListener ( this );
@@ -533,7 +534,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event description."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewTableID_JTextField = new JTextField (10);
@@ -542,16 +543,16 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the new table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output table TSID column:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output table TSID column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputTableTSIDColumn_JTextField = new JTextField ( 10 );
     __OutputTableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputTableTSIDColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Output table format for TSID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputTableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -562,8 +563,8 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -579,7 +580,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -627,22 +628,21 @@ public void keyReleased (KeyEvent event) {
 }
 
 public void keyTyped (KeyEvent event) {
-	
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -825,13 +825,13 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -842,18 +842,29 @@ private void response ( boolean ok )
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
 // The following methods are all necessary because this class implements WindowListener.
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

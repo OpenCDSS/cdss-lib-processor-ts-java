@@ -193,7 +193,7 @@ public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
-// ...End event handlers for DocumentListener
+// ...End event handlers for DocumentListener.
 
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
@@ -406,11 +406,12 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table that is providing the list of time series or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

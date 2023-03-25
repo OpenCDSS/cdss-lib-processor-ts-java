@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private TSFormatSpecifiersJPanel __TSIDFormat_JTextField = null; // Format for time series identifiers, to match table TSID column
+private TSFormatSpecifiersJPanel __TSIDFormat_JTextField = null; // Format for time series identifiers, to match table TSID column.
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private JTextField __SetFlag_JTextField = null;
@@ -94,7 +94,7 @@ private JTextField __TableValueColumn_JTextField = null;
 private JTextField __TableSetFlagColumn_JTextField = null;
 private JTextField __TableSetFlagDescColumn_JTextField = null;
 private SimpleJComboBox __SortOrder_JComboBox = null;
-// TODO SAM 2015-05-25 maybe add set window later
+// TODO SAM 2015-05-25 maybe add set window later.
 //private JCheckBox __SetWindow_JCheckBox = null;
 //private DateTime_JPanel __SetWindowStart_JPanel = null;
 //private DateTime_JPanel __SetWindowEnd_JPanel = null;
@@ -109,8 +109,8 @@ Command editor dialog constructor.
 @param tableIDChoices choices for TableID value.
 */
 public SetTimeSeriesValuesFromTable_JDialog ( JFrame parent,
-    SetTimeSeriesValuesFromTable_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+    SetTimeSeriesValuesFromTable_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -118,8 +118,8 @@ public SetTimeSeriesValuesFromTable_JDialog ( JFrame parent,
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -135,28 +135,27 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
     else {
-        // A combo box.  Refresh the command...
+        // A combo box.  Refresh the command.
         checkGUIState();
         refresh ();
     }
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{
+private void checkGUIState() {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -176,10 +175,10 @@ private void checkGUIState()
         __EnsembleID_JComboBox.setEnabled(false);
         __EnsembleID_JLabel.setEnabled ( false );
     }
-	
+
     /*
     if ( __SetWindow_JCheckBox.isSelected() ) {
-        // Checked so enable the date panels
+        // Checked so enable the date panels.
         __SetWindowStart_JPanel.setEnabled ( true );
         __SetWindowEnd_JPanel.setEnabled ( true );
     }
@@ -193,8 +192,8 @@ private void checkGUIState()
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -202,19 +201,19 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
-// ...End event handlers for DocumentListener
+// ...End event handlers for DocumentListener.
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -290,7 +289,7 @@ private void checkInput ()
         }
     }*/
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -300,11 +299,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String TSIDFormat = __TSIDFormat_JTextField.getText().trim();
@@ -349,8 +348,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 @param tableIDChoices list of choices for table identifiers
 */
-private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command command, List<String> tableIDChoices ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -366,17 +365,17 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator ( SwingConstants.HORIZONTAL ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for input time series
+
+    // Panel for input time series.
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Time series", ts_JPanel );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
 		"Specify the time series to process.  Only data in the table that match the specified time series will be used." ),
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -385,25 +384,25 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTs );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel (
         this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTs );
-    
+
     JGUIUtil.addComponent(ts_JPanel, new JLabel("Format of TSID:"),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -427,7 +426,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
         "Optional - set start date/time or ${Property} (default=set full period)."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set end:" ), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set end:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField ( "", 20 );
     __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
@@ -437,32 +436,32 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
         "Optional - set end date/time or ${Property} (default=set full period)."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set flag:" ), 
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set flag:" ),
 		0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetFlag_JTextField = new JTextField ( 10 );
 	__SetFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __SetFlag_JTextField,
 		1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
-		"Optional - string to flag values that are set."), 
+		"Optional - string to flag values that are set."),
 		3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set flag description:" ), 
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set flag description:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlagDesc_JTextField = new JTextField ( 15 );
     __SetFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __SetFlagDesc_JTextField,
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel( "Optional - description for set flag."), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel( "Optional - description for set flag."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-  
-    // Panel for table
+
+    // Panel for table.
     int yTable = -1;
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Table", table_JPanel );
-    
+
     JGUIUtil.addComponent(table_JPanel, new JLabel (
 		"Rows in the table are matched with time series using the TSID columnn." ),
 		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -478,30 +477,31 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
 		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table that provides values."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table that provides values."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableTSIDColumn_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - column name to match time series TSID."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - column name to match time series TSID."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for date/time:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for date/time:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableDateTimeColumn_JTextField = new JTextField ( "", 10 );
     JGUIUtil.addComponent(table_JPanel, __TableDateTimeColumn_JTextField,
@@ -510,8 +510,8 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Required - column to match date/time."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for value:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for value:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableValueColumn_JTextField = new JTextField ( "", 20 );
     JGUIUtil.addComponent(table_JPanel, __TableValueColumn_JTextField,
@@ -520,8 +520,8 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Required - column time series values."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for data flag:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for data flag:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableSetFlagColumn_JTextField = new JTextField ( "", 20 );
     JGUIUtil.addComponent(table_JPanel, __TableSetFlagColumn_JTextField,
@@ -530,8 +530,8 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - column for time series flag."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for data flag description:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table column for data flag description:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableSetFlagDescColumn_JTextField = new JTextField ( "", 20 );
     JGUIUtil.addComponent(table_JPanel, __TableSetFlagDescColumn_JTextField,
@@ -540,11 +540,11 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - column for time series flag description."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Sort order for date/time:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Sort order for date/time:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortOrder_JComboBox = new SimpleJComboBox ( false );
-    List<String> sortChoices = new ArrayList<String>();
+    List<String> sortChoices = new ArrayList<>();
     sortChoices.add ( "" );
     //sortChoices.add ( __command._Ascending );
     //sortChoices.add ( __command._Descending );
@@ -555,13 +555,13 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, __SortOrder_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel(
-        "Optional - sort order for table date/times (default=" + __command._None + ")."), 
+        "Optional - sort order for table date/times (default=" + __command._None + ")."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    /* TODO SAM 2015-05-25 Enable later
+
+    /* TODO SAM 2015-05-25 Enable later.
     __SetWindow_JCheckBox = new JCheckBox ( "Set window:", false );
     __SetWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetWindow_JCheckBox, 
+    JGUIUtil.addComponent(main_JPanel, __SetWindow_JCheckBox,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel setWindow_JPanel = new JPanel();
     setWindow_JPanel.setLayout(new GridBagLayout());
@@ -592,13 +592,13 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -620,15 +620,15 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -639,11 +639,12 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -656,8 +657,8 @@ public boolean ok ()
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
 	String TSID = "";
 	String EnsembleID = "";
@@ -678,7 +679,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
@@ -698,7 +699,7 @@ private void refresh ()
         //SetWindowEnd = props.getValue ( "SetWindowEnd" );
 		// Now select the item in the list.  If not a match, print a warning.
         if ( TSList == null ) {
-			// Select default...
+			// Select default.
 			__TSList_JComboBox.select ( 0 );
 		}
 		else {
@@ -716,19 +717,19 @@ private void refresh ()
             __TSID_JComboBox.select ( TSID );
         }
         else {
-            // Automatically add to the list after the blank...
+            // Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                // Select the blank...
+                // Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -746,7 +747,7 @@ private void refresh ()
             __TSIDFormat_JTextField.setText(TSIDFormat.trim());
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -795,7 +796,7 @@ private void refresh ()
         }
         else {
             if ( (SortOrder == null) || SortOrder.equals("") ) {
-                // Set default...
+                // Set default.
                 __SortOrder_JComboBox.select ( 0 );
             }
             else {
@@ -823,7 +824,7 @@ private void refresh ()
             __SetWindow_JCheckBox.setSelected ( false );
         }*/
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	checkGUIState();
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
@@ -871,17 +872,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -890,15 +891,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

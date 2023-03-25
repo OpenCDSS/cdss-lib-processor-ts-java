@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
@@ -64,8 +63,8 @@ public class JoinTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private SimpleJComboBox __TableToJoinID_JComboBox = null;
@@ -89,8 +88,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public JoinTables_JDialog ( JFrame parent, JoinTables_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public JoinTables_JDialog ( JFrame parent, JoinTables_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -98,8 +97,8 @@ public JoinTables_JDialog ( JFrame parent, JoinTables_Command command, List<Stri
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -111,7 +110,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -163,11 +162,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
@@ -208,7 +207,7 @@ private void checkInput ()
         props.set ( "RowCountProperty", RowCountProperty );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -219,11 +218,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
     String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
     String JoinColumns = __JoinColumns_JTextArea.getText().trim().replace("\n"," ");
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
@@ -248,15 +247,15 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, JoinTables_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, JoinTables_Command command, List<String> tableIDChoices ) {
+	__command = command;
     __parent = parent;
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -266,7 +265,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command modifies a table by joining columns from a second table (the table to join)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -285,20 +284,21 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID for the table to modify or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to modify (first table)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to modify (first table)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to join ID:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to join ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableToJoinID_JComboBox = new SimpleJComboBox ( 12, false );
     __TableToJoinID_JComboBox.setToolTipText("Specify the second table ID or use ${Property} notation");
@@ -307,9 +307,9 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableToJoinID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to join to the first table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to join to the first table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Columns to join:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JoinColumns_JTextArea = new JTextArea (3,35);
@@ -323,8 +323,8 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditJoinColumns",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
     __IncludeColumns_JTextField.setToolTipText("Specify the column names to copy, can use ${Property}");
@@ -333,7 +333,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns in second table to copy, can use ${property} (default=copy all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnMap_JTextArea = new JTextArea (6,35);
@@ -347,7 +347,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnFilters_JTextArea = new JTextArea (3,35);
@@ -361,11 +361,11 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Join method:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Join method:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JoinMethod_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices = new Vector<String>();
+    List<String> choices = new ArrayList<>();
     choices.add("");
     choices.add("" + DataTableJoinMethodType.JOIN_ALWAYS);
     choices.add("" + DataTableJoinMethodType.JOIN_IF_IN_BOTH);
@@ -374,13 +374,13 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __JoinMethod_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - join method (default=" + DataTableJoinMethodType.JOIN_IF_IN_BOTH + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - join method (default=" + DataTableJoinMethodType.JOIN_IF_IN_BOTH + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle multiple matches how?:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle multiple matches how?:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HandleMultipleJoinMatchesHow_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices2 = new ArrayList<String>();
+    List<String> choices2 = new ArrayList<>();
     choices2.add("");
     choices2.add(""+HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS);
     choices2.add(""+HandleMultipleJoinMatchesHowType.USE_LAST_MATCH);
@@ -390,7 +390,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, __HandleMultipleJoinMatchesHow_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - how to handle multiple matches for row (default=" +
-        HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + ")."), 
+        HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
@@ -403,7 +403,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as joined row count." ),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -412,15 +412,15 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -433,7 +433,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -465,21 +465,22 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String TableToJoinID = "";
     String JoinColumns = "";
@@ -502,7 +503,7 @@ private void refresh ()
         HandleMultipleJoinMatchesHow = props.getValue ( "HandleMultipleJoinMatchesHow" );
         RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -517,7 +518,7 @@ private void refresh ()
             }
         }
         if ( TableToJoinID == null ) {
-            // Select default...
+            // Select default.
             __TableToJoinID_JComboBox.select ( 0 );
         }
         else {
@@ -544,7 +545,7 @@ private void refresh ()
             __ColumnFilters_JTextArea.setText ( ColumnFilters );
         }
         if ( JoinMethod == null ) {
-            // Select default...
+            // Select default.
             __JoinMethod_JComboBox.select ( 0 );
         }
         else {
@@ -559,7 +560,7 @@ private void refresh ()
             }
         }
         if ( HandleMultipleJoinMatchesHow == null ) {
-            // Select default...
+            // Select default.
             __HandleMultipleJoinMatchesHow_JComboBox.select ( 0 );
         }
         else {
@@ -577,7 +578,7 @@ private void refresh ()
             __RowCountProperty_JTextField.setText ( RowCountProperty );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
     TableToJoinID = __TableToJoinID_JComboBox.getSelected();
     JoinColumns = __JoinColumns_JTextArea.getText().trim();
@@ -604,35 +605,46 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt) {}
-public void windowClosed(WindowEvent evt) {}
-public void windowDeactivated(WindowEvent evt) {}
-public void windowDeiconified(WindowEvent evt) {}
-public void windowIconified(WindowEvent evt) {}
-public void windowOpened(WindowEvent evt) {}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

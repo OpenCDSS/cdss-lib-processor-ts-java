@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,9 +82,9 @@ private SimpleJButton __help_JButton = null;
 private DeleteDataStoreTableRows_Command __command = null;
 private boolean __ok = false;
 
-private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices.
 
-private DatabaseDataStore __dataStore = null; // selected data store
+private DatabaseDataStore __dataStore = null; // Selected data store.
 private DMI __dmi = null; // DMI to do queries.
 private List<DatabaseDataStore> datastores = new ArrayList<>();
 
@@ -96,8 +96,8 @@ Command dialog constructor.
 @param datastores list of databases
 */
 public DeleteDataStoreTableRows_JDialog ( JFrame parent, DeleteDataStoreTableRows_Command command,
-    List<String> tableIDChoices, List<DatabaseDataStore> datastores )
-{	super(parent, true);
+    List<String> tableIDChoices, List<DatabaseDataStore> datastores ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices, datastores );
 }
 
@@ -105,8 +105,8 @@ public DeleteDataStoreTableRows_JDialog ( JFrame parent, DeleteDataStoreTableRow
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -118,7 +118,7 @@ public void actionPerformed(ActionEvent event)
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
-			// Command has been edited...
+			// Command has been edited.
 			response ( true );
 		}
 	}
@@ -129,8 +129,7 @@ Refresh the data type choices in response to the currently selected RiversideDB 
 @param value if non-null, then the selection is from the command initialization, in which case the
 specified data type should be selected
 */
-private void actionPerformedDataStoreSelected ( )
-{
+private void actionPerformedDataStoreSelected ( ) {
     if ( __DataStore_JComboBox.getSelected() == null ) {
         // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
         return;
@@ -146,16 +145,16 @@ private void actionPerformedDataStoreSelected ( )
         return;
     }
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
+    // Now populate the data type choices corresponding to the data store.
     populateDataStoreTableChoices ( __dmi );
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
@@ -196,11 +195,10 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	
+private void commitEdits () {	
     String DataStore = __DataStore_JComboBox.getSelected();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     //String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
@@ -216,8 +214,7 @@ private void commitEdits ()
 /**
 Return the DMI that is currently being used for database interaction, based on the selected data store.
 */
-private DMI getDMI ()
-{
+private DMI getDMI () {
     return __dmi;
 }
 
@@ -295,7 +292,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -322,8 +319,8 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
-    // List available data stores of the correct type
-    
+    // List available data stores of the correct type.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
@@ -349,7 +346,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     }
     Collections.sort(datastoreChoices, String.CASE_INSENSITIVE_ORDER);
     if ( datastoreChoices.size() == 0 ) {
-        // Add an empty item so users can at least bring up the editor
+        // Add an empty item so users can at least bring up the editor.
     	datastoreChoices.add ( "" );
     }
     __DataStore_JComboBox.setData(datastoreChoices);
@@ -357,33 +354,34 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database datastore to delete rows."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database datastore to delete rows."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Data tables are particular to the data store...
-    
+    // Data tables are particular to the data store.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore table/view:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreTable_JComboBox = new SimpleJComboBox ( false );
     __DataStoreTable_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStoreTable_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database table/view to delete rows."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database table/view to delete rows."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to write:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreColumns_JTextField = new JTextField (10);
@@ -393,7 +391,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - table/view columns, separated by commas (default=all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete all rows?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteAllRows_JComboBox = new SimpleJComboBox ( false );
@@ -406,10 +404,10 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DeleteAllRows_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DeleteAllRows_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - remove all rows (default=" + __command._False + ")?"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - remove all rows (default=" + __command._False + ")?"),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (6,50);
 	__command_JTextArea.setLineWrap ( true );
@@ -418,13 +416,13 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -448,8 +446,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent event)
-{
+public void itemStateChanged (ItemEvent event) {
     if ( !__ignoreItemEvents ) {
         if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
             // User has selected a data store.
@@ -478,25 +475,26 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Populate the data type list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
-private void populateDataStoreTableChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreTableChoices";
+private void populateDataStoreTableChoices ( DMI dmi ) {
+    String routine = getClass().getSimpleName() + "populateDataStoreTableChoices";
     //__TableID_JTextField.removeAll ();
     List<String> tableList = null;
-    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables.
     if ( dmi == null ) {
         tableList = new Vector<String>();
     }
@@ -511,15 +509,15 @@ private void populateDataStoreTableChoices ( DMI dmi )
         }
     }
     if ( tableList == null ) {
-        tableList = new Vector<String>();
+        tableList = new ArrayList<>();
     }
-    // Always add a blank option at the start to help with initialization
+    // Always add a blank option at the start to help with initialization.
     tableList.add ( 0, "" );
     __DataStoreTable_JComboBox.removeAll();
     for ( String table : tableList ) {
         __DataStoreTable_JComboBox.add( table );
     }
-    // Set large so that new table list from selected datastore does not found up layout
+    // Set large so that new table list from selected datastore does not found up layout.
     String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     __DataStoreTable_JComboBox.setPrototypeDisplayValue(longest);
     // Select first choice (may get reset from existing parameter values).
@@ -532,8 +530,8 @@ private void populateDataStoreTableChoices ( DMI dmi )
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 try{
     String DataStore = "";
     String DataStoreTable = "";
@@ -550,34 +548,34 @@ try{
 		DeleteAllRows = props.getValue ( "DeleteAllRows" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
-            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
-            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor
+            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor.
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
-                // New command...select the default...
-                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
+                // New command...select the default.
+                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
                 __DataStore_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // First populate the data type choices...
+        // First populate the data type choices.
         populateDataStoreTableChoices(getDMI() );
-        // Now select what the command had previously (if specified)...
+        // Now select what the command had previously (if specified).
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreTable_JComboBox, DataStoreTable, JGUIUtil.NONE, null, null ) ) {
             __DataStoreTable_JComboBox.select ( DataStoreTable );
         }
         else {
             if ( (DataStoreTable == null) || DataStoreTable.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __DataStoreTable_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStoreTable parameter \"" + DataStoreTable + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -607,17 +605,17 @@ try{
         }
         else {
             if ( (DeleteAllRows == null) || DeleteAllRows.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __DeleteAllRows_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DeleteAllRows parameter \"" + DeleteAllRows + "\".  Select a\ndifferent value or Cancel." );
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     DataStore = __DataStore_JComboBox.getSelected();
     if ( DataStore == null ) {
         DataStore = "";
@@ -646,35 +644,46 @@ catch ( Exception e ) {
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+// The following methods are all necessary because this class implements WindowListener.
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

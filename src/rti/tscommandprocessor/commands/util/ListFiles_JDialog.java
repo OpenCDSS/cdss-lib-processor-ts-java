@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,15 +115,15 @@ public void actionPerformed( ActionEvent event ) {
 		}
 		fc.setDialogTitle( "Select Folder Containing Files to List");
 		fc.setFileSelectionMode (JFileChooser.DIRECTORIES_ONLY );
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String filename = fc.getSelectedFile().getName();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -235,7 +235,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, ListFiles_Command command, List<String> tableIDChoices ) {
 	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
@@ -362,7 +362,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
-	
+
 	// Refresh the contents.
     refresh ();
 

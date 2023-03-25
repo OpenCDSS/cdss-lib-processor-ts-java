@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -80,8 +80,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public SetTableColumnProperties_JDialog ( JFrame parent, SetTableColumnProperties_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public SetTableColumnProperties_JDialog ( JFrame parent, SetTableColumnProperties_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -89,8 +89,8 @@ public SetTableColumnProperties_JDialog ( JFrame parent, SetTableColumnPropertie
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -109,11 +109,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
@@ -149,11 +149,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+private void commitEdits () {
+	String TableID = __TableID_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
 	String Width = __Width_JTextField.getText().trim();
@@ -170,8 +170,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, SetTableColumnProperties_Command command, List<String> tableIDChoices )
-{	__parent = parent;
+private void initialize ( JFrame parent, SetTableColumnProperties_Command command, List<String> tableIDChoices ) {
+	__parent = parent;
     __command = command;
 
 	addWindowListener(this);
@@ -188,7 +188,7 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = 0;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command sets table column properties."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -201,20 +201,21 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to change."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to change."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Include columns:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Include columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (30);
     __IncludeColumns_JTextField.setToolTipText("Names of columns to include, separated by commas, can use ${Property} notation.");
@@ -224,7 +225,7 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to update (default=update all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Exclude columns:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Exclude columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns_JTextField = new JTextField (30);
     __ExcludeColumns_JTextField.setToolTipText("Names of columns to exclude, separated by commas, can use ${Property} notation.");
@@ -233,7 +234,7 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to exclude (default=update all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Width:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Width_JTextField = new JTextField (10);
@@ -254,7 +255,7 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column precision, digits after decimal."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -269,9 +270,9 @@ private void initialize ( JFrame parent, SetTableColumnProperties_Command comman
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -323,15 +324,15 @@ public void keyTyped (KeyEvent event) {}
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String IncludeColumns = "";
     String ExcludeColumns = "";
@@ -346,7 +347,7 @@ private void refresh ()
         Width = props.getValue ( "Width" );
         Precision = props.getValue ( "Precision" );
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -392,13 +393,13 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -409,18 +410,29 @@ private void response ( boolean ok )
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
 // The following methods are all necessary because this class implements WindowListener.
-public void windowActivated(WindowEvent evt) {}
-public void windowClosed(WindowEvent evt) {}
-public void windowDeactivated(WindowEvent evt) {}
-public void windowDeiconified(WindowEvent evt) {}
-public void windowIconified(WindowEvent evt) {}
-public void windowOpened(WindowEvent evt) {}
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

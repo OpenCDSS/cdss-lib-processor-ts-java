@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ private SimpleJComboBox __CheckCriteria_JComboBox = null;
 private JTextField __CheckValue1_JTextField = null;
 private JTextField __CheckValue2_JTextField = null;
 private SimpleJComboBox __IfCriteriaMet_JComboBox = null;
-private JTextField __ProblemType_JTextField = null; // Field for problem type
+private JTextField __ProblemType_JTextField = null;
 private JTextField __CheckResultPropertyName_JTextField = null;
 private JTextField __CriteriaMetPropertyValue_JTextField = null;
 private JTextField __CriteriaNotMetPropertyValue_JTextField = null;
@@ -106,8 +106,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public CheckFile_JDialog ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public CheckFile_JDialog ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -115,8 +115,8 @@ public CheckFile_JDialog ( JFrame parent, CheckFile_Command command, List<String
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -127,16 +127,16 @@ public void actionPerformed( ActionEvent event )
 		else {	fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select File to Remove");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -166,11 +166,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String InputFile = __InputFile_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -243,7 +243,7 @@ private void checkInput ()
     //    parameters.set ( "Action", Action );
     //}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -253,10 +253,10 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits () {	
+private void commitEdits () {
     String InputFile = __InputFile_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String Statistic = __Statistic_JComboBox.getSelected();
@@ -299,8 +299,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, CheckFile_Command command, List<String> tableIDChoices ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -317,17 +317,17 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
 		"Check a file's statistics against criteria."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "A warning will be generated if the statistic matches the specified condition(s)." ), 
+        "A warning will be generated if the statistic matches the specified condition(s)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("File to check:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File to check:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the file to check or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -337,7 +337,7 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(InputFile_JPanel, __browse_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -348,8 +348,8 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	List<String> notFoundChoices = new ArrayList<String>();
-	notFoundChoices.add ( "" );	// Default
+	List<String> notFoundChoices = new ArrayList<>();
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -359,22 +359,22 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if file not found (default=" + __command._Warn + ")"), 
+		"Optional - action if file not found (default=" + __command._Warn + ")"),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for statistic
+
+    // Panel for statistic.
     int yStat = -1;
     JPanel stat_JPanel = new JPanel();
     stat_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Statistic", stat_JPanel );
-    
+
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
         "The following parameters define how to compute the statistic."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -389,20 +389,20 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(stat_JPanel, new JLabel ( "Statistic to calculate:" ), 
+
+    JGUIUtil.addComponent(stat_JPanel, new JLabel ( "Statistic to calculate:" ),
         0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Statistic_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
+    __Statistic_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit.
     __Statistic_JComboBox.setData ( this.__command.getStatisticChoicesAsStrings() );
     __Statistic_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(stat_JPanel, __Statistic_JComboBox,
         1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel(
-        "Required - may require other parameters."), 
+        "Required - may require other parameters."),
         3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(stat_JPanel, new JLabel ( "Search pattern:" ), 
+    JGUIUtil.addComponent(stat_JPanel, new JLabel ( "Search pattern:" ),
         0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SearchPattern_JTextField = new JTextField ( 30 );
     __SearchPattern_JTextField.setToolTipText("Search pattern should use * at start and/or end to match substring in a line.");
@@ -410,15 +410,15 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(stat_JPanel, __SearchPattern_JTextField,
         1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(stat_JPanel, new JLabel(
-        "Optional - use with Pattern* statistics."), 
+        "Optional - use with Pattern* statistics."),
         3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for check and actions
+
+    // Panel for check and actions.
     int yCheck = -1;
     JPanel check_JPanel = new JPanel();
     check_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Check Criteria and Actions", check_JPanel );
-    
+
     JGUIUtil.addComponent(check_JPanel, new JLabel (
         "The following parameters are used to check the statistic value against a criteria."),
         0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -428,48 +428,48 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(check_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check criteria:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check criteria:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
+    __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit.
     List<String> checkCriteriaChoices = __command.getCheckCriteriaChoicesAsStrings();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
     __CheckCriteria_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
     JGUIUtil.addComponent(check_JPanel, __CheckCriteria_JComboBox,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel("Required - may require other parameters."), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Required - may require other parameters."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value1:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value1:" ),
 		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CheckValue1_JTextField = new JTextField ( 10 );
 	__CheckValue1_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CheckValue1_JTextField,
 		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-		"Optional - minimum (or only) statistic value to check."), 
+		"Optional - minimum (or only) statistic value to check."),
 		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value2:" ), 
+
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value2:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckValue2_JTextField = new JTextField ( 10 );
     __CheckValue2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CheckValue2_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - maximum value in range, or other statistic value to check."), 
+        "Optional - maximum value in range, or other statistic value to check."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Problem type:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Problem type:" ),
 		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ProblemType_JTextField = new JTextField ( 10 );
 	__ProblemType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __ProblemType_JTextField,
 		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-		"Optional - problem type to use in output (default=Statistic-CheckCriteria)."), 
+		"Optional - problem type to use in output (default=Statistic-CheckCriteria)."),
 		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(check_JPanel,new JLabel("If criteria met?:"),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfCriteriaMet_JComboBox = new SimpleJComboBox ( false );
@@ -486,42 +486,42 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     JGUIUtil.addComponent(check_JPanel, new JLabel (
         "Optional - should warning/failure be generated (default=" + __command._Warn + ")."),
         3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check result property name:" ), 
+
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check result property name:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckResultPropertyName_JTextField = new JTextField ( 20 );
     __CheckResultPropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CheckResultPropertyName_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - name of property to set when criteria are met."), 
+        "Optional - name of property to set when criteria are met."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria met property value:" ), 
+
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria met property value:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CriteriaMetPropertyValue_JTextField = new JTextField ( 20 );
     __CriteriaMetPropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CriteriaMetPropertyValue_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - value of property to set when criteria are met."), 
+        "Optional - value of property to set when criteria are met."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria not met property value:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Criteria not met property value:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CriteriaNotMetPropertyValue_JTextField = new JTextField ( 20 );
     __CriteriaNotMetPropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CriteriaNotMetPropertyValue_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - value of property to set when criteria are met."), 
+        "Optional - value of property to set when criteria are met."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     /*
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Action:" ), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Action:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
-    List<String> actionChoices = new Vector();
+    __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit.
+    List<String> actionChoices = new ArrayList<>();
     actionChoices.add("");
     actionChoices.add(__command._Remove);
     actionChoices.add(__command._SetMissing);
@@ -531,45 +531,46 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
     __Action_JComboBox.setMaximumRowCount(actionChoices.size());
     JGUIUtil.addComponent(check_JPanel, __Action_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         */
 
-    // Panel for table output
+    // Panel for table output.
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Output", out_JPanel );
-    
+
     JGUIUtil.addComponent(out_JPanel, new JLabel (
         "The statistic that is calculated can be saved in a table containing columns for the file name and statistic value."),
         0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID for output:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID for output:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(out_JPanel, __TableID_JComboBox,
         1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JLabel(
-        "Optional - table to save the statistic."), 
+        "Optional - table to save the statistic."),
         3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table file name column:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table file name column:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableFilenameColumn_JTextField = new JTextField ( 25 );
     __TableFilenameColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __TableFilenameColumn_JTextField,
         1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(out_JPanel, new JLabel( "Required if using table - column name for file name."), 
+    JGUIUtil.addComponent(out_JPanel, new JLabel( "Required if using table - column name for file name."),
         3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableStatisticColumn_JTextField = new JTextField ( 25 );
     __TableStatisticColumn_JTextField.addKeyListener ( this );
@@ -579,17 +580,17 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
         "Required if using table - column for statistic name."),
         3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic value column:" ), 
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic value column:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableStatisticValueColumn_JTextField = new JTextField ( 25 );
     __TableStatisticValueColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __TableStatisticValueColumn_JTextField,
         1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JLabel(
-        "Required if using table - column for statistic value."), 
+        "Required if using table - column for statistic value."),
         3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -598,13 +599,13 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -625,16 +626,15 @@ private void initialize ( JFrame parent, CheckFile_Command command, List<String>
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{
+public void itemStateChanged ( ItemEvent e ) {
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -644,30 +644,31 @@ public void keyPressed ( KeyEvent event )
 		}
 	}
 	else {
-	    // Combo box...
+	    // Combo box.
 		refresh();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String InputFile = "";
     String IfNotFound = "";
     String Statistic = "";
@@ -688,7 +689,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
         InputFile = props.getValue ( "InputFile" );
 		IfNotFound = props.getValue ( "IfNotFound" );
         Statistic = props.getValue ( "Statistic" );
@@ -714,10 +715,11 @@ private void refresh ()
 		}
 		else {
             if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__IfNotFound_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+				// Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"IfNotFound parameter \"" +	IfNotFound +
@@ -725,7 +727,7 @@ private void refresh ()
 			}
 		}
         if ( Statistic == null ) {
-            // Select default...
+            // Select default.
             __Statistic_JComboBox.select ( 0 );
         }
         else {
@@ -743,7 +745,7 @@ private void refresh ()
             __SearchPattern_JTextField.setText ( SearchPattern );
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -767,7 +769,7 @@ private void refresh ()
             __TableStatisticValueColumn_JTextField.setText ( TableStatisticValueColumn );
         }
         if ( CheckCriteria == null ) {
-            // Select default...
+            // Select default.
             __CheckCriteria_JComboBox.select ( 0 );
         }
         else {
@@ -789,7 +791,7 @@ private void refresh ()
         }
         if ( __IfCriteriaMet_JComboBox != null ) {
             if ( IfCriteriaMet == null ) {
-                // Select default...
+                // Select default.
                 __IfCriteriaMet_JComboBox.select ( "" );
             }
             else {  if (    JGUIUtil.isSimpleJComboBoxItem(
@@ -817,7 +819,7 @@ private void refresh ()
         }
         /*
         if ( Action == null ) {
-            // Select default...
+            // Select default.
             __Action_JComboBox.select ( 0 );
         }
         else {
@@ -832,7 +834,7 @@ private void refresh ()
             }
         }*/
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     InputFile = __InputFile_JTextField.getText().trim();
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     Statistic = __Statistic_JComboBox.getSelected();
@@ -859,7 +861,7 @@ private void refresh ()
     props.add ( "TableFilenameColumn=" + TableFilenameColumn );
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
     props.add ( "TableStatisticValueColumn=" + TableStatisticValueColumn );
-    // Have to set in such a way that = at start of CheckCriteria does not foul up the method
+    // Have to set in such a way that = at start of CheckCriteria does not foul up the method.
     props.set ( "CheckCriteria", CheckCriteria );
     props.add ( "CheckValue1=" + CheckValue1 );
     props.add ( "CheckValue2=" + CheckValue2 );
@@ -870,7 +872,7 @@ private void refresh ()
 	props.add ( "CriteriaNotMetPropertyValue=" + CriteriaNotMetPropertyValue );
 	//props.add ( "Action=" + Action );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
 		if ( (InputFile != null) && !InputFile.isEmpty() ) {
 			__path_JButton.setEnabled ( true );
@@ -894,17 +896,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -913,15 +915,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,8 +62,8 @@ public class CreateNetworkFromTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea = null;
 private JTextField __NetworkID_JTextField = null;
 private JTextField __NetworkName_JTextField = null;
@@ -95,8 +95,8 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public CreateNetworkFromTable_JDialog ( JFrame parent, CreateNetworkFromTable_Command command, List<String> tableIDChoices )
-{	super(parent, true);
+public CreateNetworkFromTable_JDialog ( JFrame parent, CreateNetworkFromTable_Command command, List<String> tableIDChoices ) {
+	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
 
@@ -104,8 +104,8 @@ public CreateNetworkFromTable_JDialog ( JFrame parent, CreateNetworkFromTable_Co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
     if ( o == __cancel_JButton ) {
 		response ( false );
@@ -124,11 +124,11 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String NetworkID = __NetworkID_JTextField.getText().trim();
 	String NetworkName = __NetworkName_JTextField.getText().trim();
@@ -205,7 +205,7 @@ private void checkInput ()
         props.set ( "NodeFlowThroughTypes", NodeFlowThroughTypes );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -216,11 +216,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String NetworkID = __NetworkID_JTextField.getText().trim();
+private void commitEdits () {
+	String NetworkID = __NetworkID_JTextField.getText().trim();
 	String NetworkName = __NetworkName_JTextField.getText().trim();
 	String DefaultDownstreamNodeID = __DefaultDownstreamNodeID_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
@@ -263,14 +263,14 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, CreateNetworkFromTable_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, CreateNetworkFromTable_Command command, List<String> tableIDChoices ) {
+	__command = command;
 
 	addWindowListener(this);
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
@@ -280,7 +280,7 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates a node network from a table.  Each network node has one \"downstream\" node but can have multiple \"upstream\" nodes."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -304,22 +304,22 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
-    // Tabbed pane for parameters
-	 
+
+    // Tabbed pane for parameters.
+
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel to specify general data
-    
+
+    // Panel to specify general data.
+
     JPanel gen_JPanel = new JPanel ();
     gen_JPanel.setLayout( new GridBagLayout() );
     int yGen = -1;
     JGUIUtil.addComponent(main_JPanel, gen_JPanel,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     main_JTabbedPane.addTab ( "General", gen_JPanel );
-    
+
     JGUIUtil.addComponent(gen_JPanel, new JLabel (
         "Specify general information about the network that is created."),
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -328,8 +328,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(gen_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Network ID:"), 
+
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Network ID:"),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NetworkID_JTextField = new JTextField (15);
     __NetworkID_JTextField.addKeyListener ( this );
@@ -337,8 +337,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(gen_JPanel, new JLabel ("Required - network identifier."),
         3, yGen, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Network name:"), 
+
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Network name:"),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NetworkName_JTextField = new JTextField (10);
     __NetworkName_JTextField.addKeyListener ( this );
@@ -346,8 +346,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(gen_JPanel, new JLabel ("Required - network name."),
         3, yGen, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Default downstream node ID:"), 
+
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Default downstream node ID:"),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultDownstreamNodeID_JTextField = new JTextField (15);
     __DefaultDownstreamNodeID_JTextField.addKeyListener ( this );
@@ -355,8 +355,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(gen_JPanel, new JLabel ("Required - needed to allow network navigation."),
         3, yGen, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel to map table columns to network definition
+
+    // Panel to map table columns to network definition.
 
     JPanel table_JPanel = new JPanel ();
     table_JPanel.setLayout( new GridBagLayout() );
@@ -378,20 +378,21 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table containing network node information."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table containing network node information."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node ID column:"), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node ID column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeIDColumn_JTextField = new JTextField (10);
     __NodeIDColumn_JTextField.addKeyListener ( this );
@@ -399,8 +400,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for node IDs."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node name column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node name column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeNameColumn_JTextField = new JTextField (10);
     __NodeNameColumn_JTextField.addKeyListener ( this );
@@ -408,8 +409,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - column name for node names."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node type column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node type column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeTypeColumn_JTextField = new JTextField (10);
     __NodeTypeColumn_JTextField.addKeyListener ( this );
@@ -417,8 +418,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for node types."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node group column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node group column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeGroupColumn_JTextField = new JTextField (10);
     __NodeGroupColumn_JTextField.addKeyListener ( this );
@@ -426,8 +427,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - for example identifier for stream or larger basin."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node distance column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node distance column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeDistanceColumn_JTextField = new JTextField (10);
     __NodeDistanceColumn_JTextField.addKeyListener ( this );
@@ -435,8 +436,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires distance."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node weight column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node weight column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeWeightColumn_JTextField = new JTextField (10);
     __NodeWeightColumn_JTextField.addKeyListener ( this );
@@ -444,8 +445,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires weight."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Downstream node ID column:"), 
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Downstream node ID column:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DownstreamNodeIDColumn_JTextField = new JTextField (10);
     __DownstreamNodeIDColumn_JTextField.addKeyListener ( this );
@@ -453,7 +454,7 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for downstream node IDs."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel nodeType_JPanel = new JPanel ();
     nodeType_JPanel.setLayout( new GridBagLayout() );
     int yNodeType = -1;
@@ -482,7 +483,7 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
     JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that add:"), 
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that add:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeAddTypes_JTextField = new JTextField (10);
     __NodeAddTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -491,8 +492,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that add."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that add flow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that add flow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeAddDataTypes_JTextField = new JTextField (10);
     __NodeAddDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -501,11 +502,11 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that add."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that subtract flow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that subtract flow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeSubtractTypes_JTextField = new JTextField (10);
     __NodeSubtractTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -514,8 +515,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that subtract."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that subtract:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that subtract:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeSubtractDataTypes_JTextField = new JTextField (10);
     __NodeSubtractDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -524,11 +525,11 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that subtract."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that set outflow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that set outflow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeOutflowTypes_JTextField = new JTextField (10);
     __NodeOutflowTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -537,8 +538,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that set outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Defalt node time series data types that set outflow:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Defalt node time series data types that set outflow:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeOutflowDataTypes_JTextField = new JTextField (10);
     __NodeOutflowDataTypes_JTextField.setToolTipText("Separate data types with commas.");
@@ -547,11 +548,11 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that set outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL),
             0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    
-    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types with no change:"), 
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types with no change:"),
         0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeFlowThroughTypes_JTextField = new JTextField (10);
     __NodeFlowThroughTypes_JTextField.setToolTipText("Separate node types with commas.");
@@ -560,8 +561,8 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
         1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types where inflow=outflow."),
         3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (7,60);
 	__command_JTextArea.setLineWrap ( true );
@@ -570,15 +571,15 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South JPanel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add (__ok_JButton);
@@ -591,7 +592,7 @@ private void initialize ( JFrame parent, CreateNetworkFromTable_Command command,
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -623,21 +624,22 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String NetworkID = "";
 	String NetworkName = "";
 	String DefaultDownstreamNodeID = "";
@@ -687,7 +689,7 @@ private void refresh ()
             __DefaultDownstreamNodeID_JTextField.setText ( DefaultDownstreamNodeID );
         }
         if ( TableID == null ) {
-            // Select default...
+            // Select default.
             __TableID_JComboBox.select ( 0 );
         }
         else {
@@ -744,7 +746,7 @@ private void refresh ()
             __NodeFlowThroughTypes_JTextField.setText ( NodeFlowThroughTypes );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	NetworkID = __NetworkID_JTextField.getText().trim();
 	NetworkName = __NetworkName_JTextField.getText().trim();
 	DefaultDownstreamNodeID = __DefaultDownstreamNodeID_JTextField.getText().trim();
@@ -789,35 +791,47 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+// The following methods are all necessary because this class implements WindowListener.
+
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

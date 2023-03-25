@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ private JTextField __StderrFile_JTextField = null;
 private SimpleJComboBox __OutputCheckTableID_JComboBox = null;
 private JTextField __OutputCheckWarningCountProperty_JTextField = null;
 private JTextField __OutputCheckFailureCountProperty_JTextField = null;
-private boolean __error_wait = false; // Is there an error waiting to be cleared up
+private boolean __error_wait = false; // Is there an error waiting to be cleared up.
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 private String __working_dir = null;
@@ -109,8 +109,8 @@ Command editor constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public RunProgram_JDialog ( JFrame parent, RunProgram_Command command, List<String> tableIDChoices )
-{   super(parent, true);
+public RunProgram_JDialog ( JFrame parent, RunProgram_Command command, List<String> tableIDChoices ) {
+    super(parent, true);
     initialize ( parent, command, tableIDChoices );
 }
 
@@ -118,8 +118,8 @@ public RunProgram_JDialog ( JFrame parent, RunProgram_Command command, List<Stri
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 	String routine = "RunProgram";
 
 	if ( o == __browseOut_JButton ) {
@@ -134,16 +134,16 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle("Select Standard Output File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "Standard Output File");
 		fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -169,16 +169,16 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle("Select Standard Error File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "Standard Error File");
 		fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -259,11 +259,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String CommandLine = __CommandLine_JTextArea.getText().trim();
     String Program = __Program_JTextField.getText().trim();
@@ -336,7 +336,7 @@ private void checkInput ()
         props.set ( "OutputCheckTableID", OutputCheckTableID );
     }
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -346,11 +346,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String CommandLine = __CommandLine_JTextArea.getText().trim();
+private void commitEdits () {
+    String CommandLine = __CommandLine_JTextArea.getText().trim();
     String Program = __Program_JTextField.getText().trim();
     String [] ProgramArg = new String[__ProgramArg_JTextField.length];
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
@@ -394,8 +394,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, RunProgram_Command command, List<String> tableIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, RunProgram_Command command, List<String> tableIDChoices ) {
+	__command = command;
 	__parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -404,7 +404,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -429,12 +429,12 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for full command
+
+    // Panel for full command.
     int yCommand = -1;
     JPanel command_JPanel = new JPanel();
     command_JPanel.setLayout( new GridBagLayout() );
@@ -459,7 +459,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(command_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yCommand, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(command_JPanel, new JLabel ( "Command to run (with arguments):" ), 
+    JGUIUtil.addComponent(command_JPanel, new JLabel ( "Command to run (with arguments):" ),
 		0, ++yCommand, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CommandLine_JTextArea = new JTextArea ( 4, 50 );
 	__CommandLine_JTextArea.setToolTipText("Specify the full command line string, can use ${Property} notation.");
@@ -469,8 +469,8 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 	__CommandLine_JTextArea.addKeyListener ( this );
         JGUIUtil.addComponent(command_JPanel, new JScrollPane(__CommandLine_JTextArea),
 		1, yCommand, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    // Panel for command specified with parts
+
+    // Panel for command specified with parts.
     int yParts = -1;
     JPanel parts_JPanel = new JPanel();
     parts_JPanel.setLayout( new GridBagLayout() );
@@ -484,8 +484,8 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         0, ++yParts, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(parts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yParts, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program to run:" ), 
+
+    JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program to run:" ),
         0, ++yParts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Program_JTextField = new JTextField ( "", 40 );
     __Program_JTextField.setToolTipText("Specify the program to run, can use ${Property} notation.");
@@ -493,23 +493,23 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         JGUIUtil.addComponent(parts_JPanel, __Program_JTextField,
         1, yParts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(parts_JPanel, new JLabel(
-        "Required - if full command line is not specified."), 
+        "Required - if full command line is not specified."),
         3, yParts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __ProgramArg_JTextField = new JTextField[__command._ProgramArg_SIZE];
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
-        JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program argument " + (i + 1) + ":" ), 
+        JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program argument " + (i + 1) + ":" ),
             0, ++yParts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __ProgramArg_JTextField[i] = new JTextField ( "", 40 );
         __ProgramArg_JTextField[i].setToolTipText("Specify the program command-line parameters, can use ${Property} notation.");
         __ProgramArg_JTextField[i].addKeyListener ( this );
         JGUIUtil.addComponent(parts_JPanel, __ProgramArg_JTextField[i],
             1, yParts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(parts_JPanel, new JLabel("Optional - as needed if Program is specified."), 
+        JGUIUtil.addComponent(parts_JPanel, new JLabel("Optional - as needed if Program is specified."),
             3, yParts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
-    
-    // Panel for command shell
+
+    // Panel for command shell.
     int yShell = -1;
     JPanel shell_JPanel = new JPanel();
     shell_JPanel.setLayout( new GridBagLayout() );
@@ -529,8 +529,8 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         0, ++yShell, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(shell_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yShell, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(shell_JPanel, new JLabel ( "Use command shell:" ), 
+
+    JGUIUtil.addComponent(shell_JPanel, new JLabel ( "Use command shell:" ),
         0, ++yShell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UseCommandShell_JComboBox = new SimpleJComboBox ( false );
     __UseCommandShell_JComboBox.add ( "" );
@@ -541,20 +541,20 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         JGUIUtil.addComponent(shell_JPanel, __UseCommandShell_JComboBox,
         1, yShell, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(shell_JPanel, new JLabel(
-        "Optional - use command shell (default="+ __command._True + ")."), 
+        "Optional - use command shell (default="+ __command._True + ")."),
         3, yShell, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(shell_JPanel, new JLabel ( "Command shell:" ), 
+
+    JGUIUtil.addComponent(shell_JPanel, new JLabel ( "Command shell:" ),
 		0, ++yShell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CommandShell_JTextField = new JTextField ( "", 10 );
 	__CommandShell_JTextField.setToolTipText("Specify the program command shell program, can use ${Property} notation.");
 	__CommandShell_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(shell_JPanel, __CommandShell_JTextField,
 		1, yShell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(shell_JPanel, new JLabel( "Optional - shell program to run (default=depends on system)."), 
+    JGUIUtil.addComponent(shell_JPanel, new JLabel( "Optional - shell program to run (default=depends on system)."),
         3, yShell, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for environment
+    // Panel for environment.
     int yEnv = -1;
     JPanel env_JPanel = new JPanel();
     env_JPanel.setLayout( new GridBagLayout() );
@@ -582,8 +582,8 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         3, yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(env_JPanel, new SimpleJButton ("Edit","EditEnvVars",this),
         3, ++yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for command timeout
+
+    // Panel for command timeout.
     int yTimeout = -1;
     JPanel timeout_JPanel = new JPanel();
     timeout_JPanel.setLayout( new GridBagLayout() );
@@ -604,16 +604,16 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(timeout_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTimeout, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(timeout_JPanel, new JLabel ( "Timeout (seconds):" ), 
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel ( "Timeout (seconds):" ),
 		0, ++yTimeout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Timeout_JTextField = new JTextField ( "", 10 );
 	__Timeout_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(timeout_JPanel, __Timeout_JTextField,
 		1, yTimeout, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(timeout_JPanel, new JLabel( "Optional - default is no timeout."), 
+    JGUIUtil.addComponent(timeout_JPanel, new JLabel( "Optional - default is no timeout."),
         3, yTimeout, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Panel for exit code
+
+    // Panel for exit code.
     int yExit = -1;
     JPanel exit_JPanel = new JPanel();
     exit_JPanel.setLayout( new GridBagLayout() );
@@ -636,7 +636,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNonZeroExitCode_JComboBox = new SimpleJComboBox ( false );
 	List<String> notFoundChoices = new ArrayList<>();
-	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
 	notFoundChoices.add ( __command._Fail );
@@ -646,19 +646,19 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(exit_JPanel, __IfNonZeroExitCode_JComboBox,
 		1, yExit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JLabel(
-		"Optional - action if non-zero exit code (default=" + __command._Warn + ")"), 
+		"Optional - action if non-zero exit code (default=" + __command._Warn + ")"),
 		3, yExit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Exit status indicator:" ), 
+
+    JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Exit status indicator:" ),
         0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExitStatusIndicator_JTextField = new JTextField ( "", 10 );
     __ExitStatusIndicator_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(exit_JPanel, __ExitStatusIndicator_JTextField,
         1, yExit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JLabel(
-        "Optional - output string to indicate status (default=use process exit status)."), 
+        "Optional - output string to indicate status (default=use process exit status)."),
         3, yExit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(exit_JPanel, new JLabel("Exit code property:"),
         0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExitCodeProperty_JTextField = new JTextField ( "", 20 );
@@ -669,7 +669,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Optional - processor property to set as program exit code." ),
         3, yExit, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for stdout/stderr output files
+    // Panel for stdout/stderr output files.
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
@@ -683,13 +683,13 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yOut, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard output file:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard output file:" ),
 		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__StdoutFile_JTextField = new JTextField ( 50 );
 	__StdoutFile_JTextField.setToolTipText("Optional - specify the filename for standard output, can use ${Property} notation");
 	__StdoutFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel StdoutFile_JPanel = new JPanel();
 	StdoutFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(StdoutFile_JPanel, __StdoutFile_JTextField,
@@ -699,7 +699,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(StdoutFile_JPanel, __browseOut_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathOut_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(StdoutFile_JPanel, __pathOut_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -717,12 +717,12 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Optional - processor property to set as program output." ),
         3, yOut, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard error file:" ), 
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Standard error file:" ),
 		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__StderrFile_JTextField = new JTextField ( 50 );
 	__StderrFile_JTextField.setToolTipText("Optional - specify the filename for standard error, can use ${Property} notation");
 	__StderrFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel StderrFile_JPanel = new JPanel();
 	StderrFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(StderrFile_JPanel, __StderrFile_JTextField,
@@ -732,15 +732,15 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(StderrFile_JPanel, __browseErr_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathErr_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(StderrFile_JPanel, __pathErr_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(out_JPanel, StderrFile_JPanel,
 		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for output checks
+
+    // Panel for output checks.
     int yCheck = -1;
     JPanel check_JPanel = new JPanel();
     check_JPanel.setLayout( new GridBagLayout() );
@@ -772,19 +772,20 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Output check table ID:" ), 
+
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Output check table ID:" ),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputCheckTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __OutputCheckTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __OutputCheckTableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
+    tableIDChoices.add(0,""); // Add blank to ignore table.
     __OutputCheckTableID_JComboBox.setData ( tableIDChoices );
     __OutputCheckTableID_JComboBox.addItemListener ( this );
+    __OutputCheckTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __OutputCheckTableID_JComboBox,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel( "Optional - table with output check information."), 
+    JGUIUtil.addComponent(check_JPanel, new JLabel( "Optional - table with output check information."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(check_JPanel, new JLabel("Output check warning count property:"),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputCheckWarningCountProperty_JTextField = new JTextField ( "", 20 );
@@ -794,7 +795,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Optional - processor property to set as warning count." ),
         3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(check_JPanel, new JLabel("Output check failure count property:"),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputCheckFailureCountProperty_JTextField = new JTextField ( "", 20 );
@@ -805,7 +806,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Optional - processor property to set as failure count." ),
         3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __command_JTextArea = new JTextArea ( 4, 60 );
         __command_JTextArea.setLineWrap ( true );
@@ -815,13 +816,13 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -844,16 +845,15 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged(ItemEvent event)
-{
+public void itemStateChanged(ItemEvent event) {
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -864,25 +864,25 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{
+public void keyReleased ( KeyEvent event ) {
     refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String CommandLine = "";
     String Program = "";
     String [] ProgramArg = new String[__ProgramArg_JTextField.length];
@@ -930,13 +930,13 @@ private void refresh ()
         for ( int i = 0; i < ProgramArg.length; i++ ) {
             if ( ProgramArg[i] != null ) {
                 __ProgramArg_JTextField[i].setText ( ProgramArg[i] );
-            }  
+            }
         }
         if ( UseCommandShell == null ) {
-            // Select default...
+            // Select default.
             __UseCommandShell_JComboBox.select ( 0 );
         }
-        else {  
+        else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __UseCommandShell_JComboBox,
                 UseCommandShell, JGUIUtil.NONE, null,null)){
                 __UseCommandShell_JComboBox.select ( UseCommandShell );
@@ -958,10 +958,10 @@ private void refresh ()
             __Timeout_JTextField.setText ( Timeout );
         }
         if ( IfNonZeroExitCode == null ) {
-            // Select default...
+            // Select default.
             __IfNonZeroExitCode_JComboBox.select ( 0 );
         }
-        else {  
+        else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __IfNonZeroExitCode_JComboBox,
                 IfNonZeroExitCode, JGUIUtil.NONE, null,null)){
                 __IfNonZeroExitCode_JComboBox.select ( IfNonZeroExitCode );
@@ -1010,7 +1010,7 @@ private void refresh ()
             __OutputCheckFailureCountProperty_JTextField.setText ( OutputCheckFailureCountProperty );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     CommandLine = __CommandLine_JTextArea.getText();
     Program = __Program_JTextField.getText();
     for ( int i = 0; i < ProgramArg.length; i++ ) {
@@ -1049,7 +1049,7 @@ private void refresh ()
     props.add ( "OutputCheckWarningCountProperty=" + OutputCheckWarningCountProperty );
     props.add ( "OutputCheckFailureCountProperty=" + OutputCheckFailureCountProperty );
     __command_JTextArea.setText( __command.toString(props).trim() );
-	// Check the path and determine what the label on the path button should be...
+	// Check the path and determine what the label on the path button should be.
 	if ( __pathOut_JButton != null ) {
 		if ( (StdoutFile != null) && !StdoutFile.isEmpty() ) {
 			__pathOut_JButton.setEnabled ( true );
@@ -1090,17 +1090,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{   __ok = ok;
+public void response ( boolean ok ) {
+    __ok = ok;
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -1109,15 +1109,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

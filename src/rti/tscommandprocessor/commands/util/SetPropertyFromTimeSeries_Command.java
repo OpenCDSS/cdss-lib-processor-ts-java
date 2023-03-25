@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ private Prop __discovery_Prop = null;
 /**
 Constructor.
 */
-public SetPropertyFromTimeSeries_Command ()
-{	super();
+public SetPropertyFromTimeSeries_Command () {
+	super();
 	setCommandName ( "SetPropertyFromTimeSeries" );
 }
 
@@ -78,8 +78,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String PropertyName = parameters.getValue ( "PropertyName" );
+throws InvalidCommandParameterException {
+	String PropertyName = parameters.getValue ( "PropertyName" );
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String warning = "";
     String message;
@@ -95,7 +95,7 @@ throws InvalidCommandParameterException
                         message, "Provide a property name." ) );
     }
     else {
-        // Check for allowed characters...
+        // Check for allowed characters.
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
             message = "The property name cannot contains invalid characters.";
             warning += "\n" + message;
@@ -113,8 +113,8 @@ throws InvalidCommandParameterException
                 message, "Provide a property value." ) );
     }
     
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(5);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -135,16 +135,15 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetPropertyFromTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the property defined in discovery phase.
 */
-private Prop getDiscoveryProp ()
-{
+private Prop getDiscoveryProp () {
     return __discovery_Prop;
 }
 
@@ -153,16 +152,15 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
         return null;
     }
     Prop prop = new Prop();
-    // Check for TS request or class that matches the data...
+    // Check for TS request or class that matches the data.
     if ( c == prop.getClass() ) {
-        List<T> v = new ArrayList<T>(1);
+        List<T> v = new ArrayList<>(1);
         v.add ( (T)discovery_Prop );
         return v;
     }
@@ -178,8 +176,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {   
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -190,8 +187,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -204,14 +200,14 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3;  // Level for non-use messages for log file.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
@@ -223,7 +219,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -244,9 +240,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 	String PropertyName = parameters.getValue ( "PropertyName" );
-	String PropertyValue = parameters.getValue ( "PropertyValue" ); // Expanded below in run mode
+	String PropertyValue = parameters.getValue ( "PropertyValue" ); // Expanded below in run mode.
 
-	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -317,7 +313,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Command parameter data has errors.  Unable to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -325,7 +321,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandException ( message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
 	TS ts = null;
 	try {
@@ -347,16 +343,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 			ts = (TS)o_ts;
 	
-	    	// Set the property in the processor
+	    	// Set the property in the processor:
 			// - TODO smalers 2020-11-01 this always returns a string but could return a non-string property if direct property look-up
 			Object Property_Object = null;
 			if ( commandPhase == CommandPhaseType.RUN ) {
 				Property_Object = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
 						processor, ts, PropertyValue, status, commandPhase);
-				// TODO smalers 2020-11-01 added this check to help with typos, but might need a command parameter like IfPropertyNotFound
+				// TODO smalers 2020-11-01 added this check to help with typos, but might need a command parameter like IfPropertyNotFound.
 				if ( (Property_Object != null) && (Property_Object instanceof String) &&
 					(((String)Property_Object).indexOf("${") >= 0) ) {
-					// Some property did not expand - still seeing ${} in result
+					// Some property did not expand - still seeing ${} in result.
 					message = "Property was not found.  Result is: " + Property_Object;
 					Message.printWarning(warning_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -372,7 +368,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
 	    	try {
 	            processor.processRequest( "SetProperty", request_params);
-	            // Set the property value in discovery mode
+	            // Set the property value in discovery mode.
 	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
 	            }
@@ -414,8 +410,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the property defined in discovery phase.
 @param prop Property set during discovery phase.
 */
-private void setDiscoveryProp ( Prop prop )
-{
+private void setDiscoveryProp ( Prop prop ) {
     __discovery_Prop = prop;
 }
 

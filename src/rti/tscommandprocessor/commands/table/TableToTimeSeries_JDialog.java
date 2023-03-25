@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -132,8 +132,8 @@ public TableToTimeSeries_JDialog ( JFrame parent, TableToTimeSeries_Command comm
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 try{
     if ( o == __cancel_JButton ) {
 		response(false);
@@ -159,8 +159,8 @@ try{
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -168,8 +168,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -177,12 +177,12 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
-// ...End event handlers for DocumentListener
+// ...End event handlers for DocumentListener.
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -192,8 +192,8 @@ private void checkGUIState () {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput () {
 	// Put together a list of parameters to check.
@@ -232,9 +232,9 @@ private void checkInput () {
 	String BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
-	
+
 	__error_wait = false;
-	
+
 	if (TableID.length() > 0) {
 		props.set("TableID", TableID);
 	}
@@ -340,7 +340,7 @@ private void checkInput () {
 	try {
 	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
-	} 
+	}
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
 	    Message.printWarning(3, "CheckInput", e);
@@ -349,8 +349,8 @@ private void checkInput () {
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits() {
     String TableID = __TableID_JComboBox.getSelected();
@@ -441,33 +441,34 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
-	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Create 1+ time series from a table." +
-        "  The table can contain one column per time series, a single column for all time series, or a two-dimensional time block." ), 
+        "  The table can contain one column per time series, a single column for all time series, or a two-dimensional time block." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The column name(s), date/time column, value column(s), and Location ID(s) columns can use the notation " +
-        "TC[start:stop] to use column names." ), 
+        "TC[start:stop] to use column names." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "For examples: LocationID=\"TC[2:]\" defines the location IDs as column names 2, 3, ... and " +
-        "LocationID=\"TC[1:4]\" indicates column names 1 through 4." ), 
+        "LocationID=\"TC[1:4]\" indicates column names 1 through 4." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
@@ -481,7 +482,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "Optional - comma-separated numbers (1+) and ranges (e.g., 1,3-7) (default=none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeColumn_JTextField = new JTextField (25);
@@ -491,7 +492,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - if date and time are in the same column (can use \"TC[N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
     JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -504,7 +505,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - date/time format if converting string (default=auto-detect)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateColumn_JTextField = new JTextField (25);
@@ -514,7 +515,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - if date and time are in separate columns (can use \"TC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Time column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeColumn_JTextField = new JTextField (25);
@@ -524,7 +525,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - if date and time are in separate columns (can use \"TC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     __location_JTabbedPane = new JTabbedPane ();
     __location_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -537,15 +538,15 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     int yMult = -1;
 
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
-        "Example table input (first row shown is column headings):" ), 
+        "Example table input (first row shown is column headings):" ),
         0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
         "<html><pre>| DateTime | ID1_Value1 | ID1_Value2 | ID1_Value2 | ID2_Value1 | ID2_Value2 |<br>" +
-                   "| 2012-01  |        1.0 |       37.5 |      -12.5 |            |       77.3 |</pre></html>" ), 
+                   "| 2012-01  |        1.0 |       37.5 |      -12.5 |            |       77.3 |</pre></html>" ),
         0, ++yMult, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
         "Because time series values are in multiple columns, the location IDs must be specified " +
-        "(may extract from column headings in the future)." ), 
+        "(may extract from column headings in the future)." ),
         0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
         0, ++yMult, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -565,11 +566,11 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Values are expected to be in a single column, properties can be" +
-        " read from columns (or use \"TSID and Alias\" tab below).  Example table input (first row shown is column headings):" ), 
+        " read from columns (or use \"TSID and Alias\" tab below).  Example table input (first row shown is column headings):" ),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "<html><pre>| Date     | LocationTypes | LocationIDs | Data Sources | Data Types | Scenarios | Data Units |<br>" +
-                   "| 2012-01  |          Gage |    Station1 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ), 
+                   "| 2012-01  |          Gage |    Station1 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ),
         0, ++ySingle, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -580,7 +581,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for location type if not provided with LocationType parameter below"),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationColumn_JTextField = new JTextField (20);
@@ -590,7 +591,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - column name for location identifier."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data source column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSourceColumn_JTextField = new JTextField (20);
@@ -600,7 +601,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for data source if not provided with DataSource below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data type column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataTypeColumn_JTextField = new JTextField (20);
@@ -610,7 +611,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for data type if not provided with DataType below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Scenario column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ScenarioColumn_JTextField = new JTextField (20);
@@ -620,7 +621,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for scenario if not provided as Scenario below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Sequence ID column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceIDColumn_JTextField = new JTextField (20);
@@ -630,7 +631,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name sequence ID if not provided SequenceID below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data units column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UnitsColumn_JTextField = new JTextField (20);
@@ -640,7 +641,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for units, if not provided as Units below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel block_JPanel = new JPanel();
     block_JPanel.setLayout(new GridBagLayout());
     __location_JTabbedPane.addTab ( "Block of Values (data matrix)", block_JPanel );
@@ -648,28 +649,28 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(block_JPanel, new JLabel (
         "Values for a single time series are expected to be in a block, for example as shown below.  "
-        + "Configure data mapping using the \"Block Data\" tab below." ), 
+        + "Configure data mapping using the \"Block Data\" tab below." ),
         0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
-        "For a single time series, use the \"Multiple Data Value Columns\" tab to specify the location ID." ), 
+        "For a single time series, use the \"Multiple Data Value Columns\" tab to specify the location ID." ),
         0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
         "<html><pre>| Year     | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |<br>" +
                    "| 2012     | 1.0 | 3.3 | 1.5 | 4.5 | 4.6 | 3.0 | 2.5 |     | 2.3 | 1.0 | 0.5 | 0.4 |</pre></html>" ),
         0, ++yBlock, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
-        "For multiple time series where the ID is in a column, use the \"Single Data Value Column\" tab to specify the location ID column." ), 
+        "For multiple time series where the ID is in a column, use the \"Single Data Value Column\" tab to specify the location ID column." ),
         0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
         "<html><pre>| Location ID | Year     | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |<br>" +
                    "| Station1    | 2012     | 1.0 | 3.3 | 1.5 | 4.5 | 4.6 | 3.0 | 2.5 |     | 2.3 | 1.0 | 0.5 | 0.4 |<br>" +
-    		       "| Station2    | 2012     | 2.0 | 6.3 | 4.5 | 1.5 | 2.6 | 2.0 | 1.5 | 5.6 | 5.3 | 4.0 | 3.5 | 2.4 |</pre></html>" ), 
+    		       "| Station2    | 2012     | 2.0 | 6.3 | 4.5 | 1.5 | 2.6 | 2.0 | 1.5 | 5.6 | 5.3 | 4.0 | 3.5 | 2.4 |</pre></html>" ),
         0, ++yBlock, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JPanel tsid_JPanel = new JPanel();
     tsid_JPanel.setLayout(new GridBagLayout());
     main_JTabbedPane.addTab ( "TSID and Alias", tsid_JPanel );
@@ -677,11 +678,11 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "These parameters specify properties that are used for the time series identifier (TSID), " +
-        "if not specified in the above parameters, and the alias." ), 
+        "if not specified in the above parameters, and the alias." ),
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Location type(s):"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationType_JTextField = new JTextField (10);
@@ -691,7 +692,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - location types for each value column, separated by commas (default=no location type)."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Data source(s):"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSource_JTextField = new JTextField (10);
@@ -701,7 +702,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - data source(s)/provider(s) for the data, comma-separated (default=blank)."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Data type(s):"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataType_JTextField = new JTextField (10);
@@ -712,7 +713,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - data type for each value column, comma-separated (default=value column name(s))."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel( "Data interval:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
@@ -728,14 +729,14 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     //intervals.add("IrregSecond");
     //intervals.add("IrregHsecond");
     __Interval_JComboBox.setData ( intervals );
-    // Select a default...
+    // Select a default.
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(tsid_JPanel, __Interval_JComboBox,
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Required - data interval for time series."),
         3, yTsid, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel( "Irregular interval precision:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularIntervalPrecision_JComboBox = new SimpleJComboBox ( false );
@@ -752,14 +753,14 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     intervals2.add("" + TimeInterval.getName(TimeInterval.MICROSECOND, 0));
     intervals2.add("" + TimeInterval.getName(TimeInterval.NANOSECOND, 0));
     __IrregularIntervalPrecision_JComboBox.setData ( intervals2 );
-    // Select a default...
+    // Select a default.
     __IrregularIntervalPrecision_JComboBox.select ( 0 );
     __IrregularIntervalPrecision_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(tsid_JPanel, __IrregularIntervalPrecision_JComboBox,
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional - precision for irregular interval date/time."),
         3, yTsid, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Scenario:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Scenario_JTextField = new JTextField (10);
@@ -769,7 +770,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - scenario(s) for the time series, comma-separated (default=blank)."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Sequence ID:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceID_JTextField = new JTextField (10);
@@ -780,7 +781,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - sequence ID(s) for the time series, comma-separated (default=blank)."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(tsid_JPanel, new JLabel("Alias to assign:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -791,7 +792,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, yTsid, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel data_JPanel = new JPanel();
     data_JPanel.setLayout(new GridBagLayout());
     main_JTabbedPane.addTab ( "Data", data_JPanel );
@@ -799,11 +800,11 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "These parameters indicate the columns for time series data and flag values, and allow specifying " +
-        "data units and missing value in the table (set to NaN internally)." ), 
+        "data units and missing value in the table (set to NaN internally)." ),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Value column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new JTextField (20);
@@ -813,7 +814,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Required - specify column names for time series values, comma-separated (can use \"TC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Flag column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagColumn_JTextField = new JTextField (20);
@@ -823,7 +824,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - specify column names for time series flags, comma-separated (can use \"TC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(data_JPanel, new JLabel("Units of data:"),
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 10 );
@@ -833,7 +834,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - data units, comma-separated (default=blank, no units)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
+
     JGUIUtil.addComponent(data_JPanel, new JLabel("Precision of data:"),
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( "", 10 );
@@ -844,7 +845,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - data precision for output, comma-separated (default=from units)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
+
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Missing value(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField (10);
@@ -854,12 +855,12 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - missing value indicator(s) for table data, comma-separated (default=blank values)."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Handle duplicates how?:" ), 
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Handle duplicates how?:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __HandleDuplicatesHow_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __HandleDuplicatesHow_JComboBox = new SimpleJComboBox ( 12, false );
     List<String> choices = new ArrayList<>(5);
-    choices.add(""); // Add blank to ignore table
+    choices.add(""); // Add blank to ignore table.
     choices.add("" + HandleDuplicatesHowType.ADD);
     choices.add("" + HandleDuplicatesHowType.USE_FIRST_NONMISSING);
     choices.add("" + HandleDuplicatesHowType.USE_LAST);
@@ -869,26 +870,26 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, __HandleDuplicatesHow_JComboBox,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel( "Optional - how to handle duplicate dates (default=" +
-        __command._UseLast + ")."), 
+        __command._UseLast + ")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JPanel blockData_JPanel = new JPanel();
     blockData_JPanel.setLayout(new GridBagLayout());
     main_JTabbedPane.addTab ( "Block Data", blockData_JPanel );
     int yBlockData = -1;
 
     JGUIUtil.addComponent(blockData_JPanel, new JLabel (
-        "These parameters indicate the layout of a two-dimentional block of data (see \"Block of Values\" tab above)." ), 
+        "These parameters indicate the layout of a two-dimentional block of data (see \"Block of Values\" tab above)." ),
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel (
         "Specify the first data value column using \"Value column(s)\" under the \"Data\" tab.  The year type will be used to adjust dates." ),
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel (
-        "Specify columns to use for metadata or supply constant values." ), 
+        "Specify columns to use for metadata or supply constant values." ),
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout:"),
         0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BlockLayout_JComboBox = new SimpleJComboBox ( false );
@@ -901,7 +902,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Optional - indicates table contents use block layout."),
         3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout columns:"),
         0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BlockLayoutColumns_JComboBox = new SimpleJComboBox ( false );
@@ -915,7 +916,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Required for block layout - time slice of each block column."),
         3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout rows:"),
         0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BlockLayoutRows_JComboBox = new SimpleJComboBox ( false );
@@ -927,8 +928,8 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Required for block layout - time slice of each block row."),
         3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Block output year type:" ), 
+
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Block output year type:" ),
 		0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__BlockOutputYearType_JComboBox = new SimpleJComboBox ( false );
 	// Only include types that have been tested for all output.
@@ -942,19 +943,19 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 		1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Optional - block output year type (default=" + YearType.CALENDAR + ")."),
         3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JPanel period_JPanel = new JPanel();
     period_JPanel.setLayout(new GridBagLayout());
     main_JTabbedPane.addTab ( "Period", period_JPanel );
     int yPeriod = -1;
-    
+
     JGUIUtil.addComponent(period_JPanel, new JLabel (
-        "These parameters specify the input period to process.  All table data outside of the period are ignored." ), 
+        "These parameters specify the input period to process.  All table data outside of the period are ignored." ),
         0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(period_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(period_JPanel, new JLabel ("Input start:"), 
+
+    JGUIUtil.addComponent(period_JPanel, new JLabel ("Input start:"),
         0, ++yPeriod, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
@@ -964,7 +965,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(period_JPanel, new JLabel ( "Optional - overrides the global input start."),
         3, yPeriod, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Input end:"),
         0, ++yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
@@ -978,7 +979,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(4, 55);
 	__Command_JTextArea.setLineWrap ( true );
-	__Command_JTextArea.setWrapStyleWord ( true );	
+	__Command_JTextArea.setWrapStyleWord ( true );
 	__Command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -989,7 +990,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -1014,8 +1015,8 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{   checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -1055,8 +1056,8 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh()
-{   String routine = getClass().getSimpleName() + ".refresh", message;
+private void refresh() {
+   String routine = getClass().getSimpleName() + ".refresh", message;
     String TableID = "";
     //String SkipRows = "";
     String DateColumn = "";
@@ -1230,7 +1231,7 @@ private void refresh()
         if ( Interval == null || Interval.equals("") ) {
             // Select a default.
             __Interval_JComboBox.select ( 0 );
-        } 
+        }
         else {
         	// Select case-independent.
             if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, -1, null, true ) ) {
@@ -1245,7 +1246,7 @@ private void refresh()
         if ( IrregularIntervalPrecision == null || IrregularIntervalPrecision.equals("") ) {
             // Select a default.
             __IrregularIntervalPrecision_JComboBox.select ( 0 );
-        } 
+        }
         else {
         	// Select case-independent.
             if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularIntervalPrecision_JComboBox, IrregularIntervalPrecision, JGUIUtil.NONE, null, -1, null, true ) ) {
@@ -1430,14 +1431,13 @@ private void refresh()
 	props.add("BlockOutputYearType=" + BlockOutputYearType );
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
-	
+
 	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok ) {
 	__ok = ok;
@@ -1445,7 +1445,7 @@ public void response ( boolean ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}

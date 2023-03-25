@@ -448,6 +448,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - identifier for table."),

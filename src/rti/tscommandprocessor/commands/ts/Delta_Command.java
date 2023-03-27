@@ -266,6 +266,16 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify ExpectedTrend when ResetMax and ResetMin are specified." ) );
     }
+    
+    // Make sure that if ResetMin or ResetMax are set that ResetType=Rollover.
+    if ( resetCount > 0 ) {
+    	if ( (ResetType == null) || ResetType.isEmpty() ) {
+        	message = "ResetMin or ResetMax are specified but ResetType is not Rollover.";
+        	warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            	message, "Specify ResetType=Rollover when ResetMax and ResetMin are specified." ) );
+    	}
+    }
 
     if ( (ResetProximityLimit != null) && !ResetProximityLimit.isEmpty() ) {
         if ( !StringUtil.isDouble(ResetProximityLimit) ) {

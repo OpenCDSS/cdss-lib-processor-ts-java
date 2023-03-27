@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,10 +85,10 @@ private SimpleJButton __pathEndCommandFile_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private JTextField __SearchFolder_JTextField = null;	// Top folder to start search
-private JTextField __FilenamePattern_JTextField = null;	// Pattern for file names
-private JTextField __OutputFile_JTextField = null;	// Resulting command file
-private JTextField __SetupCommandFile_JTextField = null; // Setup command file
+private JTextField __SearchFolder_JTextField = null;	// Top folder to start search.
+private JTextField __FilenamePattern_JTextField = null;	// Pattern for file names.
+private JTextField __OutputFile_JTextField = null;	// Resulting command file.
+private JTextField __SetupCommandFile_JTextField = null; // Setup command file.
 private JTextField __TestResultsFile_JTextField = null;
 private JTextField __EndCommandFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
@@ -109,8 +109,8 @@ Dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CreateRegressionTestCommandFile_JDialog ( JFrame parent, CreateRegressionTestCommandFile_Command command )
-{	super(parent, true);
+public CreateRegressionTestCommandFile_JDialog ( JFrame parent, CreateRegressionTestCommandFile_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -118,9 +118,9 @@ public CreateRegressionTestCommandFile_JDialog ( JFrame parent, CreateRegression
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
-	String routine = getClass().getName() + ".actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
+	String routine = getClass().getSimpleName() + ".actionPerformed";
 
 	if ( o == __browseSearchFolder_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -133,15 +133,15 @@ public void actionPerformed( ActionEvent event )
 		}
 		fc.setFileSelectionMode (JFileChooser.DIRECTORIES_ONLY );
 		fc.setDialogTitle( "Select Folder to Search For Command Files");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			String folder = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String folder = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (folder == null || folder.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -177,16 +177,16 @@ public void actionPerformed( ActionEvent event )
         fc.setDialogTitle( "Select Setup Command File to Include at Start");
         SimpleFileFilter sff = new SimpleFileFilter("TSTool","TSTool Command File");
         fc.addChoosableFileFilter(sff);
-        
+
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -212,16 +212,16 @@ public void actionPerformed( ActionEvent event )
         fc.setDialogTitle( "Select Test Results File");
         SimpleFileFilter sff = new SimpleFileFilter("txt","test results report file");
         fc.addChoosableFileFilter(sff);
-        
+
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -247,16 +247,16 @@ public void actionPerformed( ActionEvent event )
         fc.setDialogTitle( "Select Command File to Include at End");
         SimpleFileFilter sff = new SimpleFileFilter("TSTool","TSTool Command File");
         fc.addChoosableFileFilter(sff);
-        
+
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -282,16 +282,16 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle( "Select Command File to Create");
         SimpleFileFilter sff = new SimpleFileFilter("TSTool","TSTool Command File");
         fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -400,17 +400,17 @@ public void actionPerformed( ActionEvent event )
         refresh ();
     }
 	else {
-	    // Choices...
+	    // Choices.
 		refresh();
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String SearchFolder = __SearchFolder_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -462,7 +462,7 @@ private void checkInput ()
 		props.set ( "TestResultsTableID", TestResultsTableID );
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 		__error_wait = false;
 	}
@@ -473,11 +473,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String SearchFolder = __SearchFolder_JTextField.getText().trim();
+private void commitEdits () {
+	String SearchFolder = __SearchFolder_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText();
 	String SetupCommandFile = __SetupCommandFile_JTextField.getText().trim();
 	String TestResultsFile = __TestResultsFile_JTextField.getText().trim();
@@ -508,17 +508,17 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command command ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -560,7 +560,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Folder(s) to search for TSTool command files:" ), 
+		"Folder(s) to search for TSTool command files:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SearchFolder_JTextField = new JTextField ( 50 );
 	__SearchFolder_JTextField.setToolTipText("Specify one or more top-level folders separated by commas to search for TSTool command files, can use ${Property} notation");
@@ -583,12 +583,12 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 	JGUIUtil.addComponent(main_JPanel, SearchFolder_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to create:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to create:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify command file to create, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -598,20 +598,20 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(OutputFile_JPanel, __browseOutputFile_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathOutputFile_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutputFile_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Setup command file:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Setup command file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetupCommandFile_JTextField = new JTextField ( 50 );
     __SetupCommandFile_JTextField.setToolTipText("Specify the setup command file to prepend, can use ${Property} notation");
     __SetupCommandFile_JTextField.addKeyListener ( this );
-    // Setup command file layout fights back with other rows so put in its own panel
+    // Setup command file layout fights back with other rows so put in its own panel.
 	JPanel SetupCommandFile_JPanel = new JPanel();
 	SetupCommandFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(SetupCommandFile_JPanel, __SetupCommandFile_JTextField,
@@ -621,7 +621,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(SetupCommandFile_JPanel, __browseSetupCommandFile_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathSetupCommandFile_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(SetupCommandFile_JPanel, __pathSetupCommandFile_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -629,12 +629,12 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 	JGUIUtil.addComponent(main_JPanel, SetupCommandFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test results file:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test results file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TestResultsFile_JTextField = new JTextField ( 50 );
     __TestResultsFile_JTextField.setToolTipText("Test results file for StartRegressionTestResultsReport(OutputFile=...), can use ${Property} notation");
     __TestResultsFile_JTextField.addKeyListener ( this );
-    // Setup command file layout fights back with other rows so put in its own panel
+    // Setup command file layout fights back with other rows so put in its own panel.
 	JPanel TestResultsFile_JPanel = new JPanel();
 	TestResultsFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(TestResultsFile_JPanel, __TestResultsFile_JTextField,
@@ -644,20 +644,20 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(TestResultsFile_JPanel, __browseTestResultsFile_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathTestResultsFile_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(TestResultsFile_JPanel, __pathTestResultsFile_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, TestResultsFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End command file:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End command file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EndCommandFile_JTextField = new JTextField ( 50 );
     __EndCommandFile_JTextField.setToolTipText("Specify the end command file to append, can use ${Property} notation");
     __EndCommandFile_JTextField.addKeyListener ( this );
-    // End command file layout fights back with other rows so put in its own panel
+    // End command file layout fights back with other rows so put in its own panel.
 	JPanel EndCommandFile_JPanel = new JPanel();
 	EndCommandFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(EndCommandFile_JPanel, __EndCommandFile_JTextField,
@@ -667,29 +667,29 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(EndCommandFile_JPanel, __browseEndCommandFile_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathEndCommandFile_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(EndCommandFile_JPanel, __pathEndCommandFile_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(main_JPanel, EndCommandFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file name pattern(s):" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file name pattern(s):" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FilenamePattern_JTextField = new JTextField ( 30 );
     __FilenamePattern_JTextField.setToolTipText("File pattern(s) to match, * is wildcard, multiple patterns separated by commas, ignore case.");
     __FilenamePattern_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FilenamePattern_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - file pattern(s) to match (default is \"Test_*.TSTool\",\"test-*.tstool\")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - file pattern(s) to match (default is \"Test_*.TSTool\",\"test-*.tstool\")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
 	List<String> appendChoices = new ArrayList<>();
-	appendChoices.add ( "" );	// Default
+	appendChoices.add ( "" );	// Default.
 	appendChoices.add ( __command._False );
 	appendChoices.add ( __command._True );
 	__Append_JComboBox.setData(appendChoices);
@@ -698,10 +698,10 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - append to command file? (default=" + __command._True + ")."), 
+		"Optional - append to command file? (default=" + __command._True + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to include:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeTestSuite_JTextField = new JTextField ( "", 30 );
     __IncludeTestSuite_JTextField.setToolTipText("Test suites to include, separated by commas.");
@@ -709,10 +709,10 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, __IncludeTestSuite_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to include (default=*)."), 
+        new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to include (default=*)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to exclude:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to exclude:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeTestSuite_JTextField = new JTextField ( "", 30 );
     // TODO smalers 2021-10-15 'nosuite' is probably not needed so remove later.
@@ -722,10 +722,10 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, __ExcludeTestSuite_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to exclude (default=none)."), 
+        new JLabel( "Optional - check \"#@testSuite ABC\" comments for tests to exclude (default=none)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include tests for OS:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include tests for OS:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeOS_JTextField = new JTextField ( "", 30 );
     __IncludeOS_JTextField.setToolTipText("Operating systems to include test: Windows, UNIX, Linux");
@@ -733,14 +733,14 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, __IncludeOS_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel( "Optional - check \"#@os Windows|UNIX\" comments for tests to include (default=*)."), 
+        new JLabel( "Optional - check \"#@os Windows|UNIX\" comments for tests to include (default=*)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use @order?"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__UseOrder_JComboBox = new SimpleJComboBox ( false );
 	List<String> orderChoices = new ArrayList<>();
-	orderChoices.add ( "" );	// Default
+	orderChoices.add ( "" );	// Default.
 	orderChoices.add ( __command._False );
 	orderChoices.add ( __command._True );
 	__UseOrder_JComboBox.setData(orderChoices);
@@ -749,9 +749,9 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, __UseOrder_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - use @order for sorting tests? (default=" + __command._True + ")."), 
+		"Optional - use @order for sorting tests? (default=" + __command._True + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Test results table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TestResultsTableID_JTextField = new JTextField (10);
@@ -762,7 +762,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - identifier for table containing results."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -772,13 +772,13 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -792,7 +792,7 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -800,32 +800,33 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String SearchFolder = "";
 	String SetupCommandFile = "";
 	String TestResultsFile = "";
@@ -877,11 +878,11 @@ private void refresh ()
 		}
 		else {
 		    if ( (Append == null) || Append.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__Append_JComboBox.select ( 0 );
 			}
 			else {
-			    // Bad user command...
+			    // Bad user command.
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\nAppend parameter \"" +
 				Append + "\".  Select a\ndifferent value or Cancel." );
@@ -901,7 +902,7 @@ private void refresh ()
 		}
 		else {
 		    if ( (UseOrder == null) || UseOrder.equals("") ) {
-				// New command...select the default...
+				// New command...select the default.
 				__UseOrder_JComboBox.select ( 0 );
 			}
 			else {
@@ -915,8 +916,8 @@ private void refresh ()
 			__TestResultsTableID_JTextField.setText ( TestResultsTableID );
 		}
 	}
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
 	SearchFolder = __SearchFolder_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	SetupCommandFile = __SetupCommandFile_JTextField.getText().trim();
@@ -1033,20 +1034,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1055,15 +1055,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

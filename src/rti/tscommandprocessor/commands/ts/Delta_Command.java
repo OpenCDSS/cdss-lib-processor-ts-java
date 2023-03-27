@@ -115,6 +115,8 @@ throws InvalidCommandParameterException {
 	String DeltaLimit = parameters.getValue ( "DeltaLimit" );
 	String DeltaLimitAction = parameters.getValue ( "DeltaLimitAction" );
 	//String DeltaLimitFlag = parameters.getValue ( "DeltaLimitFlag" );
+	String IntervalLimit = parameters.getValue ( "IntervalLimit" );
+	String IntervalLimitAction = parameters.getValue ( "IntervalLimitAction" );
 	// ResetType=Auto
     String AutoResetDatum = parameters.getValue ( "AutoResetDatum" );
 	// ResetType=Rollover
@@ -164,6 +166,26 @@ throws InvalidCommandParameterException {
     	!DeltaLimitAction.equalsIgnoreCase("" + this._Keep) &&
     	!DeltaLimitAction.equalsIgnoreCase("" + this._SetMissing) ) {
         message = "The DeltaLimitAction (" + DeltaLimitAction + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the delta limit action as blank, " + this._Keep + " or "
+            + this._SetMissing + " (default)." ) );
+    }
+
+    if ( (IntervalLimit != null) && !IntervalLimit.isEmpty() ) {
+        if ( !TimeInterval.isInterval(IntervalLimit) ) {
+            message = "The IntervalLimit value (" + IntervalLimit + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the interval limit as 1Hour, 7Day, etc." ) );
+        }
+    }
+
+    // Verify that the DataLimitAction is a value that can be handled.
+    if ( (IntervalLimitAction != null) && !IntervalLimitAction.isEmpty() &&
+    	!IntervalLimitAction.equalsIgnoreCase("" + this._Keep) &&
+    	!IntervalLimitAction.equalsIgnoreCase("" + this._SetMissing) ) {
+        message = "The IntervalLimitAction (" + IntervalLimitAction + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify the delta limit action as blank, " + this._Keep + " or "
@@ -328,6 +350,9 @@ throws InvalidCommandParameterException {
     validList.add ( "DeltaLimit" );
     validList.add ( "DeltaLimitAction" );
     validList.add ( "DeltaLimitFlag" );
+    validList.add ( "IntervalLimit" );
+    validList.add ( "IntervalLimitAction" );
+    validList.add ( "IntervalLimitFlag" );
     // ResetType=Auto.
     validList.add ( "AutoResetDatum" );
     // ResetType=Rollover.
@@ -374,6 +399,14 @@ public boolean editCommand ( JFrame parent ) {
 }
 
 /**
+Return the table that is read by this class when run in discovery mode.
+@return the discovery mode table
+*/
+private DataTable getDiscoveryTable() {
+    return this.__discoveryTable;
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList () {
@@ -385,13 +418,23 @@ Return the list of data objects read by this object in discovery mode.
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c ) {
+	// First check for table request.
+    DataTable table = getDiscoveryTable();
+    List<T> v = null;
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new ArrayList<>();
+        v.add ( (T)table );
+        return v;
+    }
+
+    // Check for time series request.
     List<T> matchingDiscoveryTS = new ArrayList<>();
     List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return matchingDiscoveryTS;
     }
     for ( TS datats : discoveryTSList ) {
-        // Use the most generic for the base class...
+        // Use the most generic for the base class.
         if ( (c == TS.class) || (c == datats.getClass()) ) {
             matchingDiscoveryTS.add((T)datats);
         }
@@ -502,8 +545,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	String DeltaLimitAction = parameters.getValue ( "DeltaLimitAction" );
 	String DeltaLimitFlag = parameters.getValue ( "DeltaLimitFlag" );
+	String IntervalLimit = parameters.getValue ( "IntervalLimit" );
+    TimeInterval intervalLimit = null;
+    if ( (IntervalLimit != null) && !IntervalLimit.equals("") ) {
+        intervalLimit = TimeInterval.parseInterval(IntervalLimit);
+    }
+	String IntervalLimitAction = parameters.getValue ( "IntervalLimitAction" );
+	String IntervalLimitFlag = parameters.getValue ( "IntervalLimitFlag" );
 
 	// ResetType=Auto.
+	// Treat as a string because can be a number or "Auto".
 	String AutoResetDatum = parameters.getValue ( "AutoResetDatum" );
 
 	// ResetType=Rollover.
@@ -797,7 +848,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 			ts = (TS)o_ts;
 
-		    // Create the delta time series.
+		    // Create the delta time series using the utility class.
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Creating delta for " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
@@ -807,6 +858,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    resetMin, resetMax, resetProximityLimit, resetProximityLimitInterval, ResetProximityLimitFlag,
 			    Flag, createData,
 			    deltaLimit, DeltaLimitAction, DeltaLimitFlag,
+			    intervalLimit, IntervalLimitAction, IntervalLimitFlag,
                 table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
                 TableValuePreviousColumn, TableValueColumn,
                 TableDeltaCalculatedColumn, TableActionColumn, TableDeltaColumn,
@@ -871,6 +923,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	// Just want time series headers initialized.
         	setDiscoveryTSList ( discoverTSList );
+        	// Discovery table was set at the start of the method.
     	}
     }
 	catch ( Exception e ) {
@@ -931,9 +984,12 @@ public String toString ( PropList parameters ) {
 		"DeltaLimit",
 		"DeltaLimitAction",
 		"DeltaLimitFlag",
-		// RestType=Auto.
+		"IntervalLimit",
+		"IntervalLimitAction",
+		"IntervalLimitFlag",
+		// ResetType=Auto.
 		"AutoResetDatum",
-		// RestType=Rollover.
+		// ResetType=Rollover.
 		"ResetMin",
 		"ResetMax",
 		"ResetProximityLimit",

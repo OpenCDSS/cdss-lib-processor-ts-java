@@ -157,6 +157,19 @@ throws InvalidCommandParameterException {
 			new CommandLogRecord(
 			CommandStatusType.FAILURE, message, "Use the command editor to enter required fields."));
 		}
+		
+		// Make sure that IrregularInterval is specified if the NewTSID includes "irreg".
+		
+		if ( NewTSID.toUpperCase().indexOf("IRREG") >= 0 ) {
+			if ( (IrregularInterval == null) || IrregularInterval.isEmpty() ) {
+        		message = "The interval for irregular time series must be specified.";
+				warning += "\n" + message;
+        		status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(
+					CommandStatusType.FAILURE, message,
+					"Select an interval for irregular time series."));
+			}
+		}
 	}
 
 	if ( (IrregularInterval != null) && !IrregularInterval.isEmpty() ) {
@@ -507,7 +520,7 @@ CommandWarningException, CommandException {
 				MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
 			}
 			try {
-				// Handles numbers and NaN
+				// Handles numbers and NaN.
 				missingValue = Double.parseDouble(MissingValue);
 			}
 			catch ( Exception e ) {
@@ -540,7 +553,7 @@ CommandWarningException, CommandException {
 			// Warning will have been added above.
 			++warningCount;
 		}
-	    // Make sure that dates are not null .
+	    // Make sure that dates are not null.
 	    if ( SetStart_DateTime == null ) {
 	        message = "SetStart is not set - cannot allocate time series data array.";
 	        Message.printWarning(logLevel,
@@ -626,6 +639,7 @@ CommandWarningException, CommandException {
     		    if ( ts instanceof IrregularTS ) {
     		        // Irregular time series don't have a regular data space so need to fill in some missing values first.
     		    	// Use the period to iterate and define missing values.
+    		    	// The following works for general "Irregular" interval and interval with precision (e.g., "IrregDay").
     		        DateTime end = new DateTime ( ts.getDate2() );
     		        TimeInterval tsinterval = null;
     		        try {

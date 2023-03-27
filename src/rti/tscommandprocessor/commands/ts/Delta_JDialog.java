@@ -88,12 +88,15 @@ private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __Flag_JTextField = null; // Flag to label filled data.
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-//private SimpleJComboBox __Percent_JComboBox = null; // Indicate if output should be percent
+//private SimpleJComboBox __Percent_JComboBox = null; // Indicate if output should be percent.
 
 // Delta Limit.
 private JTextField __DeltaLimit_JTextField = null;
 private SimpleJComboBox __DeltaLimitAction_JComboBox = null;
 private JTextField __DeltaLimitFlag_JTextField = null;
+private JTextField __IntervalLimit_JTextField = null;
+private SimpleJComboBox __IntervalLimitAction_JComboBox = null;
+private JTextField __IntervalLimitFlag_JTextField = null;
 
 // Reset - Auto
 private JTextField __AutoResetDatum_JTextField = null;
@@ -237,6 +240,9 @@ private void checkInput () {
 	String DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     String DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
 	String DeltaLimitFlag = __DeltaLimitFlag_JTextField.getText().trim();
+	String IntervalLimit = __IntervalLimit_JTextField.getText().trim();
+    String IntervalLimitAction = __IntervalLimitAction_JComboBox.getSelected();
+	String IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// Reset=Auto.
 	String AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
 	// Reset=Rollover.
@@ -299,6 +305,15 @@ private void checkInput () {
 	}
 	if ( DeltaLimitFlag.length() > 0 ) {
 		parameters.set ( "DeltaLimitFlag", DeltaLimitFlag );
+	}
+	if ( IntervalLimit.length() > 0 ) {
+		parameters.set ( "IntervalLimit", IntervalLimit );
+	}
+	if ( IntervalLimitAction.length() > 0 ) {
+		parameters.set ( "IntervalLimitAction", IntervalLimitAction );
+	}
+	if ( IntervalLimitFlag.length() > 0 ) {
+		parameters.set ( "IntervalLimitFlag", IntervalLimitFlag );
 	}
     // ResetType=Auto.
 	if ( AutoResetDatum.length() > 0 ) {
@@ -390,6 +405,9 @@ private void commitEdits () {
 	String DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     String DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
 	String DeltaLimitFlag = __DeltaLimitFlag_JTextField.getText().trim();
+	String IntervalLimit = __IntervalLimit_JTextField.getText().trim();
+    String IntervalLimitAction = __IntervalLimitAction_JComboBox.getSelected();
+	String IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// ResetType=Auto
 	String AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
 	// ResetType=Rollover
@@ -428,6 +446,9 @@ private void commitEdits () {
 	__command.setCommandParameter ( "DeltaLimit", DeltaLimit );
 	__command.setCommandParameter ( "DeltaLimitAction", DeltaLimitAction );
 	__command.setCommandParameter ( "DeltaLimitFlag", DeltaLimitFlag );
+	__command.setCommandParameter ( "IntervalLimit", IntervalLimit );
+	__command.setCommandParameter ( "IntervalLimitAction", IntervalLimitAction );
+	__command.setCommandParameter ( "IntervalLimitFlag", IntervalLimitFlag );
 	// ResetType=Auto
 	__command.setCommandParameter ( "AutoResetDatum", AutoResetDatum );
 	// ResetType=Rollover
@@ -622,7 +643,14 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         "The following parameters control handling of delta values that are larger than expected."),
         0, ++yLimit, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(limit_JPanel, new JLabel (
+        "The time interval between input values can also be checked, for example to check for gaps between seasons."),
+        0, ++yLimit, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(limit_JPanel, new JLabel (
         "An out of range absolute value delta may indicate bad input data."),
+        0, ++yLimit, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(limit_JPanel, new JLabel (
+        "The interval check is often omitted for ResetType=" + ResetType.ROLLOVER +
+        " because a rollover often indicates sensor maintenance."),
         0, ++yLimit, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(limit_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yLimit, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -637,20 +665,20 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
 		"Optional - maximum allowed delta value."),
 		3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Data limit action:" ),
+    JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Delta limit action:" ),
         0, ++yLimit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeltaLimitAction_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit.
-    List<String> actionChoices = new ArrayList<>();
-    actionChoices.add("");
-    actionChoices.add(__command._Keep);
-    actionChoices.add(__command._SetMissing);
-    __DeltaLimitAction_JComboBox.setData ( actionChoices );
+    List<String> deltaLimitActionChoices = new ArrayList<>();
+    deltaLimitActionChoices.add("");
+    deltaLimitActionChoices.add(__command._Keep);
+    deltaLimitActionChoices.add(__command._SetMissing);
+    __DeltaLimitAction_JComboBox.setData ( deltaLimitActionChoices );
     __DeltaLimitAction_JComboBox.select(0);
     __DeltaLimitAction_JComboBox.addItemListener ( this );
-    __DeltaLimitAction_JComboBox.setMaximumRowCount(actionChoices.size());
+    __DeltaLimitAction_JComboBox.setMaximumRowCount(deltaLimitActionChoices.size());
     JGUIUtil.addComponent(limit_JPanel, __DeltaLimitAction_JComboBox,
         1, yLimit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(limit_JPanel, new JLabel("Optional - action for matched values (default=no action)."),
+    JGUIUtil.addComponent(limit_JPanel, new JLabel("Optional - action for values > limit (default=" + __command._Keep + ")."),
         3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Delta limit flag:" ),
@@ -660,7 +688,44 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(limit_JPanel, __DeltaLimitFlag_JTextField,
 		1, yLimit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(limit_JPanel, new JLabel(
-		"Optional - data flag for values that exceed the limit."),
+		"Optional - data flag for values with data > limit."),
+		3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Interval limit:" ),
+		0, ++yLimit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IntervalLimit_JTextField = new JTextField ( 10 );
+	__IntervalLimit_JTextField.setToolTipText("Maximum interval between values (e.g., 1Day, 1Month).");
+	__IntervalLimit_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(limit_JPanel, __IntervalLimit_JTextField,
+		1, yLimit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(limit_JPanel, new JLabel(
+		"Optional - maximum allowed interval between values."),
+		3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Interval limit action:" ),
+        0, ++yLimit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IntervalLimitAction_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit.
+    List<String> intervalLimitActionChoices = new ArrayList<>();
+    intervalLimitActionChoices.add("");
+    intervalLimitActionChoices.add(__command._Keep);
+    intervalLimitActionChoices.add(__command._SetMissing);
+    __IntervalLimitAction_JComboBox.setData ( intervalLimitActionChoices );
+    __IntervalLimitAction_JComboBox.select(0);
+    __IntervalLimitAction_JComboBox.addItemListener ( this );
+    __IntervalLimitAction_JComboBox.setMaximumRowCount(intervalLimitActionChoices.size());
+    JGUIUtil.addComponent(limit_JPanel, __IntervalLimitAction_JComboBox,
+        1, yLimit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(limit_JPanel, new JLabel("Optional - action for interval > limit (default=" + __command._Keep + ")."),
+        3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(limit_JPanel, new JLabel ( "Interval limit flag:" ),
+		0, ++yLimit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__IntervalLimitFlag_JTextField = new JTextField ( 10 );
+	__IntervalLimitFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(limit_JPanel, __IntervalLimitFlag_JTextField,
+		1, yLimit, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(limit_JPanel, new JLabel(
+		"Optional - data flag for values with interval > limit."),
 		3, yLimit, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for ResetType=Auto parameters.
@@ -673,7 +738,10 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         "The following parameters are used when ResetType=" + ResetType.AUTO + "."),
         0, ++yResetAuto, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetAuto_JPanel, new JLabel (
-        "Use the Data Limit parameters to set a limit on the allowed delta value."),
+        "Use the 'Data Limit' tab parameters to set a limit on the allowed delta value."),
+        0, ++yResetAuto, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetAuto_JPanel, new JLabel (
+        "The AutoResetDatum currently always defaults to zero."),
         0, ++yResetAuto, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(resetAuto_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yResetAuto, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -681,7 +749,8 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(resetAuto_JPanel,new JLabel( "Auto reset datum:"),
         0, ++yResetAuto, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AutoResetDatum_JTextField = new JTextField ( "", 10 );
-    __AutoResetDatum_JTextField.setToolTipText("Specify the datum for RestType=Auto, can use ${Property}");
+    __AutoResetDatum_JTextField.setEnabled(false); // Future feature.
+    __AutoResetDatum_JTextField.setToolTipText("Future feature.  The datum for ResetType=Auto, 'Auto' or a number, can use ${Property}");
     __AutoResetDatum_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(resetAuto_JPanel, __AutoResetDatum_JTextField,
         1, yResetAuto, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -735,31 +804,37 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Reset proximity limit:" ),
 		0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ResetProximityLimit_JTextField = new JTextField ( 10 );
+	__ResetProximityLimit_JTextField.setToolTipText("Future feature.  Allowed delta immediately prior to or after a reset, to check for bad data.");
+	__ResetProximityLimit_JTextField.setEnabled(false); // Future feature.
 	__ResetProximityLimit_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(resetRollover_JPanel, __ResetProximityLimit_JTextField,
 		1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
-		"Optional - maximum allowed sum near the reset (default=not checked)."),
+		"Future feature - maximum allowed sum near the reset (default=not checked)."),
 		3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Reset proximity limit interval:" ),
 		0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ResetProximityLimitInterval_JTextField = new JTextField ( 10 );
+	__ResetProximityLimitInterval_JTextField.setToolTipText("Future feature.  Limit used to calculate RestProximityLimit.");
+	__ResetProximityLimitInterval_JTextField.setEnabled(false); // Future feature.
 	__ResetProximityLimitInterval_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(resetRollover_JPanel, __ResetProximityLimitInterval_JTextField,
 		1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
-		"Optional - interval for ResetProximityLimit (default=not checked)."),
+		"Future feature - interval for ResetProximityLimit (default=not checked)."),
 		3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Reset proximity limit flag:" ),
 		0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ResetProximityLimitFlag_JTextField = new JTextField ( 10 );
+	__ResetProximityLimitFlag_JTextField.setToolTipText("Future feature.  Flag for values that exceed the ResetProximityLimit.");
+	__ResetProximityLimitFlag_JTextField.setEnabled(false); // Future feature.
 	__ResetProximityLimitFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(resetRollover_JPanel, __ResetProximityLimitFlag_JTextField,
 		1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
-		"Optional - data flag for ResetProximityLimit."),
+		"Future feature - data flag for ResetProximityLimit."),
 		3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for output table parameters.
@@ -932,7 +1007,7 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     checkGUIState();
 	refresh ();
 
-	// South Panel: North
+	// Add a button panel.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -1013,6 +1088,9 @@ private void refresh () {
 	String DeltaLimit = "";
 	String DeltaLimitAction = "";
 	String DeltaLimitFlag = "";
+	String IntervalLimit = "";
+	String IntervalLimitAction = "";
+	String IntervalLimitFlag = "";
     // ResetType=Auto.
 	String AutoResetDatum = "";
     // ResetType=Rollover.
@@ -1054,9 +1132,12 @@ private void refresh () {
         DeltaLimit = props.getValue("DeltaLimit");
         DeltaLimitAction = props.getValue("DeltaLimitAction");
         DeltaLimitFlag = props.getValue("DeltaLimitFlag");
-        // RestType=Auto.
+        IntervalLimit = props.getValue("IntervalLimit");
+        IntervalLimitAction = props.getValue("IntervalLimitAction");
+        IntervalLimitFlag = props.getValue("IntervalLimitFlag");
+        // ResetType=Auto.
 		AutoResetDatum = props.getValue ( "AutoResetDatum" );
-        // RestType=Rollover.
+        // ResetType=Rollover.
 		ResetMin = props.getValue ( "ResetMin" );
 		ResetMax = props.getValue ( "ResetMax" );
         ResetProximityLimit = props.getValue("ResetProximityLimit");
@@ -1190,6 +1271,28 @@ private void refresh () {
 		if ( DeltaLimitFlag != null ) {
 			__DeltaLimitFlag_JTextField.setText ( DeltaLimitFlag );
 		}
+		if ( IntervalLimit != null ) {
+			__IntervalLimit_JTextField.setText ( IntervalLimit );
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IntervalLimitAction_JComboBox, IntervalLimitAction,JGUIUtil.NONE, null, null ) ) {
+			__IntervalLimitAction_JComboBox.select ( IntervalLimitAction );
+		}
+		else {
+            if ( (IntervalLimitAction == null) ||	IntervalLimitAction.equals("") ) {
+				// New command...select the default.
+				__IntervalLimitAction_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"IntervalLimitAction parameter \"" +	IntervalLimitAction +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+		if ( IntervalLimitFlag != null ) {
+			__IntervalLimitFlag_JTextField.setText ( IntervalLimitFlag );
+		}
         // ResetType=Auto.
 		if ( AutoResetDatum != null ) {
 			__AutoResetDatum_JTextField.setText ( AutoResetDatum );
@@ -1281,6 +1384,9 @@ private void refresh () {
 	DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
 	DeltaLimitFlag = __DeltaLimitFlag_JTextField.getText().trim();
+	IntervalLimit = __IntervalLimit_JTextField.getText().trim();
+    IntervalLimitAction = __IntervalLimitAction_JComboBox.getSelected();
+	IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// ResetType=Auto.
 	AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
 	// ResetType=Rollover.
@@ -1320,6 +1426,9 @@ private void refresh () {
 	props.add ( "DeltaLimit=" + DeltaLimit );
 	props.add ( "DeltaLimitAction=" + DeltaLimitAction );
 	props.add ( "DeltaLimitFlag=" + DeltaLimitFlag );
+	props.add ( "IntervalLimit=" + IntervalLimit );
+	props.add ( "IntervalLimitAction=" + IntervalLimitAction );
+	props.add ( "IntervalLimitFlag=" + IntervalLimitFlag );
 	// ResetType=Auto.
 	props.add ( "AutoResetDatum=" + AutoResetDatum );
 	// ResetType=Rollover.

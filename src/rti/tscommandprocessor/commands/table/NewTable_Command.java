@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ This class initializes, checks, and runs the NewTable() command.
 */
 public class NewTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 The table that is created.
 */
@@ -74,8 +74,8 @@ private String [] __columnTypes = null;
 /**
 Constructor.
 */
-public NewTable_Command ()
-{	super();
+public NewTable_Command () {
+	super();
 	setCommandName ( "NewTable" );
 }
 
@@ -87,12 +87,12 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String Columns = parameters.getValue ( "Columns" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -155,7 +155,7 @@ throws InvalidCommandParameterException
 		    }
 		}
 	}
- 
+
 	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(2);
     validList.add ( "TableID" );
@@ -167,7 +167,7 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -176,8 +176,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new NewTable_JDialog ( parent, this )).ok();
 }
 
@@ -193,8 +193,8 @@ Return a list of objects of the requested type.  This class only keeps a list of
 Classes that can be requested:  DataTable
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new ArrayList<>();
@@ -236,10 +236,10 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
@@ -262,7 +262,7 @@ CommandWarningException, CommandException
     }
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
@@ -280,10 +280,10 @@ CommandWarningException, CommandException
 
 	try {
     	// Create the table.
-    
+
 	    List<TableField> columnList = new ArrayList<>();
 	    DataTable table = null;
-        
+
         if ( commandPhase == CommandPhaseType.RUN ) {
             // Create the table with column data that was created in checkCommandParameters().
             if ( __columnNames != null ) {
@@ -317,9 +317,9 @@ CommandWarningException, CommandException
             }
             table = new DataTable( columnList );
             table.setTableID ( TableID );
-            
+
             // Set the table in the processor.
-            
+
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", table );
             try {
@@ -350,7 +350,7 @@ CommandWarningException, CommandException
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,

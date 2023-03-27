@@ -73,9 +73,9 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JFrame __parent_JFrame = null;
 private NewPatternTimeSeries_Command __command = null;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private JTextArea __NewTSID_JTextArea=null;
+private JTextArea __NewTSID_JTextArea = null;
 private SimpleJButton __edit_JButton = null;
 private SimpleJButton __clear_JButton = null;
 private SimpleJComboBox __IrregularInterval_JComboBox = null;
@@ -84,8 +84,8 @@ private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
-private JTextArea __PatternValues_JTextArea=null;
-private JTextArea __PatternFlags_JTextArea=null;
+private JTextArea __PatternValues_JTextArea = null;
+private JTextArea __PatternFlags_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -180,8 +180,11 @@ public void removeUpdate ( DocumentEvent e ) {
 Check the UI state and adjust settings based on user selections.
 */
 private void checkUIState() {
+	// Enable the IrregularInterval choice only if the interval is "Irreg, "Irregular", "IrregDay", etc.
+	// The interval like "IrregHour" can have an interval if any hour multiplier whereas other intervals may have restrictions.
+	// Also enable if the TSID contains ${ for property notation.
     String NewTSID = __NewTSID_JTextArea.getText().trim().toUpperCase();
-    if ( NewTSID.indexOf("IRR") >= 0 ) {
+    if ( (NewTSID.toUpperCase().indexOf("IRR") >= 0) || (NewTSID.indexOf("${") >= 0) ) {
         // Irregular time series.
         __IrregularInterval_JComboBox.setEnabled(true);
     }

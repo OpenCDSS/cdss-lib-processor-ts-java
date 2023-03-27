@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -122,12 +122,12 @@ throws InvalidCommandParameterException {
     String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String warning = "";
     String message;
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-	
-	// Get the property values. 
+
+	// Get the property values.
 	String InputFile = parameters.getValue("InputFile");
     String Delimiter = parameters.getValue("Delimiter" );
     String TreatConsecutiveDelimitersAsOne = parameters.getValue("TreatConsecutiveDelimitersAsOne" );
@@ -145,7 +145,7 @@ throws InvalidCommandParameterException {
     String Alias = parameters.getValue("Alias" );
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
-	
+
     String InputFile_full = null;
     if ( (InputFile == null) || InputFile.isEmpty() ) {
         message = "The input file must be specified.";
@@ -171,7 +171,7 @@ throws InvalidCommandParameterException {
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
             }
-    
+
         try {
             InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
@@ -193,7 +193,7 @@ throws InvalidCommandParameterException {
                      message, "Verify that input file and working directory paths are compatible." ) );
         }
     }
-    
+
     if ( (Delimiter == null) || (Delimiter.length() == 0) ) {
         message = "The delimiter must be specified.";
         warning += "\n" + message;
@@ -201,7 +201,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the delimiter indicating breaks between columns." ) );
     }
-    
+
     if ( (TreatConsecutiveDelimitersAsOne != null) && !TreatConsecutiveDelimitersAsOne.equals("") &&
          !TreatConsecutiveDelimitersAsOne.equalsIgnoreCase(_False) &&
          !TreatConsecutiveDelimitersAsOne.equalsIgnoreCase(_True) ) {
@@ -214,7 +214,7 @@ throws InvalidCommandParameterException {
     else {
         setTreatConsecutiveDelimitersAsOne ( Boolean.parseBoolean(TreatConsecutiveDelimitersAsOne) );
     }
-    
+
     setSkipRows ( null );
     if ( (SkipRows != null) && !SkipRows.equals("") ) {
         try {
@@ -241,7 +241,7 @@ throws InvalidCommandParameterException {
             setSkipRowsAfterComments ( Integer.parseInt(SkipRowsAfterComments) );
         }
     }
-    
+
     // Column names need to be processed after the above have been specified.
     if ( (ColumnNames == null) || (ColumnNames.length() == 0) ) {
         message = "The column names must be specified.";
@@ -250,7 +250,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify column names for all columns in the file." ) );
     }
-    
+
     // Either DateTimeColumn or DateColumn must be specified.
     // If TimeColumn is specified, then DateTimeColumn must not be specified and DateColumn must be specified.
     boolean dateTimeColumnSpecified = false;
@@ -322,7 +322,7 @@ throws InvalidCommandParameterException {
 	if ((InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${")) {
 		try {
 			InputStart_DateTime = DateTime.parse(InputStart);
-		} 
+		}
 		catch (Exception e) {
             message = "The input start date/time \"" + InputStart + "\" is not valid.";
 			warning += "\n" + message;
@@ -336,7 +336,7 @@ throws InvalidCommandParameterException {
 	if ((InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
 		try {
 			InputEnd_DateTime = DateTime.parse(InputEnd);
-		} 
+		}
 		catch (Exception e) {
             message = "The input end date/time \"" + InputEnd + "\" is not valid.";
 			warning += "\n" + message;
@@ -356,7 +356,7 @@ throws InvalidCommandParameterException {
                             message, "Specify an input start less than the input end." ) );
 		}
 	}
-    
+
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
             // Do not allow spaces in the alias.
@@ -367,7 +367,7 @@ throws InvalidCommandParameterException {
                     message, "Remove spaces from the alias." ) );
         }
     }
-    
+
 	// Check for invalid parameters.
     List<String> validList = new ArrayList<>(23);
     validList.add ( "InputFile" );
@@ -396,12 +396,12 @@ throws InvalidCommandParameterException {
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
-	if ( warning.length() > 0 ) {		
+	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -512,7 +512,7 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
 not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent ) {	
+public boolean editCommand ( JFrame parent ) {
 	// The command will be modified if changed.
 	return ( new ReadDelimitedFile_JDialog ( parent, this ) ).ok();
 }
@@ -1671,7 +1671,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -1700,7 +1700,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	    
+
     // Get and clear the status and clear the run log.
 
     CommandProcessor processor = getCommandProcessor();
@@ -1799,7 +1799,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Can have one or more values that should be interpreted as missing.
     	missingValues = StringUtil.breakStringList(MissingValue, ",", 0);
     }
-    
+
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -1832,7 +1832,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         InputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-        
+
         if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full)) {
             if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 message = "Input file does not exist:  \"" + InputFile_full + "\".";
@@ -1854,7 +1854,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Verify that filename is correct and that the file exists." ) );
             }
         }
-        
+
         // Read everything in the file (one time series or traces).
         List<String> errorMessages = new ArrayList<>();
         // If any parameters refer to the column names, then the column names are expected to be in the file.
@@ -1976,7 +1976,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             locationIDRuntime, providerRuntime, dataTypeRuntime, getInterval(), scenarioRuntime,
             unitsRuntime, missingValues,
             InputStart_DateTime, InputEnd_DateTime, readData, errorMessages );
-        
+
 		if ( tslist != null ) {
 			int tscount = tslist.size();
 			Message.printStatus ( 2, routine, "Read " + tscount + " time series from \"" + InputFile_full + "\"" );
@@ -1992,9 +1992,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            }
 	        }
 		}
-		
+
 		// Add warnings.
-		
+
 		for ( String errorMessage: errorMessages ) {
 		    Message.printWarning ( warning_level,
 	            MessageUtil.formatMessageTag(command_tag, ++warning_count ),
@@ -2003,7 +2003,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            new CommandLogRecord( CommandStatusType.WARNING, errorMessage,
 	                "Verify the file format and command parameters."));
 		}
-	} 
+	}
 	catch ( Exception e ) {
 		message = "Unexpected error reading delimited file. \"" + InputFile_full + "\" (" + e + ")";
 		Message.printWarning ( warning_level,
@@ -2022,7 +2022,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             if ( wc > 0 ) {
                 message = "Error post-processing series after read.";
-                Message.printWarning ( warning_level, 
+                Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
                     status.addToLog ( commandPhase,
@@ -2030,13 +2030,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
-    
+
             // Now add the list in the processor.
-            
+
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
             if ( wc2 > 0 ) {
                 message = "Error adding time series after read.";
-                Message.printWarning ( warning_level, 
+                Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
                     status.addToLog ( commandPhase,
@@ -2057,7 +2057,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			MessageUtil.formatMessageTag(command_tag, ++warning_count ), routine, message );
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 

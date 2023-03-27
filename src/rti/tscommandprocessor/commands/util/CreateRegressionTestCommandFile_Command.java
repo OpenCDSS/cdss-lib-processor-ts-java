@@ -306,10 +306,10 @@ throws FileNotFoundException {
     CommandStatusType expectedStatus = commandFile.getExpectedStatus();
    	// Translate variations to the official name recognized by RunCommands().
     if ( expectedStatus == CommandStatusType.WARNING ) {
-    	expectedStatusParameter = ",ExpectedStatus=Warning";
+    	expectedStatusParameter = ",ExpectedStatus=\"Warning\"";
     }
     else if ( expectedStatus == CommandStatusType.FAILURE ) {
-    	expectedStatusParameter = ",ExpectedStatus=Failure";
+    	expectedStatusParameter = ",ExpectedStatus=\"Failure\"";
    	}
     return expectedStatusParameter;
 }

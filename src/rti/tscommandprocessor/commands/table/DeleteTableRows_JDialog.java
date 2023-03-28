@@ -68,8 +68,10 @@ private JTabbedPane __param_JTabbedPane = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __Condition_JTextField = null;
 private JTextField __DeleteRowNumbers_JTextField = null;
-// TODO SAM 2016-05-25 Evaluate whether to include.
-//private JTextField __DeleteCountPropertyProperty_JTextField = null;
+private JTextField __First_JTextField = null;
+private JTextField __Last_JTextField = null;
+private JTextField __DeleteCountProperty_JTextField = null;
+private JTextField __RowCountProperty_JTextField = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -116,12 +118,15 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	// Put together a list of parameters to check.
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String Condition = __Condition_JTextField.getText().trim();
 	String DeleteRowNumbers = __DeleteRowNumbers_JTextField.getText().trim();
-	//String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+	String First = __First_JTextField.getText().trim();
+	String Last = __Last_JTextField.getText().trim();
+	String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -133,9 +138,18 @@ private void checkInput () {
     if ( DeleteRowNumbers.length() > 0 ) {
         props.set ( "DeleteRowNumbers", DeleteRowNumbers );
     }
-    //if ( DeleteCountProperty.length() > 0 ) {
-    //    props.set ( "DeleteCountProperty", DeleteCountProperty );
-    //}
+    if ( First.length() > 0 ) {
+        props.set ( "First", First );
+    }
+    if ( Last.length() > 0 ) {
+        props.set ( "Last", Last );
+    }
+    if ( DeleteCountProperty.length() > 0 ) {
+        props.set ( "DeleteCountProperty", DeleteCountProperty );
+    }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
 	try {
 	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
@@ -155,11 +169,17 @@ private void commitEdits () {
 	String TableID = __TableID_JComboBox.getSelected();
     String Condition = __Condition_JTextField.getText().trim();
     String DeleteRowNumbers = __DeleteRowNumbers_JTextField.getText().trim();
-    //String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+	String First = __First_JTextField.getText().trim();
+	String Last = __Last_JTextField.getText().trim();
+	String DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "DeleteRowNumbers", DeleteRowNumbers );
-    //__command.setCommandParameter ( "DeleteCountProperty", DeleteCountProperty );
+    __command.setCommandParameter ( "First", First );
+    __command.setCommandParameter ( "Last", Last );
+    __command.setCommandParameter ( "DeleteCountProperty", DeleteCountProperty );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
 /**
@@ -281,16 +301,56 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
     JGUIUtil.addComponent(rowNum_JPanel, new JLabel ( "Optional - row numbers to delete (default=none)." ),
         3, yRowNum, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Delete count property:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DeleteCountProperty_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel("Delete first rows:"),
+        0, ++yRowNum, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __First_JTextField = new JTextField ( "", 10 );
+    __First_JTextField.setToolTipText("Postive N deletes the first N rows, -N deletes all but the first N rows.");
+    __First_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(rowNum_JPanel, __First_JTextField,
+        1, yRowNum, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel ( "Optional - first rows to delete (default=none)." ),
+        3, yRowNum, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel("Delete last rows:"),
+        0, ++yRowNum, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Last_JTextField = new JTextField ( "", 10 );
+    __Last_JTextField.setToolTipText("Postive N deletes the last N rows, -N deletes all but the last N rows.");
+    __Last_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(rowNum_JPanel, __Last_JTextField,
+        1, yRowNum, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rowNum_JPanel, new JLabel ( "Optional - last rows to delete (default=none)." ),
+        3, yRowNum, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for output properties.
+    int yProps = -1;
+    JPanel props_JPanel = new JPanel();
+    props_JPanel.setLayout( new GridBagLayout() );
+    __param_JTabbedPane.addTab ( "Output Properties", props_JPanel );
+
+   	JGUIUtil.addComponent(props_JPanel, new JLabel (
+        "The number of rows deleted and final table row count can be set as processor properties."),
+        0, ++yProps, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(props_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yProps, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(props_JPanel, new JLabel("Delete count property:"),
+        0, ++yProps, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DeleteCountProperty_JTextField = new JTextField ( "", 25 );
     __DeleteCountProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DeleteCountProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - number of rows deleted." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
+    JGUIUtil.addComponent(props_JPanel, __DeleteCountProperty_JTextField,
+        1, yProps, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(props_JPanel, new JLabel ( "Optional - processor property to set as number of rows deleted." ),
+        3, yProps, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(props_JPanel, new JLabel("Row count property:"),
+        0, ++yProps, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 25 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the copied table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(props_JPanel, __RowCountProperty_JTextField,
+        1, yProps, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(props_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, yProps, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -304,7 +364,7 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
 	// Refresh the contents.
 	refresh ();
 
-	// South JPanel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -373,14 +433,20 @@ private void refresh () {
     String TableID = "";
     String Condition = "";
     String DeleteRowNumbers = "";
-    //String DeleteCountProperty = "";
+    String First = "";
+    String Last = "";
+    String DeleteCountProperty = "";
+    String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         Condition = props.getValue ( "Condition" );
         DeleteRowNumbers = props.getValue ( "DeleteRowNumbers" );
-        //DeleteCountProperty = props.getValue ( "DeleteCountProperty" );
+        First = props.getValue ( "First" );
+        Last = props.getValue ( "Last" );
+        DeleteCountProperty = props.getValue ( "DeleteCountProperty" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -408,21 +474,42 @@ private void refresh () {
             	__param_JTabbedPane.setSelectedIndex(1);
             }
         }
-        //if ( DeleteCountProperty != null ) {
-        //    __DeleteCountProperty_JTextField.setText ( DeleteCountProperty );
-        //}
+        if ( First != null ) {
+            __First_JTextField.setText ( First );
+            if ( !First.isEmpty() ) {
+            	__param_JTabbedPane.setSelectedIndex(1);
+            }
+        }
+        if ( Last != null ) {
+            __Last_JTextField.setText ( Last );
+            if ( !Last.isEmpty() ) {
+            	__param_JTabbedPane.setSelectedIndex(1);
+            }
+        }
+        if ( DeleteCountProperty != null ) {
+            __DeleteCountProperty_JTextField.setText ( DeleteCountProperty );
+        }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
     Condition = __Condition_JTextField.getText().trim();
     DeleteRowNumbers = __DeleteRowNumbers_JTextField.getText().trim();
-    //DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+    First = __First_JTextField.getText().trim();
+    Last = __Last_JTextField.getText().trim();
+    DeleteCountProperty = __DeleteCountProperty_JTextField.getText().trim();
+    RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     // Use the following to handle equal sign in the property.
     props.set ( "Condition", Condition );
     props.add ( "DeleteRowNumbers=" + DeleteRowNumbers );
-    //props.add ( "DeleteCountProperty=" + DeleteCountProperty );
+    props.add ( "First=" + First );
+    props.add ( "Last=" + Last );
+    props.add ( "DeleteCountProperty=" + DeleteCountProperty );
+    props.add ( "RowCountProperty=" + RowCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

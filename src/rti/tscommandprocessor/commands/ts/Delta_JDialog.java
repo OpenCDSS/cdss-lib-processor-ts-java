@@ -88,7 +88,7 @@ private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __Flag_JTextField = null; // Flag to label filled data.
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-//private SimpleJComboBox __Percent_JComboBox = null; // Indicate if output should be percent.
+private SimpleJComboBox __CopyDataFlags_JComboBox = null;
 
 // Delta Limit.
 private JTextField __DeltaLimit_JTextField = null;
@@ -100,10 +100,14 @@ private JTextField __IntervalLimitFlag_JTextField = null;
 
 // Reset - Auto
 private JTextField __AutoResetDatum_JTextField = null;
+private JTextField __AutoResetFlag_JTextField = null;
 
 // Reset - Rollover
 private JTextField __ResetMin_JTextField = null;
 private JTextField __ResetMax_JTextField = null;
+private JTextField __RolloverDeltaLimit_JTextField = null;
+private JTextField __RolloverFlag_JTextField = null;
+private JTextField __ManualResetFlag_JTextField = null;
 private JTextField __ResetProximityLimit_JTextField = null;
 private JTextField __ResetProximityLimitInterval_JTextField = null;
 private JTextField __ResetProximityLimitFlag_JTextField = null;
@@ -236,6 +240,7 @@ private void checkInput () {
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String Flag = __Flag_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
 	// Delta Limit.
 	String DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     String DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
@@ -245,9 +250,13 @@ private void checkInput () {
 	String IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// Reset=Auto.
 	String AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
+	String AutoResetFlag = __AutoResetFlag_JTextField.getText().trim();
 	// Reset=Rollover.
 	String ResetMin = __ResetMin_JTextField.getText().trim();
 	String ResetMax = __ResetMax_JTextField.getText().trim();
+	String RolloverDeltaLimit = __RolloverDeltaLimit_JTextField.getText().trim();
+	String RolloverFlag = __RolloverFlag_JTextField.getText().trim();
+	String ManualResetFlag = __ManualResetFlag_JTextField.getText().trim();
 	String ResetProximityLimit = __ResetProximityLimit_JTextField.getText().trim();
 	String ResetProximityLimitInterval = __ResetProximityLimitInterval_JTextField.getText().trim();
 	String ResetProximityLimitFlag = __ResetProximityLimitFlag_JTextField.getText().trim();
@@ -296,6 +305,9 @@ private void checkInput () {
     if (Alias.length() > 0) {
         parameters.set("Alias", Alias);
     }
+    if (CopyDataFlags.length() > 0) {
+        parameters.set("CopyDataFlags", CopyDataFlags);
+    }
     // Delta limit.
 	if ( DeltaLimit.length() > 0 ) {
 		parameters.set ( "DeltaLimit", DeltaLimit );
@@ -319,12 +331,24 @@ private void checkInput () {
 	if ( AutoResetDatum.length() > 0 ) {
 		parameters.set ( "AutoResetDatum", AutoResetDatum );
 	}
+	if ( AutoResetFlag.length() > 0 ) {
+		parameters.set ( "AutoResetFlag", AutoResetFlag );
+	}
     // ResetType=Rollover.
 	if ( ResetMin.length() > 0 ) {
 		parameters.set ( "ResetMin", ResetMin );
 	}
 	if ( ResetMax.length() > 0 ) {
         parameters.set ( "ResetMax", ResetMax );
+    }
+	if ( RolloverDeltaLimit.length() > 0 ) {
+        parameters.set ( "RolloverDeltaLimit", RolloverDeltaLimit );
+    }
+	if ( RolloverFlag.length() > 0 ) {
+        parameters.set ( "RolloverFlag", RolloverFlag );
+    }
+	if ( ManualResetFlag.length() > 0 ) {
+        parameters.set ( "ManualResetFlag", ManualResetFlag );
     }
 	if ( ResetProximityLimit.length() > 0 ) {
 		parameters.set ( "ResetProximityLimit", ResetProximityLimit );
@@ -401,6 +425,7 @@ private void commitEdits () {
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String Flag = __Flag_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
 	// Delta Limit.
 	String DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     String DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
@@ -410,9 +435,13 @@ private void commitEdits () {
 	String IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// ResetType=Auto
 	String AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
+	String AutoResetFlag = __AutoResetFlag_JTextField.getText().trim();
 	// ResetType=Rollover
 	String ResetMin = __ResetMin_JTextField.getText().trim();
 	String ResetMax = __ResetMax_JTextField.getText().trim();
+	String RolloverDeltaLimit = __RolloverDeltaLimit_JTextField.getText().trim();
+	String RolloverFlag = __RolloverFlag_JTextField.getText().trim();
+	String ManualResetFlag = __ManualResetFlag_JTextField.getText().trim();
 	String ResetProximityLimit = __ResetProximityLimit_JTextField.getText().trim();
 	String ResetProximityLimitInterval = __ResetProximityLimitInterval_JTextField.getText().trim();
 	String ResetProximityLimitFlag = __ResetProximityLimitFlag_JTextField.getText().trim();
@@ -442,6 +471,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "Flag", Flag );
 	__command.setCommandParameter ( "Alias", Alias );
+	__command.setCommandParameter ( "CopyDataFlags", CopyDataFlags );
 	// Delta limit.
 	__command.setCommandParameter ( "DeltaLimit", DeltaLimit );
 	__command.setCommandParameter ( "DeltaLimitAction", DeltaLimitAction );
@@ -451,9 +481,13 @@ private void commitEdits () {
 	__command.setCommandParameter ( "IntervalLimitFlag", IntervalLimitFlag );
 	// ResetType=Auto
 	__command.setCommandParameter ( "AutoResetDatum", AutoResetDatum );
+	__command.setCommandParameter ( "AutoResetFlag", AutoResetFlag );
 	// ResetType=Rollover
 	__command.setCommandParameter ( "ResetMin", ResetMin );
 	__command.setCommandParameter ( "ResetMax", ResetMax );
+	__command.setCommandParameter ( "RolloverDeltaLimit", RolloverDeltaLimit );
+	__command.setCommandParameter ( "RolloverFlag", RolloverFlag );
+	__command.setCommandParameter ( "ManualResetFlag", ManualResetFlag );
 	__command.setCommandParameter ( "ResetProximityLimit", ResetProximityLimit );
 	__command.setCommandParameter ( "ResetProximityLimitInterval", ResetProximityLimitInterval );
 	__command.setCommandParameter ( "ResetProximityLimitFlag", ResetProximityLimitFlag );
@@ -555,6 +589,9 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(general_JPanel, new JLabel (
         "See the Output* tabs to save problems."),
         0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (
+        "It is recommended that the flag be specified as Auto and also specify other flags in other tabs."),
+        0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(general_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -632,6 +669,20 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Copy data flags?:" ),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CopyDataFlags_JComboBox = new SimpleJComboBox ();
+    List<String> copyFlagsChoices = new ArrayList<>();
+    copyFlagsChoices.add ( "" );
+    copyFlagsChoices.add ( "" + this.__command._False );
+    copyFlagsChoices.add ( "" + this.__command._True );
+    __CopyDataFlags_JComboBox.setData(copyFlagsChoices);
+    __CopyDataFlags_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(general_JPanel, __CopyDataFlags_JComboBox,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Optional - copy data flags from input (default=" + this.__command._False + ")."),
+        3, yGeneral, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for delta limit parameters.
     int yLimit = -1;
@@ -757,6 +808,16 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(resetAuto_JPanel, new JLabel ( "Optional - datum for auto reset (default=0)."),
         3, yResetAuto, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(resetAuto_JPanel,new JLabel( "Auto reset flag:"),
+        0, ++yResetAuto, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AutoResetFlag_JTextField = new JTextField ( "", 10 );
+    __AutoResetFlag_JTextField.setToolTipText("Flag to set for auto reset values. `+A` will be used if `Auto` is specified. Can use ${Property}.");
+    __AutoResetFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(resetAuto_JPanel, __AutoResetFlag_JTextField,
+        1, yResetAuto, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetAuto_JPanel, new JLabel ( "Optional - flag for auto reset (default=none, can use Auto)."),
+        3, yResetAuto, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
     // Panel for ResetType=Rollover parameters.
     int yResetRollover = -1;
     JPanel resetRollover_JPanel = new JPanel();
@@ -769,6 +830,7 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel (
         "For example, a sensor may have an allowed range ResetValueMin=0 to ResteValueMax=2048."),
         0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    /*
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel (
         "The reset proximity parameters can be set to check for unexpected values near a non-rollover reset."),
         0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -777,6 +839,14 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel (
         "and non-zero sum in the proximity interval may indicate invalid data due to sensor calibration."),
+        0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel (
+        "If the RolloverDeltaLimit is specified, a delta of (ResetMax - previous value) that"
+        + " is larger than the limit will be treated as a manual reset."),
+        0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel (
+        "and the delta up to ResetMax will not be counted."),
         0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(resetRollover_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yResetRollover, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -799,6 +869,39 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
         "Optional - maximum value for a rollover reset."),
+        3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Rollover delta limit:" ),
+        0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RolloverDeltaLimit_JTextField = new JTextField ( 10 );
+    __RolloverDeltaLimit_JTextField.setToolTipText("Maximum delta (previous value) for rollover, else treat as manual reset, can use ${Property}.");
+    __RolloverDeltaLimit_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(resetRollover_JPanel, __RolloverDeltaLimit_JTextField,
+        1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
+        "Optional - maximum delta (previous) for rollover (default=no limit)."),
+        3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Rollover flag:" ),
+        0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RolloverFlag_JTextField = new JTextField ( 10 );
+    __RolloverFlag_JTextField.setToolTipText("Flag to set for rollover. +R will be used if specified as Auto.  Can use ${Property}.");
+    __RolloverFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(resetRollover_JPanel, __RolloverFlag_JTextField,
+        1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
+        "Optional - flag for rollover (default=none, can use Auto)."),
+        3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Manual reset flag:" ),
+        0, ++yResetRollover, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ManualResetFlag_JTextField = new JTextField ( 10 );
+    __ManualResetFlag_JTextField.setToolTipText("Flag to set for manual reset. +r will be used if specified as Auto.  Can use ${Property}.");
+    __ManualResetFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(resetRollover_JPanel, __ManualResetFlag_JTextField,
+        1, yResetRollover, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(resetRollover_JPanel, new JLabel(
+        "Optional - flag for manual reset (default=none, can use Auto)."),
         3, yResetRollover, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(resetRollover_JPanel, new JLabel ( "Reset proximity limit:" ),
@@ -992,7 +1095,7 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
     JGUIUtil.addComponent(prop_JPanel, new JLabel(
         "Optional - name of time series property for problem count."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     // Command text area.
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1084,6 +1187,7 @@ private void refresh () {
 	String AnalysisEnd = "";
 	String Flag = "";
     String Alias = "";
+    String CopyDataFlags = "";
     // Delta limit.
 	String DeltaLimit = "";
 	String DeltaLimitAction = "";
@@ -1093,9 +1197,13 @@ private void refresh () {
 	String IntervalLimitFlag = "";
     // ResetType=Auto.
 	String AutoResetDatum = "";
+	String AutoResetFlag = "";
     // ResetType=Rollover.
 	String ResetMin = "";
 	String ResetMax = "";
+	String RolloverDeltaLimit = "";
+	String RolloverFlag = "";
+	String ManualResetFlag = "";
 	String ResetProximityLimit = "";
 	String ResetProximityLimitInterval = "";
 	String ResetProximityLimitFlag = "";
@@ -1128,6 +1236,7 @@ private void refresh () {
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 	    Flag = props.getValue ( "Flag" );
         Alias = props.getValue("Alias");
+        CopyDataFlags = props.getValue("CopyDataFlags");
         // Delta limit.
         DeltaLimit = props.getValue("DeltaLimit");
         DeltaLimitAction = props.getValue("DeltaLimitAction");
@@ -1137,9 +1246,13 @@ private void refresh () {
         IntervalLimitFlag = props.getValue("IntervalLimitFlag");
         // ResetType=Auto.
 		AutoResetDatum = props.getValue ( "AutoResetDatum" );
+		AutoResetFlag = props.getValue ( "AutoResetFlag" );
         // ResetType=Rollover.
 		ResetMin = props.getValue ( "ResetMin" );
 		ResetMax = props.getValue ( "ResetMax" );
+		RolloverDeltaLimit = props.getValue ( "RolloverDeltaLimit" );
+		RolloverFlag = props.getValue ( "RolloverFlag" );
+		ManualResetFlag = props.getValue ( "ManualResetFlag" );
         ResetProximityLimit = props.getValue("ResetProximityLimit");
         ResetProximityLimitInterval = props.getValue("ResetProximityLimitInterval");
         ResetProximityLimitFlag = props.getValue("ResetProximityLimitFlag");
@@ -1248,6 +1361,22 @@ private void refresh () {
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__CopyDataFlags_JComboBox, CopyDataFlags,JGUIUtil.NONE, null, null ) ) {
+			__CopyDataFlags_JComboBox.select ( CopyDataFlags );
+		}
+		else {
+            if ( (CopyDataFlags == null) ||	CopyDataFlags.equals("") ) {
+				// New command...select the default.
+				__CopyDataFlags_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"CopyDataFlags parameter \"" +	CopyDataFlags +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
         // Delta limit.
 		if ( DeltaLimit != null ) {
 			__DeltaLimit_JTextField.setText ( DeltaLimit );
@@ -1297,12 +1426,24 @@ private void refresh () {
 		if ( AutoResetDatum != null ) {
 			__AutoResetDatum_JTextField.setText ( AutoResetDatum );
 		}
+		if ( AutoResetFlag != null ) {
+			__AutoResetFlag_JTextField.setText ( AutoResetFlag );
+		}
         // ResetType=Rollover.
 		if ( ResetMin != null ) {
 			__ResetMin_JTextField.setText ( ResetMin );
 		}
         if ( ResetMax != null ) {
             __ResetMax_JTextField.setText ( ResetMax );
+        }
+        if ( RolloverDeltaLimit != null ) {
+            __RolloverDeltaLimit_JTextField.setText ( RolloverDeltaLimit );
+        }
+        if ( RolloverFlag != null ) {
+            __RolloverFlag_JTextField.setText ( RolloverFlag );
+        }
+        if ( ManualResetFlag != null ) {
+            __ManualResetFlag_JTextField.setText ( ManualResetFlag );
         }
         if ( ResetProximityLimit != null ) {
             __ResetProximityLimit_JTextField.setText ( ResetProximityLimit );
@@ -1375,11 +1516,12 @@ private void refresh () {
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     // General.
     ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
-	ResetMax = __ResetMax_JTextField.getText().trim();
+    ResetType = __ResetType_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	Flag = __Flag_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+    CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
 	// Delta limit.
 	DeltaLimit = __DeltaLimit_JTextField.getText().trim();
     DeltaLimitAction = __DeltaLimitAction_JComboBox.getSelected();
@@ -1389,9 +1531,13 @@ private void refresh () {
 	IntervalLimitFlag = __IntervalLimitFlag_JTextField.getText().trim();
 	// ResetType=Auto.
 	AutoResetDatum = __AutoResetDatum_JTextField.getText().trim();
+	AutoResetFlag = __AutoResetFlag_JTextField.getText().trim();
 	// ResetType=Rollover.
-    ResetType = __ResetType_JComboBox.getSelected();
+	ResetMax = __ResetMax_JTextField.getText().trim();
 	ResetMin = __ResetMin_JTextField.getText().trim();
+	RolloverDeltaLimit = __RolloverDeltaLimit_JTextField.getText().trim();
+	RolloverFlag = __RolloverFlag_JTextField.getText().trim();
+	ManualResetFlag = __ManualResetFlag_JTextField.getText().trim();
 	ResetProximityLimit = __ResetProximityLimit_JTextField.getText().trim();
 	ResetProximityLimitInterval = __ResetProximityLimitInterval_JTextField.getText().trim();
 	ResetProximityLimitFlag = __ResetProximityLimitFlag_JTextField.getText().trim();
@@ -1422,6 +1568,7 @@ private void refresh () {
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "Flag=" + Flag );
 	props.add ( "Alias=" + Alias );
+	props.add ( "CopyDataFlags=" + CopyDataFlags );
 	// Delta limit.
 	props.add ( "DeltaLimit=" + DeltaLimit );
 	props.add ( "DeltaLimitAction=" + DeltaLimitAction );
@@ -1431,9 +1578,13 @@ private void refresh () {
 	props.add ( "IntervalLimitFlag=" + IntervalLimitFlag );
 	// ResetType=Auto.
 	props.add ( "AutoResetDatum=" + AutoResetDatum );
+	props.add ( "AutoResetFlag=" + AutoResetFlag );
 	// ResetType=Rollover.
 	props.add ( "ResetMin=" + ResetMin );
 	props.add ( "ResetMax=" + ResetMax );
+	props.add ( "RolloverDeltaLimit=" + RolloverDeltaLimit );
+	props.add ( "RolloverFlag=" + RolloverFlag );
+	props.add ( "ManualResetFlag=" + ManualResetFlag );
 	props.add ( "ResetProximityLimit=" + ResetProximityLimit );
 	props.add ( "ResetProximityLimitInterval=" + ResetProximityLimitInterval );
 	props.add ( "ResetProximityLimitFlag=" + ResetProximityLimitFlag );

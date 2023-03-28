@@ -59,8 +59,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the Delta() command.
 */
-public class Delta_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
-{
+public class Delta_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider {
 
 	/**
 	 * Possible values for ResetType.
@@ -76,6 +75,12 @@ public class Delta_Command extends AbstractCommand implements CommandDiscoverabl
 	*/
 	protected final String _Keep = "Keep";
 	protected final String _SetMissing = "SetMissing";
+
+	/**
+	Values for CopyDataFlags parameter.
+	*/
+	protected final String _False = "False";
+	protected final String _True = "True";
 
 	/**
 	The table that is created for discovery mode.
@@ -111,6 +116,7 @@ throws InvalidCommandParameterException {
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String Alias = parameters.getValue ( "Alias" );
+	String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
 	// Delta limit.
 	String DeltaLimit = parameters.getValue ( "DeltaLimit" );
 	String DeltaLimitAction = parameters.getValue ( "DeltaLimitAction" );
@@ -122,6 +128,7 @@ throws InvalidCommandParameterException {
 	// ResetType=Rollover
 	String ResetMin = parameters.getValue ( "ResetMin" );
 	String ResetMax = parameters.getValue ( "ResetMax" );
+	String RolloverDeltaLimit = parameters.getValue ( "RolloverDeltaLimit" );
 	String ResetProximityLimit = parameters.getValue ( "ResetProximityLimit" );
 	String ResetProximityInterval = parameters.getValue ( "ResetProximityInterval" );
 	// Output table.
@@ -215,6 +222,16 @@ throws InvalidCommandParameterException {
 
     }
 
+    // Verify that the CopyDataFlags is a value that can be handled.
+    if ( (CopyDataFlags != null) && !CopyDataFlags.isEmpty() &&
+    	!CopyDataFlags.equalsIgnoreCase(_False) &&
+    	!CopyDataFlags.equalsIgnoreCase(_True) ) {
+        message = "The CopyDataFlags valid (" + CopyDataFlags + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify CopyDataFlags as " + _False + " (default) or " + _True ));
+    }
+
   	// Verify that the AutoResetDatum is empty, Auto, or a number.
    	if ( (AutoResetDatum != null) && !AutoResetDatum.isEmpty() &&
    		!AutoResetDatum.equalsIgnoreCase(this._Auto) && !StringUtil.isDouble(AutoResetDatum) ) {
@@ -275,6 +292,13 @@ throws InvalidCommandParameterException {
         	status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             	message, "Specify ResetType=Rollover when ResetMax and ResetMin are specified." ) );
     	}
+    }
+
+    if ( (RolloverDeltaLimit != null) && !RolloverDeltaLimit.equals("") && !StringUtil.isDouble(RolloverDeltaLimit) ) {
+        message = "The RolloverDeltaLimit value (" + RolloverDeltaLimit + ") is not a number.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the rollover limit as a number." ) );
     }
 
     if ( (ResetProximityLimit != null) && !ResetProximityLimit.isEmpty() ) {
@@ -345,7 +369,7 @@ throws InvalidCommandParameterException {
     }
 
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(28);
+	List<String> validList = new ArrayList<>(39);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -356,6 +380,7 @@ throws InvalidCommandParameterException {
     validList.add ( "AnalysisEnd" );
     validList.add ( "Flag" );
     validList.add ( "Alias" );
+    validList.add ( "CopyDataFlags" );
     // Delta limit.
     validList.add ( "DeltaLimit" );
     validList.add ( "DeltaLimitAction" );
@@ -365,9 +390,13 @@ throws InvalidCommandParameterException {
     validList.add ( "IntervalLimitFlag" );
     // ResetType=Auto.
     validList.add ( "AutoResetDatum" );
+    validList.add ( "AutoResetFlag" );
     // ResetType=Rollover.
     validList.add ( "ResetType" );
     validList.add ( "ResetMin" );
+    validList.add ( "RolloverDeltaLimit" );
+    validList.add ( "RolloverFlag" );
+    validList.add ( "ManualResetFlag" );
     validList.add ( "ResetProximityLimit" );
     validList.add ( "ResetProximityLimitInterval" );
     validList.add ( "ResetProximityLimitFlag" );
@@ -542,10 +571,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String Flag = parameters.getValue ( "Flag" );
-	if ( (Flag != null) && (Flag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Flag = TSCommandProcessorUtil.expandParameterValue(processor, this, Flag);
 	}
 	String Alias = parameters.getValue ( "Alias" );
+	String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
+	boolean copyDataFlags = false; // Default.
+	if ( (CopyDataFlags != null) && CopyDataFlags.equalsIgnoreCase(_True) ) {
+		copyDataFlags = true;
+	}
 
 	// Delta limit.
 	String DeltaLimit = parameters.getValue ( "DeltaLimit" );
@@ -555,40 +589,88 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	String DeltaLimitAction = parameters.getValue ( "DeltaLimitAction" );
 	String DeltaLimitFlag = parameters.getValue ( "DeltaLimitFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DeltaLimitFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, DeltaLimitFlag);
+	}
 	String IntervalLimit = parameters.getValue ( "IntervalLimit" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		IntervalLimit = TSCommandProcessorUtil.expandParameterValue(processor, this, IntervalLimit);
+	}
     TimeInterval intervalLimit = null;
     if ( (IntervalLimit != null) && !IntervalLimit.equals("") ) {
         intervalLimit = TimeInterval.parseInterval(IntervalLimit);
     }
 	String IntervalLimitAction = parameters.getValue ( "IntervalLimitAction" );
 	String IntervalLimitFlag = parameters.getValue ( "IntervalLimitFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		IntervalLimitFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, IntervalLimitFlag);
+	}
 
 	// ResetType=Auto.
 	// Treat as a string because can be a number or "Auto".
 	String AutoResetDatum = parameters.getValue ( "AutoResetDatum" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		AutoResetDatum = TSCommandProcessorUtil.expandParameterValue(processor, this, AutoResetDatum);
+	}
+	String AutoResetFlag = parameters.getValue ( "AutoResetFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		AutoResetFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, AutoResetFlag);
+	}
 
 	// ResetType=Rollover.
 	String ResetMin = parameters.getValue ( "ResetMin" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ResetMin = TSCommandProcessorUtil.expandParameterValue(processor, this, ResetMin);
+	}
 	Double resetMin = null;
 	if ( (ResetMin != null) && !ResetMin.equals("") ) {
 	    resetMin = Double.parseDouble(ResetMin);
 	}
 	String ResetMax = parameters.getValue ( "ResetMax" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ResetMax = TSCommandProcessorUtil.expandParameterValue(processor, this, ResetMax);
+	}
     Double resetMax = null;
     if ( (ResetMax != null) && !ResetMax.equals("") ) {
         resetMax = Double.parseDouble(ResetMax);
     }
+	String RolloverDeltaLimit = parameters.getValue ( "RolloverDeltaLimit" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		RolloverDeltaLimit = TSCommandProcessorUtil.expandParameterValue(processor, this, RolloverDeltaLimit);
+	}
+    Double rolloverDeltaLimit = null;
+    if ( (RolloverDeltaLimit != null) && !RolloverDeltaLimit.equals("") ) {
+        rolloverDeltaLimit = Double.parseDouble(RolloverDeltaLimit);
+    }
+	String RolloverFlag = parameters.getValue ( "RolloverFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		RolloverFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, RolloverFlag);
+	}
+	String ManualResetFlag = parameters.getValue ( "ManualResetFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ManualResetFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, ManualResetFlag);
+	}
+
 	String ResetProximityLimit = parameters.getValue ( "ResetProximityLimit" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ResetProximityLimit = TSCommandProcessorUtil.expandParameterValue(processor, this, ResetProximityLimit);
+	}
     Double resetProximityLimit = null;
     if ( (ResetProximityLimit != null) && !ResetProximityLimit.equals("") ) {
         resetProximityLimit = Double.parseDouble(ResetProximityLimit);
     }
 	String ResetProximityLimitInterval = parameters.getValue ( "ResetProximityLimitInterval" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ResetProximityLimitInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, ResetProximityLimitInterval);
+	}
 	TimeInterval resetProximityLimitInterval = null;
 	if ( (ResetProximityLimitInterval != null) && !ResetProximityLimitInterval.isEmpty() ) {
 		resetProximityLimitInterval = TimeInterval.parseInterval(ResetProximityLimitInterval);
 	}
 	String ResetProximityLimitFlag = parameters.getValue ( "ResetProximityLimitFlag" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ResetProximityLimitFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, ResetProximityLimitFlag);
+	}
 
 	// Output table.
     String TableID = parameters.getValue ( "TableID" );
@@ -862,10 +944,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Creating delta for " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
-			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime,
+			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, copyDataFlags,
 			    trendType, resetType,
-			    AutoResetDatum,
-			    resetMin, resetMax, resetProximityLimit, resetProximityLimitInterval, ResetProximityLimitFlag,
+			    AutoResetDatum, AutoResetFlag,
+			    resetMin, resetMax, rolloverDeltaLimit, RolloverFlag, ManualResetFlag,
+			    resetProximityLimit, resetProximityLimitInterval, ResetProximityLimitFlag,
 			    Flag, createData,
 			    deltaLimit, DeltaLimitAction, DeltaLimitFlag,
 			    intervalLimit, IntervalLimitAction, IntervalLimitFlag,
@@ -990,6 +1073,7 @@ public String toString ( PropList parameters ) {
 		"AnalysisEnd",
 		"Flag",
 		"Alias",
+		"CopyDataFlags",
     	// Delta Limit.
 		"DeltaLimit",
 		"DeltaLimitAction",
@@ -999,9 +1083,13 @@ public String toString ( PropList parameters ) {
 		"IntervalLimitFlag",
 		// ResetType=Auto.
 		"AutoResetDatum",
+		"AutoResetFlag",
 		// ResetType=Rollover.
 		"ResetMin",
 		"ResetMax",
+		"RolloverDeltaLimit",
+		"RolloverFlag",
+		"ManualResetFlag",
 		"ResetProximityLimit",
 		"ResetMaxProximityLimitInterval",
 		"ResetMaxProximityLimitFlag",

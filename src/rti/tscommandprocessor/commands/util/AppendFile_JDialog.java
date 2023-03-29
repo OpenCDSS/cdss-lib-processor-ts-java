@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -92,8 +92,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public AppendFile_JDialog ( JFrame parent, AppendFile_Command command )
-{	super(parent, true);
+public AppendFile_JDialog ( JFrame parent, AppendFile_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -101,8 +101,8 @@ public AppendFile_JDialog ( JFrame parent, AppendFile_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browseInput_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -114,16 +114,16 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select Input File");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -147,16 +147,16 @@ public void actionPerformed( ActionEvent event )
             fc = JFileChooserFactory.createJFileChooser(__working_dir );
         }
         fc.setDialogTitle( "Select Output File");
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -222,11 +222,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
     String AppendText = __AppendText_JTextArea.getText().trim();
@@ -268,11 +268,10 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.  In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String InputFile = __InputFile_JTextField.getText().trim();
+private void commitEdits () {
+	String InputFile = __InputFile_JTextField.getText().trim();
     String AppendText = __AppendText_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
@@ -293,10 +292,10 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, AppendFile_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, AppendFile_Command command ) {
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
@@ -334,7 +333,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file(s):" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file(s):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the input file(s) using a single file, *, or *.ext pattern, can use ${Property} notation");
@@ -358,7 +357,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Append text area is resizable.
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append text:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append text:" ),
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AppendText_JTextArea = new JTextArea (8,60);
     __AppendText_JTextArea.setToolTipText("Optional text to append, OK to include line breaks.");
@@ -367,12 +366,12 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     __AppendText_JTextArea.addKeyListener(this);
     //JGUIUtil.addComponent(main_JPanel, new JScrollPane(__AppendText_JTextArea),
     //    1, y, 1, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel, new JLabel("Optional."), 
+    //JGUIUtil.addComponent(main_JPanel, new JLabel("Optional."),
     //    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__AppendText_JTextArea),
         1, y, 7, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.setToolTipText("Specify the output file, can be the same as an input file, can use ${Property} notation");
@@ -394,7 +393,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	}
 	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeText_JTextField = new JTextField ( 20 );
@@ -405,7 +404,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - include lines matching regular expression (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
@@ -416,7 +415,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - exclude lines matching regular expression (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Newline character(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Newline_JTextField = new JTextField ( 5 );
@@ -445,7 +444,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 		"Optional - action if input file is not found (default=" + __command._Warn + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -455,10 +454,10 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -469,7 +468,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
-	
+
 	// Refresh the contents.
     refresh ();
 
@@ -483,19 +482,20 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -507,8 +507,8 @@ public boolean ok ()
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
 	String AppendText = "";
 	String OutputFile = "";
@@ -631,13 +631,13 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
@@ -650,15 +650,27 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

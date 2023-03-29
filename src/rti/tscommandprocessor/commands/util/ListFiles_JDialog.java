@@ -75,8 +75,11 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextField __Folder_JTextField = null;
-private JTextField __IncludeFiles_JTextField = null;
-private JTextField __ExcludeFiles_JTextField = null;
+private SimpleJComboBox __ListScope_JComboBox = null;
+private SimpleJComboBox __ListFiles_JComboBox = null;
+private SimpleJComboBox __ListFolders_JComboBox = null;
+private JTextField __IncludeNames_JTextField = null;
+private JTextField __ExcludeNames_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextArea __command_JTextArea = null;
@@ -179,19 +182,31 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Folder = __Folder_JTextField.getText().trim();
-	String IncludeFiles = __IncludeFiles_JTextField.getText().trim();
-	String ExcludeFiles = __ExcludeFiles_JTextField.getText().trim();
+	String ListScope = __ListScope_JComboBox.getSelected();
+	String ListFiles = __ListFiles_JComboBox.getSelected();
+	String ListFolders = __ListFolders_JComboBox.getSelected();
+	String IncludeNames = __IncludeNames_JTextField.getText().trim();
+	String ExcludeNames = __ExcludeNames_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
 	String Append = __Append_JComboBox.getSelected();
 	__error_wait = false;
 	if ( Folder.length() > 0 ) {
 		props.set ( "Folder", Folder );
 	}
-    if ( IncludeFiles.length() > 0 ) {
-        props.set ( "IncludeFiles", IncludeFiles );
+	if ( ListScope.length() > 0 ) {
+		props.set ( "ListScope", ListScope );
+	}
+	if ( ListFiles.length() > 0 ) {
+		props.set ( "ListFiles", ListFiles );
+	}
+	if ( ListFolders.length() > 0 ) {
+		props.set ( "ListFolders", ListFolders );
+	}
+    if ( IncludeNames.length() > 0 ) {
+        props.set ( "IncludeNames", IncludeNames );
     }
-    if ( ExcludeFiles.length() > 0 ) {
-        props.set ( "ExcludeFiles", ExcludeFiles );
+    if ( ExcludeNames.length() > 0 ) {
+        props.set ( "ExcludeNames", ExcludeNames );
     }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
@@ -215,13 +230,19 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String Folder = __Folder_JTextField.getText().trim();
-    String IncludeFiles = __IncludeFiles_JTextField.getText().trim();
-    String ExcludeFiles = __ExcludeFiles_JTextField.getText().trim();
+	String ListScope = __ListScope_JComboBox.getSelected();
+	String ListFiles = __ListFiles_JComboBox.getSelected();
+	String ListFolders = __ListFolders_JComboBox.getSelected();
+    String IncludeNames = __IncludeNames_JTextField.getText().trim();
+    String ExcludeNames = __ExcludeNames_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String Append = __Append_JComboBox.getSelected();
     __command.setCommandParameter ( "Folder", Folder );
-	__command.setCommandParameter ( "IncludeFiles", IncludeFiles );
-	__command.setCommandParameter ( "ExcludeFiles", ExcludeFiles );
+    __command.setCommandParameter ( "ListScope", ListScope );
+    __command.setCommandParameter ( "ListFiles", ListFiles );
+    __command.setCommandParameter ( "ListFolders", ListFolders );
+	__command.setCommandParameter ( "IncludeNames", IncludeNames );
+	__command.setCommandParameter ( "ExcludeNames", ExcludeNames );
 	__command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "Append", Append );
 }
@@ -250,10 +271,10 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a list of files given folder and file names.  Output is to a table." ),
+		"Create a list of files and folders given a starting folder and filtering parameters  Output is to a table." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The include and exclude file patterns can use * in filenames for wildcards." ),
+        "The include and exclude name patterns can use * and will match the name only." ),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -289,24 +310,72 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, Folder_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("File(s) to include:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List scope:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ListScope_JComboBox = new SimpleJComboBox ( false );
+	List<String> scopeChoices = new ArrayList<>();
+	scopeChoices.add ( "" );	// Default.
+	scopeChoices.add ( __command._All );
+	scopeChoices.add ( __command._Folder );
+	__ListScope_JComboBox.setData(scopeChoices);
+	__ListScope_JComboBox.select ( 0 );
+	__ListScope_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ListScope_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - scope of listing (default=" + __command._Folder + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List files?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ListFiles_JComboBox = new SimpleJComboBox ( false );
+	List<String> listFilesChoices = new ArrayList<>();
+	listFilesChoices.add ( "" );	// Default.
+	listFilesChoices.add ( __command._False );
+	listFilesChoices.add ( __command._True );
+	__ListFiles_JComboBox.setData(listFilesChoices);
+	__ListFiles_JComboBox.select ( 0 );
+	__ListFiles_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ListFiles_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - whether to list files (default=" + __command._True + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List folders?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ListFolders_JComboBox = new SimpleJComboBox ( false );
+	List<String> listFoldersChoices = new ArrayList<>();
+	listFoldersChoices.add ( "" );	// Default.
+	listFoldersChoices.add ( __command._False );
+	listFoldersChoices.add ( __command._True );
+	__ListFolders_JComboBox.setData(listFoldersChoices);
+	__ListFolders_JComboBox.select ( 0 );
+	__ListFolders_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __ListFolders_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - whether to list folders (default=" + __command._False + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Names(s) to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __IncludeFiles_JTextField = new JTextField ( 40 );
-    __IncludeFiles_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IncludeFiles_JTextField,
+    __IncludeNames_JTextField = new JTextField ( 40 );
+    __IncludeNames_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeNames_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - files in folder to include (default=include all)."),
+        "Optional - names to include (default=include all)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "File(s) to exclude:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Names(s) to exclude:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcludeFiles_JTextField = new JTextField ( 40 );
-    __ExcludeFiles_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ExcludeFiles_JTextField,
+    __ExcludeNames_JTextField = new JTextField ( 40 );
+    __ExcludeNames_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeNames_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - files in folder to exclude (default=none)."),
+        "Optional - names to exclude (default=exclude none)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
@@ -412,8 +481,11 @@ Refresh the command from the other text field contents.
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
 	String Folder = "";
-	String IncludeFiles = "";
-	String ExcludeFiles = "";
+	String ListScope = "";
+	String ListFiles = "";
+	String ListFolders = "";
+	String IncludeNames = "";
+	String ExcludeNames = "";
 	String TableID = "";
 	String Append = "";
     PropList parameters = null;
@@ -421,18 +493,69 @@ private void refresh () {
 		__first_time = false;
         parameters = __command.getCommandParameters();
 		Folder = parameters.getValue ( "Folder" );
-		IncludeFiles = parameters.getValue ( "IncludeFiles" );
-		ExcludeFiles = parameters.getValue ( "ExcludeFiles" );
+		ListScope = parameters.getValue ( "ListScope" );
+		ListFiles = parameters.getValue ( "ListFiles" );
+		ListFolders = parameters.getValue ( "ListFolders" );
+		IncludeNames = parameters.getValue ( "IncludeNames" );
+		ExcludeNames = parameters.getValue ( "ExcludeNames" );
 		TableID = parameters.getValue ( "TableID" );
 		Append = parameters.getValue ( "Append" );
 		if ( Folder != null ) {
 			__Folder_JTextField.setText ( Folder );
 		}
-        if ( IncludeFiles != null ) {
-            __IncludeFiles_JTextField.setText ( IncludeFiles );
+		if ( JGUIUtil.isSimpleJComboBoxItem(__ListScope_JComboBox, ListScope,JGUIUtil.NONE, null, null ) ) {
+			__ListScope_JComboBox.select ( ListScope );
+		}
+		else {
+            if ( (ListScope == null) ||	ListScope.equals("") ) {
+				// New command...select the default.
+				__ListScope_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"ListScope parameter \"" + ListScope +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__ListFiles_JComboBox, ListFiles,JGUIUtil.NONE, null, null ) ) {
+			__ListFiles_JComboBox.select ( ListFiles );
+		}
+		else {
+            if ( (ListFiles == null) ||	ListFiles.equals("") ) {
+				// New command...select the default.
+				__ListFiles_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"ListFiles parameter \"" + ListFiles +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__ListFolders_JComboBox, ListFolders,JGUIUtil.NONE, null, null ) ) {
+			__ListFolders_JComboBox.select ( ListFolders );
+		}
+		else {
+            if ( (ListFolders == null) ||	ListFolders.equals("") ) {
+				// New command...select the default.
+				__ListFolders_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"ListFolders parameter \"" + ListFolders +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+        if ( IncludeNames != null ) {
+            __IncludeNames_JTextField.setText ( IncludeNames );
         }
-        if ( ExcludeFiles != null ) {
-            __ExcludeFiles_JTextField.setText ( ExcludeFiles );
+        if ( ExcludeNames != null ) {
+            __ExcludeNames_JTextField.setText ( ExcludeNames );
         }
         if ( TableID == null ) {
             // Select default.
@@ -473,14 +596,20 @@ private void refresh () {
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
 	Folder = __Folder_JTextField.getText().trim();
-	IncludeFiles = __IncludeFiles_JTextField.getText().trim();
-	ExcludeFiles = __ExcludeFiles_JTextField.getText().trim();
+	ListScope = __ListScope_JComboBox.getSelected();
+	ListFiles = __ListFiles_JComboBox.getSelected();
+	ListFolders = __ListFolders_JComboBox.getSelected();
+	IncludeNames = __IncludeNames_JTextField.getText().trim();
+	ExcludeNames = __ExcludeNames_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
 	Append = __Append_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "Folder=" + Folder );
-	props.add ( "IncludeFiles=" + IncludeFiles );
-	props.add ( "ExcludeFiles=" + ExcludeFiles );
+	props.add ( "ListScope=" + ListScope );
+	props.add ( "ListFiles=" + ListFiles );
+	props.add ( "ListFolders=" + ListFolders );
+	props.add ( "IncludeNames=" + IncludeNames );
+	props.add ( "ExcludeNames=" + ExcludeNames );
 	props.add ( "TableID=" + TableID );
 	props.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString(props).trim() );

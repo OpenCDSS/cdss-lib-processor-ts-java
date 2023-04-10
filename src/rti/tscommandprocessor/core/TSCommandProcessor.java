@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -108,8 +108,8 @@ import RTi.GRTS.TSProductAnnotationProvider;
 
 // TS general commands.
 
-// TODO SAM 2005-05-19 When TSEngine is sufficiently clean, merge its code
-// into this class and rework the connection to the TSTool application.
+// TODO SAM 2005-05-19 When TSEngine is sufficiently clean,
+// merge its code into this class and rework the connection to the TSTool application.
 /**
 This class processes time series commands and manages the relevant data.
 */
@@ -117,15 +117,14 @@ public class TSCommandProcessor implements CommandProcessor, TSSupplier, Command
 {
 
 /**
-The legacy TSEngine class did all of the processing in TSTool.  It is now
-wrapped by this TSCommandProcessor class and code will continue to be moved
-to Command classes and this class.
+The legacy TSEngine class did all of the processing in TSTool.
+It is now wrapped by this TSCommandProcessor class and code will continue to be moved to Command classes and this class.
 */
 private TSEngine __tsengine = null;
 
 /**
-Actions that are used when processing time series, indicating
-whether new time series are created or existing ones modified.
+Actions that are used when processing time series,
+indicating whether new time series are created or existing ones modified.
 */
 public final int	INSERT_TS = 1,
 					UPDATE_TS = 2,
@@ -140,8 +139,7 @@ private List<Command> __CommandList = new Vector<>(); // Use Vector for thread-s
 /**
 List of plugin command classes, which allow third-party commands to be recognized and run.
 These are created in the TSTool main program.
-There is no need to have data in TSEngine because by the time TSEngine is used,
-commands are already created.
+There is no need to have data in TSEngine because by the time TSEngine is used, commands are already created.
 */
 private List<Class> pluginCommandClassList = new Vector<>(); // Use Vector for thread-safe.
 
@@ -157,15 +155,14 @@ The array of CommandListListeners to be called when the command list changes.
 private CommandListListener [] __CommandListListener_array = null;
 
 /**
-The array of CommandProcessorListeners to be called when the commands are
-running, to indicate progress.
+The array of CommandProcessorListeners to be called when the commands are running, to indicate progress.
 */
 private CommandProcessorListener [] __CommandProcessorListener_array = null;
 
 /**
 The list of CommandProcessorEventListener managed by this command processor,
-which is currently used only by the check file.  See the
-OpenCheckFile command for creation of the instances.
+which is currently used only by the check file.
+See the OpenCheckFile command for creation of the instances.
 */
 private CommandProcessorEventListener[] __CommandProcessorEventListener_array = null;
 
@@ -177,10 +174,9 @@ The latter may be used during troubleshooting to increase performance.
 private Boolean __CreateOutput_Boolean = new Boolean(true);
 
 /**
-Indicate whether commands should clear their log before running.
-Normally this is true.  However, when using For() commands it is helpful to accumulate
-logging messages in commands within the For() loop.  The command processor sets this value
-and each command must call getShouldCommandsClearLog() to check whether to clear.
+Indicate whether commands should clear their log before running. Normally this is true.
+However, when using For() commands it is helpful to accumulate logging messages in commands within the For() loop.
+The command processor sets this value and each command must call getShouldCommandsClearLog() to check whether to clear.
 */
 private Boolean __commandsShouldClearRunStatus = new Boolean(true);
 
@@ -202,15 +198,15 @@ The list of TSEnsemble managed by this command processor, guaranteed to be non-n
 private List<TSEnsemble> __TSEnsembleList = new Vector<>();
 
 /**
-The initial working directory for processing, typically the location of the command
-file from read/write.  This is used to adjust the working directory with
+The initial working directory for processing, typically the location of the command file from read/write.
+This is used to adjust the working directory with
 SetWorkingDir() commands and is used as the starting location with RunCommands().
 */
 private String __InitialWorkingDir_String = null;
 
 /**
-The current working directory for processing, which was initialized to
-InitialWorkingDir and modified by SetWorkingDir() commands.
+The current working directory for processing,
+which was initialized to InitialWorkingDir and modified by SetWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
 
@@ -228,16 +224,15 @@ private HashMap<String,Object> __propertyHashmap = new HashMap<String,Object>();
 private PropList initialProps = new PropList("AppProperties");
 
 /**
-Indicates whether the processor is currently running (false if has not started
-or has completed).  The running occurs in TSEngine.processCommands().
+Indicates whether the processor is currently running (false if has not started or has completed).
+The running occurs in TSEngine.processCommands().
 */
 private volatile boolean __is_running = false;
 
 /**
-Indicates whether the processing loop should be canceled.  This is a request
-(e.g., from a GUI) that needs to be handled as soon as possible during command
-processing.  It is envisioned that cancel can always occur between commands and
-as time allows it will also be enabled within a command.
+Indicates whether the processing loop should be canceled.
+This is a request (e.g., from a GUI) that needs to be handled as soon as possible during command processing.
+It is envisioned that cancel can always occur between commands and as time allows it will also be enabled within a command.
 */
 private volatile boolean __cancel_processing_requested = false;
 
@@ -272,8 +267,8 @@ Construct a command processor with no commands.
 @initialProps initial properties, typically specified on the application command line,
 which are important to make available globally
 */
-public TSCommandProcessor ( PropList initialProps )
-{	super();
+public TSCommandProcessor ( PropList initialProps ) {
+	super();
 
 	// Create a TSEngine that works parallel to this class.
 	__tsengine = new TSEngine ( this );
@@ -286,14 +281,14 @@ public TSCommandProcessor ( PropList initialProps )
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     // FIXME smalers 2022-12-06 Prior to this date used the following:
     // - not sure why .tstool is included
-    // - As of TSTool 14.5.1 add UserTstoolDir
+    // - as of TSTool 14.5.1 add UserTstoolDir
     //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     String homeDir = System.getProperty("user.home");
     __propertyHashmap.put ( "UserHomeDir", homeDir );
     __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
     __propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
     __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
-    // TODO smalers set based on the version from ProgramVersionString property
+    // TODO smalers set based on the version from ProgramVersionString property.
     //__propertyHashmap.put ( "UserTstoolVersionDir", homeDir + File.separator + ".tstool" + File.separator + majorVersion);
     //__propertyHashmap.put ( "UserTstoolVersionDirURL", "file:///" + homeDir.replace("\\", "/") );
 
@@ -317,8 +312,8 @@ Add a command at the end of the list.
 @param command Command to add.
 @param notifyCommandListListeners Indicate whether registered CommandListListeners should be notified.
 */
-public void addCommand ( Command command, boolean notifyCommandListListeners )
-{	String routine = "TSCommandProcessor.addCommand";
+public void addCommand ( Command command, boolean notifyCommandListListeners ) {
+	String routine = getClass().getSimpleName() + ".addCommand";
 	__CommandList.add( command );
 	// Also add this processor as a listener for events.
 	if ( command instanceof CommandProcessorEventProvider ) {
@@ -334,15 +329,15 @@ public void addCommand ( Command command, boolean notifyCommandListListeners )
 }
 
 /**
-Add a command at the end of the list using the string text.  This should currently only be
-used for commands that do not have command classes, which perform
-additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be set.
+Add a command at the end of the list using the string text.
+This should currently only be used for commands that do not have command classes, which perform
+additional validation on the commands.
+A GenericCommand instance will be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 @param index Index (0+) at which to insert the command.
 */
-public void addCommand ( String command_string )
-{	String routine = "TSCommandProcessor.addCommand";
+public void addCommand ( String command_string ) {
+	String routine = getClass().getSimpleName() + ".addCommand";
 	Command command = new GenericCommand ();
 	command.setCommandString ( command_string );
 	addCommand ( command );
@@ -355,45 +350,43 @@ or change (are edited or execution status is updated).
 If the listener has already been added, the listener will remain in the list in the original order.
 */
 public void addCommandListListener ( CommandListListener listener ) {
-		// Use arrays to make a little simpler than Vectors to use later.
-		if ( listener == null ) {
+	// Use arrays to make a little simpler than Vectors to use later.
+	if ( listener == null ) {
+		return;
+	}
+	// See if the listener has already been added.
+	// Resize the listener array.
+	int size = 0;
+	if ( __CommandListListener_array != null ) {
+		size = __CommandListListener_array.length;
+	}
+	for ( int i = 0; i < size; i++ ) {
+		if ( __CommandListListener_array[i] == listener ) {
 			return;
 		}
-		// See if the listener has already been added.
-		// Resize the listener array.
-		int size = 0;
-		if ( __CommandListListener_array != null ) {
-			size = __CommandListListener_array.length;
-		}
+	}
+	if ( __CommandListListener_array == null ) {
+		__CommandListListener_array = new CommandListListener[1];
+		__CommandListListener_array[0] = listener;
+	}
+	else {
+	    // Need to resize and transfer the list.
+		size = __CommandListListener_array.length;
+		CommandListListener [] newlisteners = new CommandListListener[size + 1];
 		for ( int i = 0; i < size; i++ ) {
-			if ( __CommandListListener_array[i] == listener ) {
-				return;
-			}
+				newlisteners[i] = __CommandListListener_array[i];
 		}
-		if ( __CommandListListener_array == null ) {
-			__CommandListListener_array = new CommandListListener[1];
-			__CommandListListener_array[0] = listener;
-		}
-		else {
-		    // Need to resize and transfer the list.
-			size = __CommandListListener_array.length;
-			CommandListListener [] newlisteners = new CommandListListener[size + 1];
-			for ( int i = 0; i < size; i++ ) {
-					newlisteners[i] = __CommandListListener_array[i];
-			}
-			__CommandListListener_array = newlisteners;
-			__CommandListListener_array[size] = listener;
-			newlisteners = null;
-		}
+		__CommandListListener_array = newlisteners;
+		__CommandListListener_array[size] = listener;
+		newlisteners = null;
+	}
 }
 
 /**
 Add a CommandProcessorEventListener, to be notified when commands generate CommandProcessorEvents.
 This is currently utilized by the check file capability, which queues events and generates a report file.
-If the listener has already been added, the listener will remain in
-the list in the original order.
-TODO SAM 2008-08-21 Make this private for now but may need to rethink if other than the check file use
-the events.
+If the listener has already been added, the listener will remain in the list in the original order.
+TODO SAM 2008-08-21 Make this private for now but may need to rethink if other than the check file use the events.
 */
 private void addCommandProcessorEventListener ( CommandProcessorEventListener listener ) {
     // Use arrays to make a little simpler than Vectors to use later.
@@ -434,64 +427,65 @@ progress made, and completed.  This is useful to allow calling software to repor
 If the listener has already been added, the listener will remain in the list in the original order.
 */
 public void addCommandProcessorListener ( CommandProcessorListener listener ) {
-		// Use arrays to make a little simpler than Vectors to use later.
-		if ( listener == null ) {
+	// Use arrays to make a little simpler than lists to use later.
+	if ( listener == null ) {
+		return;
+	}
+	// See if the listener has already been added.
+	// Resize the listener array.
+	int size = 0;
+	if ( __CommandProcessorListener_array != null ) {
+		size = __CommandProcessorListener_array.length;
+	}
+	for ( int i = 0; i < size; i++ ) {
+		if ( __CommandProcessorListener_array[i] == listener ) {
 			return;
 		}
-		// See if the listener has already been added.
-		// Resize the listener array.
-		int size = 0;
-		if ( __CommandProcessorListener_array != null ) {
-			size = __CommandProcessorListener_array.length;
-		}
+	}
+	if ( __CommandProcessorListener_array == null ) {
+		__CommandProcessorListener_array = new CommandProcessorListener[1];
+		__CommandProcessorListener_array[0] = listener;
+	}
+	else {
+	    // Need to resize and transfer the list.
+		size = __CommandProcessorListener_array.length;
+		CommandProcessorListener [] newlisteners = new CommandProcessorListener[size + 1];
 		for ( int i = 0; i < size; i++ ) {
-			if ( __CommandProcessorListener_array[i] == listener ) {
-				return;
-			}
+				newlisteners[i] = __CommandProcessorListener_array[i];
 		}
-		if ( __CommandProcessorListener_array == null ) {
-			__CommandProcessorListener_array = new CommandProcessorListener[1];
-			__CommandProcessorListener_array[0] = listener;
-		}
-		else {
-		    // Need to resize and transfer the list.
-			size = __CommandProcessorListener_array.length;
-			CommandProcessorListener [] newlisteners = new CommandProcessorListener[size + 1];
-			for ( int i = 0; i < size; i++ ) {
-					newlisteners[i] = __CommandProcessorListener_array[i];
-			}
-			__CommandProcessorListener_array = newlisteners;
-			__CommandProcessorListener_array[size] = listener;
-			newlisteners = null;
-		}
+		__CommandProcessorListener_array = newlisteners;
+		__CommandProcessorListener_array[size] = listener;
+		newlisteners = null;
+	}
 }
 
-// TODO SAM 2009-01-20 Could name the method better if working with generics.  For now use the longer
-// method name to clue people in that the list contains strings.
+// TODO SAM 2009-01-20 Could name the method better if working with generics.
+// For now use the longer method name to clue people in that the list contains strings.
 /**
 Initialize and add new commands to the processor given a list of command strings.
-This is an alternative to reading the command file with the readCommandFile() method and allows in-memory
-command processing without the command file.  A disadvantage of this approach is that the command file is not
-an artifact of processing and therefore troubleshooting may be more difficult - verify that the log file
-contains the commands in the header comments.
-Registered CommandListListener instances are notified about each add - this could be used to let a GUI update
-its appearance when a command file is loaded.
+This is an alternative to reading the command file with the readCommandFile()
+method and allows in-memory command processing without the command file.
+A disadvantage of this approach is that the command file is not
+an artifact of processing and therefore troubleshooting may be more difficult
+so verify that the log file contains the commands in the header comments.
+Registered CommandListListener instances are notified about each add
+(this could be used to let a GUI update its appearance when a command file is loaded).
 @param commandStrings a list of command strings, as if read from a command file.
 @param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.
 This is being used during transition of old string commands to full Command classes and
-may be needed in any case to preserve commands that were manually edited.  Commands with
-problems will in any case be flagged at run-time as unrecognized or problematic.
+may be needed in any case to preserve commands that were manually edited.
+Commands with problems will in any case be flagged at run-time as unrecognized or problematic.
 @param append If true, the commands will be appended to the existing commands.
 @param runDiscoveryOnLoad if true, run discovery mode on the commands at load; if false, do not run discovery
-@param initialWorkingDir the initial working directory to use to run the commands (if not null) - this is typically
-specified because it would be set to the location of the command file if the command file were read from disk.
+@param initialWorkingDir the initial working directory to use to run the commands (if not null),
+which is typically specified because it would be set to the location of the command file if the command file were read from disk.
 @exception IOException if initialWorkingDir is not valid.
 */
 public void addCommandsFromStringList ( List<String> commandStrings, boolean createUnknownCommandIfNotRecognized,
     boolean append, boolean runDiscoveryOnLoad, File initialWorkingDir )
-throws IOException
-{   String routine = getClass().getSimpleName() + ".initializeCommandsFromStringList";
+throws IOException {
+    String routine = getClass().getSimpleName() + ".initializeCommandsFromStringList";
     // Set the working directory because this may be used by other commands.
     if ( initialWorkingDir != null ) {
         setInitialWorkingDir ( initialWorkingDir.getCanonicalPath() );
@@ -501,8 +495,8 @@ throws IOException
     // TODO smalers 2020-08-04 does it make sense to pass in a command factory instance to this method?
     TSCommandFactory cf = new TSCommandFactory(this.pluginCommandClassList);
     // Use this to control whether listeners should be notified for each insert.
-    // Why would this be done?  If, for example, a GUI should display
-    // the progress in reading/initializing the commands.
+    // Why would this be done?
+    // If, for example, a GUI should display the progress in reading/initializing the commands.
     //
     // Why would this not be done?  Because of performance issues.
     boolean notifyListenersForEachAdd = true;
@@ -517,8 +511,9 @@ throws IOException
         line = commandStrings.get(i);
         // Trim spaces from the end of the line.  These can really cause problems with time series identifiers
         // FIXME SAM 2009-01-20 Is desirable to trim later so the original representation of commands is not changed.
-        // In particular people may want to indent the commands.  Need to make sure that trim() is included when
-        // the command strings are interpreted.  For now this is more trouble than it is worth.
+        // In particular people may want to indent the commands.
+        // Need to make sure that trim() is included when the command strings are interpreted.
+        // For now this is more trouble than it is worth.
         //
         // TODO smalers 2022-02-23 as of TSTool 14.6.0 indentation is allowed so don't trim when loading commands.
         //line = line.trim();
@@ -541,7 +536,7 @@ throws IOException
                 command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
             }
             catch ( UnknownCommandException e ) {
-                // TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
+                // TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load.
                 // In this case skip the command, although the above case may always be needed?
             }
         }
@@ -554,8 +549,8 @@ throws IOException
                 true); // Do full initialization (parse).
         }
         catch ( InvalidCommandSyntaxException e ) {
-            // Can't use cf.newCommand() because it will recognized the command
-            // and generate yet another exception!  So, treat as a generic command with a problem.
+            // Can't use cf.newCommand() because it will recognized the command and generate yet another exception.
+        	// So, treat as a generic command with a problem.
             Message.printWarning (2, routine, "Invalid command syntax.  Adding command with problems:  " + line );
             Message.printWarning(3, routine, e);
             // CommandStatus will be set while initializing so no need to set here.
@@ -591,7 +586,7 @@ throws IOException
             // It may have no arguments or partial parameters that need corrected.
         }
         catch ( InvalidCommandParameterException e) {
-            // Can't use cf.newCommand() because it will recognized the command and generate yet another exception!
+            // Can't use cf.newCommand() because it will recognized the command and generate yet another exception.
         	// So, treat as a generic command with a problem.
             Message.printWarning (2, routine, "Invalid command parameter.  Adding command with problems:  " + line );
             Message.printWarning(3, routine, e);
@@ -671,12 +666,12 @@ throws IOException
             // Check the command parameters.
             String command_tag = "" + numAdded + 1;  // Command number, for messaging.
             int error_count = 0;
-            try {  
+            try {
                 command.checkCommandParameters(command.getCommandParameters(), command_tag, 2 );
             }
             catch ( InvalidCommandParameterException e ) {
-                /* TODO SAM 2008-05-14 Evaluate whether this can work - don't want a bunch
-                of extra comments for commands that are already being flagged with status.
+                /* TODO SAM 2008-05-14 Evaluate whether this can work.
+                 * Don't want a bunch of extra comments for commands that are already being flagged with status.
                 // Add generic commands as comments prior to this command to show the original,
                 Command command2 = new GenericCommand ();
                 command2.setCommandString ( "#" + fixme +
@@ -698,8 +693,8 @@ throws IOException
                 addCommand ( command2, notify_listeners_for_each_add );
                 ++num_added;
                 */
-                // Add command status to the command itself, handling whether a recognized
-                // command or a generic command (string command).
+                // Add command status to the command itself,
+            	// handling whether a recognized command or a generic command (string command).
                 String message = "Error loading command - invalid syntax (" + e + ").";
                 if ( command instanceof CommandStatusProvider ) {
                    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
@@ -747,12 +742,13 @@ throws IOException
 }
 
 /**
-Determine if the commands are a template.  In this case, applications may disable
-save features.  The special comment "#@template" indicates that the commands are a template.
+Determine if the commands are a template.
+In this case, applications may disable save features.
+The special comment "#@template" indicates that the commands are a template.
 @return true if commands are marked as a template, false if not.
 */
-public boolean areCommandsTemplate ()
-{   // String that indicates a template.
+public boolean areCommandsTemplate () {
+    // String that indicates a template.
     String templateString = "@TEMPLATE";
     // Loop through the commands and check comments for the special string.
     int size = size();
@@ -773,8 +769,8 @@ public boolean areCommandsTemplate ()
 
 /**
 Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
-Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRunStart()
-method, which calls this method.
+Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRunStart() method,
+which calls this method.
 */
 public void clearResults() {
 	this.__tsengine.clearTimeSeriesResults();
@@ -795,8 +791,9 @@ public void clearResults() {
 //To date things have worked fine as is but HEC-DSS open connections may linger and cause resources issues.
 /**
 Close data connections, in particular any HEC-DSS connections that may be open.
-@param closeAll if true, close all connections in use by the processor, even those that by reference may
-be used in an external application and which were passed by reference (currently not implemented).  If false,
+@param closeAll if true, close all connections in use by the processor,
+even those that by reference may be used in an external application and which were passed by reference
+(currently not implemented).  If false,
 close only the connections that are likely to be used locally in the processor.
 */
 public void closeDataConnections ( boolean closeAll ) {
@@ -840,8 +837,8 @@ public List<Command> getCommands () {
 Indicate whether output files should be created when processing.
 @return true if files should be created, false if not.
 */
-public Boolean getCreateOutput ()
-{	return __CreateOutput_Boolean;
+public Boolean getCreateOutput () {
+	return __CreateOutput_Boolean;
 }
 
 /**
@@ -861,8 +858,7 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass ) {
 Return the datastore for the requested name, or null if not found.
 @param name the data store name to match (case is ignored in the comparison)
 @param dataStoreClass the class of the data store to match,
-useful when ensuring that the data store
-is compatible with intended use - specify as null to not match class
+useful when ensuring that the data store is compatible with intended use - specify as null to not match class
 @param activeOnly if true, only active datastores are returned (status = 0)
 @return the data store for the requested name, or null if not found.
 */
@@ -890,12 +886,12 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
     	}
     }
 	// Search the datastores for the requested name.
-   	//Message.printStatus(2,routine, "  Checking " + getDataStores().size() + " datastores." ); 
+   	//Message.printStatus(2,routine, "  Checking " + getDataStores().size() + " datastores." );
 	for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
         	// Have a matching datastore.  Perform other checks.
     		if ( Message.isDebugOn ) {
-    			Message.printDebug(1,routine,"  Found matching datastore name \"" + name + "\"." ); 
+    			Message.printDebug(1,routine,"  Found matching datastore name \"" + name + "\"." );
     		}
             if ( dataStoreClass != null ) {
             	// Also must match the requested class.
@@ -910,7 +906,7 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
                 else {
                     // Does not match class.
                 	if ( Message.isDebugOn ) {
-                		Message.printDebug(1,routine,"  Datastore name \"" + name + "\" does not match requested class." ); 
+                		Message.printDebug(1,routine,"  Datastore name \"" + name + "\" does not match requested class." );
                 	}
                     dataStore = null;
                 }
@@ -923,7 +919,7 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
             	else {
             		// Datastore is not active.
                 	if ( Message.isDebugOn ) {
-                		Message.printDebug(1,routine,"  Datastore name \"" + name + "\" is not active." ); 
+                		Message.printDebug(1,routine,"  Datastore name \"" + name + "\" is not active." );
                 	}
             		dataStore = null;
             	}
@@ -965,7 +961,7 @@ public List<DataStore> getDataStores ( boolean activeOnly ) {
 }
 
 /**
-Return the list of data stores for the requested type (e.g., RiversideDBDataStore).
+Return the list of data stores for the requested type (e.g., HydroBaseDataStore).
 A non-null list is guaranteed, but the list may be empty.
 Only active datastores are returned, those that are enabled and status is 0 (Ok - no error).
 @param dataStoreClass the data store class to match (required).
@@ -976,13 +972,13 @@ public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass ) {
 }
 
 /**
-Return the list of data stores for the requested type (e.g., HydroBaseDataStore).  A non-null list
-is guaranteed, but the list may be empty.
+Return the list of data stores for the requested type (e.g., HydroBaseDataStore).
+A non-null list is guaranteed, but the list may be empty.
 @param dataStoreClass the data store class to match (required).
 @param activeOnly if true, only return datastores that are active (open)
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly ) {   
+public List<DataStore> getDataStoresByType ( Class<?> dataStoreClass, boolean activeOnly ) {
 	String routine = getClass().getSimpleName() + ".getDataStoresByType";
 	List<DataStore> dataStoreList = new ArrayList<>();
 	boolean debug = Message.isDebugOn;
@@ -1060,8 +1056,8 @@ This method is meant to be used internally without going through the request mec
 @param EnsembleID Ensemble ID to match, * wildcard is special value to match first ensemble,
 *pattern will match the first matching TSID.
 */
-protected TSEnsemble getEnsemble ( String EnsembleID )
-{   if ( (EnsembleID == null) || EnsembleID.equals("") ) {
+protected TSEnsemble getEnsemble ( String EnsembleID ) {
+    if ( (EnsembleID == null) || EnsembleID.equals("") ) {
         return null;
     }
     int size = __TSEnsembleList.size();
@@ -1109,16 +1105,16 @@ public PropList getInitialPropList () {
 Return the initial working directory for the processor.
 @return the initial working directory for the processor.
 */
-public String getInitialWorkingDir ()
-{	return __InitialWorkingDir_String;
+public String getInitialWorkingDir () {
+	return __InitialWorkingDir_String;
 }
 
 /**
 Indicate whether the processing is running.
 @return true if the command processor is running, false if not.
 */
-public boolean getIsRunning ()
-{	return __is_running;
+public boolean getIsRunning () {
+	return __is_running;
 }
 
 /**
@@ -1131,22 +1127,20 @@ public List<Class> getPluginCommandClasses () {
 }
 
 /**
-Return data for a named property, required by the CommandProcessor
-interface.  See getPropcontents() for a list of properties that are handled.
+Return data for a named property, required by the CommandProcessor interface.
+See getPropcontents() for a list of properties that are handled.
 @param prop Property to set.
 @return the named property, or null if a value is not found.
-@exception Exception if the property cannot be found or there is an
-error determining the property.
+@exception Exception if the property cannot be found or there is an error determining the property.
 */
-public Prop getProp ( String prop ) throws Exception
-{	Object o = getPropContents ( prop );
+public Prop getProp ( String prop ) throws Exception {
+	Object o = getPropContents ( prop );
 	if ( o == null ) {
 		return null;
 	}
 	else {
 	    // Contents will be a Vector, etc., so convert to a full property.
-		// TODO SAM 2005-05-13 This will work seamlessly for strings
-		// but may have a side-effects (conversions) for non-strings.
+		// TODO SAM 2005-05-13 This will work seamlessly for strings but may have a side-effects (conversions) for non-strings.
 		Prop p = new Prop ( prop, o, o.toString() );
 		return p;
 	}
@@ -1163,9 +1157,9 @@ Currently the following internal properties are handled:
 </tr>
 
 <td><b>CreateOutput</b></td>
-<td>Indicate if output should be created, as Boolean.  If True, commands that create output
-should do so.  If False, the commands should be skipped.  This is used to
-speed performance during initial testing.
+<td>Indicate if output should be created, as Boolean.
+If True, commands that create output should do so.  If False, the commands should be skipped.
+This is used to speed performance during initial testing.
 </td>
 </tr>
 
@@ -1198,8 +1192,7 @@ speed performance during initial testing.
 
 <tr>
 <td><b>InitialWorkingDir</b></td>
-<td>The initial working directory for the processor, typically the directory
-where the commands file lives.
+<td>The initial working directory for the processor, typically the directory where the commands file lives.
 </td>
 </tr>
 
@@ -1217,10 +1210,10 @@ where the commands file lives.
 
 <tr>
 <td><b>OutputComments</b></td>
-<td>A List of String with comments suitable for output.  The comments
-DO NOT contain the leading comment character (specific code that writes the
-output should add the comment characters).  Currently the comments contain
-open HydroBase connection information, if available.
+<td>A List of String with comments suitable for output.
+The comments DO NOT contain the leading comment character
+(specific code that writes the output should add the comment characters).
+Currently the comments contain open HydroBase connection information, if available.
 </td>
 </tr>
 
@@ -1271,8 +1264,7 @@ open HydroBase connection information, if available.
 
 <tr>
 <td><b>TSProductAnnotationProviderList</b></td>
-<td>A List of TSProductAnnotationProvider (for example, this is requested
-by the processTSProduct() command).
+<td>A List of TSProductAnnotationProvider (for example, this is requested by the processTSProduct() command).
 </td>
 </tr>
 
@@ -1305,8 +1297,8 @@ application can close when the TSView window is closed.</td>
 
 <tr>
 <td><b>WorkingDir</b></td>
-<td>The current working directory for the processor, reflecting the initial
-working directory and changes from setWorkingDir() commands.
+<td>The current working directory for the processor,
+reflecting the initial working directory and changes from setWorkingDir() commands.
 </td>
 </tr>
 
@@ -1314,8 +1306,8 @@ working directory and changes from setWorkingDir() commands.
 @return the contents for a named property, or null if a value is not found.
 @exception UnrecognizedRequestException if an unknown property is requested.
 */
-public Object getPropContents ( String propName ) throws Exception
-{	if ( propName.equalsIgnoreCase("AutoExtendPeriod") ) {
+public Object getPropContents ( String propName ) throws Exception {
+	if ( propName.equalsIgnoreCase("AutoExtendPeriod") ) {
 		return getPropContents_AutoExtendPeriod();
 	}
     else if ( propName.equalsIgnoreCase("AverageEnd") ) {
@@ -1430,15 +1422,14 @@ public Object getPropContents ( String propName ) throws Exception
 		return IOUtil.toPosixPath(getPropContents_WorkingDir());
 	}
 	else {
-	    // Property is not one of the individual objects that have been historically
-	    // maintained, but it may be a user-supplied property in the hashtable.
+	    // Property is not one of the individual objects that have been historically maintained,
+		// but it may be a user-supplied property in the hashtable.
 	    Object o = __propertyHashmap.get ( propName );
 	    if ( o == null ) {
 	    	// Changed on 2016-09-18 to allow null to be returned,
 	    	// generally indicating that user-supplied property is being processed.
     	    //String warning = "Unknown GetPropContents request \"" + propName + "\"";
-    		// TODO SAM 2007-02-07 Need to figure out a way to indicate
-    		// an error and pass back useful information.
+    		// TODO SAM 2007-02-07 Need to figure out a way to indicate an error and pass back useful information.
     		//throw new UnrecognizedRequestException ( warning );
 	    	return null;
 	    }
@@ -1548,8 +1539,9 @@ private Boolean getPropContents_IncludeMissingTS() {
 }
 
 /**
-Handle the InitialWorkingDir property request.  The initial working directory is the home of the
-commands file if read/saved and should be passed by the calling code when running commands.
+Handle the InitialWorkingDir property request.
+The initial working directory is the home of the commands file if read/saved and should be
+passed by the calling code when running commands.
 Use getPropContents_WorkingDir to get the working directory after processing.
 @return The working directory, as a String.
 */
@@ -1680,8 +1672,7 @@ private Integer getPropContents_TSEnsembleResultsListSize() {
 
 /**
 Handle the TSProductAnnotationProviderList property request.
-@return The time series product annotation provider list,
-as a Vector of TSProductAnnotationProvider.
+@return The time series product annotation provider list, as a list of TSProductAnnotationProvider.
 */
 private List<TSProductAnnotationProvider> getPropContents_TSProductAnnotationProviderList() {
 	return __tsengine.getTSProductAnnotationProviders();
@@ -1712,8 +1703,8 @@ private WindowListener getPropContents_TSViewWindowListener() {
 }
 
 /**
-Handle the WorkingDir property request.  The working directory is set based on
-the initial working directory and subsequent setWorkingDir() commands.
+Handle the WorkingDir property request.
+The working directory is set based on the initial working directory and subsequent setWorkingDir() commands.
 @return The working directory, as a String.
 */
 private String getPropContents_WorkingDir() {
@@ -1728,16 +1719,15 @@ These properties can be requested using getPropContents().
 */
 public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties, boolean includeDynamicProperties ) {
     // Create a set that includes the above.
-    TreeSet<String> set = new TreeSet<String>();
-	// FIXME SAM 2008-02-15 Evaluate whether these should be in the
-	// property hashmap - should properties be available before ever
-	// being defined (in case they are used later) or should only defined
-	// properties be available (and rely on discovery to pass to other commands)?
+    TreeSet<String> set = new TreeSet<>();
+	// FIXME SAM 2008-02-15 Evaluate whether these should be in the property hashmap.
+    // Should properties be available before ever being defined (in case they are used later)
+    // or should only defined properties be available (and rely on discovery to pass to other commands)?
     // For now important properties are represented as data members in this class.
     //
 	// Add properties that are accessible with getPropContents_XXXX methods.
 	if ( includeBuiltInProperties ) {
-	    List<String> v = new ArrayList<String>();
+	    List<String> v = new ArrayList<>();
         v.add ( "AutoExtendPeriod" );
         v.add ( "AverageStart" );
         v.add ( "AverageEnd" );
@@ -1751,13 +1741,13 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
         v.add ( "InitialWorkingDir" );
     	v.add ( "InputStart" );
     	v.add ( "InputEnd" );
-    	//v.add ( "OutputComments" ); // Not sure this needs to be visible
+    	//v.add ( "OutputComments" ); // Not sure this needs to be visible.
     	v.add ( "OutputStart" );
     	v.add ( "OutputEnd" );
         v.add ( "OutputYearType" );
         v.add ( "StartLogEnabled" );
-        v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
-        v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
+        v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected.
+        v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected.
         v.add ( "WarningLevelLogFile" );
         v.add ( "WarningLevelScreen" );
         v.add ( "WorkingDir" );
@@ -1766,7 +1756,7 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
         set.addAll ( v );
 	}
     if ( includeDynamicProperties ) {
-        // Add the hashtable keys and make a unique list
+        // Add the hashtable keys and make a unique list.
         set.addAll ( __propertyHashmap.keySet() );
     }
 	return set;
@@ -1778,10 +1768,10 @@ In this case, applications may disable save features.
 The special comment "#@readOnly" indicates that the commands are read-only.
 @return true if read-only, false if can be written.
 */
-public boolean getReadOnly ()
-{   // String that indicates readOnly
+public boolean getReadOnly () {
+    // String that indicates readOnly
     String readOnlyString = "@readOnly";
-    // Loop through the commands and check comments for the special string
+    // Loop through the commands and check comments for the special string.
     int size = size();
     Command c;
     for ( int i = 0; i < size; i++ ) {
@@ -1799,16 +1789,16 @@ public boolean getReadOnly ()
 Return the TSSupplier name.
 @return the TSSupplier name ("TSEngine").
 */
-public String getTSSupplierName()
-{	return __tsengine.getTSSupplierName();
+public String getTSSupplierName() {
+	return __tsengine.getTSSupplierName();
 }
 
 /**
 Return the current working directory for the processor.
 @return the current working directory for the processor.
 */
-protected String getWorkingDir ()
-{	return __WorkingDir_String;
+protected String getWorkingDir () {
+	return __WorkingDir_String;
 }
 
 /**
@@ -1829,8 +1819,8 @@ Determine the index of a command in the processor.  A reference comparison occur
 @param command A command to search for in the processor.
 @return the index (0+) of the matching command, or -1 if not found.
 */
-public int indexOf ( Command command )
-{	return TSCommandProcessorUtil.indexOf(this,command,0);
+public int indexOf ( Command command ) {
+	return TSCommandProcessorUtil.indexOf(this,command,0);
 }
 
 /**
@@ -1838,8 +1828,8 @@ Add a command using the Command instance.
 @param command Command to insert.
 @param index Index (0+) at which to insert the command.
 */
-public void insertCommandAt ( Command command, int index )
-{	String routine = "TSCommandProcessor.insertCommandAt";
+public void insertCommandAt ( Command command, int index ) {
+	String routine = getClass().getSimpleName() + ".insertCommandAt";
 	__CommandList.add( index, command);
 	// Also add this processor as a listener for events.
     if ( command instanceof CommandProcessorEventProvider ) {
@@ -1851,15 +1841,15 @@ public void insertCommandAt ( Command command, int index )
 }
 
 /**
-Add a command using the string text.  This should currently only be
-used for commands that do not have command classes, which perform
-additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be set.
+Add a command using the string text.
+This should currently only be used for commands that do not have command classes,
+which perform additional validation on the commands.
+A GenericCommand instance will be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 @param index Index (0+) at which to insert the command.
 */
-public void insertCommandAt ( String command_string, int index )
-{	String routine = "TSCommandProcessor.insertCommandAt";
+public void insertCommandAt ( String command_string, int index ) {
+	String routine = getClass().getSimpleName() + ".insertCommandAt";
 	Command command = new GenericCommand ();
 	command.setCommandString ( command_string );
 	insertCommandAt ( command, index );
@@ -1876,7 +1866,7 @@ Return a SetWorkingDir(xxx) command where xxx is the initial working directory.
 This command should be prepended to the list of SetWorkingDir() commands that
 are processed when determining the working directory for an edit dialog or other command-context action.
 */
-private Command newInitialSetWorkingDirCommand() 
+private Command newInitialSetWorkingDirCommand()
 throws InvalidCommandParameterException, InvalidCommandSyntaxException {
 	boolean doGeneric = false;
 	String commandString = "SetWorkingDir(WorkingDir=\"" + getInitialWorkingDir() + "\")";
@@ -1892,7 +1882,7 @@ throws InvalidCommandParameterException, InvalidCommandSyntaxException {
 	else {
 		// Create a new command.
 		SetWorkingDir_Command c = new SetWorkingDir_Command();
-		c.initializeCommand ( commandString, this, true );	// Full initialization
+		c.initializeCommand ( commandString, this, true );	// Full initialization.
 		return c;
 	}
 }
@@ -1902,8 +1892,8 @@ Notify registered CommandListListeners about one or more commands being added.
 @param index0 The index (0+) of the first command that is added.
 @param index1 The index (0+) of the last command that is added.
 */
-private void notifyCommandListListenersOfAdd ( int index0, int index1 )
-{	if ( __CommandListListener_array != null ) {
+private void notifyCommandListListenersOfAdd ( int index0, int index1 ) {
+	if ( __CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
 			__CommandListListener_array[i].commandAdded(index0, index1);
 		}
@@ -1916,8 +1906,8 @@ Notify registered CommandListListeners about one or more commands being changed.
 @param index1 The index (0+) of the last command that is added.
 */
 @SuppressWarnings("unused")
-private void notifyCommandListListenersOfChange ( int index0, int index1 )
-{	if ( __CommandListListener_array != null ) {
+private void notifyCommandListListenersOfChange ( int index0, int index1 ) {
+	if ( __CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
 			__CommandListListener_array[i].commandChanged(index0, index1);
 		}
@@ -1929,8 +1919,8 @@ Notify registered CommandListListeners about one or more commands being removed.
 @param index0 The index (0+) of the first command that is added.
 @param index1 The index (0+) of the last command that is added.
 */
-private void notifyCommandListListenersOfRemove ( int index0, int index1 )
-{	if ( __CommandListListener_array != null ) {
+private void notifyCommandListListenersOfRemove ( int index0, int index1 ) {
+	if ( __CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
 			__CommandListListener_array[i].commandRemoved(index0, index1);
 		}
@@ -1940,12 +1930,12 @@ private void notifyCommandListListenersOfRemove ( int index0, int index1 )
 /**
 Notify registered CommandProcessorListeners about a command being canceled.
 @param icommand The index (0+) of the command that is canceled.
-@param ncommand The number of commands being processed.  This will often be the
-total number of commands but calling code may process a subset.
+@param ncommand The number of commands being processed.
+This will often be the total number of commands but calling code may process a subset.
 @param command The instance of the nearest command that is being canceled.
 */
-protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand, int ncommand, Command command )
-{	// This method is protected to allow TSEngine to call.
+protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand, int ncommand, Command command ) {
+	// This method is protected to allow TSEngine to call.
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
 			__CommandProcessorListener_array[i].commandCanceled(icommand,ncommand,command,-1.0F,"Command cancelled.");
@@ -1956,12 +1946,12 @@ protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand,
 /**
 Notify registered CommandProcessorListeners about a command completing.
 @param icommand The index (0+) of the command that is completing.
-@param ncommand The number of commands being processed.  This will often be the
-total number of commands but calling code may process a subset.
+@param ncommand The number of commands being processed.
+This will often be the total number of commands but calling code may process a subset.
 @param command The instance of the command that is completing.
 */
-protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, int ncommand, Command command )
-{	// This method is protected to allow TSEngine to call.
+protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, int ncommand, Command command ) {
+	// This method is protected to allow TSEngine to call.
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
 			__CommandProcessorListener_array[i].commandCompleted(icommand,ncommand,command,-1.0F,"Command completed.");
@@ -1972,12 +1962,12 @@ protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand,
 /**
 Notify registered CommandProcessorListeners about a command starting.
 @param icommand The index (0+) of the command that is starting.
-@param ncommand The number of commands being processed.  This will often be the
-total number of commands but calling code may process a subset.
+@param ncommand The number of commands being processed.
+This will often be the total number of commands but calling code may process a subset.
 @param command The instance of the command that is starting.
 */
-protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, int ncommand, Command command )
-{	// This method is protected to allow TSEngine to call.
+protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, int ncommand, Command command ) {
+	// This method is protected to allow TSEngine to call.
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
 			__CommandProcessorListener_array[i].commandStarted(icommand,ncommand,command,-1.0F,"Command started.");
@@ -1998,9 +1988,8 @@ throws Exception {
 /**
 Process a request, required by the CommandProcessor interface.
 This is a generalized way to allow commands to call specialized functionality
-through the interface without directly naming a processor.  For example, the
-request may involve data that only the TSCommandProcessor has access to and
-that a command does not.
+through the interface without directly naming a processor.
+For example, the request may involve data that only the TSCommandProcessor has access to and that a command does not.
 Currently the following requests are handled:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -2009,14 +1998,13 @@ Currently the following requests are handled:
 
 <tr>
 <td><b>AddCommandProcessorEventListener</b></td>
-<td>Add a CommandProcessorEventListener to the processor, which will pass on events from
-commands to these listeners.  It is expected that the listener will be added before each
-run (via commands) and will be removed at the end of the run.  This design may need to
-change as testing occurs.  Parameters to this request are:
+<td>Add a CommandProcessorEventListener to the processor,
+which will pass on events from commands to these listeners.
+It is expected that the listener will be added before each run (via commands) and will be removed at the end of the run.
+This design may need to change as testing occurs.  Parameters to this request are:
 <ol>
 <li>    <b>TS</b> Monthly time series to process, as TS (MonthTS) object.</li>
-<li>    <b>Index</b> The index (0+) of the time series identifier being processed,
-        as an Integer.</li>
+<li>    <b>Index</b> The index (0+) of the time series identifier being processed, as an Integer.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2027,19 +2015,17 @@ Returned values from this request are:
 
 <tr>
 <td><b>CalculateTSAverageLimits</b></td>
-<td>Calculate the average data limits for a time series using the averaging period
-	if specified (otherwise use the available period).
+<td>Calculate the average data limits for a time series using the averaging period if specified (otherwise use the available period).
 	Currently only limits for monthly time series are supported.
 	Parameters to this request are:
 <ol>
 <li>	<b>TS</b> Monthly time series to process, as TS (MonthTS) object.</li>
-<li>	<b>Index</b> The index (0+) of the time series identifier being processed,
-		as an Integer.</li>
+<li>	<b>Index</b> The index (0+) of the time series identifier being processed, as an Integer.</li>
 </ol>
 Returned values from this request are:
 <ol>
 <li>	<b>TSLimits</b>the average data for a time series.
-If a monthly time series, a MonthTSLimits will be returned.</li>
+	If a monthly time series, a MonthTSLimits will be returned.</li>
 </ol>
 </td>
 </tr>
@@ -2075,8 +2061,7 @@ Returned values from this request are:
 	</ol>
 	Returned values from this request are:
 	<ol>
-	<li><b>HydroBaseDMI</b> The HydroBaseDMI instance matching the input name
-	 			(may return null).</li>
+	<li><b>HydroBaseDMI</b> The HydroBaseDMI instance matching the input name (may return null).</li>
 	</ol>
 </td>
 </tr>
@@ -2102,8 +2087,7 @@ Returned values from this request are:
 </ol>
 Returned values from this request are:
 <ol>
-<li>    <b>PropertyValue</b> The property value, as an object
-        (e.g., DateTime, Double, Integer, or String.</li>
+<li>    <b>PropertyValue</b> The property value, as an object (e.g., DateTime, Double, Integer, or String.</li>
 </ol>
 </td>
 </tr>
@@ -2136,31 +2120,27 @@ Returned values from this request are:
 
 <tr>
 <td><b>GetTimeSeries</b></td>
-<td>Return a time series from either the __tslist vector or the BinaryTS file,
-as appropriate.  If a BinaryTS is returned, it is a new instance from the file
-and should be set to null when done.  Parameters to this request are:
+<td>Return a time series from either the __tslist vector or the BinaryTS file, as appropriate.
+If a BinaryTS is returned, it is a new instance from the file and should be set to null when done.
+Parameters to this request are:
 <ol>
-<li>	<b>Index</b> The index (0+) of the time series identifier being requested,
-		as an Integer.</li>
+<li>	<b>Index</b> The index (0+) of the time series identifier being requested, as an Integer.</li>
 </ol>
 Returned values from this request are:
 <ol>
-<li>	<b>TS</b> The requested time series or null if none is available,
-		as a TS instance.</li>
+<li>	<b>TS</b> The requested time series or null if none is available, as a TS instance.</li>
 </ol>
 </td>
 </tr>
 
 <tr>
 <td><b>GetTimeSeriesForTSID</b></td>
-<td>Return a time series from either the __tslist vector or the BinaryTS file,
-as appropriate.  If a BinaryTS is returned, it is a new instance from the file
-and should be set to null when done.
-The search is performed backwards in the
-list, assuming that the commands are being processed sequentially and therefore
-any reference to a duplicate ID would intuitively be referring to the latest
-instance in the list.  For this version of the method, the trace (sequence
-number) is ignored.  Parameters to this request are:
+<td>Return a time series from either the __tslist vector or the BinaryTS file, as appropriate.
+If a BinaryTS is returned, it is a new instance from the file and should be set to null when done.
+The search is performed backwards in the list,
+assuming that the commands are being processed sequentially and therefore
+any reference to a duplicate ID would intuitively be referring to the latest instance in the list.
+For this version of the method, the trace (sequence number) is ignored.  Parameters to this request are:
 <ol>
 <li>	<b>TSID</b> The time series identifier of the time series being requested
 		(either an alias or TSIdent string), as a String.</li>
@@ -2168,36 +2148,32 @@ number) is ignored.  Parameters to this request are:
 </ol>
 Returned values from this request are:
 <ol>
-<li>	<b>TS</b> The requested time series or null if none is available,
-		as a TS instance.</li>
+<li>	<b>TS</b> The requested time series or null if none is available, as a TS instance.</li>
 </ol>
 </td>
 </tr>
 
 <tr>
 <td><b>GetTimeSeriesToProcess</b></td>
-<td>Return the list of time series to process, based on information that indicates
-how the list can be determined.  Parameters to this request are:
+<td>Return the list of time series to process, based on information that indicates how the list can be determined.
+Parameters to this request are:
 <ol>
-<li>	<b>TSList</b> Indicates how the list of time series for processing is to be
-determined, with one of the following values:</li>
+<li>	<b>TSList</b> Indicates how the list of time series for processing is to be determined,
+		with one of the following values:</li>
 	<ol>
 	<li>	"AllTS" will result in true being returned.</li>
 	<li>	"AllMatchingTSID" will use the TSID value to match time series.</li>
-	<li>	"LastMatchingTSID" will use the TSID value to match time series,
-		returning the last match.  This is necessary for backward compatibility.
+	<li>	"LastMatchingTSID" will use the TSID value to match time series, returning the last match.
+		This is necessary for backward compatibility.
 		</li>
-	<li>	"SelectedTS" will result in true being returned only if the
-		time series is selected.</li>
+	<li>	"SelectedTS" will result in true being returned only if the time series is selected.</li>
 	</ol>
 </ol>
 Returned values from this request are:
 <ol>
-<li>	<b>TSToProcessList</b> The requested time series to process
-		or null if none are available,
-		as a Vector of TS.  Use the size of the Vector (in the first
-		element) to determine the number of time series to process.  The order of
-		the time series will be from first to last.</li>
+<li>	<b>TSToProcessList</b> The requested time series to process or null if none are available, as a list of TS.
+		Use the size of the list (in the first element) to determine the number of time series to process.
+		The order of the time series will be from first to last.</li>
 <li>	<b>Indices</b> An int[] indicating the positions in the time series list,
 		to be used to update the time series.</li>
 </ol>
@@ -2206,33 +2182,30 @@ Returned values from this request are:
 
 <tr>
 <td><b>IndexOf</b></td>
-<td>Return the position of a time series from either the __tslist vector or the
-	BinaryTS file, as appropriate.  See the similar method in TSEngine for full
-	documentation.  This version assumes that no sequence number is used in the TSID.
-	The search is performed backwards in order to find the time series from the
-	most recent processed command.  Parameters to this request are:
+<td>Return the position of a time series from either the __tslist list or the BinaryTS file, as appropriate.
+	See the similar method in TSEngine for full documentation.
+	This version assumes that no sequence number is used in the TSID.
+	The search is performed backwards in order to find the time series from the most recent processed command.
+	Parameters to this request are:
 <ol>
-<li>	<b>TSID</b> The time series identifier or alias being requested,
-		as a String.</li>
+<li>	<b>TSID</b> The time series identifier or alias being requested, as a String.</li>
 </ol>
 Returned values from this request are:
 <ol>
-<li>	<b>Index</b> The index (0+) of the time series identifier being requested,
-		as an Integer.</li>
+<li>	<b>Index</b> The index (0+) of the time series identifier being requested, as an Integer.</li>
 </ol>
 </td>
 </tr>
 
 <tr>
 <td><b>ProcessCommands</b></td>
-<td>Process a list of commands (recursively), for example when called by the
-RunCommands() command.
+<td>Process a list of commands (recursively), for example when called by the RunCommands() command.
 	Parameters to this request are:
 <ol>
-<li>	<b>Commands</b> A list of commands to run, as a Vector of String.</li>
-<li>	<b>Properties</b> Properties to control the commands, as a PropList - note
-		that all properties should be String, as per the TSEngine properties.  Valid
-		properties are InitialWorkingDir=PathToWorkingDir, CreateOutput=True|False.</li>
+<li>	<b>Commands</b> A list of commands to run, as a list of String.</li>
+<li>	<b>Properties</b> Properties to control the commands, as a PropList.
+		Note that all properties should be String, as per the TSEngine properties.
+		Valid properties are InitialWorkingDir=PathToWorkingDir, CreateOutput=True|False.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2250,8 +2223,7 @@ Returned values from this request are:
 		"UPDATE" to update at the position,
 		"NONE" to do to nothing, as a String.</li>
 <li>	<b>TS</b> The time series to act on, as TS object.</li>
-<li>	<b>Index</b> The index (0+) of the time series identifier being processed,
-		as an Integer.</li>
+<li>	<b>Index</b> The index (0+) of the time series identifier being processed, as an Integer.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2266,8 +2238,8 @@ Returned values from this request are:
 	Parameters to this request are:
 <ol>
 <li>	<b>Indices</b> Indices (0+) indicating the time series to process.</li>
-<li>	<b>Properties</b> Properties indicating the type of output.  These are
-		currently documented internally in TSEngine.
+<li>	<b>Properties</b> Properties indicating the type of output.
+		These are currently documented internally in TSEngine.
 		</ol>
 Returned values from this request are:
 <ol>
@@ -2282,9 +2254,9 @@ Returned values from this request are:
     Parameters to this request are:
 <ol>
 <li>    <b>TSID</b> Full time series identifier with input type and name (if needed).</li>
-<li>    <b>HandleMissingTSHow</b> Indicate how to handle missing time series.  Use <code>IgnoreMissingTS</code>
-        to ignore the time series (return null) or <code>DefaultMissingTS</code> to return an empty time
-        series.</li>
+<li>    <b>HandleMissingTSHow</b> Indicate how to handle missing time series.
+		Use <code>IgnoreMissingTS</code> to ignore the time series (return null) or
+		<code>DefaultMissingTS</code> to return an empty time series.</li>
         </ol>
 Returned values from this request are:
 <ol>
@@ -2295,8 +2267,8 @@ Returned values from this request are:
 
 <tr>
 <td><b>ReadTimeSeries2</b></td>
-<td> Process a list of time series after the initial read.  This does NOT add the
-time series to the list (use setTimeSeries() or other commands to do this).
+<td> Process a list of time series after the initial read.
+This does NOT add the time series to the list (use setTimeSeries() or other commands to do this).
 This method should be called after time series are read.
 This method does the following:
 <ol>
@@ -2305,16 +2277,13 @@ This method does the following:
 <li>	If the description is not set, sets it to the location.</li>
 <li>	If a missing data range has been set, indicate it to the time series.
 	This may be phased out.</li>
-<li>	If the time series identifier needs to be reset to something known to
-	the read code, reset it (using the non-null tsident_string parameter
-	that is passed in).</li>
-<li>	Compute the historic averages for the raw data so that it is available
-	later for filling.</li>
-<li>	If the output period is specified, make sure that the time series
-	period includes the output period.  For important time series, the
-	available period may already include the output period.  For time series
-	that are being filled, it is likely that the available period will need
-	to be extended to include the output period.</li>
+<li>	If the time series identifier needs to be reset to something known to the read code,
+		reset it (using the non-null tsident_string parameter that is passed in).</li>
+<li>	Compute the historic averages for the raw data so that it is available later for filling.</li>
+<li>	If the output period is specified, make sure that the time series period includes the output period.
+		For important time series, the available period may already include the output period.
+		For time series that are being filled,
+		it is likely that the available period will need to be extended to include the output period.</li>
 </ol>
 Parameters to this request are:
 <ol>
@@ -2359,8 +2328,8 @@ Returned values from this request are:
 <td>Set a HydroBaseDMI instance for use in database queries.
 	Parameters to this request are:
 <ol>
-<li>	<b>HydroBaseDMI</b> An open HydroBaseDMI instance, where the input name
-		can be used to uniquely identify the instance.</li>
+<li>	<b>HydroBaseDMI</b> An open HydroBaseDMI instance,
+		where the input name can be used to uniquely identify the instance.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2402,8 +2371,7 @@ Returned values from this request are:
 <td>Set a processor property.  Parameters to this request are:
 <ol>
 <li>    <b>PropertyName</b> The property name.</li>
-<li>    <b>PropertyValue</b> The property value, as an object
-        (e.g., DateTime, Double, Integer, or String.</li>
+<li>    <b>PropertyValue</b> The property value, as an object (e.g., DateTime, Double, Integer, or String.</li>
 <li>	<b>SetNull</b> If True, set the property value to null.</li>
 </ol>
 Returned values from this request are:
@@ -2417,8 +2385,7 @@ Returned values from this request are:
 <td><b>SetTable</b></td>
 <td>Set a DataTable instance.  Parameters to this request are:
 <ol>
-<li>    <b>Table</b> A DataTable, where getTableID() is used to get a unique
-        identifier for matching in the list of tables.</li>
+<li>    <b>Table</b> A DataTable, where getTableID() is used to get a unique identifier for matching in the list of tables.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2429,17 +2396,15 @@ Returned values from this request are:
 
 <tr>
 <td><b>TSIDListNoInputAboveCommand</b></td>
-<td>The Vector of time series identifiers that are available (as String), without the
-input type and name.  The time series identifiers from commands above the
-selected command are returned.  This property will normally only be used with
-command editor dialogs.  Parameters for this request are:</td>
+<td>The list of time series identifiers that are available (as String), without the input type and name.
+The time series identifiers from commands above the selected command are returned.
+This property will normally only be used with command editor dialogs.  Parameters for this request are:</td>
 <ol>
-<li>	<b>Command</b> A Command instance, typically being edited, above which time series
-identifiers are determined.</li>
+<li>	<b>Command</b> A Command instance, typically being edited, above which time series identifiers are determined.</li>
 </ol>
 Returned values from this request are:
 <ol>
-<li>	<b>TSIDList</b> The list of time series identifiers as a Vector of String.</li>
+<li>	<b>TSIDList</b> The list of time series identifiers as a list of String.</li>
 </ol>
 </td>
 </tr>
@@ -2451,8 +2416,8 @@ Returned values from this request are:
 @return the results of a request, or null if a value is not found.
 */
 public CommandProcessorRequestResultsBean processRequest ( String request, PropList request_params, PropList processorProps )
-throws Exception
-{	//return __tsengine.getPropContents ( prop );
+throws Exception {
+	//return __tsengine.getPropContents ( prop );
     if ( request.equalsIgnoreCase("AddCommandProcessorEventListener") ) {
         return processRequest_AddCommandProcessorEventListener ( request, request_params );
     }
@@ -2589,8 +2554,7 @@ throws Exception
 		String warning = "Unknown TSCommandProcessor request \"" + request + "\"";
 		bean.setWarningText( warning );
 		Message.printWarning(3, "TSCommandProcessor.processRequest", warning);
-		// TODO SAM 2007-02-07 Need to figure out a way to indicate
-		// an error and pass back useful information.
+		// TODO SAM 2007-02-07 Need to figure out a way to indicate an error and pass back useful information.
 		throw new UnrecognizedRequestException ( warning );
 	}
 }
@@ -2600,8 +2564,8 @@ Process the AddCommandProcessorEventListener request.
 */
 private CommandProcessorRequestResultsBean processRequest_AddCommandProcessorEventListener (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "CommandProcessorEventListener" );
     if ( o == null ) {
@@ -2622,8 +2586,8 @@ Process the AppendEnsemble request.
 */
 private CommandProcessorRequestResultsBean processRequest_AppendEnsemble (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "TSEnsemble" );
     if ( o == null ) {
@@ -2643,8 +2607,8 @@ Process the AppendTimeSeries request.
 */
 private CommandProcessorRequestResultsBean processRequest_AppendTimeSeries (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TS" );
 	if ( o == null ) {
@@ -2664,16 +2628,16 @@ Process the CalculateTSAverageLimits request.
 */
 private CommandProcessorRequestResultsBean processRequest_CalculateTSAverageLimits (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	// Time series.
 	Object o_TS = request_params.getContents ( "TS" );
 	if ( o_TS == null ) {
-			String warning = "Request CalculateTSAverageLimits() does not provide a TS parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText ( "This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request CalculateTSAverageLimits() does not provide a TS parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ( "This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o_TS;
 	TSLimits tslimits = __tsengine.calculateTSAverageLimits(ts);
@@ -2684,7 +2648,8 @@ throws Exception
 }
 
 /**
-Get a date/time property (DateTime instances) from a string.  The string is first expanded to fill ${Property} strings and then the
+Get a date/time property (DateTime instances) from a string.
+The string is first expanded to fill ${Property} strings and then the
 matching property name is used to determine the date/time using the following rules:
 <ol>
 <li> If the string is null, "*" or "", return null.</li>
@@ -2699,8 +2664,8 @@ matching property name is used to determine the date/time using the following ru
 </ol>
 */
 private CommandProcessorRequestResultsBean processRequest_DateTime ( String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "DateTime" );
 	if ( o == null ) {
@@ -2722,8 +2687,8 @@ Process the GetEnsemble request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetEnsemble (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "EnsembleID" );
     if ( o == null ) {
@@ -2745,8 +2710,8 @@ Process the GetEnsembleAt request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetEnsembleAt (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Index" );
     if ( o == null ) {
@@ -2776,9 +2741,8 @@ Process the GetHydroBaseDMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetHydroBaseDMI (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "InputName" );
 	if ( o == null ) {
@@ -2800,8 +2764,8 @@ Process the GetNetwork request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetNetwork (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "NetworkID" );
     if ( o == null ) {
@@ -2838,8 +2802,8 @@ Process the GetNwsrfsDMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetNwsrfsDMI (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "InputName" );
     if ( o == null ) {
@@ -2861,8 +2825,8 @@ Process the GetObject request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetObject (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "ObjectID" );
     if ( o == null ) {
@@ -2899,8 +2863,8 @@ Process the GetOutputPeriodForCommand request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetOutputPeriodForCommand (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Command" );
     if ( o == null ) {
@@ -2947,13 +2911,13 @@ throws Exception
 }
 
 /**
-Process the GetProperty request.  User-specified properties are checked first and
-if not found the built-in properties are requested.
+Process the GetProperty request.
+User-specified properties are checked first and if not found the built-in properties are requested.
 */
 private CommandProcessorRequestResultsBean processRequest_GetProperty (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "PropertyName" );
     if ( o == null ) {
@@ -2976,15 +2940,17 @@ throws Exception
 }
 
 /**
-Process the GetPropertyHashtable request.  Currently only user-specified properties are returned and only if the request parameter "UserProperties=True".
-@return Hashtable of properties, not in sorted order.  This is a new Hashtable instance whose contents generally should not be modified.
+Process the GetPropertyHashtable request.
+Currently only user-specified properties are returned and only if the request parameter "UserProperties=True".
+@return Hashtable of properties, not in sorted order.
+This is a new Hashtable instance whose contents generally should not be modified.
 */
 private CommandProcessorRequestResultsBean processRequest_GetPropertyHashtable (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// New Hashtable to return.
-	Hashtable<String,Object> ph = new Hashtable<String,Object>();
+	Hashtable<String,Object> ph = new Hashtable<>();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "GetUserProperties" );
 	if ( o != null ) {
@@ -2995,7 +2961,7 @@ throws Exception
 			for ( String key : keys ) {
 				o = __propertyHashmap.get ( key );
 				ph.put(key,o);
-			}			
+			}
 		}
 	}
 	// TODO SAM 2015-04-26 Transfer the internal properties.
@@ -3009,10 +2975,9 @@ throws Exception
 /**
 Process the GetTable request.
 */
-private CommandProcessorRequestResultsBean processRequest_GetTable (
-        String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+private CommandProcessorRequestResultsBean processRequest_GetTable ( String request, PropList request_params )
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "TableID" );
     if ( o == null ) {
@@ -3047,10 +3012,9 @@ throws Exception
 /**
 Process the GetTimeSeries request.
 */
-private CommandProcessorRequestResultsBean processRequest_GetTimeSeries (
-		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+private CommandProcessorRequestResultsBean processRequest_GetTimeSeries ( String request, PropList request_params )
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "Index" );
 	if ( o == null ) {
@@ -3074,8 +3038,8 @@ The time series is located by processing backwards in the list.
 */
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeriesForTSID (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TSID" );
 	if ( o == null ) {
@@ -3102,8 +3066,8 @@ Process the GetTimeSeriesToProcess request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeriesToProcess (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TSList" );
 	if ( o == null ) {
@@ -3132,7 +3096,7 @@ throws Exception
     if ( o_TSPosition != null ) {
         TSPosition = (String)o_TSPosition;
     }
-	// Get the information from TSEngine, which is returned as a Vector
+	// Get the information from TSEngine, which is returned as a list
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
     TimeSeriesToProcess tsToProcess = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
@@ -3153,8 +3117,8 @@ Process the GetTimeSeriesForTSID request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetTSIDListNoInputAboveCommand (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "Command" );
 	if ( o == null ) {
@@ -3178,8 +3142,8 @@ Do not set any internal "Posix" variations - retrieve those as needed by reforma
 */
 private CommandProcessorRequestResultsBean processRequest_GetWorkingDirForCommand (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "Command" );
 	if ( o == null ) {
@@ -3224,9 +3188,9 @@ throws Exception
 		Message.printWarning(2, routine, e);
 	}
 	// Return the working directory as a String:
-	// - This can then be used in editors, for example.
-	// - The WorkingDir property will have been set in the temporary processor.
-	// - Also set WorkingDirPosix and WorkingDirPortable and phase in POSIX paths.
+	// - this can then be used in editors, for example
+	// - the WorkingDir property will have been set in the temporary processor
+	// - also set WorkingDirPosix and WorkingDirPortable and phase in POSIX paths
 	PropList results = bean.getResultsPropList();
 	results.set( "WorkingDir", (String)ts_processor.getPropContents ( "WorkingDir") );
 	results.set( "WorkingDirPortable", IOUtil.toPortablePath((String)ts_processor.getPropContents ( "WorkingDir")) );
@@ -3239,9 +3203,8 @@ Process the IndexOf request.
 */
 private CommandProcessorRequestResultsBean processRequest_IndexOf (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TSID" );
 	if ( o == null ) {
@@ -3263,8 +3226,8 @@ Process the ProcessTimeSeriesAction request.
 */
 private CommandProcessorRequestResultsBean processRequest_ProcessCommands (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	// Time series.
 	Object o_Commands = request_params.getContents ( "Commands" );
@@ -3291,12 +3254,11 @@ throws Exception
 /**
 Process the ProcessTimeSeriesAction request.
 */
-private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesAction (
-		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
+private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesAction ( String request, PropList request_params )
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
-	// Time series...
+	// Time series.
 	Object o_TS = request_params.getContents ( "TS" );
 	if ( o_TS == null ) {
 			String warning = "Request ProcessTimeSeriesAction() does not provide a TS parameter.";
@@ -3341,7 +3303,7 @@ throws Exception
         __tsengine.setTimeSeries ( ts, ts_pos );
     }
     else if ( Action_int == UPDATE_TS ) {
-        // Update in the time series list...
+        // Update in the time series list.
         __tsengine.setTimeSeries ( ts, ts_pos );
     }
 	// No results need to be set in the bean.
@@ -3351,8 +3313,7 @@ throws Exception
 /**
 Process the ProcessTimeSeriesResultsList request.
 This processes the time series into a product such as a graph or report.
-@param request will be the original request "ProcessTimeSeriesResultsList",
-used in error-handling
+@param request will be the original request "ProcessTimeSeriesResultsList", used in error-handling
 @param request_params request parameters, as follows:
 <ol>
 <li>Indices - an int[] containing the processor time series list indices to process</li>
@@ -3363,8 +3324,8 @@ used in error-handling
 @SuppressWarnings("unchecked")
 private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesResultsList (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	// Indices for time series.
 	Object o_Indices = request_params.getContents ( "Indices" );
@@ -3407,8 +3368,8 @@ throws Exception
 
 /**
 Process the ReadTimeSeries request.
-This request is used with the CreateFromList() and ReadTimeSeries() commands.  Because this
-method performs fundamental tasks, some of the error handling is different than other requests, 
+This request is used with the CreateFromList() and ReadTimeSeries() commands.
+Because this method performs fundamental tasks, some of the error handling is different than other requests,
 in particular passing in the WarningLevel and CommandTag request parameters.
 This reads the time series and post-processes.
 To only post-process time series, use the "ReadTimeSeries2" request.
@@ -3427,10 +3388,9 @@ The following properties are expected:
 <li> TS - time series object</li>
 </ol>
 */
-private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries (
-        String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries ( String request, PropList request_params )
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     // Identifier for time series to read.
     Object o = request_params.getContents ( "TSID" );
@@ -3470,10 +3430,8 @@ throws Exception
     // IfMissing parameter to indicate how to handle missing time series.
     // The Warn value will generate warnings in the main command.
     //
-    // For the low level code, Warn and Ignore result in no default
-    // time series (includeMissingTS=false in low level code).
-    // Default results in default time series being added
-    // (includeMissingTS=true in low level code).
+    // For the low level code, Warn and Ignore result in no default time series (includeMissingTS=false in low level code).
+    // Default results in default time series being added (includeMissingTS=true in low level code).
     Object o_IfNotFound = request_params.getValue ( "IfNotFound" );
     if ( o_IfNotFound == null ) {
             o_IfNotFound = "Warn";  // Default.
@@ -3499,8 +3457,7 @@ throws Exception
     }
     boolean readData = ((Boolean)o_ReadData).booleanValue();
     // If values have been specified for default time series,
-    // save the current IgnoreMissingTS global flag, set to the value for this command, and then
-    // reset to the global value.
+    // save the current IgnoreMissingTS global flag, set to the value for this command, and then reset to the global value.
     TS ts = null;
     boolean includeMissingTsOld = __tsengine.getIncludeMissingTS();
     DateTime outputStartOld = __tsengine.getIncludeMissingTSOutputStart();
@@ -3536,8 +3493,8 @@ Process the ReadTimeSeries2 request.
 */
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries2 (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TSList" );
 	if ( o == null ) {
@@ -3559,8 +3516,8 @@ Process the RemoveAllFromEnsembleResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveAllFromEnsembleResultsList (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     removeAllEnsembles ();
     //PropList results = bean.getResultsPropList();
     // No data are returned in the bean.
@@ -3572,8 +3529,8 @@ Process the RemoveAllFromTimeSeriesResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveAllFromTimeSeriesResultsList (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     __tsengine.removeAllTimeSeries ();
     //PropList results = bean.getResultsPropList();
@@ -3586,8 +3543,8 @@ Process the RemoveObjectFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveObjectFromResultsList (
     String request, PropList request_params )
-throws Exception
-{   //String routine = "TSCommandProcessor.processRequest_RemoveObjectFromResultsList";
+throws Exception {
+    //String routine = "TSCommandProcessor.processRequest_RemoveObjectFromResultsList";
     TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "ObjectID" );
@@ -3615,8 +3572,8 @@ Process the SetProperty request.  Null property values are NOT allowed.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveProperty (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "PropertyName" );
     if ( o == null ) {
@@ -3642,8 +3599,8 @@ Process the RemoveTableFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveTableFromResultsList (
     String request, PropList request_params )
-throws Exception
-{   //String routine = "TSCommandProcessor.processRequest_RemoveTableFromResultsList";
+throws Exception {
+    //String routine = "TSCommandProcessor.processRequest_RemoveTableFromResultsList";
     TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "TableID" );
@@ -3671,8 +3628,8 @@ Process the RemoveTimeSeriesFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveTimeSeriesFromResultsList (
         String request, PropList request_params )
-throws Exception
-{   String routine = "TSCommandProcessor.processRequest_RemoveTimeSeriesFromResultsList";
+throws Exception {
+    String routine = getClass().getSimpleName() + ".processRequest_RemoveTimeSeriesFromResultsList";
     TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Index" );
@@ -3693,8 +3650,8 @@ throws Exception
     // Remove the time series.
     __tsengine.removeTimeSeries ( Index.intValue() );
     // Remove the time series from ensembles and remove ensembles if empty.
-    // Time series are only removed if the time series reference in the ensemble matches the
-    // removed time series (identifiers are not checked).
+    // Time series are only removed if the time series reference in the ensemble matches the removed time series
+    // (identifiers are not checked).
     for ( int i = 0; i < __TSEnsembleList.size(); i++ ) {
         TSEnsemble ensemble = __TSEnsembleList.get(i);
         if ( ensemble.remove ( ts ) ) {
@@ -3714,8 +3671,8 @@ Process the RunCommands request.
 */
 private CommandProcessorRequestResultsBean processRequest_RunCommands (
 		String request, PropList request_params, PropList initialProps )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	// Command list.
 	Object o = request_params.getContents ( "CommandList" );
@@ -3751,8 +3708,8 @@ Process the SetDataStore request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetDataStore (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "DataStore" );
     if ( o == null ) {
@@ -3763,7 +3720,7 @@ throws Exception
     }
     DataStore dataStore = (DataStore)o;
     // Add an open DataStore instance, closing and discarding a previous data store of the same id if it exists.
-    // 
+    //
     __tsengine.setDataStore( dataStore, true );
     // No results need to be returned.
     return bean;
@@ -3774,8 +3731,8 @@ Process the SetHydroBaseDMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetHydroBaseDMI (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "HydroBaseDMI" );
 	if ( o == null ) {
@@ -3796,8 +3753,8 @@ Process the SetNetwork request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetNetwork (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Network" );
     if ( o == null ) {
@@ -3830,8 +3787,8 @@ Process the SetNWSRFSFS5FilesDMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetNWSRFSFS5FilesDMI (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "NWSRFSFS5FilesDMI" );
 	if ( o == null ) {
@@ -3852,8 +3809,8 @@ Process the SetObject request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetObject (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Object" );
     if ( o == null ) {
@@ -3886,8 +3843,8 @@ Process the SetPatternTSList request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetPatternTSList (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "TSList" );
     if ( o == null ) {
@@ -3927,8 +3884,8 @@ Otherwise, it is difficult to check input for errors.
 */
 private CommandProcessorRequestResultsBean processRequest_SetProperty (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "PropertyName" );
     if ( o == null ) {
@@ -3941,7 +3898,7 @@ throws Exception
     Object o2 = request_params.getContents ( "PropertyValue" );
     if ( o2 == null ) {
     	Object o3 = request_params.getValue ( "SetNull" );
-    	if ( (o3 != null) && o3.toString().equalsIgnoreCase("true") ) { 
+    	if ( (o3 != null) && o3.toString().equalsIgnoreCase("true") ) {
 	        String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
 	        bean.setWarningText ( warning );
 	        bean.setWarningRecommendationText ( "This is likely a software code error.");
@@ -3949,7 +3906,7 @@ throws Exception
     	}
     	// Else OK to set a null property.
     }
-    // Try to set official property...
+    // Try to set official property.
     Collection<String> internalProperties = getPropertyNameList(true,false);
     if ( internalProperties.contains(PropertyName) ) {
 	    try {
@@ -3973,8 +3930,8 @@ Process the SetTable request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetTable (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "Table" );
     if ( o == null ) {
@@ -4007,8 +3964,8 @@ Process the SetTimeSeries request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetTimeSeries (
 		String request, PropList request_params )
-throws Exception
-{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
+throws Exception {
+	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters.
 	Object o = request_params.getContents ( "TS" );
 	if ( o == null ) {
@@ -4037,8 +3994,8 @@ Process the SetTimeSeriesView request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetTimeSeriesView (
         String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
     Object o = request_params.getContents ( "TimeSeriesView" );
     if ( o == null ) {
@@ -4073,16 +4030,16 @@ to the directory of the command file.  The addCommandsFromStringList() method is
 @param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.
 This is being used during transition of old string commands to full Command classes and
-may be needed in any case to preserve commands that were manually edited.  Commands with
-problems will in any case be flagged at run-time as unrecognized or problematic.
+may be needed in any case to preserve commands that were manually edited.
+Commands with problems will in any case be flagged at run-time as unrecognized or problematic.
 @param append If true, the commands will be appended to the existing commands.
 @param runDiscoveryOnLoad if true, run discovery mode on the commands at load; if false, do not run discovery
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
 */
 public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append, boolean runDiscoveryOnLoad )
-throws IOException, FileNotFoundException
-{	BufferedReader br = null;
+throws IOException, FileNotFoundException {
+	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
 	try {
         setCommandFileName ( path ); // This is used in headers, etc.
@@ -4140,11 +4097,12 @@ throws IOException, FileNotFoundException
 }
 
 /**
-Run discovery on the command. This will, for example, make available a list of time series
-to be requested with the ObjectListProvider.getObjectList() method.
+Run discovery on the command.
+This will, for example, make available a list of time series to be requested with the
+ObjectListProvider.getObjectList() method.
 */
-private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
-{   String routine = getClass().getSimpleName() + ".readCommandFile_RunDiscoveryOnCommand";
+private void readCommandFile_RunDiscoveryOnCommand ( Command command_read ) {
+    String routine = getClass().getSimpleName() + ".readCommandFile_RunDiscoveryOnCommand";
     // Run the discovery.
     if ( Message.isDebugOn ) {
         Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
@@ -4163,23 +4121,23 @@ private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
 
 /**
 Method for TSSupplier interface.
-Read a time series given a time series identifier string.  The string may be
-a file name if the time series are stored in files, or may be a true identifier
-string if the time series is stored in a database.  The specified period is
-read.  The data are converted to the requested units.
+Read a time series given a time series identifier string.
+The string may be a file name if the time series are stored in files,
+or may be a true identifier string if the time series is stored in a database.
+The specified period is read.  The data are converted to the requested units.
 @param tsident_string Time series identifier or file name to read.
 @param req_date1 First date to query.  If specified as null the entire period will be read.
 @param req_date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
 public TS readTimeSeries (	String tsident_string, DateTime req_date1, DateTime req_date2,
 				String req_units, boolean read_data )
-throws Exception
-{	return __tsengine.readTimeSeries ( tsident_string, req_date1, req_date2, req_units, read_data );
+throws Exception {
+	return __tsengine.readTimeSeries ( tsident_string, req_date1, req_date2, req_units, read_data );
 }
 
 /**
@@ -4187,58 +4145,55 @@ Method for TSSupplier interface.
 Read a time series given an existing time series and a file name.  The specified period is read.
 The data are converted to the requested units.
 @param req_ts Requested time series to fill.  If null, return a new time series.
-If not null, all data are reset, except for the identifier, which is assumed
-to have been set in the calling code.  This can be used to query a single
-time series from a file that contains multiple time series.
+If not null, all data are reset, except for the identifier,
+which is assumed to have been set in the calling code.
+This can be used to query a single time series from a file that contains multiple time series.
 @param fname File name to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public TS readTimeSeries (	TS req_ts, String fname, DateTime date1, DateTime date2,
-				String req_units, boolean read_data )
-throws Exception
-{	return __tsengine.readTimeSeries ( req_ts, fname, date1, date2, req_units, read_data );
+public TS readTimeSeries ( TS req_ts, String fname, DateTime date1, DateTime date2, String req_units, boolean read_data )
+throws Exception {
+	return __tsengine.readTimeSeries ( req_ts, fname, date1, date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
 Read a time series list from a file (this is typically used used where a time
-series file can contain one or more time series).  The specified period is
-read.  The data are converted to the requested units.
+series file can contain one or more time series).  The specified period is read.
+The data are converted to the requested units.
 @param fname File to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return list of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public List<TS> readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
-					String req_units, boolean read_data )
-throws Exception
-{	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
+public List<TS> readTimeSeriesList ( String fname, DateTime date1, DateTime date2, String req_units, boolean read_data )
+throws Exception {
+	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
-Read a time series list from a file or database using the time series identifier
-information as a query pattern.  The specified period is
-read.  The data are converted to the requested units.
+Read a time series list from a file or database using the time series identifier information as a query pattern.
+The specified period is read.  The data are converted to the requested units.
 @param tsident A TSIdent instance that indicates which time series to query.
-If the identifier parts are empty, they will be ignored in the selection.  If
-set to "*", then any time series identifier matching the field will be selected.
+If the identifier parts are empty, they will be ignored in the selection.
+If set to "*", then any time series identifier matching the field will be selected.
 If set to a literal string, the identifier field must match exactly to be selected.
 @param fname File to read.
 @param date1 First date to query.  If specified as null the entire period will be read.
 @param date2 Last date to query.  If specified as null the entire period will be read.
-@param req_units Requested units to return data.  If specified as null or an
-empty string the units will not be converted.
+@param req_units Requested units to return data.
+If specified as null or an empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return list of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
@@ -4252,16 +4207,16 @@ throws Exception {
 /**
 Remove all CommandProcessorEventListener.
 */
-public void removeAllCommandProcessorEventListeners ( )
-{   // Just reset the array to null.
+public void removeAllCommandProcessorEventListeners ( ) {
+    // Just reset the array to null.
     __CommandProcessorEventListener_array = null;
 }
 
 /**
 Remove all commands.
 */
-public void removeAllCommands ()
-{	int size = __CommandList.size();
+public void removeAllCommands () {
+	int size = __CommandList.size();
 	if ( size > 0 ) {
 		__CommandList.clear ();
 		notifyCommandListListenersOfRemove ( 0, size - 1 );
@@ -4290,8 +4245,8 @@ private void removeAllPatternTS () {
 Remove a command at a position.
 @param index Position (0+) at which to remove command.
 */
-public void removeCommandAt ( int index )
-{	String routine = "TSCommandProcessor.removeCommandAt";
+public void removeCommandAt ( int index ) {
+	String routine = getClass().getSimpleName() + ".removeCommandAt";
 	__CommandList.remove ( index );
 	notifyCommandListListenersOfRemove ( index, index );
 	Message.printStatus(2, routine, "Remove command object at [" + index + "]" );
@@ -4301,8 +4256,8 @@ public void removeCommandAt ( int index )
 Remove a CommandListListener.
 @param listener CommandListListener to remove.
 */
-public void removeCommandListListener ( CommandListListener listener )
-{	if ( listener == null ) {
+public void removeCommandListListener ( CommandListListener listener ) {
+	if ( listener == null ) {
 		return;
 	}
 	if ( __CommandListListener_array != null ) {
@@ -4350,10 +4305,10 @@ Reset the workflow global properties to defaults, necessary when a command proce
 For example, initial properties include user name, home folder, etc.
 */
 private void resetWorkflowProperties ()
-throws Exception
-{   String routine = getClass().getSimpleName() + ".resetWorkflowProperties";
+throws Exception {
+    String routine = getClass().getSimpleName() + ".resetWorkflowProperties";
     Message.printStatus(2, routine, "Resetting workflow properties." );
-    
+
     // First clear user-defined properties.
     __propertyHashmap.clear();
 
@@ -4361,7 +4316,7 @@ throws Exception
     __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
     boolean newTZ = true;
     if ( newTZ ) {
-        // Use new time zone class
+        // Use new time zone class.
     	ZonedDateTime now = ZonedDateTime.now();
     	__propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
     }
@@ -4386,7 +4341,7 @@ throws Exception
     __propertyHashmap.put ( "UserTstoolDirPosix", IOUtil.toPosixPath(homeDir) + "/.tstool" );
     __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
     __propertyHashmap.put ( "UserName", System.getProperty("user.name") );
-    // Set the program version as a property, useful for version-dependent command logic
+    // Set the program version as a property, useful for version-dependent command logic.
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period.
     // Save the program version as a string.
     String programVersion = IOUtil.getProgramVersion();
@@ -4436,7 +4391,7 @@ throws Exception
     	programVersionNumber = -1.0;
     }
     __propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
-    
+
     // Set initial properties, such as from the command line:
     // - all are strings, so are immutable
 	Message.printStatus(2, routine, "Setting initial (command line) application properties in processor." );
@@ -4490,8 +4445,8 @@ throws Exception
 /**
 Run the specified commands.  If no commands are specified, run all that are being managed.
 @param commands list of Command to process.
-@param runProps Properties to control run.  See full list in TSEngine.processCommands.  This
-method only acts on the properties shown below.
+@param runProps Properties to control run.  See full list in TSEngine.processCommands.
+This method only acts on the properties shown below.
 <td><b>Property</b></td>    <td><b>Description</b></td>
 </tr>
 
@@ -4506,8 +4461,7 @@ should be reset before running.
 </table>
 */
 public void runCommands ( List<Command> commands, PropList runProps )
-throws Exception
-{
+throws Exception {
     // Reset the global workflow properties if requested.
     boolean resetWorkflowProperties = true;   // Default.
     if ( runProps != null ) {
@@ -4521,20 +4475,20 @@ throws Exception
     	// - some standard properties will be initialized for each run
         resetWorkflowProperties();
     }
-    
+
     // Currently, always set the properties defined for the initial application command line.
 
-    // Remove all registered CommandProcessorEventListener, so that listeners don't get added
-    // more than once if the processor is rerun.  Currently this will require that an OpenCheckFile()
+    // Remove all registered CommandProcessorEventListener,
+    // so that listeners don't get added more than once if the processor is rerun.
+    // Currently this will require that an OpenCheckFile()
     // command is always run since it is the only thing that handles events at this time.
     removeAllCommandProcessorEventListeners();
-    
+
     // Now call the TSEngine method to do the processing.
-    // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands
-    // have been converted to classes - then code size should be more manageable and can remove
-    // redundant code in the two classes.
+    // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands have been converted to classes,
+    // then code size should be more manageable and can remove redundant code in the two classes.
 	__tsengine.processCommands ( commands, runProps );
-	
+
 	// Now finalize the results by processing the check files, if any.
 
 	if ( __CommandProcessorEventListener_array != null ) {
@@ -4547,20 +4501,20 @@ throws Exception
     	    }
     	}
 	}
-	
+
     // Remove all registered CommandProcessorEventListener again so that if by chance editing, etc. generates
 	// events don't want to deal with.
     removeAllCommandProcessorEventListeners();
 }
 
 /**
-Request that processing be canceled.  This sets a flag that is detected in the
-TSEngine.processCommands() method.  Processing will be canceled as soon as the current command
-completes its processing.
+Request that processing be canceled.
+This sets a flag that is detected in the TSEngine.processCommands() method.
+Processing will be canceled as soon as the current command completes its processing.
 @param cancel_processing_requested Set to true to cancel processing.
 */
-public void setCancelProcessingRequested ( boolean cancel_processing_requested )
-{	__cancel_processing_requested = cancel_processing_requested;
+public void setCancelProcessingRequested ( boolean cancel_processing_requested ) {
+	__cancel_processing_requested = cancel_processing_requested;
 }
 
 /**
@@ -4590,14 +4544,14 @@ protected void setCreateOutput ( Boolean CreateOutput_Boolean ) {
 /**
 Set the list of all DataStore instances known to the processor.
 These are named database connections that correspond to input type/name for time series.
-This method is normally only called in special cases.  For example, the RunCommands() command
-sets the data stores from the main processor into the called commands.
-Note that each data store in the list is set using setDataStore() - the instance of the list that
-manages the data stores is not reset.
+This method is normally only called in special cases.
+For example, the RunCommands() command sets the data stores from the main processor into the called commands.
+Note that each data store in the list is set using setDataStore().
+The instance of the list that manages the data stores is not reset.
 @param dataStoreList list of DataStore to use in the processor
 @param closeOld if true, then any matching data stores are first closed before being set to the
-new value (normally this should be false if, for example, a list of data stores from one processor
-is passed to another)
+new value (normally this should be false if,
+for example, a list of data stores from one processor is passed to another)
 */
 public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld ) {
     for ( DataStore dataStore : dataStoreList ) {
@@ -4615,13 +4569,13 @@ public void setDatastoreSubstituteList ( List<DataStoreSubstitute> dssubList ) {
 }
 
 /**
-Set the initial working directory for the processor.  This is typically the location
-of the command file, or a temporary directory if the commands have not been saved.
+Set the initial working directory for the processor.
+This is typically the location of the command file, or a temporary directory if the commands have not been saved.
 Also set the current working directory by calling setWorkingDir() with the same information.
 @param InitialWorkingDir The current working directory.
 */
-public void setInitialWorkingDir ( String InitialWorkingDir )
-{   String routine = getClass().getSimpleName() + ".setInitialWorkingDir";
+public void setInitialWorkingDir ( String InitialWorkingDir ) {
+    String routine = getClass().getSimpleName() + ".setInitialWorkingDir";
     Message.printStatus(2, routine, "Setting the initial working directory to \"" + InitialWorkingDir + "\"" );
 	__InitialWorkingDir_String = InitialWorkingDir;
 	// Also set the working directory.
@@ -4629,10 +4583,11 @@ public void setInitialWorkingDir ( String InitialWorkingDir )
 }
 
 /**
-Indicate whether the processor is running.  This should be set in processCommands()
-and can be monitored by code (e.g., GUI) that has behavior that depends on whether
-the processor is running.  The method is protected to allow it to be called from
-TSEngine (for example when an interrupt occurs) but would normally not be called from other code.
+Indicate whether the processor is running.
+This should be set in processCommands() and can be monitored by code (e.g., GUI)
+that has behavior that depends on whether the processor is running.
+The method is protected to allow it to be called from TSEngine (for example when an interrupt occurs)
+but would normally not be called from other code.
 @param is_running indicates whether the processor is running (processing commands).
 */
 protected void setIsRunning ( boolean is_running ) {
@@ -4668,20 +4623,20 @@ public void setPluginCommandClasses ( List<Class> pluginCommandClasses, boolean 
 }
 
 /**
-Set the data for a built-in named property, required by the CommandProcessor
-interface.  See the getPropContents method for a list of properties that are
-handled.  This method simply calls setPropContents () using the information in the Prop instance.
+Set the data for a built-in named property, required by the CommandProcessor interface.
+See the getPropContents method for a list of properties that are handled.
+This method simply calls setPropContents () using the information in the Prop instance.
 @param prop Property to set.
 @return the named property, or null if a value is not found.
 @exception Exception if there is an error setting the property.
 */
-public void setProp ( Prop prop ) throws Exception
-{	setPropContents ( prop.getKey(), prop.getContents() );
+public void setProp ( Prop prop ) throws Exception {
+	setPropContents ( prop.getKey(), prop.getContents() );
 }
 
 /**
-Set the contents for a built-in named property, required by the CommandProcessor
-interface.  The following properties are handled.
+Set the contents for a built-in named property, required by the CommandProcessor interface.
+The following properties are handled.
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
 <td><b>Property</b></td>	<td><b>Description</b></td>
@@ -4689,8 +4644,7 @@ interface.  The following properties are handled.
 
 <tr>
 <td><b>AutoExtendPeriod</b></td>
-<td>A Boolean indicating whether time series period should automatically be extended to the
-output period at read.
+<td>A Boolean indicating whether time series period should automatically be extended to the output period at read.
 </td>
 </tr>
 
@@ -4745,9 +4699,8 @@ This was added to handle For() loops in commands since status clear setting is s
 
 <tr>
 <td><b>InitialWorkingDir</b></td>
-<td>A String containing the path to the initial working directory, from which all
-paths are determined.  This is usually the directory to the commands file, or the
-startup directory.
+<td>A String containing the path to the initial working directory, from which all paths are determined.
+This is usually the directory to the commands file, or the startup directory.
 </td>
 </tr>
 
@@ -4771,8 +4724,8 @@ startup directory.
 
 <tr>
 <td><b>StartLogEnabled></b></td>
-<td>a Boolean indicating whether or not the StartLog command is enabled, useful to disable when troubleshooting
-so that all logging is in the main log file.
+<td>a Boolean indicating whether or not the StartLog command is enabled,
+useful to disable when troubleshooting so that all logging is in the main log file.
 </td>
 </tr>
 
@@ -4798,8 +4751,8 @@ application can close when the TSView window is closed.</td>
 </table>
 @exception Exception if there is an error setting the properties.
 */
-public void setPropContents ( String propName, Object contents ) throws Exception
-{	if ( propName.equalsIgnoreCase("AutoExtendPeriod" ) ) {
+public void setPropContents ( String propName, Object contents ) throws Exception {
+	if ( propName.equalsIgnoreCase("AutoExtendPeriod" ) ) {
         __tsengine.setAutoExtendPeriod ( ((Boolean)contents).booleanValue() );
     }
     else if ( propName.equalsIgnoreCase("AverageEnd") ) {
@@ -4887,7 +4840,7 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
  * but does not require creating a bean object to pass the request.
  */
 public void setProperty ( String propName, Object contents ) {
-    // Try to set official property...
+    // Try to set official property.
     Collection<String> internalProperties = getPropertyNameList(true,false);
     if ( internalProperties.contains(propName) ) {
 	    try {
@@ -4914,8 +4867,8 @@ protected void setStartLogEnabled ( Boolean StartLogEnabled_Boolean ) {
 }
 
 /**
-Set the working directory for the processor.  This is typically set by
-SetInitialWorkingDir() method when initializing the processor and SetWorkingDir() commands.
+Set the working directory for the processor.
+This is typically set by SetInitialWorkingDir() method when initializing the processor and SetWorkingDir() commands.
 @param WorkingDir The current working directory.
 */
 protected void setWorkingDir ( String WorkingDir ) {
@@ -4923,8 +4876,8 @@ protected void setWorkingDir ( String WorkingDir ) {
 }
 
 /**
-Return the number of commands being managed by this processor.  This
-matches the Collection interface, although that is not yet fully implemented.
+Return the number of commands being managed by this processor.
+This matches the Collection interface, although that is not yet fully implemented.
 @return The number of commands being managed by the processor
 */
 public int size() {

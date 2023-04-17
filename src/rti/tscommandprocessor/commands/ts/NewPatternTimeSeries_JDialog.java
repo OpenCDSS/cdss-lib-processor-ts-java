@@ -347,6 +347,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
+    __IrregularInterval_JComboBox.setToolTipText("Controls spacing of irregular interval data, to initialize the data.");
     boolean padZeroes = true;
     boolean includeIrregular = false;
     List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(

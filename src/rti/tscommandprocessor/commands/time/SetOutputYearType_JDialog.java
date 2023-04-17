@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,9 +60,9 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private SetOutputYearType_Command __command = null; // Command to edit
+private SetOutputYearType_Command __command = null; // Command to edit.
 private JTextArea __command_JTextArea = null;
-private SimpleJComboBox __OutputYearType_JComboBox = null; // Field for year type
+private SimpleJComboBox __OutputYearType_JComboBox = null; // Field for year type.
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -72,8 +72,8 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetOutputYearType_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
+public SetOutputYearType_JDialog ( JFrame parent, SetOutputYearType_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -81,8 +81,8 @@ public SetOutputYearType_JDialog ( JFrame parent, Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -100,11 +100,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check...
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     __error_wait = false;
@@ -113,7 +113,7 @@ private void checkInput ()
         props.set ( "OutputYearType", OutputYearType );
     }
     try {
-    	// This will warn the user...
+    	// This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -123,25 +123,12 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String OutputYearType = __OutputYearType_JComboBox.getSelected();
+private void commitEdits () {
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
     __command.setCommandParameter ( "OutputYearType", OutputYearType );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__OutputYearType_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -149,14 +136,14 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (SetOutputYearType_Command)command;
+private void initialize ( JFrame parent, SetOutputYearType_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -185,11 +172,11 @@ private void initialize ( JFrame parent, Command command )
         "Additional output year types may be enabled for specific commands." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputYearType_JComboBox = new SimpleJComboBox ( false );
-	// Only include types that have been tested for all output.  More specific types may be included in
-	// some commands where local handling is enabled.
+	// Only include types that have been tested for all output.
+	// More specific types may be included in some commands where local handling is enabled.
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
     __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
@@ -208,13 +195,13 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -229,7 +216,7 @@ private void initialize ( JFrame parent, Command command )
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -238,48 +225,49 @@ private void initialize ( JFrame parent, Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{   String routine = getClass().getName() + "._JDialog.refresh";
+private void refresh () {
+    String routine = getClass().getSimpleName() + ".refresh";
     String OutputYearType = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         OutputYearType = props.getValue ( "OutputYearType" );
         if ( OutputYearType == null ) {
-            // Select default...
+            // Select default.
             __OutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -294,7 +282,7 @@ private void refresh ()
             }
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     OutputYearType = __OutputYearType_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "OutputYearType=" + OutputYearType );
@@ -303,20 +291,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+private void response ( boolean ok ) {
+    __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
@@ -325,15 +312,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

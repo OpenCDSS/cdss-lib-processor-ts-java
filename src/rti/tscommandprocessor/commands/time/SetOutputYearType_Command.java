@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -57,28 +57,27 @@ implements Command
 /**
 Constructor.
 */
-public SetOutputYearType_Command ()
-{	super();
+public SetOutputYearType_Command () {
+	super();
 	setCommandName ( "SetOutputYearType" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String OutputYearType = parameters.getValue ( "OutputYearType" );
+throws InvalidCommandParameterException {
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	String warning = "";
 	String message;
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	YearType outputYearType = null;
 	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         try {
@@ -103,8 +102,8 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
         }
 	}
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>();
 	validList.add ( "OutputYearType" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -119,28 +118,24 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetOutputYearType_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
     }
     else {
@@ -153,11 +148,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
         String OutputYearType = "";
         if ( ntokens >= 2 ) {
-            // Output year type...
+            // Output year type.
             OutputYearType = v.get(1).trim();
         }
 
-        // Set parameters and new defaults...
+        // Set parameters and new defaults.
 
         PropList parameters = new PropList ( getCommandName() );
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -172,35 +167,33 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_line Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "SetOutputYearType_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
-	
+
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	YearType outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
-	
+
 	try {
-        // Set the output year type...
+        // Set the output year type.
 	    processor.setPropContents ( "OutputYearType", outputYearType );
 		Message.printStatus ( 2, routine, "Set output year type to \"" + OutputYearType + "\".");
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting output year type to \"" + OutputYearType + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,

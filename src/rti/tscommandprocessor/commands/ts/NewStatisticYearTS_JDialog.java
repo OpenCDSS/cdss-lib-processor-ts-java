@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -56,6 +55,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
+import RTi.TS.DayBoundaryType;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
@@ -90,24 +90,25 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __NewEnsembleID_JLabel = null;
-private JTextField __NewEnsembleID_JTextField;
+private JTextField __NewEnsembleID_JTextField = null;
 private JLabel __NewEnsembleName_JLabel = null;
-private JTextField __NewEnsembleName_JTextField;
+private JTextField __NewEnsembleName_JTextField = null;
 private JTextArea __NewTSID_JTextArea = null;
 private SimpleJComboBox	__Statistic_JComboBox = null;
-private JTextField __TestValue_JTextField = null;
 private JTextField __Value1_JTextField = null;
 private JTextField __AllowMissingCount_JTextField = null;
 private JTextField __MinimumSampleSize_JTextField = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
-private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period)
+private SimpleJComboBox __YearStartTime_JComboBox = null;
+private SimpleJComboBox __YearEndTime_JComboBox = null;
+private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
-private DateTime_JPanel __AnalysisWindowStart_JPanel = null; // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null;
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private JTextField __SearchStart_JTextField = null;
-private SimpleJButton __edit_JButton = null; // Edit TSID button
-private SimpleJButton __clear_JButton = null; // Clear NewTSID button
+private SimpleJButton __edit_JButton = null; // Edit TSID button.
+private SimpleJButton __clear_JButton = null; // Clear NewTSID button.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -117,8 +118,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewStatisticYearTS_JDialog ( JFrame parent, NewStatisticYearTS_Command command )
-{	super(parent, true);
+public NewStatisticYearTS_JDialog ( JFrame parent, NewStatisticYearTS_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -126,9 +127,9 @@ public NewStatisticYearTS_JDialog ( JFrame parent, NewStatisticYearTS_Command co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
-	String routine = "NewStatisticYearTS_JDialog.actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	String routine = getClass().getSimpleName() + ".actionPerformed";
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -143,7 +144,7 @@ public void actionPerformed( ActionEvent event )
 		try {
 		    if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
-				// Set some defaults to guide the user
+				// Set some defaults to guide the user.
 				tsident.setInterval(TimeInterval.YEAR, 1);
 				tsident.setScenario(__Statistic_JComboBox.getSelected());
 			}
@@ -182,8 +183,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -191,8 +192,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -200,8 +201,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -210,8 +211,8 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	// Handle TSList-related parameter editing...
+private void checkGUIState() {
+	// Handle TSList-related parameter editing.
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
         TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
@@ -240,7 +241,7 @@ private void checkGUIState()
         __NewEnsembleName_JTextField.setEnabled(false);
     }
     if ( __AnalysisWindow_JCheckBox.isSelected() ) {
-        // Checked so enable the date panels
+        // Checked so enable the date panels.
         __AnalysisWindowStart_JPanel.setEnabled ( true );
         __AnalysisWindowEnd_JPanel.setEnabled ( true );
     }
@@ -251,11 +252,11 @@ private void checkGUIState()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
@@ -265,11 +266,12 @@ private void checkInput ()
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
-	String TestValue = __TestValue_JTextField.getText().trim();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
+    String YearStartTime = __YearStartTime_JComboBox.getSelected();
+    String YearEndTime = __YearEndTime_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String SearchStart = __SearchStart_JTextField.getText().trim();
@@ -299,19 +301,6 @@ private void checkInput ()
 	if ( (Statistic != null) && (Statistic.length() > 0) ) {
 		props.set ( "Statistic", Statistic );
 	}
-	if ( (TestValue != null) && (TestValue.length() > 0) ) {
-		props.set ( "TestValue", TestValue );
-	    // If TestValue is populated set the background to yellow because Value1 should be used instead
-		__TestValue_JTextField.setBackground(Color.yellow);
-		// If Value1 is not set, automatically set to transition to future
-		if ( (Value1 == null) || (Value1.isEmpty()) ) {
-			Value1 = TestValue;
-		}
-	}
-	else {
-		// Background is white
-		__TestValue_JTextField.setBackground(Color.white);
-	}
 	if ( (Value1 != null) && (Value1.length() > 0) ) {
 		props.set ( "Value1", Value1 );
 	}
@@ -324,6 +313,12 @@ private void checkInput ()
     if ( OutputYearType.length() > 0 ) {
         props.set ( "OutputYearType", OutputYearType );
     }
+	if ( YearStartTime.length() > 0 ) {
+		props.set ( "YearStartTime", YearStartTime );
+	}
+	if ( YearEndTime.length() > 0 ) {
+		props.set ( "YearEndTime", YearEndTime );
+	}
 	if ( AnalysisStart.length() > 0 ) {
 		props.set ( "AnalysisStart", AnalysisStart );
 	}
@@ -344,7 +339,7 @@ private void checkInput ()
         }
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -354,11 +349,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -366,11 +361,12 @@ private void commitEdits ()
 	String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
-	String TestValue = __TestValue_JTextField.getText().trim();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
+    String YearStartTime = __YearStartTime_JComboBox.getSelected();
+    String YearEndTime = __YearEndTime_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String SearchStart = __SearchStart_JTextField.getText().trim();
@@ -382,11 +378,12 @@ private void commitEdits ()
     __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Statistic", Statistic );
-	__command.setCommandParameter ( "TestValue", TestValue );
 	__command.setCommandParameter ( "Value1", Value1 );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
 	__command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize);
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
+	__command.setCommandParameter ( "YearStartTime", YearStartTime );
+	__command.setCommandParameter ( "YearEndTime", YearEndTime );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	if ( __AnalysisWindow_JCheckBox.isSelected() ){
@@ -394,6 +391,11 @@ private void commitEdits ()
 	    String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
 	    __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
 	    __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
+	}
+	else {
+		// Make sure the analysis window is cleared.
+	    __command.setCommandParameter ( "AnalysisWindowStart", "" );
+	    __command.setCommandParameter ( "AnalysisWindowEnd", "" );
 	}
 	__command.setCommandParameter ( "SearchStart", SearchStart );
 }
@@ -403,8 +405,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, NewStatisticYearTS_Command command ) {
+	__parent_JFrame = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -420,16 +422,22 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 		"Create a time series (or ensemble of time series) where each value is a statistic calculated from a sample determined from a year of data from the input time series." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If the input time series is day or larger interval, days or months in the year (ignoring time) are included in the year's sample." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If the input time series is less than day interval, the year start and end time are used to define the year boundaries." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The output time series has an interval of year." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for input
+
+    // Panel for input.
     int yInput = -1;
     JPanel input_JPanel = new JPanel();
     input_JPanel.setLayout( new GridBagLayout() );
@@ -457,7 +465,7 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yInput = CommandEditorUtil.addTSIDToEditorDialogPanel (
         this, this, input_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInput );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
@@ -465,13 +473,13 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yInput = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, input_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yInput );
-    
-    // Panel for distribution
+
+    // Panel for distribution.
     int yDist = -1;
     JPanel dist_JPanel = new JPanel();
     dist_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Distribution", dist_JPanel );
-    
+
     JGUIUtil.addComponent(dist_JPanel, new JLabel (
 		"A distribution cannot currently be specified.  Statistics are calculated by treating the data as simple sample data." ),
 		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -480,22 +488,23 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(dist_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for analysis
+
+    // Panel for analysis.
     int yAnalysis = -1;
     JPanel analysis_JPanel = new JPanel();
     analysis_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Analysis", analysis_JPanel );
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
 		"Specify parameters for the statistical analysis." ),
 		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Statistic:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
+	__Statistic_JComboBox.setToolTipText("The statistic to calculate for the data sample for the year.");
 	// TODO SAM 2009-11-11 Ideally should figure out the input time series interval and limit the choices.
 	__Statistic_JComboBox.setData ( TSUtil_NewStatisticYearTS.getStatisticChoicesForIntervalAsStrings (
 	    TimeInterval.UNKNOWN, null ) );
@@ -506,19 +515,10 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Required - statistic to calculate."),
 		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Test value:"),
-		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TestValue_JTextField = new JTextField (10);
-	__TestValue_JTextField.setToolTipText("Use Value1 instead of this parameter - TestValue parameter will be removed in the future.");
-	__TestValue_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(analysis_JPanel, __TestValue_JTextField,
-		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Legacy - use Value1 as of TSTool 11.09.00."),
-		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Value1:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Value1_JTextField = new JTextField (10);
+	__Value1_JTextField.setToolTipText("Value needed to compute the statistic, required by some statistics.");
 	__Value1_JTextField.addKeyListener (this);
 	JGUIUtil.addComponent(analysis_JPanel, __Value1_JTextField,
 		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -528,31 +528,33 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Allow missing count:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField (10);
+	__AllowMissingCount_JTextField.setToolTipText("Number of missing values allowed to compute the statistic, not used for irregular interval input.");
 	__AllowMissingCount_JTextField.addKeyListener (this);
 	JGUIUtil.addComponent(analysis_JPanel, __AllowMissingCount_JTextField,
 		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
 		"Optional - number of missing values allowed in analysis interval (default=allow missing)."),
 		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Minimum sample size:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinimumSampleSize_JTextField = new JTextField (10);
+    __MinimumSampleSize_JTextField.setToolTipText("Minimum sample size required to compute the statistic.");
     __MinimumSampleSize_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(analysis_JPanel, __MinimumSampleSize_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - minimum required sample size (default=determined by statistic)."),
         3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output year type:" ), 
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output year type:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputYearType_JComboBox = new SimpleJComboBox ( false );
+    __OutputYearType_JComboBox.setToolTipText("Output year type, if other than Calendar.");
     __OutputYearType_JComboBox.add ( "" );
-    __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
-    __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
-    __OutputYearType_JComboBox.add ( "" + YearType.WATER );
-    __OutputYearType_JComboBox.add ( "" + YearType.YEAR_MAY_TO_APR );
+    for ( String outputYearType : this.__command.getYearTypeChoices() ) {
+    	__OutputYearType_JComboBox.add ( outputYearType );
+    }
     __OutputYearType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __OutputYearType_JComboBox,
         1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -560,10 +562,38 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
         "Optional - to define year span (default=" + YearType.CALENDAR + ")."),
         3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Year start time:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __YearStartTime_JComboBox = new SimpleJComboBox ( false );
+    __YearStartTime_JComboBox.setToolTipText("Define the year start boundary for input time series that include time.");
+    __YearStartTime_JComboBox.add ( "" );
+    __YearStartTime_JComboBox.add ( "" + DayBoundaryType.AFTER_MIDNIGHT );
+    __YearStartTime_JComboBox.add ( "" + DayBoundaryType.MIDNIGHT );
+    __YearStartTime_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __YearStartTime_JComboBox,
+        1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Optional - define year start boundary (default=" + DayBoundaryType.AFTER_MIDNIGHT + ")."),
+        3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Year end time:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __YearEndTime_JComboBox = new SimpleJComboBox ( false );
+    __YearEndTime_JComboBox.setToolTipText("Define the year end boundary for input time series that include time.");
+    __YearEndTime_JComboBox.add ( "" );
+    __YearEndTime_JComboBox.add ( "" + DayBoundaryType.BEFORE_MIDNIGHT );
+    __YearEndTime_JComboBox.add ( "" + DayBoundaryType.MIDNIGHT );
+    __YearEndTime_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __YearEndTime_JComboBox,
+        1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Optional - define year start boundary (default=" + DayBoundaryType.MIDNIGHT + ")."),
+        3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
-    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.setToolTipText("Analysis start using a calendar year date/time string or ${Property} notation, account for midnight if using time");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -571,20 +601,20 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
         "Optional - analysis start date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
-    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.setToolTipText("Aanalysis end using a calendar year date/time string or ${Property} notation, account for midnight if using time");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+
 	__AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
 	__AnalysisWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __AnalysisWindow_JCheckBox, 
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisWindow_JCheckBox,
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel analysisWindow_JPanel = new JPanel();
     analysisWindow_JPanel.setLayout(new GridBagLayout());
@@ -593,7 +623,7 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     __AnalysisWindowStart_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowStart_JPanel,
         1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval.
     __AnalysisWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
     __AnalysisWindowEnd_JPanel.addActionListener(this);
     __AnalysisWindowEnd_JPanel.addKeyListener ( this );
@@ -604,39 +634,40 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis window within input year (default=full year)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Search start:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SearchStart_JTextField = new JTextField (10);
+    __SearchStart_JTextField.setToolTipText("Starting date/time, used with statistics that search for a value." );
     __SearchStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(analysis_JPanel, __SearchStart_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - search start (needed for some statistics, default=full year)."),
         3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for output
+
+    // Panel for output.
     int yOutput = -1;
     JPanel output_JPanel = new JPanel();
     output_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Output", output_JPanel );
 
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"The result of the analysis is a new year interval time series." ), 
+		"The result of the analysis is a new year interval time series." ),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
 		"It is recommended that new time series identifier (TSID)" +
-		" information be specified for the output time series to avoid confusing the output with the original." ), 
+		" information be specified for the output time series to avoid confusing the output with the original." ),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"An alias can also be defined to identify the output time series." ), 
+		"An alias can also be defined to identify the output time series." ),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"If an ensemble was specified as input, a new ensemble can be created as output." ), 
+		"If an ensemble was specified as input, a new ensemble can be created as output." ),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(output_JPanel, new JLabel("Alias to assign:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -655,29 +686,29 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
     JGUIUtil.addComponent(output_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, yOutput, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel(
-		"Recommended - to avoid confusion with TSID from original time series."), 
+		"Recommended - to avoid confusion with TSID from original time series."),
 		3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     yOutput += 2;
     JGUIUtil.addComponent(output_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(output_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     __NewEnsembleID_JLabel = new JLabel ( "New ensemble ID:" );
-    JGUIUtil.addComponent(output_JPanel, __NewEnsembleID_JLabel, 
+    JGUIUtil.addComponent(output_JPanel, __NewEnsembleID_JLabel,
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleID_JTextField = new JTextField ( "", 20 );
     __NewEnsembleID_JTextField.setToolTipText("Specify the new ensemble identifier, can use ${Property} notation");
     __NewEnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __NewEnsembleID_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."), 
+    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."),
         3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __NewEnsembleName_JLabel = new JLabel ( "New ensemble name:" );
     JGUIUtil.addComponent(output_JPanel, __NewEnsembleName_JLabel,
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -686,7 +717,7 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     __NewEnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __NewEnsembleName_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - name for new ensemble."), 
+    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - name for new ensemble."),
         3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -698,13 +729,13 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -725,16 +756,16 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -748,25 +779,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
 	String TSList = "";
     String TSID = "";
@@ -775,11 +807,12 @@ private void refresh ()
     String NewEnsembleName = "";
 	String NewTSID = "";
 	String Statistic = "";
-	String TestValue = "";
 	String Value1 = "";
 	String AllowMissingCount = "";
 	String MinimumSampleSize = "";
 	String OutputYearType = "";
+	String YearStartTime = "";
+	String YearEndTime = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String AnalysisWindowStart = "";
@@ -788,7 +821,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		Alias = props.getValue ( "Alias" );
 		TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
@@ -797,11 +830,12 @@ private void refresh ()
         NewEnsembleName = props.getValue ( "NewEnsembleName" );
 		NewTSID = props.getValue ( "NewTSID" );
 		Statistic = props.getValue ( "Statistic" );
-		TestValue = props.getValue ( "TestValue" );
 		Value1 = props.getValue ( "Value1" );
 		AllowMissingCount = props.getValue ( "AllowMissingCount" );
 		MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
 		OutputYearType = props.getValue ( "OutputYearType" );
+		YearStartTime = props.getValue ( "YearStartTime" );
+		YearEndTime = props.getValue ( "YearEndTime" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
@@ -811,7 +845,7 @@ private void refresh ()
 			__Alias_JTextField.setText ( Alias );
 		}
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -829,18 +863,20 @@ private void refresh ()
                 JGUIUtil.NONE, null, null ) ) {
                 __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+            	// Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -858,7 +894,7 @@ private void refresh ()
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
 		if ( Statistic == null ) {
-			// Select default...
+			// Select default.
 			__Statistic_JComboBox.select ( 0 );
 		}
 		else {
@@ -872,9 +908,6 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
-		if ( TestValue != null ) {
-			__TestValue_JTextField.setText ( TestValue );
-		}
 		if ( Value1 != null ) {
 			__Value1_JTextField.setText ( Value1 );
 		}
@@ -885,7 +918,7 @@ private void refresh ()
             __MinimumSampleSize_JTextField.setText ( MinimumSampleSize );
         }
         if ( OutputYearType == null ) {
-            // Select default...
+            // Select default.
             __OutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -899,6 +932,36 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( YearStartTime == null ) {
+            // Select default.
+            __YearStartTime_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __YearStartTime_JComboBox,YearStartTime, JGUIUtil.NONE, null, null ) ) {
+                __YearStartTime_JComboBox.select ( YearStartTime );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nYearStartTime value \"" + YearStartTime +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( YearEndTime == null ) {
+            // Select default.
+            __YearEndTime_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __YearEndTime_JComboBox,YearEndTime, JGUIUtil.NONE, null, null ) ) {
+                __YearEndTime_JComboBox.select ( YearEndTime );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nYearEndTime value \"" + YearEndTime +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );
 		}
@@ -907,7 +970,7 @@ private void refresh ()
 		}
         if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
             try {
-                // Add year because it is not part of the parameter value...
+                // Add year because it is not part of the parameter value.
                 DateTime AnalysisWindowStart_DateTime = DateTime.parse ( "0000-" + AnalysisWindowStart );
                 Message.printStatus(2, routine, "Setting window start to " + AnalysisWindowStart_DateTime );
                 __AnalysisWindowStart_JPanel.setDateTime ( AnalysisWindowStart_DateTime );
@@ -919,7 +982,7 @@ private void refresh ()
         }
         if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
             try {
-                // Add year because it is not part of the parameter value...
+                // Add year because it is not part of the parameter value.
                 DateTime AnalysisWindowEnd_DateTime = DateTime.parse ( "0000-" + AnalysisWindowEnd );
                 Message.printStatus(2, routine, "Setting window end to " + AnalysisWindowEnd_DateTime );
                 __AnalysisWindowEnd_JPanel.setDateTime ( AnalysisWindowEnd_DateTime );
@@ -946,17 +1009,18 @@ private void refresh ()
             __NewEnsembleName_JTextField.setText ( NewEnsembleName );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	checkGUIState();
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	Statistic = __Statistic_JComboBox.getSelected();
-	TestValue = __TestValue_JTextField.getText();
 	Value1 = __Value1_JTextField.getText();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText();
 	MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
+    YearStartTime = __YearStartTime_JComboBox.getSelected();
+    YearEndTime = __YearEndTime_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	SearchStart = __SearchStart_JTextField.getText().trim();
@@ -967,11 +1031,12 @@ private void refresh ()
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "Statistic=" + Statistic );
-	props.add ( "TestValue=" + TestValue );
 	props.add ( "Value1=" + Value1 );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	props.add ( "MinimumSampleSize=" + MinimumSampleSize );
 	props.add ( "OutputYearType=" + OutputYearType );
+	props.add ( "YearStartTime=" + YearStartTime );
+	props.add ( "YearEndTime=" + YearEndTime );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	if ( __AnalysisWindow_JCheckBox.isSelected() ) {
@@ -992,17 +1057,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1011,15 +1076,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

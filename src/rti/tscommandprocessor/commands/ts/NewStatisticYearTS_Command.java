@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.ArrayList;
 import java.util.List;
 
+import RTi.TS.DayBoundaryType;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSStatisticType;
@@ -60,17 +61,16 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
-// TODO SAM 2016-02-27 Need to phase out TestValue in favor of Value1 after some period, introduced in TSTool 11.09.00
 /**
 This class initializes, checks, and runs the NewStatisticYearTS() command.
 */
 public class NewStatisticYearTS_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
-    
+
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.
+These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
 
@@ -78,18 +78,18 @@ private List<TS> __discoveryTSList = null;
 TSEnsemble created in discovery mode (basically to get the identifier for other commands).
 */
 private TSEnsemble __discoveryEnsemble = null;
-    
+
 /**
 Analysis window year, since users do not supply this information.
-This allows for leap year in case the analysis window start or end is on Feb 29.
+This allows for leap year in case the analysis window start or end is on February 29.
 */
 private final int __ANALYSIS_WINDOW_YEAR = 2000;
 
 /**
 Constructor.
 */
-public NewStatisticYearTS_Command ()
-{	super();
+public NewStatisticYearTS_Command () {
+	super();
 	setCommandName ( "NewStatisticYearTS" );
 }
 
@@ -101,16 +101,17 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Alias = parameters.getValue ( "Alias" );
+throws InvalidCommandParameterException {
+	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String Statistic = parameters.getValue ( "Statistic" );
-	String TestValue = parameters.getValue ( "TestValue" );
 	String Value1 = parameters.getValue ( "Value1" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
+	String YearStartTime = parameters.getValue ( "YearStartTime" );
+	String YearEndTime = parameters.getValue ( "YearEndTime" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
@@ -118,7 +119,7 @@ throws InvalidCommandParameterException
 	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -146,9 +147,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series or ensemble identifier." ) );
 	}
-	// TODO SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support wildcards.
-	
+	// TODO SAM 2005-08-29 Need to decide whether to check NewTSID - it might need to support wildcards.
+
     TSStatisticType statisticType = null;
 	if ( (Statistic == null) || Statistic.equals("") ) {
         message = "The statistic must be specified.";
@@ -158,7 +158,7 @@ throws InvalidCommandParameterException
                         message, "Specify a statistic." ) );
 	}
 	else {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         try {
             statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
@@ -170,9 +170,9 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported statistic using the command editor." ) );
         }
-        
-        // Make sure that it is in the supported list
-        
+
+        // Make sure that it is in the supported list.
+
         if ( supported ) {
             supported = false;
             List<TSStatisticType> statistics =
@@ -190,53 +190,29 @@ throws InvalidCommandParameterException
             }
         }
 	}
-	// TODO SAM 2016-02-27 phase out TestValue in favor of Value1 at some point, introduced in TSTool 11.09.00
-	if ( (TestValue != null) && !TestValue.equals("") ) {
-		// If a test value is specified, for now make sure it is a
-		// number.  It is possible that in the future it could be a
-		// special value (date, etc.) but for now focus on numbers.
-		if ( !StringUtil.isDouble(TestValue) ) {
-            message = "The test value (" + TestValue + ") is not a number.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the test value as a number." ) );
-		}
-	}
-	else {
-	    // Test value not specified...
-        if ( (statisticType != null) && TSUtil_NewStatisticYearTS.isTestValueNeeded(statisticType)) {
-            message = "The test value is required for the " + statisticType + " statistic.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the test value as a number." ) ); 
-        }
-	}
-	
+
 	if ( (Value1 != null) && !Value1.equals("") ) {
-		// If a test value is specified, for now make sure it is a
-		// number.  It is possible that in the future it could be a
-		// special value (date, etc.) but for now focus on numbers.
+		// If a test value is specified, for now make sure it is a number.
+		// It is possible that in the future it could be a special value (date, etc.) but for now focus on numbers.
 		if ( !StringUtil.isDouble(Value1) ) {
             message = "Value1 (" + Value1 + ") is not a number.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify Value1 as a number." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify Value1 as a number." ) );
 		}
 	}
 	else {
-	    // Value1 not specified...
+	    // Value1 not specified.
         if ( (statisticType != null) && TSUtil_NewStatisticYearTS.isTestValueNeeded(statisticType)) {
             message = "Value1 is required for the " + statisticType + " statistic.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the Value1 as a number." ) ); 
+                    message, "Specify the Value1 as a number." ) );
         }
 	}
-	
+
 	if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
 		if ( !StringUtil.isInteger(AllowMissingCount) ) {
             message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";
@@ -246,7 +222,7 @@ throws InvalidCommandParameterException
                             message, "Specify the AllowMissingCount value as an integer." ) );
 		}
 		else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
 			if ( StringUtil.atoi(AllowMissingCount) < 0 ) {
                 message = "The AllowMissingCount value (" + AllowMissingCount + ") must be >= 0.";
 				warning += "\n" + message;
@@ -256,7 +232,7 @@ throws InvalidCommandParameterException
 			}
 		}
 	}
-	
+
     if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
         if ( !StringUtil.isInteger(MinimumSampleSize) ) {
             message = "The MinimumSampleSize value (" + MinimumSampleSize + ") is not an integer.";
@@ -266,7 +242,7 @@ throws InvalidCommandParameterException
                             message, "Specify an integer for MinimumSampleSize." ) );
         }
         else {
-            // Make sure it is an allowable value >= 0...
+            // Make sure it is an allowable value >= 0.
             int i = Integer.parseInt(MinimumSampleSize);
             if ( i <= 0 ) {
                 message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be >= 1.";
@@ -279,10 +255,8 @@ throws InvalidCommandParameterException
     }
 
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
-        try {
-            YearType.valueOfIgnoreCase(OutputYearType);
-        }
-        catch ( Exception e ) {
+        YearType yearType = YearType.valueOfIgnoreCase(OutputYearType);
+        if ( yearType == null ) {
             message = "The output year type (" + OutputYearType + ") is invalid.";
             warning += "\n" + message;
             StringBuffer b = new StringBuffer();
@@ -298,7 +272,67 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
         }
     }
-    
+
+    if ( (YearStartTime != null) && !YearStartTime.equals("")
+    	&& !YearStartTime.equalsIgnoreCase("" + DayBoundaryType.AFTER_MIDNIGHT)
+    	&& !YearStartTime.equalsIgnoreCase("" + DayBoundaryType.MIDNIGHT)) {
+        YearType yearType = YearType.valueOfIgnoreCase(OutputYearType);
+        if ( yearType == null ) {
+        	message = "The year start time \"" + YearStartTime + "\" is not valid.";
+        	warning += "\n" + message;
+        	status.addToLog(CommandPhaseType.INITIALIZATION,
+            	new CommandLogRecord(
+                	CommandStatusType.FAILURE, message, "Specify the year start time as " + DayBoundaryType.AFTER_MIDNIGHT
+                	+ " (default) or " + DayBoundaryType.MIDNIGHT));
+        }
+    }
+
+    if ( (YearEndTime != null) && !YearEndTime.equals("")
+    	&& !YearEndTime.equalsIgnoreCase("" + DayBoundaryType.BEFORE_MIDNIGHT)
+    	&& !YearEndTime.equalsIgnoreCase("" + DayBoundaryType.MIDNIGHT)) {
+        YearType yearType = YearType.valueOfIgnoreCase(OutputYearType);
+        if ( yearType == null ) {
+        	message = "The year end time \"" + YearEndTime + "\" is not valid.";
+        	warning += "\n" + message;
+        	status.addToLog(CommandPhaseType.INITIALIZATION,
+            	new CommandLogRecord(
+                	CommandStatusType.FAILURE, message, "Specify the year start time as " + DayBoundaryType.BEFORE_MIDNIGHT
+                	+ " or " + DayBoundaryType.MIDNIGHT + " (default)."));
+        }
+    }
+
+    // Year start and end time cannot both be midnight.
+
+    if ( ((YearStartTime != null) && YearStartTime.equalsIgnoreCase("" + DayBoundaryType.MIDNIGHT))
+   		&& ((YearEndTime != null) && YearEndTime.equalsIgnoreCase("" + DayBoundaryType.MIDNIGHT)) ) {
+        message = "The YearStartTime and YearEndTime cannot both be " + DayBoundaryType.MIDNIGHT;
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify the year start or end time as " + DayBoundaryType.MIDNIGHT + ", but not both."));
+    }
+
+    if ( ((YearStartTime != null) && YearStartTime.equalsIgnoreCase("" + DayBoundaryType.AFTER_MIDNIGHT))
+   		&& ((YearEndTime != null) && YearEndTime.equalsIgnoreCase("" + DayBoundaryType.BEFORE_MIDNIGHT)) ) {
+        message = "The YearStartTime and YearEndTime cannot both be " + DayBoundaryType.MIDNIGHT;
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify the year start or end time as " + DayBoundaryType.MIDNIGHT + ", but not both."));
+    }
+
+    // Year start and end time cannot both be NOT midnight.
+
+    if ( ((YearStartTime != null) && YearStartTime.equalsIgnoreCase("" + DayBoundaryType.AFTER_MIDNIGHT))
+   		&& ((YearEndTime == null) || (YearEndTime.equals("")
+   			|| ((YearEndTime != null) && YearEndTime.equalsIgnoreCase("" + DayBoundaryType.BEFORE_MIDNIGHT)))) ) {
+        message = "Either YearStartTime and YearEndTime must be " + DayBoundaryType.MIDNIGHT + " (or default to " + DayBoundaryType.MIDNIGHT + ").";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify either the year start or end time as " + DayBoundaryType.MIDNIGHT + "."));
+    }
+
     if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") &&
         !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
         try {
@@ -312,6 +346,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
+
     if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && !AnalysisEnd.startsWith("${") &&
         !AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
         try {
@@ -340,7 +375,7 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
 		}
 	}
-	
+
     if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
         String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
         try {
@@ -355,7 +390,7 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
+
     if ( (SearchStart != null) && !SearchStart.equals("") ) {
         String searchStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + SearchStart;
         try {
@@ -370,18 +405,19 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
-    // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(18);
+
+    // Check for invalid parameters.
+	List<String> validList = new ArrayList<>(19);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "Statistic" );
-    validList.add ( "TestValue" );
     validList.add ( "Value1" );
     validList.add ( "AllowMissingCount" );
     validList.add ( "MinimumSampleSize" );
     validList.add ( "OutputYearType" );
+    validList.add ( "YearStartTime" );
+    validList.add ( "YearEndTime" );
     validList.add ( "AnalysisStart" );
     validList.add ( "AnalysisEnd" );
     validList.add ( "AnalysisWindowStart" );
@@ -392,40 +428,37 @@ throws InvalidCommandParameterException
     validList.add ( "NewEnsembleID" );
     validList.add ( "NewEnsembleName" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new NewStatisticYearTS_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the ensemble that is read by this class when run in discovery mode.
 */
-private TSEnsemble getDiscoveryEnsemble()
-{
+private TSEnsemble getDiscoveryEnsemble() {
     return __discoveryEnsemble;
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discoveryTSList;
 }
 
@@ -434,18 +467,17 @@ Return the list of data objects created by this object in discovery mode.
 Classes that can be requested:  TS, TSEnsemble
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
 
     // TODO SAM 2011-03-31 Does the following work as intended?
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS).
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
     TS datats = discoveryTSList.get(0);
-    // Use the most generic for the base class...
+    // Use the most generic for the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
             return null;
@@ -455,13 +487,37 @@ public <T> List<T> getObjectList ( Class<T> c )
         }
     }
     else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        List<T> v = new ArrayList<T>();
+        List<T> v = new ArrayList<>();
         v.add ( (T)tsensemble );
         return v;
     }
     else {
         return null;
     }
+}
+
+/**
+ * Return the list of supported year type choices.
+ * @return the list of supported year type choices.
+ */
+public List<String> getYearTypeChoices () {
+	List<String> yearTypeChoices = new ArrayList<>();
+    yearTypeChoices.add ( "" + YearType.CALENDAR );
+    yearTypeChoices.add ( "" + YearType.WATER );
+    yearTypeChoices.add ( "" + YearType.NOV_TO_OCT );
+    yearTypeChoices.add ( "" + YearType.FEB_TO_JAN_YEAR );
+    yearTypeChoices.add ( "" + YearType.MAR_TO_FEB_YEAR );
+    yearTypeChoices.add ( "" + YearType.APR_TO_MAR_YEAR );
+    yearTypeChoices.add ( "" + YearType.MAY_TO_APR_YEAR );
+    yearTypeChoices.add ( "" + YearType.JUN_TO_MAY_YEAR );
+    yearTypeChoices.add ( "" + YearType.JUL_TO_JUN_YEAR );
+    yearTypeChoices.add ( "" + YearType.AUG_TO_JUL_YEAR );
+    yearTypeChoices.add ( "" + YearType.SEP_TO_AUG_YEAR );
+    yearTypeChoices.add ( "" + YearType.OCT_TO_SEP_YEAR );
+    yearTypeChoices.add ( "" + YearType.NOV_TO_OCT_YEAR );
+    yearTypeChoices.add ( "" + YearType.DEC_TO_NOV_YEAR );
+    yearTypeChoices.add ( "" + YearType.YEAR_MAY_TO_APR );
+    return yearTypeChoices;
 }
 
 /**
@@ -472,21 +528,21 @@ Parse the command string into a PropList of parameters.
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
 	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
     if ( !command.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
+        // New style syntax using simple parameter=value notation.
         super.parseCommand(command);
-        // If TestValue is set but Value1 is not, set Value1 to same value as TestValue for transition to new syntax
-        // Also leave TestValue because it may be needed by old versions of the software
+        // If TestValue is set but Value1 is not, set Value1 to same value as TestValue for transition to new syntax.
+        // Also leave TestValue because it may be needed by old versions of the software.
         String Value1 = getCommandParameters().getValue("Value1");
         String TestValue = getCommandParameters().getValue("TestValue");
         if ( ((TestValue != null) && !TestValue.isEmpty()) && ((Value1 == null) || Value1.isEmpty()) ) {
         	getCommandParameters().set("Value1",TestValue);
         }
-        // If TSID is specified but not TSList, it is legacy behavior
+        // If TSID is specified but not TSList, it is legacy behavior.
         String TSList = getCommandParameters().getValue("TSList");
         String TSID = getCommandParameters().getValue("TSID");
         if ( ((TSID != null) && !TSID.isEmpty()) && ((TSList == null) || TSList.isEmpty()) ) {
@@ -494,7 +550,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
     }
     else {
-    	// Get the part of the command after the TS Alias =...
+    	// Get the part of the command after the TS Alias =.
     	int pos = command.indexOf ( "=" );
     	if ( pos < 0 ) {
     		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
@@ -508,7 +564,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     		Message.printWarning ( warning_level, routine, message);
     		throw new InvalidCommandSyntaxException ( message );
     	}
-    
+
     	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     	if ( (v == null) || (v.size() != 2) ) {
     		message = "Syntax error in \"" + command +
@@ -519,12 +575,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     	String Alias = v.get(1);
     	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
     	if ( (tokens == null) || tokens.size() < 2 ) {
-    		// Must have at least the command name and its parameters...
+    		// Must have at least the command name and its parameters.
     		message = "Syntax error in \"" + command + "\".  Not enough tokens.";
     		Message.printWarning ( warning_level, routine, message);
     		throw new InvalidCommandSyntaxException ( message );
     	}
-    	// Get the input needed to process the file...
+    	// Get the input needed to process the file.
     	try {
     	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, (String)tokens.get(1), routine, "," );
     		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -549,8 +605,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{
+CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -562,8 +617,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -574,19 +628,19 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Non-user warning level
+	int log_level = 3;	// Non-user warning level.
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -594,7 +648,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -604,10 +658,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         setDiscoveryTSList ( null );
     }
 
-	String Alias = parameters.getValue ( "Alias" ); // Expansion handled below
+	String Alias = parameters.getValue ( "Alias" ); // Expansion handled below.
 	String TSList = parameters.getValue ( "TSList" );
 	if ( (TSList == null) || TSList.isEmpty() ) {
-		TSList = "" + TSListType.ALL_TS; // Default
+		TSList = "" + TSListType.ALL_TS; // Default.
 	}
 	String TSID = parameters.getValue ( "TSID" );
 	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
@@ -619,8 +673,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String Statistic = parameters.getValue ( "Statistic" );
 	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-	// Legacy is TestValue but Value1 is being phased in
-	Double value1 = null; // Default
+	// Legacy is TestValue but Value1 is being phased in.
+	Double value1 = null; // Default.
 	String TestValue = parameters.getValue ( "TestValue" );
     if ( StringUtil.isDouble(TestValue) ) {
         value1 = new Double(TestValue);
@@ -630,11 +684,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         value1 = new Double(Value1);
     }
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
-	Integer AllowMissingCount_Integer = new Integer(-1); // Default
+	Integer AllowMissingCount_Integer = new Integer(-1); // Default.
 	if ( StringUtil.isInteger(AllowMissingCount) ) {
 	    AllowMissingCount_Integer = new Integer(AllowMissingCount);
 	}
-	Integer MinimumSampleSize_Integer = null; // Default - no minimum
+	Integer MinimumSampleSize_Integer = null; // Default - no minimum.
 	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     if ( StringUtil.isInteger(MinimumSampleSize) ) {
         MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
@@ -644,25 +698,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
     }
+    // For how to handle midnight when time is used.
+	String YearStartTime = parameters.getValue ( "YearStartTime" );
+	DayBoundaryType yearStartTime = DayBoundaryType.AFTER_MIDNIGHT; // Default is AfterMidnight, only allow switching to Midnight below.
+	if ( (YearStartTime != null) && YearStartTime.equalsIgnoreCase("" + DayBoundaryType.MIDNIGHT) ) {
+		yearStartTime = DayBoundaryType.MIDNIGHT;
+	}
+	String YearEndTime = parameters.getValue ( "YearEndTime" );
+	DayBoundaryType yearEndTime = DayBoundaryType.MIDNIGHT; // Default is Midnight, only allow switching to BeforeMidnight below.
+	if ( (YearEndTime != null) && YearEndTime.equalsIgnoreCase("" + DayBoundaryType.BEFORE_MIDNIGHT) ) {
+		yearEndTime = DayBoundaryType.BEFORE_MIDNIGHT;
+	}
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
-	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
-		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID); // Also expand for time series properties
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID); // Also expand for time series properties.
 	}
 	String NewEnsembleID = parameters.getValue ( "NewEnsembleID" );
-	if ( (NewEnsembleID != null) && (NewEnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (NewEnsembleID != null) && (NewEnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		NewEnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewEnsembleID);
 	}
 	String NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
-	if ( (NewEnsembleName != null) && (NewEnsembleName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (NewEnsembleName != null) && (NewEnsembleName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		NewEnsembleName = TSCommandProcessorUtil.expandParameterValue(processor, this, NewEnsembleName);
 	}
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis.
 
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
@@ -672,7 +737,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -680,15 +745,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
-		
+
 	DateTime AnalysisWindowStart_DateTime = null;
 	if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
 		try {
-		    // The following works with ISO formats...
+		    // The following works with ISO formats.
 		    AnalysisWindowStart_DateTime =
 		        DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
 		}
@@ -704,7 +769,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTime AnalysisWindowEnd_DateTime = null;
     if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             AnalysisWindowEnd_DateTime =
                 DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
         }
@@ -720,7 +785,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTime SearchStart_DateTime = null;
     if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
         try {
-            // The following works with ISO formats...
+            // The following works with ISO formats.
             SearchStart_DateTime = DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + SearchStart );
         }
         catch ( Exception e ) {
@@ -732,11 +797,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
 
-	// Get the time series or ensemble to process.  The time series list is searched backwards until the first match...
-    List<TS> tsList = new ArrayList<TS>();
+	// Get the time series or ensemble to process.
+    // The time series list is searched backwards until the first match.
+    List<TS> tsList = new ArrayList<>();
     boolean createData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
+        // Get the discovery time series list from all time series above this command.
         tsList = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
         createData = false;
@@ -795,7 +861,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
-	
+
 	if ( tsList == null ) {
 		message = "Unable to find time series to analyze using TSID \"" + TSID + "\" and EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
@@ -806,9 +872,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog (commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
@@ -816,8 +882,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
 
-	// Now process the time series...
-    List<TS> resultList = new ArrayList<TS>();
+	// Now process the time series.
+    List<TS> resultList = new ArrayList<>();
 	for ( TS ts : tsList ) {
 		try {
 		    // Make sure that the statistic is allowed for the time series interval.
@@ -834,7 +900,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    else {
 	    	    TSUtil_NewStatisticYearTS tsu = new TSUtil_NewStatisticYearTS ( ts, NewTSID, statisticType,
 	    	        value1, AllowMissingCount_Integer, MinimumSampleSize_Integer,
-	    	        outputYearType, AnalysisStart_DateTime, AnalysisEnd_DateTime,
+	    	        outputYearType, yearStartTime, yearEndTime,
+	    	        AnalysisStart_DateTime, AnalysisEnd_DateTime,
 	                AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
 	    		TS stats_ts = tsu.newStatisticYearTS ( createData );
 	    		// Set alias separately because setting the NewTSID might cause the alias set to fail below.
@@ -845,13 +912,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                }
 	                stats_ts.setAlias ( alias );
 	            }
-	            // Add the output time series to an array to add to the ensemble output
+	            // Add the output time series to an array to add to the ensemble output.
 	            resultList.add(stats_ts);
-	    
-	    		// Update the data to the processor so that appropriate actions are taken...
+
+	    		// Update the data to the processor so that appropriate actions are taken.
 	    	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	    	        // Just want time series headers initialized
-	    	        List<TS> discoveryTSList = new ArrayList<TS>(1);
+	    	        // Just want time series headers initialized.
+	    	        List<TS> discoveryTSList = new ArrayList<>(1);
 	    	        discoveryTSList.add ( stats_ts );
 	    	        setDiscoveryTSList ( discoveryTSList );
 	    	    }
@@ -864,25 +931,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			message ="Unexpected error generating the statistic time series from \""+
 				ts.getIdentifier() + "\" (" + e + ").";
 			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag,++warning_count),routine,message );
+				MessageUtil.formatMessageTag( command_tag,++warning_count),routine,message );
 			Message.printWarning(3,routine,e);
 	        status.addToLog ( commandPhase,
-	                new CommandLogRecord(CommandStatusType.FAILURE,
-	                        message, "See the log file for details." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE, message, "See the log file for details." ) );
 		}
 	}
-	
-    // If processing an ensemble, create the new ensemble
-    
+
+    // If processing an ensemble, create the new ensemble.
+
     if ( (NewEnsembleID != null) && !NewEnsembleID.isEmpty() ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create a discovery ensemble with ID and name
+            // Create a discovery ensemble with ID and name.
             TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
             setDiscoveryEnsemble ( ensemble );
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {
-            // Add the ensemble to the processor if created
+            // Add the ensemble to the processor if created.
             TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
@@ -896,15 +961,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the ensemble that is processed by this class in discovery mode.
 */
-private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
-{
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble ) {
     __discoveryEnsemble = tsensemble;
 }
 
@@ -912,8 +976,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
@@ -921,8 +984,7 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 Return the string representation of the command.
 @param props parameters for the command
 */
-public String toString ( PropList props )
-{
+public String toString ( PropList props ) {
     return toString ( props, 10 );
 }
 
@@ -944,6 +1006,8 @@ public String toString ( PropList parameters, int majorVersion ) {
 		"AllowMissingCount",
 		"MinimumSampleSize",
 		"OutputYearType",
+		"YearStartTime",
+		"YearEndTime",
 		"AnalysisStart",
 		"AnalysisEnd",
 		"AnalysisWindowStart",

@@ -1,3 +1,26 @@
+// ReadUsgsInstantaneous_Command - initialize, check, and run the Add() command
+
+/* NoticeStart
+
+CDSS Time Series Processor Java Library
+CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
+
+CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
+
+NoticeEnd */
+
 package rti.tscommandprocessor.commands.usgs.nwis.instantaneous;
 
 import java.io.File;
@@ -40,7 +63,7 @@ This class initializes, checks, and runs the ReadUsgsNwisInstantaneous() command
 public class ReadUsgsNwisInstantaneous_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, FileGenerator
 {
-	
+
 	/**
 	Possible values for WaterMLRequireDataToMatchInterval parameter.
 	*/
@@ -48,15 +71,14 @@ implements Command, CommandDiscoverable, ObjectListProvider, FileGenerator
 	protected final String _True = "True";
 
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
 
 /**
 Bounding box coordinate WestLon, SouthLat, EastLon, NorthLat
 */
-double [] __boundingBox = null; // Use null to indicate no bounding box specified
+double [] __boundingBox = null; // Use null to indicate no bounding box specified.
 
 /**
 Output file that is created by this command.
@@ -66,24 +88,23 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public ReadUsgsNwisInstantaneous_Command ()
-{	super();
+public ReadUsgsNwisInstantaneous_Command () {
+	super();
 	setCommandName ( "ReadUsgsNwisInstantaneous" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String warning = "";
+throws InvalidCommandParameterException {
+	String warning = "";
     String message;
-    
+
     String DataStore = parameters.getValue ( "DataStore" );
     String Sites = parameters.getValue ( "Sites" );
     String States = parameters.getValue ( "States" );
@@ -109,7 +130,7 @@ throws InvalidCommandParameterException
                 message, "Specify the data store." ) );
     }
 
-    int locCount = 0; // Count of location parameters (only 1 allowed)
+    int locCount = 0; // Count of location parameters (only 1 allowed).
     if ( (Sites != null) && !Sites.equals("") ) {
         ++locCount;
     }
@@ -121,7 +142,7 @@ throws InvalidCommandParameterException
     }
     __boundingBox = null;
     if ( (BoundingBox != null) && !BoundingBox.equals("") && (BoundingBox.indexOf("${") < 0) ) {
-        // Make sure that 4 numbers are specified
+        // Make sure that 4 numbers are specified.
         ++locCount;
         String [] parts = BoundingBox.split(",");
         if ( parts == null ) {
@@ -207,7 +228,7 @@ throws InvalidCommandParameterException
                     message, "Specify a date/time or InputEnd." ) );
 		}
 	}
-	
+
     if ( (OutputFile != null) && (OutputFile.length() != 0) && (OutputFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
@@ -261,7 +282,7 @@ throws InvalidCommandParameterException
 	            TimeInterval.parseInterval(WaterMLInterval);
 	        }
 	        catch ( Exception e ) {
-	            // Should not happen because choices are valid
+	            // Should not happen because choices are valid.
 	            message = "The WaterML data interval \"" + WaterMLInterval + "\" is invalid.";
 	            warning += "\n" + message;
 	            status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -269,8 +290,8 @@ throws InvalidCommandParameterException
 	                CommandStatusType.FAILURE, message, "Specify a WaterML data interval using the command editor."));
 	        }
 	    }
-	
-	    if ( WaterMLRequireDataToMatchInterval != null && !(WaterMLRequireDataToMatchInterval.equalsIgnoreCase(_True)) && 
+
+	    if ( WaterMLRequireDataToMatchInterval != null && !(WaterMLRequireDataToMatchInterval.equalsIgnoreCase(_True)) &&
 	        !(WaterMLRequireDataToMatchInterval.equalsIgnoreCase(_False)) && !(WaterMLRequireDataToMatchInterval.equalsIgnoreCase(""))) {
 	        message = "WaterMLRequireDataToMatchInterval is invalid.";
 	        warning += "\n" + message;
@@ -280,8 +301,8 @@ throws InvalidCommandParameterException
 	    }
     }
 
-    // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(17);
+    // Check for invalid parameters.
+    List<String> validList = new ArrayList<>(17);
     validList.add ( "DataStore" );
     validList.add ( "Sites" );
     validList.add ( "States" );
@@ -306,34 +327,31 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   // The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+    // The command will be modified if changed.
     return (new ReadUsgsNwisInstantaneous_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discovery_TS_Vector;
 }
 
 /**
 Return the list of files that were created by this command.
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
     List<File> list = new ArrayList<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
@@ -346,15 +364,14 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS).
     TS datats = discovery_TS_Vector.get(0);
-    // Also check the base class
+    // Also check the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return (List<T>)discovery_TS_Vector;
     }
@@ -366,35 +383,29 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Return the output file generated by this file.  This method is used internally.
 */
-private File getOutputFile ()
-{
+private File getOutputFile () {
     return __OutputFile_File;
 }
 
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -405,8 +416,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -414,7 +425,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -422,23 +433,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
-    // Clear the output file
-    
+
+    // Clear the output file.
+
     setOutputFile ( null );
-    
+
     boolean readData = true;
-    boolean propertiesUsedInParameters = false; // Don't call the read method if any ${Property} are used because it will cause issues
+    boolean propertiesUsedInParameters = false; // Don't call the read method if any ${Property} are used because it will cause issues.
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
         readData = false;
     }
-    
+
     String dataStoreName = parameters.getValue("DataStore");
     String Sites = parameters.getValue("Sites");
     if ( (Sites != null) && !Sites.isEmpty() && (Sites.indexOf("${") >= 0) ) {
@@ -559,7 +570,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
     }
-	
+
     List<UsgsNwisSiteType> siteTypeList = new ArrayList<UsgsNwisSiteType>();
     if ( (SiteTypes != null) && !SiteTypes.equals("") ) {
         if ( SiteTypes.indexOf(",") < 0 ) {
@@ -588,8 +599,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         format = UsgsNwisFormatType.WATERML;
     }
     String OutputFile = parameters.getValue("OutputFile");
-    // The following is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
-    // the time series data interval
+    // The following is necessary because WaterML (1.1 at least)
+    // does not appear to have a clear indicator of the time series data interval.
 	String WaterMLInterval = parameters.getValue("WaterMLInterval");
 	TimeInterval watermlInterval = null;
     if ( (WaterMLInterval != null) && !WaterMLInterval.equals("") ) {
@@ -597,18 +608,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	watermlInterval = TimeInterval.parseInterval(WaterMLInterval);
         }
         catch ( Exception e ) {
-            // Should not happen because checked previously
+            // Should not happen because checked previously.
         }
     }
     String WaterMLRequireDataToMatchInterval = parameters.getValue("WaterMLRequireDataToMatchInterval");
-    boolean WaterRequireDataToMatchInterval_boolean = true; // default
+    boolean WaterRequireDataToMatchInterval_boolean = true; // Default.
     if ( (WaterMLRequireDataToMatchInterval != null) && WaterMLRequireDataToMatchInterval.equalsIgnoreCase(_False) ) {
         WaterRequireDataToMatchInterval_boolean = false;
     }
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
 		if ( commandPhase == CommandPhaseType.RUN ) {
-			InputStart = "${InputStart}"; // Global default
+			InputStart = "${InputStart}"; // Global default.
 		}
 		else {
 			propertiesUsedInParameters = true;
@@ -617,13 +628,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputEnd = parameters.getValue("InputEnd");
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
 		if ( commandPhase == CommandPhaseType.RUN ) {
-			InputEnd = "${InputEnd}"; // Global default
+			InputEnd = "${InputEnd}"; // Global default.
 		}
 		else {
 			propertiesUsedInParameters = true;
 		}
 	}
-    
+
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -632,7 +643,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -640,26 +651,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now try to read...
+	// Now try to read.
 
-	List<TS> tslist = new ArrayList<TS>();	// List for time series results.
-					// Will be added to for one time series
-					// read or replaced if a list is read.
+	// List for time series results.  Will be added to for one time series read or replaced if a list is read.
+	List<TS> tslist = new ArrayList<>();
 	try {
-		// Find the data store to use...
+		// Find the data store to use.
 		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
 		    dataStoreName, UsgsNwisInstantaneousDataStore.class );
 		if ( dataStore == null ) {
@@ -688,17 +698,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            InputStart_DateTime, InputEnd_DateTime,
 	            watermlInterval, WaterRequireDataToMatchInterval_boolean, readData );
 		}
-		// Make sure that size is set...
+		// Make sure that size is set.
 		int size = 0;
 		if ( tslist != null ) {
 			size = tslist.size();
 		}
-	
+
    		if ( ((tslist == null) || (size == 0)) && !propertiesUsedInParameters ) {
 			Message.printStatus ( 2, routine,"No USGS NWIS instantaneous time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
             message = "No time series were read from the USGS NWIS instantaneous value web service.";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -706,43 +716,43 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     	"  Previous messages may provide more information." ) );
    		}
    		else {
-			// Else, further process each time series...
+			// Else, further process each time series.
 			for ( TS ts: tslist ) {
 			    // Set the alias to the desired string - this is impacted by the Location parameter
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                     processor, ts, Alias, status, commandPhase);
                 ts.setAlias ( alias );
 			}
-			
-            // Save the output file name...
+
+            // Save the output file name.
 			if ( (OutputFile != null) && !OutputFile.equals("") ) {
 			    setOutputFile ( new File(OutputFile_full));
 			}
 		}
-    
+
         Message.printStatus ( 2, routine, "Read " + size + " USGS NWIS instantaneous time series." );
 
         if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
-                // Further process the time series...
-                // This makes sure the period is at least as long as the output period...
+                // Further process the time series.
+                // This makes sure the period is at least as long as the output period.
 
                 int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                 if ( wc > 0 ) {
                     message = "Error post-processing USGS NWIS instantaneous time series after read.";
-                    Message.printWarning ( warning_level, 
+                    Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
                     // Don't throw an exception - probably due to missing data.
                 }
-    
-                // Now add the list in the processor...
-                
+
+                // Now add the list in the processor.
+
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                 if ( wc2 > 0 ) {
                     message = "Error adding USGS NWIS instantaneous time series after read.";
-                    Message.printWarning ( warning_level, 
+                    Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -757,7 +767,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Warn if nothing was retrieved (can be overridden to ignore).
         if ( ((tslist == null) || (size == 0)) && !propertiesUsedInParameters ) {
             message = "No time series were read from the USGS NWIS instantaneous value web service.";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -767,7 +777,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message ="Unexpected error reading time series from USGS NWIS instantaneous web service (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
         status.addToLog ( commandPhase,
@@ -791,16 +801,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
-{
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector ) {
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
     __OutputFile_File = file;
 }
 

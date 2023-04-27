@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ This class initializes, checks, and runs the CreateNetworkFromTable() command.
 */
 public class CreateNetworkFromTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-	
+
 	/**
 	 * NodeNetwork that is used for the network (is actually a HydrologyNodeNetwork)
 	 */
@@ -71,8 +71,8 @@ public class CreateNetworkFromTable_Command extends AbstractCommand implements C
 /**
 Constructor.
 */
-public CreateNetworkFromTable_Command ()
-{	super();
+public CreateNetworkFromTable_Command () {
+	super();
 	setCommandName ( "CreateNetworkFromTable" );
 }
 
@@ -92,10 +92,10 @@ and subsequent calls will follow the tributaries upstream recursively (called fr
 */
 private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork network, String nodeID,
     int nodeIdColumnNum, int nodeNameColumnNum, int nodeTypeColumnNum, int downstreamNodeIdColumnNum,
-    List<Integer> addedNodeRecordPosList, List<String> problems )
-{   String routine = getClass().getSimpleName() + ".addNodesUpstreamOfNode";
-    // Find the table records that have "nodeID" as the downstream node
-	List<Integer> foundNodeRecords = new ArrayList<Integer>();
+    List<Integer> addedNodeRecordPosList, List<String> problems ) {
+    String routine = getClass().getSimpleName() + ".addNodesUpstreamOfNode";
+    // Find the table records that have "nodeID" as the downstream node.
+	List<Integer> foundNodeRecords = new ArrayList<>();
     List<TableRecord> records = findTableRecordsWithValue(table, downstreamNodeIdColumnNum, nodeID, false, foundNodeRecords);
     String upstreamNodeID = null;
     String nodeName;
@@ -104,7 +104,7 @@ private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork netw
     boolean isInstreamFlow = false;
     boolean isImport = false;
     for ( TableRecord record : records ) {
-        // Add the node...
+        // Add the node.
     	++irec;
     	nodeName = "";
         try {
@@ -118,15 +118,15 @@ private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork netw
             continue;
         }
         node = network.addNode(upstreamNodeID, HydrologyNode.NODE_TYPE_UNKNOWN,
-            null, // Upstream node ID is not yet known
-            nodeID, // Downstream node ID
-            isInstreamFlow, // Not a natural flow node (not significant in general network)
-            isImport ); // Not an import (not significant in general network)
+            null, // Upstream node ID is not yet known.
+            nodeID, // Downstream node ID.
+            isInstreamFlow, // Not a natural flow node (not significant in general network).
+            isImport ); // Not an import (not significant in general network).
         node.setDescription(nodeName);
-        // TODO sam 2017-05-31 add node group and stream mile
+        // TODO sam 2017-05-31 add node group and stream mile.
         addedNodeRecordPosList.add(foundNodeRecords.get(irec));
         Message.printStatus(2,routine,"Added node \"" + upstreamNodeID + "\" upstream of \"" + nodeID + "\", table record " + foundNodeRecords.get(irec) );
-        // Recursively add the nodes upstream of the node just added
+        // Recursively add the nodes upstream of the node just added.
         addNodesUpstreamOfNode ( table, network, upstreamNodeID, nodeIdColumnNum, nodeNameColumnNum,
             nodeTypeColumnNum, downstreamNodeIdColumnNum, addedNodeRecordPosList, problems );
     }
@@ -135,14 +135,13 @@ private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork netw
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String NetworkID = parameters.getValue ( "NetworkID" );
+throws InvalidCommandParameterException {
+	String NetworkID = parameters.getValue ( "NetworkID" );
 	String NetworkName = parameters.getValue ( "NetworkName" );
 	String DefaultDownstreamNodeID = parameters.getValue ( "DefaultDownstreamNodeID" );
 	String TableID = parameters.getValue ( "TableID" );
@@ -152,10 +151,10 @@ throws InvalidCommandParameterException
     //String NodeDistanceColumn = parameters.getValue ( "NodeDistanceColumn" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
     if ( (NetworkID == null) || (NetworkID.length() == 0) ) {
         message = "The network identifier must be specified.";
         warning += "\n" + message;
@@ -163,7 +162,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the network identifier." ) );
     }
-    
+
     if ( (NetworkName == null) || (NetworkName.length() == 0) ) {
         message = "The network name must be specified.";
         warning += "\n" + message;
@@ -171,7 +170,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the network name." ) );
     }
-    
+
     if ( (DefaultDownstreamNodeID == null) || (DefaultDownstreamNodeID.length() == 0) ) {
         message = "The default downstream node identifier must be specified.";
         warning += "\n" + message;
@@ -187,7 +186,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
+
     if ( (NodeIDColumn == null) || (NodeIDColumn.length() == 0) ) {
         message = "The node ID column must be specified.";
         warning += "\n" + message;
@@ -195,7 +194,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the node ID column." ) );
     }
-    
+
     /* NodeTypeColumn is not currently required for basic network creation
     if ( (NodeTypeColumn == null) || (NodeTypeColumn.length() == 0) ) {
         message = "The node type column must be specified.";
@@ -205,7 +204,7 @@ throws InvalidCommandParameterException
                 message, "Specify the node type column." ) );
     }
     */
-    
+
     if ( (DownstreamNodeIDColumn == null) || (DownstreamNodeIDColumn.length() == 0) ) {
         message = "The downstream node identifier must be specified.";
         warning += "\n" + message;
@@ -213,9 +212,9 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the downstream node identifier." ) );
     }
- 
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(18);
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(18);
 	validList.add ( "NetworkID" );
 	validList.add ( "NetworkName" );
 	validList.add ( "DefaultDownstreamNodeID" );
@@ -234,25 +233,25 @@ throws InvalidCommandParameterException
     validList.add ( "NodeOutflowTypes" );
     validList.add ( "NodeOutflowDataTypes" );
     validList.add ( "NodeFlowThroughTypes" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Create the hash map that contains the NodeID and the array of input TSID for the node.
 */
-HashMap<String, String[]> createInputTSIDMap ( DataTable table, int nodeidColumnNum, int [] tsidColumnsNum )
-{   HashMap<String, String[]> nodeInputTSIDsMap = new HashMap<String,String []>();
+HashMap<String, String[]> createInputTSIDMap ( DataTable table, int nodeidColumnNum, int [] tsidColumnsNum ) {
+    HashMap<String, String[]> nodeInputTSIDsMap = new HashMap<String,String []>();
     if ( tsidColumnsNum.length > 0 ) {
         TableRecord rec;
-        ArrayList<String> nodeTsidColumns = new ArrayList<String>();
+        ArrayList<String> nodeTsidColumns = new ArrayList<>();
         String nodeID;
         for ( int i = 0; i < table.getNumberOfRecords(); i++ ) {
             try {
@@ -278,7 +277,7 @@ HashMap<String, String[]> createInputTSIDMap ( DataTable table, int nodeidColumn
                     a[j] = nodeTsidColumns.get(j);
                 }
                 nodeInputTSIDsMap.put(nodeID,a);
-            } 
+            }
         }
     }
     return nodeInputTSIDsMap;
@@ -287,18 +286,17 @@ HashMap<String, String[]> createInputTSIDMap ( DataTable table, int nodeidColumn
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new CreateNetworkFromTable_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// TODO SAM 2013-05-20 Perhaps move this to the DataTable class
+// TODO SAM 2013-05-20 Perhaps move this to the DataTable class.
 /**
 Find the records matching a string table value, ignoring case.  All matching records are returned.
 @param table table to search
@@ -306,10 +304,9 @@ Find the records matching a string table value, ignoring case.  All matching rec
 @param value string value to match
 @param matchNull if true, match null value
 */
-private List<TableRecord> findTableRecordsWithValue ( DataTable table, int col, String value, boolean matchNull, List<Integer> recordPosList )
-{
+private List<TableRecord> findTableRecordsWithValue ( DataTable table, int col, String value, boolean matchNull, List<Integer> recordPosList ) {
     int nRows = table.getNumberOfRecords();
-    List<TableRecord> records = new ArrayList<TableRecord>();
+    List<TableRecord> records = new ArrayList<>();
     TableRecord rec;
     Object o;
     for ( int iRow = 0; iRow < nRows; iRow++ ) {
@@ -341,8 +338,7 @@ private List<TableRecord> findTableRecordsWithValue ( DataTable table, int col, 
 /**
 Return the network that is read by this class when run in discovery mode.
 */
-private NodeNetwork getDiscoveryNetwork()
-{
+private NodeNetwork getDiscoveryNetwork() {
     return this.network;
 }
 
@@ -350,11 +346,11 @@ private NodeNetwork getDiscoveryNetwork()
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   NodeNetwork network = getDiscoveryNetwork();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    NodeNetwork network = getDiscoveryNetwork();
     if ( (network != null) && (c == network.getClass()) ) {
-        // Network request
-        List<T> v = new ArrayList<T>();
+        // Network request.
+        List<T> v = new ArrayList<>();
         v.add ( (T)network );
         return v;
     }
@@ -375,20 +371,20 @@ Initialize the network from a table of network node information.
 private void initializeNetworkFromTable ( DataTable table, int nodeIdColumnNum, int nodeNameColumnNum,
     int nodeTypeColumnNum, int nodeDistanceColumnNum, int downstreamNodeIdColumnNum,
     HydrologyNodeNetwork network, String defaultDownstreamNodeId, List<String> problems )
-throws Exception
-{   String routine = "AnalyzeNetworkPointFlow_Command.initializeNetworkFromTable";
-    // First find a table node that has no downstream node, which will be the end node
-	List <Integer> recordPosList = new ArrayList<Integer>(); // position of found records
+throws Exception {
+    String routine = getClass().getSimpleName() + ".initializeNetworkFromTable";
+    // First find a table node that has no downstream node, which will be the end node.
+	List <Integer> recordPosList = new ArrayList<>(); // position of found records.
     List <TableRecord> records = findTableRecordsWithValue ( table, downstreamNodeIdColumnNum, "", true, recordPosList );
-    String networkDownstreamNodeId = null; // Downstream node ID that was added, start of network creation
-    List<Integer> addedNodeRecordPosList = new ArrayList<Integer>(); // Table records for added nodes, to do check
+    String networkDownstreamNodeId = null; // Downstream node ID that was added, start of network creation.
+    List<Integer> addedNodeRecordPosList = new ArrayList<>(); // Table records for added nodes, to do check.
     if ( records.size() == 0 ) {
         problems.add ( "Cannot find end node (node with no downstream node) in table.  " +
             "Cannot initialize network from table." );
         return;
     }
     else if ( records.size() == 1 ) {
-    	// Single end node found so use it as the downstream node without adding a default end node
+    	// Single end node found so use it as the downstream node without adding a default end node:
     	// - this will result in the network, if output, having only the original nodes
         Integer endNodeRecordPos = recordPosList.get(0);
         TableRecord rec = records.get(endNodeRecordPos);
@@ -396,26 +392,26 @@ throws Exception
         String nodeID = "";
         if ( nodeIdColumnNum >= 0 ) {
         	nodeID = ((String)rec.getFieldValue(nodeIdColumnNum)).trim();
-        }        
+        }
         String nodeNameString = "";
         if ( nodeNameColumnNum >= 0 ) {
         	nodeNameString = ((String)rec.getFieldValue(nodeNameColumnNum)).trim().replace("\r\n"," ").replace("\r"," ");
         }
-        // Use generic node type for now since table type will control behavior
+        // Use generic node type for now since table type will control behavior.
         //int nodeType = HydrologyNode.NODE_TYPE_UNKNOWN; //lookupNodeType ();
-        // TODO SAM 2017-05-31 set the node type if features are added to enable (not sure if explicit end node will be needed)
+        // TODO SAM 2017-05-31 set the node type if features are added to enable (not sure if explicit end node will be needed)>
         int nodeType = HydrologyNode.NODE_TYPE_END; //lookupNodeType ();
         // The following does all the work of determining computational order, etc.
-        //HydrologyNode node = network.addNode(nodeID, nodeType, null, // Upstream node ID is not yet known
+        //HydrologyNode node = network.addNode(nodeID, nodeType, null, // Upstream node ID is not yet known.
         networkDownstreamNodeId = nodeID;
-        String upstreamNodeId = null; // Upstream node ID is not yet known
-        String downstreamNodeId = network.getNodeHead().getCommonID(); // Connect to internal downstream network node
+        String upstreamNodeId = null; // Upstream node ID is not yet known.
+        String downstreamNodeId = network.getNodeHead().getCommonID(); // Connect to internal downstream network node.
         boolean isNaturalFlowNode = false;
         boolean isImportNode = false;
         HydrologyNode node = network.addNode(networkDownstreamNodeId, nodeType, upstreamNodeId,
-        	downstreamNodeId, // This is the most downstream node so no further downstream node
-        	isNaturalFlowNode, // Not a natural flow node (not significant in general network)
-        	isImportNode ); // Not an import (not significant in general network)
+        	downstreamNodeId, // This is the most downstream node so no further downstream node.
+        	isNaturalFlowNode, // Not a natural flow node (not significant in general network).
+        	isImportNode ); // Not an import (not significant in general network).
         node.setDescription(nodeNameString);
         if ( nodeDistanceColumnNum >= 0 ) {
             Double distance = (Double)rec.getFieldValue(nodeDistanceColumnNum);
@@ -425,44 +421,44 @@ throws Exception
         }
     }
     else {
-    	// Multiple nodes that don't have downstream and could be considered the end node.
+    	// Multiple nodes that don't have downstream and could be considered the end node:
     	// - set all downstream node ID to the default end node
     	// - add the default end node, and all will point to it via the downstream node
     	boolean doInsertDefaultEndNode = true;
     	if ( doInsertDefaultEndNode ) {
-    		// Use the default end node specified by the command parameter
+    		// Use the default end node specified by the command parameter.
 	        for ( TableRecord rec: records ) {
 	            Message.printStatus ( 2, routine, "Node with no downstream node: \"" + rec.getFieldValueString(nodeIdColumnNum) + "\" - setting downstream to default \"" + defaultDownstreamNodeId + "\"");
 	        	rec.setFieldValue(downstreamNodeIdColumnNum, defaultDownstreamNodeId);
 	        }
 	        String nodeNameString = "Default downstream end node inserted for end of network";
-	        // Use unknown since it is a generated node and no risk of conflict with actual node type
+	        // Use unknown since it is a generated node and no risk of conflict with actual node type.
 	        int nodeType = HydrologyNode.NODE_TYPE_UNKNOWN; //lookupNodeType ();
 	        networkDownstreamNodeId = defaultDownstreamNodeId;
 	        String upstreamNodeId = null;
-	        String downstreamNodeId = network.getNodeHead().getCommonID(); // Connect to internal downstream network node;
+	        String downstreamNodeId = network.getNodeHead().getCommonID(); // Connect to internal downstream network node.
 	        boolean isNaturalFlowNode = false;
 	        boolean isImportNode = false;
-	        // The following does all the work of determining computational order, etc.
+	        // The following does all the work of determining computational order, etc.:
 	        // - no stream mile set since don't know for default end node
-	        HydrologyNode node = network.addNode(networkDownstreamNodeId, nodeType, upstreamNodeId, // Upstream node ID is not yet known
-	            downstreamNodeId, // Most downstream node ID
-	            isNaturalFlowNode, // Not a natural flow node (not significant in general network)
-	            isImportNode ); // Not an import (not significant in general network)
+	        HydrologyNode node = network.addNode(networkDownstreamNodeId, nodeType, upstreamNodeId, // Upstream node ID is not yet known.
+	            downstreamNodeId, // Most downstream node ID.
+	            isNaturalFlowNode, // Not a natural flow node (not significant in general network).
+	            isImportNode ); // Not an import (not significant in general network).
 	        node.setDescription(nodeNameString);
-		    // Add nodes above the specified node
+		    // Add nodes above the specified node:
 	        // - Should cross-reference OK since the downstream node was connected above
 		    // - Keep track of nodes that are added so that warning can be printed (only check for nodes in the table)
 		    addNodesUpstreamOfNode ( table, network, networkDownstreamNodeId, nodeIdColumnNum, nodeNameColumnNum,
 		        nodeTypeColumnNum, downstreamNodeIdColumnNum, addedNodeRecordPosList, problems );
     	}
     	else {
-    		// Use the default end node that is already in the network from creation
-    		// TODO sam 2017-05-31 enable this as the default if no DefauleDownstreamNodeID parameter is specified
+    		// Use the default end node that is already in the network from creation.
+    		// TODO sam 2017-05-31 enable this as the default if no DefauleDownstreamNodeID parameter is specified.
     	}
     }
     Message.printStatus(2, routine, "Initialized network with " + network.getNodeList().size() + " nodes.");
-    // Check whether all the table rows were added
+    // Check whether all the table rows were added:
     // - first sort the table record list
     Collections.sort(addedNodeRecordPosList);
     Integer addedNodeRecordPos = null, addedNodeRecordPosPrev = -1;
@@ -474,13 +470,16 @@ throws Exception
         		problems.add("Table record " + (jrec + 1) + " with network node ID \"" + table.getRecord(jrec).getFieldValueString(nodeIdColumnNum) + "\" was not added to network.");
         	}
     	}
-    	// Keep track of the previous record position that was added for check in the next iteration
+    	// Keep track of the previous record position that was added for check in the next iteration.
     	addedNodeRecordPosPrev = addedNodeRecordPos;
     }
-    if ( addedNodeRecordPos < (table.getNumberOfRecords() - 1) ) {
-    	// Some records were left off at the end so generate warning
-    	for ( int irec = (addedNodeRecordPos + 1); irec < table.getNumberOfRecords(); irec++ ) {
-    		problems.add("Table record " + (irec + 1) + " with network node ID \"" + table.getRecord(irec).getFieldValueString(nodeIdColumnNum) + "\" was not added to network.");
+    if ( addedNodeRecordPos != null ) {
+    	// May be null if a single-node network?
+    	if ( addedNodeRecordPos < (table.getNumberOfRecords() - 1) ) {
+    		// Some records were left off at the end so generate warning.
+    		for ( int irec = (addedNodeRecordPos + 1); irec < table.getNumberOfRecords(); irec++ ) {
+    			problems.add("Table record " + (irec + 1) + " with network node ID \"" + table.getRecord(irec).getFieldValueString(nodeIdColumnNum) + "\" was not added to network.");
+    		}
     	}
     }
 }
@@ -490,13 +489,11 @@ throws Exception
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -507,8 +504,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -521,20 +517,20 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
     if ( command_phase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryNetwork ( null );
     }
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
@@ -646,7 +642,7 @@ CommandWarningException, CommandException
             }
         }
     }
-       
+
     // Get the table to process.
 
     DataTable table = null;
@@ -654,7 +650,7 @@ CommandWarningException, CommandException
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the network table
+            // Get the network table.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
             try {
@@ -691,13 +687,13 @@ CommandWarningException, CommandException
 	}
 
 	try {
-    	// Process the network and create the output table...
+    	// Process the network and create the output table.
         if ( command_phase == CommandPhaseType.RUN ) {
-            // Create a new network from the table
+            // Create a new network from the table:
         	// - create an end node so there is something to connect downstream nodes
         	boolean createEndNode = true;
             HydrologyNodeNetwork network = new HydrologyNodeNetwork(NetworkID, NetworkName, createEndNode);
-            List<String> problems = new ArrayList<String>();
+            List<String> problems = new ArrayList<>();
             int nodeIdColumnNum = table.getFieldIndex(NodeIDColumn);
             int nodeNameColumnNum = table.getFieldIndex(NodeNameColumn);
             int nodeTypeColumnNum = -1;
@@ -713,20 +709,20 @@ CommandWarningException, CommandException
                 //nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
             }
             int downstreamNodeIdColumnNum = table.getFieldIndex(DownstreamNodeIDColumn);
-            // Initialize the network from table information using column numbers for primary data
+            // Initialize the network from table information using column numbers for primary data.
             initializeNetworkFromTable ( table, nodeIdColumnNum, nodeNameColumnNum,
                 nodeTypeColumnNum, nodeDistanceColumnNum, downstreamNodeIdColumnNum, network, DefaultDownstreamNodeID, problems );
-            // Report problems
+            // Report problems.
             for ( String problem : problems ) {
                 if ( problem.charAt(0) != ' ' ) {
-                    // Message has not been logged before so log...
+                    // Message has not been logged before so log.
                     Message.printWarning ( 3, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
                 }
                 status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
                     problem, "Check log file for more details." ) );
             }
-            // Add the network to the processor...
-            
+            // Add the network to the processor.
+
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Network", network );
             try {
@@ -743,7 +739,7 @@ CommandWarningException, CommandException
             }
         }
         else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty output table and set the ID
+            // Create an empty output table and set the ID.
             if ( (NetworkID != null) && !NetworkID.equals("") ) {
                 HydrologyNodeNetwork network = new HydrologyNodeNetwork(NetworkID, NetworkName);
                 setDiscoveryNetwork ( network );
@@ -758,7 +754,7 @@ CommandWarningException, CommandException
             message, "Check log file for details." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -772,8 +768,7 @@ CommandWarningException, CommandException
 /**
 Set the network that is created by this class in discovery mode (empty network with identifier and name).
 */
-private void setDiscoveryNetwork ( NodeNetwork network )
-{
+private void setDiscoveryNetwork ( NodeNetwork network ) {
     this.network = network;
 }
 

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ protected final String _String = "String";
 /**
 Constructor.
 */
-public SetTimeSeriesProperty_Command ()
-{	super();
+public SetTimeSeriesProperty_Command () {
+	super();
 	setCommandName ( "SetTimeSeriesProperty" );
 }
 
@@ -85,8 +85,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Editable = parameters.getValue ( "Editable" );
+throws InvalidCommandParameterException {
+	String Editable = parameters.getValue ( "Editable" );
     String MissingValue = parameters.getValue("MissingValue" );
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
@@ -98,9 +98,9 @@ throws InvalidCommandParameterException
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
     if ( (MissingValue != null) && !MissingValue.isEmpty() && !MissingValue.startsWith("${") && !StringUtil.isDouble(MissingValue) ) {
-        message = "The missing value \"" + MissingValue + "\" is not a number."; 
+        message = "The missing value \"" + MissingValue + "\" is not a number.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -116,7 +116,7 @@ throws InvalidCommandParameterException
                		message, "Specify a precision value as an integer." ) );
         }
     }
-	
+
 	if ( (Editable != null) && (Editable.length() != 0) &&
         !Editable.equalsIgnoreCase(_False) && !Editable.equalsIgnoreCase(_True)) {
 		message = "The value for Editable is invalid.";
@@ -125,7 +125,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify blank, " + _False + " (default), or " + _True + "." ) );
 	}
-	
+
     if ( (PropertyName != null) && !PropertyName.equals("") ) {
         // Check for allowed characters.
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
@@ -153,7 +153,7 @@ throws InvalidCommandParameterException
         }
         else {
             // Check the value given the type.
-            if ( (PropertyValue.indexOf("%") >= 0) || (PropertyValue.indexOf("${") >= 0) ) {
+            if ( (PropertyValue.indexOf("%") >= 0) || (PropertyValue.indexOf("${") >= 0) ) { // } to match bracket.
                 // Let it pass because a property will be expanded at run-time.
             }
             else if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
@@ -181,7 +181,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(12);
     validList.add ( "TSList" );
 	validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -193,6 +193,7 @@ throws InvalidCommandParameterException
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
+    validList.add ( "AssociatedTSID" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -208,8 +209,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetTimeSeriesProperty_JDialog ( parent, this )).ok();
 }
 
@@ -223,8 +224,8 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -273,8 +274,11 @@ CommandWarningException, CommandException
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
     String PropertyValue = parameters.getValue ( "PropertyValue" );
+    String AssociatedTSIDName = parameters.getValue ( "AssociatedTSIDName" );
+    String AssociatedTSID = parameters.getValue ( "AssociatedTSID" );
 
 	// Get the time series to process.
+	List<TS> tslist = new ArrayList<>();
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -302,21 +306,73 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Confirm that time series are available (may be OK for partial run)." ) );
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
-	@SuppressWarnings("unchecked")
-	List<TS> tslist = (List<TS>)o_TSList;
-	if ( tslist.size() == 0 ) {
-		message = "Zero time series in list to process using TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
+	else {
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+		tslist = tslist0;
+		if ( tslist.size() == 0 ) {
+			message = "Zero time series in list to process using TSList=\"" + TSList +
+        	"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.WARNING,
-						message, "Confirm that time series are available (may be OK for partial run)." ) );
+					message, "Confirm that time series are available (may be OK for partial run)." ) );
+		}
 	}
-	
+
+	TS associatedTS = null;
+	if ( (AssociatedTSID != null) && !AssociatedTSID.isEmpty() ) {
+		// Get the associated time series.
+		request_params = new PropList ( "" );
+		request_params.set ( "TSList", TSList );
+		request_params.set ( "TSID", AssociatedTSID );
+		bean = null;
+		try {
+        	bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		}
+		catch ( Exception e ) {
+			message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+			"\", TSID=\"" + AssociatedTSID + "\" from processor.";
+			Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Report problem to software support." ) );
+		}
+		bean_PropList = bean.getResultsPropList();
+		Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
+		if ( o_TSList2 == null ) {
+			message = "Unable to find associated time series to process using TSList=\"" + TSList + "\" TSID=\"" + AssociatedTSID + "\".";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag,++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Confirm that the time series is available (may be OK for partial run)." ) );
+		}
+		else {
+			@SuppressWarnings("unchecked")
+			List<TS> tslist2 = (List<TS>)o_TSList2;
+			if ( tslist2.size() == 0 ) {
+				message = "Zero associated time series in list to process using TSList=\"" + TSList +
+        		"\" TSID=\"" + AssociatedTSID + "\".";
+				Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+					new CommandLogRecord(CommandStatusType.WARNING,
+						message, "Confirm that time series is available (may be OK for partial run)." ) );
+			}
+			else {
+				associatedTS = tslist2.get(0);
+			}
+		}
+	}
+
 	// Now try to process.
 
     int size = 0;
@@ -370,10 +426,15 @@ CommandWarningException, CommandException
                 }
                 ts.setProperty(PropertyName, Property_Object);
             }
+            
+            if ( (AssociatedTSIDName != null) && !AssociatedTSIDName.isEmpty() && (associatedTS != null) ) {
+            	// Set the associated time series.
+            	ts.setAssociatedTimeSeries ( AssociatedTSIDName, associatedTS );
+            }
         }
         catch ( Exception e ) {
             message = "Unexpected error setting property for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
@@ -382,7 +443,7 @@ CommandWarningException, CommandException
             throw new CommandException ( message );
         }
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -391,7 +452,7 @@ CommandWarningException, CommandException
             routine,message);
         throw new CommandWarningException ( message );
     }
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -412,7 +473,8 @@ public String toString ( PropList parameters ) {
     	"Editable",
     	"PropertyName",
     	"PropertyType",
-    	"PropertyValue"
+    	"PropertyValue",
+    	"AssociatedTSID"
 	};
 	return this.toString(parameters, parameterOrder);
 }

@@ -466,6 +466,15 @@ throws IOException {
             //Message.printStatus(2,"","Property name \"" + propName + "\" has value \"" + propValue + "\".");
             // Default just treat as string.
             objectValue = propValue;
+            // Handle special values.
+            if ( propValue.equals("PARENT_FOLDER") ) {
+            	File f = new File(inputFileFull);
+            	propValue = f.getParentFile().getAbsolutePath();
+            }
+            else if ( propValue.equals("PARENT_PARENT_FOLDER") ) {
+            	File f = new File(inputFileFull);
+            	propValue = f.getParentFile().getParentFile().getAbsolutePath();
+            }
             // Handle special types.
             if ( propValue.toUpperCase().startsWith("DATETIME") ) {
                 // Parse out the argument inside the ().

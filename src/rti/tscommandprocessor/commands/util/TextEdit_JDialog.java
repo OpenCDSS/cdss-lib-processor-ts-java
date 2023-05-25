@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -112,16 +112,16 @@ public void actionPerformed( ActionEvent event ) {
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select Input File");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String filename = fc.getSelectedFile().getName();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -282,7 +282,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, TextEdit_Command command ) {
 	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
@@ -386,7 +386,7 @@ private void initialize ( JFrame parent, TextEdit_Command command ) {
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If input not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfInputNotFound_JComboBox = new SimpleJComboBox ( false );
-	List<String> notFoundChoices = new ArrayList<String>();
+	List<String> notFoundChoices = new ArrayList<>();
 	notFoundChoices.add ( "" );	// Default.
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
@@ -410,7 +410,7 @@ private void initialize ( JFrame parent, TextEdit_Command command ) {
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -424,7 +424,7 @@ private void initialize ( JFrame parent, TextEdit_Command command ) {
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
-	
+
 	// Refresh the contents.
     refresh ();
 
@@ -570,7 +570,7 @@ public void response ( boolean ok ) {
 		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}

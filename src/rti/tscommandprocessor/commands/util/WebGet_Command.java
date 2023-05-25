@@ -668,11 +668,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     			// Set the timeout information for the current connection attempt.
     			if ( connectTimeout > 0 ) {
-    				Message.printStatus(2,routine,"Setting the connect to: " + connectTimeout );
+    				Message.printStatus(2,routine,"Setting the connect timeout to: " + connectTimeout );
     				urlConnection.setConnectTimeout(connectTimeout);
     			}
     			if ( readTimeout > 0 ) {
-    				Message.printStatus(2,routine,"Setting the read to: " + readTimeout );
+    				Message.printStatus(2,routine,"Setting the read timeout to: " + readTimeout );
     				urlConnection.setReadTimeout(readTimeout);
     			}
     			
@@ -696,10 +696,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			}
     			else if ( RequestMethod.equalsIgnoreCase(this.GET) ) {
     				urlConnection.setRequestMethod("GET");
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+    					// Used below with the payload.
+  						urlConnection.setDoOutput(true);
+    				}
 
     			    // Call the 'connect' method to explicitly fire the request.
     			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
+
+   				    // A payload is not usually needed for a GET but may be used to specify query information.
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+  						Message.printStatus(2,routine,"  Adding request payload file \"" + payloadFile + "\"." );
+    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
+    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
+    					outputStream.write(payloadBuilder.toString());
+    					outputStream.flush();
+    					outputStream.close();
+    				}
+
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
    				    responseCode = urlConnection.getResponseCode();
@@ -798,6 +813,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			    // Call the 'connect' method to explicitly fire the request.
     			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
+
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+  						Message.printStatus(2,routine,"  Adding request payload file \"" + payloadFile + "\"." );
+    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
+    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
+    					outputStream.write(payloadBuilder.toString());
+    					outputStream.flush();
+    					outputStream.close();
+    				}
+
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
    				    responseCode = urlConnection.getResponseCode();
@@ -806,13 +831,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    					    continue;
    				    }
 
-    				if ( (payloadFile != null) && payloadFile.exists() ) {
-    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
-    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
-    					outputStream.write(payloadBuilder.toString());
-    					outputStream.flush();
-    					outputStream.close();
-    				}
     				requestSuccessful = true;
     			}
     			else if ( RequestMethod.equalsIgnoreCase(this.PUT) ) {
@@ -822,6 +840,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			    // Call the 'connect' method to explicitly fire the request.
     			    // Check the response code immediately in case it was a redirect.
    				    urlConnection.connect();
+
+    				if ( (payloadFile != null) && payloadFile.exists() ) {
+  						Message.printStatus(2,routine,"  Adding request payload file \"" + payloadFile + "\"." );
+  						urlConnection.setDoOutput(true);
+    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
+    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
+    					outputStream.write(payloadBuilder.toString());
+    					outputStream.flush();
+    					outputStream.close();
+    				}
+
    				    // Get the response code:
    				    // - if 3xx, loop again to follow the redirect
    				    responseCode = urlConnection.getResponseCode();
@@ -830,13 +859,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    					    continue;
    				    }
 
-    				if ( (payloadFile != null) && payloadFile.exists() ) {
-    					outputStream = new OutputStreamWriter(urlConnection.getOutputStream());
-    					StringBuilder payloadBuilder = IOUtil.fileToStringBuilder(payloadFile.getAbsolutePath());
-    					outputStream.write(payloadBuilder.toString());
-    					outputStream.flush();
-    					outputStream.close();
-    				}
     				requestSuccessful = true;
     			}
     			else {

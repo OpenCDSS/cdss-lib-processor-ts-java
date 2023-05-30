@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -80,8 +80,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SortTimeSeries_JDialog ( JFrame parent, SortTimeSeries_Command command )
-{	super(parent, true);
+public SortTimeSeries_JDialog ( JFrame parent, SortTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -89,8 +89,8 @@ public SortTimeSeries_JDialog ( JFrame parent, SortTimeSeries_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -107,14 +107,13 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{
+public void changedUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -122,8 +121,7 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{
+public void insertUpdate ( DocumentEvent e ) {
     refresh();
 }
 
@@ -131,25 +129,24 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{
+public void removeUpdate ( DocumentEvent e ) {
     refresh();
 }
 
 // ...End event handlers for DocumentListener
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String TSIDFormat = __TSIDFormat_JComboBox.getSelected();
     String Property = __Property_JTextField.getText().trim();
     String PropertyFormat = __PropertyFormat_JTextField.getText().trim();
     String SortOrder = __SortOrder_JComboBox.getSelected();
-    
+
     __error_wait = false;
 
     if (TSIDFormat != null && TSIDFormat.length() > 0) {
@@ -166,9 +163,9 @@ private void checkInput ()
     }
 
     try {
-        // This will warn the user...
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
-    } 
+    }
     catch ( Exception e ) {
         // The warning would have been printed in the check code.
         __error_wait = true;
@@ -178,12 +175,12 @@ private void checkInput ()
 /**
 Commit the edits to the command.
 */
-private void commitEdits ()
-{   String TSIDFormat = __TSIDFormat_JComboBox.getSelected();
+private void commitEdits () {
+    String TSIDFormat = __TSIDFormat_JComboBox.getSelected();
     String Property = __Property_JTextField.getText().trim();
     String PropertyFormat = __PropertyFormat_JTextField.getText().trim();
     String SortOrder = __SortOrder_JComboBox.getSelected();
-    
+
     __command.setCommandParameter("TSIDFormat", TSIDFormat);
     __command.setCommandParameter("Property", Property);
     __command.setCommandParameter("PropertyFormat", PropertyFormat);
@@ -195,14 +192,14 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, SortTimeSeries_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, SortTimeSeries_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -221,19 +218,19 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel to sort ID
+
+    // Panel to sort ID.
     int yId = -1;
     JPanel id_JPanel = new JPanel();
     id_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "By Identifier", id_JPanel );
-    
+
     JGUIUtil.addComponent(id_JPanel, new JLabel (
         "Specify how to sort using the alias and/or identifier." ),
         0, ++yId, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(id_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yId, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(id_JPanel, new JLabel ( "TSID format:"),
         0, ++yId, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSIDFormat_JComboBox = new SimpleJComboBox ( false );
@@ -243,17 +240,17 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     __TSIDFormat_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(id_JPanel, __TSIDFormat_JComboBox,
         1, yId, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(id_JPanel, new JLabel("Optional - indicate how TSIDFormat should be sorted (default=" + __command._TSID + ")."), 
+    JGUIUtil.addComponent(id_JPanel, new JLabel("Optional - indicate how TSID and/or alias should be sorted (default=" + __command._TSID + ")."),
         3, yId, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     
-    // Panel for property to sort
+
+    // Panel for property to sort.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "By Property", prop_JPanel );
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
-        "Specify the name of a time series property to sort by." ),
+        "Specify the name of a time series property to sort." ),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "Numerical values are sorted as numbers.  Otherwise, sorts are performed on string equivalents." ),
@@ -263,22 +260,23 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Property to sort:"),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Property_JTextField = new JTextField (10);
+    __Property_JTextField.setToolTipText("Time series property name with value to sort.");
     __Property_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(prop_JPanel, __Property_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Optional - time series property to sort."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel to sort formatted properties
+
+    // Panel to sort formatted properties.
     int yFormatted = -1;
     JPanel format_JPanel = new JPanel();
     format_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "By Formatted Properties", format_JPanel );
-    
+
     JGUIUtil.addComponent(format_JPanel, new JLabel (
         "Specify how to sort using a string formatted from time series properties." ),
         0, ++yFormatted, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -287,7 +285,7 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
         0, ++yFormatted, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(format_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yFormatted, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(format_JPanel, new JLabel ( "Format for properties to sort:"),
         0, ++yFormatted, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyFormat_JTextField = new TSFormatSpecifiersJPanel(30);
@@ -295,9 +293,9 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     __PropertyFormat_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(format_JPanel, __PropertyFormat_JTextField,
         1, yFormatted, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(format_JPanel, new JLabel("Optional - indicate format for property string to sort."), 
+    JGUIUtil.addComponent(format_JPanel, new JLabel("Optional - indicate format for property string to sort."),
         3, yFormatted, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Sort order:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortOrder_JComboBox = new SimpleJComboBox ( false );
@@ -307,10 +305,10 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     __SortOrder_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SortOrder_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - sort order (default=" + __command._Ascending + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - sort order (default=" + __command._Ascending + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -320,13 +318,13 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 	__ok_JButton.setToolTipText("Save changes to command");
@@ -347,58 +345,59 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the input field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TSIDFormat = "";
     String Property = "";
     String PropertyFormat = "";
     String SortOrder = "";
 
     PropList props = null;
-    
+
     if (__first_time) {
         __first_time = false;
-        
-        // Get the properties from the command
+
+        // Get the properties from the command.
         props = __command.getCommandParameters();
         TSIDFormat = props.getValue("TSIDFormat");
         Property = props.getValue("Property");
         PropertyFormat = props.getValue("PropertyFormat");
         SortOrder = props.getValue("SortOrder");
-        // Set the control fields
+        // Set the control fields.
         if ( TSIDFormat == null ) {
-            // Select default...
+            // Select default.
             __TSIDFormat_JComboBox.select ( 0 );
         }
         else {
@@ -421,7 +420,7 @@ private void refresh ()
             __main_JTabbedPane.setSelectedIndex(2);
         }
         if ( SortOrder == null ) {
-            // Select default...
+            // Select default.
             __SortOrder_JComboBox.select ( 0 );
         }
         else {
@@ -436,14 +435,14 @@ private void refresh ()
             }
         }
     }
-    
-    // Regardless, reset the command from the fields.  This is only  visible
-    // information that has not been committed in the command.
+
+    // Regardless, reset the command from the fields.
+    // This is only  visible information that has not been committed in the command.
     TSIDFormat = __TSIDFormat_JComboBox.getSelected();
     Property = __Property_JTextField.getText().trim();
     PropertyFormat = __PropertyFormat_JTextField.getText().trim();
     SortOrder = __SortOrder_JComboBox.getSelected();
-    
+
     props = new PropList(__command.getCommandName());
     props.add("TSIDFormat=" + TSIDFormat);
     props.add("Property=" + Property);
@@ -456,17 +455,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -475,15 +474,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

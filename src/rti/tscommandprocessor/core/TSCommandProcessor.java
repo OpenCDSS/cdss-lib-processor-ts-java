@@ -2666,7 +2666,7 @@ matching property name is used to determine the date/time using the following ru
 private CommandProcessorRequestResultsBean processRequest_DateTime ( String request, PropList request_params )
 throws Exception {
 	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-	// Get the necessary parameters.
+	// Get the DateTime parameters from the request.
 	Object o = request_params.getContents ( "DateTime" );
 	if ( o == null ) {
 		String warning = "Request DateTime() does not provide a DateTime parameter.";
@@ -2674,7 +2674,11 @@ throws Exception {
 		bean.setWarningRecommendationText ( "This is likely a software code error.");
 		throw new RequestParameterNotFoundException ( warning );
 	}
+	// Have a "DateTime" parameter in the request:
+	// - get the string value
 	String DateTime = (String)o;
+	// Call the TSEngine class method to expand the DateTime:
+	// - handles the variants in the method documentation above
 	DateTime dt = __tsengine.getDateTime ( DateTime );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.

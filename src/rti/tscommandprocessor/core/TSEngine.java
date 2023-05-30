@@ -189,12 +189,6 @@ End date for averaging.
 */
 private DateTime __AverageEnd_DateTime = null;
 
-// TODO SAM 2015-05-17 Evaluate whether this can be removed - instead using general processor properties.
-/**
-List of DateTime initialized from commands.
-*/
-private Hashtable<String,DateTime> __datetime_Hashtable = new Hashtable<>();
-
 // TODO 2007-11-16 - why can't this be local in the method that uses it?
 /**
 Count of errors.
@@ -1267,20 +1261,21 @@ matching property name is used to determine the date/time using the following ru
 */
 protected DateTime getDateTime ( String dtString )
 throws Exception {
+	String routine = null;
+	// Set the following to true to troubleshoot during development.
+	boolean debug = false;
+	if ( debug ) {
+		routine = getClass().getSimpleName() + ".getDateTime";
+	}
 	if ( dtString != null ) {
 		dtString = dtString.trim();
 	}
 	if ( (dtString == null) || dtString.isEmpty() || dtString.equals("*") ) {
 		// Want to use all available.
+		if ( debug ) {
+			Message.printStatus(2, routine, "For requested DateTime \"" + dtString + "\", returning null DateTime.");
+		}
 		return null;
-	}
-
-	// Check for user DateTime instances (legacy InputStart, OutputStart, etc.).
-
-	DateTime date = (DateTime)__datetime_Hashtable.get ( dtString );
-	if ( date != null ) {
-		// Found date in the hash table so use it.
-		return date;
 	}
 
 	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively.
@@ -1288,17 +1283,33 @@ throws Exception {
 	// Check for named DateTime instances.
 
 	if ( dtString.equalsIgnoreCase("OutputEnd") || dtString.equalsIgnoreCase("${OutputEnd}") || dtString.equalsIgnoreCase("OutputPeriodEnd") ) {
+		if ( debug ) {
+			Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+				+ "\", returning built-in DateTime property OutputEnd=" + this.__OutputEnd_DateTime);
+		}
 		return __OutputEnd_DateTime;
 	}
 	else if(dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("${OutputStart}") || dtString.equalsIgnoreCase("OutputPeriodStart") ) {
+		if ( debug ) {
+			Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+				+ "\", returning built-in DateTime property OutputStart" + this.__OutputStart_DateTime);
+		}
 		return __OutputStart_DateTime;
 	}
 	else if(dtString.equalsIgnoreCase("InputEnd") || dtString.equalsIgnoreCase("${InputEnd}") || dtString.equalsIgnoreCase("QueryEnd") ||
 		dtString.equalsIgnoreCase("QueryPeriodEnd") ) {
+		if ( debug ) {
+			Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+				+ "\", returning built-in DateTime property InputEnd=" + this.__InputEnd_DateTime);
+		}
 		return __InputEnd_DateTime;
 	}
 	else if(dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("${InputStart}") || dtString.equalsIgnoreCase("QueryStart") ||
 		dtString.equalsIgnoreCase("QueryPeriodStart") ) {
+		if ( debug ) {
+			Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+				+ "\", returning built-in DateTime property InputStart=" + this.__InputStart_DateTime);
+		}
 		return __InputStart_DateTime;
 	}
 
@@ -1308,17 +1319,28 @@ throws Exception {
 		Object o = __ts_processor.getPropContents(propName);
 		if ( o != null ) {
 			if ( o instanceof DateTime ) {
+				if ( debug ) {
+					Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+						+ "\", returning user specified DateTime=" + o);
+				}
 				return (DateTime)o;
 			}
 			else if ( o instanceof String ) {
 				// Reset the string and try parsing below.
+				if ( debug ) {
+					Message.printStatus(2, routine, "For requested DateTime \"" + dtString
+						+ "\", will parse the given string.");
+				}
 				dtString = (String)o;
 			}
 		}
 	}
 
-	// Else did not find a date time so try parse the string (OK to throw an exception).
+	// Else did not find a date time (or found a string above) so try parse the string (OK to throw an exception).
 
+	if ( debug ) {
+		Message.printStatus(2, routine, "For requested DateTime \"" + dtString + "\", parsing string DateTime=" + dtString);
+	}
 	return DateTime.parse ( dtString );
 }
 
@@ -3281,7 +3303,6 @@ private void processCommands_ResetDataForRunStart ( boolean AppendResults_boolea
 throws Exception {
     // The following are the initial defaults.
     setAutoExtendPeriod ( true );
-    __datetime_Hashtable.clear();
     setIncludeMissingTS ( false );
     setIgnoreLEZero ( false );
     setInputStart ( null );

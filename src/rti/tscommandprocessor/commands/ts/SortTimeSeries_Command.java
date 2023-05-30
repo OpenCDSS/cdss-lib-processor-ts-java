@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ protected final String _Descending = "Descending";
 /**
 Constructor.
 */
-public SortTimeSeries_Command ()
-{	super();
+public SortTimeSeries_Command () {
+	super();
 	setCommandName ( "SortTimeSeries" );
 }
 
@@ -78,16 +78,16 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   String TSIDFormat = parameters.getValue ( "TSIDFormat" );
+throws InvalidCommandParameterException {
+    String TSIDFormat = parameters.getValue ( "TSIDFormat" );
     String SortOrder = parameters.getValue ( "SortOrder" );
-    
+
     String warning = "";
     String message;
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
     if ( (TSIDFormat != null) && !TSIDFormat.equals("") && !TSIDFormat.equals(_AliasTSID) && !TSIDFormat.equals(_TSID) ) {
         message = "The TSID format is invalid.";
         warning += "\n" + message;
@@ -102,22 +102,22 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the sort order as " + _Ascending + " (default), or " + _Descending + "." ) );
     }
-    
-    //  Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+
+    //  Check for invalid parameters.
+    List<String> validList = new ArrayList<>(4);
     validList.add ( "TSIDFormat" );
     validList.add ( "Property" );
     validList.add ( "PropertyFormat" );
     validList.add ( "SortOrder" );
 
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,warning_level),warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -126,8 +126,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SortTimeSeries_JDialog ( parent, this )).ok();
 }
 
@@ -140,12 +140,12 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	List<TS> tslist = null;
-	
+
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
@@ -157,22 +157,22 @@ throws CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
+
     PropList parameters = getCommandParameters();
     String TSIDFormat = parameters.getValue ( "TSIDFormat" );
     String Property = parameters.getValue ( "Property" );
     String PropertyFormat = parameters.getValue ( "PropertyFormat" );
     String SortOrder = parameters.getValue ( "SortOrder" );
-    int sortOrder = 1;
+    int sortOrder = 1; // Default is ascending.
     if ( (SortOrder != null) && SortOrder.equalsIgnoreCase(_Descending) ) {
-        sortOrder = -1;
+        sortOrder = -1; // Descending.
     }
-	
+
 	try {
 	    Object o = processor.getPropContents ( "TSResultsList" );
 	    @SuppressWarnings("unchecked")
@@ -189,21 +189,21 @@ throws CommandWarningException, CommandException
 	}
 	int warning_count = 0;
 	if ( (tslist == null) || (tslist.size() == 0) ) {
-		// Don't do anything...
+		// Don't do anything.
 		Message.printStatus ( 2, routine,"No time series are available.  Not sorting." );
 	}
     else {
         try {
-            TSUtil_SortTimeSeries<TS> tsu = new TSUtil_SortTimeSeries(tslist, TSIDFormat, Property, PropertyFormat, sortOrder );
+            TSUtil_SortTimeSeries<TS> tsu = new TSUtil_SortTimeSeries<>(tslist, TSIDFormat, Property, PropertyFormat, sortOrder );
             List<TS> tslistSorted = tsu.sortTimeSeries();
-            // TODO SAM 2014-07-14 Might be dangerous to do the following so replace the existing list
+            // TODO SAM 2014-07-14 Might be dangerous to do the following so replace the existing list.
             //processor.setPropContents ( "TSResultsList", tslistSorted );
             tslist.clear();
             tslist.addAll(tslistSorted);
         }
         catch ( Exception e ) {
             message = "Unexpected error sorting time series (" + e + ").";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),
                 routine, message );
             Message.printWarning ( 3, routine, e );
@@ -213,7 +213,7 @@ throws CommandWarningException, CommandException
             throw new CommandException ( message );
 	    }
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

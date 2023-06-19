@@ -76,8 +76,8 @@ For example FC(1:) indicates columns 1 through the total number of columns.
 protected final String _FC = "FC[";
 
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.
+These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_List = null;
 
@@ -411,8 +411,8 @@ This opens a temporary connection, reads the end of the file, and parses out dat
 */
 private DateTime determineEndDateTimeFromFile ( String inputFileFull, int dateTimePos, int datePos, int timePos,
     String delim, int parseFlag, DateTimeParser dateTimeParser )
-throws FileNotFoundException, IOException
-{   String routine = getClass().getName() + ".determineEndDateTimeFromFile";
+throws FileNotFoundException, IOException {
+    String routine = getClass().getSimpleName() + ".determineEndDateTimeFromFile";
     int dl = 30;
     if ( Message.isDebugOn ) {
         Message.printDebug( dl, routine, "Getting end date from end of file..." );
@@ -509,8 +509,7 @@ throws FileNotFoundException, IOException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent ) {
 	// The command will be modified if changed.
@@ -524,8 +523,8 @@ It is expected that this has already been expanded for ${Property}.
 */
 private List<String> getColumnNamesRuntime(String ColumnNames, String inputFileFull,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems )
-{	String message;
+	String routine, CommandStatus status, List<String> problems ) {
+	String message;
 	List<String> columnNames = new ArrayList<>();
 	if ( ColumnNames == null ) {
 		return columnNames;
@@ -562,8 +561,8 @@ Get the column number (0+) from the column names.
 @param columnNames names of all the columns in the file
 @return the column number (0+) corresponding to the column name, or -1 if not found.
 */
-private int getColumnNumberFromName ( String columnName, List<String> columnNames )
-{   if ( (columnName == null) || columnName.isEmpty() || (columnNames == null) ) {
+private int getColumnNumberFromName ( String columnName, List<String> columnNames ) {
+    if ( (columnName == null) || columnName.isEmpty() || (columnNames == null) ) {
         return -1;
     }
     for ( int i = 0; i < columnNames.size(); i++ ) {
@@ -595,8 +594,8 @@ private int[] getColumnNumbersFromNames ( List<String> someNames, List<String> c
 Return the data type list.
 */
 private List<String> getDataTypeRuntime(String DataType,
-	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems)
-{	String message;
+	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> dataType = new ArrayList<>();
     if ( (DataType == null) || DataType.equals("") ) {
         // Set to the same as the value columns.
@@ -639,8 +638,8 @@ Return the date column name expanded for runtime.
 */
 private String getDateColumnRuntime ( String DateColumn, String inputFileFull, List<String> columnNamesRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems )
-{	String message;
+	String routine, CommandStatus status, List<String> problems ) {
+	String message;
     if ( (DateColumn == null) || DateColumn.isEmpty() ) {
     	return "";
     }
@@ -649,7 +648,7 @@ private String getDateColumnRuntime ( String DateColumn, String inputFileFull, L
         // Original string used slice notation for column name in file.
         try {
             List<String> dateColumnName = new ArrayList<>();
-            dateColumnName.add ( DateColumn ); // Only one
+            dateColumnName.add ( DateColumn ); // Only one.
             dateColumnName = readColumnNamesFromFile(inputFileFull, dateColumnName,
                 StringUtil.literalToInternal(delimiter), comment, skipRows,
                 skipRowsAfterComments );
@@ -685,8 +684,8 @@ Return the date/time column name expanded for runtime.
 */
 private String getDateTimeColumnRuntime ( String DateTimeColumn, String inputFileFull, List<String> columnNamesRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems )
-{	String message;
+	String routine, CommandStatus status, List<String> problems ) {
+	String message;
 	String dateTimeColumnRuntime = "";
     if ( (DateTimeColumn != null) && !DateTimeColumn.isEmpty() ) {
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_FC, 0) >= 0 ) {
@@ -737,8 +736,8 @@ Return the flag column list, expanded for runtime.
 private List<String> getFlagColumnsRuntime(String FlagColumn, String inputFileFull, List<String> columnNamesRuntime,
 	List<String> valueColumnsRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems )
-{	String message;
+	String routine, CommandStatus status, List<String> problems ) {
+	String message;
     List<String> flagColumnsRuntime = new ArrayList<>();
     if ( (FlagColumn != null) && (FlagColumn.length() != 0) ) {
     	List<String> flagColumns = StringUtil.breakStringList(FlagColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
@@ -800,8 +799,8 @@ Return the location ID list, expanded for runtime.
 private List<String> getLocationIDRuntime(String LocationID, String inputFileFull, List<String> columnNamesRuntime,
 	List<String> valueColumnsRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems)
-{	String message;
+	String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> locationIDRuntime = new ArrayList<>();
     if ( (LocationID == null) || LocationID.equals("") ) {
         message = "The location ID column(s) must be specified.";
@@ -862,8 +861,7 @@ Return the list of data objects read by this object in discovery mode.
 Classes that can be requested: TS
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
     List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
@@ -883,8 +881,8 @@ public <T> List<T> getObjectList ( Class<T> c )
 Return the provider list.
 */
 private List<String> getProviderRuntime(String Provider,
-	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems)
-{	String message;
+	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> provider = new ArrayList<>();
     if ( (Provider != null) && !Provider.equals("") ) {
         // Can have one value that is re-used, or Provider for each time series.
@@ -925,8 +923,8 @@ private List<String> getProviderRuntime(String Provider,
 Return the scenario list.
 */
 private List<String> getScenarioRuntime(String Scenario,
-	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems)
-{	String message;
+	List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> scenario = new ArrayList<>();
     if ( (Scenario != null) && !Scenario.equals("") ) {
         // Can have one value that is re-used, or Scenario for each time series.
@@ -982,8 +980,8 @@ Return the time column name expanded for runtime.
 */
 private String getTimeColumnRuntime ( String TimeColumn, String inputFileFull, List<String> columnNamesRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems )
-{	String message;
+	String routine, CommandStatus status, List<String> problems ) {
+	String message;
 
 	if ( (TimeColumn == null) || TimeColumn.isEmpty() ) {
 		return "";
@@ -1034,8 +1032,8 @@ private boolean getTreatConsecutiveDelimitersAsOne() {
 Return the data units list.
 */
 private List<String> getUnitsRuntime(String Units,
-		List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems)
-{	String message;
+		List<String> valueColumnsRuntime,String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> units = new ArrayList<>();
     if ( (Units != null) && !Units.equals("") ) {
         // Can have one value that is re-used, or units for each time series.
@@ -1077,8 +1075,8 @@ Return the value column list, expanded for runtime.
 */
 private List<String> getValueColumnsRuntime(String ValueColumn, String inputFileFull, List<String> columnNamesRuntime,
 	String delimiter, String comment, int [][] skipRows, int skipRowsAfterComments,
-	String routine, CommandStatus status, List<String> problems)
-{	String message;
+	String routine, CommandStatus status, List<String> problems) {
+	String message;
     List<String> valueColumnsRuntime = new ArrayList<>();
     if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
         message = "The value column(s) must be specified.";
@@ -1158,17 +1156,17 @@ private boolean needToSkipRow( int row, int firstNonHeaderRow, int[][] skipRows,
 
 // TODO SAM 2010-05-24 Evaluate making code more modular so as to not repeat this code from main read method.
 /**
-Read the column names from the file.  This code is essentially a copy of some of the code used when
-actually processing the time series and should be kept consistent.  It mainly is concerned with handling
-initial comments in the file, skipped rows, and reading the first non-comment record as a header.
+Read the column names from the file.
+This code is essentially a copy of some of the code used when actually processing the time series and should be kept consistent.
+It mainly is concerned with handling initial comments in the file, skipped rows, and reading the first non-comment record as a header.
 @param inputFileFull the full path to the input file.
-@param columnNames0 the value of the ColumnNames parameter before special handling.  For example, this may contain
-FC[] notation.
+@param columnNames0 the value of the ColumnNames parameter before special handling.
+For example, this may contain FC[] notation.
 */
 protected List<String> readColumnNamesFromFile ( String inputFileFull, List<String> columnNames0, String delim,
     String commentChar, int[][] skipRows, int skipRowsAfterComments )
-throws IOException
-{   String routine = getClass().getSimpleName() + ".readColumnNamesFromFile";
+throws IOException {
+    String routine = getClass().getSimpleName() + ".readColumnNamesFromFile";
     List<String> columnNames = new ArrayList<>();
     BufferedReader in = null;
     Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
@@ -1196,7 +1194,7 @@ throws IOException
         }
         rowIsComment = false;
         sTrimmed = s.trim();
-        // Skip in the range of rows being skipped - this basically throws out rows without evaluating
+        // Skip in the range of rows being skipped - this basically throws out rows without evaluating.
         // Don't even know if it is a comment.
         if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
             Message.printStatus(2, routine, "Skipping row " + row );
@@ -1288,8 +1286,8 @@ Read a list of time series from a delimited file.
 @param dateColumn the date column name
 @param timeColumn the time column name
 @param valueColumns the data value column names
-@param commentChar character(s) that indicates comments lines, if the first character of a line
-(or null if not specified).  Only 1-character is checked but more than one special character can be indicated.
+@param commentChar character(s) that indicates comments lines, if the first character of a line (or null if not specified).
+Only 1-character is checked but more than one special character can be indicated.
 @param skipRows ranges of rows (1+ each) that are to be skipped
 @param skipRowsAfterComments the number of rows after the header comments to be skipped
 @param ids list of location identifiers to use for time series
@@ -1313,11 +1311,11 @@ private List<TS> readTimeSeriesList ( String inputFileFull,
     List<String> scenarios, List<String> units, List<String> missing,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, List<String> errorMessages )
-throws IOException
-{   String routine = getClass().getSimpleName() + ".readTimeSeriesList";
+throws IOException {
+    String routine = getClass().getSimpleName() + ".readTimeSeriesList";
     // Allocate the list.
     List<TS> tslist = new ArrayList<>();
-    // Open the file
+    // Open the file.
     BufferedReader in = null;
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime.
@@ -1549,7 +1547,7 @@ throws IOException
             // Process the time series for the row.
             for ( ival = 0; ival < valuePos.length; ival++ ) {
                 if ( valuePos[ival] < 0 ) {
-                    // Error matching column in setup so continue to avoid major problem
+                    // Error matching column in setup so continue to avoid major problem.
                     // Will have null time series in result.
                     continue;
                 }
@@ -1557,8 +1555,8 @@ throws IOException
                 ts = tslist.get(ival);
                 // If the first row being processed, need to allocate the data space for all the time series.
                 // This also requires reading from the end of the file to get the end date.
-                // Because some files have data in reverse chronological order (newest at top), compare
-                // the start and end date/times before setting.
+                // Because some files have data in reverse chronological order (newest at top),
+                // compare the start and end date/times before setting.
                 if ( (doReadColumnNamesFromFile && (dataRowCount == 2)) ||
                      (!doReadColumnNamesFromFile && dataRowCount == 1) ) {
                     // The first date will be set from the first row of data.
@@ -1602,8 +1600,8 @@ throws IOException
                     }
                 }
                 if ( !readData ) {
-                    // No need to process data for this time series (and will break out of main loop below when
-                    // done with all time series).
+                    // No need to process data for this time series
+                	// (and will break out of main loop below when done with all time series).
                     continue;
                 }
                 valueString = tokens.get(valuePos[ival]).trim();
@@ -1694,8 +1692,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;
@@ -1895,7 +1893,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Correct the parameter values that specify column names." ) );
         }
         // The column names for the file are either read from a heading line in the file (ColumnNames="[1:]" or are assigned using ColumnNames="name1,name2,...").
-        List<String> problemList = new ArrayList<>(); // Cumulative list of warning messages (already added in code below)
+        List<String> problemList = new ArrayList<>(); // Cumulative list of warning messages (already added in code below).
         // Translate file column names and other information to runtime values.
         // Print information for troubleshooting.
        	List<String> columnNamesRuntime = getColumnNamesRuntime(ColumnNames, InputFile_full,

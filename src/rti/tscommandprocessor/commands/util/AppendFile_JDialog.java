@@ -130,7 +130,7 @@ public void actionPerformed( ActionEvent event ) {
 					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1,"FTPGet_JDialog", "Error converting file to relative path." );
+					Message.printWarning ( 1, "AppendFile", "Error converting file to relative path." );
 				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
@@ -163,7 +163,7 @@ public void actionPerformed( ActionEvent event ) {
 					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1,"FTPGet_JDialog", "Error converting file to relative path." );
+					Message.printWarning ( 1, "AppendFile", "Error converting file to relative path." );
 				}
                 JGUIUtil.setLastFileDialogDirectory(directory);
                 refresh();
@@ -360,7 +360,7 @@ private void initialize ( JFrame parent, AppendFile_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append text:" ),
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AppendText_JTextArea = new JTextArea (8,60);
-    __AppendText_JTextArea.setToolTipText("Optional text to append, OK to include line breaks.");
+    __AppendText_JTextArea.setToolTipText("Optional text to append, OK to include line breaks, can use ${Property}.");
     __AppendText_JTextArea.setLineWrap ( true );
     __AppendText_JTextArea.setWrapStyleWord ( true );
     __AppendText_JTextArea.addKeyListener(this);
@@ -397,7 +397,7 @@ private void initialize ( JFrame parent, AppendFile_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeText_JTextField = new JTextField ( 20 );
-    __IncludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard.");
+    __IncludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard, can use ${Property}.");
     __IncludeText_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeText_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -408,7 +408,7 @@ private void initialize ( JFrame parent, AppendFile_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeText_JTextField = new JTextField ( 20 );
-    __ExcludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard.");
+    __ExcludeText_JTextField.setToolTipText("Specify a pattern to match, using * for wildcard, can use ${Property}.");
     __ExcludeText_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcludeText_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

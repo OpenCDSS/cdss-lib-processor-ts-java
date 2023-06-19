@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -110,7 +110,7 @@ private JTextField __InputEnd_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
-private boolean __ok = false;			
+private boolean __ok = false;
 private final String __RemoveWorkingDirectory = "Rel";
 private final String __AddWorkingDirectory = "Abs";
 
@@ -128,9 +128,9 @@ public ReadDelimitedFile_JDialog ( JFrame parent, ReadDelimitedFile_Command comm
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
-try{
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
+	try{
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read.
 		JFileChooser fc = new JFileChooser();
@@ -140,7 +140,7 @@ try{
         sff = new SimpleFileFilter("csv","Delimited (Comma Separated Value) Time Series File");
         fc.addChoosableFileFilter(sff);
         fc.setFileFilter (fc.getAcceptAllFileFilter());
-		
+
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		if ( last_directory_selected != null ) {
 			fc.setCurrentDirectory(	new File(last_directory_selected));
@@ -152,11 +152,11 @@ try{
 			String directory = fc.getSelectedFile().getParent();
 			String filename = fc.getSelectedFile().getName();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -197,9 +197,9 @@ try{
 		}
 		refresh ();
 	}
-}catch ( Exception e ) {
-    Message.printWarning(2, "Action performed", e );
-}
+	} catch ( Exception e ) {
+    	Message.printWarning(2, "Action performed", e );
+	}
 }
 
 // Start event handlers for DocumentListener...
@@ -208,8 +208,8 @@ try{
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -217,8 +217,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -226,8 +226,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -245,7 +245,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	// Put together a list of parameters to check.
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String Comment = __Comment_JTextField.getText().trim();
@@ -270,9 +270,9 @@ private void checkInput () {
 	String Alias = __Alias_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
-	
+
 	__error_wait = false;
-	
+
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
@@ -354,8 +354,8 @@ private void checkInput () {
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits() {
 	String InputFile = __InputFile_JTextField.getText().trim();
@@ -425,7 +425,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
-	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read all the time series from a column-oriented delimited file, using " +
         "provided information to assign the time series metadata."),
@@ -455,7 +455,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	}
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
+
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -727,7 +727,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "Optional - separate by commas (default=blank)."),
         3, yData2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
+
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Missing value(s):"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField (15);
@@ -774,7 +774,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(5, 55);
 	__Command_JTextArea.setLineWrap ( true );
-	__Command_JTextArea.setWrapStyleWord ( true );	
+	__Command_JTextArea.setWrapStyleWord ( true );
 	__Command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -782,7 +782,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Button panel.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -810,8 +810,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{   checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -851,8 +851,8 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh()
-{   String routine = getClass().getName() + ".refresh", message;
+private void refresh() {
+    String routine = getClass().getSimpleName() + ".refresh", message;
     String InputFile = "";
     String Comment = "";
     String SkipRows = "";
@@ -953,8 +953,8 @@ private void refresh()
             __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
         if (DateTimeFormat != null) {
-            // The front part of the string may match a formatter type (e.g., "C:") in which case
-            // only the latter part of the string should be displayed.
+            // The front part of the string may match a formatter type (e.g., "C:"),
+        	// in which case only the latter part of the string should be displayed.
             int pos = DateTimeFormat.indexOf(":");
             if ( pos > 0 ) {
                 try {
@@ -1072,7 +1072,7 @@ private void refresh()
     props.add("Alias=" + Alias );
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
-	
+
 	__Command_JTextArea.setText( __command.toString(props).trim() );
 
 	// Check the path and determine what the label on the path button should be.
@@ -1097,8 +1097,8 @@ private void refresh()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok ) {
 	__ok = ok;

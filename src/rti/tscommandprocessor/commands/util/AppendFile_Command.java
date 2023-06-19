@@ -229,8 +229,10 @@ CommandWarningException, CommandException {
     	Message.printStatus(2,routine,"Replacing escaped newline with actual newline.");
     	AppendText = AppendText.replace("\\n", "\n");
     }
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
 	String IncludeText = parameters.getValue ( "IncludeText" );
+	// TODO smalers 2023-06-15 for now expand but if this causes conflicts may need to handle escaping.
+    IncludeText = TSCommandProcessorUtil.expandParameterValue(processor,this,IncludeText);
     String includePattern = null;
 	boolean doIncludeText = false;
 	if ( (IncludeText != null) && !IncludeText.isEmpty() ) {
@@ -239,6 +241,8 @@ CommandWarningException, CommandException {
         includePattern = IncludeText.replace("*", ".*");
 	}
     String ExcludeText = parameters.getValue ( "ExcludeText" );
+	// TODO smalers 2023-06-15 for now expand but if this causes conflicts may need to handle escaping.
+    ExcludeText = TSCommandProcessorUtil.expandParameterValue(processor,this,ExcludeText);
     String excludePattern = null;
     boolean doExcludeText = false;
     if ( (ExcludeText != null) && !ExcludeText.isEmpty() ) {

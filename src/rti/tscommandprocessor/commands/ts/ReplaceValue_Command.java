@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -57,24 +57,25 @@ This class initializes, checks, and runs the ReplaceValue() command.
 */
 public class ReplaceValue_Command extends AbstractCommand implements Command
 {
-    
+
 /**
 Analysis window year, since users do not supply this information.
-This allows for leap year in case the analysis window start or end is on Feb 29.
+This allows for leap year in case the analysis window start or end is on February 29.
 */
 private final int __ANALYSIS_WINDOW_YEAR = 2000;
-    
+
 /**
 Values for Action parameter.
 */
 protected final String _Remove = "Remove";
+protected final String _RemoveMissing = "RemoveMissing";
 protected final String _SetMissing = "SetMissing";
 
 /**
 Constructor.
 */
-public ReplaceValue_Command ()
-{	super();
+public ReplaceValue_Command () {
+	super();
 	setCommandName ( "ReplaceValue" );
 }
 
@@ -86,28 +87,28 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TSList = parameters.getValue ( "TSList" );
+throws InvalidCommandParameterException {
+	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
 	String MinValue = parameters.getValue ( "MinValue" );
     if ( MinValue == null ) {
-        MinValue = ""; // To simplify checks below
+        MinValue = ""; // To simplify checks below.
     }
     String MaxValue = parameters.getValue ( "MaxValue" );
     if ( MaxValue == null ) {
-        MaxValue = ""; // To simplify checks below
+        MaxValue = ""; // To simplify checks below.
     }
     String MatchFlag = parameters.getValue ( "MatchFlag" );
     if ( MatchFlag == null ) {
-        MatchFlag = ""; // To simplify checks below
+        MatchFlag = ""; // To simplify checks below.
     }
     String NewValue = parameters.getValue ( "NewValue" );
     if ( NewValue == null ) {
-        NewValue = ""; // To simplify checks below
+        NewValue = ""; // To simplify checks below.
     }
     String Action = parameters.getValue ( "Action" );
     if ( Action == null ) {
-        Action = ""; // To simplify checks below
+        Action = ""; // To simplify checks below.
     }
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
@@ -116,10 +117,10 @@ throws InvalidCommandParameterException
 	//String SetFlag = parameters.getValue ( "SetFlag" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
 	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
 	        !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
 	        !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
@@ -134,12 +135,12 @@ throws InvalidCommandParameterException
                     message, "Do not specify the TSID parameter." ) );
 		}
 	}
-	if ( MinValue.equals("") && MatchFlag.equals("") ) {
-        message = "The minimum value or match flag must be specified.";
+	if ( MinValue.equals("") && MatchFlag.equals("") && !Action.equalsIgnoreCase(_RemoveMissing)) {
+        message = "The minimum value or match flag must be specified (unless an irregular interval time series and Action=" + _RemoveMissing + ").";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the minimum value or match flag." ) );  
+                message, "Specify the minimum value or match flag." ) );
 	}
 	else {
     	if ( !MinValue.equals("") && !StringUtil.isDouble(MinValue) ) {
@@ -175,15 +176,15 @@ throws InvalidCommandParameterException
                     message, "Specify the new value as a number." ) );
         }
     }
-    
-    if ( !Action.equals("") && !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
+
+    if ( !Action.equals("") && !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_RemoveMissing) && !Action.equalsIgnoreCase(_SetMissing)) {
         message = "The action (" + Action + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the action as " + _Remove + " or " + _SetMissing + " (or specify a new value)." ) );
+                message, "Specify the action as " + _Remove + ", " + _RemoveMissing + ", or " + _SetMissing + " (or specify a new value)." ) );
     }
-    
+
     if ( !Action.equals("") && !NewValue.equals("") ) {
         message = "A new value and an action cannot both be specified.";
         warning += "\n" + message;
@@ -191,7 +192,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new value or an action." ) );
     }
- 
+
 	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${") ) {
 		try {	DateTime.parse(SetStart);
 		}
@@ -214,7 +215,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or property." ) );
 		}
 	}
-	
+
     if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
         String analysisWindowStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart;
         try {
@@ -229,7 +230,7 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
+
     if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
         String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
         try {
@@ -244,9 +245,9 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(14);
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(14);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -262,45 +263,41 @@ throws InvalidCommandParameterException
     validList.add ( "SetFlag" );
     validList.add ( "SetFlagDesc" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new ReplaceValue_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
 	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
     }
     else {
@@ -315,14 +312,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			ntokens = v.size();
 		}
 		if ( ntokens != 7 ) {
-			// Command name, TSID, min, max, new, start, end
+			// Command name, TSID, min, max, new, start, end.
 			message = "Syntax error in \"" + command_string +
 			"\".  Expecting ReplaceValue(TSID,MinValue,MaxValue,NewValue,AnalysisStart,AnalysisEnd).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 
-		// Get the individual tokens of the expression...
+		// Get the individual tokens of the expression.
 
 		String TSID = ((String)v.get(1)).trim();
 		String MinValue = ((String)v.get(2)).trim();
@@ -331,14 +328,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String SetStart = ((String)v.get(5)).trim();
 		String SetEnd = ((String)v.get(6)).trim();
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-            // Legacy behavior was to match last matching TSID if no wildcard
+            // Legacy behavior was to match last matching TSID if no wildcard.
             if ( TSID.indexOf("*") >= 0 ) {
                 parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
             }
@@ -380,21 +377,21 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messages
+	int log_level = 3;	// Warning message level for non-user messages.
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -402,7 +399,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -421,8 +418,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 
-	// Get the time series to process...
-	
+	// Get the time series to process.
+
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -496,7 +493,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
 		}
 	}
-	
+
 	int nts = 0;
 	if ( tslist != null ) {
 		nts = tslist.size();
@@ -513,7 +510,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// Values...
+	// Values.
 
 	String MinValue = parameters.getValue("MinValue");
 	Double MinValue_double = null;
@@ -533,14 +530,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String Action = parameters.getValue("Action");
 
-	// Set period...
+	// Set period.
 
 	String SetStart = parameters.getValue("SetStart");
 	String SetEnd = parameters.getValue("SetEnd");
 	String SetFlag = parameters.getValue("SetFlag");
 	String SetFlagDesc = parameters.getValue("SetFlagDesc");
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis.
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
 
@@ -549,7 +546,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
 	try {
@@ -557,19 +554,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
-	
+
     String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     
     DateTime AnalysisWindowStart_DateTime = null;
     if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
         try {
-            // The following works with ISO formats...
-            AnalysisWindowStart_DateTime =
-                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
+            // The following works with ISO formats.
+            AnalysisWindowStart_DateTime = DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
         }
         catch ( Exception e ) {
             message = "AnalysisWindowStart \"" + AnalysisWindowStart +
@@ -583,9 +579,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTime AnalysisWindowEnd_DateTime = null;
     if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
         try {
-            // The following works with ISO formats...
-            AnalysisWindowEnd_DateTime =
-                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
+            // The following works with ISO formats.
+            AnalysisWindowEnd_DateTime = DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
         }
         catch ( Exception e ) {
             message = "AnalysisWindowEnd \"" + AnalysisWindowEnd +
@@ -598,14 +593,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
@@ -639,7 +634,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {
 		    ts = (TS)prop_contents;
 		}
-		
+
 		if ( ts == null ) {
 			// Skip time series.
             message = "Unable to set time series at position " + tspos[its] + " - null time series.";
@@ -651,8 +646,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
 			continue;
 		}
-		
-		// Do the setting...
+
+		// Do the setting.
 		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Replacing value in " +
             ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier() +

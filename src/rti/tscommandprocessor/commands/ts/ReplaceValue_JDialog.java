@@ -76,7 +76,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private ReplaceValue_Command __command = null;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private JTextField __MinValue_JTextField = null;
 private JTextField __MaxValue_JTextField = null;
 private JTextField __MatchFlag_JTextField = null;
@@ -89,6 +89,7 @@ private DateTime_JPanel __AnalysisWindowStart_JPanel = null;
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private JTextField __SetFlag_JTextField = null;
 private JTextField __SetFlagDesc_JTextField = null;
+private JTextField __Description_JTextField = null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up.
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -179,11 +180,12 @@ private void checkInput () {
     String MaxValue = __MaxValue_JTextField.getText().trim();
     String MatchFlag = __MatchFlag_JTextField.getText().trim();
     String NewValue = __NewValue_JTextField.getText().trim();
+    String Action = __Action_JComboBox.getSelected();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String SetFlag = __SetFlag_JTextField.getText().trim();
     String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
-    String Action = __Action_JComboBox.getSelected();
+    String Description = __Description_JTextField.getText().trim();
 
     __error_wait = false;
 
@@ -233,6 +235,9 @@ private void checkInput () {
     if ( SetFlagDesc.length() > 0 ) {
         parameters.set ( "SetFlagDesc", SetFlagDesc );
     }
+    if ( Description.length() > 0 ) {
+        parameters.set ( "Description", Description );
+    }
     try {
         // This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -260,6 +265,7 @@ private void commitEdits () {
     String Action = __Action_JComboBox.getSelected();
     String SetFlag = __SetFlag_JTextField.getText().trim();
     String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
+    String Description = __Description_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -278,6 +284,7 @@ private void commitEdits () {
     }
     __command.setCommandParameter ( "SetFlag", SetFlag );
     __command.setCommandParameter ( "SetFlagDesc", SetFlagDesc );
+    __command.setCommandParameter ( "Description", Description );
 }
 
 /**
@@ -299,13 +306,13 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Replace a single data value or range of data values with a constant."),
+		"Replace a single data value or range of data values with a constant or set missing."),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The data values and/or flags are matched to determine values to replace."),
         0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optionally, set missing or remove the values entirely (if an irregular interval time series)."),
+        "For irregular interval time series, can also remove missing values or values in the range."),
         0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If the missing value indicator is a number in the given range, missing values also will be replaced." ),
@@ -387,7 +394,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=just replace)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement start:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement (set) start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField (20);
     __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
@@ -397,7 +404,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - start of replacement (default is all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replacement end:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replacement (set) end:"),
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField (20);
     __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
@@ -433,19 +440,31 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlag_JTextField = new JTextField ( "", 10 );
+    __SetFlag_JTextField.setToolTipText("String flag for changed values.");
     __SetFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - string to mark replaced data."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - string to mark replaced data (default=no flag)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag description:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlagDesc_JTextField = new JTextField ( "", 20 );
+    __SetFlagDesc_JTextField.setToolTipText("Description for changed values (used in flag legend).");
     __SetFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetFlagDesc_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - description for set flag (default=auto-generated)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Time series description:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Description_JTextField = new JTextField ( "", 50 );
+    __Description_JTextField.setToolTipText("Time series description, use ${ts:description} for existing description.");
+    __Description_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - description for time series (default=no change)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
@@ -545,6 +564,7 @@ private void refresh () {
     String AnalysisWindowEnd = "";
     String SetFlag = "";
     String SetFlagDesc = "";
+    String Description = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -563,6 +583,7 @@ private void refresh () {
         AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
         SetFlag = props.getValue ( "SetFlag" );
         SetFlagDesc = props.getValue ( "SetFlagDesc" );
+        Description = props.getValue ( "Description" );
         if ( TSList == null ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -678,6 +699,9 @@ private void refresh () {
         if ( SetFlagDesc != null ) {
             __SetFlagDesc_JTextField.setText ( SetFlagDesc );
         }
+        if ( Description != null ) {
+            __Description_JTextField.setText ( Description );
+        }
     }
     // Regardless, reset the command from the fields.
     checkGUIState();
@@ -693,6 +717,7 @@ private void refresh () {
     SetEnd = __SetEnd_JTextField.getText().trim();
     SetFlag = __SetFlag_JTextField.getText().trim();
     SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
+    Description = __Description_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -712,6 +737,7 @@ private void refresh () {
     }
     props.add ( "SetFlag=" + SetFlag );
     props.add ( "SetFlagDesc=" + SetFlagDesc );
+    props.add ( "Description=" + Description );
     __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 
@@ -738,8 +764,8 @@ private void response ( boolean ok ) {
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ) {

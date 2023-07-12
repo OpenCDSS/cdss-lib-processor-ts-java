@@ -249,6 +249,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String OutputFile = parameters.getValue ( "OutputFile" ); // Expand below.
 	String SearchFor = parameters.getValue ( "SearchFor" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
+		// Expand properties, will skip over if escaped with \$\{.
 		SearchFor = TSCommandProcessorUtil.expandParameterValue(processor, this, SearchFor);
 	}
 	if ( SearchFor != null ) {
@@ -263,7 +264,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		ReplaceWith = TSCommandProcessorUtil.expandParameterValue(processor, this, ReplaceWith);
 	}
 	if ( ReplaceWith != null ) {
-		//ReplaceWith = ReplaceWith.replace("\\$\\{", "${");
 		// Replace literal strings with equivalent internal characters.
 		ReplaceWith = ReplaceWith.
 			replace("\\n", "\n").

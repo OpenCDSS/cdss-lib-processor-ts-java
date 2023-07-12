@@ -182,6 +182,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TSPropertyNames = parameters.getValue ( "TSPropertyNames" );
+	TSPropertyNames = TSCommandProcessorUtil.expandParameterValue(processor, this, TSPropertyNames);
     Hashtable<String,String> tsPropertyNamesMap = new Hashtable<>();
     if ( (TSPropertyNames != null) && (TSPropertyNames.length() > 0) ) {
         if ( TSPropertyNames.indexOf(":") > 0 ) {

@@ -262,6 +262,7 @@ throws InvalidCommandParameterException {
     validList.add ( "AnalysisWindowEnd" );
     validList.add ( "SetFlag" );
     validList.add ( "SetFlagDesc" );
+    validList.add ( "Description" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -407,14 +408,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
+    	// Default.
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 
@@ -534,8 +536,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String SetStart = parameters.getValue("SetStart");
 	String SetEnd = parameters.getValue("SetEnd");
-	String SetFlag = parameters.getValue("SetFlag");
-	String SetFlagDesc = parameters.getValue("SetFlagDesc");
 
 	// Figure out the dates to use for the analysis.
 	DateTime SetStart_DateTime = null;
@@ -591,6 +591,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             throw new InvalidCommandParameterException ( message );
         }
     }
+
+	String SetFlag = parameters.getValue("SetFlag");
+	String SetFlagDesc = parameters.getValue("SetFlagDesc");
+	String Description = parameters.getValue("Description");
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series).
@@ -655,10 +659,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			", SetStart=" + SetStart_DateTime + ", SetEnd=" + SetEnd_DateTime +
 			", AnalysisWindowStart=" + AnalysisWindowStart_DateTime + ", AnalysisWindowEnd=" + AnalysisWindowEnd_DateTime +
 			", SetFlag=" + SetFlag + ", SetFlagDescription=" + SetFlagDesc +
-			" Action=\"" + Action + "\"." );
+			" Action=\"" + Action + "\" Description=\"" + Description + "\"." );
 		try {
-            TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
-                NewValue_double, MatchFlag, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SetFlag, SetFlagDesc );
+			// Expand the description here if requested.
+			String description = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, Description, status, commandPhase);
+			// Replace the value:
+			// - this will modify the existing time series in the processor
+            TSUtil.replaceValue ( ts,
+            	SetStart_DateTime, SetEnd_DateTime,
+            	MinValue_double, MaxValue_double, NewValue_double, MatchFlag,
+            	Action,
+            	AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
+            	SetFlag, SetFlagDesc,
+                description );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error replacing values in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -703,7 +716,8 @@ public String toString ( PropList parameters ) {
     	"AnalysisWindowStart",
     	"AnalysisWindowEnd",
 		"SetFlag",
-		"SetFlagDesc"
+		"SetFlagDesc",
+		"Description"
 	};
 	return this.toString(parameters, parameterOrder);
 }

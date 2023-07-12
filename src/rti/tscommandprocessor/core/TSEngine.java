@@ -3618,7 +3618,7 @@ throws IOException {
 		try {
     		TS	tspt = null;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.get(0);
+    			tspt = tslist_output.get(0);
     		}
     		String units = null;
     		if ( tspt != null ) {
@@ -3722,7 +3722,7 @@ throws IOException {
     		TS	tspt = null;
     		int	list_size = 0;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.get(0);
+    			tspt = tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
     		// NWS Card files can only contain one time series.
@@ -3740,7 +3740,7 @@ throws IOException {
     		// Format the comments to add to the top of the file.
     		// In this case, add the commands used to generate the file.
     		int interval_mult = 1;
-    		interval_mult = ((TS)tslist_output.get(0)).getDataIntervalMult();
+    		interval_mult = tslist_output.get(0).getDataIntervalMult();
     		// Need date precision to be hour and NWS uses hour 1 - 24 so adjust dates accordingly.
     		DateTime date1 = __OutputStart_DateTime;
     		if ( __OutputStart_DateTime != null ) {
@@ -3757,7 +3757,7 @@ throws IOException {
     			date2.addDay ( 1 );
     			date2.setHour ( 0 );
     		}
-    		NWSCardTS.writeTimeSeries ( (TS)tslist_output.get(0),	__output_file, date1, date2, units, true );
+    		NWSCardTS.writeTimeSeries ( tslist_output.get(0), __output_file, date1, date2, units, true );
 		} catch ( Exception e ) {
 			message = "Error writing NWS Card file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -3771,7 +3771,7 @@ throws IOException {
     		TS	tspt = null;
     		int	list_size = 0;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.get(0);
+    			tspt = tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
     		// RiverWare files can only contain one time series.
@@ -3788,7 +3788,7 @@ throws IOException {
 
     		// Format the comments to add to the top of the file.
     		// In this case, add the commands used to generate the file.
-    		RiverWareTS.writeTimeSeries ( (TS)tslist_output.get(0),
+    		RiverWareTS.writeTimeSeries ( tslist_output.get(0),
     			__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, 1.0, null, -1.0, true );
 		} catch ( Exception e ) {
 			message = "Error writing RiverWare file \"" + __output_file + "\"";
@@ -3956,7 +3956,7 @@ throws IOException {
 		List<TS> tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
-    			Message.printWarning ( 1, routine, "Can only generate a table from GUI" );
+    			Message.printWarning ( 1, routine, "Can only generate a table from a UI (batch is not supported)." );
     			return;
     		}
 
@@ -3964,8 +3964,8 @@ throws IOException {
     		// Set graph properties for a simple graph.
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
-    		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
-    		graphprops.set ( "YAxisLabelString", ((TS)tslist.get(0)).getDataUnits() );
+    		graphprops.set ( "DataUnits", tslist.get(0).getDataUnits() );
+    		graphprops.set ( "YAxisLabelString", tslist.get(0).getDataUnits() );
     		graphprops.set ( "CalendarType", "" + getOutputYearType() );
     		// Set the total size of the graph window.
     		graphprops.set ( "TotalWidth", "600" );
@@ -4077,7 +4077,7 @@ throws IOException {
     			reference_date.setDay ( 1 );
     			size = tslist.size();
     			for ( int i = 0; i < size; i++ ) {
-    				ts = (TS)tslist.elementAt(i);
+    				ts = tslist.elementAt(i);
     				if ( ts == null ) {
     					continue;
     				}
@@ -4100,7 +4100,7 @@ throws IOException {
     					Message.printStatus ( 1, routine, "Split " + ts.getIdentifier() + " into " + traces_size + " traces" );
     					TS ts2 = null;
     					for ( int j = 0; j < traces_size; j++ ){
-    						ts2 = (TS)traces.elementAt(j);
+    						ts2 = traces.elementAt(j);
     						ts2.setLegend ( "%D, %F" );
     						new_tslist.addElement ( ts2 );
     					}

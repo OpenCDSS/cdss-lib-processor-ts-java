@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -232,7 +232,7 @@ CommandWarningException, CommandException {
 	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
 	String IncludeText = parameters.getValue ( "IncludeText" );
 	// TODO smalers 2023-06-15 for now expand but if this causes conflicts may need to handle escaping.
-    IncludeText = TSCommandProcessorUtil.expandParameterValue(processor,this,IncludeText);
+    IncludeText = TSCommandProcessorUtil.expandParameterValue ( processor, this, IncludeText );
     String includePattern = null;
 	boolean doIncludeText = false;
 	if ( (IncludeText != null) && !IncludeText.isEmpty() ) {
@@ -242,7 +242,7 @@ CommandWarningException, CommandException {
 	}
     String ExcludeText = parameters.getValue ( "ExcludeText" );
 	// TODO smalers 2023-06-15 for now expand but if this causes conflicts may need to handle escaping.
-    ExcludeText = TSCommandProcessorUtil.expandParameterValue(processor,this,ExcludeText);
+    ExcludeText = TSCommandProcessorUtil.expandParameterValue ( processor, this, ExcludeText );
     String excludePattern = null;
     boolean doExcludeText = false;
     if ( (ExcludeText != null) && !ExcludeText.isEmpty() ) {
@@ -391,6 +391,7 @@ CommandWarningException, CommandException {
 	        	while( (line = in.readLine()) != null ) {
 	            	includeLine = true;
 	            	if ( doIncludeText ) {
+	            		// Evaluate the include pattern first.
 	                	if ( line.matches(includePattern) ) {
 	                    	// OK to append to output.
 	                    	includeLine = true;
@@ -400,12 +401,10 @@ CommandWarningException, CommandException {
 	                	}
 	            	}
                 	if ( doExcludeText ) {
+	            		// Reduce from the included lines above.
                     	if ( line.matches(excludePattern) ) {
                         	// Skip.
                         	includeLine = false;
-                    	}
-                    	else {
-                        	includeLine = true;
                     	}
                 	}
 	            	if ( includeLine ) {

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -28,12 +28,12 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TS;
-import RTi.TS.TSData;
-import RTi.TS.TSIterator;
+import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -47,8 +47,6 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
-import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the ChangeTimeZone() command.
@@ -56,11 +54,17 @@ This class initializes, checks, and runs the ChangeTimeZone() command.
 public class ChangeTimeZone_Command extends AbstractCommand
 {
 
+	/**
+	 * Values for ShiftTime parameter.
+	 */
+	protected final String _False = "False";
+	protected final String _True = "True";
+
 /**
 Constructor.
 */
-public ChangeTimeZone_Command ()
-{	super();
+public ChangeTimeZone_Command () {
+	super();
 	setCommandName ( "ChangeTimeZone" );
 }
 
@@ -72,41 +76,75 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	//String TSList = parameters.getValue ( "TSList" );
-	//String TSID = parameters.getValue ( "TSID" );
-	//String NewTimeZone = parameters.getValue ( "NewTimeZone" );
+throws InvalidCommandParameterException {
+	String OldTimeZone = parameters.getValue ( "OldTimeZone" );
+	String NewTimeZone = parameters.getValue ( "NewTimeZone" );
+	String ShiftTime = parameters.getValue ( "ShiftTime" );
 	String warning = "";
-    //String message;
-    
+    String message;
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
-    // TODO sam 2017-04-11 evaluate whether to check time zone.  Empty is OK because will set time zone to empty.
-    /*
-    if ( (NewTimeZone == null) || NewTimeZone.isEmpty() ) {
-        message = "NewTimeZone must be specified.";
+
+    if ( (OldTimeZone != null) && !OldTimeZone.isEmpty() ) {
+    	try {
+    		ZoneId.of(OldTimeZone);
+    	}
+    	catch ( Exception e ) {
+    		message = "OldTimeZone (" + OldTimeZone + ") is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+   				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid time Zone (e.g., GMT, America/Denver, +06:00)." ) );
+    	}
+    }
+    if ( (NewTimeZone != null) && !NewTimeZone.isEmpty() ) {
+    	try {
+    		ZoneId.of(NewTimeZone);
+    	}
+    	catch ( Exception e ) {
+    		message = "NewTimeZone (" + NewTimeZone + ") is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+   				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid time Zone (e.g., GMT, America/Denver, +06:00)." ) );
+    	}
+    }
+    if ( (ShiftTime != null) && !ShiftTime.equals("") &&
+        !ShiftTime.equalsIgnoreCase(_False) && !ShiftTime.equalsIgnoreCase(_True) ) {
+        message = "The Shift value (" + ShiftTime + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify NewTimeZone." ) );
-    }*/
-    
-	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+                message, "Specify as " + _False + " (default) or " + _True + "." ) );
+        
+        // NewTimeZone must be specified.
+        if ( (NewTimeZone == null) || NewTimeZone.isEmpty() ) {
+    	    message = "ShiftTime=True requires that NewTimeZone is also set.";
+    	    warning += "\n" + message;
+    	    status.addToLog ( CommandPhaseType.INITIALIZATION,
+   			    new CommandLogRecord(CommandStatusType.FAILURE,
+				    message, "Specify a valid new time Zone (e.g., GMT, America/Denver, +06:00)." ) );
+        }
+    }
+
+	// Check for invalid parameters.
+    List<String> validList = new ArrayList<>(6);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
+    validList.add ( "OldTimeZone" );
     validList.add ( "NewTimeZone" );
+    validList.add ( "ShiftTime" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -115,12 +153,12 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new ChangeTimeZone_JDialog ( parent, this )).ok();
 }
 
-// Use parseCommand() from base class
+// Use parseCommand() from base class.
 
 /**
 Run the command.
@@ -130,21 +168,21 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messages
+	int log_level = 3;	// Warning message level for non-user messages.
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    
+
     CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -152,7 +190,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -163,16 +201,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TSList = "" + TSListType.ALL_TS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
+	String OldTimeZone = parameters.getValue("OldTimeZone");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		OldTimeZone = TSCommandProcessorUtil.expandParameterValue(processor, this, OldTimeZone);
+	}
+	String NewTimeZone = parameters.getValue("NewTimeZone");
+	if ( NewTimeZone == null ) {
+		NewTimeZone = ""; // Default.
+	}
+	else if ( commandPhase == CommandPhaseType.RUN ) {
+		NewTimeZone = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTimeZone);
+	}
+	String ShiftTime = parameters.getValue("ShiftTime");
+	boolean shiftTime = false; // Default.
+	if ( (ShiftTime != null) && ShiftTime.equalsIgnoreCase(this._True) ) {
+		shiftTime = true;
+	}
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		ShiftTime = TSCommandProcessorUtil.expandParameterValue(processor, this, ShiftTime);
+	}
 
-	// Get the time series to process...
-	
+	// Get the time series to process.
+
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -247,7 +304,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 	}
-	
+
 	int nts = 0;
 	if ( tslist != null ) {
 		nts = tslist.size();
@@ -264,153 +321,89 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// New time zone...
-
-	String NewTimeZone = parameters.getValue("NewTimeZone");
-	if ( NewTimeZone == null ) {
-		NewTimeZone = "";
-	}
-	if ( (NewTimeZone != null) && (NewTimeZone.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
-		NewTimeZone = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTimeZone);
-	}
-	
-	// Compare the time zone against valid time zones
-
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 	}
 
-	// Now process the time series...
+	// Default is to process the time series:
+	// - can add runtime checks and set to false below if there is a problem
+	boolean doProcess = true;
 
-	TS ts = null;
-	try {
-		for ( int its = 0; its < nts; its++ ) {
-			ts = null;
-			request_params = new PropList ( "" );
-			request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
-			bean = null;
-			try {
-				bean = processor.processRequest( "GetTimeSeries", request_params);
-			}
-			catch ( Exception e ) {
-	            message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	if ( doProcess ) {
+		// Now process the time series.
+
+		TS ts = null;
+		try {
+			for ( int its = 0; its < nts; its++ ) {
+				ts = null;
+				request_params = new PropList ( "" );
+				request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
+				bean = null;
+				try {
+					bean = processor.processRequest( "GetTimeSeries", request_params);
+				}
+				catch ( Exception e ) {
+	            	message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
+					Message.printWarning(log_level,
+							MessageUtil.formatMessageTag( command_tag, ++warning_count),
+							routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                    	new CommandLogRecord(CommandStatusType.FAILURE,
+	                            	message, "Report the problem to software support." ) );
+				}
+				PropList bean_PropList = bean.getResultsPropList();
+				Object prop_contents = bean_PropList.getContents ( "TS" );
+				if ( prop_contents == null ) {
+	            	message = "Null value for GetTimeSeries(Index=" + tspos[its] + "\") returned from processor.";
+					Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                    	new CommandLogRecord(CommandStatusType.FAILURE,
+	                            	message, "Report the problem to software support." ) );
+				}
+				else {
+			    	ts = (TS)prop_contents;
+				}
+
+				if ( ts == null ) {
+					// Skip time series.
+	            	message = "Unable to process time series at position " + tspos[its];
+					Message.printWarning(warning_level,
+							MessageUtil.formatMessageTag( command_tag, ++warning_count),
+								routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                    	new CommandLogRecord(CommandStatusType.FAILURE,
+	                            	message, "Report the problem to software support." ) );
+					continue;
+				}
+
+		    	notifyCommandProgressListeners ( its, nts, (float)-1.0, "Changing time zone to \"" + NewTimeZone + " for " +
+		        	ts.getIdentifier().toStringAliasAndTSID() );
+
+		    	// Shift the time zone using the utility method.
+		    	TSUtil.shiftTimeZone( ts, OldTimeZone, NewTimeZone, shiftTime );
 			}
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "TS" );
-			if ( prop_contents == null ) {
-	            message = "Null value for GetTimeSeries(Index=" + tspos[its] + "\") returned from processor.";
-				Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
+		}
+		catch ( Exception e ) {
+			if ( ts != null ) {
+				message = "Unexpected error changing time zone for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
 			}
 			else {
-			    ts = (TS)prop_contents;
+				message = "Unexpected error changing time zone for time series (" + e + ").";
 			}
-			
-			if ( ts == null ) {
-				// Skip time series.
-	            message = "Unable to process time series at position " + tspos[its];
-				Message.printWarning(warning_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-							routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
-				continue;
-			}
-			
-		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Changing time zone to \"" + NewTimeZone + " for " +
-		        ts.getIdentifier().toStringAliasAndTSID() );
-		    
-		    // Reset all date/times to not have time zone
-		    DateTime dt = ts.getDate1();
-		    dt.setTimeZone(NewTimeZone);
-		    ts.setDate1(dt);
-		    dt = ts.getDate1Original();
-		    dt.setTimeZone(NewTimeZone);
-		    ts.setDate1Original(dt);
-		    dt = ts.getDate2();
-		    dt.setTimeZone(NewTimeZone);
-		    ts.setDate2(dt);
-		    dt = ts.getDate2Original();
-		    dt.setTimeZone(NewTimeZone);
-		    ts.setDate2Original(dt);
-		    ts.addToGenesis("Changed time zone to \"" + NewTimeZone + "\".");
-		    if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
-		    	// Loop through all the data and set the time zone on the date/time
-		    	TSIterator tsi = ts.iterator();
-		    	TSData tsdata = null;
-		    	while ( (tsdata = tsi.next()) != null ) {
-		    		tsdata.setDate(tsdata.getDate().setTimeZone(NewTimeZone));
-		    	}
-		    }
-		    // Set the time series dirty so limits will be recomputed and new dates used
-		    ts.setDirty(true);
-		    
-		    // Otherwise, check the offset on the existing and new time zone.
-		    // If no offset change, just change the zone on the dates.
-		    
-		    // TODO sam 2017-04-11 need to enable time zone shift which will either only change time zone
-		    // or will also change the data.
-		    // Else, have an offset.  Accomplish the time zone change by changing the period of record to
-		    // new date/times that have the new time zone.  This can shift the internal data management
-		    // so use the same logic as ChangePeriod() command.
-			
-			// Change the period...
-		    /*
-	        if ( NewStart_DateTime == null ) {
-	            NewStart_DateTime = new DateTime(ts.getDate1());
-	        }
-	        if ( NewEnd_DateTime == null ) {
-	            NewEnd_DateTime = new DateTime(ts.getDate2());
-	        }
-			Message.printStatus ( 2, routine, "Changing \"" +
-			ts.getIdentifier()+ "\" period to " + NewStart_DateTime + " to " + NewEnd_DateTime + "." );
-			*/
-			try {
-	            //ts.changePeriodOfRecord ( NewStart_DateTime, NewEnd_DateTime );
-	            // No need to re-add to results list since the original reference is maintained.
-			}
-			catch ( Exception e ) {
-				message = "Unexpected error changing time zone for \"" + ts.getIdentifier() + "\" (" + e + ").";
-	            Message.printWarning ( warning_level,
-	                    MessageUtil.formatMessageTag(
-	                    command_tag, ++warning_count),
-	                    routine,message);
-				Message.printWarning(3,routine,e);
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "See the log file for details - report the problem to software support." ) );
-			}
+        	Message.printWarning ( warning_level,
+                	MessageUtil.formatMessageTag(command_tag, ++warning_count),
+                	routine,message);
+			Message.printWarning(3,routine,e);
+        	status.addToLog ( CommandPhaseType.RUN,
+                	new CommandLogRecord(CommandStatusType.FAILURE,
+                        	message, "See the log file for details - report the problem to software support." ) );
 		}
-	}
-	catch ( Exception e ) {
-		if ( ts != null ) {
-			message = "Unexpected error changing time zone for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
-		}
-		else {
-			message = "Unexpected error changing time zone for time series (" + e + ").";
-		}
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag, ++warning_count),
-                routine,message);
-		Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "See the log file for details - report the problem to software support." ) );
 	}
 
 	if ( warning_count > 0 ) {
@@ -421,7 +414,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -435,7 +428,9 @@ public String toString ( PropList parameters ) {
 		"TSList",
 		"TSID",
 		"EnsembleID",
-		"NewTimeZone"
+		"OldTimeZone",
+		"NewTimeZone",
+		"ShiftTime"
 	};
 	return this.toString(parameters, parameterOrder);
 }

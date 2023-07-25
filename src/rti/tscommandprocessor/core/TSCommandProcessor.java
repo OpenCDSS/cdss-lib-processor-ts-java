@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -74,7 +74,6 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeUtil;
 import RTi.Util.Time.YearType;
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
@@ -4317,17 +4316,10 @@ throws Exception {
     __propertyHashmap.clear();
 
     // Define some standard properties.
-    __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
-    boolean newTZ = true;
-    if ( newTZ ) {
-        // Use new time zone class.
-    	ZonedDateTime now = ZonedDateTime.now();
-    	__propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
-    }
-    else {
-    	// Use old time zone approach.
-    	__propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
-    }
+    __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages.
+    // Use new time zone class.
+    ZonedDateTime now = ZonedDateTime.now();
+    __propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
     __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     __propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
     __propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );

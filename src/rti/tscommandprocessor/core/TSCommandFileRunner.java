@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -41,8 +41,8 @@ import riverside.datastore.DataStoreRequirementChecker;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 
 /**
-This class allows a commands file to be be run.  For example, it can be
-used to make a batch run of a commands file.
+This class allows a commands file to be be run.
+For example, it can be used to make a batch run of a commands file.
 An instance of TSCommandProcessor is created to process the commands.
 */
 public class TSCommandFileRunner
@@ -82,7 +82,8 @@ Syntax for command files is, for example:
 If null or empty, process all the commands for the processor, such as when called from RunCommands command.
 If a single command, then checking syntax errors in a comment from the command processor.
 @return RequirementCheckList object that contains check criteria, result, and justification of the result.
-If ANY comments have "@enabledif" statements that evaluate to false, the overall check result will be false, and otherwise true.
+If ANY comments have "@enabledif" statements that evaluate to false, the overall check result will be false,
+and otherwise true.
 */
 public static RequirementCheckList checkEnabled ( TSCommandProcessor processor, List<Command> commands ) {
 	return checkRequirementsForAnnotation ( processor, commands, "@enabledif");
@@ -104,7 +105,8 @@ Syntax for command files is, for example:
 If null or empty, process all the commands for the processor, such as when called from RunCommands command.
 If a single command, then checking syntax errors in a comment from the command processor.
 @return RequirementCheckList object that contains check criteria, result, and justification of the result.
-If ANY comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
+If ANY comments have "@require" statements that evaluate to false, the overall check result will be false,
+and otherwise true.
 */
 public static RequirementCheckList checkRequirements ( TSCommandProcessor processor, List<Command> commands ) {
 	return checkRequirementsForAnnotation ( processor, commands, "@require");
@@ -127,7 +129,8 @@ If null or empty, process all the commands for the processor, such as when calle
 If a single command, then checking syntax errors in a comment from the command processor.
 @param annotation annotation to check, either "@require" or "@enabledif"
 @return RequirementCheckList object that contains check criteria, result, and justification of the result.
-If any comments have "@require" statements that evaluate to false, the overall check result will be false, and otherwise true.
+If any comments have "@require" statements that evaluate to false, the overall check result will be false,
+and otherwise true.
 */
 private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandProcessor processor, List<Command> commands, String annotation ) {
 	String routine = TSCommandFileRunner.class.getSimpleName() + ".checkRequirementsForAnnotation";
@@ -149,7 +152,8 @@ private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandPr
     String datastoreName;
     String operator;
     String reqVersion;
-    String checkerName = "TSCommandFileRunner"; // Default value - specific checker will supply scope-specific name such as 'HydroBaseDataStore'.
+    // Default value - specific checker will supply scope-specific name such as 'HydroBaseDataStore'.
+    String checkerName = "TSCommandFileRunner";
     for ( Command command : commands ) {
    		if ( command instanceof Comment_Command ) {
    			commandString = command.toString();
@@ -319,7 +323,7 @@ private static RequirementCheckList checkRequirementsForAnnotation ( TSCommandPr
    					throw new RuntimeException (message);
    				}
             }
-   			// Else no @require
+   			// Else no @require.
         }
     }
     return checkList;
@@ -405,15 +409,15 @@ public boolean isCommandFileEnabled () {
 /**
 Read the commands from a file.
 @param filename name of command file to run, should be absolute.
-@param runDiscoveryOnLoad indicates whether to run discovery mode on commands when loading (this is
-a noticeable performance hit for large command files)
+@param runDiscoveryOnLoad indicates whether to run discovery mode on commands when loading
+(this is a noticeable performance hit for large command files)
 */
 public void readCommandFile ( String path, boolean runDiscoveryOnLoad )
 throws FileNotFoundException, IOException {
 	__processor.readCommandFile (
-		path, // InitialWorkingDir will be set to commands file location
-		true, // Create GenericCommand instances for unknown commands
-		false, // Do not append the commands.
+		path, // InitialWorkingDir will be set to commands file location.
+		true, // Create GenericCommand instances for unknown commands.
+		false, // Do not append the commands
 		runDiscoveryOnLoad );
 }
 

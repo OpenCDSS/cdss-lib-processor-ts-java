@@ -122,15 +122,6 @@ It is now wrapped by this TSCommandProcessor class and code will continue to be 
 private TSEngine __tsengine = null;
 
 /**
-Actions that are used when processing time series,
-indicating whether new time series are created or existing ones modified.
-*/
-public final int	INSERT_TS = 1,
-					UPDATE_TS = 2,
-					EXIT = 3,
-					NONE = 4;
-
-/**
 The list of commands managed by this command processor, guaranteed to be non-null.
 */
 private List<Command> __CommandList = new Vector<>(); // Use Vector for thread-safe.
@@ -3280,17 +3271,12 @@ throws Exception {
 	}
 	String Action = (String)o_Action;
 	// TODO SAM 2007-02-11 Need to handle actions as strings cleaner.
-	int Action_int = NONE;
-	if ( Action.equalsIgnoreCase("Insert") ) {
-		Action_int = INSERT_TS;
-	}
-	else if ( Action.equalsIgnoreCase("Update") ) {
-		Action_int = UPDATE_TS;
-	}
-	else {
+	TSCommandProcessorActionType action = TSCommandProcessorActionType.valueOfIgnoreCase(Action);
+	if ( action == null ) {
 	    String warning = "Request ProcessTimeSeriesAction() Action value \"" + Action + "\" is invalid.";
-			throw new RequestParameterInvalidException ( warning );
+		throw new RequestParameterInvalidException ( warning );
 	}
+
 	// Index.
 	Object o_Index = request_params.getContents ( "Index" );
 	if ( o_Index == null ) {
@@ -3301,11 +3287,11 @@ throws Exception {
 	}
 	Integer Index = (Integer)o_Index;
 	int ts_pos = Index.intValue();
-    if ( Action_int == INSERT_TS ) {
+    if ( action == TSCommandProcessorActionType.INSERT_TS ) {
         // Add new time series to the list.
         __tsengine.setTimeSeries ( ts, ts_pos );
     }
-    else if ( Action_int == UPDATE_TS ) {
+    else if ( action == TSCommandProcessorActionType.UPDATE_TS ) {
         // Update in the time series list.
         __tsengine.setTimeSeries ( ts, ts_pos );
     }
@@ -4489,8 +4475,7 @@ throws Exception {
 
 	if ( __CommandProcessorEventListener_array != null ) {
     	for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
-    	    CommandProcessorEventListener listener =
-    	        (CommandProcessorEventListener)__CommandProcessorEventListener_array[i];
+    	    CommandProcessorEventListener listener = __CommandProcessorEventListener_array[i];
     	    if ( listener instanceof CheckFileCommandProcessorEventListener ) {
     	        CheckFileCommandProcessorEventListener cflistener = (CheckFileCommandProcessorEventListener)listener;
     	        cflistener.finalizeOutput();
@@ -4498,8 +4483,8 @@ throws Exception {
     	}
 	}
 
-    // Remove all registered CommandProcessorEventListener again so that if by chance editing, etc. generates
-	// events don't want to deal with.
+    // Remove all registered CommandProcessorEventListener again so that if by chance editing,
+	// etc. generates events don't want to deal with.
     removeAllCommandProcessorEventListeners();
 }
 

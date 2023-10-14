@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -70,7 +70,7 @@ Used with AllowDuplicates.
 */
 protected final String _False = "False";
 protected final String _True = "True";
-    
+
 /**
 The table that is created (when not operating on an existing table).
 */
@@ -79,8 +79,8 @@ private DataTable __table = null;
 /**
 Constructor.
 */
-public CopyTimeSeriesPropertiesToTable_Command ()
-{   super();
+public CopyTimeSeriesPropertiesToTable_Command () {
+    super();
     setCommandName ( "CopyTimeSeriesPropertiesToTable" );
 }
 
@@ -92,32 +92,32 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+throws InvalidCommandParameterException {
+    String IncludeProperties = parameters.getValue ( "IncludeProperties" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
     String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
     String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
     if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide the identifier for the table to process." ) );
     }
-    
+
     if ( (TableTSIDColumn == null) || TableTSIDColumn.equals("") ) {
         message = "The TableTSID column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a table column name for the TSID." ) );
     }
-    
+
     if ( (IncludeProperties != null) && !IncludeProperties.equals("") &&
         (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
         String[] includeProperties = IncludeProperties.split(",");
@@ -130,7 +130,7 @@ throws InvalidCommandParameterException
                 message, "Specify the same number of include properties names as output columns." ) );
         }
     }
-    
+
     if ( (AllowDuplicates != null) && !AllowDuplicates.equals("") && !AllowDuplicates.equalsIgnoreCase(_False) &&
         !AllowDuplicates.equalsIgnoreCase(_True) ) {
         message = "The AllowDuplicates value (" + AllowDuplicates + ") is invalid.";
@@ -138,9 +138,9 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specity the value as " + _False + " or " + _True + " (default)." ) );
     }
-    
-    // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(9);
+
+    // Check for invalid parameters.
+    List<String> validList = new ArrayList<>(9);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -151,14 +151,14 @@ throws InvalidCommandParameterException
     validList.add ( "AllowDuplicates" );
     validList.add ( "TableOutputColumns" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,warning_level),
         warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -167,8 +167,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+    List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     return (new CopyTimeSeriesPropertiesToTable_JDialog ( parent, this, tableIDChoices )).ok();
@@ -177,8 +177,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
@@ -186,11 +185,11 @@ private DataTable getDiscoveryTable()
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
@@ -201,10 +200,9 @@ Override parent parseCommand() so that parameter name can be changed.
 @param commandString command string to parse
 */
 public void parseCommand ( String commandString )
-throws InvalidCommandParameterException, InvalidCommandSyntaxException
-{
+throws InvalidCommandParameterException, InvalidCommandSyntaxException {
 	super.parseCommand(commandString);
-	// Now replace "PropertyNames" with "IncludeProperties"
+	// Now replace "PropertyNames" with "IncludeProperties".
 	PropList params = getCommandParameters();
 	String propVal = params.getValue("PropertyNames");
 	if ( (propVal != null) && !propVal.isEmpty() ) {
@@ -220,8 +218,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -232,8 +229,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -246,17 +242,17 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+CommandWarningException, CommandException {
+    String message, routine = getCommandName() + "_Command.runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
     int log_level = 3;
     //int log_level = 3;  // Level for non-use messages for log file.
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -264,7 +260,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -273,8 +269,8 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
-    
-    // Get the input parameters...
+
+    // Get the input parameters.
 
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
@@ -299,7 +295,7 @@ CommandWarningException, CommandException
     }
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
+    	// In discovery mode want lists of tables to include ${Property}.
     	if ( TableID.indexOf("${") >= 0 ) {
     		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     	}
@@ -315,7 +311,7 @@ CommandWarningException, CommandException
     String [] tableOutputColumnNames0 = null;
     if ( (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
         tableOutputColumnNames0 = TableOutputColumns.split(",");
-        // These are expanded below based on dynamic time series properties
+        // These are expanded below based on dynamic time series properties.
     }
 
     // Get the table to process.
@@ -324,7 +320,7 @@ CommandWarningException, CommandException
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated/created
+        // Get the table to be updated/created.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -332,7 +328,7 @@ CommandWarningException, CommandException
             PropList bean_PropList = bean.getResultsPropList();
             Object o_Table = bean_PropList.getContents ( "Table" );
             if ( o_Table != null ) {
-                // Found the table so no need to create it
+                // Found the table so no need to create it.
                 table = (DataTable)o_Table;
             }
         }
@@ -344,12 +340,12 @@ CommandWarningException, CommandException
                 message, "Report problem to software support." ) );
         }
     }
-    
-    // Get the time series to process.  Allow TSID to be a pattern or specific time series...
+
+    // Get the time series to process.  Allow TSID to be a pattern or specific time series.
     List<TS> tslist = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
-        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        // Get the discovery time series list from all time series above this command.
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request.
         tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
     }
@@ -393,7 +389,7 @@ CommandWarningException, CommandException
                     "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
             }
         }
-        
+
         int nts = tslist.size();
         if ( nts == 0 ) {
             message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
@@ -405,22 +401,22 @@ CommandWarningException, CommandException
                 "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
     }
-    
+
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-    
-    // Now process...
+
+    // Now process.
 
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         if ( table == null ) {
-            // Did not find table so is being created in this command
-            // Create an empty table and set the ID
+            // Did not find table so is being created in this command.
+            // Create an empty table and set the ID.
             table = new DataTable();
             table.setTableID ( TableID );
             setDiscoveryTable ( table );
@@ -428,13 +424,13 @@ CommandWarningException, CommandException
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
         if ( table == null ) {
-            // Did not find the table above so create it
+            // Did not find the table above so create it.
             table = new DataTable( /*columnList*/ );
             table.setTableID ( TableID );
             Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-            
-            // Set the table in the processor...
-            
+
+            // Set the table in the processor.
+
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", table );
             try {
@@ -463,7 +459,7 @@ CommandWarningException, CommandException
                 // The the time series to process, from the list that was returned above.
                 message = "Copying properties for time series " + (its + 1) + " of " + nts;
                 notifyCommandProgressListeners ( its, nts, (float)-1.0, message );
-                // Reset the tableColumnNames for each time series
+                // Reset the tableColumnNames for each time series.
                 String [] tableOutputColumnNames = null;
                 if ( tableOutputColumnNames0 != null ) {
                 	tableOutputColumnNames = new String[tableOutputColumnNames0.length];
@@ -482,35 +478,35 @@ CommandWarningException, CommandException
                     continue;
                 }
                 ts = (TS)o_ts;
-                
+
                 // Get the properties to process - this must be done for each time series because the properties may
                 // be different between time series.
                 if ( IncludeProperties == null ) {
-                    // Get all the properties by forming a list of property names from the hashtable
+                    // Get all the properties by forming a list of property names from the hashtable.
                     HashMap<String, Object> propertyHash = ts.getProperties();
-                    ArrayList<String> keyList = new ArrayList<String>(propertyHash.keySet());
-                    // Don't sort because original order has meaning
+                    ArrayList<String> keyList = new ArrayList<>(propertyHash.keySet());
+                    // Don't sort because original order has meaning.
                     //Collections.sort(keyList);
                     includeProperties = StringUtil.toArray(keyList);
                 }
-                // Set the column names from the time series properties
+                // Set the column names from the time series properties.
                 if ( tableOutputColumnNames == null ) {
-                	// Default output column names to input
+                	// Default output column names to input.
                     tableOutputColumnNames = includeProperties;
                 }
                 else {
-                    // Table output columns were set to an array above.  Check for wildcards
-                	// TODO SAM 2016-02-17 What does this do?  Need dictionary to map similar to other commands
+                    // Table output columns were set to an array above.  Check for wildcards.
+                	// TODO SAM 2016-02-17 What does this do?  Need dictionary to map similar to other commands.
                     for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
                         if ( tableOutputColumnNames[icolumn].equals("*") ) {
-                            // Output column name gets reset to the output name
+                            // Output column name gets reset to the output name.
                             tableOutputColumnNames[icolumn] = includeProperties[icolumn];
                         }
                     }
                 }
-                
-                // Make sure that the output table includes the columns to receive property values, including the TSID column
-                // TSID is always a string
+
+                // Make sure that the output table includes the columns to receive property values, including the TSID column.
+                // TSID is always a string.
                 try {
                     TableTSIDColumnNumber = table.getFieldIndex(TableTSIDColumn);
                 }
@@ -526,11 +522,11 @@ CommandWarningException, CommandException
                 for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
                 	Message.printStatus(2,routine,"tableOutputColumnNames["+icolumn+"]="+tableOutputColumnNames[icolumn]);
                 }
-                // Other output column types depend on the time series properties
+                // Other output column types depend on the time series properties.
                 for ( int i = 0; i < tableOutputColumnNames.length; i++ ) {
                     String tableOutputColumnName = tableOutputColumnNames[i];
                     try {
-                        // Column names are allowed to use time series properties
+                        // Column names are allowed to use time series properties.
                         tableOutputColumnName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                             processor, ts, tableOutputColumnName, status, commandPhase);
                         table.getFieldIndex(tableOutputColumnName);
@@ -557,6 +553,9 @@ CommandWarningException, CommandException
                         }
                         else if ( propertyValue instanceof String ) {
                             table.addField(new TableField(TableField.DATA_TYPE_STRING, tableOutputColumnName, -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof Boolean ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_BOOLEAN, tableOutputColumnName, -1, -1), null);
                         }
                         else if ( propertyValue instanceof Integer ) {
                             table.addField(new TableField(TableField.DATA_TYPE_INT, tableOutputColumnName, -1, -1), null);
@@ -586,17 +585,17 @@ CommandWarningException, CommandException
                             MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Contact software support." ) );
-                            // Skip the time series...
+                            // Skip the time series.
                             continue;
                         }
                         Message.printStatus(2, routine, "Did not match property name \"" + tableOutputColumnNames[i] +
                             "\" as column table so added to table." );
                     }
                 }
-                
-                // Get the table column numbers corresponding to the column names...
-                
-                // Get the columns from the table to be used as output...
+
+                // Get the table column numbers corresponding to the column names.
+
+                // Get the columns from the table to be used as output.
                 // TODO SAM 2014-06-09 Why is this done here and not above?
                 int [] tableOutputColumns = new int[tableOutputColumnNames.length];
                 String [] tableOutputColumnNamesExpanded = new String[tableOutputColumnNames.length];
@@ -608,26 +607,26 @@ CommandWarningException, CommandException
                     }
                     catch ( Exception e2 ) {
                         // This should not happen since columns created above, but possible that a value had all nulls
-                        // above and therefore column was not added because type was unknown
+                        // above and therefore column was not added because type was unknown.
                         // FIXME SAM 2012-09-30 Need to add column as string if all values were null?
                         //message = "Table \"" + TableID + "\" does not have column \"" + tableOutputColumnNames[i] + "\".";
                         //Message.printWarning ( warning_level,
                         //MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                         //status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                         //    message, "Verify that a table exists with the requested output column." ) );
-                        // Skip the time series...
+                        // Skip the time series.
                         //continue;
                     }
                 }
-                
-                // See if a matching row exists using the specified TSID column...
+
+                // See if a matching row exists using the specified TSID column.
                 String tsid = null;
                 if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
-                    // Format the TSID using the specified format
+                    // Format the TSID using the specified format.
                     tsid = ts.formatLegend ( TableTSIDFormat );
                 }
                 else {
-                    // Use the alias if available and then the TSID
+                    // Use the alias if available and then the TSID.
                     tsid = ts.getAlias();
                     if ( (tsid == null) || tsid.equals("") ) {
                         tsid = ts.getIdentifierString();
@@ -635,7 +634,7 @@ CommandWarningException, CommandException
                 }
                 TableRecord rec = null;
                 if ( !allowDuplicates ) {
-                    // Try to match the TSID 
+                    // Try to match the TSID.
                     rec = table.getRecord ( TableTSIDColumn, tsid );
                 }
                 if ( rec == null ) {
@@ -648,36 +647,37 @@ CommandWarningException, CommandException
                     //    "Verify that table \"" + TableID + "\" column TSID matches one or more time series." ) );
                     // Go to next time series.
                     //continue;
-                    
-                    // Add a new record to the table that matches the formatted TSID
+
+                    // Add a new record to the table that matches the formatted TSID.
                     int recNum = table.getTableRecords().size();
                     table.setFieldValue(recNum, TableTSIDColumnNumber, tsid, true);
-                    // Get the new record for use below
+                    // Get the new record for use below.
                     rec = table.getRecord(recNum);
                 }
                 else {
                     Message.printStatus(2, routine, "Matched table \"" + TableID + "\" row for TSID \"" + tsid );
                 }
-                
-                // Loop through the property names...
-                
+
+                // Loop through the property names.
+
                 //for ( int icolumn = 0; icolumn < IncludeProperties.length; icolumn++ ) {
                 //    String propertyName = IncludeProperties[icolumn];
                 //    Object propertyValue = ts.getProperty(propertyName);
                 for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
-                	// Get property name that matches the table output column
-                    String propertyName = includeProperties[icolumn]; // This should align with a corresponding output column
+                	// Get property name that matches the table output column.
+                    String propertyName = includeProperties[icolumn]; // This should align with a corresponding output column.
                     Object propertyValue = ts.getProperty(propertyName);
-                    // If the property value is null, just skip setting it - default value for columns is null
+                    // If the property value is null, just skip setting it - default value for columns is null.
                     // TODO SAM 2011-04-27 Should this be a warning?
                     if ( propertyValue == null ) {
-                        Message.printStatus(2,routine,"Time series property \"" + propertyName + "\" is null, not copying");
+                        Message.printStatus(2,routine,"Time series \"" + ts.getIdentifierString() + "\" property \"" +
+                        	propertyName + "\" is null, not copying (column value will be null).");
                         continue;
                     }
-                    // Get the matching table column
+                    // Get the matching table column.
                     try {
-                        // Get the value from the table
-                        // Make sure that the table has the specified column...
+                        // Get the value from the table.
+                        // Make sure that the table has the specified column.
                         int colNumber = tableOutputColumns[icolumn];
                         if ( colNumber < 0 ) {
                             // TODO SAM 2012-09-30 Should not happen?
@@ -689,7 +689,7 @@ CommandWarningException, CommandException
                                 message, "Verify that the proper table output column is specified and has been defined." ) );
                             continue;
                         }
-                        // Set the value in the table...
+                        // Set the value in the table.
                         try {
                             rec.setFieldValue(colNumber,propertyValue);
                             if ( Message.isDebugOn ) {
@@ -698,10 +698,10 @@ CommandWarningException, CommandException
                             }
                             Message.printStatus(2, routine, "Setting table column [" + icolumn + "] " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                  propertyValue + "\"" );
-                            // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table
-                            // Reset the column width if necessary
+                            // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table.
+                            // Reset the column width if necessary.
                             if ( propertyValue instanceof String ) {
-                                // If the incoming string is longer than the column width, reset the column width
+                                // If the incoming string is longer than the column width, reset the column width.
                                 int width = table.getFieldWidth(tableOutputColumns[icolumn]);
                                 if ( width > 0 ) {
                                     table.setFieldWidth(tableOutputColumns[icolumn],
@@ -710,7 +710,7 @@ CommandWarningException, CommandException
                             }
                         }
                         catch ( Exception e ) {
-                            // Blank cell values are allowed - just don't set the property
+                            // Blank cell values are allowed - just don't set the property.
                             message = "Unable to set " + propertyName + "=" + propertyValue + " in table \"" + TableID +
                                 "\" column \"" + tableOutputColumnNamesExpanded[icolumn] +
                                 "\" matching TSID \"" + tsid + " (" + ts.getIdentifier().toStringAliasAndTSID() + "\") (" + e + ").";
@@ -735,7 +735,7 @@ CommandWarningException, CommandException
         }
         catch ( Exception e ) {
             message = "Unexpected error processing time series (" + e + ").";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -743,15 +743,15 @@ CommandWarningException, CommandException
             throw new CommandException ( message );
         }
     }
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table the DataTable to receive output
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
@@ -760,7 +760,7 @@ Return the string representation of the command.
 @param parameters to include in the command
 @return the string representation of the command
 */
-public String toString ( PropList parameters ) {   
+public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
     	"TSList",
     	"TSID",

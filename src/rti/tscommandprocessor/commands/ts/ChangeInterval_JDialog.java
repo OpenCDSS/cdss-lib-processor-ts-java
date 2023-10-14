@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -72,8 +72,7 @@ import RTi.Util.Time.YearType;
 public class ChangeInterval_JDialog extends JDialog
 	implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-// Controls are defined in logical order -- The order they appear in the dialog
-// box and documentation.
+// Controls are defined in logical order -- The order they appear in the dialog box and documentation.
 private ChangeInterval_Command __command = null;// Command object.
 
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -103,7 +102,7 @@ private JLabel __AllowMissingCount_JLabel = null;
 private JTextField __AllowMissingCount_JTextField = null;
 private JLabel __AllowMissingConsecutive_JLabel = null;
 private JTextField __AllowMissingConsecutive_JTextField = null;
-/* TODO SAM 2005-02-18 may enable later
+/* TODO SAM 2005-02-18 may enable later.
 private JTextField	__AllowMissingPercent_JTextField = null; // % missing to allow in input when converting.
 */
 private JLabel __OutputFillMethod_JLabel = null;
@@ -119,20 +118,19 @@ private String __cancel_String  = "Cancel";
 private SimpleJButton __ok_JButton = null;
 private String __ok_String  = "OK";
 private SimpleJButton __help_JButton = null;
-				
+
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __ok = false;						
+private boolean __ok = false;
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public ChangeInterval_JDialog ( JFrame parent, ChangeInterval_Command command )
-{	
+public ChangeInterval_JDialog ( JFrame parent, ChangeInterval_Command command ) {
 	super(parent, true);
-	
+
 	// Initialize the dialog.
 	initialize ( parent, command );
 }
@@ -141,8 +139,7 @@ public ChangeInterval_JDialog ( JFrame parent, ChangeInterval_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	
+public void actionPerformed( ActionEvent event ) {
 	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
@@ -151,9 +148,9 @@ public void actionPerformed( ActionEvent event )
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "ChangeInterval");
 	}
-	else if ( o == __ok_JButton ) {		
+	else if ( o == __ok_JButton ) {
 		refresh ();
-		checkInput();	
+		checkInput();
 		if ( !__error_wait ) {
 			response ( true );
 		}
@@ -166,8 +163,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -175,8 +172,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -184,8 +181,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -194,10 +191,10 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{   String routine = "ChangeInterval_JDialog.checkGUIState";
+private void checkGUIState () {
+    String routine = getClass().getSimpleName() + ".checkGUIState";
 
-    // Handle TSList-related parameter editing...
+    // Handle TSList-related parameter editing.
 
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
@@ -227,7 +224,7 @@ private void checkGUIState ()
         __NewEnsembleName_JTextField.setEnabled(false);
     }
 
-    // initially set the following to gray and only enable based on input and output scale.
+    // Initially set the following to gray and only enable based on input and output scale.
 
     __OutputYearType_JLabel.setEnabled ( false );
     __OutputYearType_JComboBox.setEnabled ( false );
@@ -250,7 +247,7 @@ private void checkGUIState ()
         newIntervalObj = TimeInterval.parseInterval(newInterval);
     }
     catch ( Exception e ) {
-        // Should not happen because choices are valid
+        // Should not happen because choices are valid.
         Message.printWarning ( 3, routine, e );
     }
     String oldTimeScale = __OldTimeScale_JComboBox.getSelected();
@@ -299,13 +296,13 @@ private void checkGUIState ()
         __HandleEndpointsHow_JLabel.setEnabled ( true );
         __HandleEndpointsHow_JComboBox.setEnabled ( true );
     }
-    
-    // Converting to yearly time series has some special handling
+
+    // Converting to yearly time series has some special handling.
     if ( newInterval.equalsIgnoreCase("Year") ) {
         __OutputYearType_JLabel.setEnabled ( true );
         __OutputYearType_JComboBox.setEnabled ( true );
         if ( (outputYearType != null) && (outputYearType != YearType.CALENDAR) ) {
-            // Going through special code so don't use the advanced options
+            // Going through special code so don't use the advanced options.
             __Tolerance_JLabel.setEnabled ( false );
             __Tolerance_JTextField.setEnabled ( false );
             __HandleMissingInputHow_JLabel.setEnabled ( false );
@@ -314,43 +311,43 @@ private void checkGUIState ()
             __OutputFillMethod_JComboBox.setEnabled ( false );
             __HandleEndpointsHow_JLabel.setEnabled ( false );
             __HandleEndpointsHow_JComboBox.setEnabled ( false );
-            
+
             __AllowMissingCount_JLabel.setEnabled ( true );
             __AllowMissingCount_JTextField.setEnabled ( true );
             __AllowMissingConsecutive_JLabel.setEnabled ( true );
             __AllowMissingConsecutive_JTextField.setEnabled ( true );
         }
     }
-    
-    // More specific handling of the HandleEndPointsHow parameter...
-    
+
+    // More specific handling of the HandleEndPointsHow parameter.
+
     if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) &&
         (newIntervalObj.getBase() <= TimeInterval.DAY)  ) {
-        // Would also like to check the following but it is not available until runtime...
+        // Would also like to check the following but it is not available until runtime.
         // && (oldIntervalBase < TimeInterval.DAY)
         __HandleEndpointsHow_JLabel.setEnabled ( true );
         __HandleEndpointsHow_JComboBox.setEnabled ( true );
     }
     else {
-        // Need to disable
+        // Need to disable.
         __HandleEndpointsHow_JLabel.setEnabled ( false );
         __HandleEndpointsHow_JComboBox.setEnabled ( false );
     }
-    
-    // More specific handling of the OutputFillMethod parameter...
-    
+
+    // More specific handling of the OutputFillMethod parameter.
+
     if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
-        // Would also like to check the following but it is not available until runtime...
+        // Would also like to check the following but it is not available until runtime.
         // && long to short
         __OutputFillMethod_JLabel.setEnabled ( true );
         __OutputFillMethod_JComboBox.setEnabled ( true );
     }
     else {
-        // Need to disable
+        // Need to disable.
         __OutputFillMethod_JLabel.setEnabled ( false );
         __OutputFillMethod_JComboBox.setEnabled ( false );
     }
-    
+
     // Statistic is only implemented for instantaneous to instantaneous time scale and impacts some parameters.
     if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.INST) ) {
         __Statistic_JLabel.setEnabled ( true );
@@ -360,8 +357,8 @@ private void checkGUIState ()
         __Statistic_JLabel.setEnabled ( false );
         __Statistic_JComboBox.setEnabled ( false );
     }
-    
-    // If the statistic is enabled and has a value set, also allow the number of missing allowed to be set
+
+    // If the statistic is enabled and has a value set, also allow the number of missing allowed to be set.
     if ( __Statistic_JComboBox.isEnabled() ) {
         if ( (statistic != null) && (statistic.length() > 0) ) {
             __AllowMissingCount_JLabel.setEnabled ( true );
@@ -375,8 +372,8 @@ private void checkGUIState ()
 /**
 Check the user input for errors and set __error_wait accordingly.
 */
-private void checkInput ()
-{	// Get the values from the interface.
+private void checkInput () {
+	// Get the values from the interface.
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -393,14 +390,14 @@ private void checkInput ()
 	String Tolerance = __Tolerance_JTextField.getText().trim();
     String HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
-	/* TODO LT 2005-05-24 may enable later		
+	/* TODO LT 2005-05-24 may enable later.
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
 	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 	String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
-	
-	// Put together the list of parameters to check...
+
+	// Create the list of parameters to check.
 	PropList props = new PropList ( "" );
     if ( TSList.length() > 0 ) {
         props.set ( "TSList", TSList );
@@ -452,7 +449,7 @@ private void checkInput ()
 		props.set( "AllowMissingCount", AllowMissingCount );
 	}
 	// AllowMissingPercent
-	/* TODO LT 2005-05-24 may enable later
+	/* TODO LT 2005-05-24 may enable later.
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		props.set( "AllowMissingPercent", AllowMissingPercent );
 	} */
@@ -469,25 +466,24 @@ private void checkInput ()
     if ( RecalcLimits.length() > 0 ) {
         props.set( "RecalcLimits", RecalcLimits );
     }
-	
+
 	// Check the list of Command Parameters.
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 		__error_wait = false;
 	}
 	catch ( Exception e ) {
-		// The warning would have been printed in the check code.		
+		// The warning would have been printed in the check code.
 		__error_wait = true;
 	}
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{
+private void commitEdits () {
 	// Get the values from the interface.
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -505,7 +501,7 @@ private void commitEdits ()
 	String Tolerance = __Tolerance_JTextField.getText().trim();
     String HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
-	/* TODO LT 2005-05-24 may enable later		
+	/* TODO LT 2005-05-24 may enable later.
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
 	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
@@ -529,7 +525,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Tolerance", Tolerance );
 	__command.setCommandParameter ( "HandleEndpointsHow", HandleEndpointsHow );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount );
-	/* TODO LT 2005-05-24 may enable later
+	/* TODO LT 2005-05-24 may enable later.
 	__command.setCommandParameter ( "AllowMissingPercent", AllowMissingPercent ); */
 	__command.setCommandParameter ( "AllowMissingConsecutive", AllowMissingConsecutive );
 	__command.setCommandParameter ( "OutputFillMethod", OutputFillMethod );
@@ -540,17 +536,16 @@ private void commitEdits ()
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param command Vector of String containing the command.
+@param command command to edit.
 */
-private void initialize ( JFrame parent, ChangeInterval_Command command )
-{		
+private void initialize ( JFrame parent, ChangeInterval_Command command ) {
 	__command = command;
-	
-	// GUI Title
+
+	// GUI Title.
 	String title = "Edit " + __command.getCommandName() + "() Command";
-	
+
 	addWindowListener( this );
-	
+
     Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
@@ -579,7 +574,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         "which may only be confirmed when commands are run,</b></html>."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>and are mainly for intervals less than a day.  " +  
+        "<html><b>and are mainly for intervals less than a day.  " +
         "Parameters are enabled/disabled as much as possible but see the documentation for details.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -587,19 +582,19 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     tslist_JPanel.setBorder(BorderFactory.createTitledBorder (
         BorderFactory.createLineBorder(Color.black),"Time series to process"));
     tslist_JPanel.setLayout( new GridBagLayout() );
-    
+
     int yTslist = 0;
     __TSList_JComboBox = new SimpleJComboBox(false);
     yTslist = CommandEditorUtil.addTSListToEditorDialogPanel ( this, tslist_JPanel, __TSList_JComboBox, yTslist );
 
-    __TSID_JLabel = new JLabel ("TSID (for TSList=*TSID:");
+    __TSID_JLabel = new JLabel ("TSID (for TSList=*TSID):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTslist = CommandEditorUtil.addTSIDToEditorDialogPanel (
         this, this, tslist_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTslist );
-    
+
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
@@ -607,20 +602,20 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTslist = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, tslist_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTslist );
-    
+
     JGUIUtil.addComponent(main_JPanel, tslist_JPanel,
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
-    
+
     __NewEnsembleID_JLabel = new JLabel ( "New ensemble ID:" );
-    JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JLabel, 
+    JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleID_JTextField = new JTextField ( "", 20 );
     __NewEnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __NewEnsembleName_JLabel = new JLabel ( "New ensemble name:" );
     JGUIUtil.addComponent(main_JPanel, __NewEnsembleName_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -628,10 +623,10 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     __NewEnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewEnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - name for new ensemble."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - name for new ensemble."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-	// Time series alias
+
+	// Time series alias.
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -641,22 +636,22 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
-	// New interval
+
+	// New interval.
     JGUIUtil.addComponent(main_JPanel, new JLabel( "New interval:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewInterval_JComboBox = new SimpleJComboBox ( false );
 	__NewInterval_JComboBox.setData (
 		TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1));
-	// Select a default...
+	// Select a default.
 	__NewInterval_JComboBox.select ( 0 );
 	__NewInterval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewInterval_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Required - data interval for result."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// Old time scale
+
+	// Old time scale.
     JGUIUtil.addComponent(main_JPanel, new JLabel("Old time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OldTimeScale_JComboBox = new SimpleJComboBox ( false );
@@ -667,8 +662,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - indicates how to process data."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// New time scale
+
+	// New time scale.
     JGUIUtil.addComponent(main_JPanel, new JLabel("New time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTimeScale_JComboBox = new SimpleJComboBox ( false );
@@ -679,11 +674,11 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - indicates how to process data."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __Statistic_JLabel = new JLabel ( "Statistic to calculate:" );
-    JGUIUtil.addComponent(main_JPanel, __Statistic_JLabel, 
+    JGUIUtil.addComponent(main_JPanel, __Statistic_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Statistic_JComboBox = new SimpleJComboBox ( false );    // Do not allow edit
+    __Statistic_JComboBox = new SimpleJComboBox ( false );    // Do not allow edit.
     List<String> statisticList = TSUtil_ChangeInterval.getStatisticChoicesAsStrings();
     statisticList.add ( 0, "" ); // Blank as default
     __Statistic_JComboBox.setData ( statisticList );
@@ -693,11 +688,11 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - limited support for " + TimeScaleType.INST + " to " + TimeScaleType.INST +
-        " (default statistic is from old/new time scale)."), 
+        " (default statistic is from old/new time scale)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __OutputYearType_JLabel = new JLabel ( "Output year type:" );
-    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JLabel, 
+    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputYearType_JComboBox = new SimpleJComboBox ( false );
     __OutputYearType_JComboBox.add ( "" );
@@ -712,8 +707,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         "Optional - use only when old interval is day or month and new interval is Year (default=" +
         YearType.CALENDAR + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// New data type
+
+	// New data type.
     JGUIUtil.addComponent(main_JPanel,new JLabel ("New data type:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewDataType_JTextField = new JTextField ( "", 10 );
@@ -722,8 +717,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	__NewDataType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - data type (default = original time series data type)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // New units
+
+    // New units.
     JGUIUtil.addComponent(main_JPanel,new JLabel ("New units:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewUnits_JTextField = new JTextField ( "", 10 );
@@ -733,7 +728,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - data units (default = original time series units)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Tolerance
+    // Tolerance.
     __Tolerance_JLabel = new JLabel ("Tolerance:" );
     JGUIUtil.addComponent(main_JPanel, __Tolerance_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -749,12 +744,12 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleEndpointsHow_JComboBox = new SimpleJComboBox ( false );
-	List<String> endpointsChoices = new ArrayList<String>(4);
-	endpointsChoices.add ( "" );	// Blank is default
+	List<String> endpointsChoices = new ArrayList<>(4);
+	endpointsChoices.add ( "" );	// Blank is default.
 	endpointsChoices.add ( __command._AverageEndpoints );
 	endpointsChoices.add ( __command._IncludeFirstOnly );
 	__HandleEndpointsHow_JComboBox.setData ( endpointsChoices );
-	__HandleEndpointsHow_JComboBox.select ( 0 );	// Default
+	__HandleEndpointsHow_JComboBox.select ( 0 );	// Default.
 	__HandleEndpointsHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -763,7 +758,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		__command._AverageEndpoints + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// Allow missing count
+	// Allow missing count.
     __AllowMissingCount_JLabel = new JLabel("Allow missing count:");
     JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -774,9 +769,9 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - number of missing values allowed in input interval (default=0)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// Allow missing percent
-	/* TODO SAM 2005-02-18 may enable later
+
+	// Allow missing percent.
+	/* TODO SAM 2005-02-18 may enable later.
         JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing percent:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingPercent_JTextField = new JTextField ( "", 10 );
@@ -788,8 +783,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"processing interval."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	*/
-    
-    // Allow missing consecutive
+
+    // Allow missing consecutive.
     __AllowMissingConsecutive_JLabel = new JLabel("Allow consecutive missing:");
     JGUIUtil.addComponent(main_JPanel, __AllowMissingConsecutive_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -801,47 +796,47 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         "Optional - number of consecutive missing values allowed in input interval (default=AllowMissingCount)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// Output fill method
+	// Output fill method.
     __OutputFillMethod_JLabel = new JLabel( "Output fill method:");
     JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFillMethod_JComboBox = new SimpleJComboBox ( false );
-	List<String> fillChoices = new ArrayList<String>(3);
-	fillChoices.add ( "" );	// Blank is default
+	List<String> fillChoices = new ArrayList<>(3);
+	fillChoices.add ( "" );	// Blank is default.
 	fillChoices.add ( __command._Interpolate );
 	fillChoices.add ( __command._Repeat );
 	__OutputFillMethod_JComboBox.setData ( fillChoices );
-	__OutputFillMethod_JComboBox.select ( 0 );	// Default
+	__OutputFillMethod_JComboBox.select ( 0 );	// Default.
 	__OutputFillMethod_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - use when converting from INST to MEAN, large to small interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+
 	// Handle missing input how?
     __HandleMissingInputHow_JLabel = new JLabel("Handle missing input how?:");
     JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
-	List<String> missingChoices = new ArrayList<String>(4);
-	missingChoices.add ( "" );	// Blank is default
+	List<String> missingChoices = new ArrayList<>(4);
+	missingChoices.add ( "" );	// Blank is default.
 	missingChoices.add ( __command._KeepMissing );
 	missingChoices.add ( __command._Repeat );
 	missingChoices.add ( __command._SetToZero );
 	__HandleMissingInputHow_JComboBox.setData ( missingChoices );
-	__HandleMissingInputHow_JComboBox.select ( 0 );	// Default
+	__HandleMissingInputHow_JComboBox.select ( 0 );	// Default.
 	__HandleMissingInputHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-    List<String> recalcChoices = new ArrayList<String>();
+    List<String> recalcChoices = new ArrayList<>();
     recalcChoices.add ( "" );
     recalcChoices.add ( __command._False );
     recalcChoices.add ( __command._True );
@@ -851,11 +846,11 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel( "Optional - recalculate original data limits after set (default=" + __command._False + ")."), 
+        new JLabel( "Optional - recalculate original data limits after set (default=" + __command._False + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// Command
-    
+
+	// Command.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea (5,55);
@@ -866,14 +861,14 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton(__ok_String, this);
@@ -884,24 +879,23 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
-	
-	// Visualize it...
+
+	// Visualize it.
 	if ( title != null ) {
 		setTitle ( title );
 	}
-	
+
     pack();
     JGUIUtil.center( this );
 	setResizable ( false );
-    super.setVisible( true );   
+    super.setVisible( true );
 }
 
 /**
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{
+public void itemStateChanged ( ItemEvent e ) {
     checkGUIState();
 	refresh();
 }
@@ -909,8 +903,7 @@ public void itemStateChanged ( ItemEvent e )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	
+public void keyPressed ( KeyEvent event ) {
 	int code = event.getKeyCode();
 
 	refresh();
@@ -924,8 +917,7 @@ public void keyPressed ( KeyEvent event )
 
 /**
 */
-public void keyReleased ( KeyEvent event )
-{	
+public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
@@ -938,17 +930,15 @@ public void keyTyped ( KeyEvent event ) {
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
-public boolean ok ()
-{
+public boolean ok () {
 	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	
-	String mthd = "ChangeInterval_JDialog.refresh", mssg;
+private void refresh () {
+	String mthd = getClass().getSimpleName() + ".refresh", mssg;
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -966,17 +956,17 @@ private void refresh ()
 	String HandleEndpointsHow = "";
 	String AllowMissingCount = "";
 	String AllowMissingConsecutive = "";
-	/* TODO SAM 2005-02-18 may enable later
+	/* TODO SAM 2005-02-18 may enable later.
 	String AllowMissingPercent = ""; */
 	String OutputFillMethod	 = "";
 	String HandleMissingInputHow = "";
 	String RecalcLimits = "";
-	
+
 	__error_wait = false;
 	PropList props 	= null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the properties from the command
+		// Get the properties from the command.
 		props = __command.getCommandParameters();
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
@@ -994,7 +984,7 @@ private void refresh ()
 		Tolerance = props.getValue( "Tolerance" );
 		HandleEndpointsHow = props.getValue( "HandleEndpointsHow" );
 		AllowMissingCount = props.getValue( "AllowMissingCount" );
-		/* TODO SAM 2005-02-18 may enable later
+		/* TODO SAM 2005-02-18 may enable later.
 		AllowMissingPercent = props.getValue( "AllowMissingPercent"  );
 		*/
 		AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
@@ -1003,7 +993,7 @@ private void refresh ()
 		RecalcLimits = props.getValue ( "RecalcLimits" );
 
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -1017,22 +1007,23 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+            	// Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -1055,12 +1046,12 @@ private void refresh ()
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
-		// Update NewInterval text field
+		// Update NewInterval text field.
 		// Select the item in the list.  If not a match, print a warning.
 		if ( NewInterval == null || NewInterval.equals("") ) {
-			// Select a default...
+			// Select a default.
 			__NewInterval_JComboBox.select ( 0 );
-		} 
+		}
 		else {
 			if ( JGUIUtil.isSimpleJComboBoxItem( __NewInterval_JComboBox, NewInterval, JGUIUtil.NONE, null, null ) ) {
 				__NewInterval_JComboBox.select ( NewInterval );
@@ -1071,15 +1062,15 @@ private void refresh ()
 				Message.printWarning ( 1, mthd, mssg );
 			}
 		}
-		
-		// Update OldTimeScale text field
+
+		// Update OldTimeScale text field.
 		// Select the item in the list.  If not a match, print a warning.
 		if ( OldTimeScale == null || OldTimeScale.equals("") ) {
-			// Select default...
+			// Select default.
 			__OldTimeScale_JComboBox.select ( 0 );
 		}
 		else {
-			try {	
+			try {
 				JGUIUtil.selectTokenMatches ( __OldTimeScale_JComboBox, true, " ", 0, 0, OldTimeScale, null );
 			}
 			catch ( Exception e ) {
@@ -1089,15 +1080,15 @@ private void refresh ()
 				__OldTimeScale_JComboBox.setText (OldTimeScale);
 			}
 		}
-		
-		// Update NewTimeScale text field
+
+		// Update NewTimeScale text field.
 		// Select the item in the list.  If not a match, print a warning.
 		if ( NewTimeScale == null || NewTimeScale.equals("") ) {
-			// Select default...
+			// Select default.
 			__NewTimeScale_JComboBox.select ( 0 );
 		}
 		else {
-			try {	
+			try {
 				JGUIUtil.selectTokenMatches ( __NewTimeScale_JComboBox, true, " ", 0, 0, NewTimeScale, null );
 			}
 			catch ( Exception e ) {
@@ -1108,7 +1099,7 @@ private void refresh ()
 			}
 		}
         if ( Statistic == null ) {
-            // Select default...
+            // Select default.
             __Statistic_JComboBox.select ( 0 );
         }
         else {
@@ -1123,7 +1114,7 @@ private void refresh ()
             }
         }
         if ( OutputYearType == null ) {
-            // Select default...
+            // Select default.
             __OutputYearType_JComboBox.select ( 0 );
         }
         else {
@@ -1147,10 +1138,10 @@ private void refresh ()
             __Tolerance_JTextField.setText ( Tolerance );
         }
 
-        // Update HandleEndpointsHow text field
+        // Update HandleEndpointsHow text field.
 		// Select the item in the list. If not a match, print a warning.
 		if ( HandleEndpointsHow == null ) {
-			// Select default...
+			// Select default.
 			__HandleEndpointsHow_JComboBox.select ( 0 );
 		}
 		else {
@@ -1158,7 +1149,7 @@ private void refresh ()
 		        JGUIUtil.selectTokenMatches ( __HandleEndpointsHow_JComboBox, true, " ", 0, 0, HandleEndpointsHow, null );
 			}
 			catch ( Exception e ) {
-			    // Only an issue when going from INST to MEAN
+			    // Only an issue when going from INST to MEAN.
 			    if ( OldTimeScale.equalsIgnoreCase("" + TimeScaleType.INST) &&
 			        NewTimeScale.equalsIgnoreCase("" + TimeScaleType.MEAN) ) {
     				mssg = "Existing command references an unrecognized HandleEndpointsHow value \""
@@ -1172,9 +1163,9 @@ private void refresh ()
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
 		}
-		
-		// Update AllowMissingPercent text field
-		/* TODO SAM 2005-02-18 may enable later
+
+		// Update AllowMissingPercent text field.
+		/* TODO SAM 2005-02-18 may enable later.
 		if ( AllowMissingPercent != null ) {
 			__AllowMissingPercent_JTextField.setText (
 				AllowMissingPercent );
@@ -1183,14 +1174,14 @@ private void refresh ()
        if ( AllowMissingConsecutive != null ) {
             __AllowMissingConsecutive_JTextField.setText ( AllowMissingConsecutive );
         }
-		// Update OutputFillMethod text field
+		// Update OutputFillMethod text field.
 		// Select the item in the list. If not a match, print a warning.
 		if ( OutputFillMethod == null ) {
-			// Select default...
+			// Select default.
 			__OutputFillMethod_JComboBox.select ( 0 );
 		}
 		else {
-			try {	
+			try {
 				JGUIUtil.selectTokenMatches ( __OutputFillMethod_JComboBox, true, " ", 0, 0, OutputFillMethod, null );
 			}
 			catch ( Exception e ) {
@@ -1200,11 +1191,11 @@ private void refresh ()
 				__OutputFillMethod_JComboBox.setText ( OutputFillMethod );
 			}
 		}
-		
-		// Update HandleMissingInputHow text field
+
+		// Update HandleMissingInputHow text field.
 		// Select the item in the list. If not a match, print a warning.
 		if ( HandleMissingInputHow == null ) {
-			// Select default...
+			// Select default.
 			__HandleMissingInputHow_JComboBox.select ( 0 );
 		}
 		else {
@@ -1220,7 +1211,7 @@ private void refresh ()
 			}
 		}
         if ( RecalcLimits == null ) {
-            // Select default...
+            // Select default.
             __RecalcLimits_JComboBox.select ( 0 );
         }
         else {
@@ -1237,9 +1228,9 @@ private void refresh ()
             }
         }
 	}
-	
-	// Regardless, reset the command from the fields.  This is only  visible
-	// information that has not been committed in the command.
+
+	// Regardless, reset the command from the fields.
+	// This is only  visible information that has not been committed in the command.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -1256,13 +1247,13 @@ private void refresh ()
 	Tolerance = __Tolerance_JTextField.getText().trim();
     HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
-	/* TODO LT 2005-05-24 may enable later		
+	/* TODO LT 2005-05-24 may enable later.
 	AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
 	AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	HandleMissingInputHow =	__HandleMissingInputHow_JComboBox.getSelected();
 	RecalcLimits = __RecalcLimits_JComboBox.getSelected();
-	
+
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -1285,7 +1276,7 @@ private void refresh ()
 	    props.add ( "HandleEndpointsHow=" + HandleEndpointsHow );
 	}
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
-	/* TODO LT 2005-05-24 may enable later	
+	/* TODO LT 2005-05-24 may enable later.
 	props.add ( "AllowMissingPercent=" + AllowMissingPercent   ); */
 	props.add ( "AllowMissingConsecutive=" + AllowMissingConsecutive );
 	if ( __OutputFillMethod_JComboBox.isEnabled() ) {
@@ -1293,7 +1284,7 @@ private void refresh ()
 	}
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	props.add ( "RecalcLimits=" + RecalcLimits);
-	
+
 	__Command_JTextArea.setText( __command.toString(props).trim() );
 }
 
@@ -1301,18 +1292,17 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	
+public void response ( boolean ok ) {
 	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -1321,16 +1311,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	
+public void windowClosing( WindowEvent event ) {
 	response ( false );
 }
 
-public void windowActivated	( WindowEvent evt ){;}
-public void windowClosed ( WindowEvent evt ){;}
-public void windowDeactivated ( WindowEvent evt ){;}
-public void windowDeiconified ( WindowEvent evt ){;}
-public void windowIconified	( WindowEvent evt ){;}
-public void windowOpened ( WindowEvent evt ){;}
+public void windowActivated	( WindowEvent evt ) {
+}
+
+public void windowClosed ( WindowEvent evt ) {
+}
+
+public void windowDeactivated ( WindowEvent evt ) {
+}
+
+public void windowDeiconified ( WindowEvent evt ) {
+}
+
+public void windowIconified	( WindowEvent evt ) {
+}
+
+public void windowOpened ( WindowEvent evt ) {
+}
 
 }

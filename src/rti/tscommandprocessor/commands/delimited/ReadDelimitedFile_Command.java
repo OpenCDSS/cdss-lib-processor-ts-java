@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -1170,6 +1170,7 @@ throws IOException {
     List<String> columnNames = new ArrayList<>();
     BufferedReader in = null;
     Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
+    // If an error, the exception will be thrown to calling code.
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
     String s, sTrimmed;
     List<String> columnHeadingList = null;
@@ -1179,98 +1180,105 @@ throws IOException {
     int firstNonHeaderRow = -1; // First line that is not a header comment (1+).
     int dl = 10;
     int breakFlag = 0;
-    while ( true ) {
-        // Read a line and deal with skipping.
-        s = in.readLine();
-        if ( s == null ) {
-            // No more data.
-            break;
-        }
-        // Else handle the line.
-        ++row;
-        //Message.printStatus(2, routine, "Processing line " + row + ": " + s );
-        if ( Message.isDebugOn ) {
-            Message.printDebug(dl, routine, "Processing line " + row + ": " + s );
-        }
-        rowIsComment = false;
-        sTrimmed = s.trim();
-        // Skip in the range of rows being skipped - this basically throws out rows without evaluating.
-        // Don't even know if it is a comment.
-        if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            Message.printStatus(2, routine, "Skipping row " + row );
-            continue;
-        }
-        if ( (sTrimmed.length() == 0) || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
-            rowIsComment = true;
-        }
-        // Skip rows first, in particular user-specified skips before evaluating for the first non-comment row.
-        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            Message.printStatus(2, routine, "2 Skipping row " + row );
-            continue;
-        }
-        Message.printStatus(2, routine, "Line is not a comment and is not being skipped." );
-        if ( !rowIsComment ) {
-            if ( firstNonHeaderRow < 0 ) {
-                // This is the first non-comment data record.
-                firstNonHeaderRow = row;
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(dl, routine, "Found first non-comment (non-skipped) line at row " +
-                        firstNonHeaderRow + ": " + s );
-                }
-            }
-        }
-        // Check again in case the first non-header line is detected.
-        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            if ( Message.isDebugOn ) {
-                Message.printDebug(dl, routine, "Skipping the row because needToSkipRow()=true" );
-            }
-            continue;
-        }
-        // Else continue reading data records from the file - this will be the file header with column names.
-        // First break the row (allow quoted strings since headers).
-        Message.printStatus(2, routine, "Parsing the line to get column names." );
-        columnHeadingList = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
-        if ( columnHeadingList == null ) {
-            nColumnHeadings = 0;
-        }
-        else {
-            nColumnHeadings = columnHeadingList.size();
-        }
-        // Loop through original column name tokens and, as requested, expand to what is in the file.
-        for ( String columnName0 : columnNames0 ) {
-            if ( StringUtil.startsWithIgnoreCase(columnName0,_FC) ) {
-                // Need to process the column names from the file.
-                int parenPos1 = columnName0.indexOf(_FC);
-                int parenPos2 = columnName0.indexOf("]");
-                if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
-                    // Need to interpret slice of field numbers in file.
-                    String slice = columnName0.substring((parenPos1 + _FC.length()),parenPos2);
-                    int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, nColumnHeadings );
-                    Message.printStatus(2, routine, "Got " + fileColPos.length + " columns from slice \"" + slice + "\"" );
-                    for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
-                        // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices.
-                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(fileColPos[ipos] - 1).trim() + "\"" );
-                        columnNames.add ( columnHeadingList.get(fileColPos[ipos] - 1).trim() );
-                    }
-                }
-                else {
-                    // Use all the file field names.
-                    for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
-                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
-                        columnNames.add ( columnHeadingList.get(ipos).trim() );
-                    }
-                }
-            }
-            else {
-                // A literal string that can be used as is.
-                Message.printStatus(2, routine, "Adding user-specified column name \"" + columnName0 + "\"" );
-                columnNames.add ( columnName0 );
-            }
-        }
-        // Currently headers in files can only be one row so break out of reading.
-        break;
+    try {
+    	while ( true ) {
+        	// Read a line and deal with skipping.
+        	s = in.readLine();
+        	if ( s == null ) {
+            	// No more data.
+            	break;
+        	}
+        	// Else handle the line.
+        	++row;
+        	//Message.printStatus(2, routine, "Processing line " + row + ": " + s );
+        	if ( Message.isDebugOn ) {
+            	Message.printDebug(dl, routine, "Processing line " + row + ": " + s );
+        	}
+        	rowIsComment = false;
+        	sTrimmed = s.trim();
+        	// Skip in the range of rows being skipped - this basically throws out rows without evaluating.
+        	// Don't even know if it is a comment.
+        	if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            	Message.printStatus(2, routine, "Skipping row " + row );
+            	continue;
+        	}
+        	if ( (sTrimmed.length() == 0) || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
+            	rowIsComment = true;
+        	}
+        	// Skip rows first, in particular user-specified skips before evaluating for the first non-comment row.
+        	if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            	Message.printStatus(2, routine, "2 Skipping row " + row );
+            	continue;
+        	}
+        	Message.printStatus(2, routine, "Line is not a comment and is not being skipped." );
+        	if ( !rowIsComment ) {
+            	if ( firstNonHeaderRow < 0 ) {
+                	// This is the first non-comment data record.
+                	firstNonHeaderRow = row;
+                	if ( Message.isDebugOn ) {
+                    	Message.printDebug(dl, routine, "Found first non-comment (non-skipped) line at row " +
+                        	firstNonHeaderRow + ": " + s );
+                	}
+            	}
+        	}
+        	// Check again in case the first non-header line is detected.
+        	if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            	if ( Message.isDebugOn ) {
+                	Message.printDebug(dl, routine, "Skipping the row because needToSkipRow()=true" );
+            	}
+            	continue;
+        	}
+        	// Else continue reading data records from the file - this will be the file header with column names.
+        	// First break the row (allow quoted strings since headers).
+        	Message.printStatus(2, routine, "Parsing the line to get column names." );
+        	columnHeadingList = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
+        	if ( columnHeadingList == null ) {
+            	nColumnHeadings = 0;
+        	}
+        	else {
+            	nColumnHeadings = columnHeadingList.size();
+        	}
+        	// Loop through original column name tokens and, as requested, expand to what is in the file.
+        	for ( String columnName0 : columnNames0 ) {
+            	if ( StringUtil.startsWithIgnoreCase(columnName0,_FC) ) {
+                	// Need to process the column names from the file.
+                	int parenPos1 = columnName0.indexOf(_FC);
+                	int parenPos2 = columnName0.indexOf("]");
+                	if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
+                    	// Need to interpret slice of field numbers in file.
+                    	String slice = columnName0.substring((parenPos1 + _FC.length()),parenPos2);
+                    	int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, nColumnHeadings );
+                    	Message.printStatus(2, routine, "Got " + fileColPos.length + " columns from slice \"" + slice + "\"" );
+                    	for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
+                        	// Positions from parameter parsing are 1+ so need to decrement to get 0+ indices.
+                        	Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(fileColPos[ipos] - 1).trim() + "\"" );
+                        	columnNames.add ( columnHeadingList.get(fileColPos[ipos] - 1).trim() );
+                    	}
+                	}
+                	else {
+                    	// Use all the file field names.
+                    	for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
+                        	Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
+                        	columnNames.add ( columnHeadingList.get(ipos).trim() );
+                    	}
+                	}
+            	}
+            	else {
+                	// A literal string that can be used as is.
+                	Message.printStatus(2, routine, "Adding user-specified column name \"" + columnName0 + "\"" );
+                	columnNames.add ( columnName0 );
+            	}
+        	}
+        	// Currently headers in files can only be one row so break out of reading.
+        	break;
+    	}
     }
-    in.close();
+    finally {
+    	// Close the file before throwing the exception.
+    	if ( in != null ) {
+    		in.close();
+    	}
+    }
     return columnNames;
 }
 

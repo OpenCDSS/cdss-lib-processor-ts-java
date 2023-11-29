@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -76,7 +76,9 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __ConstantValue_JTextField = null;
-private JTextField __MonthValues_JTextField = null; // Monthly constant values
+private JTextField __MonthValues_JTextField = null; // Monthly constant values.
+private JTextField __SetFlag_JTextField = null;
+private JTextField __SetFlagDescription_JTextField = null;
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -88,8 +90,8 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetConstant_JDialog ( JFrame parent, SetConstant_Command command )
-{   super(parent, true);
+public SetConstant_JDialog ( JFrame parent, SetConstant_Command command ) {
+    super(parent, true);
     initialize ( parent, command );
 }
 
@@ -97,8 +99,8 @@ public SetConstant_JDialog ( JFrame parent, SetConstant_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -118,12 +120,11 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState ()
-{
+private void checkGUIState () {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -142,17 +143,20 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.
+If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String ConstantValue = __ConstantValue_JTextField.getText().trim();
     String MonthValues = __MonthValues_JTextField.getText().trim();
+	String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDescription = __SetFlagDescription_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     
@@ -173,13 +177,20 @@ private void checkInput ()
     if ( MonthValues.length() > 0 ) {
         parameters.set ( "MonthValues", MonthValues );
     }
+	if ( SetFlag.length() > 0 ) {
+		parameters.set ( "SetFlag", SetFlag );
+	}
+    if ( SetFlagDescription.length() > 0 ) {
+        parameters.set ( "SetFlagDescription", SetFlagDescription );
+    }
     if ( SetStart.length() > 0 ) {
         parameters.set ( "AnalysisStart", SetStart );
     }
     if ( SetEnd.length() > 0 ) {
         parameters.set ( "AnalysisEnd", SetEnd );
     }
-    try {   // This will warn the user...
+    try {
+    	// This will warn the user.
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -189,15 +200,17 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+    String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String ConstantValue = __ConstantValue_JTextField.getText().trim();
     String MonthValues = __MonthValues_JTextField.getText().trim();
+	String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDescription = __SetFlagDescription_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
@@ -205,6 +218,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "ConstantValue", ConstantValue );
     __command.setCommandParameter ( "MonthValues", MonthValues );
+    __command.setCommandParameter ( "SetFlag", SetFlag );
+    __command.setCommandParameter ( "SetFlagDescription", SetFlagDescription );
     __command.setCommandParameter ( "SetStart", SetStart );
     __command.setCommandParameter ( "SetEnd", SetEnd );
 }
@@ -215,14 +230,14 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, SetConstant_Command command )
-{   __command = command;
+private void initialize ( JFrame parent, SetConstant_Command command ) {
+    __command = command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -237,6 +252,9 @@ private void initialize ( JFrame parent, SetConstant_Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"In this case, each date/time that matches a month will have its corresponding value set." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The flag can be set even if numerical values are not specified." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -278,6 +296,25 @@ private void initialize ( JFrame parent, SetConstant_Command command )
         "Optional - monthly values, * to keep original, blank or NaN to set missing, separated by commas."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetFlag_JTextField = new JTextField ( 10 );
+	__SetFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - flag for values that are set."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetFlagDescription_JTextField = new JTextField ( 15 );
+    __SetFlagDescription_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlagDescription_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for set flag."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetStart_JTextField = new JTextField (20);
@@ -307,11 +344,11 @@ private void initialize ( JFrame parent, SetConstant_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
     checkGUIState();
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
@@ -337,16 +374,16 @@ private void initialize ( JFrame parent, SetConstant_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -357,8 +394,7 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{
+public void keyReleased ( KeyEvent event ) {
     refresh();
 }
 
@@ -366,35 +402,39 @@ public void keyReleased ( KeyEvent event )
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = "SetConstant_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
 	String ConstantValue = "";
 	String MonthValues = "";
+    String SetFlag = "";
+    String SetFlagDescription = "";
 	String SetStart = "";
 	String SetEnd = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
-        // Get the parameters from the command...
+        // Get the parameters from the command.
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         ConstantValue = props.getValue ( "ConstantValue" );
         MonthValues = props.getValue ( "MonthValues" );
+        SetFlag = props.getValue ( "SetFlag" );
+        SetFlagDescription = props.getValue ( "SetFlagDescription" );
         SetStart = props.getValue ( "SetStart" );
         SetEnd = props.getValue ( "SetEnd" );
         if ( TSList == null ) {
-            // Select default...
+            // Select default.
             __TSList_JComboBox.select ( 0 );
         }
         else {
@@ -408,22 +448,23 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank.
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
-                // Select...
+                // Select.
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+            	// Select the blank.
                 __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {
-            // Select default...
+            // Select default.
             __EnsembleID_JComboBox.select ( 0 );
         }
         else {
@@ -443,6 +484,12 @@ private void refresh ()
 		if ( MonthValues != null ) {
 			__MonthValues_JTextField.setText( MonthValues );
 		}
+        if ( SetFlag != null ) {
+			__SetFlag_JTextField.setText ( SetFlag );
+        }
+        if ( SetFlagDescription != null ) {
+			__SetFlagDescription_JTextField.setText ( SetFlagDescription );
+        }
 		if ( SetStart != null ) {
 			__SetStart_JTextField.setText( SetStart );
 		}
@@ -450,12 +497,14 @@ private void refresh ()
 			__SetEnd_JTextField.setText( SetEnd );
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	ConstantValue = __ConstantValue_JTextField.getText().trim();
 	MonthValues = __MonthValues_JTextField.getText().trim();
+    SetFlag = __SetFlag_JTextField.getText().trim();
+    SetFlagDescription = __SetFlagDescription_JTextField.getText().trim();
 	SetStart = __SetStart_JTextField.getText().trim();
 	SetEnd = __SetEnd_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -464,6 +513,8 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "ConstantValue=" + ConstantValue );
     props.add ( "MonthValues=" + MonthValues );
+    props.add ( "SetFlag=" + SetFlag );
+    props.add ( "SetFlagDescription=" + SetFlagDescription );
     props.add ( "SetStart=" + SetStart );
     props.add ( "SetEnd=" + SetEnd );
     __command_JTextArea.setText( __command.toString ( props ).trim() );
@@ -473,36 +524,48 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{   __ok = ok;  // Save to be returned by ok()
+private void response ( boolean ok ) {
+    __ok = ok;  // Save to be returned by ok().
     if ( ok ) {
-        // Commit the changes...
+        // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
-    // Now close out...
+    // Now close out.
     setVisible( false );
     dispose();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

@@ -194,6 +194,7 @@ throws InvalidCommandParameterException {
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
     validList.add ( "AssociatedTSID" );
+    validList.add ( "AssociatedTSIDName" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -474,7 +475,8 @@ public String toString ( PropList parameters ) {
     	"PropertyName",
     	"PropertyType",
     	"PropertyValue",
-    	"AssociatedTSID"
+    	"AssociatedTSID",
+    	"AssociatedTSIDName"
 	};
 	return this.toString(parameters, parameterOrder);
 }

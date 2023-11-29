@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2023 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -61,8 +61,8 @@ public class SetConstant_Command extends AbstractCommand implements Command
 /**
 Constructor.
 */
-public SetConstant_Command ()
-{	super();
+public SetConstant_Command () {
+	super();
 	setCommandName ( "SetConstant" );
 }
 
@@ -74,20 +74,23 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TSList = parameters.getValue ( "TSList" );
+throws InvalidCommandParameterException {
+	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
 	String ConstantValue = parameters.getValue ( "ConstantValue" );
     if ( ConstantValue == null ) {
-        ConstantValue = ""; // To simplify checks below
+        ConstantValue = ""; // To simplify checks below.
     }
     String MonthValues = parameters.getValue ( "MonthValues" );
     if ( MonthValues == null ) {
-        MonthValues = ""; // To simplify checks below
+        MonthValues = ""; // To simplify checks below.
+    }
+    String SetFlag = parameters.getValue ( "SetFlag" );
+    if ( SetFlag == null ) {
+        SetFlag = ""; // To simplify checks below.
     }
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
-	//String FillFlag = parameters.getValue ( "SetFlag" );
 	String warning = "";
     String message;
     
@@ -95,8 +98,8 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
     if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
-            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
-            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+        !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         if ( TSID != null ) {
             message = "TSID should only be specified when TSList=" +
             TSListType.ALL_MATCHING_TSID.toString() + " or " +
@@ -130,7 +133,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the constant value as a number." ) );
 	}
-    if ( MonthValues.length() > 0 ) {
+    if ( !MonthValues.isEmpty() ) {
     	String [] v = MonthValues.split(",");
         if ( (v == null) || (v.length != 12) ) {
             message = "12 monthly values must be specified.";
@@ -152,22 +155,25 @@ throws InvalidCommandParameterException
             }
         }
     }
-    if ( (ConstantValue.length() == 0) && (MonthValues.length() == 0) ) {
-        message = "Neither single or monthly constant values are specified.";;
+    if ( ConstantValue.isEmpty() && MonthValues.isEmpty() && SetFlag.isEmpty() ) {
+        message = "Neither single, monthly constant values, or data flag are specified.";;
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Choose a single value or monthly values, but not both." ) );
     }
-    if ( (ConstantValue.length() > 0) && (MonthValues.length() > 0) ) {
+    if ( !ConstantValue.isEmpty() && !MonthValues.isEmpty() ) {
         message = "Both single and monthly contant values are specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Choose a single value or monthly values, but not both." ) );
     }
-	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${") ){
-		try {	DateTime.parse(SetStart);
+    
+    
+	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${") ) { // }
+		try {
+			DateTime.parse(SetStart);
 		}
 		catch ( Exception e ) {
             message = "The set start date/time \"" + SetStart + "\" is not a valid date/time.";
@@ -177,8 +183,9 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${")) {
-		try {	DateTime.parse( SetEnd);
+	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${")) { // }
+		try {
+			DateTime.parse( SetEnd);
 		}
 		catch ( Exception e ) {
             message = "The set end date/time \"" + SetStart + "\" is not a valid date/time.";
@@ -188,26 +195,18 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
-    */
     
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(9);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "ConstantValue" );
     validList.add ( "MonthValues" );
+    validList.add ( "SetFlag" );
+    validList.add ( "SetFlagDescription" );
     validList.add ( "SetStart" );
     validList.add ( "SetEnd" );
-    //valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -223,39 +222,35 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetConstant_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "SetConstant_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String TSID = parameters.getValue ( "TSID");
-        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
-                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-            // Assume old-style where TSList was not specified but TSID was...
+        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified.
+            ((TSID != null) && (TSID.length() != 0)) ) { // TSID is specified.
+            // Assume old-style where TSList was not specified but TSID was.
             if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
                 parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
             }
@@ -276,18 +271,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			ntokens = v.size();
 		}
 		if ( ntokens != 3 ) {
-			// Command name, TSID, and constant...
+			// Command name, TSID, and constant.
 			message = "Syntax error in \"" + command_string + "\".  Two tokens expected.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 
-		// Get the individual tokens of the expression...
+		// Get the individual tokens of the expression.
 
-		String TSID = ((String)v.get(1)).trim();
-		String ConstantValue = ((String)v.get(2)).trim();
+		String TSID = v.get(1).trim();
+		String ConstantValue = v.get(2).trim();
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -316,14 +311,14 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messages
+	int log_level = 3;	// Warning message level for non-user messages.
 
-	// Make sure there are time series available to operate on...
+	// Make sure there are time series available to operate on.
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -338,7 +333,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
@@ -357,7 +352,7 @@ CommandWarningException, CommandException
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 
-	// Get the time series to process...
+	// Get the time series to process.
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -449,17 +444,20 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// Constant value...
+	// Constant value.
 
 	String ConstantValue = parameters.getValue("ConstantValue");
-	double ConstantValue_double = 0.0;
+	Double ConstantValue_Double = null;
 	if ( (ConstantValue != null) && !ConstantValue.equals("") ) {
-	    ConstantValue_double = Double.parseDouble ( ConstantValue );
+	    ConstantValue_Double = Double.parseDouble ( ConstantValue );
 	}
     
     String MonthValues = parameters.getValue("MonthValues");
 
-	// Set period...
+    String SetFlag = parameters.getValue("SetFlag");
+    String SetFlagDescription = parameters.getValue("SetFlagDescription");
+
+	// Set period.
 
 	String SetStart = parameters.getValue("SetStart");
 	if ( (SetStart != null) && (SetStart.indexOf("${") >= 0) ) {
@@ -471,39 +469,39 @@ CommandWarningException, CommandException
 	}
 	//String FillFlag = parameters.getValue("SetFlag");
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis.
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-			// The following expands built-in DateTime properties
+			// The following expands built-in DateTime properties.
 			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
-			// The following expands built-in DateTime properties
+			// The following expands built-in DateTime properties.
 			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
     }
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
     /*
 	PropList props = new PropList ( "SetConstant" );
@@ -518,8 +516,8 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
 		bean = null;
-		try { bean =
-			processor.processRequest( "GetTimeSeries", request_params);
+		try {
+			bean = processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
             message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
@@ -556,11 +554,12 @@ CommandWarningException, CommandException
 			continue;
 		}
 		
-		// Do the setting...
+		// Set set the constant value(s) in the time series.
+
 		try {
-		    // Monthly values may use missing value so figure out values here
+		    // Monthly values may use missing value so figure out values here.
 		    Double [] monthValues = null;
-		    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
+		    if ( (MonthValues != null) && !MonthValues.isEmpty() ) {
 		        monthValues = new Double[12];
 		        String [] v = MonthValues.split(",");
 		        String val;
@@ -570,24 +569,28 @@ CommandWarningException, CommandException
 		                monthValues[i] = null;
 		            }
 		            else if ( val.equals("") || val.equalsIgnoreCase("NaN") ) {
-		                // Set the monthly value to missing
+		                // Set the monthly value to missing.
 		                monthValues[i] = ts.getMissing();
 		            }
 		            else {
-		                // Have a number to set
+		                // Have a number to set.
 		                monthValues[i] = Double.parseDouble ( val );
 		            }
 		        }
 		    }
             if ( monthValues == null ) {
+            	// Set monthly values.
                 Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with constant " + ConstantValue +
                     " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
-                TSUtil.setConstant ( ts, SetStart_DateTime, SetEnd_DateTime, ConstantValue_double );
+                TSUtil.setConstant ( ts, SetStart_DateTime, SetEnd_DateTime, ConstantValue_Double,
+                	SetFlag, SetFlagDescription );
             }
             else {
+            	// Set single value.
                 Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with monthly constants " +
                     monthValues + " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
-                TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, monthValues );
+                TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, monthValues,
+                	SetFlag, SetFlagDescription );
             }
 		}
 		catch ( Exception e ) {
@@ -625,9 +628,10 @@ public String toString ( PropList parameters ) {
     	"EnsembleID",
 		"ConstantValue",
     	"MonthValues",
+		"SetFlag",
+		"SetFlagDescription",
 		"SetStart",
 		"SetEnd"
-		//"FillFlag"
 	};
 	return this.toString(parameters, parameterOrder);
 }

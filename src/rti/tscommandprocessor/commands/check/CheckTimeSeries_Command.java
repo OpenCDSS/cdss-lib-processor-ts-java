@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -112,7 +112,7 @@ throws InvalidCommandParameterException {
     String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
     String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -133,12 +133,12 @@ throws InvalidCommandParameterException {
         }
 
         // Additional checks that depend on the criteria.
-        
+
         int nRequiredValues = 0;
         if ( checkType != null ) {
             nRequiredValues = TSUtil_CheckTimeSeries.getRequiredNumberOfValuesForCheckCriteria ( checkType );
         }
-        
+
         if ( nRequiredValues >= 1 ) {
             if ( (Value1 == null) || Value1.equals("") ) {
                 message = "Value1 must be specified for the criteria.";
@@ -153,7 +153,7 @@ throws InvalidCommandParameterException {
                     message, "Specify Value1 as a number." ) );
             }
         }
-        
+
         if ( nRequiredValues == 2 ) {
             if ( (Value2 == null) || Value2.equals("") ) {
                 message = "Value2 must be specified for the criteria.";
@@ -176,7 +176,7 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify MaxWarnings as an integer." ) );
     }
-    
+
     if ( (Action != null) && !Action.isEmpty() &&
         !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
             message = "The action \"" + Action + "\" is invalid.";
@@ -224,7 +224,7 @@ throws InvalidCommandParameterException {
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
+
     if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.isEmpty() ) {
         String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
         try {
@@ -239,7 +239,7 @@ throws InvalidCommandParameterException {
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-    
+
     if ( (TableID != null) && !TableID.isEmpty() ) {
         if ( (TableTSIDColumn == null) || TableTSIDColumn.equals("") ) {
             message = "The Table TSID column must be specified.";
@@ -260,7 +260,7 @@ throws InvalidCommandParameterException {
                 message, "Specify the precision as an integer." ) );
         }
     }
-    
+
     // Check for invalid parameters.
     List<String> validList = new ArrayList<>(26);
     validList.add ( "TSList" );
@@ -290,14 +290,14 @@ throws InvalidCommandParameterException {
     validList.add ( "CheckCountProperty" );
     validList.add ( "CheckCountTimeSeriesProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,warning_level),
         warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -342,7 +342,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -372,7 +372,7 @@ CommandWarningException, CommandException {
     String command_tag = "" + command_number;
     int warning_count = 0;
     int log_level = 3;  // Level for non-use messages for log file.
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -389,9 +389,9 @@ CommandWarningException, CommandException {
 		status.clearLog(CommandPhaseType.RUN);
 	}
     PropList parameters = getCommandParameters();
-    
+
     // Get the input parameters.
-    
+
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
@@ -451,7 +451,7 @@ CommandWarningException, CommandException {
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String CheckCountProperty = parameters.getValue ( "CheckCountProperty" );
     String CheckCountTimeSeriesProperty = parameters.getValue ( "CheckCountTimeSeriesProperty" );
-    
+
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
@@ -460,7 +460,7 @@ CommandWarningException, CommandException {
     // Default of null means to analyze the full period.
     DateTime AnalysisStart_DateTime = null;
     DateTime AnalysisEnd_DateTime = null;
-    
+
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
 			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
@@ -481,7 +481,7 @@ CommandWarningException, CommandException {
     }
 
     // Get the time series to process.  Allow TSID to be a pattern or specific time series.
-    
+
     List<TS> tslist = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Get the discovery time series list from all time series above this command.
@@ -546,13 +546,13 @@ CommandWarningException, CommandException {
 	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     	}
     }
-    
+
     // Get the table to process.
 
     DataTable table = null;
     boolean doTable = false;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be used as input.
+        // Get the table to be used as for check results.
     	doTable = true;
     	PropList request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
@@ -573,7 +573,7 @@ CommandWarningException, CommandException {
             table = (DataTable)o_Table;
         }
     }
-    
+
     if ( warning_count > 0 ) {
         // Input error.
         message = "Insufficient data to run command.";
@@ -582,9 +582,9 @@ CommandWarningException, CommandException {
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-    
+
     // Now process.
-    
+
     DateTime AnalysisWindowStart_DateTime = null;
     if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
         try {
@@ -617,7 +617,7 @@ CommandWarningException, CommandException {
             throw new InvalidCommandParameterException ( message );
         }
     }
-    
+
     try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	if ( doTable ) {
@@ -637,7 +637,7 @@ CommandWarningException, CommandException {
 	                table = new DataTable( /*columnList*/ );
 	                table.setTableID ( TableID );
 	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-	                
+
 	                // Set the table in the processor.
 	                PropList request_params = null;
 	                request_params = new PropList ( "" );
@@ -673,7 +673,7 @@ CommandWarningException, CommandException {
 	            ts = (TS)o_ts;
 	            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Checking time series " +
 	                ts.getIdentifier().toStringAliasAndTSID() );
-	            
+
 	            try {
 	                // Do the check.
 	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
@@ -730,7 +730,7 @@ CommandWarningException, CommandException {
 	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountTimeSeriesProperty, status, commandPhase);
 	                	ts.setProperty(propName, new Integer(checkCriteriaMetCount));
 	                }
-	            } 
+	            }
 	            catch ( Exception e ) {
 	                message = "Unexpected error checking time series \""+ ts.getIdentifier() + " (" + e + ").";
 	                Message.printWarning ( warning_level,
@@ -744,21 +744,21 @@ CommandWarningException, CommandException {
     }
     catch ( Exception e ) {
         message = "Unexpected error checking time series (" + e + ").";
-        Message.printWarning ( warning_level, 
+        Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
         status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Check log file for details." ) );
         throw new CommandException ( message );
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
         throw new CommandWarningException ( message );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

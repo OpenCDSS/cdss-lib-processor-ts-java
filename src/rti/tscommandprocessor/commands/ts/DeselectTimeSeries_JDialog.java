@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -82,6 +82,9 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __TSPosition_JLabel = null;
 private JTextField __TSPosition_JTextField=null;
 private SimpleJComboBox	__SelectAllFirst_JComboBox = null;
+private SimpleJComboBox __IfNotFound_JComboBox = null;
+private JTextField __SelectedCountProperty_JTextField = null;
+private JTextField __UnselectedCountProperty_JTextField = null;
 
 private boolean __error_wait = false;
 private boolean __first_time = true;
@@ -166,6 +169,9 @@ private void checkInput () {
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
+    String SelectedCountProperty = __SelectedCountProperty_JTextField.getText().trim();
+    String UnselectedCountProperty = __UnselectedCountProperty_JTextField.getText().trim();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -182,6 +188,15 @@ private void checkInput () {
     }
     if ( SelectAllFirst.length() > 0 ) {
         parameters.set ( "SelectAllFirst", SelectAllFirst );
+    }
+    if ( IfNotFound.length() > 0 ) {
+        parameters.set ( "IfNotFound", IfNotFound );
+    }
+    if ( SelectedCountProperty.length() > 0 ) {
+        parameters.set (  "SelectedCountProperty", SelectedCountProperty );
+    }
+    if ( UnselectedCountProperty.length() > 0 ) {
+        parameters.set (  "UnselectedCountProperty", UnselectedCountProperty );
     }
     try {
         // This will warn the user.
@@ -203,11 +218,17 @@ private void commitEdits () {
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
+    String SelectedCountProperty = __SelectedCountProperty_JTextField.getText().trim();
+    String UnselectedCountProperty = __UnselectedCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "TSPosition", TSPosition );
     __command.setCommandParameter ( "SelectAllFirst", SelectAllFirst );
+    __command.setCommandParameter ( "IfNotFound", IfNotFound );
+    __command.setCommandParameter ( "SelectedCountProperty", SelectedCountProperty );
+    __command.setCommandParameter ( "UnselectedCountProperty", UnselectedCountProperty );
 }
 
 /**
@@ -232,33 +253,32 @@ private void initialize ( JFrame parent, Command command ) {
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command deselects time series and is often used with the SelectTimeSeries() command." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "When matching a time series identifier (TSID) pattern:"),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "When matching a time series identifier (TSID) pattern:"),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    The dot-delimited time series identifier parts are " +
 		"Location.DataSource.DataType.Interval.Scenario"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    The pattern used to select/deselect time series will be " +
 		"matched against aliases and identifiers."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Use * to match all time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Use A* to match all time series with alias or location starting with A."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "When specifying time series positions:"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    The first time series created is position 1."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Separate numbers by a comma.  Specify a range, for " +
 		"example, as 1-3."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -309,6 +329,43 @@ private void initialize ( JFrame parent, Command command ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - eliminates need for separate select (default=" +
         __command._False + ")."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IfNotFound_JComboBox = new SimpleJComboBox ( false );
+    List<String> notFoundChoices = new ArrayList<String>();
+    notFoundChoices.add ( "" );
+    notFoundChoices.add ( __command._Ignore );
+    notFoundChoices.add ( __command._Warn );
+    notFoundChoices.add ( __command._Fail );
+    __IfNotFound_JComboBox.setData(notFoundChoices);
+    __IfNotFound_JComboBox.select ( 0 );
+    __IfNotFound_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - how to handle case of nothing matched (default=" + __command._Fail + ")."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Selected count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SelectedCountProperty_JTextField = new JTextField ( "", 20 );
+    __SelectedCountProperty_JTextField.setToolTipText("Specify name of the property to set to the selected count, or specify with ${Property} notation");
+    __SelectedCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SelectedCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set for number selected." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Unselected count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UnselectedCountProperty_JTextField = new JTextField ( "", 20 );
+    __UnselectedCountProperty_JTextField.setToolTipText("Specify the name of the property to set to the unselected count, or specify with ${Property} notation");
+    __UnselectedCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __UnselectedCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set for number unselected." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -391,6 +448,9 @@ private void refresh () {
 	String EnsembleID = "";
 	String TSPosition = "";
 	String SelectAllFirst = "";
+    String IfNotFound = "";
+	String SelectedCountProperty = "";
+	String UnselectedCountProperty = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -400,6 +460,9 @@ private void refresh () {
 		EnsembleID = props.getValue ( "EnsembleID" );
 		TSPosition = props.getValue ( "TSPosition" );
 		SelectAllFirst = props.getValue ( "SelectAllFirst" );
+		IfNotFound = props.getValue ( "IfNotFound" );
+		SelectedCountProperty = props.getValue ( "SelectedCountProperty" );
+		UnselectedCountProperty = props.getValue ( "UnselectedCountProperty" );
         if ( TSList == null ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -466,6 +529,28 @@ private void refresh () {
 				__error_wait = true;
 			}
 		}
+        if ( __IfNotFound_JComboBox != null ) {
+            if ( IfNotFound == null ) {
+                // Select default.
+                __IfNotFound_JComboBox.select ( 0 );
+            }
+            else {
+                if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound, JGUIUtil.NONE, null, null ) ) {
+                    __IfNotFound_JComboBox.select ( IfNotFound );
+                }
+                else {
+                    Message.printWarning ( 1, routine,
+                    "Existing command references an invalid\n"+
+                    "IfNotFound \"" + IfNotFound + "\".  Select a\ndifferent value or Cancel." );
+                }
+            }
+        }
+        if ( SelectedCountProperty != null ) {
+            __SelectedCountProperty_JTextField.setText ( SelectedCountProperty );
+        }
+        if ( UnselectedCountProperty != null ) {
+            __UnselectedCountProperty_JTextField.setText ( UnselectedCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
@@ -473,12 +558,18 @@ private void refresh () {
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     TSPosition = __TSPosition_JTextField.getText().trim();
 	SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
+    IfNotFound = __IfNotFound_JComboBox.getSelected();
+	SelectedCountProperty = __SelectedCountProperty_JTextField.getText().trim();
+	UnselectedCountProperty = __UnselectedCountProperty_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "TSPosition=" + TSPosition );
     props.add ( "SelectAllFirst=" + SelectAllFirst );
+    props.add ( "IfNotFound=" + IfNotFound );
+    props.add ( "SelectedCountProperty=" + SelectedCountProperty );
+    props.add ( "UnselectedCountProperty=" + UnselectedCountProperty );
     __command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

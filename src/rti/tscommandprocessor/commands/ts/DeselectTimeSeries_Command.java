@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -57,6 +57,13 @@ public class DeselectTimeSeries_Command extends AbstractCommand implements Comma
 {
 
 /**
+Values for IfNotFound parameter.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Fail = "Fail";
+protected final String _Warn = "Warn";
+
+/**
 Values for DeselectAllFirst.
 */
 protected final String _False = "False";
@@ -89,6 +96,7 @@ throws InvalidCommandParameterException {
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
 	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
+	String IfNotFound = parameters.getValue("IfNotFound");
 	String warning = "";
     String message;
 
@@ -156,13 +164,26 @@ throws InvalidCommandParameterException {
                         message, "Specify as " + _False + " or " + _True + "." ) );
 	}
 
+    if ( (IfNotFound != null) && !IfNotFound.equals("") && !IfNotFound.equalsIgnoreCase(_Ignore) &&
+        !IfNotFound.equalsIgnoreCase(_Fail) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
+        message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the IfNotFound as " + _Ignore + ", " +
+                _Warn + ", or " + _Fail + " (default)." ) );
+    }
+
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(5);
+	List<String> validList = new ArrayList<>(8);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "TSPosition" );
     validList.add ( "SelectAllFirst" );
+    validList.add ( "IfNotFound" );
+    validList.add ( "SelectedCountProperty" );
+    validList.add ( "UnselectedCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -254,6 +275,14 @@ CommandWarningException, CommandException {
 	if ( (SelectAllFirst != null) && SelectAllFirst.equalsIgnoreCase("true") ) {
 	    SelectAllFirst_boolean = true;
 	}
+    String IfNotFound = parameters.getValue("IfNotFound");
+    if ( (IfNotFound == null) || IfNotFound.isEmpty()) {
+        IfNotFound = _Fail; // Default.
+    }
+	String SelectedCountProperty = parameters.getValue ( "SelectedCountProperty" );
+	SelectedCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectedCountProperty);
+	String UnselectedCountProperty = parameters.getValue ( "UnselectedCountProperty" );
+	UnselectedCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, UnselectedCountProperty);
 
 	// If necessary, get the list of all time series.
 	List<TS> tslistAll = new ArrayList<>();
@@ -330,13 +359,20 @@ CommandWarningException, CommandException {
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-			Message.printWarning ( log_level,
-					MessageUtil.formatMessageTag(
-							command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	             Message.printWarning ( log_level,
+                     MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                 status.addToLog ( CommandPhaseType.RUN,
+                     new CommandLogRecord(CommandStatusType.WARNING, message,
+                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			}
+			else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+    			Message.printWarning ( log_level,
+    				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			}
 		}
 	}
 
@@ -344,13 +380,22 @@ CommandWarningException, CommandException {
 	if ( nts == 0 ) {
 		message = "Unable to find time series to deselect using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+		    Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.WARNING, message,
+	                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		}
+		else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+    		Message.printWarning ( warning_level,
+    		MessageUtil.formatMessageTag(
+    		command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		}
 	}
 
 	if ( warning_count > 0 ) {
@@ -400,6 +445,98 @@ CommandWarningException, CommandException {
 		}
 	}
 
+    // Set the SelectedCountProperty.
+    if ( (SelectedCountProperty != null) && !SelectedCountProperty.equals("") ) {
+    	int selectCount = 0;
+        Object o = null;
+        try {
+            o = processor.getPropContents("TSResultsList");
+        }
+        catch ( Exception e ) {
+            message = "Error requesting Property=\"TSResultsList\" from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+        }
+        if ( o != null ) {
+            @SuppressWarnings("unchecked")
+			List<TS> allTS = (List<TS>)o;
+            for ( TS ats: allTS ) {
+                if ( (ats != null) && ats.isSelected() ) {
+                    ++selectCount;
+                }
+            }
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", SelectedCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
+                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+                //}
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + SelectedCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+    }
+
+    // Set the UnselectedCountProperty.
+    if ( (UnselectedCountProperty != null) && !UnselectedCountProperty.equals("") ) {
+    	int unselectedCount = 0;
+        Object o = null;
+        try {
+            o = processor.getPropContents("TSResultsList");
+        }
+        catch ( Exception e ) {
+            message = "Error requesting Property=\"TSResultsList\" from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+        }
+        if ( o != null ) {
+            @SuppressWarnings("unchecked")
+			List<TS> allTS = (List<TS>)o;
+            for ( TS ats: allTS ) {
+                if ( (ats != null) && !ats.isSelected() ) {
+                    ++unselectedCount;
+                }
+            }
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", UnselectedCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(unselectedCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
+                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+                //}
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + UnselectedCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+    }
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -422,7 +559,10 @@ public String toString ( PropList parameters ) {
 		"TSID",
     	"EnsembleID",
     	"TSPosition",
-	   	"SelectAllFirst"
+	   	"SelectAllFirst",
+		"IfNotFound",
+		"SelectedCountProperty",
+		"UnselectedCountProperty"
 	};
 	return this.toString(parameters, parameterOrder);
 }

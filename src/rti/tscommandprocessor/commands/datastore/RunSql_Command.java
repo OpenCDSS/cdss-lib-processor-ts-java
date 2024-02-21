@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -68,7 +68,7 @@ This class initializes, checks, and runs the RunSql() command.
 */
 public class RunSql_Command extends AbstractCommand implements Command
 {
-    
+
 /**
 Constructor.
 */
@@ -153,7 +153,7 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing SQL file." ) );
             }
-    
+
         try {
             SqlFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
@@ -175,7 +175,7 @@ throws InvalidCommandParameterException
                      message, "Verify that SQL file and working directory paths are compatible." ) );
         }
     }
-    
+
 	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(8);
     validList.add ( "DataStore" );
@@ -186,14 +186,14 @@ throws InvalidCommandParameterException
     validList.add ( "DataStoreProcedure" );
     validList.add ( "ProcedureParameters" );
     validList.add ( "ProcedureReturnProperty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -212,8 +212,7 @@ not (e.g., "Cancel" was pressed).
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent ) {
 	String routine = getClass().getSimpleName() + ".editCommand";
@@ -305,15 +304,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 {	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     status.clearLog(commandPhase);
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
@@ -326,10 +325,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String SqlFile = parameters.getValue("SqlFile");
     String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String ProcedureParameters = parameters.getValue ( "ProcedureParameters" );
-    // Use a LinkedHashMap to retain the parameter order
+    // Use a LinkedHashMap to retain the parameter order.
     HashMap<String,String> procedureParameters = StringUtil.parseDictionary(ProcedureParameters);
     String ProcedureReturnProperty = parameters.getValue ( "ProcedureReturnProperty" );
-    
+
     // Find the datastore to use.
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, DatabaseDataStore.class );
     DMI dmi = null;
@@ -347,7 +346,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	dbds.checkDatabaseConnection();
         dmi = ((DatabaseDataStore)dataStore).getDMI();
     }
-    
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
 		Message.printWarning ( 2,
@@ -355,7 +354,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		routine,message);
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
     String sqlString = "";
     // Execute the query as appropriate depending on how the query was specified.
     int nEffected = 0;
@@ -379,7 +378,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             SqlFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                     TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
-            
+
             if ( !IOUtil.fileReadable(SqlFile_full) || !IOUtil.fileExists(SqlFile_full)) {
                 message = "SQL file \"" + SqlFile_full + "\" is not found or accessible.";
                 Message.printWarning ( warning_level,
@@ -401,11 +400,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
             // Run a stored procedure.
             // TODO SAM 2013-08-28 Figure out why this is run through the DMISelectStatement.
-            //x DMISelectStatement q = new DMISelectStatement(dmi);        
+            //x DMISelectStatement q = new DMISelectStatement(dmi);
             //x q.setStoredProcedureData(new DMIStoredProcedureData(dmi,DataStoreProcedure));
             //x rs = q.executeStoredProcedure();
            	// - declaring the procedure will fill its internal metadata
-         	int errorCount = 0; // Count of errors that will prevent further processing
+         	int errorCount = 0; // Count of errors that will prevent further processing.
            	Message.printStatus(2, routine, "Executing stored procedure \"" + DataStoreProcedure + "\"");
            	procedureData = new DMIStoredProcedureData(dmi,DataStoreProcedure);
            	q = new DMISelectStatement(dmi);
@@ -420,7 +419,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	// - will have values 2+ below
                 	parameterNum = 1;
                 }
-                int parameterNum0 = -1; // 0-offset index 
+                int parameterNum0 = -1; // 0-offset index.
                 for ( Map.Entry<String,String> entry : procedureParameters.entrySet() ) {
                 	++parameterNum;
                 	++parameterNum0;
@@ -552,7 +551,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     finally {
         DMI.closeResultSet(rs);
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,

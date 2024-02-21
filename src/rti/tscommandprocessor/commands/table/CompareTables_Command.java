@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -52,6 +52,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DataTableComparer;
+import RTi.Util.Table.DataTableComparerAnalysisType;
 
 /**
 This class initializes, checks, and runs the CompareTables() command.
@@ -59,7 +60,7 @@ This class initializes, checks, and runs the CompareTables() command.
 public class CompareTables_Command extends AbstractCommand
 implements CommandDiscoverable, ObjectListProvider, FileGenerator
 {
-    
+
 /**
 Possible values for IfDifferent and IfSame parameters.
 */
@@ -74,43 +75,54 @@ protected final String _Name = "Name";
 protected final String _Order = "Order";
 
 /**
-The comparison table that is created.
+The first comparison table that is created.
 */
 private DataTable __table = null;
 
 /**
-Output file that is created by this command.
+The second comparison table that is created.
+*/
+private DataTable __table2 = null;
+
+/**
+The first output file that is created by this command.
 */
 private File __OutputFile_File = null;
 
 /**
+The second output file that is created by this command.
+*/
+private File __OutputFile2_File = null;
+
+/**
 Constructor.
 */
-public CompareTables_Command ()
-{	super();
+public CompareTables_Command () {
+	super();
 	setCommandName ( "CompareTables" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages,
+to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Table1ID = parameters.getValue ( "Table1ID" );
+throws InvalidCommandParameterException {
+	String Table1ID = parameters.getValue ( "Table1ID" );
     String Table2ID = parameters.getValue ( "Table2ID" );
     String Precision = parameters.getValue ( "Precision" );
     String MatchColumnsHow = parameters.getValue ( "MatchColumnsHow" );
+    String AnalysisMethod = parameters.getValue ( "AnalysisMethod" );
     String Tolerance = parameters.getValue ( "Tolerance" );
     String AllowedDiff = parameters.getValue ( "AllowedDiff" );
-    String NewTableID = parameters.getValue ( "NewTableID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
     String IfDifferent = parameters.getValue ( "IfDifferent" );
     String IfSame = parameters.getValue ( "IfSame" );
+    String NewTableID = parameters.getValue ( "NewTableID" );
+    String OutputFile = parameters.getValue ( "OutputFile" );
 	String warning = "";
     String message;
 
@@ -125,7 +137,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the first table identifier." ) );
     }
-    
+
     if ( (Table2ID == null) || (Table2ID.length() == 0) ) {
         message = "The second table identifier must be specified.";
         warning += "\n" + message;
@@ -133,7 +145,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the second table identifier." ) );
     }
-    
+
     if ( (Table1ID != null) && (Table1ID.length() != 0) && (NewTableID != null) && (NewTableID.length() != 0) &&
         Table1ID.equalsIgnoreCase(NewTableID) ) {
         message = "The first and new table identifiers are the same.";
@@ -142,7 +154,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the first table identifier." ) );
     }
-    
+
     if ( (Table2ID != null) && (Table2ID.length() != 0) && (NewTableID != null) && (NewTableID.length() != 0) &&
         Table2ID.equalsIgnoreCase(NewTableID) ) {
         message = "The second and new table identifiers are the same.";
@@ -151,7 +163,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the second table identifier." ) );
     }
-    
+
     if ( (MatchColumnsHow != null) && !MatchColumnsHow.equals("") && !MatchColumnsHow.equalsIgnoreCase(_Name) &&
         !MatchColumnsHow.equalsIgnoreCase(_Order) ) {
             message = "The MatchColumnsHow parameter \"" + MatchColumnsHow + "\" is not a valid value.";
@@ -160,7 +172,17 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the parameter as " + _Name + " (default) or " + _Order + "."));
     }
-    
+
+    if ( (AnalysisMethod != null) && !AnalysisMethod.equals("") &&
+    	(DataTableComparerAnalysisType.valueOfIgnoreCase(AnalysisMethod) == null) ) {
+        message = "The AnalysisMethod parameter \"" + AnalysisMethod + "\" is not a valid value.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the analysis method as " + DataTableComparerAnalysisType.ADVANCED + " or " +
+                DataTableComparerAnalysisType.SIMPLE + " (default)."));
+    }
+
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
             message = "The precision: \"" + Precision + "\" is not an integer.";
@@ -168,7 +190,6 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the precision as an integer (or blank to not round)." ) );
-            
         }
         if ( StringUtil.atoi(Precision) < 0 ) {
             message = "The precision: \"" + Precision + "\" must be >= 0.";
@@ -178,7 +199,7 @@ throws InvalidCommandParameterException
                             message, "Specify the precision as an integer >= 0 (or blank to not round)." ) );
         }
     }
-    
+
     if ( (Tolerance != null) && !Tolerance.equals("") ) {
         if ( !StringUtil.isDouble(Tolerance) ) {
             message = "The tolerance: \"" + Tolerance + "\" is not a number.";
@@ -186,7 +207,6 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the tolerance as a number." ) );
-            
         }
         if ( StringUtil.atod(Tolerance) < 0.0 ) {
             message = "The tolerance: \"" + Tolerance + "\" must be >= 0.0.";
@@ -196,7 +216,7 @@ throws InvalidCommandParameterException
                             message, "Specify the tolerance as a number >= 0.0." ) );
         }
     }
-    
+
     if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
         message = "The number of allowed differences \"" + AllowedDiff + "\" is invalid.";
         warning += "\n" + message;
@@ -204,7 +224,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                  message, "Specify the parameter as an integer."));
     }
-    
+
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
@@ -219,7 +239,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Software error - report problem to support." ) );
         }
-    
+
         try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
             File f = new File ( adjusted_path );
@@ -261,22 +281,30 @@ throws InvalidCommandParameterException
                     message, "Specify the parameter as " + _Ignore + " (default), " +
                     _Warn + ", or " + _Fail + "."));
     }
- 
+
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>();
+	List<String> validList = new ArrayList<>(21);
     validList.add ( "Table1ID" );
     validList.add ( "Table2ID" );
     validList.add ( "CompareColumns1" );
     validList.add ( "ExcludeColumns1" );
+    validList.add ( "MatchColumns1" );
     validList.add ( "CompareColumns2" );
+    validList.add ( "MatchColumns2" );
     validList.add ( "MatchColumnsHow" );
+    validList.add ( "AnalysisMethod" );
     validList.add ( "Precision" );
     validList.add ( "Tolerance" );
     validList.add ( "AllowedDiff" );
-    validList.add ( "NewTableID" );
-    validList.add ( "OutputFile" );
     validList.add ( "IfDifferent" );
     validList.add ( "IfSame" );
+    validList.add ( "NewTableID" );
+    validList.add ( "NewTable2ID" );
+    validList.add ( "RowNumberColumn" );
+    validList.add ( "OutputFile" );
+    validList.add ( "OutputFile2" );
+    validList.add ( "RowDiffCountProperty" );
+    validList.add ( "CellDiffCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -284,18 +312,17 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed.
@@ -303,37 +330,66 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Return the table that is read by this class when run in discovery mode.
+Return the first table that is read by this class when run in discovery mode.
+@return the first table that is read by this class when run in discovery mode
 */
 private DataTable getDiscoveryTable() {
     return __table;
 }
 
 /**
+Return the second table that is read by this class when run in discovery mode.
+@return the second table that is read by this class when run in discovery mode
+*/
+private DataTable getDiscoveryTable2() {
+    return __table2;
+}
+
+/**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command
 */
 public List<File> getGeneratedFileList () {
     List<File> list = new ArrayList<>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
+    if ( getOutputFile2() != null ) {
+        list.add ( getOutputFile2() );
+    }
     return list;
 }
 
 /**
-Return the output file generated by this file.  This method is used internally.
+Return the first output file generated by this file.  This method is used internally.
+@return the first output file generated by this file.
 */
 private File getOutputFile () {
     return __OutputFile_File;
 }
 
 /**
+Return the second output file generated by this file.  This method is used internally.
+@return the second output file generated by this file.
+*/
+private File getOutputFile2 () {
+    return __OutputFile2_File;
+}
+
+/**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+@param class to match (DataTable).
+@return a list of objects of the requested type.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
     List<T> v = null;
+    DataTable table = getDiscoveryTable();
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new ArrayList<>();
+        v.add ( (T)table );
+    }
+    table = getDiscoveryTable2();
     if ( (table != null) && (c == table.getClass()) ) {
         v = new ArrayList<>();
         v.add ( (T)table );
@@ -346,8 +402,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -374,36 +429,75 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "CompareTables_Command.runCommand",message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	int log_level = 3; // Level for non-user messages for log file.
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
-    // Clear the output file.
+
+    // Clear the output files.
     setOutputFile ( null );
-    
+    setOutputFile2 ( null );
+
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
+        setDiscoveryTable2 ( null );
     }
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
     String Table1ID = parameters.getValue ( "Table1ID" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		Table1ID = TSCommandProcessorUtil.expandParameterValue(processor, this, Table1ID);
+    }
     String Table2ID = parameters.getValue ( "Table2ID" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		Table2ID = TSCommandProcessorUtil.expandParameterValue(processor, this, Table2ID);
+    }
     String CompareColumns1 = parameters.getValue ( "CompareColumns1" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		CompareColumns1 = TSCommandProcessorUtil.expandParameterValue(processor, this, CompareColumns1);
+    }
     String ExcludeColumns1 = parameters.getValue ( "ExcludeColumns1" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		ExcludeColumns1 = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeColumns1);
+    }
+    String MatchColumns1 = parameters.getValue ( "MatchColumns1" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		MatchColumns1 = TSCommandProcessorUtil.expandParameterValue(processor, this, MatchColumns1);
+    }
+    if ( ((MatchColumns1 == null) || MatchColumns1.isEmpty()) && ((CompareColumns1 != null) && !CompareColumns1.isEmpty()) ) {
+    	// Only used with advanced analysis:
+    	// - also need to set at runtime because CompareColumns1 defaults to table columns
+    	MatchColumns1 = CompareColumns1;
+    }
     String CompareColumns2 = parameters.getValue ( "CompareColumns2" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		CompareColumns2 = TSCommandProcessorUtil.expandParameterValue(processor, this, CompareColumns2);
+    }
+    String MatchColumns2 = parameters.getValue ( "MatchColumns2" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		MatchColumns2 = TSCommandProcessorUtil.expandParameterValue(processor, this, MatchColumns2);
+    }
+    if ( (MatchColumns2 == null) || (MatchColumns2.isEmpty()) ) {
+    	// Set to the same as MatchColumns1.
+    	MatchColumns2 = MatchColumns1;
+    }
     String MatchColumnsHow = parameters.getValue ( "MatchColumnsHow" );
     boolean matchColumnsByName = true;
     if ( (MatchColumnsHow != null) && MatchColumnsHow.equalsIgnoreCase(_Order) ) {
         matchColumnsByName = false;
+    }
+    String AnalysisMethod = parameters.getValue ( "AnalysisMethod" );
+    DataTableComparerAnalysisType analysisType = DataTableComparerAnalysisType.SIMPLE; // Default.
+    if ( (AnalysisMethod != null) && !AnalysisMethod.isEmpty() ) {
+    	analysisType = DataTableComparerAnalysisType.valueOfIgnoreCase(AnalysisMethod);
     }
     String Precision = parameters.getValue ( "Precision" );
     Integer Precision_Integer = null;
@@ -419,15 +513,6 @@ CommandWarningException, CommandException
     int AllowedDiff_int = 0;
     if ( StringUtil.isInteger(AllowedDiff) ) {
         AllowedDiff_int = Integer.parseInt(AllowedDiff);
-    }
-    String NewTableID = parameters.getValue ( "NewTableID" );
-    String newTableID = Table1ID + "-" + Table2ID + "-comparison";
-    if ( (NewTableID != null) && !NewTableID.equals("") ) {
-        newTableID = NewTableID;
-    }
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    if ( (OutputFile != null) && OutputFile.equals("") ) {
-        OutputFile = null; // Easier for checks below.
     }
     String IfDifferent = parameters.getValue ( "IfDifferent" );
     CommandStatusType IfDifferent_CommandStatusType = CommandStatusType.UNKNOWN;
@@ -449,7 +534,40 @@ CommandWarningException, CommandException
             IfSame_CommandStatusType = CommandStatusType.parse(IfSame);
         }
     }
-    
+    String NewTableID = parameters.getValue ( "NewTableID" );
+    String newTableID = null;
+    if ( analysisType == DataTableComparerAnalysisType.ADVANCED ) {
+    	newTableID = Table1ID + "-" + Table2ID + "-comparison1"; // Default for Advanced method.
+    }
+    else {
+    	newTableID = Table1ID + "-" + Table2ID + "-comparison"; // Default for Simple method.
+    }
+    if ( (NewTableID != null) && !NewTableID.isEmpty() ) {
+        newTableID = NewTableID;
+    }
+    String RowNumberColumn = parameters.getValue ( "RowNumberColumn" );
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    if ( (OutputFile != null) && OutputFile.isEmpty() ) {
+        OutputFile = null; // Easier for checks below.
+    }
+    String NewTable2ID = parameters.getValue ( "NewTable2ID" );
+    String newTable2ID = Table1ID + "-" + Table2ID + "-comparison2"; // Default.
+    if ( (NewTable2ID != null) && !NewTable2ID.isEmpty() ) {
+        newTable2ID = NewTable2ID;
+    }
+    String OutputFile2 = parameters.getValue ( "OutputFile2" );
+    if ( (OutputFile2 != null) && OutputFile2.isEmpty() ) {
+        OutputFile2 = null; // Easier for checks below.
+    }
+    String RowDiffCountProperty = parameters.getValue ( "RowDiffCountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	RowDiffCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowDiffCountProperty);
+    }
+    String CellDiffCountProperty = parameters.getValue ( "CellDiffCountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	CellDiffCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, CellDiffCountProperty);
+    }
+
     String [] compareColumns1 = null;
     if ( (CompareColumns1 != null) && !CompareColumns1.equals("") ) {
         compareColumns1 = CompareColumns1.split(",");
@@ -464,6 +582,13 @@ CommandWarningException, CommandException
             excludeColumns1[i] = excludeColumns1[i].trim();
         }
     }
+    String [] matchColumns1 = null;
+    if ( (MatchColumns1 != null) && !MatchColumns1.equals("") ) {
+        matchColumns1 = MatchColumns1.split(",");
+        for ( int i = 0; i < matchColumns1.length; i++ ) {
+            matchColumns1[i] = matchColumns1[i].trim();
+        }
+    }
     String [] compareColumns2 = null;
     if ( (CompareColumns2 != null) && !CompareColumns2.equals("") ) {
         compareColumns2 = CompareColumns2.split(",");
@@ -471,7 +596,14 @@ CommandWarningException, CommandException
             compareColumns2[i] = compareColumns2[i].trim();
         }
     }
-    
+    String [] matchColumns2 = null;
+    if ( (MatchColumns2 != null) && !MatchColumns2.equals("") ) {
+        matchColumns2 = MatchColumns2.split(",");
+        for ( int i = 0; i < matchColumns2.length; i++ ) {
+            matchColumns2[i] = matchColumns2[i].trim();
+        }
+    }
+
     // Get the table to process.
 
     DataTable table1 = null;
@@ -479,7 +611,7 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
-        if ( (Table1ID != null) && !Table1ID.equals("") ) {
+        if ( (Table1ID != null) && !Table1ID.isEmpty() ) {
             // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", Table1ID );
@@ -508,7 +640,7 @@ CommandWarningException, CommandException
             }
         }
     }
-    
+
     DataTable table2 = null;
     int table2RowCount = 0;
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -551,36 +683,55 @@ CommandWarningException, CommandException
 		routine,message);
 		throw new InvalidCommandParameterException ( message );
 	}
+
     int diffCount = 0; // For final warning check.
+    int diffRowCount = 0; // For setting properties.
+    int diffCellCount = 0; // For setting properties.
     int errorCount = 0; // Count of errors doing the comparison.
     int tableCellCount = 0;
 	try {
     	// Create the table.
 	    String OutputFile_full = OutputFile;
+	    String OutputFile2_full = OutputFile2;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        if ( OutputFile != null ) {
     	        OutputFile_full = IOUtil.verifyPathForOS(
     	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 	        }
-	        DataTableComparer comparer = new DataTableComparer ( table1, 
-	            StringUtil.toList(compareColumns1), StringUtil.toList(excludeColumns1),
-	            table2, StringUtil.toList(compareColumns2),
-	            matchColumnsByName, Precision_Integer, Tolerance_Double, newTableID );
+	        if ( OutputFile2 != null ) {
+    	        OutputFile2_full = IOUtil.verifyPathForOS(
+    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile2) );
+	        }
+	        DataTableComparer comparer = new DataTableComparer ( table1,
+	            StringUtil.toList(compareColumns1), StringUtil.toList(excludeColumns1), StringUtil.toList(matchColumns1),
+	            table2, StringUtil.toList(compareColumns2), StringUtil.toList(matchColumns2),
+	            matchColumnsByName,
+	            analysisType,
+	            Precision_Integer, Tolerance_Double, newTableID, newTable2ID, RowNumberColumn );
 	        comparer.compare ();
 	        DataTable comparisonTable = comparer.getComparisonTable();
+	        DataTable comparisonTable2 = comparer.getComparisonTable2();
 	        tableCellCount = comparisonTable.getNumberOfRecords()*comparisonTable.getNumberOfFields();
 	        diffCount = comparer.getDifferenceCount();
+	        diffRowCount = comparer.getRowDifferenceCount();
+	        diffCellCount = comparer.getCellDifferenceCount();
 	        errorCount = comparer.getErrorCount();
-	        
+
 	        // If an output file is desired, write to it and save the name.
 	        if ( OutputFile != null ) {
 	            comparer.writeHtmlFile ( OutputFile_full );
 	            setOutputFile ( new File(OutputFile_full) );
 	        }
-            
-            // Set the table in the processor if the user has specific a name (otherwise the table is used
-	        // internally, for example to create the HTML file).
-            
+
+	        // If a second output file is desired, write to it and save the name.
+	        if ( OutputFile2 != null ) {
+	            comparer.writeHtmlFile2 ( OutputFile2_full );
+	            setOutputFile2 ( new File(OutputFile2_full) );
+	        }
+
+            // Set the comparison table(s) in the processor if the user has specific a name
+	        // (otherwise the table is used internally, for example to create the HTML file).
+
 	        if ( (comparisonTable != null) && (NewTableID != null) && !NewTableID.equals("") ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "Table", comparisonTable );
@@ -597,14 +748,38 @@ CommandWarningException, CommandException
                            message, "Report problem to software support." ) );
                 }
 	        }
+
+	        if ( (comparisonTable2 != null) && (NewTable2ID != null) && !NewTable2ID.equals("") ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "Table", comparisonTable2 );
+                try {
+                    processor.processRequest( "SetTable", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetTable(Table=...) from processor.";
+                    Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report problem to software support." ) );
+                }
+	        }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            if ( (NewTableID != null) && !NewTableID.equals("") ) {
+            if ( (NewTableID != null) && !NewTableID.isEmpty() ) {
                 // Create an empty table and set the ID.
                 DataTable comparisonTable = new DataTable();
                 comparisonTable.setTableID ( NewTableID );
                 setDiscoveryTable ( comparisonTable );
                 Message.printStatus(2,routine,"Setting discovery table " + comparisonTable.getTableID() );
+            }
+            if ( (NewTable2ID != null) && !NewTable2ID.isEmpty() ) {
+                // Create an empty table and set the ID.
+                DataTable comparisonTable = new DataTable();
+                comparisonTable.setTableID ( NewTable2ID );
+                setDiscoveryTable2 ( comparisonTable );
+                Message.printStatus(2,routine,"Setting discovery table 2 " + comparisonTable.getTableID() );
             }
         }
 	}
@@ -623,8 +798,8 @@ CommandWarningException, CommandException
 	if ( diffCount > 0 ) {
 	    // Have some differences - action is as per user request.
         message = "" + diffCount + " table values were different, " +
-        StringUtil.formatString(100.0*(double)diffCount/(double)tableCellCount, "%.2f") +
-        "% (compared " + tableCellCount + " values).";
+        	StringUtil.formatString(100.0*(double)diffCount/(double)tableCellCount, "%.2f") +
+        	"% (compared " + tableCellCount + " values).";
         Message.printStatus ( 2, routine, message );
 	    boolean needToNotify = false;
 	    if ( (AllowedDiff_int < 0) && (diffCount > allowedDiffPositive) ) {
@@ -638,78 +813,116 @@ CommandWarningException, CommandException
            (IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
             // Have differences and need to warn.
             Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count),
-            routine, message );
+            	MessageUtil.formatMessageTag( command_tag,++warning_count),
+            	routine, message );
             status.addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(IfDifferent_CommandStatusType,
                     message, "Check tables because difference is not expected.") );
         }
     }
+
+    // Set the property indicating the number of different rows.
+    if ( (RowDiffCountProperty != null) && !RowDiffCountProperty.isEmpty() ) {
+        PropList request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", RowDiffCountProperty );
+        request_params.setUsingObject ( "PropertyValue", new Integer(diffRowCount) );
+        try {
+            processor.processRequest( "SetProperty", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting SetProperty(Property=\"" + RowDiffCountProperty + "\") from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+        }
+    }
+
+    // Set the property indicating the number of different cells.
+    if ( (CellDiffCountProperty != null) && !CellDiffCountProperty.isEmpty() ) {
+        PropList request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", CellDiffCountProperty );
+        request_params.setUsingObject ( "PropertyValue", new Integer(diffCellCount) );
+        try {
+            processor.processRequest( "SetProperty", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting SetProperty(Property=\"" + CellDiffCountProperty + "\") from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+        }
+    }
+
 	boolean tablesDiffSize = false;
-		// Also check for different table sizes, which may not be fully handled in the above comparison:
-		// - set diffcount to 1 if the 
-		if ( (table1RowCount == 0) && (table2RowCount != 0) ) {
-			tablesDiffSize = true;
-			if ( 
-				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
-				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-				// Have differences and need to warn:
-				// - do not allow any differences
-				message = "First table is empty and second is not.";
-				Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag( command_tag,++warning_count),
-					routine, message );
-				status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(IfDifferent_CommandStatusType,
-						message, "Check tables because difference is not expected.") );
-			}
+	// Also check for different table sizes, which may not be fully handled in the above comparison.
+	if ( (table1RowCount == 0) && (table2RowCount != 0) ) {
+		tablesDiffSize = true;
+		if (
+			((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+			(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+			// Have differences and need to warn:
+			// - do not allow any differences
+			message = "First table is empty and second is not.";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag( command_tag,++warning_count),
+				routine, message );
+			status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(IfDifferent_CommandStatusType,
+					message, "Check tables because difference is not expected.") );
 		}
-		else if ( (table2RowCount == 0) && (table1RowCount != 0) ) {
-			tablesDiffSize = true;
-			if ( 
-				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
-				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-				// Have differences and need to warn:
-				// - do not allow any differences
-				message = "Second table is empty and first is not.";
-				Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag( command_tag,++warning_count),
-					routine, message );
-				status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(IfDifferent_CommandStatusType,
-						message, "Check tables because difference is not expected.") );
-			}
+	}
+	else if ( (table2RowCount == 0) && (table1RowCount != 0) ) {
+		tablesDiffSize = true;
+		if (
+			((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+			(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+			// Have differences and need to warn:
+			// - do not allow any differences
+			message = "Second table is empty and first is not.";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag( command_tag,++warning_count),
+				routine, message );
+			status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(IfDifferent_CommandStatusType,
+					message, "Check tables because difference is not expected.") );
 		}
-		else if ( table2RowCount != table1RowCount ) {
-			tablesDiffSize = true;
-			if ( 
-				((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
-				(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-				// Have differences and need to warn:
-				// - do not allow any differences
-				message = "First table has " + table1RowCount + " rows and second table has " + table2RowCount + " rows.";
-				Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag( command_tag,++warning_count),
-					routine, message );
-				status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(IfDifferent_CommandStatusType,
-						message, "Check tables because difference is not expected.") );
-			}
+	}
+	else if ( (analysisType == DataTableComparerAnalysisType.SIMPLE) && (table2RowCount != table1RowCount) ) {
+		tablesDiffSize = true;
+		if (
+			((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+			(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
+			// Have differences and need to warn:
+			// - do not allow any differences
+			message = "First table has " + table1RowCount + " rows and second table has " + table2RowCount + " rows.";
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag( command_tag,++warning_count),
+				routine, message );
+			status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(IfDifferent_CommandStatusType,
+					message, "Check tables because difference is not expected for simple analysis.") );
 		}
-		if ( (diffCount == 0) && !tablesDiffSize ) {
-			// No differences were reported.
-			message = "No table values were different (the tables are the same).";
-			Message.printStatus ( 2, routine, message );
-			if ( (IfSame_CommandStatusType == CommandStatusType.WARNING) ||
-				(IfSame_CommandStatusType == CommandStatusType.FAILURE)) {
-				Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag( command_tag,++warning_count),
-					routine, message );
-				status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(IfSame_CommandStatusType,
-						message, "Check tables because match is not expected.") );
-			}
+	}
+	if ( (diffCount == 0) && !tablesDiffSize ) {
+		// No differences were reported.
+		message = "No table values were different (the tables are the same).";
+		Message.printStatus ( 2, routine, message );
+		if ( (IfSame_CommandStatusType == CommandStatusType.WARNING) ||
+			(IfSame_CommandStatusType == CommandStatusType.FAILURE)) {
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag( command_tag,++warning_count),
+				routine, message );
+			status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(IfSame_CommandStatusType,
+					message, "Check tables because match is not expected.") );
 		}
+	}
 	if ( errorCount > 0 ) {
 		// Error comparing the tables, usually due to a software problem.
 		message = "There were " + errorCount + " errors performaing the comparison.";
@@ -731,17 +944,35 @@ CommandWarningException, CommandException
 }
 
 /**
-Set the table that is read by this class in discovery mode.
+Set the first comparison table that is created by this class in discovery mode.
+@param table data table for discovery mode
 */
 private void setDiscoveryTable ( DataTable table ) {
-    __table = table;
+    this.__table = table;
+}
+
+/**
+Set the second comparison table that is created by this class in discovery mode.
+@param table data table for discovery mode
+*/
+private void setDiscoveryTable2 ( DataTable table ) {
+    this.__table2 = table;
 }
 
 /**
 Set the output file that is created by this command.
+@param file output file for discovery mode
 */
 private void setOutputFile ( File file ) {
-    __OutputFile_File = file;
+    this.__OutputFile_File = file;
+}
+
+/**
+Set the second output file that is created by this command.
+@param file output file for discovery mode
+*/
+private void setOutputFile2 ( File file ) {
+    this.__OutputFile2_File = file;
 }
 
 /**
@@ -754,16 +985,24 @@ public String toString ( PropList parameters ) {
     	"Table1ID",
 		"CompareColumns1",
 		"ExcludeColumns1",
+		"MatchColumns1",
     	"Table2ID",
 		"CompareColumns2",
+		"MatchColumns2",
 		"MatchColumnsHow",
+    	"AnalysisMethod",
     	"Precision",
     	"Tolerance",
     	"AllowedDiff",
-    	"NewTableID",
-    	"OutputFile",
     	"IfDifferent",
-    	"IfSame"
+    	"IfSame",
+    	"NewTableID",
+    	"NewTable2ID",
+    	"RowNumberColumn",
+    	"OutputFile",
+    	"OutputFile2",
+    	"RowDiffCountProperty",
+    	"CellDiffCountProperty"
 	};
 	return this.toString(parameters, parameterOrder);
 }

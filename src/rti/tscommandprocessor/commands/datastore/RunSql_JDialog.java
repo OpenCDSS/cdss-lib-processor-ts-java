@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -96,7 +96,7 @@ private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
-private JTabbedPane __sql_JTabbedPane = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Sql_JTextArea = null;
 private JTextField __SqlFile_JTextField = null;
 private SimpleJComboBox __DataStoreFunction_JComboBox = null;
@@ -301,11 +301,11 @@ private void actionPerformedDataStoreSelected ( ) {
         return;
     }
     // Update list of functions, but only if the function tab is shown.
-    if ( this.__sql_JTabbedPane.getSelectedIndex() == 2) {
+    if ( this.__main_JTabbedPane.getSelectedIndex() == 2) {
     	populateDataStoreFunctionChoices(getDMI() );
     }
     // Update list of procedures, but only if the procedure tab is shown.
-    if ( this.__sql_JTabbedPane.getSelectedIndex() == 3) {
+    if ( this.__main_JTabbedPane.getSelectedIndex() == 3) {
     	populateDataStoreProcedureChoices(getDMI() );
     }
 }
@@ -572,19 +572,19 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore containing data to read."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    __sql_JTabbedPane = new JTabbedPane ();
-    __sql_JTabbedPane.addChangeListener(this);
-    __sql_JTabbedPane.setBorder(
+    __main_JTabbedPane = new JTabbedPane ();
+    __main_JTabbedPane.addChangeListener(this);
+    __main_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
         "Specify SQL" ));
-    JGUIUtil.addComponent(main_JPanel, __sql_JTabbedPane,
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Panel for SQL via SQL statement.
     int ySql = -1;
     JPanel sql_JPanel = new JPanel();
     sql_JPanel.setLayout( new GridBagLayout() );
-    __sql_JTabbedPane.addTab ( "SQL string", sql_JPanel );
+    __main_JTabbedPane.addTab ( "SQL string", sql_JPanel );
 
     JGUIUtil.addComponent(sql_JPanel, new JLabel (
         "Specify the SQL statement string as a command parameter below."),
@@ -609,7 +609,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     int yFile = -1;
     JPanel file_JPanel = new JPanel();
     file_JPanel.setLayout( new GridBagLayout() );
-    __sql_JTabbedPane.addTab ( "SQL file", file_JPanel );
+    __main_JTabbedPane.addTab ( "SQL file", file_JPanel );
 
     JGUIUtil.addComponent(file_JPanel, new JLabel (
         "Read the SQL statement from a file."),
@@ -649,7 +649,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     int yFunc = -1;
     JPanel func_JPanel = new JPanel();
     func_JPanel.setLayout( new GridBagLayout() );
-    __sql_JTabbedPane.addTab ( "Function", func_JPanel );
+    __main_JTabbedPane.addTab ( "Function", func_JPanel );
 
     JGUIUtil.addComponent(func_JPanel, new JLabel ("<html><b>Under development</b> - run a function.</html>"),
         0, ++yFunc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -705,7 +705,7 @@ private void initialize ( JFrame parent, RunSql_Command command, List<DatabaseDa
     int yProc = -1;
     JPanel proc_JPanel = new JPanel();
     proc_JPanel.setLayout( new GridBagLayout() );
-    __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
+    __main_JTabbedPane.addTab ( "Procedure", proc_JPanel );
 
     JGUIUtil.addComponent(proc_JPanel, new JLabel ("<html><b>Under development</b> - run a procedure.</html>"),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -1264,11 +1264,11 @@ try{
         }
         if ( (Sql != null) && !Sql.equals("") ) {
             __Sql_JTextArea.setText ( Sql );
-            __sql_JTabbedPane.setSelectedIndex(0);
+            __main_JTabbedPane.setSelectedIndex(0);
         }
         if ( (SqlFile != null) && !SqlFile.equals("") ) {
             __SqlFile_JTextField.setText(SqlFile);
-            __sql_JTabbedPane.setSelectedIndex(1);
+            __main_JTabbedPane.setSelectedIndex(1);
         }
         // First populate the function choices:
         // - lazy load since can be slow
@@ -1277,7 +1277,7 @@ try{
         	// Now select what the command had previously (if specified).
         	if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreFunction_JComboBox, DataStoreFunction, JGUIUtil.NONE, null, null ) ) {
         		__DataStoreFunction_JComboBox.select ( DataStoreFunction );
-            	__sql_JTabbedPane.setSelectedIndex(2);
+            	__main_JTabbedPane.setSelectedIndex(2);
         	}
         	else {
         		if ( (DataStoreFunction == null) || DataStoreFunction.isEmpty() ) {
@@ -1301,7 +1301,7 @@ try{
         	// Now select what the command had previously (if specified).
         	if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreProcedure_JComboBox, DataStoreProcedure, JGUIUtil.NONE, null, null ) ) {
         		__DataStoreProcedure_JComboBox.select ( DataStoreProcedure );
-            	__sql_JTabbedPane.setSelectedIndex(3);
+            	__main_JTabbedPane.setSelectedIndex(3);
         	}
         	else {
         		if ( (DataStoreProcedure == null) || DataStoreProcedure.isEmpty() ) {
@@ -1400,6 +1400,7 @@ private void response ( boolean ok ) {
 
 /**
  * Handle JTabbedPane changes.
+ * @param event ChangeEvent to handle
  */
 public void stateChanged ( ChangeEvent event ) {
 	JTabbedPane sourceTabbedPane = (JTabbedPane)event.getSource();
@@ -1408,14 +1409,14 @@ public void stateChanged ( ChangeEvent event ) {
 		// Populate the function list if not done already:
 		// - set the index first because otherwise there is a pause,
 		//   but still seems slow switching tabs
-        __sql_JTabbedPane.setSelectedIndex(2);
+        __main_JTabbedPane.setSelectedIndex(2);
 		populateDataStoreFunctionChoices(getDMI());
 	}
 	else if ( index == 3 ) {
 		// Populate the procedure list if not done already:
 		// - set the index first because otherwise there is a pause,
 		//   but still seems slow switching tabs
-        __sql_JTabbedPane.setSelectedIndex(3);
+        __main_JTabbedPane.setSelectedIndex(3);
 		populateDataStoreProcedureChoices(getDMI());
 	}
 }

@@ -69,6 +69,7 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnData_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
+private JTextField __AppendRowNumbers_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -154,6 +155,7 @@ private void checkInput () {
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnData = __ColumnData_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	String AppendRowNumbers = __AppendRowNumbers_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -173,6 +175,9 @@ private void checkInput () {
     }
     if ( ColumnFilters.length() > 0 ) {
         props.set ( "ColumnFilters", ColumnFilters );
+    }
+    if ( AppendRowNumbers.length() > 0 ) {
+        props.set ( "AppendRowNumbers", AppendRowNumbers );
     }
 	try {
 	    // This will warn the user.
@@ -196,12 +201,14 @@ private void commitEdits () {
     String ColumnMap = __ColumnMap_JTextArea.getText().trim();
     String ColumnData = __ColumnData_JTextArea.getText().trim();
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+	String AppendRowNumbers = __AppendRowNumbers_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "AppendTableID", AppendTableID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 	__command.setCommandParameter ( "ColumnData", ColumnData );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
+    __command.setCommandParameter ( "AppendRowNumbers", AppendRowNumbers );
 }
 
 /**
@@ -320,6 +327,16 @@ private void initialize ( JFrame parent, AppendTable_Command command, List<Strin
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Append row numbers:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AppendRowNumbers_JTextField = new JTextField ( "", 25 );
+    __AppendRowNumbers_JTextField.setToolTipText("Specify row number (1+) to append, separated by commas, can use ${Property}, or use \"last\" to append the last row.");
+    __AppendRowNumbers_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AppendRowNumbers_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - row numbers to append (default=all)." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -397,7 +414,7 @@ public boolean ok () {
 Refresh the command from the other text field contents.
 */
 private void refresh () {
-	String routine = getClass().getName() + ".refresh";
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String AppendTableID = "";
     String IncludeColumns = "";
@@ -405,6 +422,7 @@ private void refresh () {
     String ColumnMap = "";
     String ColumnData = "";
     String ColumnFilters = "";
+    String AppendRowNumbers = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -415,6 +433,7 @@ private void refresh () {
         ColumnMap = props.getValue ( "ColumnMap" );
         ColumnData = props.getValue ( "ColumnData" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
+        AppendRowNumbers = props.getValue ( "AppendRowNumbers" );
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -445,6 +464,9 @@ private void refresh () {
         if ( ColumnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( ColumnFilters );
         }
+        if ( AppendRowNumbers != null ) {
+            __AppendRowNumbers_JTextField.setText ( AppendRowNumbers );
+        }
 	}
 	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
@@ -453,6 +475,7 @@ private void refresh () {
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
 	ColumnData = __ColumnData_JTextArea.getText().trim();
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+    AppendRowNumbers = __AppendRowNumbers_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "AppendTableID=" + AppendTableID );
@@ -461,6 +484,7 @@ private void refresh () {
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "ColumnData=" + ColumnData );
 	props.add ( "ColumnFilters=" + ColumnFilters );
+    props.add ( "AppendRowNumbers=" + AppendRowNumbers );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

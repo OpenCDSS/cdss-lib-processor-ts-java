@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -123,7 +123,7 @@ Append a time series to the processor time series results list.
 @param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @param ts Time series to append.
-@param return the number of warnings generated.
+@return return the number of warnings generated.
 */
 public static int appendEnsembleToResultsEnsembleList ( CommandProcessor processor, Command command, TSEnsemble tsensemble ) {
     String routine = TSCommandProcessorUtil.class.getSimpleName() + ".appendEnsembleToResultsEnsembleList";
@@ -242,7 +242,7 @@ Errors should not result and are logged in the log file and command status, indi
 @param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @param tslist List of time series to append.
-@param return the number of warnings generated.
+@return return the number of warnings generated.
 */
 public static int appendTimeSeriesListToResultsList ( CommandProcessor processor, Command command, List<TS> tslist ) {
     int wc = 0;
@@ -261,7 +261,7 @@ Append a time series to the processor time series results list.
 @param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @param ts Time series to append.
-@param return the number of warnings generated.
+@return return the number of warnings generated.
 */
 public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts ) {
 	String routine = TSCommandProcessor.class.getSimpleName() + ".appendTimeSeriesToResultsList";

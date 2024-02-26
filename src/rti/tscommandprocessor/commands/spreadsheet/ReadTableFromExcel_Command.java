@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -99,8 +99,8 @@ private int __firstDataRow = 0;
 /**
 Constructor.
 */
-public ReadTableFromExcel_Command ()
-{	super();
+public ReadTableFromExcel_Command () {
+	super();
 	setCommandName ( "ReadTableFromExcel" );
 }
 
@@ -112,8 +112,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String InputFile = parameters.getValue ( "InputFile" );
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
     String NumberPrecision = parameters.getValue ( "NumberPrecision" );
@@ -121,26 +121,26 @@ throws InvalidCommandParameterException
     String KeepOpen = parameters.getValue ( "KeepOpen" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// If the input file does not exist, warn the user...
 
 	//String working_dir = null;
-	
+
 	CommandProcessor processor = getCommandProcessor();
-	
+
     if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the table identifier." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the table identifier." ) );
     }
 	try {
 	    Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
+		// Working directory is available so use it.
 		if ( o != null ) {
 			//working_dir = (String)o;
 		}
@@ -149,10 +149,10 @@ throws InvalidCommandParameterException
         message = "Error requesting WorkingDir from processor.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report the problem to software support." ) );
 	}
-	
+
 	if ( (InputFile == null) || InputFile.isEmpty() ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
@@ -160,8 +160,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else if ( InputFile.indexOf("${") < 0 ){
-		/* Allow input file to not exist
+	else if ( InputFile.indexOf("${") < 0 ) {
+		/* Allow input file to not exist because it might be created by the workflow.
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -186,7 +186,7 @@ throws InvalidCommandParameterException
 		}
 		*/
 	}
-	
+
     if ( (ExcelColumnNames != null) && !ExcelColumnNames.isEmpty() ) {
     	ExcelColumnNameRowType t = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);
     	if ( t == null ) {
@@ -198,7 +198,7 @@ throws InvalidCommandParameterException
 	            	ExcelColumnNameRowType.FIRST_ROW_IN_RANGE + ", or " + ExcelColumnNameRowType.ROW_BEFORE_RANGE) );
     	}
     }
-    
+
     if ( NumberPrecision != null && !NumberPrecision.equals("") ) {
         int numberPrecision = 0;
         boolean bad = false;
@@ -219,8 +219,8 @@ throws InvalidCommandParameterException
                     message, "Specify NumberPrecision as a positive integer." ) );
         }
     }
-	
-	if ( ReadAllAsText != null && !ReadAllAsText.equalsIgnoreCase(_True) && 
+
+	if ( ReadAllAsText != null && !ReadAllAsText.equalsIgnoreCase(_True) &&
         !ReadAllAsText.equalsIgnoreCase(_False) && !ReadAllAsText.equalsIgnoreCase("") ) {
         message = "ReadAllAsText is invalid.";
         warning += "\n" + message;
@@ -228,7 +228,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "ReadAllAsText must " + _False + " (default) or " + _True ) );
     }
-    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
+    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) &&
         !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
         message = "KeepOpen is invalid.";
         warning += "\n" + message;
@@ -238,9 +238,9 @@ throws InvalidCommandParameterException
     }
 
 	// TODO SAM 2005-11-18 Check the format.
-    
-	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(18);
+
+	//  Check for invalid parameters.
+	List<String> validList = new ArrayList<>(18);
     validList.add ( "TableID" );
     validList.add ( "NumberPrecision" );
     validList.add ( "InputFile" );
@@ -259,41 +259,38 @@ throws InvalidCommandParameterException
     validList.add ( "ExcelTextColumns" );
     validList.add ( "ReadAllAsText" );
     validList.add ( "RowCountProperty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new ReadTableFromExcel_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
 /**
 Return the row (0+) of the first data row to process.
 */
-private int getFirstDataRow ()
-{
+private int getFirstDataRow () {
     return __firstDataRow;
 }
 
@@ -302,21 +299,22 @@ Return a list of objects of the requested type.  This class only keeps a list of
 The following classes can be requested:  DataTable
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new Vector<>();
         v.add ( (T)table );
     }
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
-Read the table from an Excel worksheet.  The cells must be specified by a contiguous address block specified
-by one of the parameters excelAddress, excelNamedRange, excelTableName.
+Read the table from an Excel worksheet.
+The cells must be specified by a contiguous address block specified by one of the parameters excelAddress,
+excelNamedRange, excelTableName.
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
 @param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
@@ -338,12 +336,12 @@ private DataTable readTableFromExcelFile ( String workbookFile, String sheetName
     String comment,
     String [] excelDoubleColumns, String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
     int numberPrecision, boolean readAllAsText, List<String> problems )
-throws FileNotFoundException, IOException
-{   String routine = getClass().getSimpleName() + ".readTableFromExcelFile", message;
+    throws FileNotFoundException, IOException {
+    String routine = getClass().getSimpleName() + ".readTableFromExcelFile", message;
     Message.printStatus(2, routine, "Reading Excel file \"" + workbookFile + "\" sheet name \"" + sheetName + "\"." );
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
-        // Set to null to simplify logic below
+        // Set to null to simplify logic below.
         comment = null;
     }
 
@@ -351,7 +349,7 @@ throws FileNotFoundException, IOException
     Workbook wb = null;
     InputStream inp = null;
     try {
-        // See if an open workbook by the same name exists
+        // See if an open workbook by the same name exists.
         WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
         if ( wbMeta != null ) {
         	Message.printStatus(2,routine,"Found an open workbook matching \"" + workbookFile + "\"");
@@ -369,10 +367,10 @@ throws FileNotFoundException, IOException
             try {
             	StopWatch sw = new StopWatch();
             	sw.start();
-            	Message.printStatus(2,routine,"Creating in-memory workbook...");
+            	Message.printStatus(2,routine,"Creating in-memory workbook.");
                 wb = WorkbookFactory.create(inp);
                 sw.stop();
-            	Message.printStatus(2,routine,"done creating in-memory workbook (took " + sw.getMilliseconds() + " ms).");
+            	Message.printStatus(2,routine,"Done creating in-memory workbook (took " + sw.getMilliseconds() + " ms).");
             }
             catch ( InvalidFormatException e ) {
                 problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
@@ -380,32 +378,31 @@ throws FileNotFoundException, IOException
             }
         }
         Sheet sheet = null;
-        Message.printStatus(2,routine,"Getting sheet from workbook...");
-        // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges
-        // are global in workbook)
+        Message.printStatus(2,routine,"Getting sheet from workbook.");
+        // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges are global in workbook)>
         if ( (sheetName == null) || (sheetName.length() == 0) ) {
             // Default is to use the first sheet
             sheet = wb.getSheetAt(0);
             if ( sheet == null ) {
-                problems.add ( "Workbook does not include any worksheets" );
+                problems.add ( "Workbook does not include any worksheets." );
                 return null;
             }
         }
         else {
             sheet = wb.getSheet(sheetName);
             if ( sheet == null ) {
-                problems.add ( "Workbook does not include worksheet named \"" + sheetName + "\"" );
+                problems.add ( "Workbook does not include worksheet named \"" + sheetName + "\"." );
                 return null;
             }
         }
-        // Get the contiguous block of data to process by evaluating user input
+        // Get the contiguous block of data to process by evaluating user input.
         AreaReference area = tk.getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
         if ( area == null ) {
             problems.add ( "Unable to get worksheet area reference from address information." );
             return null;
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
-        // Create the table based on the first row of the area
+        // Create the table based on the first row of the area.
         Object [] o = tk.createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
         	excelDoubleColumns, excelIntegerColumns, excelDateTimeColumns, excelTextColumns, numberPrecision, readAllAsText, problems );
         String [] columnNames = (String [])o[0];
@@ -414,28 +411,28 @@ throws FileNotFoundException, IOException
         // Read the data from the area and transfer to the table.
         Row row;
         Cell cell;
-        int rowStart = getFirstDataRow(); // Set in createTableColumns()
+        int rowStart = getFirstDataRow(); // Set in createTableColumns().
         int rowEnd = area.getLastCell().getRow();
         int colStart = area.getFirstCell().getCol();
         int colEnd = area.getLastCell().getCol();
-        String numberFormat = "%." + numberPrecision + "f"; // Used to format numeric to text to avoid Java exponential notation
+        String numberFormat = "%." + numberPrecision + "f"; // Used to format numeric to text to avoid Java exponential notation.
         Message.printStatus(2, routine, "Cell range is [" + rowStart + "][" + colStart + "] to [" + rowEnd + "][" + colEnd + "]");
         int cellType;
         int iRowOut = -1, iColOut;
         String cellValueString;
-        Object cellValueObject = null; // Generic cell object for logging
+        Object cellValueObject = null; // Generic cell object for logging.
         boolean cellValueBoolean;
         double cellValueDouble;
         Date cellValueDate;
-        CellValue formulaCellValue = null; // Cell value after formula evaluation
+        CellValue formulaCellValue = null; // Cell value after formula evaluation.
         DateTime dt;
-        boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
-        boolean needToSkipRow = false; // Whether a row should be skipped when reading (depends on columnIncludeFilterList and columnExcludeFilterList)
+        boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object.
+        boolean needToSkipRow = false; // Whether a row should be skipped when reading (depends on columnIncludeFilterList and columnExcludeFilterList).
         int nRowsToRead = rowEnd - rowStart + 1;
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
             if ( row == null ) {
-                // Seems to happen at bottom of worksheets where there are extra junk rows
+                // Seems to happen at bottom of worksheets where there are extra junk rows.
                 continue;
             }
             if ( Message.isDebugOn ) {
@@ -446,7 +443,7 @@ throws FileNotFoundException, IOException
                 updateDelta = 2;
             }
             if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%updateDelta == 0) ) {
-                // Update the progress bar every 5%
+                // Update the progress bar every 5%.
                 message = "Reading row " + (iRow - rowStart + 1) + " of " + nRowsToRead;
                 notifyCommandProgressListeners ( (iRow - rowStart), nRowsToRead, (float)-1.0, message );
             }
@@ -455,7 +452,7 @@ throws FileNotFoundException, IOException
                 continue;
             }
             // Increment after check for comments.
-            // Other skipped rows are handled by removing the row and decrementing iRowOut
+            // Other skipped rows are handled by removing the row and decrementing iRowOut.
             ++iRowOut;
             needToSkipRow = false;
             iColOut = -1;
@@ -467,34 +464,36 @@ throws FileNotFoundException, IOException
                 }
                 try {
                     if ( cell == null ) {
-                    	// Handle null cells specifically - might cause row to be ignored
+                    	// Handle null cells specifically - might cause row to be ignored.
                         String cellValue = null;
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                             cellValue = "";
                         }
                         table.setFieldValue(iRowOut, iColOut, cellValue, true);
-                        if ( !needToSkipRow && (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValue, columnIncludeFilterList, true, true) ) {
-                            // Row was added but will remove at the end after all columns are processed
-                        	// Only change from false to true to handle previous columns setting to true
+                        // Default the cell value to check, assuming a String.
+                        String checkValue = "" + cellValue;
+                        if ( !needToSkipRow &&
+                            !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], checkValue, columnIncludeFilterList, true, true) ) {
+                            // Row was added but will remove at the end after all columns are processed.
+                        	// Only change from false to true to handle previous columns setting to true.
                         	needToSkipRow = true;
                         }
-                        if ( !needToSkipRow && (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValue, columnExcludeFilterList, true, true) ) {
-                            // Row was added but will remove at the end after all columns are processed
-                        	// Only change from false to true since include takes precedence
+                        if ( !needToSkipRow &&
+                            tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], checkValue, columnExcludeFilterList, true, true) ) {
+                            // Row was added but will remove at the end after all columns are processed.
+                        	// Only change from false to true since include takes precedence.
                         	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
                     		needToSkipRow = true;
                         }
                         continue;
                     }
                     // If here the cell is not null.
-                    // First get the data using the type indicated for the cell.  Then translate to
-                    // the appropriate type in the data table.  Handling at cell level is needed because
-                    // the Excel worksheet might have cell values that are mixed type in the column.
+                    // First get the data using the type indicated for the cell.
+                    // Then translate to the appropriate type in the data table.
+                    // Handling at cell level is needed because the Excel worksheet might have cell values that are mixed type in the column.
                     // The checks are exhaustive, so list in the order that is most likely (string, double,
                     // boolean, blank, error, formula).
-                    cellValueObject = null; // For try/catch
+                    cellValueObject = null; // For try/catch.
                     cellType = cell.getCellType();
                     if ( Message.isDebugOn ) {
                         Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
@@ -502,12 +501,12 @@ throws FileNotFoundException, IOException
                     }
                     cellIsFormula = false;
                     if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                        // Have to evaluate the cell and get the value as the result
+                        // Have to evaluate the cell and get the value as the result.
                         cellIsFormula = true;
                         try {
                             FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
                             formulaCellValue = formulaEval.evaluate(cell);
-                            // Reset cellType for following code
+                            // Reset cellType for following code.
                             cellType = formulaCellValue.getCellType();
                             if ( Message.isDebugOn ) {
                                 Message.printDebug(1, routine, "Detected formula, new cellType=" + cellType +
@@ -530,44 +529,44 @@ throws FileNotFoundException, IOException
                         }
                         cellValueObject = cellValueString; // For try/catch
                         if ( !needToSkipRow && !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValueString, columnIncludeFilterList, true, true) ) {
-                            // Add the row but will remove at the end after all columns are processed
-                        	// Only change from false to true to handle previous columns setting to true
+                            // Add the row but will remove at the end after all columns are processed.
+                        	// Only change from false to true to handle previous columns setting to true.
                         	needToSkipRow = true;
                         }
                         if ( !needToSkipRow && tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValueString, columnExcludeFilterList, true, true) ) {
-                            // Add the row but will remove at the end after all columns are processed
-                        	// Only change from false to true since include takes precedence
+                            // Add the row but will remove at the end after all columns are processed.
+                        	// Only change from false to true since include takes precedence.
                         	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
                         	needToSkipRow = true;
                         }
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            // Just set
+                            // Just set.
                             table.setFieldValue(iRowOut, iColOut, cellValueString, true);
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                            // Parse to the double
+                            // Parse to the double.
                             try {
-                                table.setFieldValue(iRowOut, iColOut, new Double(cellValueString), true);
+                                table.setFieldValue(iRowOut, iColOut, Double.valueOf(cellValueString), true);
                             }
                             catch ( NumberFormatException e ) {
-                                // Set to NaN
+                                // Set to NaN.
                                 table.setFieldValue(iRowOut, iColOut, Double.NaN, true);
                             }
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                            // Parse to the boolean
+                            // Parse to the boolean.
                             if ( cellValueString.equalsIgnoreCase("True") || cellValueString.equals("1") ) {
-                                table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
+                                table.setFieldValue(iRowOut, iColOut, Integer.valueOf(1), true);
                             }
                             else {
-                                // Set to null
+                                // Set to null.
                                 table.setFieldValue(iRowOut, iColOut, null, true);
                             }
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                            // Try to parse to a date/time string
-                        	// TODO SAM 2016-03-10 Need to understand better how to handle time zone
-                        	// Format is like Sun Jan 01 00:00:00 MST 2012
+                            // Try to parse to a date/time string.
+                        	// TODO SAM 2016-03-10 Need to understand better how to handle time zone.
+                        	// Format is like Sun Jan 01 00:00:00 MST 2012.
                             try {
                                 dt = DateTime.parse(cellValueString);
                                 Date d = dt.getDate(TimeZoneDefaultType.LOCAL);
@@ -575,28 +574,30 @@ throws FileNotFoundException, IOException
                                 table.setFieldValue(iRowOut, iColOut, d, true);
                             }
                             catch ( Exception e ) {
-                                // Set to null
+                                // Set to null.
                                 table.setFieldValue(iRowOut, iColOut, null, true);
                             }
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
-                            // Try to parse to a date/time string
+                            // Try to parse to a date/time string.
                             try {
                                 dt = DateTime.parse(cellValueString);
                                 //Message.printStatus(2, routine, "Original Excel date string \"" + cellValueString + "\" DateTime=\"" + dt + "\"");
                                 table.setFieldValue(iRowOut, iColOut, dt, true);
                             }
                             catch ( Exception e ) {
-                                // Set to null
+                                // Set to null.
                                 table.setFieldValue(iRowOut, iColOut, null, true);
                             }
                         }
                         else {
-                            // Other cell types don't translate
+                            // Other cell types don't translate.
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
                     else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
+                    	// Excel Numeric:
+                    	// - stores float, integer, and date/time
                        	if ( Message.isDebugOn ) {
                            	Message.printDebug(1, routine, "Cell type is numeric, from formula=" + cellIsFormula);
                        	}
@@ -616,9 +617,9 @@ throws FileNotFoundException, IOException
                             else {
                                 cellValueDate = cell.getDateCellValue();
                             }
-                            cellValueObject = cellValueDate; // For try/catch
+                            cellValueObject = cellValueDate; // For try/catch.
                             if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                                // date to date
+                                // Date to date.
                                 table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
@@ -627,7 +628,7 @@ throws FileNotFoundException, IOException
                                 table.setFieldValue(iRowOut, iColOut, new DateTime(cellValueDate), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                                // date to string
+                                // Date to string.
                                 try {
                                     dt = new DateTime ( cellValueDate );
                                     table.setFieldValue(iRowOut, iColOut, dt.toString(), true);
@@ -641,29 +642,49 @@ throws FileNotFoundException, IOException
                             }
                         }
                         else {
-                            // Floating point value
+                            // Excel cell type is a number:
+                        	// - could be a float or an integer
                             if ( cellIsFormula ) {
                                 cellValueDouble = formulaCellValue.getNumberValue();
                             }
                             else {
                                 cellValueDouble = cell.getNumericCellValue();
                             }
-                            cellValueObject = cellValueDouble; // For try/catch
+                            cellValueObject = cellValueDouble; // For try/catch.
                             if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                                // Double to double
-                                table.setFieldValue(iRowOut, iColOut, new Double(cellValueDouble), true);
+                                // Double to double.
+                                table.setFieldValue(iRowOut, iColOut, Double.valueOf(cellValueDouble), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                                // Double to string - have to format number because Java will use exponential notation
+                                // Double to string - have to format number because Java will use exponential notation.
                                 table.setFieldValue(iRowOut, iColOut, StringUtil.formatString(cellValueDouble,numberFormat), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                                // Double to integer - use an offset to help make sure integer value is correct
+                                // Double to integer - use an offset to help make sure integer value is correct:
+                            	// - for example, double stored internally as .9999 should be integer 1, as intended
+                            	Integer intValue = null;
                                 if ( cellValueDouble >= 0.0 ) {
-                                    table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble + .0001)), true);
+                                	intValue = Integer.valueOf((int)(cellValueDouble + .0001));
+                                    table.setFieldValue(iRowOut, iColOut, intValue, true);
                                 }
                                 else {
-                                    table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble - .0001)), true);
+                                	intValue = Integer.valueOf((int)(cellValueDouble - .0001));
+                                    table.setFieldValue(iRowOut, iColOut, intValue, true);
+                                }
+                                String checkValue = "" + intValue;
+                                if ( Message.isDebugOn ) {
+                                	Message.printDebug(1, routine, "Checking filters for cell value: " + checkValue );
+                                }
+                                if ( !needToSkipRow && !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], checkValue, columnIncludeFilterList, true, true) ) {
+                                    // Add the row but will remove at the end after all columns are processed.
+                        	        // Only change from false to true to handle previous columns setting to true.
+                        	        needToSkipRow = true;
+                                }
+                                if ( !needToSkipRow && tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], checkValue, columnExcludeFilterList, true, true) ) {
+                                    // Add the row but will remove at the end after all columns are processed.
+                        	        // Only change from false to true since include takes precedence.
+                        	        // In other words, if the include has set to true then the row is already excluded so don't undo that setting.
+                        	        needToSkipRow = true;
                                 }
                             }
                             else {
@@ -678,7 +699,7 @@ throws FileNotFoundException, IOException
                         else {
                             cellValueBoolean = cell.getBooleanCellValue();
                         }
-                        cellValueObject = cellValueBoolean; // For try/catch
+                        cellValueObject = cellValueBoolean; // For try/catch.
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
                             table.setFieldValue(iRowOut, iColOut, cellValueBoolean, true);
                         }
@@ -688,31 +709,31 @@ throws FileNotFoundException, IOException
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
                             if ( cellValueBoolean ) {
-                                table.setFieldValue(iRowOut, iColOut, new Double(1.0), true);
+                                table.setFieldValue(iRowOut, iColOut, Double.valueOf(1.0), true);
                             }
                             else {
-                                table.setFieldValue(iRowOut, iColOut, new Double(0.0), true);
+                                table.setFieldValue(iRowOut, iColOut, Double.valueOf(0.0), true);
                             }
                         }
                         else {
-                            // Not able to convert
+                            // Not able to convert.
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
                     else if ( cellType == Cell.CELL_TYPE_BLANK ) {
-                        // Null works for all object types.  If truly a blank string in text cell, use "" as text
+                        // Null works for all object types.  If truly a blank string in text cell, use "" as text.
                         if ( !needToSkipRow && !tk.cellMatchesIncludeFilter(columnNames[iColOut],"",columnIncludeFilterList, true, true) ) {
-                            // Add the row but will remove at the end after all columns are processed
-                        	// Only change from false to true to handle previous columns setting to true
+                            // Add the row but will remove at the end after all columns are processed.
+                        	// Only change from false to true to handle previous columns setting to true.
                         	needToSkipRow = true;
                         }
                         if ( !needToSkipRow && tk.cellMatchesExcludeFilter(columnNames[iColOut],"",columnExcludeFilterList, true, true) ) {
-                            // Add the row but will remove at the end after all columns are processed
-                        	// Only change from false to true since include takes precedence
+                            // Add the row but will remove at the end after all columns are processed.
+                        	// Only change from false to true since include takes precedence.
                         	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
                         	needToSkipRow = true;
                         }
-                        cellValueObject = "blank"; // For try/catch
+                        cellValueObject = "blank"; // For try/catch.
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                             table.setFieldValue(iRowOut, iColOut, "", true);
                         }
@@ -727,7 +748,7 @@ throws FileNotFoundException, IOException
                         else {
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
-                        cellValueObject = "error"; // For try/catch
+                        cellValueObject = "error"; // For try/catch.
                     }
                     else {
                         table.setFieldValue(iRowOut, iColOut, null, true);
@@ -741,15 +762,15 @@ throws FileNotFoundException, IOException
                 if ( Message.isDebugOn ) {
                 	Message.printDebug(1,routine,"At end of processing column \"" + columnNames[iColOut] + "\", needToSkipRow="+needToSkipRow);
                 }
-            } // end of column loop
+            } // End of column loop.
             if ( Message.isDebugOn ) {
             	Message.printDebug(1,routine,"At end of processing row, needToSkipRow="+needToSkipRow);
             }
             if ( needToSkipRow ) {
                 // Because columns are added individually, need to remove rows that were added but should not have because
-                // an exclude filter was matched
+                // an include filter was not matched or an exclude filter was matched.
                 table.deleteRecord(iRowOut);
-                --iRowOut; // Will be incremented for next row
+                --iRowOut; // Will be incremented for next row.
                 continue;
             }
         }
@@ -761,7 +782,7 @@ throws FileNotFoundException, IOException
     finally {
         // If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
-            // Save the open workbook for other commands to use
+            // Save the open workbook for other commands to use.
             ExcelUtil.setOpenWorkbook(workbookFile,"r",wb);
         }
         else {
@@ -777,13 +798,11 @@ throws FileNotFoundException, IOException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -794,8 +813,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -808,16 +826,16 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -825,7 +843,7 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -834,8 +852,8 @@ CommandWarningException, CommandException
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
@@ -851,15 +869,15 @@ CommandWarningException, CommandException
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
 	String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
-	ExcelColumnNameRowType excelColumnNames = ExcelColumnNameRowType.COLUMN_N; // Default
+	ExcelColumnNameRowType excelColumnNames = ExcelColumnNameRowType.COLUMN_N; // Default.
 	if ( (ExcelColumnNames != null) && !ExcelColumnNames.isEmpty() ) {
-	    excelColumnNames = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);  
+	    excelColumnNames = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);
 	}
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
     StringFilterList columnIncludeFilterList = null;
     if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) && (ColumnIncludeFilters.indexOf(":") > 0) ) {
         columnIncludeFilterList = new StringFilterList();
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnIncludeFilters, ",", 0 );
         // Now break pairs and put in list
         for ( String pair : pairs ) {
@@ -867,7 +885,7 @@ CommandWarningException, CommandException
             String tableColumn = parts[0].trim();
             String pattern = "";
             if ( parts.length > 1 ) {
-                // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation
+                // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation.
                 pattern = parts[1].trim().replace("*", ".*");
             }
             columnIncludeFilterList.add(tableColumn, pattern );
@@ -877,16 +895,16 @@ CommandWarningException, CommandException
     StringFilterList columnExcludeFilterList = null;
     if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) && (ColumnExcludeFilters.indexOf(":") > 0) ) {
         columnExcludeFilterList = new StringFilterList();
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnExcludeFilters, ",", 0 );
-        // Now break pairs and put in hashtable
-        // Case is checked when processing the filter
+        // Now break pairs and put in hashtable.
+        // Case is checked when processing the filter.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             String tableColumn = parts[0].trim();
             String pattern = "";
             if ( parts.length > 1 ) {
-                // Replace * globbing with internal Java notation
+                // Replace * globbing with internal Java notation.
                 pattern = parts[1].trim().replace("*", ".*");
             }
             columnExcludeFilterList.add(tableColumn, pattern );
@@ -930,7 +948,7 @@ CommandWarningException, CommandException
         }
     }
 	String NumberPrecision = parameters.getValue ( "NumberPrecision" );
-	int numberPrecision = 6; // default
+	int numberPrecision = 6; // Default.
 	try {
 	    numberPrecision = Integer.parseInt(NumberPrecision);
 	}
@@ -947,7 +965,7 @@ CommandWarningException, CommandException
     	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
     }
     String KeepOpen = parameters.getValue ( "KeepOpen" );
-    boolean keepOpen = false; // default
+    boolean keepOpen = false; // Default.
     if ( (KeepOpen != null) && KeepOpen.equalsIgnoreCase(_True) ) {
         keepOpen = true;
     }
@@ -958,8 +976,8 @@ CommandWarningException, CommandException
 	if ( !IOUtil.fileExists(InputFile_full) ) {
 		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 			if ( InputFile_full.indexOf("${") < 0 ) {
-				// File does not exist because it may be created during run - ${Property} is ok regardless
-				// Do not increment the warning counter because the discovery table will not be set up below
+				// File does not exist because it may be created during run - ${Property} is ok regardless.
+				// Do not increment the warning counter because the discovery table will not be set up below.
 				message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
 		        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
 		            message, "Verify that the Excel workbook file exists.  May be OK if created during processing." ) );
@@ -981,10 +999,10 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now process the file...
+	// Now process the file.
 
 	DataTable table = null;
-	List<String> problems = new Vector<String>();
+	List<String> problems = new ArrayList<>();
 	try {
 	    if ( commandPhase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet, keepOpen,
@@ -999,18 +1017,18 @@ CommandWarningException, CommandException
                 status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Check the log file for exceptions." ) );
             }
-            // Set the table identifier...
+            // Set the table identifier.
             if ( table == null ) {
-                // Create an empty table to have something in output for user
+                // Create an empty table to have something in output for user.
                 table = new DataTable();
             }
             table.setTableID ( TableID );
-    	    // Set the property indicating the number of rows in the table
+    	    // Set the property indicating the number of rows in the table.
             if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
                 int rowCount = table.getNumberOfRecords();
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", RowCountProperty );
-                request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+                request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
                 try {
                     processor.processRequest( "SetProperty", request_params);
                 }
@@ -1040,16 +1058,16 @@ CommandWarningException, CommandException
             message, "Verify that the file exists and is readable." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
-    // Set the table in the processor...
-    
+
+    // Set the table in the processor.
+
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "Table", table );
@@ -1072,17 +1090,17 @@ CommandWarningException, CommandException
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table the table created in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 
 /**
 Set the first data row (0+).
+@param row the first data row
 */
-private void setFirstDataRow ( int row )
-{
+private void setFirstDataRow ( int row ) {
     __firstDataRow = row;
 }
 

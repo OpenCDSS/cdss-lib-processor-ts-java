@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -72,7 +72,7 @@ This class initializes, checks, and runs the ReadTableFromDataStore() command.
 */
 public class ReadTableFromDataStore_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 The table that is read.
 */
@@ -81,22 +81,21 @@ private DataTable __table = null;
 /**
 Constructor.
 */
-public ReadTableFromDataStore_Command ()
-{	super();
+public ReadTableFromDataStore_Command () {
+	super();
 	setCommandName ( "ReadTableFromDataStore" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   String DataStore = parameters.getValue ( "DataStore" );
+throws InvalidCommandParameterException {
+    String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     String Top = parameters.getValue ( "Top" );
     String Sql = parameters.getValue ( "Sql" );
@@ -151,8 +150,9 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store table, SQL statement, SQL file, function, or procedure." ) );
     }
-    // Remove comments.  In general /* */ are the main comments supported because they are used with SQL Server
-    // and Oracle and generally easy to deal with.
+    // Remove comments:
+    // - in general /* */ are the main comments supported because they are used with SQL Server and Oracle and generally easy to deal with
+    // - do not remove other comments such as double dashes
     String sqlNoComments = null;
     if ( (Sql != null) && !Sql.equals("") ) {
         sqlNoComments = DMIUtil.removeCommentsFromSql ( Sql ).trim();
@@ -188,7 +188,7 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing SQL file." ) );
             }
-    
+
         try {
             SqlFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
@@ -217,7 +217,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the output table identifier." ) );
     }
-    
+
 	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(17);
     validList.add ( "DataStore" );
@@ -237,22 +237,21 @@ throws InvalidCommandParameterException
     validList.add ( "OutputProperties" );
     validList.add ( "TableID" );
     validList.add ( "RowCountProperty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent ) {
 	String routine = getClass().getSimpleName() + ".editCommand";
@@ -269,8 +268,7 @@ TODO smalers 2021-10-23 this version passes datastore names to the editor.
 The above version operations on DataStore instances.
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean x_editCommand ( JFrame parent ) {
 	String routine = getClass().getSimpleName() + ".editCommand";
@@ -341,8 +339,7 @@ protected String formatFunctionParameters ( List<String> parameterNames ) {
 /**
 Return the table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
@@ -351,8 +348,8 @@ Return a list of objects of the requested type.  This class only keeps a list of
 The following classes can be requested:  DataTable
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new Vector<T>();
@@ -361,7 +358,7 @@ public <T> List<T> getObjectList ( Class<T> c )
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
  * Parse the parameter names from the full function or procedure signature:
@@ -434,13 +431,11 @@ private String removeSurroundingQuotes ( String paramValue ) {
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -451,8 +446,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -464,13 +458,13 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int log_level = 3; // Level for non-user messages for log file.
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
 	CommandProcessor processor = getCommandProcessor();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -491,7 +485,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
     String DataStore = parameters.getValue ( "DataStore" );
@@ -566,7 +560,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
-    
+
     // Find the data store to use.
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
         DataStore, DatabaseDataStore.class );
@@ -587,7 +581,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	dbds.checkDatabaseConnection();
         dmi = ((DatabaseDataStore)dataStore).getDMI();
     }
-    
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
 		Message.printWarning ( 2,
@@ -595,9 +589,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		routine,message);
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
     // Query the table and set in the processor.
-    
+
     DataTable table = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
         // Create the query.
@@ -627,7 +621,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 dataStoreTable.append(DMIUtil.escapeField(dmi,DataStoreTable));
             }
             q.addTable(dataStoreTable.toString());
-            // Always get the columns from the database to check parameters, to guard against SQL injection
+            // Always get the columns from the database to check parameters, to guard against SQL injection.
             List<String> columns = null;
             try {
                 columns = DMIUtil.getTableColumns(dmi,DataStoreTable);
@@ -725,7 +719,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 SqlFile_full = IOUtil.verifyPathForOS(
                     IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                         TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
-                
+
                 if ( !IOUtil.fileReadable(SqlFile_full) || !IOUtil.fileExists(SqlFile_full)) {
                     message = "SQL file \"" + SqlFile_full + "\" is not found or accessible.";
                     Message.printWarning ( warning_level,
@@ -931,7 +925,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             		table = factory.createDataTable(dmi.getDatabaseEngineType(), rs, tableID);
 
             		// Set the table in the processor.
-            
+
             		PropList request_params = new PropList ( "" );
             		request_params.setUsingObject ( "Table", table );
             		try {
@@ -982,7 +976,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                	}
-            
         	}
         }
         catch ( Exception e ) {
@@ -1050,7 +1043,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	for ( Map.Entry<String,String> mapElement : outputPropertiesMap.entrySet() ) {
         		String columnName = mapElement.getKey();
         		String propertyName = mapElement.getValue();
-        		
+
         		try {
         			// Make sure the column name is found in the table.
         			int columnNum = table.getFieldIndex(columnName);
@@ -1089,7 +1082,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         table.setTableID ( TableID );
         setDiscoveryTable ( table );
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -1102,9 +1095,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table data table used for discovery mode
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __table = table;
 }
 

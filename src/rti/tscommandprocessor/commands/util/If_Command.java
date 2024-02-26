@@ -588,13 +588,35 @@ throws CommandWarningException, CommandException {
  	    	    }
             }
             else {
-	            message = "Left and right have different type - cannot evaluate condition \"" + Condition + "\"";
-	            Message.printWarning(3,
-	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                new CommandLogRecord(CommandStatusType.FAILURE,
-	                    message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
+            	// Check to see if a property exists for left or right.
+            	if ( !value1.startsWith("${") && (processor.getProp(value1) != null) ) {
+            		message = "Left and right have different type (is Value1 missing ${ }?) - cannot evaluate condition \"" + Condition + "\"";
+	            	Message.printWarning(3,
+	                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                	routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                	new CommandLogRecord(CommandStatusType.FAILURE,
+	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
+            	}
+            	else if ( !value2.startsWith("${") && (processor.getProp(value2) != null) ) {
+            		message = "Left and right have different type (is Value2 missing ${ }?) - cannot evaluate condition \"" + Condition + "\"";
+	            	Message.printWarning(3,
+	                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                	routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                	new CommandLogRecord(CommandStatusType.FAILURE,
+	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
+            	}
+            	else {
+            		// Show a general warning.
+            		message = "Left and right have different type - cannot evaluate condition \"" + Condition + "\"";
+	            	Message.printWarning(3,
+	                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                	routine, message );
+	            	status.addToLog ( CommandPhaseType.RUN,
+	                	new CommandLogRecord(CommandStatusType.FAILURE,
+	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
+            	}
             }
     	    if ( Condition.indexOf("${") >= 0 ) {
     	        // Show the original.

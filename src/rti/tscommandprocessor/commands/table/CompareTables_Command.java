@@ -536,7 +536,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		message = "Automatically updated old parameter NewTableID to current syntax DiffTable1ID: " + commandString;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.INFO, message,
-				"The new syntax should be used with TSTool 14.9.3 and later." ) ); 
+				"The new syntax should be used with TSTool 14.9.3 and later." ) );
 		Message.printStatus(2, routine, message);
 	}
 	propValue = parameters.getValue("NewTable2ID");
@@ -548,7 +548,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		message = "Automatically updated old parameter NewTable2ID to current syntax DiffTable2ID: " + commandString;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.INFO, message,
-				"The new syntax should be used with TSTool 14.9.3 and later." ) ); 
+				"The new syntax should be used with TSTool 14.9.3 and later." ) );
 		Message.printStatus(2, routine, message);
 	}
 	propValue = parameters.getValue("OutputFile");
@@ -560,7 +560,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		message = "Automatically updated old parameter OutputFile to current syntax DiffFile1: " + commandString;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.INFO, message,
-				"The new syntax should be used with TSTool 14.9.3 and later." ) ); 
+				"The new syntax should be used with TSTool 14.9.3 and later." ) );
 		Message.printStatus(2, routine, message);
 	}
 	propValue = parameters.getValue("OutputFile2");
@@ -572,7 +572,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		message = "Automatically updated old parameter OutputFile2 to current syntax DiffFile2: " + commandString;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.INFO, message,
-				"The new syntax should be used with TSTool 14.9.3 and later." ) ); 
+				"The new syntax should be used with TSTool 14.9.3 and later." ) );
 		Message.printStatus(2, routine, message);
 	}
 }

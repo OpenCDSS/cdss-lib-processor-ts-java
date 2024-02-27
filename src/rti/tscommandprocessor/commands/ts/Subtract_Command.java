@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -68,8 +68,8 @@ protected final String _SetMissingIfAnyMissing = "SetMissingIfAnyMissing";
 /**
 Constructor.
 */
-public Subtract_Command ()
-{	super();
+public Subtract_Command () {
+	super();
 	setCommandName ( "Subtract" );
 }
 
@@ -81,8 +81,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
+throws InvalidCommandParameterException {
+	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     //String SubtractTSList = parameters.getValue ( "SubtractTSList" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
@@ -90,10 +90,10 @@ throws InvalidCommandParameterException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
     /*
 	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
 		if ( TSID != null ) {
@@ -107,10 +107,9 @@ throws InvalidCommandParameterException
     */
     /*
 	if ( TSList == null ) {
-		// Probably legacy command...
-		// TODO SAM 2005-05-17 Need to require TSList when legacy
-		// commands are safely nonexistent...  At that point the
-		// following check can occur in any case.
+		// Probably legacy command.
+		// TODO SAM 2005-05-17 Need to require TSList when legacy commands are safely nonexistent.
+		// At that point the following check can occur in any case.
 		if ( (TSID == null) || (TSID.length() == 0) ) {
             message = "A TSID must be specified.";
 			warning += "\n" + message;
@@ -120,20 +119,20 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-    
+
     if ( ((TSID == null) || TSID.equals("")) && ((EnsembleID == null) || EnsembleID.equals("")) ) {
         message = "Neither TSID or EnsembleID have been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the TSID or EnsembleID to process." ) ); 
+                        message, "Specify the TSID or EnsembleID to process." ) );
     }
     if ( (TSID != null) && !TSID.equals("") && (EnsembleID != null) && !EnsembleID.equals("") ) {
         message = "Only one of the TSID and EnsembleID should be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the TSID or EnsembleID to process." ) ); 
+                        message, "Specify the TSID or EnsembleID to process." ) );
     }
 
     if ( (HandleMissingHow != null) && !HandleMissingHow.equals("") &&
@@ -147,7 +146,7 @@ throws InvalidCommandParameterException
                 message, "Specify HandleMissingHow as " + _IgnoreMissing + ", " +
                 _SetMissingIfOtherMissing + ", or " + _SetMissingIfAnyMissing) );
     }
-    
+
     if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && (AnalysisStart.indexOf("${") < 0) ) {
 		try {
 		    DateTime.parse(AnalysisStart);
@@ -170,9 +169,9 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time." ) );
 		}
 	}
-    
-	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(8);
+
+	// Check for invalid parameters.
+    List<String> validList = new ArrayList<>(8);
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "SubtractTSList" );
@@ -182,25 +181,25 @@ throws InvalidCommandParameterException
     validList.add ( "AnalysisStart" );
     validList.add ( "AnalysisEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed),
+and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new Subtract_JDialog ( parent, this )).ok();
 }
 
@@ -209,8 +208,8 @@ Get the time series to process.
 @param its Position in time series array to get time series.
 @param tspos Positions in time series processor time series array.
 */
-private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count )
-{   String routine = "Subtract_Command.getTimeSeriesToProcess";
+private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count ) {
+    String routine = getClass().getSimpleName() + ".getTimeSeriesToProcess";
     TS ts = null;
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -252,41 +251,39 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
+This method currently supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "Subtract_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()")) {
-        // Current syntax...
+        // Current syntax.
         super.parseCommand( command_string);
-        // Recently added TSList so handle it properly
+        // Recently added TSList so handle it properly.
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String SubtractTSList = parameters.getValue ( "SubtractTSList");
         String SubtractTSID = parameters.getValue ( "SubtractTSID");
         if ( ((SubtractTSList == null) || (SubtractTSList.length() == 0)) && ((SubtractTSID != null) && (SubtractTSID.length() > 0)) ) {
             // Old command where SubtractTSID= is specified but SubtractTSList is not.
-            // TSList may be used instead of SubtractTSList and if so use it
+            // TSList may be used instead of SubtractTSList and if so use it.
             if ( (TSList != null) && (TSList.length() > 0) ) {
                 SubtractTSList = TSList;
-                // Convert to newer syntax...SpecifiedTS replaced with SpecifiedTSID
+                // Convert to newer syntax:
+                // - SpecifiedTS replaced with SpecifiedTSID
                 if ( SubtractTSList.equalsIgnoreCase("SpecifiedTS") ) {
                     SubtractTSList = TSListType.SPECIFIED_TSID.toString();
                 }
                 parameters.set ( "SubtractTSList", SubtractTSList );
             }
             else {
-                // Examine SubtractTSID to figure out what to do...
+                // Examine SubtractTSID to figure out what to do.
                 if ( SubtractTSID.indexOf("*") >= 0 ) {
                     SubtractTSList = TSListType.ALL_TS.toString();
                 }
@@ -297,7 +294,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             parameters.set ( "SubtractTSList", SubtractTSList );
         }
         else if ( (TSList != null) && (TSList.length() > 0) ) {
-            // Convert to newer syntax...SpecifiedTS replaced with SpecifiedTSID
+            // Convert to newer syntax:
+        	// - SpecifiedTS replaced with SpecifiedTSID
             SubtractTSList = TSList;
             if ( SubtractTSList.equalsIgnoreCase("SpecifiedTS") ) {
                 SubtractTSList = TSListType.SPECIFIED_TSID.toString();
@@ -321,14 +319,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String HandleMissingHow = ((String)v.get(2)).trim();
         StringBuffer SubtractTSID = new StringBuffer();
         for ( int i = 3; i < v.size(); i++ ) {
-            // Fourth and fifth fields optionally have analysis period...
+            // Fourth and fifth fields optionally have analysis period.
             if ( i > 3 ) {
                 SubtractTSID.append(",");
             }
             SubtractTSID.append(((String)v.get(i)).trim());
         }
 
-        // Set parameters and new defaults...
+        // Set parameters and new defaults.
 
         PropList parameters = new PropList ( getCommandName() );
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -340,11 +338,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         parameters.set ( "SubtractTSID", SubtractTSID.toString() );
         parameters.setHowSet ( Prop.SET_UNKNOWN );
         setCommandParameters ( parameters );
-        
+
         message = "Automatically updated to current syntax from old command \"" + command_string + "\".";
         CommandStatus status = getCommandStatus();
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.INFO, message, "" ) ); 
+                new CommandLogRecord(CommandStatusType.INFO, message, "" ) );
     }
 }
 
@@ -356,18 +354,18 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	//int log_level = 3;	// Warning message level for non-user messages
+	//int log_level = 3;	// Warning message level for non-user messages.
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    
+
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
     try {
@@ -377,16 +375,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
 
 	// Get the time series to process.  This should be a single matching time series or ensemble time series.
-	
+
 	PropList request_params = new PropList ( "" );
-	// Only one of these will be specified...
+	// Only one of these will be specified.
     String TSID = parameters.getValue ( "TSID" );
 	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
@@ -406,20 +404,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         request_params.set ( "TSList", TSList );
         request_params.set ( "EnsembleID", EnsembleID );
     }
-	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below
-	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" ); // ${Property} is handled below
-	
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below.
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" ); // ${Property} is handled below.
+
 	// Figure out the dates to use for the analysis.
 	// Default of null means to analyze the full period.
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
-	
+
 	try {
 		AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
 	try {
@@ -427,10 +425,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
-	
+
 	CommandProcessorRequestResultsBean bean = null;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
@@ -499,7 +497,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
 		}
 	}
-	
+
 	int nts = 0;
 	if ( tslist != null ) {
 		nts = tslist.size();
@@ -517,7 +515,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     else {
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
-            // Expecting only a single time series
+            // Expecting only a single time series.
             if ( nts != 1 ) {
                 message = "Expecting to find one time series to process (have " + nts + ") using TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
@@ -532,8 +530,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
 
-	// Time series to subtract...
-    
+	// Time series to subtract.
+
     String SubtractTSList = parameters.getValue ( "SubtractTSList" );
     if ( (SubtractTSList == null) || SubtractTSList.equals("") ) {
         SubtractTSList = TSListType.ALL_TS.toString();
@@ -618,7 +616,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
         }
     }
-    
+
     int n_subtract_ts = 0;
     if ( subtract_tslist != null ) {
         n_subtract_ts = subtract_tslist.size();
@@ -634,11 +632,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message,
                 "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
-    
-    // Make sure that the number of dependent and independent time series is consistent
-    // Already checked to make sure there is a single time series above if NOT processing enembles so
+
+    // Make sure that the number of dependent and independent time series is consistent.
+    // Already checked to make sure there is a single time series above if NOT processing ensembles so
     // just check ensembles here.
-    
+
     if ( TSListType.ENSEMBLE_ID.equals(SubtractTSList) ) {
         if ( (n_subtract_ts != 1) && (n_subtract_ts != nts) ) {
             message = "The number if time series to subtract to the ensemble (" + n_subtract_ts +
@@ -654,14 +652,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+		// Input error (e.g., missing time series).
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
     /*
     String TransferHow = parameters.getValue("TransferHow");
@@ -670,11 +668,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		setprops.set ( "TransferHow", TransferHow );
 	}
     */
-    
+
     String HandleMissingHow = parameters.getValue("HandleMissingHow");
     int HandleMissingHow_int = TSUtil.IGNORE_MISSING;
-    if ( HandleMissingHow == null ) {
-        HandleMissingHow = "IgnoreMissing";
+    if ( (HandleMissingHow == null) || HandleMissingHow.isEmpty() ) {
+        HandleMissingHow = "IgnoreMissing"; // Default.
     }
     if ( HandleMissingHow.equalsIgnoreCase( _IgnoreMissing ) ) {
         HandleMissingHow_int = TSUtil.IGNORE_MISSING;
@@ -686,8 +684,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         HandleMissingHow_int=TSUtil.SET_MISSING_IF_ANY_MISSING;
     }
 
-	TS ts = null;  // Time series to be subtracted from
-    // Loop through the time series being modified...
+	TS ts = null;  // Time series to be subtracted from.
+    // Loop through the time series being modified.
 	for ( int its = 0; its < nts; its++ ) {
 		ts = getTimeSeriesToProcess ( its, tspos, command_tag, warning_count );
 		if ( ts == null ) {
@@ -701,15 +699,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
 			continue;
 		}
-        
+
         // TODO SAM 2008-01-06 Phase out if customer does not need or if a more robust way to check
-        // for dates can be implemented
-        // Special check inspired by CDSS where people tried to subtract FrostDate time series
+        // for dates can be implemented.
+        // Special check inspired by CDSS where people tried to subtract FrostDate time series.
         if ( StringUtil.indexOfIgnoreCase(ts.getDataType(), "FrostDate", 0) >= 0 ) {
             // TODO - SAM 2005-05-20
             // This is a special check because the subtract() command used to
-            // be used in TSTool to subtract frost date time series.  Now the
-            // subtract() command is not suitable.
+            // be used in TSTool to subtract frost date time series.
+        	// Now the Subtract() command is not suitable.
             message = "The " + getCommandName() + "() command is not suitable for frost dates - skipping processing.";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
@@ -717,37 +715,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Use Blend(), SetFromTS(), or similar commands." ) );
         }
-		
-		// Get the specific time series to subtract depending on the input parameters...
-        
-        TS tstosubtract = null;  // Single time series to subtract
-        List<TS> tstosubtract_list = new ArrayList<TS>(); // List of time series to subtract
+
+		// Get the specific time series to subtract depending on the input parameters.
+
+        TS tstosubtract = null;  // Single time series to subtract.
+        List<TS> tstosubtract_list = new ArrayList<TS>(); // List of time series to subtract.
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
-            // Processing a single time series.  Subtract all the time series from it
-            // Reuse the same independent time series for all transfers...
+            // Processing a single time series.  Subtract all the time series from it.
+            // Reuse the same independent time series for all transfers.
             tstosubtract_list = subtract_tslist;
             Message.printStatus(2, routine, "Subtracting " + tstosubtract_list.size() +
                     " time series from single time series \"" + ts.getIdentifier() + "\"" );
         }
         else if ( TSListType.ENSEMBLE_ID.equals(TSList) ) {
             // Processing an ensemble.  Need to loop through each time series in the ensemble and subtract a single
-            // time series (either from a single TS or another ensemble)
-            // Get the time series matching the loop index...
+            // time series (either from a single TS or another ensemble).
+            // Get the time series matching the loop index.
             if ( TSListType.ENSEMBLE_ID.equals(SubtractTSList) ) {
-                // Subtracting an ensemble from an ensemble so get the ensemble time series at the position...
+                // Subtracting an ensemble from an ensemble so get the ensemble time series at the position.
                 tstosubtract = getTimeSeriesToProcess ( its, subtract_tspos, command_tag, warning_count );
                 tstosubtract_list.add( tstosubtract );
                 Message.printStatus(2, routine, "Subtracting ensemble time series \"" + tstosubtract.getIdentifier() +
                         "\" from ensemble time series \"" + ts.getIdentifier() + "\".");
             }
             else {
-                // Subtracting another time series from an ensemble (checks above verified that only one time series is subtracted).
+                // Subtracting another time series from an ensemble
+            	// (checks above verified that only one time series is subtracted).
                 Message.printStatus(2, routine, "Subtracting " + tstosubtract_list.size() +
                         " time series from ensemble time series \"" + ts.getIdentifier() + "\".");
                 tstosubtract_list = subtract_tslist;
             }
         }
-        
+
         int tstosubtract_list_size = tstosubtract_list.size();
         if ( tstosubtract_list_size == 0 ) {
             // Skip time series.
@@ -760,9 +759,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "May be be OK for partial run." ) );
             continue;
         }
-        
-        // Remove from the time series list the time series being subtracted to (don't subtract from itself)...
-        
+
+        // Remove from the time series list the time series being subtracted to (don't subtract from itself).
+
         TS subtract_ts;
         for ( int icheck = 0; icheck < tstosubtract_list_size; icheck++ ) {
             subtract_ts = (TS)subtract_tslist.get(icheck);
@@ -777,9 +776,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 --tstosubtract_list_size;
             }
         }
-        
-        // Finally do the subtract...
-        
+
+        // Finally do the subtract.
+
         try {
             TSUtil.subtract ( ts, tstosubtract_list, HandleMissingHow_int, AnalysisStart_DateTime, AnalysisEnd_DateTime );
         }
@@ -802,7 +801,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

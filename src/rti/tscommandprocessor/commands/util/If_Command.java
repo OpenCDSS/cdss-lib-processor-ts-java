@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -98,6 +98,8 @@ throws InvalidCommandParameterException {
 	String TableDoesNotExist = parameters.getValue ( "TableDoesNotExist" );
 	String TSExists = parameters.getValue ( "TSExists" );
 	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
+	String TSHasData = parameters.getValue ( "TSHasData" );
+	String TSHasNoData = parameters.getValue ( "TSHasNoData" );
 	String warning = "";
 	String message;
 
@@ -110,6 +112,7 @@ throws InvalidCommandParameterException {
 	boolean propertyDefinedProvided = false;
 	boolean tableExistsProvided = false;
 	boolean tsExistsProvided = false;
+	boolean tsHasDataProvided = false;
 
 	if ( (Condition != null) && !Condition.isEmpty() ) {
 		conditionProvided = true;
@@ -132,6 +135,9 @@ throws InvalidCommandParameterException {
 	if ( ((TSExists != null) && !TSExists.isEmpty()) || ((TSDoesNotExist != null) && !TSDoesNotExist.isEmpty()) ) {
 		tsExistsProvided = true;
 	}
+	if ( ((TSHasData != null) && !TSHasData.isEmpty()) || ((TSHasNoData != null) && !TSHasNoData.isEmpty()) ) {
+		tsHasDataProvided = true;
+	}
 
     if ( (Name == null) || Name.equals("") ) {
         message = "A name for the If() block must be specified";
@@ -140,7 +146,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
     if ( !conditionProvided && !fileExistsProvided && !objectExistsProvided &&
-   		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided ) {
+   		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided && !tsHasDataProvided ) {
         message = "A condition or check of file, object, property, table, or time series must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -156,7 +162,7 @@ throws InvalidCommandParameterException {
 	}
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(13);
+    List<String> validList = new ArrayList<>(15);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
@@ -170,6 +176,8 @@ throws InvalidCommandParameterException {
 	validList.add ( "TableDoesNotExist" );
 	validList.add ( "TSExists" );
 	validList.add ( "TSDoesNotExist" );
+	validList.add ( "TSHasData" );
+	validList.add ( "TSHasNoData" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -289,6 +297,14 @@ throws CommandWarningException, CommandException {
 	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSDoesNotExist = TSCommandProcessorUtil.expandParameterValue(processor, this, TSDoesNotExist);
+	}
+	String TSHasData = parameters.getValue ( "TSHasData" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSHasData = TSCommandProcessorUtil.expandParameterValue(processor, this, TSHasData);
+	}
+	String TSHasNoData = parameters.getValue ( "TSDHasNoData" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSHasNoData = TSCommandProcessorUtil.expandParameterValue(processor, this, TSHasNoData);
 	}
 
 	try {
@@ -910,19 +926,20 @@ throws CommandWarningException, CommandException {
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
-            if ( (TSExists != null) && !TSExists.isEmpty() ) {
-            	if ( ts == null ) {
-                	// Does not matter what the Condition had - the final result is false.
-                	conditionEval = false;
-            	}
-            	else {
-                	if ( (Condition != null) && !Condition.equals("") ) {
-                     	conditionEval = conditionEval & true;
-                	}
-                	else {
-                    	conditionEval = true;
-                	}
-            	}
+            if ( ts == null ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+               	if ( Message.isDebugOn ) {
+               		Message.printStatus(2, routine, "Time series \"" + TSExists + "\" is null and therefore does not exist.");
+               	}
+            }
+            else {
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                    	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
             }
             setConditionEval(conditionEval);
 	    }
@@ -962,6 +979,122 @@ throws CommandWarningException, CommandException {
             else {
                	// Does not matter what the Condition had - the final result is false.
                	conditionEval = false;
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (TSHasData != null) && !TSHasData.isEmpty() ) {
+	        // Check whether a time series has data - this is ANDed to the condition.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+	        TS ts = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSHasData );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSHasData + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_TS = bean_PropList.getContents ( "TS");
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
+            if ( ts == null ) {
+               	// Does not matter what the Condition had - the final result is false.
+               	conditionEval = false;
+               	if ( Message.isDebugOn ) {
+               		Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" is null and therefore does not have data.");
+               	}
+            }
+            else {
+           		// Time series exists.
+            	if ( ts.hasData() ) {
+            		if ( Message.isDebugOn ) {
+            			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" has data.");
+            		}
+            		if ( (Condition != null) && !Condition.equals("") ) {
+            			conditionEval = conditionEval & true;
+            		}
+            		else {
+            			conditionEval = true;
+            		}
+            	}
+            	else {
+            		// Has no data so condition is false in this case.
+            		if ( Message.isDebugOn ) {
+            			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" does not have data.");
+            		}
+            		conditionEval = false;
+            	}
+            }
+       		setConditionEval(conditionEval);
+	    }
+	    if ( (TSHasNoData != null) && !TSHasNoData.isEmpty() ) {
+	        // Check whether a time series does not have data - this is ANDed to the condition.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+	        TS ts = null;
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSHasNoData );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSHasNoData + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_TS = bean_PropList.getContents ( "TS");
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
+            if ( ts == null ) {
+            	// No time series so it has no data.
+           		if ( Message.isDebugOn ) {
+           			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is null and therefore has no data.");
+           		}
+               	if ( (Condition != null) && !Condition.equals("") ) {
+                    	conditionEval = conditionEval & true;
+               	}
+               	else {
+                   	conditionEval = true;
+               	}
+            }
+            else {
+               	// Time series exists but may not have data.
+            	if ( !ts.hasData() ) {
+            		if ( Message.isDebugOn ) {
+            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does not have data.");
+            		}
+            		// Has no data so the condition is true.
+            		if ( (Condition != null) && !Condition.equals("") ) {
+                    	conditionEval = conditionEval & true;
+            		}
+            		else {
+            			conditionEval = true;
+            		}
+            	}
+            	else {
+            		// Has data so condition is false in this case.
+            		if ( Message.isDebugOn ) {
+            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does have data.");
+            		}
+            		conditionEval = false;
+            	}
             }
             setConditionEval(conditionEval);
 	    }
@@ -1006,7 +1139,9 @@ public String toString ( PropList parameters ) {
 		"TableExists",
 		"TableDoesNotExist",
 		"TSExists",
-		"TSDoesNotExist" };
+		"TSDoesNotExist",
+		"TSHasData",
+		"TSHasNoData" };
 	return super.toString(parameters,parameterOrder);
 }
 

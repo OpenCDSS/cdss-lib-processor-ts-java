@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -68,7 +68,7 @@ implements Command, CommandDiscoverable, ObjectListProvider
 	 */
 	//protected final String _False = "False";
 	//protected final String _True = "True";
-	
+
 
 /**
 TSEnsemble created in discovery mode (basically to get the identifier for other commands).
@@ -84,8 +84,7 @@ private List<TS> discoveryTSList = null;
 /**
 Command constructor.
 */
-public ChangeIntervalIrregularToRegular_Command ()
-{	
+public ChangeIntervalIrregularToRegular_Command () {
 	super();
 	setCommandName ( "ChangeIntervalIrregularToRegular" );
 }
@@ -99,13 +98,13 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String warning = "";
+throws InvalidCommandParameterException {
+	String warning = "";
     String message;
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// Get the properties from the PropList parameters.
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID" );
@@ -119,7 +118,7 @@ throws InvalidCommandParameterException
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
 	//String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 
-	// Alias must be specified - for historical command syntax (and generally a good idea)
+	// Alias must be specified - for historical command syntax (and generally a good idea).
 	if ( Alias == null || Alias.isEmpty() ) {
         message = "The time series alias must be specified.";
         warning += "\n" + message;
@@ -128,19 +127,17 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide a time series alias when defining the command."));
 	}
-	
-	// Check if the alias for the new time series is the same as the 
-	// alias used by one of the time series in memory.
-	// If so print a warning...
-	// TODO [LT 2005-05-26] This is used in all other command but it 
-	// is not working here.  Why?	Temporarily using the alternative below.
+
+	// Check if the alias for the new time series is the same as the alias used by one of the time series in memory.
+	// If so print a warning.
+	// TODO [LT 2005-05-26] This is used in all other command but it is not working here.  Why?	Temporarily using the alternative below.
 	/*	Vector tsids = (Vector) getCommandProcessor().getPropContents ( "TSIDListNoInput" );
 	if ( StringUtil.indexOf( tsids, Alias ) >= 0 ) {
 		warning += "\nTime series alias \"" + Alias + "\" is already used above.";
 	}
-	 */		
-	// Check if the alias for the new time series is the same as the 
-	// alias used by the original time series.  If so print a warning...
+	 */
+	// Check if the alias for the new time series is the same as the alias used by the original time series.
+	// If so print a warning.
 	// TODO [LT 2005-05-26] Would this alternative be more appropriated?
 	// Notice: The version above is the one used by the others commands.
 	if ( (Alias != null) && (TSID != null) && TSID.equalsIgnoreCase( Alias ) ) {
@@ -152,17 +149,17 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Specify different time series for input and output."));
 	}
-	
-	// Verify that a NewEnsembleID is specified only if an input EnsembleID is specified
+
+	// Verify that a NewEnsembleID is specified only if an input EnsembleID is specified.
 	if ( (NewEnsembleID != null) && !NewEnsembleID.isEmpty() && ((EnsembleID == null) || EnsembleID.isEmpty())) {
         message = "The NewEnsembleID can only be specified when the input time series are specified using EnsembleID.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(
             CommandStatusType.FAILURE, message,
-            "Specify input as an ensemble or clear the NewEnsembleID.")); 
+            "Specify input as an ensemble or clear the NewEnsembleID."));
 	}
-	
+
 	if ( NewInterval == null || NewInterval.isEmpty() ) {
 		message = "The new interval must be specified.";
         warning += "\n" + message;
@@ -175,7 +172,7 @@ throws InvalidCommandParameterException
 	        TimeInterval.parseInterval(NewInterval);
 	    }
 	    catch ( Exception e ) {
-	        // Should not happen because choices are valid
+	        // Should not happen because choices are valid.
 	        message = "The new interval \"" + NewInterval + "\" is invalid.";
 	        warning += "\n" + message;
 	        status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -183,9 +180,9 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify a new interval using the command editor."));
 	    }
 	}
-	
+
     if ( (Statistic != null) && !Statistic.isEmpty() ) {
-        // Make sure that the statistic is known in general
+        // Make sure that the statistic is known in general.
         boolean supported = false;
         TSStatisticType statisticType = null;
         try {
@@ -198,9 +195,9 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported statistic using the command editor." ) );
         }
-        
-        // Make sure that the statistic is in the supported list for the command
-        
+
+        // Make sure that the statistic is in the supported list for the command.
+
         if ( supported ) {
             supported = false;
             List<TSStatisticType> statistics = TSUtil_ChangeIntervalIrregularToRegular.getStatisticChoices();
@@ -244,7 +241,7 @@ throws InvalidCommandParameterException
     				message, "Specify a number or leave blank.") );
     	}
     }
-	
+
     if ( (OutputYearType != null) && !OutputYearType.isEmpty() ) {
         try {
             YearType.valueOfIgnoreCase(OutputYearType);
@@ -278,7 +275,7 @@ throws InvalidCommandParameterException
     				message, "Specify a number or leave blank.") );
     	}
     }
-	
+
     /*
     if ( (RecalcLimits != null) && !RecalcLimits.isEmpty() &&
         !RecalcLimits.equalsIgnoreCase( _True ) && !RecalcLimits.equalsIgnoreCase(_False) ) {
@@ -289,8 +286,8 @@ throws InvalidCommandParameterException
                 message, "Specify a RecalcLimits as " + _False + " or " + _True + ".") );
     }
     */
-    
-    // Check for invalid parameters...
+
+    // Check for invalid parameters.
 	List<String> validList = new ArrayList<>(18);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -312,15 +309,15 @@ throws InvalidCommandParameterException
     validList.add ( "NewEnsembleID" );
     validList.add ( "NewEnsembleName" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	// Throw an InvalidCommandParameterException in case of errors.
-	if ( warning.length() > 0 ) {		
+	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -329,25 +326,22 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	
-	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return ( new ChangeIntervalIrregularToRegular_JDialog ( parent, this ) ).ok();
 }
 
 /**
 Return the ensemble that is read by this class when run in discovery mode.
 */
-private TSEnsemble getDiscoveryEnsemble()
-{
+private TSEnsemble getDiscoveryEnsemble() {
     return this.discoveryEnsemble;
 }
 
 /**
 Return the list of time series read in discovery phase.
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return this.discoveryTSList;
 }
 
@@ -355,18 +349,17 @@ private List<TS> getDiscoveryTSList ()
 Return the list of data objects created by this object in discovery mode.
 */
 @SuppressWarnings("unchecked")
-public <T> List<T>  getObjectList ( Class<T>  c )
-{
+public <T> List<T>  getObjectList ( Class<T>  c ) {
     TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
 
     // TODO SAM 2011-03-31 Does the following work as intended?
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS).
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
     TS datats = discoveryTSList.get(0);
-    // Use the most generic for the base class...
+    // Use the most generic for the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
             return null;
@@ -385,7 +378,7 @@ public <T> List<T>  getObjectList ( Class<T>  c )
     }
 }
 
-// parseCommand in parent class
+// Use the parseCommand method in parent class.
 
 /**
 Calls TSCommandProcessor to re-calculate limits for this time series.
@@ -395,9 +388,8 @@ Calls TSCommandProcessor to re-calculate limits for this time series.
 @param warning_count Number of warnings found.
 @param command_tag Reference or identifier for this command.
  */
-private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
-    int warningLevel, int warning_count, String command_tag )
-{
+private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
+    int warningLevel, int warning_count, String command_tag ) {
     String routine = getClass().getSimpleName() + ".recalculateLimits", message;
     CommandStatus status = getCommandStatus();
     PropList request_params = new PropList ( "" );
@@ -416,7 +408,7 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
                 message, "Report problem to software support." ) );
         return warning_count;
     }
-    // Get the calculated limits and set in the original data limits...
+    // Get the calculated limits and set in the original data limits.
     PropList bean_PropList = bean.getResultsPropList();
     Object prop_contents = bean_PropList.getContents ( "TSLimits" );
     if ( prop_contents == null ) {
@@ -437,13 +429,11 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -456,8 +446,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{
+CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -468,15 +457,14 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommandInternal";
 	String message = "";
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messages
-    
+	int log_level = 3;	// Warning message level for non-user messages.
+
     CommandStatus status = getCommandStatus();
     TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
     Boolean clearStatus = new Boolean(true); // default
@@ -487,7 +475,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -496,7 +484,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         setDiscoveryTSList ( null );
         setDiscoveryEnsemble ( null );
     }
-	
+
 	PropList parameters = getCommandParameters();
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
@@ -579,14 +567,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     */
     String NewEnsembleID = parameters.getValue( "NewEnsembleID" );
     String NewEnsembleName = parameters.getValue( "NewEnsembleName" );
-	
+
     // Get the time series to process.
 
     List<TS> tslist = null;
-    boolean createData = true; // Whether to fill in the data array
+    boolean createData = true; // Whether to fill in the data array.
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Get the discovery time series list from all time series above this command
-        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        // Get the discovery time series list from all time series above this command.
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request.
         tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
         createData = false;
@@ -641,13 +629,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
-    
+
     int nts = tslist.size();
     if ( nts == 0 ) {
         message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        	// Error is OK, especially with dynamic content
+        	// Error is OK, especially with dynamic content.
         }
         else {
 	        Message.printWarning ( warning_level,
@@ -657,19 +645,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
     }
-	
+
     if ( warning_count > 0 ) {
-        // Input error...
+        // Input error.
         message = "Insufficient data to run command.";
         status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-	
-	// If here, have enough input to attempt the changing the interval
-    IrregularTS originalTS = null; // Original (input) time series
-	TS resultTS = null; // Result time series
+
+	// If here, have enough input to attempt the changing the interval.
+    IrregularTS originalTS = null; // Original (input) time series.
+	TS resultTS = null; // Result time series.
 	List<TS> resultList = new ArrayList<TS>();
     for ( int its = 0; its < nts; its++ ) {
         TS ts = tslist.get(its);
@@ -684,7 +672,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         notifyCommandProgressListeners ( its, nts, (float)-1.0, "Changing interval for " +
             originalTS.getIdentifier().toStringAliasAndTSID() );
     	try {
-    		// Process the change of interval
+    		// Process the change of interval.
     	    TSUtil_ChangeIntervalIrregularToRegular tsu = new TSUtil_ChangeIntervalIrregularToRegular( originalTS,
                 statisticType, Flag, FlagDescription,
                 persistInterval, persistValue, PersistFlag, PersistFlagDescription,
@@ -692,25 +680,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		resultTS = tsu.changeInterval ( createData );
     		//if ( (commandPhase == CommandPhaseType.RUN) && recalcLimits ) {
     		if ( commandPhase == CommandPhaseType.RUN ) {
-    		    warning_count = recalculateLimits( resultTS, processor, 
+    		    warning_count = recalculateLimits( resultTS, processor,
     		        warning_level, warning_count, command_tag );
     		}
     		resultList.add(resultTS);
-    		
-    		// Update the newly created time series alias (alias is required)
+
+    		// Update the newly created time series alias (alias is required).
             if ( (Alias != null) && !Alias.equals("") ) {
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                     processor, resultTS, Alias, status, commandPhase);
                 resultTS.setAlias ( alias );
             }
-    
+
     		// Add the newly created time series to the software memory.
     	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
     	        // Just want time series headers initialized
-    	        setDiscoveryTSList ( resultList ); // OK to reset each time
+    	        setDiscoveryTSList ( resultList ); // OK to reset each time.
     	    }
     	    if ( commandPhase == CommandPhaseType.RUN ) {
-    	        // Add single time series
+    	        // Add single time series.
     	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, resultTS );
     	    }
     	}
@@ -737,17 +725,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		throw new CommandWarningException ( message );
     	}
     }
-    
-    // If processing an ensemble, create the new ensemble
-    
+
+    // If processing an ensemble, create the new ensemble.
+
     if ( (NewEnsembleID != null) && !NewEnsembleID.equals("") ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create a discovery ensemble with ID and name
+            // Create a discovery ensemble with ID and name.
             TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
             setDiscoveryEnsemble ( ensemble );
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {
-            // Add the ensemble to the processor if created
+            // Add the ensemble to the processor if created.
             TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
@@ -767,8 +755,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the ensemble that is processed by this class in discovery mode.
 */
-private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
-{
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble ) {
     this.discoveryEnsemble = tsensemble;
 }
 
@@ -776,8 +763,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     this.discoveryTSList = discoveryTSList;
 }
 
@@ -788,9 +774,11 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// Input.
     	"TSList",
     	"TSID",
     	"EnsembleID",
+    	// Analysis (Larger).
 		"Statistic",
 		"Flag",
 		"FlagDescription",
@@ -798,13 +786,16 @@ public String toString ( PropList parameters ) {
 		"PersistValue",
 		"PersistFlag",
 		"PersistFlagDescription",
+		// Output.
+		"NewTSID",
 		"Alias",
 		"NewInterval",
 		"OutputYearType",
-		"NewDataType",
+		//"NewDataType",
 		"NewUnits",
 		"ScaleValue",
 		//"RecalcLimits",
+		// Output (Ensemble).
 		"NewEnsembleID",
 		"NewEnsembleName"
 	};

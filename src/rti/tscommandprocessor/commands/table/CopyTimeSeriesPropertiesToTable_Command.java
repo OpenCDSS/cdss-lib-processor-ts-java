@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -183,6 +183,7 @@ private DataTable getDiscoveryTable() {
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+@return a list of objects of the requested type
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c ) {
@@ -266,6 +267,7 @@ CommandWarningException, CommandException {
 		status.clearLog(commandPhase);
 	}
     PropList parameters = getCommandParameters();
+
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
@@ -421,6 +423,9 @@ CommandWarningException, CommandException {
             table.setTableID ( TableID );
             setDiscoveryTable ( table );
         }
+        else {
+        	// The table was created in a previous command so don't need to add here.
+        }
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
         if ( table == null ) {
@@ -479,8 +484,8 @@ CommandWarningException, CommandException {
                 }
                 ts = (TS)o_ts;
 
-                // Get the properties to process - this must be done for each time series because the properties may
-                // be different between time series.
+                // Get the properties to process:
+                // - this must be done for each time series because the properties may be different between time series
                 if ( IncludeProperties == null ) {
                     // Get all the properties by forming a list of property names from the hashtable.
                     HashMap<String, Object> propertyHash = ts.getProperties();
@@ -541,7 +546,8 @@ CommandWarningException, CommandException {
                         // Skip the time series...
                         //continue;
                         //
-                        // Create the column in the table - do this before any attempt to match the record based on TSID below
+                        // Create the column in the table.
+                        // Do this before any attempt to match the record based on TSID below.
                         // For now don't set any width or precision on the column.
                         // First find the matching property in the time series to determine the property type.
                         // The order of IncludeProperties is the same as tableOutputColumnNames.

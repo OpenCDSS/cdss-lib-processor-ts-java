@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -103,6 +103,7 @@ throws InvalidCommandParameterException {
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     String PropertyValue = parameters.getValue ( "PropertyValue" );
+    String HasData = parameters.getValue ( "HasData" );
 	String warning = "";
     String message;
 
@@ -159,6 +160,15 @@ throws InvalidCommandParameterException {
             Message.printStatus ( 1, "", "Range " + i + " from " + token + " is " +
                     __TSPositionStart[i] + "," + __TSPositionEnd[i] );
         }
+	}
+
+	if ( (HasData != null) && !HasData.equals("") &&
+        !HasData.equalsIgnoreCase(_True) && !HasData.equalsIgnoreCase(_False) ) {
+        message = "The HasData (" + HasData + ") parameter value is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify as " + _False + ", " + _True + ", or blank to not check." ) );
 	}
 
 	if ( (DeselectAllFirst != null) && !DeselectAllFirst.equals("") &&
@@ -244,7 +254,7 @@ throws InvalidCommandParameterException {
     }
 
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(13);
+	List<String> validList = new ArrayList<>(14);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -255,6 +265,7 @@ throws InvalidCommandParameterException {
     validList.add ( "PropertyName" );
     validList.add ( "PropertyCriterion" );
     validList.add ( "PropertyValue" );
+    validList.add ( "HasData" );
     validList.add ( "NetworkID" );
     validList.add ( "DownstreamNodeID" );
     validList.add ( "UpstreamNodeIDs" );
@@ -375,6 +386,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String PropertyValue = parameters.getValue ( "PropertyValue" );
 	PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
+
+    String HasData = parameters.getValue ( "HasData" );
+	HasData = TSCommandProcessorUtil.expandParameterValue(processor, this, HasData);
+	Boolean hasData = null; // Default is to not check whether data are available.
+	if ( (HasData != null) && !HasData.isEmpty() ) {
+		if ( HasData.equalsIgnoreCase(_False) ) {
+			hasData = Boolean.valueOf(false);
+		}
+		else if ( HasData.equalsIgnoreCase(_True) ) {
+			hasData = Boolean.valueOf(true);
+		}
+	}
+
     String NetworkID = parameters.getValue ( "NetworkID" );
 	NetworkID = TSCommandProcessorUtil.expandParameterValue(processor, this, NetworkID);
     String DownstreamNodeID = parameters.getValue ( "DownstreamNodeID" );
@@ -627,6 +651,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		ts = (TS)o_ts;
 
 		try {
+			// The time series is initially not selected.
 		    boolean selected = false;
 		    int filterCount = 0;
 		    // Further filter based on the property (property selection is additive to above selection).
@@ -655,6 +680,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    				// Matched the location so select.
 		    				selected = true;
 		    			}
+		    		}
+		    	}
+		    }
+		    if ( hasData != null ) {
+		    	// Check whether the time series has data.
+		    	++filterCount;
+		    	if ( hasData ) {
+		    		// Select if the time series has data.
+		    		if ( ts.hasData() ) {
+		    			selected = true;
+		    		}
+		    	}
+		    	else if ( ! hasData || ((ts.getDate1() == null) && (ts.getDate2() == null)) ) {
+		    		// Select if the time series does not have data.
+		    		if ( !ts.hasData() ) {
+		    			selected = true;
 		    		}
 		    	}
 		    }
@@ -751,6 +792,7 @@ public String toString ( PropList parameters ) {
 		"PropertyName",
 		"PropertyCriterion",
 		"PropertyValue",
+		"HasData",
 		"NetworkID",
 		"DownstreamNodeID",
 		"UpstreamNodeIDs"

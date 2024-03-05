@@ -3029,6 +3029,8 @@ throws Exception {
 /**
 Process the GetTimeSeriesForTSID request.
 The time series is located by processing backwards in the list.
+@param request the 'processRequest' request that was called (for messaging)
+@param request_paramts request parameters:  "TSID" as the TSID or alias and "CommandTag" for the command tag (position)
 */
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeriesForTSID (
 		String request, PropList request_params )

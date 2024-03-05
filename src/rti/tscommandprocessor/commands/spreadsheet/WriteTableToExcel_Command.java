@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -120,8 +120,8 @@ private int outputMaxColumn = 0;
 /**
 Constructor.
 */
-public WriteTableToExcel_Command ()
-{	super();
+public WriteTableToExcel_Command () {
+	super();
 	setCommandName ( "WriteTableToExcel" );
 }
 
@@ -133,23 +133,23 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
 	String KeepOpen = parameters.getValue ( "KeepOpen" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// If the input file does not exist, warn the user.
 
 	//String working_dir = null;
-	
+
 	CommandProcessor processor = getCommandProcessor();
-	
+
     if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
@@ -205,7 +205,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	*/
-	
+
     if ( ExcelColumnNames != null &&
         !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) && !ExcelColumnNames.equalsIgnoreCase(_None) &&
         !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.isEmpty()) {
@@ -216,8 +216,8 @@ throws InvalidCommandParameterException
                 message, "ExcelColumnNames must be " + _FirstRowInRange +
                 ", " + _None + " (default), or " + _RowBeforeRange ) );
     }
-    
-    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
+
+    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) &&
         !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.isEmpty() ) {
         message = "KeepOpen is invalid.";
         warning += "\n" + message;
@@ -227,7 +227,7 @@ throws InvalidCommandParameterException
     }
 
 	// TODO SAM 2005-11-18 Check the format.
-    
+
 	//  Check for invalid parameters.
 	List<String> validList = new ArrayList<>(22);
     validList.add ( "TableID" );
@@ -252,14 +252,14 @@ throws InvalidCommandParameterException
     validList.add ( "StyleTableID" );
     validList.add ( "LegendWorksheet" );
     validList.add ( "LegendAddress" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -268,8 +268,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
     List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)getCommandProcessor(), this);
 	return (new WriteTableToExcel_JDialog ( parent, this, tableIDChoices )).ok();
@@ -308,8 +308,8 @@ Determine whether a table row is matched for output.
 private boolean isTableRowIncluded ( DataTable table, int irow,
 	int [] columnIncludeFiltersNumbers, String [] columnIncludeFiltersGlobs,
 	int [] columnExcludeFiltersNumbers, String [] columnExcludeFiltersGlobs,
-	List<String> errors )
-{   boolean filterMatches = true; // Default is match.
+	List<String> errors ) {
+    boolean filterMatches = true; // Default is match.
 	Object o;
 	String s;
     if ( columnIncludeFiltersNumbers.length > 0 ) {
@@ -392,8 +392,7 @@ Parse the command string into a PropList of parameters.  Use this to translate o
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
     // First parse as usual.
     super.parseCommand(command_string);
     PropList props = getCommandParameters();
@@ -405,7 +404,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         LinkedHashMap<String,String> hm = columnDecimalPlaces.getLinkedHashMap();
         String prop2 = hm.get("Default");
         if ( prop2 == null ) {
-            // Set the property
+            // Set the property.
             hm.put("Default",prop2);
             props.set("ColumnDecimalPlaces",columnDecimalPlaces.toString());
         }
@@ -435,10 +434,10 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
@@ -457,12 +456,12 @@ throws InvalidCommandParameterException, CommandWarningException
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
+
     // Clear the output file.
     setOutputFile ( null );
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
@@ -536,7 +535,7 @@ throws InvalidCommandParameterException, CommandWarningException
         }
     }
     String KeepOpen = parameters.getValue ( "KeepOpen" );
-    boolean keepOpen = false; // default
+    boolean keepOpen = false; // Default is to close the workbook after writing the table.
     if ( (KeepOpen != null) && KeepOpen.equalsIgnoreCase("True") ) {
         keepOpen = true;
     }
@@ -560,9 +559,9 @@ throws InvalidCommandParameterException, CommandWarningException
     if ( commandPhase == CommandPhaseType.RUN ) {
     	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
     }
-	
+
 	// Get the output table to process.
-	
+
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
     CommandProcessorRequestResultsBean bean = null;
@@ -589,9 +588,9 @@ throws InvalidCommandParameterException, CommandWarningException
     else {
         table = (DataTable)o_Table;
     }
-    
+
 	// Get the style table.
-	
+
     DataTable styleTable = null;
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -619,9 +618,9 @@ throws InvalidCommandParameterException, CommandWarningException
 	        styleTable = (DataTable)o_Table;
 	    }
     }
-	    
+
 	// Get the condition table.
-	
+
     DataTable conditionTable = null;
     if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -649,7 +648,7 @@ throws InvalidCommandParameterException, CommandWarningException
 	        conditionTable = (DataTable)o_Table;
 	    }
     }
-	    
+
     // Get the worksheet to write.
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
@@ -774,19 +773,20 @@ throws InvalidCommandParameterException, CommandWarningException
             message, "Verify that the file exists and is writeable." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
+@param file output file created by this command
 */
 private void setOutputFile ( File file ) {
     __OutputFile_File = file;
@@ -824,7 +824,7 @@ public String toString ( PropList parameters ) {
 }
 
 /**
-TODO SAM 2015-07-10 - move this to generic location if reused between classes
+TODO SAM 2015-07-10 - move this to generic location if reused between classes.
 Write the legend to the Excel worksheet.
 @param sheet the worksheet being written
 @param styleManager the style manager containing conditions and styles
@@ -932,9 +932,9 @@ private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumber
     StringDictionary columnDecimalPlaces,
     DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
     List<String> problems )
-throws FileNotFoundException, IOException
-{   String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
-    
+throws FileNotFoundException, IOException {
+    String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
+
     Workbook wb = null;
     InputStream inp = null;
     try {
@@ -1022,8 +1022,7 @@ throws FileNotFoundException, IOException
             }
         }
         Sheet sheet = null;
-        // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges
-        // are global in workbook).
+        // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges are global in workbook).
         if ( (sheetName == null) || (sheetName.length() == 0) ) {
             // Default is to use the first sheet.
             sheet = wb.getSheetAt(0);
@@ -1531,6 +1530,7 @@ throws FileNotFoundException, IOException
         // Now write the workbook and close.  If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use.
+        	Message.printStatus(2, routine, "Keeping the workbook open for writing: \"" + workbookFile + "\"");
             ExcelUtil.setOpenWorkbook(workbookFile,"w",wb);
         }
         else {

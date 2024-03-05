@@ -11,12 +11,12 @@ CDSS Time Series Processor Java Library is free software:  you can redistribute 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -112,7 +112,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-    // Put together a list of parameters to check.
+    // Create a list of parameters to check.
     PropList props = new PropList ( "" );
 	String Name = __Name_JComboBox.getSelected();
     if ( Name.length() > 0 ) {
@@ -164,18 +164,6 @@ private void initialize ( JFrame parent, EndIf_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Name_JTextField = new JTextField ( 20 );
-    __Name_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Name_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - the name will be matched against an If() command name."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
-
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Name_JComboBox = new SimpleJComboBox ( false );
@@ -200,7 +188,7 @@ private void initialize ( JFrame parent, EndIf_Command command ) {
     __Name_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Name_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - If name."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - If name."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -215,7 +203,7 @@ private void initialize ( JFrame parent, EndIf_Command command ) {
 	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -284,14 +272,16 @@ private void refresh () {
 	if ( __first_time ) {
 		__first_time = false;
 		Name = props.getValue( "Name" );
-		/*
-		if ( Name != null ) {
-		    __Name_JTextField.setText( Name );
-		}
-		*/
 		if ( Name == null ) {
-			// Select default.
-			__Name_JComboBox.select ( 0 );
+			if ( __Name_JComboBox.getItemCount() == 0 ) {
+			    Message.printWarning ( 1, routine,
+				"No If commands have been defined above the command. Cancel and then define an If command before using EndIf.");
+				__error_wait = true;
+			}
+			else {
+				// Select default.
+				__Name_JComboBox.select ( 0 );
+			}
 		}
 		else {
 		    if ( JGUIUtil.isSimpleJComboBoxItem( __Name_JComboBox, Name, JGUIUtil.NONE, null, null ) ) {
@@ -306,7 +296,6 @@ private void refresh () {
 		}
 	}
 	// Regardless, reset the command from the fields.
-	//Name = __Name_JTextField.getText().trim();
 	Name = __Name_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );

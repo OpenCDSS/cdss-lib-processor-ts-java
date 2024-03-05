@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -112,13 +112,23 @@ private int __tableCommentColumnNum = -1;
 /**
 Constructor.
 */
-public CompareTimeSeries_Command ()
-{	super();
+public CompareTimeSeries_Command () {
+	super();
 	setCommandName ( "CompareTimeSeries" );
 }
 
 /**
 Add a table record for output difference.
+@param table the table to update
+@param dt the DateTime for the record, can be null if a missing time series record
+@param ts1 first time series being compared
+@param ts2 second time series being compared, can be null if a missing time series record
+@param value1 the first value being compared, can be NaN if a missing time series record
+@param flag1 the first flag being compared, can be null if a missing time series record
+@param value2 the second value being compared, can be NaN if a missing time series record
+@param flag2 the second flag being compared, can be null if a missing time series record
+@param diff the difference between the values
+@param comment comment explaining the data
 */
 private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2,
 	double value1, String flag1, double value2, String flag2, double diff, String comment ) {
@@ -128,7 +138,12 @@ private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2,
 	try {
 		if ( __tableDateTimeColumnNum >= 0 ) {
 			// Make a copy since iterating.
-			rec.setFieldValue(__tableDateTimeColumnNum, new DateTime(dt));
+			if ( dt == null ) {
+				rec.setFieldValue(__tableDateTimeColumnNum, null);
+			}
+			else {
+				rec.setFieldValue(__tableDateTimeColumnNum, new DateTime(dt));
+			}
 		}
 		if ( __tableTSID1ColumnNum >= 0 ) {
 			String tsid1 = ts1.getAlias();
@@ -138,11 +153,16 @@ private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2,
 			rec.setFieldValue(__tableTSID1ColumnNum, tsid1);
 		}
 		if ( __tableTSID2ColumnNum >= 0 ) {
-			String tsid2 = ts2.getAlias();
-			if ( tsid2.isEmpty() ) {
-				tsid2 = ts2.getIdentifierString();
+			if ( ts2 == null ) {
+				rec.setFieldValue(__tableTSID2ColumnNum, null);
 			}
-			rec.setFieldValue(__tableTSID2ColumnNum, tsid2);
+			else {
+				String tsid2 = ts2.getAlias();
+				if ( tsid2.isEmpty() ) {
+					tsid2 = ts2.getIdentifierString();
+				}
+				rec.setFieldValue(__tableTSID2ColumnNum, tsid2);
+			}
 		}
 		if ( __tableValue1ColumnNum >= 0 ) {
 			rec.setFieldValue(__tableValue1ColumnNum, value1);
@@ -172,22 +192,27 @@ private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2,
 	catch ( Exception e ) {
 		// This should not happen.
 		String routine = getClass().getSimpleName() + ".addTableRecord";
-		Message.printWarning(3, routine, "Error adding record for ts1=\"" + ts1.getIdentifierString() +
-			"\" ts2=\"" + ts2.getIdentifierString() + "\" date/time=" + dt );
+		if ( ts2 == null ) {
+			Message.printWarning(3, routine, "Error adding record for ts1=\"" + ts1.getIdentifierString() +
+				"\" ts2=null date/time=" + dt );
+		}
+		else {
+			Message.printWarning(3, routine, "Error adding record for ts1=\"" + ts1.getIdentifierString() +
+				"\" ts2=\"" + ts2.getIdentifierString() + "\" date/time=" + dt );
+		}
 	}
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String MatchLocation = parameters.getValue ( "MatchLocation" );
+throws InvalidCommandParameterException {
+	String MatchLocation = parameters.getValue ( "MatchLocation" );
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
 	String MatchAlias = parameters.getValue ( "MatchAlias" );
 	String Precision = parameters.getValue ( "Precision" );
@@ -204,7 +229,7 @@ throws InvalidCommandParameterException
 	//String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -242,7 +267,7 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the precision as an integer (or blank to not round)." ) );
-            
+
 		}
 		if ( StringUtil.atoi(Precision) < 0 ) {
             message = "The precision: \"" + Precision + "\" must be >= 0.";
@@ -268,7 +293,6 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Specify the tolerance as a number." ) );
-                
 			}
 			if ( StringUtil.atod(string) < 0.0 ) {
                 message = "The tolerance: \"" + Tolerance + "\" must be >= 0.0.";
@@ -411,7 +435,7 @@ throws InvalidCommandParameterException
                         message, "Check the values of WarnIfDifferent and WarnIfSame." ) );
 	}
 	*/
-    
+
 	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(22);
 	validList.add ( "TSID1" );
@@ -439,21 +463,45 @@ throws InvalidCommandParameterException
 	//validList.add ( "WarnIfDifferent" );
 	//validList.add ( "WarnIfSame" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
  * Compare time series values for two time series and generate output.
  * This method is reused depending on how time series are iterated.
- * @param Precision precision to round values (ignored if precision is < 0)
+ * @param routine the routine that is calling this method
+ * @param ts1 the first time series being compared
+ * @param loc1 the location identifier for the first time series being compared
+ * @param ts2 the second time series being compared
+ * @param Precision precision to round values, as a string
+ * @param Precision_int precision to round values, as an integer, (ignored if precision is < 0)
+ * @param value_format the format to use to format the values (C-style)
+ * @param Tolerance_count the number of tolerances to check
+ * @param Tolerance_double the number of tolerance values
+ * @param date the date/time for the data values
+ * @param value1_orig the original value from the first time series (can be the missing value)
+ * @param tsdata1 the original value from the first time series, in a TSData
+ * @param flag1 the original flag from the first time series
+ * @param value2_orig the original value from the second time series (can be the missing value)
+ * @param tsdata2 the original value from the second time series, in a TSData
+ * @param flag2 the original flag from the second time series
+ * @param diffcount difference counts for the time series and tolerance levels
+ * @param difftotal the total of all differences per time series
+ * @param difftotalabs the total of all differences per time series, as an absolute value
+ * @param doCreateDiffTS whether to create a difference time series if there are differences
+ * @param docreateDiffTSAlways whether to always create a difference time series, even if no differences
+ * @param diffts the difference time series for the two time series
+ * @param doTable whether to create a difference table
+ * @param table the difference table to populate
+ * @param diffStats used to summarize difference statistics
  * @return true if any differences were detected according to the criteria
  */
 private boolean compareTimeSeriesValues (
@@ -490,6 +538,7 @@ private boolean compareTimeSeriesValues (
 		}
 	}
 	else {
+		// Not using precision so use the original values as is.
 	   	value1 = value1_orig;
 		value2 = value2_orig;
 	}
@@ -530,7 +579,7 @@ private boolean compareTimeSeriesValues (
 			diffts.setDataValue ( date, value2 );
 		}
 	}
-	else if(!ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig)) {
+	else if ( !ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig) ) {
 		// ts1 is not missing.
 		// ts2 is missing.
 		Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
@@ -561,7 +610,7 @@ private boolean compareTimeSeriesValues (
 			diffts.setDataValue ( date, -value2 );
 		}
 	}
-	else if(ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig)) {
+	else if ( ts1.isDataMissing(value1_orig) && ts2.isDataMissing(value2_orig) ) {
 		// Both missing so consider the values equal.
 		if ( compareFlags ) {
 			// Also check flags.
@@ -853,7 +902,7 @@ private void createReportFiles ( List<TS> outputTSList, String DifferenceFile_fu
 		if ( is_diff ) {
 			summaryBuilder.append ( "|" + StringUtil.formatString(matched, "  %-3.3s  ") );
 		}
-		
+
 		// If a time series is matched, print out analysis.  Otherwise (not matched or > 1 match) print blanks.
 		if ( isMatched ) {
 			diffBuilder.append ( "|" + StringUtil.formatString(compare_numvalues.get(its).intValue(),intFormat) );
@@ -960,11 +1009,10 @@ private void createReportFiles ( List<TS> outputTSList, String DifferenceFile_fu
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   // The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+    // The command will be modified if changed.
     List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)getCommandProcessor(), this);
     return (new CompareTimeSeries_JDialog ( parent, this, tableIDChoices )).ok();
@@ -972,17 +1020,17 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __discoveryTable;
 }
 
 /**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<>();
 	list.addAll ( getOutputFiles() );
 	return list;
@@ -990,21 +1038,22 @@ public List<File> getGeneratedFileList ()
 
 /**
 Return the output files generated by this file.  This method is used internally.
+@return the output files generated by this file
 */
-private List<File> getOutputFiles ()
-{
+private List<File> getOutputFiles () {
 	return __outputFileList;
 }
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+@return a list of objects of the requested type
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new Vector<>();
         v.add ( (T)table );
     }
     return v;
@@ -1018,9 +1067,9 @@ Can't use base class method because of change in parameter names.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "CompareFiles_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	int warning_level = 2;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
@@ -1033,7 +1082,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 					message, "Report the problem to support."));
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	// Get the input needed to process the command...
+	// Get the input needed to process the command.
 	if ( tokens.size() > 1 ) {
 		try {
 		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine,"," ) );
@@ -1047,9 +1096,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
-	// Update old parameter names to new
-	// Change WarnIfDifferent=True to IfDifferent=Warn
-	// Change WarnIfSame=True to IfSame=Warn
+	// Update old parameter names to new:
+	// - change WarnIfDifferent=True to IfDifferent=Warn
+	// - change WarnIfSame=True to IfSame=Warn
 	PropList props = getCommandParameters();
 	String propValue = props.getValue ( "WarnIfDifferent" );
 	if ( propValue != null ) {
@@ -1074,8 +1123,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -1086,8 +1134,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -1099,18 +1146,18 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages.
 	int tslistSize = 0;
 
-	// Clear the output file
-	
+	// Clear the output file.
+
 	this.__outputFileList.clear();
-	
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // Default.
@@ -1126,7 +1173,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
+
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	setDiscoveryTable ( null );
+    }
+
 	PropList parameters = getCommandParameters();
 	String TSID1 = parameters.getValue ( "TSID1" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -1283,7 +1334,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warning_count;
 		}
     }
-    
+
     // Get the table to process. If null will create below.
 
     DataTable table = null;
@@ -1310,7 +1361,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             table = (DataTable)o_Table;
         }
     }
-    
+
     if ( warning_count > 0 ) {
         // Input error.
         message = "Insufficient data to run command.";
@@ -1319,16 +1370,57 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-	
+
     // Now process.
-    
+
 	List<TS> tslist = new ArrayList<>();
 	List<TS> tslist2 = null; // Used when comparing 2 ensembles.
 	boolean do2Ts = false;
 	boolean do2Ensembles = false;
 	String DifferenceFile_full = DifferenceFile;
 	String SummaryFile_full = SummaryFile;
-	if ( commandPhase == CommandPhaseType.RUN ) {
+
+	// Create the table here because it will be used if the second time series is not found.
+
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+      	if ( doTable ) {
+            if ( table == null ) {
+                // Did not find table so is being created in this command.
+                // Create an empty table and set the ID.
+                table = new DataTable();
+                table.setTableID ( TableID );
+                setDiscoveryTable ( table );
+            }
+       	}
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+       	if ( doTable ) {
+	        if ( table == null ) {
+	            // Did not find the table above so create it.
+	            table = new DataTable( /*columnList*/ );
+	            table.setTableID ( TableID );
+	            setupOutputTable(table);
+	            Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
+
+	            // Set the table in the processor.
+	            PropList request_params = null;
+	            request_params = new PropList ( "" );
+	            request_params.setUsingObject ( "Table", table );
+	            try {
+	                processor.processRequest( "SetTable", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting SetTable(Table=...) from processor.";
+	                Message.printWarning(warning_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report problem to software support." ) );
+	            }
+        	}
+        }
+
         // Convert to absolute paths.
 		if ( (DifferenceFile != null) && !DifferenceFile.isEmpty() ) {
 			DifferenceFile_full = IOUtil.verifyPathForOS(
@@ -1423,6 +1515,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			        status.addToLog ( commandPhase,
 			            new CommandLogRecord(CommandStatusType.FAILURE,
 			               message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+			        ts = null;
 				}
 				else {
 					ts = (TS)o_TS;
@@ -1439,6 +1532,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    status.addToLog ( commandPhase,
 			        new CommandLogRecord(CommandStatusType.FAILURE,
 			            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+
+	        	// Add to the output table so that it is obvious that the second time series is missing
+	        	DateTime date = null;
+	        	TS ts2 = null;
+	        	double value1 = Double.NaN;
+	        	String flag1 = null;
+	        	double value2 = Double.NaN;
+	        	String flag2 = null;
+	        	double diff = Double.NaN;
+	        	String comment = "Second time series " + TSID2 + " was not found.";
+	        	addTableRecord(table, date, tslist.get(0), ts2, value1, flag1, value2, flag2, diff, comment);
+
 				throw new CommandWarningException ( message );
 			}
 			else {
@@ -1517,7 +1622,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        else {
 	            tsensemble2 = (TSEnsemble)o_TSEnsemble;
 	        }
-	        
+
 	        if ( tsensemble2 == null ) {
 	            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID2 + "\".";
 	            Message.printWarning ( warning_level,
@@ -1562,10 +1667,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		                message, "Report to software support." ) );
 			}
 		}
-		
+
 		if ( (tslist == null) || (tslist.size() < 2) ) {
 			message = "Number of time series determined for comparison is < 2.  Not comparing.";
-			Message.printWarning ( warning_level, 
+			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),
 			routine, message );
 	        status.addToLog ( commandPhase,
@@ -1582,7 +1687,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		if ( !TSUtil.areIntervalsSame(tslist2Check) ) {
 			message = "Time series intervals are not consistent.  Not able to compare time series.";
-			Message.printWarning ( warning_level, 
+			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),
 			routine, message );
 	        status.addToLog ( commandPhase,
@@ -1591,7 +1696,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			throw new CommandException ( message );
 		}
 	}
-	
+
 	int [] diffcount = null; // Count of differences for each tolerance.
 	double [] difftotal = new double[Tolerance_count]; // Total difference for each tolerance.
 	double [] difftotalabs = new double[Tolerance_count]; // Total difference for each tolerance, absolute values.
@@ -1601,7 +1706,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	//boolean foundLoc1 = false; // Has the time series already been processed?
 	//boolean foundDatatype1 = false;
 	//boolean foundAlias1 = false;
-	StringBuilder hashKey = new StringBuilder(); // Reused below
+	StringBuilder hashKey = new StringBuilder(); // Reused below.
 	HashMap<String,Boolean> addedMap = new HashMap<>();
 	boolean foundMatch = false;
 	// If true, add a time series comparison analysis:
@@ -1611,7 +1716,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Lists of data that were processed for the report,
 	// matching pairs of time series that are compared and time series that were not matched.
 	List<TS> outputTSList = new ArrayList<>();
-	// Whether the time series was matched ("yes" or "no")
+	// Whether the time series was matched ("yes" or "no").
 	List<String> matchedList = new ArrayList<>();
 	List<Integer> compare_numvalues = new ArrayList<>();
 	List<Double> compare_diffmax = new ArrayList<>();
@@ -1622,44 +1727,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<TS> difftsList = new ArrayList<>(); // List of difference time series if CreateDiffTS=True|IfDifferent.
 	int tsComparisonsTried = 0; // Count of the number of comparisons tried - warn if 0.
 	try {
-        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-           	if ( doTable ) {
-	            if ( table == null ) {
-	                // Did not find table so is being created in this command.
-	                // Create an empty table and set the ID.
-	                table = new DataTable();
-	                table.setTableID ( TableID );
-	                setDiscoveryTable ( table );
-	            }
-        	}
-        }
-        else if ( commandPhase == CommandPhaseType.RUN ) {
-        	if ( doTable ) {
-	            if ( table == null ) {
-	                // Did not find the table above so create it.
-	                table = new DataTable( /*columnList*/ );
-	                table.setTableID ( TableID );
-	                setupOutputTable(table);
-	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-	                
-	                // Set the table in the processor.
-	                PropList request_params = null;
-	                request_params = new PropList ( "" );
-	                request_params.setUsingObject ( "Table", table );
-	                try {
-	                    processor.processRequest( "SetTable", request_params);
-	                }
-	                catch ( Exception e ) {
-	                    message = "Error requesting SetTable(Table=...) from processor.";
-	                    Message.printWarning(warning_level,
-	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                            routine, message );
-	                    status.addToLog ( commandPhase,
-	                            new CommandLogRecord(CommandStatusType.FAILURE,
-	                               message, "Report problem to software support." ) );
-	                }
-	            }
-        	}
+        if ( commandPhase == CommandPhaseType.RUN ) {
         	// Loop through the time series:
            	// - for each time series, find its matching time series, by location, ignoring itself
         	// - when a match is found, do the comparison
@@ -1692,7 +1760,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	//List<String> matchedLocList = new ArrayList<>();
 		   	//List<String> matchedDatatypeList = new ArrayList<>();
 		   	//List<String> matchedAliasList = new ArrayList<>();
-		
+
 		   	// New approach is to populate an integer array with count of matches:
 		   	// - match count of 1 is expected (one match for each time series)
 		   	// - otherwise will generate warnings
@@ -1700,9 +1768,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   	for ( int i = 0; i < tslistSize; i++ ) {
 			   	matchCount[i] = 0;
 		   	}
-		   	
+
 		   	// Prepare strings that are used to match time series:
-		   	// - create arrays of upper case strings so that 
+		   	// - create arrays of upper case strings so that
 		   	String [] locUpperArray = new String[0];
 		   	String [] dataTypeUpperArray = new String[0];
 		   	String [] aliasUpperArray = new String[0];
@@ -1719,7 +1787,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		   			aliasUpperArray[its] = ts.getAlias();
 		   		}
 		   	}
-		
+
 		   	// Loop through all time series.
 		   	for ( int its = 0; its < tslistSize; its++ ) {
 			   	diffts = null;
@@ -1753,7 +1821,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			   		datatype1Upper = dataTypeUpperArray[its];
 			   		alias1Upper = aliasUpperArray[its];
 				   	//boolean alreadyProcessed = false;
-				
+
 				   	// Determine if the time series has already been matched.
 				   	/*
 				   	for ( int iMatchedTs = 0; iMatchedTs < matchedLocList.size(); iMatchedTs++ ) {
@@ -1872,7 +1940,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   			//break;
 				   		//}
 				   	} // End jts search for match
-				   	
+
 			   	}
 			   	// Figure out if the time series has already been added.
 			   	if ( foundMatch ) {
@@ -2260,18 +2328,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 		   	if ( tsComparisonsTried == 0 ) {
 		       	message = "No time series comparisons occurred based on the input parameters.";
-               	Message.printWarning ( warning_level, 
+               	Message.printWarning ( warning_level,
                    	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
                	status.addToLog ( commandPhase,
                    	new CommandLogRecord(CommandStatusType.FAILURE,
                        	message, "Verify that the location, data type, etc. " +
                     	"parameters result in pairs of time series to compare." ) );
 		   	}
-           	
+
            	// Output detailed messages.
 
 		   	for ( String problem : problems ) {
-			   	Message.printWarning ( warning_level, 
+			   	Message.printWarning ( warning_level,
 				   	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
                	status.addToLog ( commandPhase,
                    	new CommandLogRecord(CommandStatusType.WARNING,
@@ -2300,7 +2368,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			   	}
 			   	catch ( Exception e ) {
 				   	message = "Error setting time series list appended with difference time series.";
-				   	Message.printWarning ( warning_level, 
+				   	Message.printWarning ( warning_level,
 					   	MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 				   	Message.printWarning ( 3, routine, e );
                       	status.addToLog ( commandPhase,
@@ -2330,7 +2398,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                            	message, "Report the problem to software support." ) );
                	}
            	}
-           	
+
            	// Check the matched indices:
            	// - may result in a large number of messages if paired time series were not analyzed
            	// - warn for cases where more than 2 time series in a match
@@ -2373,7 +2441,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	catch ( Exception e ) {
 		message = "Unexpected error comparing time series (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		Message.printWarning ( 3, routine, e );
         status.addToLog ( commandPhase,
@@ -2386,15 +2454,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table discovery data table containing the table ID
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __discoveryTable = table;
 }
 
 /**
-Check that the output table is set up.  The following columns are included
-(might also include flags later):
+Check that the output table is set up.
+The following columns are included (might also include flags later):
 <ol>
 <li>DateTime</li>
 <li>TSID1</li>
@@ -2409,8 +2477,8 @@ Check that the output table is set up.  The following columns are included
 @param table table to set up
 @return true if table is being used, false if not.
 */
-private boolean setupOutputTable ( DataTable table )
-{	if ( table == null ) {
+private boolean setupOutputTable ( DataTable table ) {
+	if ( table == null ) {
 		return false;
 	}
 	String tableDateTimeColumn = "DateTime";

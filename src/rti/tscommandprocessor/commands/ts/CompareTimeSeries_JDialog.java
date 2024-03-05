@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -644,7 +644,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
 		"Optional - match alias to find time series pair? (default=" + __command._False + ")."),
 		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-  
+
     // Panel specifying analysis parameters.
     int yAnalysis = -1;
     JPanel analysis_JPanel = new JPanel();
@@ -1048,7 +1048,6 @@ private void refresh () {
         // Select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID1_JComboBox, TSID1, JGUIUtil.NONE, null, null ) ) {
             __TSID1_JComboBox.select ( TSID1 );
-            __main_JTabbedPane.setSelectedIndex(0);
         }
         else {
             // Automatically add to the list.
@@ -1064,16 +1063,18 @@ private void refresh () {
                 }
             }
         }
+        if ( (TSID1 != null) && !TSID1.isEmpty() ) { 
+         	__main_JTabbedPane.setSelectedIndex(0);
+        }
         // Select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID2_JComboBox, TSID2, JGUIUtil.NONE, null, null ) ) {
             __TSID2_JComboBox.select ( TSID2 );
-            __main_JTabbedPane.setSelectedIndex(0);
         }
         else {
             // Automatically add to the list.
             if ( (TSID2 != null) && (TSID2.length() > 0) ) {
                 __TSID2_JComboBox.insertItemAt ( TSID2, 0 );
-                // Select...
+                // Select.
                 __TSID2_JComboBox.select ( TSID2 );
             }
             else {
@@ -1083,6 +1084,9 @@ private void refresh () {
                 }
             }
         }
+        if ( (TSID2 != null) && !TSID2.isEmpty() ) { 
+          	__main_JTabbedPane.setSelectedIndex(0);
+        }
         if ( EnsembleID1 == null ) {
             // Select default.
             __EnsembleID1_JComboBox.select ( 0 );
@@ -1090,7 +1094,6 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID1_JComboBox, EnsembleID1, JGUIUtil.NONE, null, null ) ) {
                 __EnsembleID1_JComboBox.select ( EnsembleID1 );
-                __main_JTabbedPane.setSelectedIndex(1);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -1099,6 +1102,9 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+        if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() ) { 
+          	__main_JTabbedPane.setSelectedIndex(1);
+        }
         if ( EnsembleID2 == null ) {
             // Select default.
             __EnsembleID2_JComboBox.select ( 0 );
@@ -1106,7 +1112,6 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID2_JComboBox, EnsembleID2, JGUIUtil.NONE, null, null ) ) {
                 __EnsembleID2_JComboBox.select ( EnsembleID2 );
-                __main_JTabbedPane.setSelectedIndex(1);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -1115,9 +1120,11 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+        if ( (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) { 
+          	__main_JTabbedPane.setSelectedIndex(1);
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
 			__MatchLocation_JComboBox.select ( MatchLocation );
-			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchLocation == null) || MatchLocation.equals("") ) {
@@ -1132,9 +1139,11 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( (MatchLocation != null) && !MatchLocation.isEmpty() ) { 
+         	__main_JTabbedPane.setSelectedIndex(2);
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchDataType_JComboBox, MatchDataType, JGUIUtil.NONE, null, null ) ) {
 			__MatchDataType_JComboBox.select ( MatchDataType );
-			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchDataType == null) || MatchDataType.equals("") ) {
@@ -1149,9 +1158,11 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( (MatchDataType != null) && !MatchDataType.isEmpty() ) { 
+         	__main_JTabbedPane.setSelectedIndex(2);
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchAlias_JComboBox, MatchAlias, JGUIUtil.NONE, null, null ) ) {
 			__MatchAlias_JComboBox.select ( MatchAlias );
-			__main_JTabbedPane.setSelectedIndex(2);
 		}
 		else {
 		    if ( (MatchAlias == null) || MatchAlias.equals("") ) {
@@ -1166,6 +1177,9 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( (MatchAlias != null) && !MatchAlias.isEmpty() ) { 
+        	__main_JTabbedPane.setSelectedIndex(2);
+        }
 		if ( Precision != null ) {
 			__Precision_JTextField.setText ( Precision );
 		}

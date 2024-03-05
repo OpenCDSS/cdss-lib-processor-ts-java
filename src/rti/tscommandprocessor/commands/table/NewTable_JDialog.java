@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -193,7 +193,7 @@ private void initialize ( JFrame parent, NewTable_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (10);
-    __TableID_JTextField.setToolTipText("Specify the table to create or use ${Property} notation");
+    __TableID_JTextField.setToolTipText("Specify the table to create, can use ${Property} notation.");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -203,6 +203,7 @@ private void initialize ( JFrame parent, NewTable_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column definitions:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Columns_JTextArea = new JTextArea (4,40);
+    __Columns_JTextArea = new JTextArea ("Column definitions in format ColumnName1,ColumnType1;..., can use ${Property} notation.");
     __Columns_JTextArea.setLineWrap ( true );
     __Columns_JTextArea.setWrapStyleWord ( true );
     __Columns_JTextArea.addKeyListener ( this );

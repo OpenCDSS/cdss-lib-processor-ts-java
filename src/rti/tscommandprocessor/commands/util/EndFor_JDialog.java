@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -113,15 +113,14 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-    // Put together a list of parameters to check.
+    // Create a list of parameters to check.
     PropList props = new PropList ( "" );
-    //String Name = __Name_JTextField.getText().trim();
 	String Name = __Name_JComboBox.getSelected();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
     try {
-        // This will warn the user..
+        // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -134,7 +133,6 @@ private void checkInput () {
 Commit the edits to the command.
 */
 private void commitEdits () {
-    //String Name = __Name_JTextField.getText().trim();
 	String Name = __Name_JComboBox.getSelected();
     __command.setCommandParameter ( "Name", Name );
 }
@@ -153,7 +151,7 @@ private void initialize ( JFrame parent, EndFor_Command command ) {
     Insets insetsNONE = new Insets(1,1,1,1);
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -166,18 +164,6 @@ private void initialize ( JFrame parent, EndFor_Command command ) {
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Name_JTextField = new JTextField ( 20 );
-    __Name_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Name_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - the name will be matched against a For() command name."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -218,7 +204,7 @@ private void initialize ( JFrame parent, EndFor_Command command ) {
 	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -287,14 +273,15 @@ private void refresh () {
 	if ( __first_time ) {
 		__first_time = false;
 		Name = props.getValue( "Name" );
-		/*
-		if ( Name != null ) {
-		    __Name_JTextField.setText( Name );
-		}
-		*/
 		if ( Name == null ) {
-			// Select default.
-			__Name_JComboBox.select ( 0 );
+			if ( __Name_JComboBox.getItemCount() == 0 ) {
+			    Message.printWarning ( 1, routine,
+				"No For commands have been defined above the command. Cancel and then define a For command before using EndFor.");
+				__error_wait = true;
+			}
+			else {
+				__Name_JComboBox.select ( 0 );
+			}
 		}
 		else {
 		    if ( JGUIUtil.isSimpleJComboBoxItem( __Name_JComboBox, Name, JGUIUtil.NONE, null, null ) ) {
@@ -309,7 +296,6 @@ private void refresh () {
 		}
 	}
 	// Regardless, reset the command from the fields.
-	//Name = __Name_JTextField.getText().trim();
 	Name = __Name_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );

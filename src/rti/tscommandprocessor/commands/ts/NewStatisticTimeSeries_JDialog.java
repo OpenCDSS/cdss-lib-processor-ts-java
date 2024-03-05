@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -79,7 +79,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JTextArea __NewTSID_JTextArea = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
-/* TODO SAM 2007-11-05 Enable later
+/* TODO SAM 2007-11-05 Enable later.
 private JTextField	__TestValue_JTextField = null;
 						// Test value for the statistic.
 						 */
@@ -100,8 +100,8 @@ NewStatisticTimeSeries_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewStatisticTimeSeries_JDialog ( JFrame parent, NewStatisticTimeSeries_Command command )
-{	super(parent, true);
+public NewStatisticTimeSeries_JDialog ( JFrame parent, NewStatisticTimeSeries_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -109,9 +109,9 @@ public NewStatisticTimeSeries_JDialog ( JFrame parent, NewStatisticTimeSeries_Co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
-	String routine = "NewStatisticTimeSeries_JDialog.actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
+	String routine = getClass().getSimpleName() + ".actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -136,8 +136,7 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -163,8 +162,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -172,8 +171,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -181,8 +180,8 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -191,17 +190,16 @@ public void removeUpdate ( DocumentEvent e )
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	// TODO SAM 2005-09-08
-	// Once more statistics are added, may need to disable TestValue, etc.	
+private void checkGUIState() {
+	// TODO SAM 2005-09-08 Once more statistics are added, may need to disable TestValue, etc.
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -262,11 +260,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
@@ -298,8 +296,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command ) {
+	__parent_JFrame = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -324,15 +322,15 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A new time series identifier can be assigned and is highly recommended if there is any chance that the " +
-		"new time series will be mistaken for the original." ), 
+		"new time series will be mistaken for the original." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit.
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	__TSID_JComboBox.setData ( tsids );
@@ -340,7 +338,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
@@ -358,11 +356,11 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.setEditable ( false );
 	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
+	// Make 3-high to fit in the edit button.
         JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - specify unique TSID information to define time series."), 
+		"Optional - specify unique TSID information to define time series."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
     JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
@@ -393,7 +391,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
 		"Test value (needed for some statistics)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
-        
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField (10);
@@ -403,7 +401,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - number of missing values allowed in sample (default=no limit)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Minimum sample size:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinimumSampleSize_JTextField = new JTextField (10);
@@ -424,7 +422,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
         "Optional - analysis start date/time (default=full time series period)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
@@ -433,7 +431,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output start:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField ( "", 20 );
@@ -444,7 +442,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
         "Optional - output start date/time (default=full time series period)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField ( "", 20 );
     __OutputEnd_JTextField.addKeyListener ( this );
@@ -475,13 +473,13 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -503,16 +501,16 @@ private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command 
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -526,25 +524,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = "NewStatisticTimeSeries_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
 	String TSID = "";
 	String NewTSID = "";
@@ -560,7 +559,7 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		Alias = props.getValue ( "Alias" );
 		TSID = props.getValue ( "TSID" );
 		NewTSID = props.getValue ( "NewTSID" );
@@ -581,21 +580,21 @@ private void refresh ()
 			__TSID_JComboBox.select ( TSID );
 		}
 		else {
-		    // Automatically add to the list after the blank...
+		    // Automatically add to the list after the blank.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
+				// Select.
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {
-			    // Do not select anything...
+			    // Do not select anything.
 			}
 		}
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
 		if ( Statistic == null ) {
-			// Select default...
+			// Select default.
 			__Statistic_JComboBox.select ( 0 );
 		}
 		else {
@@ -632,7 +631,7 @@ private void refresh ()
             __OutputEnd_JTextField.setText ( OutputEnd );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
@@ -666,17 +665,17 @@ React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -685,15 +684,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

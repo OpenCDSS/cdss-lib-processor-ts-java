@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -86,6 +86,7 @@ private JTextField __TSPosition_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private SimpleJComboBox __PropertyCriterion_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
+private SimpleJComboBox __HasData_JComboBox = null;
 private JTextField __NetworkID_JTextField = null;
 private JTextField __DownstreamNodeID_JTextField = null;
 private JTextField __UpstreamNodeIDs_JTextField = null;
@@ -168,7 +169,7 @@ If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-    // Put together a list of parameters to check.
+    // Create a list of parameters to check.
     PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -180,6 +181,7 @@ private void checkInput () {
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String HasData = __HasData_JComboBox.getSelected();
     String NetworkID = __NetworkID_JTextField.getText().trim();
     String DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
     String UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
@@ -215,6 +217,9 @@ private void checkInput () {
     if ( PropertyValue.length() > 0 ) {
         parameters.set ( "PropertyValue", PropertyValue );
     }
+    if ( HasData.length() > 0 ) {
+        parameters.set ( "HasData", HasData );
+    }
     if ( NetworkID.length() > 0 ) {
         parameters.set ( "NetworkID", NetworkID );
     }
@@ -249,6 +254,7 @@ private void commitEdits () {
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String HasData = __HasData_JComboBox.getSelected();
     String NetworkID = __NetworkID_JTextField.getText().trim();
     String DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
     String UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
@@ -262,6 +268,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "PropertyCriterion", PropertyCriterion );
     __command.setCommandParameter ( "PropertyValue", PropertyValue );
+    __command.setCommandParameter ( "HasData", HasData );
     __command.setCommandParameter ( "NetworkID", NetworkID );
     __command.setCommandParameter ( "DownstreamNodeID", DownstreamNodeID );
     __command.setCommandParameter ( "UpstreamNodeIDs", UpstreamNodeIDs );
@@ -342,6 +349,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(list_JPanel, new JLabel (
     "    Separate numbers by a comma.  Specify a range, for example, as 1-3.  A valid combination is: 1,5-10,13"),
     0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(list_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     yList = CommandEditorUtil.addTSListToEditorDialogPanel ( this, list_JPanel, __TSList_JComboBox, yList );
@@ -389,6 +398,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Comparisons are case-independent."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property name:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -426,6 +437,36 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(prop_JPanel, new JLabel("Required - property value to match."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // Panel for data.
+
+    int yData = -1;
+    JPanel data_JPanel = new JPanel();
+    data_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Check Data", data_JPanel );
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Time series may not have data values when read from a source, due to the requested period, error, etc."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "These parameters select time series that do or do not have data (but may still have metadata)."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Has data?:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HasData_JComboBox = new SimpleJComboBox ( false );
+    List<String> hasDataChoices = new ArrayList<String>();
+    hasDataChoices.add ( "" );
+    hasDataChoices.add ( command._False);
+    hasDataChoices.add ( command._True);
+    __HasData_JComboBox.setData(hasDataChoices);
+    __HasData_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __HasData_JComboBox,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel("Optional - whether time series has data (default=not checked)."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     // Panel for statistic.
     int yStat = -1;
     JPanel stat_JPanel = new JPanel();
@@ -441,6 +482,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(stat_JPanel, new JLabel (
         "2) Select time series with the property using the parameters in the Match Property tab of this command."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(stat_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Panel for network.
 
@@ -620,6 +663,7 @@ private void refresh () {
     String PropertyName = "";
     String PropertyCriterion = "";
     String PropertyValue = "";
+    String HasData = "";
     String NetworkID = "";
     String DownstreamNodeID = "";
     String UpstreamNodeIDs = "";
@@ -637,6 +681,7 @@ private void refresh () {
         PropertyName = props.getValue ( "PropertyName" );
         PropertyCriterion = props.getValue ( "PropertyCriterion" );
         PropertyValue = props.getValue ( "PropertyValue" );
+        HasData = props.getValue ( "HasData" );
         NetworkID = props.getValue ( "NetworkID" );
         DownstreamNodeID = props.getValue ( "DownstreamNodeID" );
         UpstreamNodeIDs = props.getValue ( "UpstreamNodeIDs" );
@@ -744,6 +789,21 @@ private void refresh () {
         if ( PropertyValue != null ) {
             __PropertyValue_JTextField.setText ( PropertyValue );
         }
+        if ( HasData == null ) {
+            // Select default.
+            __HasData_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __HasData_JComboBox,HasData, JGUIUtil.NONE, null, null ) ) {
+                __HasData_JComboBox.select ( HasData );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nHasData value \"" + HasData +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( NetworkID != null ) {
             __NetworkID_JTextField.setText ( NetworkID );
         }
@@ -765,6 +825,7 @@ private void refresh () {
     PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     PropertyValue = __PropertyValue_JTextField.getText().trim();
+    HasData = __HasData_JComboBox.getSelected();
     NetworkID = __NetworkID_JTextField.getText().trim();
     DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
     UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
@@ -779,6 +840,7 @@ private void refresh () {
     props.add ( "PropertyName=" + PropertyName );
     props.add ( "PropertyCriterion=" + PropertyCriterion );
     props.add ( "PropertyValue=" + PropertyValue );
+    props.add ( "HasData=" + HasData );
     props.add ( "NetworkID=" + NetworkID );
     props.add ( "DownstreamNodeID=" + DownstreamNodeID );
     props.add ( "UpstreamNodeIDs=" + UpstreamNodeIDs );

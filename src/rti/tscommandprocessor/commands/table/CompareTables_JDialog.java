@@ -920,7 +920,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __DiffRowCountProperty_JTextField.setToolTipText("Specify the property name for the number of rows with differences, can use ${Property} notation");
     __DiffRowCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __DiffRowCountProperty_JTextField,
-        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as count of different rows." ),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -930,7 +930,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __DiffCellCountProperty_JTextField.setToolTipText("Specify the property name for the number of cells with differences, can use ${Property} notation");
     __DiffCellCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __DiffCellCountProperty_JTextField,
-        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as count of different cells." ),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -940,7 +940,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __SameRowCountProperty_JTextField.setToolTipText("Specify the property name for the number of rows that are the same, can use ${Property} notation");
     __SameRowCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __SameRowCountProperty_JTextField,
-        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as count of same rows." ),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -950,7 +950,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __SameCellCountProperty_JTextField.setToolTipText("Specify the property name for the number of cells that are the same, can use ${Property} notation");
     __SameCellCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __SameCellCountProperty_JTextField,
-        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as count of same cells." ),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 

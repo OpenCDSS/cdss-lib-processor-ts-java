@@ -81,6 +81,8 @@ private JTextField __TableExists_JTextField = null;
 private JTextField __TableDoesNotExist_JTextField = null;
 private JTextField __TSExists_JTextField = null;
 private JTextField __TSDoesNotExist_JTextField = null;
+private JTextField __TSHasData_JTextField = null;
+private JTextField __TSHasNoData_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -145,6 +147,8 @@ private void checkInput () {
     String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
     String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
+    String TSHasData = __TSHasData_JTextField.getText().trim();
+    String TSHasNoData = __TSHasNoData_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
@@ -184,6 +188,12 @@ private void checkInput () {
     if ( TSDoesNotExist.length() > 0 ) {
         props.set ( "TSDoesNotExist", TSDoesNotExist );
     }
+    if ( TSHasData.length() > 0 ) {
+        props.set ( "TSHasData", TSHasData );
+    }
+    if ( TSHasNoData.length() > 0 ) {
+        props.set ( "TSHasNoData", TSHasNoData );
+    }
     try {
         // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
@@ -211,6 +221,8 @@ private void commitEdits () {
     String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
     String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
+    String TSHasData = __TSHasData_JTextField.getText().trim();
+    String TSHasNoData = __TSHasNoData_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
@@ -224,6 +236,8 @@ private void commitEdits () {
     __command.setCommandParameter ( "TableDoesNotExist", TableDoesNotExist );
     __command.setCommandParameter ( "TSExists", TSExists );
     __command.setCommandParameter ( "TSDoesNotExist", TSDoesNotExist );
+    __command.setCommandParameter ( "TSHasData", TSHasData );
+    __command.setCommandParameter ( "TSHasNoData", TSHasNoData );
 }
 
 /**
@@ -251,7 +265,10 @@ private void initialize ( JFrame parent, If_Command command ) {
         "the matching EndIf() command will be executed."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The evaluation can check an expression or whether a time series exists."),
+        "The evaluation can check an expression or whether property, table, and time series data exist."),
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Conditions are AND'd together (all must be true for the If command to evaluate to true)."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -471,6 +488,9 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "The TSHasData parameter, if specified, checks whether a time series with the specified TSID or alias has data."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -494,6 +514,28 @@ private void initialize ( JFrame parent, If_Command command ) {
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
         "Optional - If() will be true if the specified TSID does not exist."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TS has data:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSHasData_JTextField = new JTextField ( 40 );
+    __TSHasData_JTextField.setToolTipText("Specify a TSID or alias to match, can use ${Property}.");
+    __TSHasData_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSHasData_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified TSID has data."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TS has no data:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSHasNoData_JTextField = new JTextField ( 40 );
+    __TSHasNoData_JTextField.setToolTipText("Specify a TSID or alias to match, can use ${Property}.");
+    __TSHasNoData_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSHasNoData_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified TSID does not have data."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -585,6 +627,8 @@ private void refresh () {
 	String TableDoesNotExist = "";
 	String TSExists = "";
 	String TSDoesNotExist = "";
+	String TSHasData = "";
+	String TSHasNoData = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -602,6 +646,8 @@ private void refresh () {
 		TableDoesNotExist = props.getValue( "TableDoesNotExist" );
 		TSExists = props.getValue( "TSExists" );
 		TSDoesNotExist = props.getValue( "TSDoesNotExist" );
+		TSHasData = props.getValue( "TSHasData" );
+		TSHasNoData = props.getValue( "TSHasNoData" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
@@ -686,6 +732,18 @@ private void refresh () {
             	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
             }
         }
+        if ( TSHasData != null ) {
+            __TSHasData_JTextField.setText( TSHasData );
+            if ( !TSHasData.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
+        if ( TSHasNoData != null ) {
+            __TSHasNoData_JTextField.setText( TSHasNoData );
+            if ( !TSHasNoData.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
 	}
 	// Regardless, reset the command from the fields.
 	Name = __Name_JTextField.getText().trim();
@@ -701,6 +759,8 @@ private void refresh () {
     TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     TSExists = __TSExists_JTextField.getText().trim();
     TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
+    TSHasData = __TSHasData_JTextField.getText().trim();
+    TSHasNoData = __TSHasNoData_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.set ( "Condition", Condition ); // May contain = so handle differently.
@@ -715,6 +775,8 @@ private void refresh () {
     props.add ( "TableDoesNotExist=" + TableDoesNotExist );
     props.add ( "TSExists=" + TSExists );
     props.add ( "TSDoesNotExist=" + TSDoesNotExist );
+    props.add ( "TSHasData=" + TSHasData );
+    props.add ( "TSHasNoData=" + TSHasNoData );
     __command_JTextArea.setText( __command.toString(props).trim() );
 }
 

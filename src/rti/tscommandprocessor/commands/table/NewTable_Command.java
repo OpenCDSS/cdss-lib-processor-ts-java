@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -61,17 +61,6 @@ The table that is created.
 private DataTable __table = null;
 
 /**
-The column names to create for the table.
-*/
-private String [] __columnNames = null;
-
-/**
-The column types to create for the table, corresponding to string version of  TableField.DATA_TYPE_*.
-If the type is an array, the string will be [type].
-*/
-private String [] __columnTypes = null;
-
-/**
 Constructor.
 */
 public NewTable_Command () {
@@ -104,8 +93,8 @@ throws InvalidCommandParameterException {
                 message, "Specify the table identifier." ) );
     }
 
-    __columnNames = null;
-    __columnTypes = null;
+    String columnName = null;
+    String columnType = null;
 	if ( (Columns != null) && !Columns.isEmpty() ) {
         // Check column definitions (Column name,Type;...).
 		List<String> v = StringUtil.breakStringList ( Columns, ",;", 0 );
@@ -132,20 +121,15 @@ throws InvalidCommandParameterException {
                         message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
 		    }
 		    else {
-    			__columnNames = new String[size/2]; // Data in pairs.
-    			__columnTypes = new String[size/2];
-    			int columnCount = -1; // Will increment to zero on first loop below.
     			for ( int i = 0; i < size; i++ ) {
-    			    ++columnCount;
-    				__columnNames[columnCount] = v.get(i).trim();
-    				__columnTypes[columnCount] = v.get(++i).trim(); // Increment i to handle pairs.
+    				columnName = v.get(i).trim();
+    				columnType = v.get(++i).trim(); // Increment i to handle pairs.
     				// Make sure that the data type is recognized:
     				// - check simple type and [type]
-    				int posType = StringUtil.indexOfIgnoreCase(dataTypeChoices, __columnTypes[columnCount]);
-    				int posArrayType = StringUtil.indexOfIgnoreCase(dataTypeArrayChoices, __columnTypes[columnCount]);
+    				int posType = StringUtil.indexOfIgnoreCase(dataTypeChoices, columnType);
+    				int posArrayType = StringUtil.indexOfIgnoreCase(dataTypeArrayChoices, columnType);
     				if ( (posType < 0) && (posArrayType < 0) ) {
-                        message = "Column \"" + __columnNames[columnCount] + "\" type (" +
-                        __columnTypes[columnCount] + ") is invalid";
+                        message = "Column \"" + columnName + "\" type (" + columnType + ") is invalid";
     					warning += "\n" + message;
                         status.addToLog ( CommandPhaseType.INITIALIZATION,
                             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -266,9 +250,65 @@ CommandWarningException, CommandException {
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
+
+    String [] columnNames = null;
+    String [] columnTypes = null;
+    String Columns = parameters.getValue ( "Columns" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		Columns = TSCommandProcessorUtil.expandParameterValue(processor, this, Columns);
+    }
+    // This code is similar to checkCommandParamaters but evaluates at runtime to handle properties.
+	if ( (Columns != null) && !Columns.isEmpty() ) {
+        // Check column definitions (Column name,Type;...).
+		List<String> v = StringUtil.breakStringList ( Columns, ",;", 0 );
+		if ( v == null ) {
+            message = "One or more columns must be specified";
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
+		}
+		else {
+			// Get data type choices without note.
+		    List<String>dataTypeChoices = TableField.getDataTypeChoices(false);
+		    List<String>dataTypeArrayChoices = new ArrayList<>();
+		    for ( String dataType : dataTypeChoices ) {
+		    	dataTypeArrayChoices.add("[" + dataType + "]");
+		    }
+		    int size = v.size();
+		    if ( (size %2) != 0 ) {
+                message = "Column data are not specified in pairs.";
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the columns for the table as Name,Type;Name,Type;..." ) );
+		    }
+		    else {
+    			columnNames = new String[size/2]; // Data in pairs.
+    			columnTypes = new String[size/2];
+    			columnNames = new String[size/2]; // Data in pairs.
+    			columnTypes = new String[size/2];
+    			int columnCount = -1; // Will increment to zero on first loop below.
+    			for ( int i = 0; i < size; i++ ) {
+    			    ++columnCount;
+    				columnNames[columnCount] = v.get(i).trim();
+    				columnTypes[columnCount] = v.get(++i).trim(); // Increment i to handle pairs.
+    				// Make sure that the data type is recognized:
+    				// - check simple type and [type]
+    				int posType = StringUtil.indexOfIgnoreCase(dataTypeChoices, columnTypes[columnCount]);
+    				int posArrayType = StringUtil.indexOfIgnoreCase(dataTypeArrayChoices, columnTypes[columnCount]);
+    				if ( (posType < 0) && (posArrayType < 0) ) {
+                        message = "Column \"" + columnNames[columnCount] + "\" type (" +
+                        columnTypes[columnCount] + ") is invalid";
+                        status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the column type as boolean, datetime, double, float, integer, long, short, or string, or use [ ] around type to indicate array." ) );
+    				}
+    			}
+		    }
+		}
+	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -286,32 +326,32 @@ CommandWarningException, CommandException {
 
         if ( commandPhase == CommandPhaseType.RUN ) {
             // Create the table with column data that was created in checkCommandParameters().
-            if ( __columnNames != null ) {
-                for ( int i = 0; i < __columnNames.length; i++ ) {
-                	if ( __columnTypes[i].charAt(0) == '[' ) {
+            if ( columnNames != null ) {
+                for ( int i = 0; i < columnNames.length; i++ ) {
+                	if ( columnTypes[i].charAt(0) == '[' ) {
                 		// Column type is an array, which will be the main type:
                 		// - also set the precision based on the type in the array
-                		String arrayType = __columnTypes[i].substring(1,(__columnTypes[i].length() - 1));
+                		String arrayType = columnTypes[i].substring(1,(columnTypes[i].length() - 1));
                 		if ( (TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_DOUBLE) ||
                         	(TableField.lookupDataType(arrayType) == TableField.DATA_TYPE_FLOAT) ) {
                         	// Set the precision to 2 (width to 12), which should be reasonable for many data types:
                 			// - since an array, the data type includes a base offset
-                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], 12, 2) );
+                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), columnNames[i], 12, 2) );
                     	}
                     	else {
                         	// No precision is necessary and specify the field width as -1 meaning it can grow:
                 			// - since an array, the data type includes a base offset
-                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), __columnNames[i], -1) );
+                        	columnList.add ( new TableField((TableField.DATA_TYPE_ARRAY + TableField.lookupDataType(arrayType)), columnNames[i], -1) );
                     	}
                 	}
-                	else if ( (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
-                        (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_FLOAT) ) {
+                	else if ( (TableField.lookupDataType(columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
+                        (TableField.lookupDataType(columnTypes[i]) == TableField.DATA_TYPE_FLOAT) ) {
                         // Set the precision to 2 (width to 12), which should be reasonable for many data types.
-                        columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], 12, 2) );
+                        columnList.add ( new TableField(TableField.lookupDataType(columnTypes[i]), columnNames[i], 12, 2) );
                     }
                     else {
                         // No precision is necessary and specify the field width as -1 meaning it can grow.
-                        columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], -1) );
+                        columnList.add ( new TableField(TableField.lookupDataType(columnTypes[i]), columnNames[i], -1) );
                     }
                 }
             }
@@ -363,6 +403,7 @@ CommandWarningException, CommandException {
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table discovery table with TableID set
 */
 private void setDiscoveryTable ( DataTable table ) {
     __table = table;

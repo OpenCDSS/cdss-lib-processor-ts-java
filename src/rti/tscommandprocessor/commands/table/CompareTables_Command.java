@@ -720,6 +720,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // - two comparison output tables allows reviewing the differences from each table's perspective
     // - one comparison output table merges the differences into one difference table
     String DiffTable1ID = parameters.getValue ( "DiffTable1ID" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	DiffTable1ID = TSCommandProcessorUtil.expandParameterValue(processor, this, DiffTable1ID);
+    }
     String diffTable1ID = null;
     if ( analysisType == DataTableComparerAnalysisType.ADVANCED ) {
     	diffTable1ID = Table1ID + "-" + Table2ID + "-diff1"; // Default for Advanced method.
@@ -729,14 +732,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     if ( (DiffTable1ID != null) && !DiffTable1ID.isEmpty() ) {
         diffTable1ID = DiffTable1ID;
-    }
-    String RowNumberColumn = parameters.getValue ( "RowNumberColumn" );
-    String DiffFile1 = parameters.getValue ( "DiffFile1" );
-    if ( commandPhase == CommandPhaseType.RUN ) {
-    	DiffTable1ID = TSCommandProcessorUtil.expandParameterValue(processor, this, DiffTable1ID);
-    }
-    if ( (DiffFile1 != null) && DiffFile1.isEmpty() ) {
-        DiffFile1 = null; // Easier for checks below.
     }
     String DiffTable2ID = parameters.getValue ( "DiffTable2ID" );
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -750,11 +745,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
     	DiffTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, DiffTableID);
     }
-    String DiffFile2 = parameters.getValue ( "DiffFile2" );
+    String RowNumberColumn = parameters.getValue ( "RowNumberColumn" ); // Expanded below.
+    String DiffFile1 = parameters.getValue ( "DiffFile1" );
+    if ( (DiffFile1 != null) && DiffFile1.isEmpty() ) {
+        DiffFile1 = null; // Easier for checks below.
+    }
+    String DiffFile2 = parameters.getValue ( "DiffFile2" ); // Expanded below.
     if ( (DiffFile2 != null) && DiffFile2.isEmpty() ) {
         DiffFile2 = null; // Easier for checks below.
     }
-    String DiffFile = parameters.getValue ( "DiffFile" );
+    String DiffFile = parameters.getValue ( "DiffFile" ); // Expanded below.
     if ( (DiffFile != null) && DiffFile.isEmpty() ) {
         DiffFile = null; // Easier for checks below.
     }
@@ -910,15 +910,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        if ( DiffFile1 != null ) {
     	        DiffFile1_full = IOUtil.verifyPathForOS(
-    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DiffFile1) );
+    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    	            	TSCommandProcessorUtil.expandParameterValue(processor, this, DiffFile1)));
 	        }
 	        if ( DiffFile2 != null ) {
     	        DiffFile2_full = IOUtil.verifyPathForOS(
-    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DiffFile2) );
+    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    	            	TSCommandProcessorUtil.expandParameterValue(processor, this, DiffFile2)));
 	        }
 	        if ( DiffFile != null ) {
     	        DiffFile_full = IOUtil.verifyPathForOS(
-    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DiffFile) );
+    	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    	            	TSCommandProcessorUtil.expandParameterValue(processor, this, DiffFile)));
 	        }
 	        DataTableComparer comparer = new DataTableComparer (
 	        	table1,

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -56,31 +56,30 @@ This class initializes, checks, and runs the InsertTableRow() command.
 */
 public class InsertTableRow_Command extends AbstractCommand
 {
- 
+
 /**
 Constructor.
 */
-public InsertTableRow_Command ()
-{	super();
+public InsertTableRow_Command () {
+	super();
 	setCommandName ( "InsertTableRow" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String InsertRow = parameters.getValue ( "InsertRow" );
     String InsertCount = parameters.getValue ( "InsertCount" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -125,21 +124,21 @@ throws InvalidCommandParameterException
             }
         }
     }
- 
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(4);
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(4);
     validList.add ( "TableID" );
     validList.add ( "InsertRow" );
     validList.add ( "InsertCount" );
     validList.add ( "ColumnValues" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -148,14 +147,14 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new InsertTableRow_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
@@ -164,12 +163,12 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 
@@ -177,36 +176,40 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     String InsertRow = parameters.getValue ( "InsertRow" );
+    InsertRow = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertRow);
     Integer insertRow = null;
     if ( (InsertRow != null) && !InsertRow.equals("") ) {
-        insertRow = new Integer(InsertRow);
+        insertRow = Integer.valueOf(InsertRow);
     }
     String InsertCount = parameters.getValue ( "InsertCount" );
+    InsertCount = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertCount);
     Integer insertCount = null;
     if ( (InsertCount != null) && !InsertCount.equals("") ) {
-        insertCount = new Integer(InsertCount);
+        insertCount = Integer.valueOf(InsertCount);
     }
     String ColumnValues = parameters.getValue ( "ColumnValues" );
-    // Used LinkedHashMap because want insert order to be retained in new columns, if columns are created
+    ColumnValues = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnValues);
+    // Used LinkedHashMap because want insert order to be retained in new columns, if columns are created.
     LinkedHashMap<String,String> columnValues = new LinkedHashMap<String,String>();
     if ( (ColumnValues != null) && (ColumnValues.length() > 0) && (ColumnValues.indexOf(":") > 0) ) {
-        // First break map pairs by comma
-        List<String>pairs = StringUtil.breakStringList(ColumnValues, ",", 0 );
-        // Now break pairs and put in hashmap
+        // First break map pairs by comma.
+        List<String> pairs = StringUtil.breakStringList(ColumnValues, ",", 0 );
+        // Now break pairs and put in hashmap.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnValues.put(parts[0].trim(), parts[1].trim() );
         }
     }
-    
+
     // Get the table to process.
 
     DataTable table = null;
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to be updated.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -242,14 +245,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Insert rows...
+    	// Insert rows.
 	    if ( insertCount == null ) {
 	        insertCount = 1;
 	    }
 	    int nRows = table.getNumberOfRecords();
-        List<TableRecord> addedRecords = new ArrayList<TableRecord>();
+        List<TableRecord> addedRecords = new ArrayList<>();
         if ( insertRow == null ) {
-            // Add the end of the table
+            // Add the end of the table.
             for ( int i = 0; i < insertCount; i++ ) {
                 TableRecord addedRecord = table.addRecord(table.emptyRecord());
                 if ( columnValues != null ) {
@@ -258,9 +261,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         else if ( insertRow < nRows ) {
-            int row0 = insertRow - 1; // convert from 1-index to 0-index
+            int row0 = insertRow - 1; // Convert from 1-index to 0-index.
             for ( int i = 0; i < insertCount; i++ ) {
-                // OK to keep inserting at the same point
+                // OK to keep inserting at the same point.
                 TableRecord addedRecord = table.emptyRecord();
                 table.insertRecord(row0,addedRecord,false);
                 if ( columnValues != null ) {
@@ -279,11 +282,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	// Set values in the table records that were added.
         	// At this point the records will have been set in the table, and table record references should be consistent.
     		final Command thisCommand = this; // for anonymous class below
-    		// TODO SAM 2016-08-25 Why is the DataTableValueStringProvider needed?  The ColumnValues parameter
-    		// is expanded above before parsing the parameter to allow ${xx:Property} to be expanded
+    		// TODO SAM 2016-08-25 Why is the DataTableValueStringProvider needed?
+    		// The ColumnValues parameter is expanded above before parsing the parameter to allow ${xx:Property} to be expanded.
     		DataTableValueStringProvider tableValueGetter = new DataTableValueStringProvider () {
     			public String getTableCellValueAsString ( String valueFormat ) {
-    				// The value in the table can actually contain ${Property}
+    				// The value in the table can actually contain ${Property}.
     				if ( (valueFormat == null) || valueFormat.isEmpty() || valueFormat.indexOf("${") < 0 ) {
     					return valueFormat;
     				}
@@ -303,7 +306,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,

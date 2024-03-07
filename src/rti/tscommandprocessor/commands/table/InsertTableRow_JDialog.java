@@ -217,6 +217,7 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit.
+    __TableID_JComboBox.setToolTipText("Table identifier for the table to modify, can use ${Property}");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -230,6 +231,7 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     JGUIUtil.addComponent(main_JPanel, new JLabel("Insert row:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertRow_JTextField = new JTextField ( "", 10 );
+    __InsertRow_JTextField.setToolTipText("Table row (1+) to insert before, can use ${Property}");
     __InsertRow_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertRow_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -239,6 +241,7 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     JGUIUtil.addComponent(main_JPanel, new JLabel("Insert count:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertCount_JTextField = new JTextField ( "", 10 );
+    __InsertCount_JTextField.setToolTipText("Number of rows to insert, can use ${Property}");
     __InsertCount_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertCount_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -250,7 +253,7 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     __ColumnValues_JTextArea = new JTextArea (6,35);
     __ColumnValues_JTextArea.setLineWrap ( true );
     __ColumnValues_JTextArea.setWrapStyleWord ( true );
-    __ColumnValues_JTextArea.setToolTipText("Column1:Value1,Column2:Value2");
+    __ColumnValues_JTextArea.setToolTipText("Column1:Value1,Column2:Value2, can use ${Property}");
     __ColumnValues_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnValues_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

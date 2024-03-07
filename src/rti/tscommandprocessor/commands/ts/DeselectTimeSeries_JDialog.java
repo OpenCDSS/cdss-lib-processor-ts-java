@@ -256,7 +256,7 @@ private void initialize ( JFrame parent, Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "When matching a time series identifier (TSID) pattern:"),
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    The dot-delimited time series identifier parts are " +
+		"    The period-delimited time series identifier parts are " +
 		"Location.DataSource.DataType.Interval.Scenario"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (

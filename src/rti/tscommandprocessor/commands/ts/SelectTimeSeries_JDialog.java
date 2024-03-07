@@ -322,7 +322,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
         "When matching a time series identifier (TSID) pattern:"),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
-        "    The dot-delimited time series identifier parts are " +
+        "    The period-delimited time series identifier parts are " +
         "Location.DataSource.DataType.Interval.Scenario"),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
@@ -445,10 +445,14 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     __main_JTabbedPane.addTab ( "Check Data", data_JPanel );
 
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "Time series may not have data values when read from a source, due to the requested period, error, etc."),
+        "Time series may not have data values when read from a source, due to the requested period, "
+        + "discontinued data source, error, etc."),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "These parameters select time series that do or do not have data (but may still have metadata)."),
+        "Processing time series that have no data may result in errors in later commands."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "This parameter selects time series that do or do not have data."),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

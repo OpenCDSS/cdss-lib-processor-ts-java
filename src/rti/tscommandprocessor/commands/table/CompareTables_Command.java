@@ -745,8 +745,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
     	DiffTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, DiffTableID);
     }
-    String RowNumberColumn = parameters.getValue ( "RowNumberColumn" ); // Expanded below.
-    String DiffFile1 = parameters.getValue ( "DiffFile1" );
+    String RowNumberColumn = parameters.getValue ( "RowNumberColumn" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	RowNumberColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, RowNumberColumn);
+    }
+    String DiffFile1 = parameters.getValue ( "DiffFile1" ); // Expanded below.
     if ( (DiffFile1 != null) && DiffFile1.isEmpty() ) {
         DiffFile1 = null; // Easier for checks below.
     }

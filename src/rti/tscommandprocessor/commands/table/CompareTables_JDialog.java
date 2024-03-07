@@ -573,6 +573,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ( "Table1 ID:" ),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Table1ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit.
+    __Table1ID_JComboBox.setToolTipText("The first table to compare, can use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __Table1ID_JComboBox.setData ( tableIDChoices );
     __Table1ID_JComboBox.addItemListener ( this );
@@ -586,6 +587,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 1 columns to compare:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareColumns1_JTextField = new JTextField (10);
+    __CompareColumns1_JTextField.setToolTipText(
+    	"Comma-separated list of column names in the first table to compare, can use ${Property} notation");
     __CompareColumns1_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __CompareColumns1_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -595,6 +598,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 1 columns to exclude:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns1_JTextField = new JTextField (10);
+    __ExcludeColumns1_JTextField.setToolTipText(
+    	"Comma-separated list of column names in the first table to exclude, can use ${Property} notation");
     __ExcludeColumns1_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __ExcludeColumns1_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -604,7 +609,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 1 columns to match:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchColumns1_JTextField = new JTextField (10);
-    __MatchColumns1_JTextField.setToolTipText("Columns to match when searching for matching rows for advanced analysis.");
+    __MatchColumns1_JTextField.setToolTipText(
+    	"Column namess in the first table to match when searching for matching rows for advanced analysis, can use ${Property} notation.");
     __MatchColumns1_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __MatchColumns1_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -614,6 +620,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ( "Table2 ID:" ),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Table2ID_JComboBox = new SimpleJComboBox ( 25, true );    // Allow edit.
+    __Table2ID_JComboBox.setToolTipText("The second table to compare, can use ${Property} notation");
     __Table2ID_JComboBox.setData ( tableIDChoices );
     __Table2ID_JComboBox.addItemListener ( this );
     __Table2ID_JComboBox.getJTextComponent().addKeyListener ( this );
@@ -626,6 +633,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 2 columns to compare:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareColumns2_JTextField = new JTextField (10);
+    __CompareColumns2_JTextField.setToolTipText(
+    	"Comma-separated list of column names in the second table to compare, can use ${Property} notation");
     __CompareColumns2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(input_JPanel, __CompareColumns2_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -635,7 +644,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 2 columns to match:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchColumns2_JTextField = new JTextField (10);
-    __MatchColumns2_JTextField.setToolTipText("Columns to match when searching for matching rows for advanced analysis.");
+    __MatchColumns2_JTextField.setToolTipText(
+    	"Column names in the second table to match when searching for matching rows for advanced analysis, can use ${Property} notation.");
     __MatchColumns2_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __MatchColumns2_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -790,7 +800,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ("Difference table (1) ID:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DiffTable1ID_JTextField = new JTextField (10);
-    __DiffTable1ID_JTextField.setToolTipText("Name of difference table from table1 perspective.");
+    __DiffTable1ID_JTextField.setToolTipText("Name of difference table from table1 perspective, can use ${Property} notation.");
     __DiffTable1ID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(output_JPanel, __DiffTable1ID_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -800,7 +810,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ("Difference table (2) ID:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DiffTable2ID_JTextField = new JTextField (10);
-    __DiffTable2ID_JTextField.setToolTipText("Name of difference table from table2 perspective.");
+    __DiffTable2ID_JTextField.setToolTipText("Name of difference table from table2 perspective, can use ${Property} notation.");
     __DiffTable2ID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(output_JPanel, __DiffTable2ID_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -810,7 +820,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ("Difference table (combined) ID:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DiffTableID_JTextField = new JTextField (10);
-    __DiffTableID_JTextField.setToolTipText("Used with advanced analysis, name of difference table merging the above difference tables.");
+    __DiffTableID_JTextField.setToolTipText(
+    	"Used with advanced analysis, name of difference table merging the above difference tables, can use ${Property} notation.");
     __DiffTableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(output_JPanel, __DiffTableID_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -830,7 +841,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Difference file (1) to write:" ),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __DiffFile1_JTextField = new JTextField ( 50 );
-     __DiffFile1_JTextField.setToolTipText ( "Optional output file for first difference table - specify .html extension." );
+     __DiffFile1_JTextField.setToolTipText (
+    	"Optional output file for first difference table - specify .html extension, can use ${Property} notation." );
      __DiffFile1_JTextField.addKeyListener ( this );
      // Output file layout fights back with other rows so put in its own panel.
  	JPanel DiffFile1_JPanel = new JPanel();
@@ -853,7 +865,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Difference file (2) to write:" ),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DiffFile2_JTextField = new JTextField ( 50 );
-    __DiffFile2_JTextField.setToolTipText ( "Optional output file for second difference table - specify .html extension." );
+    __DiffFile2_JTextField.setToolTipText (
+    	"Optional output file for second difference table - specify .html extension, can use ${Property} notation." );
     __DiffFile2_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
     JPanel DiffFile2_JPanel = new JPanel();
@@ -876,7 +889,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Difference file (combined) to write:" ),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DiffFile_JTextField = new JTextField ( 50 );
-    __DiffFile_JTextField.setToolTipText ( "Optional output file for combined difference table - specify .html extension." );
+    __DiffFile_JTextField.setToolTipText (
+    	"Optional output file for combined difference table - specify .html extension, can use ${Property} notation." );
     __DiffFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
     JPanel DiffFile_JPanel = new JPanel();

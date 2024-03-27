@@ -54,6 +54,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -76,13 +77,16 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __IncludeProperties_JTextField = null;
+private JTextField __IncludeBuiltInProperties_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers.
 private SimpleJComboBox __AllowDuplicates_JComboBox = null;
+private JTextArea __NameMap_JTextArea = null;
 private JTextField __TableOutputColumns_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
+private JFrame __parent = null;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
@@ -106,6 +110,19 @@ public void actionPerformed( ActionEvent event ) {
 	if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditNameMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String NameMap = __NameMap_JTextArea.getText().trim();
+        String [] notes = {
+            "Property names can be renamed as column names by specifying information below."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, NameMap,
+            "Edit NameMap Parameter", notes, "Original Property Name", "Column Name",10)).response();
+        if ( dict != null ) {
+            __NameMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "CopyTimeSeriesPropertiesToTable");
 	}
@@ -184,10 +201,12 @@ private void checkInput () {
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
+	String NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n", " ").replace("\n"," ");
     String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	PropList parameters = new PropList ( "" );
 
@@ -205,6 +224,9 @@ private void checkInput () {
     if ( IncludeProperties.length() > 0 ) {
         parameters.set ( "IncludeProperties", IncludeProperties );
     }
+    if ( IncludeBuiltInProperties.length() > 0 ) {
+        parameters.set ( "IncludeBuiltInProperties", IncludeBuiltInProperties );
+    }
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
     }
@@ -219,6 +241,9 @@ private void checkInput () {
     }
     if ( AllowDuplicates.length() > 0 ) {
         parameters.set ( "AllowDuplicates", AllowDuplicates );
+    }
+    if ( NameMap.length() > 0 ) {
+        parameters.set ( "NameMap", NameMap );
     }
     if ( TableOutputColumns.length() > 0 ) {
         parameters.set ( "TableOutputColumns", TableOutputColumns );
@@ -243,19 +268,23 @@ private void commitEdits () {
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
+	String NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n", " ").replace("\n"," ");
     String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "IncludeProperties", IncludeProperties );
+    __command.setCommandParameter ( "IncludeBuiltInProperties", IncludeBuiltInProperties );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "AllowDuplicates", AllowDuplicates );
+    __command.setCommandParameter ( "NameMap", NameMap );
     __command.setCommandParameter ( "TableOutputColumns", TableOutputColumns );
 }
 
@@ -267,7 +296,8 @@ Instantiates the GUI components.
 @param tableIDChoices list of choices for table identifiers
 */
 private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command command, List<String> tableIDChoices ) {
-	__command = command;
+	this.__parent = parent;
+	this.__command = command;
 
 	addWindowListener( this );
 
@@ -295,7 +325,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
         "If the formatted TSID is not matched or AllowDuplicates=True, a new row will be created for the properties." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The table output columns will default to the property names.  Use * to match one property name " +
+        "The table output columns will default to the property names.  Use * as the column name to match a property name " +
         "when specifying a list of column names." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -319,9 +349,10 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Properties to include:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Dynamic properties to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeProperties_JTextField = new JTextField ( 10 );
+    __IncludeProperties_JTextField.setToolTipText("Comma-separated list of user-defined (dynamic) properties to include");
     __IncludeProperties_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -329,10 +360,21 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
         "Optional - property names to copy (default=all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Built-in properties to include:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeBuiltInProperties_JTextField = new JTextField ( 10 );
+    __IncludeBuiltInProperties_JTextField.setToolTipText("Comma-separated list of built-in properties to include (alias, description, units, tsid), * for all");
+    __IncludeBuiltInProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeBuiltInProperties_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - names of built-in properties (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
-    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
+    __TableID_JComboBox.setToolTipText("The table ID for output or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -346,6 +388,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table TSID column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
+    __TableTSIDColumn_JTextField.setToolTipText("Table column for the TSID, used to match the time series, can use ${Property} syntax.");
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -376,9 +419,24 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - allow multiple rows for same TSID? (default=" + __command._False+ ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table output columns:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Property/column name map:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NameMap_JTextArea = new JTextArea (6,35);
+    __NameMap_JTextArea.setLineWrap ( true );
+    __NameMap_JTextArea.setWrapStyleWord ( true );
+    __NameMap_JTextArea.setToolTipText("PropertyName1:ColumnName1,PropertyName2:ColumnName2");
+    __NameMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NameMap_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change column names (default=colum name is the same as property)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditNameMap",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "<html>Table output columns (<b>use NameMap above</b>):</html>" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableOutputColumns_JTextField = new JTextField ( 10 );
+    __TableOutputColumns_JTextField.setToolTipText("NameMap is being phased in.");
     __TableOutputColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableOutputColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -470,10 +528,12 @@ private void refresh () {
     String TSID = "";
     String EnsembleID = "";
     String IncludeProperties = "";
+    String IncludeBuiltInProperties = "";
     String TableID = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
     String AllowDuplicates = "";
+    String NameMap = "";
     String TableOutputColumns = "";
 
 	PropList props = __command.getCommandParameters();
@@ -484,10 +544,12 @@ private void refresh () {
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         IncludeProperties = props.getValue ( "IncludeProperties" );
+        IncludeBuiltInProperties = props.getValue ( "IncludeBuiltInProperties" );
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         AllowDuplicates = props.getValue ( "AllowDuplicates" );
+        NameMap = props.getValue ( "NameMap" );
         TableOutputColumns = props.getValue ( "TableOutputColumns" );
         if ( TSList == null ) {
             // Select default.
@@ -536,6 +598,9 @@ private void refresh () {
         if ( IncludeProperties != null ) {
             __IncludeProperties_JTextField.setText ( IncludeProperties );
         }
+        if ( IncludeBuiltInProperties != null ) {
+            __IncludeBuiltInProperties_JTextField.setText ( IncludeBuiltInProperties );
+        }
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -575,6 +640,9 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+        if ( NameMap != null ) {
+            __NameMap_JTextArea.setText ( NameMap );
+        }
         if ( TableOutputColumns != null ) {
             __TableOutputColumns_JTextField.setText ( TableOutputColumns );
         }
@@ -584,20 +652,24 @@ private void refresh () {
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
+	NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n"," ").replace("\n"," ");
     TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "IncludeProperties=" + IncludeProperties );
+    props.add ( "IncludeBuiltInProperties=" + IncludeBuiltInProperties );
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "AllowDuplicates=" + AllowDuplicates );
+    props.add ( "NameMap=" + NameMap );
     props.add ( "TableOutputColumns=" + TableOutputColumns );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }

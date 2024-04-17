@@ -338,6 +338,9 @@ CommandWarningException, CommandException {
         allowDuplicates = true;
     }
     String NameMap = parameters.getValue ( "NameMap" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		NameMap = TSCommandProcessorUtil.expandParameterValue(processor, this, NameMap);
+	}
     Hashtable<String,String> nameMap = new Hashtable<>();
     if ( (NameMap != null) && !NameMap.isEmpty() && (NameMap.indexOf(":") > 0) ) {
         // First break map pairs by comma.

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -63,9 +64,11 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __SortColumns_JTextField = null;
 private JTextArea __SortOrder_JTextArea = null;
+private JTextField __OrderColumns_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -135,6 +138,7 @@ private void checkInput () {
 	String TableID = __TableID_JComboBox.getSelected();
 	String SortColumns = __SortColumns_JTextField.getText().trim();
 	String SortOrder = __SortOrder_JTextArea.getText().trim().replace("\n"," ");
+	String OrderColumns = __OrderColumns_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -145,6 +149,9 @@ private void checkInput () {
 	}
     if ( SortOrder.length() > 0 ) {
         props.set ( "SortOrder", SortOrder );
+    }
+    if ( OrderColumns.length() > 0 ) {
+        props.set ( "OrderColumns", OrderColumns );
     }
 	try {
 	    // This will warn the user.
@@ -165,9 +172,11 @@ private void commitEdits () {
 	String TableID = __TableID_JComboBox.getSelected();
     String SortColumns = __SortColumns_JTextField.getText().trim();
     String SortOrder = __SortOrder_JTextArea.getText().trim().replace("\n"," ");
+    String OrderColumns = __OrderColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "SortColumns", SortColumns );
 	__command.setCommandParameter ( "SortOrder", SortOrder );
+	__command.setCommandParameter ( "OrderColumns", OrderColumns );
 }
 
 /**
@@ -195,7 +204,7 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command sorts the rows in a table by sorting values from one or more specified columns."),
+        "This command sorts the rows and/or columns in a table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Sorting has been implemented for columns with data types:  integer, float, double, string (case is ignored), and date/time."),
@@ -219,30 +228,68 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to sort."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Name(s) of column(s) to sort:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JPanel rows_JPanel = new JPanel();
+    rows_JPanel.setLayout(new GridBagLayout());
+    __main_JTabbedPane.addTab ( "Sort Rows", rows_JPanel );
+
+    int yRows = -1;
+   	JGUIUtil.addComponent(rows_JPanel, new JLabel (
+        "Sort table rows by specifying the columns in the rows to sort, and the sort order."),
+        0, ++yRows, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(rows_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yRows, 7, 1, 0, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(rows_JPanel, new JLabel ("Name(s) of column(s) to sort row data:"),
+        0, ++yRows, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortColumns_JTextField = new JTextField (10);
     __SortColumns_JTextField.setToolTipText("Specify the columns to sort or use ${Property} notation");
     __SortColumns_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SortColumns_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - separate by commas if more than one column."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(rows_JPanel, __SortColumns_JTextField,
+        1, yRows, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rows_JPanel, new JLabel ("Optional - separate by commas if more than one column."),
+        3, yRows, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Sort order:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(rows_JPanel, new JLabel ("Sort order:"),
+        0, ++yRows, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortOrder_JTextArea = new JTextArea (3,35);
     __SortOrder_JTextArea.setLineWrap ( true );
     __SortOrder_JTextArea.setWrapStyleWord ( true );
     __SortOrder_JTextArea.setToolTipText("ColumnName1:SortOrder1,ColumnName2:SortOrder2");
     __SortOrder_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__SortOrder_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - sort order for columns being sorted (default=" + __command._Ascending + ")."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditSortOrder",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(rows_JPanel, new JScrollPane(__SortOrder_JTextArea),
+        1, yRows, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rows_JPanel, new JLabel ("Optional - sort order for columns being sorted (default=" + __command._Ascending + ")."),
+        3, yRows, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(rows_JPanel, new SimpleJButton ("Edit","EditSortOrder",this),
+        3, ++yRows, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JPanel columns_JPanel = new JPanel();
+    columns_JPanel.setLayout(new GridBagLayout());
+    __main_JTabbedPane.addTab ( "Reorder Columns", columns_JPanel );
+
+    int yCols = -1;
+   	JGUIUtil.addComponent(columns_JPanel, new JLabel (
+        "Reorder table columns by specifying the column names in the desired order."),
+        0, ++yCols, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(columns_JPanel, new JLabel (
+        "Existing column names that are not specified will shift to the right side of the table."),
+        0, ++yCols, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(columns_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yCols, 7, 1, 0, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(columns_JPanel, new JLabel ("Column names in order:"),
+        0, ++yCols, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OrderColumns_JTextField = new JTextField (60);
+    __OrderColumns_JTextField.setToolTipText("Specify the column names in the desired order ${Property} notation");
+    __OrderColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(columns_JPanel, __OrderColumns_JTextField,
+        1, yCols, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(columns_JPanel, new JLabel ("Optional - separate by commas if more than one column."),
+        3, yCols, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -325,12 +372,14 @@ private void refresh () {
     String TableID = "";
     String SortColumns = "";
     String SortOrder = "";
+    String OrderColumns = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         SortColumns = props.getValue ( "SortColumns" );
         SortOrder = props.getValue ( "SortOrder" );
+        OrderColumns = props.getValue ( "OrderColumns" );
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -352,15 +401,21 @@ private void refresh () {
         if ( SortOrder != null ) {
             __SortOrder_JTextArea.setText ( SortOrder );
         }
+		if ( OrderColumns != null ) {
+			__OrderColumns_JTextField.setText ( OrderColumns );
+			__main_JTabbedPane.setSelectedIndex(1);
+		}
 	}
 	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
 	SortColumns = __SortColumns_JTextField.getText().trim();
 	SortOrder = __SortOrder_JTextArea.getText().trim().replace("\n"," ");
+	OrderColumns = __OrderColumns_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "SortColumns=" + SortColumns );
 	props.add ( "SortOrder=" + SortOrder );
+	props.add ( "OrderColumns=" + OrderColumns );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

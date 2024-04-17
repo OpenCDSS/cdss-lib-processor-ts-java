@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,8 +78,8 @@ Command dialog editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Message_JDialog ( JFrame parent, Message_Command command )
-{ 	super(parent, true);
+public Message_JDialog ( JFrame parent, Message_Command command ) {
+ 	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -87,8 +87,8 @@ public Message_JDialog ( JFrame parent, Message_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -106,11 +106,11 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{   // Put together a list of parameters to check.
+private void checkInput () {
+    // Put together a list of parameters to check.
     PropList props = new PropList ( "" );
     String Message = __Message_JTextArea.getText().trim();
     String PromptActions = __PromptActions_JTextField.getText().trim();
@@ -137,8 +137,8 @@ private void checkInput ()
 /**
 Commit the edits to the command.
 */
-private void commitEdits ()
-{  // Allow newlines in the dialog to be saved as escaped newlines.
+private void commitEdits () {
+   // Allow newlines in the dialog to be saved as escaped newlines.
    //String Message = __Message_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
    String Message2 = __Message_JTextArea.getText().replace("\n", "\\n").replace('\t', ' ').trim();
     String PromptActions = __PromptActions_JTextField.getText().trim();
@@ -155,8 +155,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Message_Command command )
-{   __command = command;
+private void initialize ( JFrame parent, Message_Command command ) {
+    __command = command;
 
 	addWindowListener( this );
 
@@ -184,13 +184,17 @@ private void initialize ( JFrame parent, Message_Command command )
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Setting the command status to " + CommandStatusType.WARNING + " or " + CommandStatusType.FAILURE +
-		" will impact the command status indicator."),
+		" will show a command status indicator for a problem."),
+		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Setting the command status to " + CommandStatusType.NOTIFICATION +
+		" will treat the status as success and show a notification indicator."),
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     // Message text area is resizable.
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Message:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Message:" ),
         0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Message_JTextArea = new JTextArea (8,60);
     __Message_JTextArea.setLineWrap ( true );
@@ -198,10 +202,10 @@ private void initialize ( JFrame parent, Message_Command command )
     __Message_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Message_JTextArea),
         1, y, 1, 1, 1.0, 1.0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Prompt actions:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Prompt actions:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PromptActions_JTextField = new JTextField ( 40 );
 	__PromptActions_JTextField.setToolTipText("Specify actions separated by commas, which will display as buttons.  Possible values: Cancel, Continue");
@@ -209,20 +213,21 @@ private void initialize ( JFrame parent, Message_Command command )
     JGUIUtil.addComponent(main_JPanel, __PromptActions_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional actions if message is a prompt."), 
+		"Optional actions if message is a prompt."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Command status:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Command status:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommandStatus_JComboBox = new SimpleJComboBox ( false );
     __CommandStatus_JComboBox.add ( "" );
+    __CommandStatus_JComboBox.add ( "" + CommandStatusType.NOTIFICATION );
     __CommandStatus_JComboBox.add ( "" + CommandStatusType.SUCCESS );
     __CommandStatus_JComboBox.add ( "" + CommandStatusType.WARNING );
     __CommandStatus_JComboBox.add ( "" + CommandStatusType.FAILURE );
     __CommandStatus_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CommandStatus_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - default is " + CommandStatusType.SUCCESS + "."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - default is " + CommandStatusType.SUCCESS + "."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -237,10 +242,10 @@ private void initialize ( JFrame parent, Message_Command command )
 	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -263,15 +268,16 @@ private void initialize ( JFrame parent, Message_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{   refresh();
+public void itemStateChanged ( ItemEvent e ) {
+    refresh();
 }
 
 /**
 Respond to KeyEvents.
+@param event KeyEvent to handle
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
    	if ( code == KeyEvent.VK_ENTER ) {
    		if ( event.getSource() == this.__Message_JTextArea ) {
@@ -288,24 +294,33 @@ public void keyPressed ( KeyEvent event )
     }
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+/**
+ * Handle key released event.
+ * @param event KeyEvent to handle
+ */
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+/**
+ * Handle key typed event.
+ * @param event KeyEvent to handle
+ */
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{   return __ok;
+public boolean ok () {
+    return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
     String Message0 = "";
     String PromptActions = "";
 	String CommandStatus = "";
@@ -361,13 +376,13 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{   __ok = ok;
+public void response ( boolean ok ) {
+    __ok = ok;
     if ( ok ) {
         // Commit the changes.
         commitEdits ();
         if ( __error_wait ) {
-            // Not ready to close out!
+            // Not ready to close out.
             return;
         }
     }
@@ -380,15 +395,26 @@ public void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

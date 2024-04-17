@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -54,28 +54,27 @@ public class Message_Command extends AbstractCommand implements Command
 /**
 Constructor.
 */
-public Message_Command ()
-{	super();
+public Message_Command () {
+	super();
 	setCommandName ( "Message" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String routine = getCommandName() + "_checkCommandParameters";
+throws InvalidCommandParameterException {
+	String routine = getCommandName() + ".checkCommandParameters";
 	String Message0 = parameters.getValue ( "Message" );
 	String PromptActions = parameters.getValue ( "PromptActions" );
 	String CommandStatus = parameters.getValue ( "CommandStatus" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -87,14 +86,15 @@ throws InvalidCommandParameterException
                 message, "Specify message text." ) );
     }
     if ( (CommandStatus != null) && !CommandStatus.isEmpty() &&
-    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.SUCCESS) &&
-    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.WARNING) &&
-    	!CommandStatus.equalsIgnoreCase(""+CommandStatusType.FAILURE) ) {
+    	!CommandStatus.equalsIgnoreCase("" + CommandStatusType.NOTIFICATION) &&
+    	!CommandStatus.equalsIgnoreCase("" + CommandStatusType.SUCCESS) &&
+    	!CommandStatus.equalsIgnoreCase("" + CommandStatusType.WARNING) &&
+    	!CommandStatus.equalsIgnoreCase("" + CommandStatusType.FAILURE) ) {
         message = "The command status \"" + CommandStatus + "\" is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the command status as " + 
+                message, "Specify the command status as " +
                 CommandStatusType.SUCCESS + " (default), " + CommandStatusType.WARNING +
                 ", or " + CommandStatusType.FAILURE ) );
     }
@@ -114,20 +114,20 @@ throws InvalidCommandParameterException
     	}
     }
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
     List<String> validList = new ArrayList<>(3);
 	validList.add ( "Message" );
 	validList.add ( "PromptActions" );
 	validList.add ( "CommandStatus" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-	
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -136,8 +136,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new Message_JDialog ( parent, this )).ok();
 }
 
@@ -148,17 +148,17 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
 	CommandStatus status = getCommandStatus();
 	CommandProcessor processor = getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -166,12 +166,12 @@ throws CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-	
+
 	String Message2 = parameters.getValue ( "Message" );
 	String PromptActions = parameters.getValue ( "PromptActions" );
     PromptActions = TSCommandProcessorUtil.expandParameterValue(processor,this,PromptActions);
@@ -190,7 +190,7 @@ throws CommandWarningException, CommandException
 	    	messageExpanded = messageExpanded.replace("\\n", "\n");
 	    }
 	    if ( commandStatusType != null ) {
-	        // Add a command record message to trigger the status level
+	        // Add a command record message to trigger the status level.
 	        status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(commandStatusType, messageExpanded, "Check the log file or command window for details." ) );
 	    }
@@ -232,7 +232,7 @@ throws CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error printing message.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,

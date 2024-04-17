@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -49,6 +49,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringDictionary;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -71,8 +72,8 @@ private String [] sortColumns = new String[0];
 /**
 Constructor.
 */
-public SortTable_Command ()
-{	super();
+public SortTable_Command () {
+	super();
 	setCommandName ( "SortTable" );
 }
 
@@ -84,8 +85,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String SortColumns = parameters.getValue ( "SortColumns" );
     String SortOrder = parameters.getValue ( "SortOrder" );
 	String warning = "";
@@ -102,21 +103,11 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
 
-    if ( (SortColumns == null) || SortColumns.isEmpty() ) {
-        message = "The column to sort must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the name of the column to sort." ) );
-    }
-    else {
+    if ( (SortColumns != null) && !SortColumns.isEmpty() ) {
     	this.sortColumns = SortColumns.split(",");
     	for ( int i = 0; i < this.sortColumns.length; i++ ) {
     		this.sortColumns[i] = this.sortColumns[i].trim();
     	}
-    }
-    
-    if ( (SortOrder != null) && (SortOrder.length() != 0) ) {
     	StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
     	LinkedHashMap<String,String> map = sortOrder.getLinkedHashMap();
     	Set<String> set = map.keySet();
@@ -148,10 +139,11 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(3);
+	List<String> validList = new ArrayList<>(4);
     validList.add ( "TableID" );
     validList.add ( "SortColumns" );
     validList.add ( "SortOrder" );
+    validList.add ( "OrderColumns" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -166,11 +158,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed.
@@ -182,8 +173,7 @@ Parse the command.  Need to handle legacy SortOrder that does not use a dictiona
 @param commandString the string representation of the command
 */
 public void parseCommand ( String commandString )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	super.parseCommand(commandString);
 	// Check for SortOrder that does not have the dictionary ":" delimiter.
 	// If found, replace with the new syntax on the single column to be sorted.
@@ -205,8 +195,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -250,6 +240,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 	}
+
+    String OrderColumns = parameters.getValue ( "OrderColumns" );
+    String orderColumns[] = new String[0];
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	// In discovery mode want lists of tables to include ${Property}.
+    	OrderColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, OrderColumns);
+    }
+    if ( (OrderColumns != null) && !OrderColumns.isEmpty() ) {
+    	if ( OrderColumns.contains(",") ) {
+    		String [] parts = OrderColumns.split(",");
+   			orderColumns = new String[parts.length];
+    		for ( int i = 0; i < parts.length; i++ ) {
+    			orderColumns[i] = parts[i].trim();
+    		}
+    	}
+    	else {
+    		orderColumns = new String[1];
+    		orderColumns[0] = OrderColumns.trim();
+    	}
+    }
     
     // Get the table to process.
 
@@ -293,8 +303,49 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Sort the table.
-        table.sortTable ( sortColumns, sortOrderArray );
+		// Sort the table rows.
+		if ( sortColumns.length > 0 ) {
+			table.sortTable ( sortColumns, sortOrderArray );
+		}
+
+		// Order the table columns.
+		if ( orderColumns.length > 0 ) {
+			// Check that columns exist.
+			for ( String columnName : orderColumns ) {
+				int columnNumber = -1;
+				try {
+					columnNumber = table.getFieldIndex(columnName);
+				}
+				catch ( Exception e ) {
+					columnNumber = -1;
+				}
+				if ( columnNumber < 0 ) {
+					message = "The table does not have column \"" + columnName + "\" - will ignore when ordering columns.";
+					Message.printWarning ( warning_level,
+							MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+						message, "Verify that column \"" + columnName + "\" exists in the table." ) );
+				}
+			}
+			List<String> problems = new ArrayList<>();
+			table.reorderFields ( orderColumns, problems );
+			int problemCount = 0;
+			for ( String problem : problems ) {
+				++problemCount;
+				message = problem;
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+					message, "See the log file." ) );
+				if ( problemCount == 500 ) {
+					message = "Limiting output to 50 problems.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+					problem, "See the log file." ) );
+				}
+			}
+		}
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -324,7 +375,8 @@ public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
     	"TableID",
 		"SortColumns",
-		"SortOrder"
+		"SortOrder",
+		"OrderColumns"
 	};
 	return this.toString(parameters, parameterOrder);
 }

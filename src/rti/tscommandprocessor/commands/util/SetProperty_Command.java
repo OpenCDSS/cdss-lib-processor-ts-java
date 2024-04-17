@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -84,8 +84,8 @@ private Prop __discovery_Prop = null;
 /**
 Constructor.
 */
-public SetProperty_Command ()
-{	super();
+public SetProperty_Command () {
+	super();
 	setCommandName ( "SetProperty" );
 }
 
@@ -97,8 +97,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String PropertyName = parameters.getValue ( "PropertyName" );
+throws InvalidCommandParameterException {
+	String PropertyName = parameters.getValue ( "PropertyName" );
 	String PropertyType = parameters.getValue ( "PropertyType" );
     if ( PropertyType == null ) {
 	    // Set to blank to be able to do checks below.
@@ -118,7 +118,7 @@ throws InvalidCommandParameterException
 	String Divide = parameters.getValue ( "Divide" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -247,7 +247,7 @@ throws InvalidCommandParameterException
 					_Fail + "."));
 		}
 	}
-	
+
 	if ( (SetEmpty != null) && !SetEmpty.isEmpty() && !SetEmpty.equalsIgnoreCase(_True)) {
 		message = "The SetEmpty parameter \"" + SetEmpty + "\" is invalid.";
 		warning += "\n" + message;
@@ -255,7 +255,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
-	
+
 	if ( (SetNaN != null) && !SetNaN.isEmpty() && !SetNaN.equalsIgnoreCase(_True)) {
 		message = "The SetNaN parameter \"" + SetNaN + "\" is invalid.";
 		warning += "\n" + message;
@@ -263,7 +263,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
-	
+
 	if ( (SetNull != null) && !SetNull.isEmpty() && !SetNull.equalsIgnoreCase(_True)) {
 		message = "The SetNull parameter \"" + SetNull + "\" is invalid.";
 		warning += "\n" + message;
@@ -271,7 +271,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
-	
+
 	if ( (RemoveProperty != null) && !RemoveProperty.isEmpty() && !RemoveProperty.equalsIgnoreCase(_True)) {
 		message = "The RemoveProperty parameter \"" + RemoveProperty + "\" is invalid.";
 		warning += "\n" + message;
@@ -279,7 +279,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
-	
+
 	if ( (Add != null) && !Add.isEmpty() && (Add.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Add) ) {
 			message = "The Add parameter \"" + Add + "\" is invalid for " + _Double + " property type.";
@@ -296,7 +296,7 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as an integer."));
 		}
 	}
-	
+
 	if ( (Subtract != null) && !Subtract.isEmpty() && (Subtract.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Subtract) ) {
 			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
@@ -313,7 +313,7 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as an integer."));
 		}
 	}
-	
+
 	if ( (Multiply != null) && !Multiply.isEmpty() && (Multiply.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Multiply) ) {
 			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
@@ -330,7 +330,7 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as an integer."));
 		}
 	}
-	
+
 	if ( (Divide != null) && !Divide.isEmpty() && (Divide.indexOf("${") < 0) ) {
 		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Divide) ) {
 			message = "The Divide parameter \"" + Divide + "\" is invalid for " + _Double + " property type.";
@@ -347,7 +347,7 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as an integer."));
 		}
 	}
-    
+
     // Check for invalid parameters.
 	List<String> validList = new ArrayList<>(14);
     validList.add ( "PropertyName" );
@@ -365,14 +365,14 @@ throws InvalidCommandParameterException
     validList.add ( "Multiply" );
     validList.add ( "Divide" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -381,8 +381,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetProperty_JDialog ( parent, this )).ok();
 }
 
@@ -398,8 +398,8 @@ Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   Prop discovery_Prop = getDiscoveryProp ();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
         return null;
     }
@@ -448,8 +448,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -470,7 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
 	PropList parameters = getCommandParameters();
 
 	String PropertyName = parameters.getValue ( "PropertyName" );
@@ -715,9 +715,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    	}
 			    	Message.printStatus(2,routine,"Setting string property to \"" + Property_Object + "\"");
 			    }
-		    
+
 		    	// Set the property in the processor.
-		    
+
 		    	PropList request_params = new PropList ( "" );
 		    	request_params.setUsingObject ( "PropertyName", PropertyName );
 		    	request_params.setUsingObject ( "PropertyValue", Property_Object );

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -112,9 +112,9 @@ throws InvalidCommandParameterException {
 	// If the input file does not exist, warn the user.
 
 	//String working_dir = null;
-	
+
 	CommandProcessor processor = getCommandProcessor();
-	
+
 	if ( ((InputFile == null) || InputFile.isEmpty()) && ((ObjectID == null) || ObjectID.isEmpty()) ) {
         message = "The input file or object identifier must be specified.";
         warning += "\n" + message;
@@ -175,7 +175,7 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 	}
-	
+
 	if ( (Append != null) && !Append.equals("") ) {
 		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
 			message = "The Append parameter \"" + Append + "\" is invalid.";
@@ -360,10 +360,10 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
 	String [] arrayColumns, String[] booleanColumns, String [] dateTimeColumns,
 	String [] doubleColumns, String [] integerColumns, String [] textColumns ) {
 	String routine = getClass().getSimpleName() + ".initializeTableColumns";
-	
+
 	// First loop through the list of Map to get the column names:
 	// - it is not required that all objects have the same element names (although this is usually the case)
-	
+
 	Map<?,?> listMap = null;
 	List<String> columnNames = new ArrayList<>();
 	String name;
@@ -436,7 +436,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
 		}
 	}
 	}
-	
+
 	int numColumns = columnNames.size();
 	Message.printStatus(2, routine, "Number of columns = " + numColumns );
 
@@ -661,12 +661,12 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
 		}
 	}
 	}
-		
+
 	// Set the initial column types from the data.
 
 	// Loop through the table fields and based on the examination of data above,
 	// set the table field type and if a string, max width.
-	
+
 	// Initialize all columns to string and reset below.
     tableFields = new ArrayList<TableField> ( numColumns );
     TableField newTableField;
@@ -906,7 +906,7 @@ private void initializeTableColumns ( DataTable table, List<List<?>> objectList,
            // Message.printStatus ( 2, routine, "length max=" + lenmax_string[icol] );
         }
     }
-		
+
 	// Set the table fields.
 	table.setTableFields(tableFields);
 }
@@ -945,13 +945,13 @@ throws FileNotFoundException, IOException {
 	if ( useMapper ) {
 		// Map the JSON string into an object hierarchy and then pull out what is needed:
 		// - may fail on very large input files by running out of memory
-		
+
 		StringBuilder responseJson = null;
 		Map<?,?> map = null;
 		if ( (inputFile != null) && !inputFile.isEmpty() ) {
 			// First read the input file into a string.
 			responseJson = IOUtil.fileToStringBuilder(inputFile);
-		
+
 			// Parse the string into object hierarchy:
 			// - if the JSON string starts with '{', read into a map
 			// - if the JSON string starts with '[', read into an array and add to a map for further processing
@@ -1003,18 +1003,18 @@ throws FileNotFoundException, IOException {
         	++warningCount;
         	return warningCount;
 		}
-		
+
 		// Process the objects in the list.
-		
+
 		initializeTableColumns ( table, arrays,
 			excludeNames,
 			arrayColumns, booleanColumns, dateTimeColumns, doubleColumns, integerColumns, textColumns );
-		
+
 		// Read the data.
-		
+
 		List<String> problems = new ArrayList<>();
 		readTableData ( table, arrays, arrayColumns, excludeNames, top, problems );
-		
+
 		// Log the problems.
 		int maxProblems = 100;
 		int iProblem = -1;
@@ -1072,7 +1072,7 @@ throws FileNotFoundException, IOException {
 	else {
 		// Other options.
 	}
-	
+
 	return warningCount;
 }
 
@@ -1110,7 +1110,7 @@ Determine the column type considering overrides:
 private int readJSON_DetermineColumnType ( String colName, int colType0, String [] dateTimeColumns,
 	String [] doubleColumns, String [] integerColumns, String [] textColumns ) {
 	int colType = colType0;
-	
+
 	if ( dateTimeColumns != null) {
 		for ( int i = 0; i < dateTimeColumns.length; i++ ) {
 			if ( dateTimeColumns[i].equalsIgnoreCase(colName) ) {
@@ -1469,7 +1469,7 @@ throws InvalidCommandParameterException,
 CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
@@ -1492,16 +1492,20 @@ CommandWarningException, CommandException {
     }
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
     String ObjectID = parameters.getValue ( "ObjectID" );
 	ObjectID = TSCommandProcessorUtil.expandParameterValue(processor, this, ObjectID);
     String TableID = parameters.getValue ( "TableID" );
-	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
 	String ArrayName = parameters.getValue ( "ArrayName" );
-	ArrayName = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayName);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ArrayName = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayName);
+    }
 	if ( ArrayName == null ) {
 		// Set to empty to avoid null pointer exceptions.
 		ArrayName = "";
@@ -1513,7 +1517,9 @@ CommandWarningException, CommandException {
 	}
 
 	String ExcludeNames = parameters.getValue ( "ExcludeNames" );
-	ExcludeNames = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeNames);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ExcludeNames = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeNames);
+    }
 	String [] excludeNames = null;
     if ( (ExcludeNames != null) && !ExcludeNames.isEmpty() ) {
     	excludeNames = ExcludeNames.split(",");
@@ -1526,7 +1532,9 @@ CommandWarningException, CommandException {
     	excludeNames = new String[0];
     }
 	String ArrayColumns = parameters.getValue ( "ArrayColumns" );
-	ArrayColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ArrayColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, ArrayColumns);
+    }
 	String [] arrayColumns = null;
     if ( (ArrayColumns != null) && !ArrayColumns.isEmpty() ) {
         arrayColumns = ArrayColumns.split(",");
@@ -1538,7 +1546,9 @@ CommandWarningException, CommandException {
     	arrayColumns = new String[0];
     }
 	String BooleanColumns = parameters.getValue ( "BooleanColumns" );
-	BooleanColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, BooleanColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	BooleanColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, BooleanColumns);
+    }
 	String [] booleanColumns = null;
     if ( (BooleanColumns != null) && !BooleanColumns.isEmpty() ) {
         booleanColumns = BooleanColumns.split(",");
@@ -1550,7 +1560,9 @@ CommandWarningException, CommandException {
     	booleanColumns = new String[0];
     }
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
-	DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
+    }
 	String [] dateTimeColumns = null;
     if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
         dateTimeColumns = DateTimeColumns.split(",");
@@ -1562,7 +1574,9 @@ CommandWarningException, CommandException {
     	dateTimeColumns = new String[0];
     }
 	String DoubleColumns = parameters.getValue ( "DoubleColumns" );
-	DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
+    }
 	String [] doubleColumns = null;
     if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
     	doubleColumns = DoubleColumns.split(",");
@@ -1574,7 +1588,9 @@ CommandWarningException, CommandException {
     	doubleColumns = new String[0];
     }
 	String IntegerColumns = parameters.getValue ( "IntegerColumns" );
-	IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
+    }
 	String [] integerColumns = null;
     if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
     	integerColumns = IntegerColumns.split(",");
@@ -1586,7 +1602,9 @@ CommandWarningException, CommandException {
     	integerColumns = new String[0];
     }
 	String TextColumns = parameters.getValue ( "TextColumns" );
-	TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
+    }
 	String [] textColumns = null;
     if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
     	textColumns = TextColumns.split(",");
@@ -1598,7 +1616,9 @@ CommandWarningException, CommandException {
     	textColumns = new String[0];
     }
 	String Top = parameters.getValue ( "Top" );
-	Top = TSCommandProcessorUtil.expandParameterValue(processor, this, Top);
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	Top = TSCommandProcessorUtil.expandParameterValue(processor, this, Top);
+    }
 	int top = 0;
 	if ( (Top != null) && !Top.isEmpty() ) {
 		top = Integer.parseInt(Top);
@@ -1632,7 +1652,7 @@ CommandWarningException, CommandException {
 		}
 		haveFile = true;
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
 		Message.printWarning ( 2,
@@ -1762,7 +1782,7 @@ CommandWarningException, CommandException {
     			throw new CommandWarningException ( message );
     		}
     	}
-    	
+
         // Set the table in the processor.
 
         PropList request_params = new PropList ( "" );

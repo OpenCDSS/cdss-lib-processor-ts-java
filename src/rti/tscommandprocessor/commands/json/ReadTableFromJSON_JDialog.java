@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -97,7 +97,7 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
-private String __working_dir = null;	
+private String __working_dir = null;
 private ReadTableFromJSON_Command __command = null;
 private boolean __ok = false;
 
@@ -365,7 +365,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command,
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"It is recommended that the location of the files be " +
 		"specified using a path relative to the working directory."),
-		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);			
+		0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	if (__working_dir != null) {
     	JGUIUtil.addComponent(paragraph, new JLabel (
 		"The working directory is: " + __working_dir),
@@ -458,7 +458,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command,
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - JSON names to exclude, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-   	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Array columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ArrayColumns_JTextField = new JTextField (20);

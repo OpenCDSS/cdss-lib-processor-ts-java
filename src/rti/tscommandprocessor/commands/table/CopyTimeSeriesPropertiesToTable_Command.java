@@ -511,37 +511,45 @@ CommandWarningException, CommandException {
             int TableTSIDColumnNumber = -1;
             String [] tableOutputColumnNames = null;
             if ( iout == 0 ) {
+            	// User-defined properties:
+            	// - the 'tableOutputColumnNames' are determined below in iout=0 code
             	Message.printStatus(2, routine, "Copying user-defined (dynamic) properties to table \"" + TableID + "\" for " + nts + " time series");
             }
             else {
+            	// Built-in properties:
+            	// - set the 'tableOutputColumnNames' here
+            	if ( (includeBuiltInProperties == null) || (includeBuiltInProperties.length == 0) ) {
+            		// No built-in properties to copy;
+            		continue;
+            	}
             	Message.printStatus(2, routine, "Copying built-in properties to table \"" + TableID + "\" for " + nts + " time series");
 
-            	// Get the properties to process:
-            	// - built-in properties are the same for all time series
+            	// Get the built-in properties to process:
+            	// - built-in property names are the same for all time series
             	if ( (IncludeBuiltInProperties != null) && IncludeBuiltInProperties.equals("*") ) {
                 	// Get all the properties:
             		// - these are the known built-in properties from TS.getProperty()
-                	includeBuiltInProperties = new String[4];
-                	includeProperties[0] = "alias";
-                	includeProperties[1] = "datatype";
-                	includeProperties[2] = "description";
-                	includeProperties[3] = "interval";
-                	includeProperties[4] = "tsid";
-                	includeProperties[5] = "units";
+                	includeBuiltInProperties = new String[6];
+                	includeBuiltInProperties[0] = "alias";
+                	includeBuiltInProperties[1] = "datatype";
+                	includeBuiltInProperties[2] = "description";
+                	includeBuiltInProperties[3] = "interval";
+                	includeBuiltInProperties[4] = "tsid";
+                	includeBuiltInProperties[5] = "units";
             	}
 
            		// Default output column names to input:
            		// - need to copy because may change values below
-               	tableOutputColumnNames = new String[includeProperties.length];
+            	tableOutputColumnNames = new String[includeBuiltInProperties.length];
               	for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
-               		tableOutputColumnNames[icolumn] = includeProperties[icolumn];
+               		tableOutputColumnNames[icolumn] = includeBuiltInProperties[icolumn];
                	}
 
-               	// If the NameMap was specified, reset the output column names.
+               	// If the NameMap was specified, reset the output column names using the map.
 
                	if ( nameMap != null ) {
-               		for ( int iprop = 0; iprop < includeProperties.length; iprop++ ) {
-               			String columnName = nameMap.get(includeProperties[iprop]);
+               		for ( int iprop = 0; iprop < includeBuiltInProperties.length; iprop++ ) {
+               			String columnName = nameMap.get(includeBuiltInProperties[iprop]);
                			if ( columnName != null ) {
                				// A mapped name has been specified:
                				// - a bad map property name will be ignored since never requested
@@ -549,9 +557,12 @@ CommandWarningException, CommandException {
                			}
                		}
                	}
+               	
+               	// Set the include properties for generic handling:
+               	includeProperties = includeBuiltInProperties;
             }
 
-            // Loop through the dynamic properties and then the built-in properties.
+            // Loop through the time series.
             
             for ( int its = 0; its < nts; its++ ) {
                 // The the time series to process, from the list that was returned above.
@@ -623,6 +634,9 @@ CommandWarningException, CommandException {
                 			}
                 		}
                 	}
+                }
+                else {
+                	// The 'tableOutputColumnNames' array was set before the time series loop
                 }
 
                 // Make sure that the output table includes the columns to receive property values, including the TSID column.
@@ -779,7 +793,9 @@ CommandWarningException, CommandException {
                     Message.printStatus(2, routine, "Matched table \"" + TableID + "\" row for TSID \"" + tsid );
                 }
 
-                // Loop through the property names.
+                // Loop through the property names:
+                // - the property names will be user-defined if iout=0
+                // - the property names will be built-in if iout=1
 
                 //for ( int icolumn = 0; icolumn < IncludeProperties.length; icolumn++ ) { // }
                 //    String propertyName = IncludeProperties[icolumn];
@@ -814,10 +830,10 @@ CommandWarningException, CommandException {
                         try {
                             rec.setFieldValue(colNumber,propertyValue);
                             if ( Message.isDebugOn ) {
-                                Message.printDebug(1, routine, "Setting table column [" + icolumn + "]" + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
+                                Message.printDebug(1, routine, "iout=" + iout + " Setting table column [" + icolumn + "]" + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                     propertyValue + "\"" );
                             }
-                            Message.printStatus(2, routine, "Setting table column [" + icolumn + "] " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
+                            Message.printStatus(2, routine, "iout=" + iout + " Setting table column [" + icolumn + "] " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                  propertyValue + "\"" );
                             // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table.
                             // Reset the column width if necessary.

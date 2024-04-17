@@ -336,21 +336,21 @@ throws InvalidCommandParameterException {
     }
     if ( (IfDifferent != null) && !IfDifferent.equals("") && !IfDifferent.equalsIgnoreCase(_Ignore) &&
         !IfDifferent.equalsIgnoreCase(_Warn) && !IfDifferent.equalsIgnoreCase(_Fail) ) {
-            message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the parameter as " + _Ignore + " (default), " +
-                        _Warn + ", or " + _Fail + "."));
+        message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + _Ignore + " (default), " +
+                _Warn + ", or " + _Fail + "."));
     }
     if ( (IfSame != null) && !IfSame.equals("") && !IfSame.equalsIgnoreCase(_Ignore) &&
         !IfSame.equalsIgnoreCase(_Warn) && !IfSame.equalsIgnoreCase(_Fail) ) {
         message = "The IfSame parameter \"" + IfSame + "\" is not a valid value.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the parameter as " + _Ignore + " (default), " +
-                    _Warn + ", or " + _Fail + "."));
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + _Ignore + " (default), " +
+                _Warn + ", or " + _Fail + "."));
     }
 
     if ( (OutputRows != null) && !OutputRows.equals("") && !OutputRows.equalsIgnoreCase(_All) &&
@@ -358,19 +358,20 @@ throws InvalidCommandParameterException {
         message = "The OutputRows parameter \"" + OutputRows + "\" is not a valid value.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the parameter as " + _All + " (default), " +
-                    _Different + ", or " + _Same + "."));
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + _All + " (default), " +
+                _Different + ", or " + _Same + "."));
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(26);
+	List<String> validList = new ArrayList<>(27);
     validList.add ( "Table1ID" );
     validList.add ( "Table2ID" );
     validList.add ( "CompareColumns1" );
     validList.add ( "ExcludeColumns1" );
     validList.add ( "MatchColumns1" );
     validList.add ( "CompareColumns2" );
+    validList.add ( "ExcludeColumns2" );
     validList.add ( "MatchColumns2" );
     validList.add ( "MatchColumnsHow" );
     validList.add ( "AnalysisMethod" );
@@ -661,6 +662,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
    		CompareColumns2 = TSCommandProcessorUtil.expandParameterValue(processor, this, CompareColumns2);
     }
+    String ExcludeColumns2 = parameters.getValue ( "ExcludeColumns2" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		ExcludeColumns2 = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeColumns2);
+    }
     String MatchColumns2 = parameters.getValue ( "MatchColumns2" );
     if ( commandPhase == CommandPhaseType.RUN ) {
    		MatchColumns2 = TSCommandProcessorUtil.expandParameterValue(processor, this, MatchColumns2);
@@ -810,6 +815,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             compareColumns2[i] = compareColumns2[i].trim();
         }
     }
+    String [] excludeColumns2 = null;
+    if ( (ExcludeColumns2 != null) && !ExcludeColumns2.equals("") ) {
+        excludeColumns2 = ExcludeColumns2.split(",");
+        for ( int i = 0; i < excludeColumns2.length; i++ ) {
+            excludeColumns2[i] = excludeColumns2[i].trim();
+        }
+    }
     String [] matchColumns2 = null;
     if ( (MatchColumns2 != null) && !MatchColumns2.equals("") ) {
         matchColumns2 = MatchColumns2.split(",");
@@ -904,7 +916,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int sameRowCount = 0; // For setting properties.
     int sameCellCount = 0; // For setting properties.
     int errorCount = 0; // Count of errors doing the comparison.
-    int tableCellCount = 0;
+    int table1CellCount = 0;
 	try {
     	// Create the table.
 	    String DiffFile1_full = DiffFile1;
@@ -931,18 +943,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            StringUtil.toList(compareColumns1), StringUtil.toList(excludeColumns1),
 	            StringUtil.toList(matchColumns1),
 	            table2,
-	            StringUtil.toList(compareColumns2), StringUtil.toList(matchColumns2),
+	            StringUtil.toList(compareColumns2), StringUtil.toList(excludeColumns2),
+	            StringUtil.toList(matchColumns2),
 	            matchColumnsByName,
 	            analysisType,
 	            Precision_Integer, Tolerance_Double, diffTable1ID, diffTable2ID,
 	            DiffTableID,
 	            RowNumberColumn,
-	            OutputRows);
+	            OutputRows );
 	        comparer.compare ();
 	        DataTable diffTable1 = comparer.getDiffTable1();
 	        DataTable diffTable2 = comparer.getDiffTable2();
 	        DataTable diffTable = comparer.getDiffTable();
-	        tableCellCount = diffTable1.getNumberOfRecords()*diffTable1.getNumberOfFields();
+	        table1CellCount = table1.getNumberOfRecords()*table1.getNumberOfFields();
+           	if ( (compareColumns1 != null) && compareColumns1.length > 0 ) {
+           		table1CellCount = table1.getNumberOfRecords()*compareColumns1.length;
+           	}
 	        diffCount = comparer.getDifferenceCount();
 	        diffRowCount = comparer.getDifferentRowCount();
 	        diffCellCount = comparer.getDifferentCellCount();
@@ -1021,6 +1037,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                            message, "Report problem to software support." ) );
                 }
 	        }
+	        
+	        // Add problems to the status:
+	        // - show as warnings since an exception would have been generated if a major problem
+	        List<String> problems = comparer.getProblems();
+	        int problemCount = 0;
+	        for ( String problem : problems ) {
+	        	++problemCount;
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                         problem, "See the log file." ) );
+                if ( problemCount > 200 ) {
+                	status.addToLog ( commandPhase,
+                    	new CommandLogRecord(CommandStatusType.WARNING,
+                         	"Limiting problem output to 200 messages.", "See the log file." ) );
+                	break;
+                }
+	        }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             if ( (DiffTable1ID != null) && !DiffTable1ID.isEmpty() ) {
@@ -1060,9 +1093,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	if ( diffCount > 0 ) {
 	    // Have some differences - action is as per user request.
-        message = "" + diffCount + " table values were different, " +
-        	StringUtil.formatString(100.0*(double)diffCount/(double)tableCellCount, "%.2f") +
-        	"% (compared " + tableCellCount + " values).";
+        message = "" + diffCount + " values (" +
+        	StringUtil.formatString(100.0*(double)diffCount/(double)table1CellCount, "%.2f")
+        	+ " %) out of " + table1CellCount + " table 1 values had differences.";
         Message.printStatus ( 2, routine, message );
 	    boolean needToNotify = false;
 	    if ( (AllowedDiff_int < 0) && (diffCount > allowedDiffPositive) ) {
@@ -1081,6 +1114,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(IfDifferent_CommandStatusType,
                     message, "Check tables because difference is not expected.") );
+            
+            // Also show the row and cell differences, which may make it easier to understand.
+            if ( diffRowCount > 0 ) {
+            	message = "" + diffRowCount + " rows (" +
+            	StringUtil.formatString(100.0*(double)diffRowCount/(double)table1.getNumberOfRecords(), "%.2f")
+            	+ "%) out of " + table1.getNumberOfRecords() + " table 1 rows had differences.";
+            	Message.printWarning ( warning_level,
+            		MessageUtil.formatMessageTag( command_tag,++warning_count),
+            		routine, message );
+            	status.addToLog(CommandPhaseType.RUN,
+                	new CommandLogRecord(IfDifferent_CommandStatusType,
+                    	message, "Check tables because difference is not expected.") );
+            }
+
+            if ( diffCellCount > 0 ) {
+            	message = "" + diffCellCount + " cells (" +
+            	StringUtil.formatString(100.0*(double)diffCellCount/(double)table1CellCount, "%.2f")
+            	+ "%) out of " + table1CellCount + " table 1 cells had differences.";
+            	Message.printWarning ( warning_level,
+            		MessageUtil.formatMessageTag( command_tag,++warning_count),
+            		routine, message );
+            	status.addToLog(CommandPhaseType.RUN,
+                	new CommandLogRecord(IfDifferent_CommandStatusType,
+                    	message, "Check tables because difference is not expected.") );
+            }
         }
     }
 
@@ -1305,6 +1363,7 @@ public String toString ( PropList parameters ) {
 		"MatchColumns1",
     	"Table2ID",
 		"CompareColumns2",
+		"ExcludeColumns2",
 		"MatchColumns2",
 		"MatchColumnsHow",
     	"AnalysisMethod",

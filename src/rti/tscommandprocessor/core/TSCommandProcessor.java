@@ -531,7 +531,7 @@ throws IOException {
             }
         }
         // Have a command instance.  Initialize the command (parse the command string) and check its arguments.
-        String fixme = "FIXME! ";  // String for inserted messages.
+        String fixme = "@FIXME! ";  // String for inserted messages.
         try {
             command.initializeCommand(
                 line, // Command string, needed to do full parse on parameters.
@@ -4052,6 +4052,7 @@ throws IOException, FileNotFoundException {
         	// Trim because the command may contain spaces at the front due to indentation.
         	String commandStringTrimmed = commandString.trim();
         	if ( commandString.startsWith("#") ) {
+        		// No discovery mode.
         		continue;
         	}
         	// Put the following after the above because #/* comments out a block start.
@@ -4091,15 +4092,16 @@ throws IOException, FileNotFoundException {
 Run discovery on the command.
 This will, for example, make available a list of time series to be requested with the
 ObjectListProvider.getObjectList() method.
+@param command command that needs to be run in discovery mode
 */
-private void readCommandFile_RunDiscoveryOnCommand ( Command command_read ) {
+private void readCommandFile_RunDiscoveryOnCommand ( Command command ) {
     String routine = getClass().getSimpleName() + ".readCommandFile_RunDiscoveryOnCommand";
     // Run the discovery.
     if ( Message.isDebugOn ) {
-        Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
+        Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command + "\"" );
     }
     try {
-        ((CommandDiscoverable)command_read).runCommandDiscovery(indexOf(command_read));
+        ((CommandDiscoverable)command).runCommandDiscovery(indexOf(command));
     }
     catch ( Exception e ) {
         // TODO SAM 2011-02-17 Need to show warning to user?  With current design, code should have complete input.

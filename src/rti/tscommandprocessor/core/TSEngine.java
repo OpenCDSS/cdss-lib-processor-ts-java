@@ -33,7 +33,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -2165,7 +2164,8 @@ throws Exception {
 	stopwatch.start();
 	String commandString = null;
 
-	boolean inComment = false;
+	// Whether in a /* */ block comment.
+	boolean inBlockComment = false;
 	Command command = null;	// The command to process.
 	CommandStatus commandStatus = null; // Put outside of main try to be able to use in catch.
 
@@ -2179,7 +2179,7 @@ throws Exception {
 	// Now loop through the commands, query time series, and manipulate to produce a list of final time series.
     // The following loop does the initial queries.
 
-	inComment = false;
+	inBlockComment = false;
 	// 'i_for_message' will be adjusted by __num_prepended_commands:
 	// - the user will see command numbers in messages like (12), indicating the twelfth command
 	int i_for_message;
@@ -2317,7 +2317,7 @@ throws Exception {
     		}
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		// Don't use routine in messages. keep log messages shorter.
-    		if ( !inComment && ifStackOkToRun ) {
+    		if ( !inBlockComment && ifStackOkToRun ) {
     			Message.printStatus ( 2, "", "-> Start processing command " + (iCommand + 1) + " of " + size + ": \"" + commandString + "\"" );
     		}
             stopWatch.clear();
@@ -2380,15 +2380,18 @@ throws Exception {
 			    		}
                 	}
                 }
+                /* As of TSTool 14.9.4 allow the comment to run.
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
                 commandProfile.setEndTime(System.currentTimeMillis());
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
+    			*/
     		}
     		else if ( command instanceof CommentBlockStart_Command ) {
-    			inComment = true;
+    			// Comment block start is not evaluated in any way so no need to run below.
+    			inBlockComment = true;
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -2397,7 +2400,8 @@ throws Exception {
     			continue;
     		}
     		else if ( command instanceof CommentBlockEnd_Command ) {
-    			inComment = false;
+    			// Comment block end is not evaluated in any way so no need to run below.
+    			inBlockComment = false;
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -2405,7 +2409,7 @@ throws Exception {
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
-    		if ( inComment ) {
+    		if ( inBlockComment ) {
     		    // Commands won't know themselves that they are in a comment so set the status for them and continue.
     		    // TODO SAM 2008-09-30 Do the logs need to be cleared?
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
@@ -2984,7 +2988,7 @@ throws Exception {
 		// Notify any listeners that the command is done running.
 		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( iCommand, size, command );
-		if ( !inComment && ifStackOkToRun ) {
+		if ( !inBlockComment && ifStackOkToRun ) {
 			Message.printStatus ( 2, "",
 	            "<- Done processing command \"" + commandString + "\" (" +  (iCommand + 1) + " of " + size + " commands, " +
 	            StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );

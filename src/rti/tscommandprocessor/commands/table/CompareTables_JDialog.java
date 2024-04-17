@@ -89,6 +89,7 @@ private JTextField __CompareColumns1_JTextField = null;
 private JTextField __ExcludeColumns1_JTextField = null;
 private JTextField __MatchColumns1_JTextField = null;
 private JTextField __CompareColumns2_JTextField = null;
+private JTextField __ExcludeColumns2_JTextField = null;
 private JTextField __MatchColumns2_JTextField = null;
 private SimpleJComboBox __MatchColumnsHow_JComboBox = null;
 private SimpleJComboBox __AnalysisMethod_JComboBox = null;
@@ -338,6 +339,7 @@ private void checkInput () {
     String ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
     String MatchColumns1 = __MatchColumns1_JTextField.getText().trim();
 	String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+	String ExcludeColumns2 = __ExcludeColumns2_JTextField.getText().trim();
     String MatchColumns2 = __MatchColumns2_JTextField.getText().trim();
 	String MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
 	String AnalysisMethod = __AnalysisMethod_JComboBox.getSelected();
@@ -382,6 +384,9 @@ private void checkInput () {
     }
 	if ( CompareColumns2.length() > 0 ) {
 		props.set ( "CompareColumns2", CompareColumns2 );
+	}
+	if ( ExcludeColumns2.length() > 0 ) {
+		props.set ( "ExcludeColumns2", ExcludeColumns2 );
 	}
     if ( MatchColumns2.length() > 0 ) {
         props.set ( "MatchColumns2", MatchColumns2 );
@@ -465,6 +470,7 @@ private void commitEdits () {
     String ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
     String MatchColumns1 = __MatchColumns1_JTextField.getText().trim();
     String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+    String ExcludeColumns2 = __ExcludeColumns2_JTextField.getText().trim();
     String MatchColumns2 = __MatchColumns2_JTextField.getText().trim();
     String MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
     String AnalysisMethod = __AnalysisMethod_JComboBox.getSelected();
@@ -491,6 +497,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "ExcludeColumns1", ExcludeColumns1 );
     __command.setCommandParameter ( "MatchColumns1", MatchColumns1 );
 	__command.setCommandParameter ( "CompareColumns2", CompareColumns2 );
+	__command.setCommandParameter ( "ExcludeColumns2", ExcludeColumns2 );
 	__command.setCommandParameter ( "MatchColumns2", MatchColumns2 );
 	__command.setCommandParameter ( "MatchColumnsHow", MatchColumnsHow );
     __command.setCommandParameter ( "AnalysisMethod", AnalysisMethod );
@@ -541,9 +548,8 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command compares two tables and optionally creates one or more difference table(s) and/or output file(s)."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "By default, all columns (and rows) from the specified tables are compared; however, the columns to " +
-        "compare can be specified."),
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+        "Tables to be compared should be sorted similarly to best highlight differences and avoid visual noise in output."),
         0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -564,6 +570,15 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel (
         "Specify the tables and columns."),
         0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "By default, all columns (and rows) from the specified tables are compared."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Specify the 'columns to compare' and 'columns to exclude' if specific columns should be compared."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Column order does not need to be the same in each table if MatchColumnsHow=" + this.__command._Name + "."),
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel, new JLabel (
         "If AnalysisMethod=Advanced, columns to match can be specified to allow searches for matching rows."),
         0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -592,7 +607,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __CompareColumns1_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __CompareColumns1_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all."),
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all table 1 columns."),
         3, yInput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 1 columns to exclude:"),
@@ -603,7 +618,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __ExcludeColumns1_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(input_JPanel, __ExcludeColumns1_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all."),
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all table 1 columns."),
         3, yInput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 1 columns to match:"),
@@ -638,7 +653,18 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     __CompareColumns2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(input_JPanel, __CompareColumns2_JTextField,
         1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all."),
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all table 2 columns."),
+        3, yInput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 2 columns to exclude:"),
+        0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns2_JTextField = new JTextField (10);
+    __ExcludeColumns2_JTextField.setToolTipText(
+    	"Comma-separated list of column names in the second table to exclude, can use ${Property} notation");
+    __ExcludeColumns2_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(input_JPanel, __ExcludeColumns2_JTextField,
+        1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("Optional - default is to compare all table 2 columns."),
         3, yInput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(input_JPanel, new JLabel ("Table 2 columns to match:"),
@@ -655,6 +681,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(input_JPanel, new JLabel ( "Match columns how:"),
         0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchColumnsHow_JComboBox = new SimpleJComboBox ( false );
+    __MatchColumnsHow_JComboBox.setToolTipText("If Name, then columns with matching names are compared.  If Order, column 1 is compared to column 1, etc.");
     List<String> matchChoices = new ArrayList<>();
     matchChoices.add ( "" ); // Default.
     matchChoices.add ( __command._Name );
@@ -681,14 +708,14 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         "If AnalysisMethod=Advanced, empty rows will be inserted in the difference tables to align matching rows."),
         0, ++yAnalysis, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
-        "Tables should be sorted similarly before doing the comparison (e.g., use database SQL sort or SortTable command)."),
+        "Tables should be sorted similarly before doing the comparison (e.g., use database SQL sort or the SortTable command)."),
         0, ++yAnalysis, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "The tables are compared by formatting cell values as strings, " +
         "which ensures that floating point numbers can be compared exactly."),
         0, ++yAnalysis, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
-        "If necessary, specify the precision or tolerance for floating point comparisons."),
+        "If necessary, specify the precision or tolerance for floating point number comparisons."),
         0, ++yAnalysis, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(analysis_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yAnalysis, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -910,23 +937,23 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
  	JGUIUtil.addComponent(output_JPanel, DiffFile_JPanel,
  		1, yOutput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output rows:"),
-         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     __OutputRows_JComboBox = new SimpleJComboBox ( false );
-     __OutputRows_JComboBox.setToolTipText("Indicate which rows to output.");
-     List<String> outputChoices = new ArrayList<>();
-     outputChoices.add ( "" );  // Default.
-     outputChoices.add ( __command._All );
-     outputChoices.add ( __command._Different );
-     outputChoices.add ( __command._Same );
-     __OutputRows_JComboBox.setData(outputChoices);
-     __OutputRows_JComboBox.select ( 0 );
-     __OutputRows_JComboBox.addActionListener ( this );
-     JGUIUtil.addComponent(output_JPanel, __OutputRows_JComboBox,
-         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(output_JPanel, new JLabel(
-         "Optional - rows to output (default=" + __command._All + ")."),
-         3, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output rows:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputRows_JComboBox = new SimpleJComboBox ( false );
+    __OutputRows_JComboBox.setToolTipText("Indicate which rows to output.");
+    List<String> outputChoices = new ArrayList<>();
+    outputChoices.add ( "" );  // Default.
+    outputChoices.add ( __command._All );
+    outputChoices.add ( __command._Different );
+    outputChoices.add ( __command._Same );
+    __OutputRows_JComboBox.setData(outputChoices);
+    __OutputRows_JComboBox.select ( 0 );
+    __OutputRows_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __OutputRows_JComboBox,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel(
+        "Optional - rows to output (default=" + __command._All + ")."),
+        3, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(output_JPanel, new JLabel("Different row count property:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1052,6 +1079,7 @@ private void refresh () {
     String ExcludeColumns1 = "";
     String MatchColumns1 = "";
     String CompareColumns2 = "";
+    String ExcludeColumns2 = "";
     String MatchColumns2 = "";
     String MatchColumnsHow = "";
     String AnalysisMethod = "";
@@ -1081,6 +1109,7 @@ private void refresh () {
         ExcludeColumns1 = props.getValue ( "ExcludeColumns1" );
         MatchColumns1 = props.getValue ( "MatchColumns1" );
         CompareColumns2 = props.getValue ( "CompareColumns2" );
+        ExcludeColumns2 = props.getValue ( "ExcludeColumns2" );
         MatchColumns2 = props.getValue ( "MatchColumns2" );
         MatchColumnsHow = props.getValue ( "MatchColumnsHow" );
         AnalysisMethod = props.getValue ( "AnalysisMethod" );
@@ -1142,6 +1171,9 @@ private void refresh () {
         }
 		if ( CompareColumns2 != null ) {
 			__CompareColumns2_JTextField.setText ( CompareColumns2 );
+		}
+		if ( ExcludeColumns2 != null ) {
+			__ExcludeColumns2_JTextField.setText ( ExcludeColumns2 );
 		}
         if ( MatchColumns2 != null ) {
             __MatchColumns2_JTextField.setText ( MatchColumns2 );
@@ -1266,6 +1298,7 @@ private void refresh () {
     ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
     MatchColumns1 = __MatchColumns1_JTextField.getText().trim();
 	CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+	ExcludeColumns2 = __ExcludeColumns2_JTextField.getText().trim();
     MatchColumns2 = __MatchColumns2_JTextField.getText().trim();
 	MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
 	AnalysisMethod = __AnalysisMethod_JComboBox.getSelected();
@@ -1293,6 +1326,7 @@ private void refresh () {
     props.add ( "ExcludeColumns1=" + ExcludeColumns1 );
     props.add ( "MatchColumns1=" + MatchColumns1 );
 	props.add ( "CompareColumns2=" + CompareColumns2 );
+	props.add ( "ExcludeColumns2=" + ExcludeColumns2 );
     props.add ( "MatchColumns2=" + MatchColumns2 );
 	props.add ( "MatchColumnsHow=" + MatchColumnsHow );
 	props.add ( "AnalysisMethod=" + AnalysisMethod );

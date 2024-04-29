@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -221,10 +221,14 @@ public void actionPerformed(ActionEvent event) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnDecimalPlaces = __ColumnDecimalPlaces_JTextArea.getText().trim();
         String [] notes = {
-            "Number columns for floating-point values can have the number of decimal places specified.",
-            "The default is the number for the table column, or if not known, 6.",
-            "Column Name - column name in the table",
-            "Decimal Places - specify the number of decimal places to show for floating point number columns"
+            "Columns containing floating-point number values can have the number of decimal places specified.",
+            "The default is the table column precision, or if not known, 6.",
+            "Column Name - one of the following:",
+            "  Column name in the table, matching an output column name",
+            "  * to match all output columns",
+            "  *abc, abc*, *abc* - to match output column(s) using a wildcard",
+            "Decimal Places:",
+            "  Specify the number of decimal places to show for floating point number columns"
         };
         String columnCellTypes = (new DictionaryJDialog ( __parent, true, ColumnDecimalPlaces, "Edit ColumnDecimalPlaces Parameter",
             notes, "Column Name", "Decimal Places",10)).response();
@@ -283,10 +287,14 @@ public void actionPerformed(ActionEvent event) {
         String [] notes = {
             "A column's width can be set to make the Excel output more readable.",
             "Column Name - one of the following:",
-            "  column name in the table",
-            "  Default, to set default width for all columns (can be reset by specific column information)",
-            "  EmptyColumns, to set the width for empty columns (can be reset by specific column information)",
-            "Width - " + __command._Auto + " to automatically size to data, or 1/256 of character width (max=256*256)"
+            "  Column name in the table, matching an output column name",
+            "  * to match all output columns",
+            "  *abc, abc*, *abc* - to match output column(s) using a wildcard",
+            "  EmptyColumns - default width for empty output columns",
+            "  Default - to set default width for all output columns",
+            "Width - one of the following:",
+            "  " + __command._Auto + " - to automatically size to data",
+            "  1/256 of character width (max=256*256 = 256 characters), using Excel width units"
         };
         String columnWidths = (new DictionaryJDialog ( __parent, true, ColumnWidths, "Edit ColumnWidths Parameter",
             notes, "Column Name", "Width",10)).response();
@@ -732,6 +740,12 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
 
     JGUIUtil.addComponent(excelFormat_JPanel, new JLabel (
         "The following parameters control how Excel cells are formatted.  See also the \"Style Formatting\" tab."),
+        0, ++yExcelFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelFormat_JPanel, new JLabel (
+        "Output column names can be spedified exactly, using wildcards, or other options."),
+        0, ++yExcelFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelFormat_JPanel, new JLabel (
+        "See also the \"Style Formatting\" tab."),
         0, ++yExcelFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(excelFormat_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
    	    0, ++yExcelFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

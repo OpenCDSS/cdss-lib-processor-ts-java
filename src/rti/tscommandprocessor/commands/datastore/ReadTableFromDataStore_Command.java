@@ -32,13 +32,11 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.io.File;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMIDatabaseType;
@@ -60,6 +58,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
@@ -95,6 +94,20 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
+	DatabaseDataStore datastore = null;
+	checkCommandParameters ( datastore, parameters, command_tag, warning_level );
+}
+
+/**
+Check the command parameter for valid values, combination, etc.
+@param dataStore datastore to use for data checks, used when called from the editor
+@param parameters The parameters for the command.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
+@param warning_level The warning level to use when printing parse warnings
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
+*/
+public void checkCommandParameters ( DatabaseDataStore dataStore, PropList parameters, String command_tag, int warning_level )
+throws InvalidCommandParameterException {
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     String Top = parameters.getValue ( "Top" );
@@ -118,6 +131,13 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the datastore." ) );
     }
+	else {
+		// Have DataStore parameter.
+        if ( dataStore != null ) {
+        	// Could put datastore data checks here.
+        }
+	}
+
     int specCount = 0;
     if ( (Sql != null) && !Sql.equals("") ) {
     	// Convert command file placeholder for newline into actual newline.
@@ -219,8 +239,9 @@ throws InvalidCommandParameterException {
     }
 
 	//  Check for invalid parameters.
-	List<String> validList = new ArrayList<>(17);
+	List<String> validList = new ArrayList<>(18);
     validList.add ( "DataStore" );
+    validList.add ( "EditorDataStore" ); // Only used in the editor.
     validList.add ( "DataStoreCatalog" );
     validList.add ( "DataStoreSchema" );
     validList.add ( "DataStoreTable" );
@@ -260,63 +281,10 @@ public boolean editCommand ( JFrame parent ) {
 	}
 	List<DatabaseDataStore> dataStoreList =
 		TSCommandProcessorUtil.getDatabaseDataStoresForEditors ( (TSCommandProcessor)this.getCommandProcessor(), this );
-	return (new ReadTableFromDataStore_JDialog ( parent, this, dataStoreList )).ok();
-}
-
-/**
-TODO smalers 2021-10-23 this version passes datastore names to the editor.
-The above version operations on DataStore instances.
-Edit the command.
-@param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
-*/
-public boolean x_editCommand ( JFrame parent ) {
-	String routine = getClass().getSimpleName() + ".editCommand";
-	if ( Message.isDebugOn ) {
-		Message.printDebug(1,routine,"Editing the command...getting active and discovery database datastores.");
-	}
-	// Get the list of database datastores as string, to list as choices.
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)getCommandProcessor();
-    // Datastore names could be those active at startup and opened with commands:
-    // - since runtime datastores may not known when editing the command,
-    //   merge the two lists
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
-    List<String> datastoreNames = new ArrayList<>();
-    for ( DataStore dataStore: dataStoreList ) {
-    	datastoreNames.add ( dataStore.getName() );
-    }
-	if ( Message.isDebugOn ) {
-		Message.printDebug(1,routine,"There are " + datastoreNames.size() + " matching datastores that are active.");
-	}
-    // Get the datastores from discovery mode:
-    // - only get the database datastore names, not web services
-	List<String> datastoreList2 =
-        TSCommandProcessorUtil.getDataStoreNamesFromCommandsBeforeCommand(
-            (TSCommandProcessor)getCommandProcessor(), this, true, false);
-	if ( Message.isDebugOn ) {
-		Message.printDebug(1,routine,"There are " + datastoreList2.size() + " datastores from discovery.");
-	}
-    // Merge the lists and sort alphabetically.
-	for ( String datastoreName2 : datastoreList2 ) {
-		boolean found = false;
-		// Loop through the the list from active datastores and add if not already in the list.
-		for ( String datastoreName : datastoreNames ) {
-			if ( Message.isDebugOn ) {
-				Message.printDebug(1,routine,"Comparing discovery datastore \"" + datastoreName2 +
-					"\" with active datastore \"" + datastoreName + "\"");
-			}
-			if ( datastoreName2.equals(datastoreName) ) {
-				found = true;
-				break;
-			}
-		}
-		if ( !found ) {
-			datastoreNames.add(datastoreName2);
-		}
-	}
-	Collections.sort(datastoreNames);
-	//return (new ReadTableFromDataStore_JDialog ( parent, this, datastoreNames )).ok();
-	return false;
+	List<Prop> propList =
+        TSCommandProcessorUtil.getDiscoveryPropFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	return (new ReadTableFromDataStore_JDialog ( parent, this, dataStoreList, propList )).ok();
 }
 
 /**
@@ -352,7 +320,7 @@ public <T> List<T> getObjectList ( Class<T> c ) {
     DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
@@ -480,7 +448,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
+	List<Prop> propList = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		// Get all discovery properties, used to handle ${Property} expansion in discovery mode.
+		propList = TSCommandProcessorUtil.getDiscoveryPropFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
         setDiscoveryTable ( null );
     }
 
@@ -489,6 +461,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 
     String DataStore = parameters.getValue ( "DataStore" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+	    DataStore = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStore);
+	}
+	else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	    DataStore = TSCommandProcessorUtil.expandParameterDiscoveryValue(propList, this, DataStore);
+	}
     String DataStoreCatalog = parameters.getValue ( "DataStoreCatalog" );
     if ( (DataStoreCatalog != null) && DataStoreCatalog.equals("") ) {
         DataStoreCatalog = null; // Simplifies logic below.
@@ -1109,6 +1087,7 @@ Return the string representation of the command.
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
 		"DataStore",
+		"EditorDataStore",
 		"DataStoreCatalog",
 		"DataStoreSchema",
 		"DataStoreTable",

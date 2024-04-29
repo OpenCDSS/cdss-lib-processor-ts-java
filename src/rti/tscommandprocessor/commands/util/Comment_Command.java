@@ -164,11 +164,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     Message.printStatus(2, routine, "Checking comment string as upper case: " + commandStringUpper);
     // Check below needs to not match strings like:
     // # - use @sourceUrl and @version
-    if ( commandStringUpper.contains("#@SOURCEURL") || commandStringUpper.contains("# @SOURCEURL") ) {
-    	// Temporary folder for source file copy and temporary version of TSTool UI commands.
-		String tempFolder = System.getProperty("java.io.tmpdir");
+    if ( TSCommandProcessorUtil.isAnnotationCommand(this) && (commandStringUpper.contains("#@SOURCEURL") || commandStringUpper.contains("# @SOURCEURL")) ) {
 		// Full #@sourceUrl annotation, extracted from the local command file.
 		String sourceUrl = null;
+   		// Temporary folder for source file copy and temporary version of TSTool UI commands.
+		String tempFolder = System.getProperty("java.io.tmpdir");
+		// File for the source (remote) command file:
+		// - use 'file1Path' since it is the original
+		String file1Path = tempFolder + File.separator + "TSTool-commands-from-sourceUrl.tstool";
 		// Version of the source command file, extracted after downloading the command file.
 		String sourceVersion = null;
 		// Version date of the source command file, extracted after downloading the command file.
@@ -178,57 +181,60 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Version date of the local command file, extracted from in-memory commands.
 		String localVersionDate = null;
 
-		// Get the local command file information.
-		// File for the source (remote) command file.
-		String file1Path = tempFolder + File.separator + "TSTool-commands-source.tstool";
-		List<Command> commands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"sourceUrl");
-		if ( commands.size() > 1 ) {
+    	// Get commands that are annotations (may be a true comment if the annotation is itself a comment (e.g., for a test).
+		List<Command> annotationCommands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"sourceUrl");
+		if ( annotationCommands.size() > 1 ) {
 			message = "The TSTool commands have multiple #@sourceUrl annotations - can't get command file source.";
 			Message.printWarning(3, routine, message);
 			++warningCount;
-       		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+       		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
            		message, "Verify that only one #@sourceUrl annotation comment is used." ) );
 		}
-		if ( warningCount == 0 ) {
-			// Get the URL from the command:
-			// - if it is not set, the version comparison will not happen below
-			// - source URL is from the first command from above
-			sourceUrl = TSCommandProcessorUtil.getAnnotationCommandParameter(commands.get(0), 1);
-			commands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"version");
-			if ( commands.size() == 0 ) {
-				// OK, checked below - must have version and/or versionDate.
-			}
-			else if ( commands.size() > 1 ) {
-				message = "The TSTool commands have multiple #@version annotations - can't check for updates.";
-				Message.printWarning(3, routine, message);
-				++warningCount;
-       			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-           			message, "Verify that only one #@version annotation comment is used." ) );
-			}
-			else {
-				localVersion = TSCommandProcessorUtil.getAnnotationCommandParameter(commands.get(0), 1);
-			}
-			commands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"versionDate");
-			if ( commands.size() == 0 ) {
-				// OK, checked below - must have version and/or versionDate.
-			}
-			else if ( commands.size() > 1 ) {
-				message = "The commands have multiple #@versionDate annotations - can't check for updates.";
-				Message.printWarning(3, routine, message);
-				++warningCount;
-       			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-           			message, "Verify that only one #@versionDate annotation comment is used." ) );
-			}
-			else {
-				localVersionDate = TSCommandProcessorUtil.getAnnotationCommandParameter(commands.get(0), 1);
-			}
+		else if ( annotationCommands.size() == 1 ) {
+			// Else, continue processing the annotation.
 
-			if ( localVersion.isEmpty() && localVersionDate.isEmpty() ) {
-				message = "The commands have no #@version or #@versionDate annotation - can't check for updates.";
-				Message.printWarning(3, routine, message);
-				++warningCount;
-       			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-           			message, "Verify that a #@version and/or #@versionDate annotation comment is used." ) );
+			// Get the local command file information.
+			if ( warningCount == 0 ) {
+				// Get the URL from the command:
+				// - if it is not set, the version comparison will not happen below
+				// - source URL is from the first command from above
+				sourceUrl = TSCommandProcessorUtil.getAnnotationCommandParameter(annotationCommands.get(0), 1);
+				annotationCommands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"version");
+				if ( annotationCommands.size() == 0 ) {
+					// OK, checked below - must have version and/or versionDate.
+				}
+				else if ( annotationCommands.size() > 1 ) {
+					message = "The TSTool commands have multiple #@version annotations - can't check the version.";
+					Message.printWarning(3, routine, message);
+					++warningCount;
+       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+           				message, "Verify that only one #@version annotation comment is used." ) );
+				}
+				else {
+					localVersion = TSCommandProcessorUtil.getAnnotationCommandParameter(annotationCommands.get(0), 1);
+				}
+				annotationCommands = TSCommandProcessorUtil.getAnnotationCommands((TSCommandProcessor)processor,"versionDate");
+				if ( annotationCommands.size() == 0 ) {
+					// OK, checked below - must have version and/or versionDate.
+				}
+				else if ( annotationCommands.size() > 1 ) {
+					message = "The TSTool commands have multiple #@versionDate annotations - can't check the version.";
+					Message.printWarning(3, routine, message);
+					++warningCount;
+       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+           				message, "Verify that only one #@versionDate annotation comment is used." ) );
+				}
+				else {
+					localVersionDate = TSCommandProcessorUtil.getAnnotationCommandParameter(annotationCommands.get(0), 1);
+				}
+
+				if ( ((localVersion == null) || localVersion.isEmpty()) && ((localVersionDate == null) || localVersionDate.isEmpty()) ) {
+					message = "The TSTool commands have no #@version or #@versionDate annotation - can't check the version.";
+					Message.printWarning(3, routine, message);
+					++warningCount;
+       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+           				message, "Verify that a #@version and/or #@versionDate annotation comment is used." ) );
+				}
 			}
 		}
 		
@@ -236,66 +242,74 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Get the source command file using the URL and compare the version:
 			// - time out is 5 seconds
 			if ( IOUtil.getUriContent(sourceUrl, file1Path, null, 5000, 5000) != 200 ) {
-				message = "Error retrieving the command file source from: " + sourceUrl;
+				message = "Error retrieving the source (remote) command file from: " + sourceUrl;
 				Message.printWarning(3, routine, message);
 				++warningCount;
-       			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+       			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
           				message, "Confirm that the source file can be accessed (may require authentication if a private website)." ) );
+			}
+			else {
+				Message.printStatus(2, routine, "Retrieved sourceUrl command file to local file \"" + file1Path + "\".");
 			}
 		}
 
 		if ( warningCount == 0 ) {
 			// Get the version properties out of the source command file:
-			// - use a second command processor
+			// - use a second command processor to parse the source command file
 			TSCommandProcessor sourceProcessor = new TSCommandProcessor(null);
 			try {
 				sourceProcessor.readCommandFile ( file1Path, true, false, false );
-				commands = TSCommandProcessorUtil.getAnnotationCommands(sourceProcessor,"version");
-				if ( commands.size() == 0 ) {
+				annotationCommands = TSCommandProcessorUtil.getAnnotationCommands(sourceProcessor,"version");
+				if ( annotationCommands.size() == 0 ) {
 					// OK, checked below - must have version and/or versionDate.
 				}
-				else if ( commands.size() > 1 ) {
-					message = "The source commands have multiple #@version annotations - can't check for updates.";
+				else if ( annotationCommands.size() > 1 ) {
+					message = "The source commands have multiple #@version annotations - can't check the version.";
 					Message.printWarning(3, routine, message);
 					++warningCount;
-       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
            				message, "Verify that only one #@version annotation comment is used." ) );
 				}
 				else {
-					sourceVersion = TSCommandProcessorUtil.getAnnotationCommandParameter(commands.get(0), 1);
+					// Have one @version annotation.
+					sourceVersion = TSCommandProcessorUtil.getAnnotationCommandParameter(annotationCommands.get(0), 1);
 				}
-				commands = TSCommandProcessorUtil.getAnnotationCommands(sourceProcessor,"versionDate");
-				if ( commands.size() == 0 ) {
+				annotationCommands = TSCommandProcessorUtil.getAnnotationCommands(sourceProcessor,"versionDate");
+				if ( annotationCommands.size() == 0 ) {
 					// OK, checked below - must have version and/or versionDate.
 				}
-				else if ( commands.size() > 1 ) {
-					message = "The source commands have multiple #@versionDate annotations - can't check for updates.";
+				else if ( annotationCommands.size() > 1 ) {
+					message = "The source commands have multiple #@versionDate annotations - can't check the version.";
 					Message.printWarning(3, routine, message);
 					++warningCount;
-       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+       				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
            				message, "Verify that only one #@versionDate annotation comment is used." ) );
 				}
 				else {
-					sourceVersionDate = TSCommandProcessorUtil.getAnnotationCommandParameter(commands.get(0), 1);
+					sourceVersionDate = TSCommandProcessorUtil.getAnnotationCommandParameter(annotationCommands.get(0), 1);
 				}
 			}
 			catch ( Exception e ) {
 				message = "Error reading source command file: " + file1Path;
 				Message.printWarning(3, routine, message);
 				++warningCount;
-    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
       				message, "Verify that the file exists and is readable." ) );
 			}
 		}
+
 		if ( warningCount == 0 ) {
-			// Do the version comparison:
+			// No problems so attempt to do the version comparison:
 			// - if 'version' is available for both use it
 			// - else if 'versionDate' is available for both use it
 			// - if both 'version' and 'versionDate' are available?
 
+			Message.printStatus(2, routine, "localVersion=" + localVersion + " localVersionDate=" + localVersionDate +
+				" sourceVersion=" + sourceVersion + " sourceVersionDate=" + sourceVersionDate);
 			boolean checkDate = false;
-			if ( !localVersion.isEmpty() && !sourceVersion.isEmpty() ) {
-				// Compare the versions:
+			boolean checkDateBecauseOfSameVersion = false;
+			if ( (localVersion != null) && !localVersion.isEmpty() && (sourceVersion != null) && !sourceVersion.isEmpty() ) {
+				// Have the '#@version ...' data to compare the versions:
 				// - both must be either semantic versions or dates
 				// - dates are redundant with @versionDate but may be used if semantic versions are not used
 				Message.printStatus(2, routine, "Comparing source version \"" + sourceVersion + "\" with local version \"" + localVersion + "\"");
@@ -322,7 +336,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						// Also check the date as the tie-breaker.
 						message = "The source and local versions are the same based on semantic version comparison.";
 						Message.printStatus(2, routine, message);
-						checkDate = true;
+						checkDateBecauseOfSameVersion = true;
 					}
 				}
 				else if ( (localDashCount > 0) && (sourceDashCount > 0) ) {
@@ -336,8 +350,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message = "The local commands @version seems to be a date/time but is invalid.";
 						Message.printWarning(3, routine, message);
 						++warningCount;
-    					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-      						message, "Verify that the version is a semantic version (1.2.3.4) or a date YYYY-MM-DD." ) );
+    					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+      						message, "Verify that the version is a semantic version (1.2.3 or 1.2.3.4) or a date YYYY-MM-DD." ) );
 					}
 					try {
 						sourceDate = DateTime.parse(sourceVersionDate);
@@ -346,8 +360,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message = "The source commands @version seems to be a date/time but is invalid.";
 						Message.printWarning(3, routine, message);
 						++warningCount;
-    					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-      						message, "Verify that the version is a semantic version (1.2.3.4) or a date YYYY-MM-DD." ) );
+    					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+      						message, "Verify that the version is a semantic version (1.2.3 or 1.2.3.4) or a date YYYY-MM-DD." ) );
 					}
 					if ( (localDate != null) && (sourceDate != null) ) {
 						if ( sourceDate.greaterThan(localDate) ) {
@@ -375,15 +389,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message = "The source and local @version don't appear to be consistent semantic versions or dates - can't check the version.";
 					Message.printWarning(3, routine, message);
 					++warningCount;
-   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-   						message, "Verify that the version in source and local files are both a semantic version (1.2.3.4) or a date YYYY-MM-DD." ) );
+   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+   						message, "Verify that the version in source and local files are both a semantic version (1.2.3 or 1.2.3.4) or a date YYYY-MM-DD." ) );
 				}
 			}
-			else if ( !localVersionDate.isEmpty() && !sourceVersionDate.isEmpty() ) {
+
+			if ( (localVersionDate != null) && !localVersionDate.isEmpty() && (sourceVersionDate != null) && !sourceVersionDate.isEmpty() ) {
+				// Have data to check the '#@versionDate date' in both files.
 				checkDate = true;
 			}
-			if ( checkDate ) {
-				// Compare the versions.
+
+			if ( (((localVersion == null) || localVersion.isEmpty()) || checkDateBecauseOfSameVersion) && checkDate ) {
+				// Compare the version dates.
 				DateTime localDate = null;
 				DateTime sourceDate = null;
 				try {
@@ -393,7 +410,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message = "The local commands @versionDate date/time is invalid.";
 					Message.printWarning(3, routine, message);
 					++warningCount;
-   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
    						message, "Verify that the local version date is valid (YYYY-MM-DD)." ) );
 				}
 				try {
@@ -403,7 +420,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					message = "The source commands @versionDate date/time is invalid.";
 					Message.printWarning(3, routine, message);
 					++warningCount;
-   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+   					status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
    						message, "Verify that the local version date is valid (YYYY-MM-DD)." ) );
 				}
 				if ( (localDate != null) && (sourceDate != null) ) {
@@ -427,6 +444,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						Message.printStatus(2, routine, message);
 					}
 				}
+			}
+		}
+
+		if ( warningCount == 0 ) {
+			// Do some final checks for fall-through cases.
+			if ( ((localVersion != null) && !localVersion.isEmpty()) && ((sourceVersion == null) || sourceVersion.isEmpty()) ) {
+				message = "The local command file has #@version but the source file does not.";
+				Message.printWarning(3, routine, message);
+				++warningCount;
+   				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+   					message, "Cannot compare the versions." ) );
+			}
+			if ( ((sourceVersion != null) && !sourceVersion.isEmpty()) && ((localVersion == null) || localVersion.isEmpty()) ) {
+				message = "The source command file has #@version but the local file does not.";
+				Message.printWarning(3, routine, message);
+				++warningCount;
+   				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+   					message, "Cannot compare the versions." ) );
+			}
+			if ( ((localVersionDate != null) && !localVersionDate.isEmpty()) && ((sourceVersionDate == null) || sourceVersionDate.isEmpty()) ) {
+				message = "The local command file has #@versionDate but the source file does not.";
+				Message.printWarning(3, routine, message);
+				++warningCount;
+   				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+   					message, "Cannot compare the version dates." ) );
+			}
+			if ( ((sourceVersionDate != null) && !sourceVersionDate.isEmpty()) && ((localVersionDate == null) || localVersionDate.isEmpty()) ) {
+				message = "The source command file has #@versionDate but the local file does not.";
+				Message.printWarning(3, routine, message);
+				++warningCount;
+   				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+   					message, "Cannot compare the version dates." ) );
 			}
 		}
    	}

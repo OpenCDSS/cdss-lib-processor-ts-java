@@ -524,7 +524,7 @@ throws InvalidCommandParameterException, CommandWarningException {
         }
     }
     String ColumnNamedRanges = parameters.getValue ( "ColumnNamedRanges" );
-    Hashtable<String,String> columnNamedRanges = new Hashtable<String,String>();
+    Hashtable<String,String> columnNamedRanges = new Hashtable<>();
     if ( (ColumnNamedRanges != null) && (ColumnNamedRanges.length() > 0) && (ColumnNamedRanges.indexOf(":") > 0) ) {
         // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnNamedRanges, ",", 0 );
@@ -540,10 +540,19 @@ throws InvalidCommandParameterException, CommandWarningException {
         keepOpen = true;
     }
     String ColumnCellTypes = parameters.getValue ( "ColumnCellTypes" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ColumnCellTypes = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnCellTypes);
+    }
     StringDictionary columnCellTypes = new StringDictionary(ColumnCellTypes,":",",");
     String ColumnWidths = parameters.getValue ( "ColumnWidths" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ColumnWidths = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnWidths);
+    }
     StringDictionary columnWidths = new StringDictionary(ColumnWidths,":",",");
     String ColumnDecimalPlaces = parameters.getValue ( "ColumnDecimalPlaces" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	ColumnDecimalPlaces = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnDecimalPlaces);
+    }
     StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
     String ConditionTableID = parameters.getValue ( "ConditionTableID" );
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -918,19 +927,32 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param columnNamedRanges column names and name range name to define
 @param keepOpen if True, the Excel workbook will be kept open and not written
 @param columnCellTypes column names and Excel cell types
-@param columnWidths column names and widths (Auto to auto-size, or integer points)
+@param columnWidths column names and widths ("Auto" to auto-size, or integer points)
 @param columnDecimalPlaces column names and number of decimal places (used for floating point data)
 @param conditionTable table containing condition data, to relate columns to styles and condition
 @param styleTable table containing style data, for formatting
 @param problems list of problems encountered during read, for formatted logging in calling code
 */
-private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumbers, String workbookFile, String sheetName,
-    String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
-    Hashtable<String,String> columnNamedRanges, boolean keepOpen,
-    StringDictionary columnCellTypes, StringDictionary columnWidths,
+private void writeTableToExcelFile (
+	DataTable table,
+	int [] includeColumnNumbers,
+	String workbookFile,
+	String sheetName,
+    String excelAddress,
+	String excelNamedRange,
+	String excelTableName,
+	String excelColumnNames,
+    StringDictionary columnIncludeFilters,
+	StringDictionary columnExcludeFilters,
+    Hashtable<String,String> columnNamedRanges,
+	boolean keepOpen,
+    StringDictionary columnCellTypes,
+	StringDictionary columnWidths,
     StringDictionary columnDecimalPlaces,
-    DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
+    DataTable conditionTable,
+	DataTable styleTable,
+	String legendWorksheet,
+	String legendAddress,
     List<String> problems )
 throws FileNotFoundException, IOException {
     String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
@@ -1115,7 +1137,7 @@ throws FileNotFoundException, IOException {
             else {
                 // Else set the type to something reasonable for the table column data type.
             	if ( table.isColumnArray(tableFieldType) ) {
-            		// Output will be formatted as string [ , , , ]
+            		// Output will be formatted as string "[ , , , ]".
             		excelColumnTypes[col] = Cell.CELL_TYPE_STRING;
             	}
             	else if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
@@ -1131,9 +1153,9 @@ throws FileNotFoundException, IOException {
                     excelColumnTypes[col] = Cell.CELL_TYPE_STRING;
                 }
             }
-            // 2. Write the column names
-            // First try to get an existing cell for the heading.
-            // First try to get an existing row.
+            // 2. Write the column names:
+            // - first try to get an existing cell for the heading
+            // - first try to get an existing row
             Row wbRowColumnNames = sheet.getRow(rowOutColumnNames);
             // If it does not exist, create it.
             if ( wbRowColumnNames == null ) {
@@ -1156,15 +1178,26 @@ throws FileNotFoundException, IOException {
                     colOut + "] (" + e + ")." );
                 Message.printWarning(3, routine, e);
             }
-            // 3. Set the column width.
-            //    Actually, have to do this after the data have been set so see post-write section below.
+            // 3. Set the column width:
+            //    - actually, have to do this after the data have been set so see post-write section below
             // 4. Create the styles for the data values, including number of decimals (precision).
             columnCellFormats[col] = wb.createDataFormat();
             columnCellStyles[col] = wb.createCellStyle();
             if ( (tableFieldType == TableField.DATA_TYPE_FLOAT) || (tableFieldType == TableField.DATA_TYPE_DOUBLE) ) {
                 precision = table.getFieldPrecision(includeColumnNumbers[col]);
                 String numDec = columnDecimalPlaces.get(tableColumnName);
+                if ( numDec == null ) {
+            	    // Try looping through the map and matching wildcards:
+            	    // - the map key may contain the * wildcard
+            	    for ( Map.Entry<String, String> entry : columnDecimalPlaces.getLinkedHashMap().entrySet() ) {
+            		    String key = entry.getKey().replace("*", ".*"); // Use Java regex syntax.
+            		    if ( tableColumnName.matches(key) ) {
+            			    numDec = entry.getValue();
+            		    }
+            	    }
+                }
                 if ( numDec != null ) {
+                	// Have the number of decimal places to set.
                     try {
                         precision = Integer.parseInt(numDec.trim());
                     }
@@ -1173,7 +1206,7 @@ throws FileNotFoundException, IOException {
                     }
                 }
                 else {
-                    // Use the number of decimal places if specified.
+                    // Use the default if not specified in the table.
                     if ( precision < 0 ) {
                         precision = 6;
                     }
@@ -1475,12 +1508,28 @@ throws FileNotFoundException, IOException {
                 }
             }
         }
+
         // Now do post-data set operations.
-        // Set the column width.
+
+        // Set the column width:
+        // - loop through the table output columns and set the width on the corresponding Excel cell
         colOut = colOutDataStart;
         for ( int col = 0; col < includeColumnNumbers.length; col++, colOut++ ) {
             String tableColumnName = table.getFieldName(includeColumnNumbers[col]);
+            // Get the column width by cascading through possible matches for the column name:
+            // - start with most specific and then the most generic default
+            // Check for column name that exactly matches.
             String width = columnWidths.get(tableColumnName);
+            if ( width == null ) {
+            	// Try looping through the map and matching wildcards:
+            	// - the map key may contain the * wildcard
+            	for ( Map.Entry<String, String> entry : columnWidths.getLinkedHashMap().entrySet() ) {
+            		String key = entry.getKey().replace("*", ".*"); // Use Java regex syntax.
+            		if ( tableColumnName.matches(key) ) {
+            			width = entry.getValue();
+            		}
+            	}
+            }
             if ( width == null ) {
                 // Try getting the empty columns width - this overrides "Default".
                 String width2 = columnWidths.get("EmptyColumns");
@@ -1498,8 +1547,10 @@ throws FileNotFoundException, IOException {
                 // Try getting the default width.
                 width = columnWidths.get("Default");
             }
+
             if ( width != null ) {
-                // Set the column width.
+                // Have found the column width:
+            	// - set the column width
                 if ( width.equalsIgnoreCase("Auto") ) {
                     sheet.autoSizeColumn(colOut);
                     Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" [" + colOut + "] width to auto.");
@@ -1517,7 +1568,9 @@ throws FileNotFoundException, IOException {
                 }
             }
         }
+
         // Write the legend.
+
         if ( (legendAddress != null) && !legendAddress.isEmpty() ) {
         	writeLegend ( tk, wb, sheet, styleManager, legendWorksheet, legendAddress, problems );
         }

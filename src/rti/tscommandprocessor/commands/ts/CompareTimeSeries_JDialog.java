@@ -502,7 +502,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "First time series to compare:" ),
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID1_JComboBox = new SimpleJComboBox ( true ); // Allow edit
-    __TSID1_JComboBox.setToolTipText("Specify the TSID for the first time series, can use ${Property}");
+    __TSID1_JComboBox.setToolTipText("Specify the TSID or alias for the first time series, can use ${Property}");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids.size() == 0 ) {
@@ -520,7 +520,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "Second time series compare:" ),
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID2_JComboBox = new SimpleJComboBox ( true ); // Allow edit.
-    __TSID2_JComboBox.setToolTipText("Specify the TSID for the second time series, can use ${Property}");
+    __TSID2_JComboBox.setToolTipText("Specify the TSID or alias for the second time series, can use ${Property}");
     __TSID2_JComboBox.setData ( tsids );
     __TSID2_JComboBox.addItemListener ( this );
     __TSID2_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
@@ -1063,7 +1063,7 @@ private void refresh () {
                 }
             }
         }
-        if ( (TSID1 != null) && !TSID1.isEmpty() ) { 
+        if ( (TSID1 != null) && !TSID1.isEmpty() ) {
          	__main_JTabbedPane.setSelectedIndex(0);
         }
         // Select the item in the list.  If not a match, print a warning.
@@ -1084,7 +1084,7 @@ private void refresh () {
                 }
             }
         }
-        if ( (TSID2 != null) && !TSID2.isEmpty() ) { 
+        if ( (TSID2 != null) && !TSID2.isEmpty() ) {
           	__main_JTabbedPane.setSelectedIndex(0);
         }
         if ( EnsembleID1 == null ) {
@@ -1102,7 +1102,7 @@ private void refresh () {
                 __error_wait = true;
             }
         }
-        if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() ) { 
+        if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() ) {
           	__main_JTabbedPane.setSelectedIndex(1);
         }
         if ( EnsembleID2 == null ) {
@@ -1120,7 +1120,7 @@ private void refresh () {
                 __error_wait = true;
             }
         }
-        if ( (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) { 
+        if ( (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) {
           	__main_JTabbedPane.setSelectedIndex(1);
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
@@ -1139,7 +1139,7 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-        if ( (MatchLocation != null) && !MatchLocation.isEmpty() ) { 
+        if ( (MatchLocation != null) && !MatchLocation.isEmpty() ) {
          	__main_JTabbedPane.setSelectedIndex(2);
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchDataType_JComboBox, MatchDataType, JGUIUtil.NONE, null, null ) ) {
@@ -1158,7 +1158,7 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-        if ( (MatchDataType != null) && !MatchDataType.isEmpty() ) { 
+        if ( (MatchDataType != null) && !MatchDataType.isEmpty() ) {
          	__main_JTabbedPane.setSelectedIndex(2);
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchAlias_JComboBox, MatchAlias, JGUIUtil.NONE, null, null ) ) {
@@ -1177,7 +1177,7 @@ private void refresh () {
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-        if ( (MatchAlias != null) && !MatchAlias.isEmpty() ) { 
+        if ( (MatchAlias != null) && !MatchAlias.isEmpty() ) {
         	__main_JTabbedPane.setSelectedIndex(2);
         }
 		if ( Precision != null ) {

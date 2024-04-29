@@ -1037,7 +1037,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                            message, "Report problem to software support." ) );
                 }
 	        }
-	        
+
 	        // Add problems to the status:
 	        // - show as warnings since an exception would have been generated if a major problem
 	        List<String> problems = comparer.getProblems();
@@ -1093,7 +1093,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	if ( diffCount > 0 ) {
 	    // Have some differences - action is as per user request.
-        message = "" + diffCount + " values (" +
+        message = "" + diffCount + " (" +
         	StringUtil.formatString(100.0*(double)diffCount/(double)table1CellCount, "%.2f")
         	+ " %) out of " + table1CellCount + " table 1 values had differences.";
         Message.printStatus ( 2, routine, message );
@@ -1114,10 +1114,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(IfDifferent_CommandStatusType,
                     message, "Check tables because difference is not expected.") );
-            
+
             // Also show the row and cell differences, which may make it easier to understand.
             if ( diffRowCount > 0 ) {
-            	message = "" + diffRowCount + " rows (" +
+            	message = "" + diffRowCount + " (" +
             	StringUtil.formatString(100.0*(double)diffRowCount/(double)table1.getNumberOfRecords(), "%.2f")
             	+ "%) out of " + table1.getNumberOfRecords() + " table 1 rows had differences.";
             	Message.printWarning ( warning_level,
@@ -1129,7 +1129,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
 
             if ( diffCellCount > 0 ) {
-            	message = "" + diffCellCount + " cells (" +
+            	message = "" + diffCellCount + " (" +
             	StringUtil.formatString(100.0*(double)diffCellCount/(double)table1CellCount, "%.2f")
             	+ "%) out of " + table1CellCount + " table 1 cells had differences.";
             	Message.printWarning ( warning_level,

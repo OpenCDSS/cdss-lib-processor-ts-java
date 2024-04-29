@@ -397,7 +397,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status.
+	refresh();
 	setResizable (false);
     super.setVisible(true);
 }

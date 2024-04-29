@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -166,7 +166,7 @@ private void checkGUIState () {
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REMOVE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings removed - see also InputValue2");
-    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be removed (^=start of line, $=end of line, \\s=space, see also InputValue3)");
+    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be removed (^=start of line, $=end of line, [123]=remove specified characters, \\s=space, see also InputValue3)");
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REPLACE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings replaced - see also InputValue2 and InputValue3");
@@ -287,7 +287,6 @@ private void commitEdits () {
     __command.setCommandParameter ( "InputValue3", InputValue3 );
     __command.setCommandParameter ( "Operator", Operator );
     __command.setCommandParameter ( "OutputColumn", OutputColumn );
-
 }
 
 /**
@@ -375,7 +374,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 1:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __InputColumn1_JComboBox.setToolTipText("Specify the first input column name (if appropriate) or use ${Property} notation");
     List<String> input1Choices = new ArrayList<>();
     input1Choices.add("");
@@ -404,7 +403,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 2:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
     __InputColumn2_JComboBox.setToolTipText("Specify the second input column name (if appropriate) or use ${Property} notation");
     List<String> input2Choices = new ArrayList<>();
     input2Choices.add("");

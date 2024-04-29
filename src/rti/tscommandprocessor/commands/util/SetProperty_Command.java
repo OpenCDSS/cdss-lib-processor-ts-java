@@ -476,15 +476,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
 	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (EnvironmentVariable != null) && (EnvironmentVariable.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnvironmentVariable = TSCommandProcessorUtil.expandParameterValue(processor, this, EnvironmentVariable);
 	}
 	String JavaProperty = parameters.getValue ( "JavaProperty" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (JavaProperty != null) && (JavaProperty.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		JavaProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, JavaProperty);
 	}
 	String IfJavaPropertyUndefined = parameters.getValue ( "IfJavaPropertyUndefined" );
@@ -513,19 +513,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	// Treat as strings until the math operation is executed and type is handled.
 	String Add = parameters.getValue ( "Add" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (Add != null) && (Add.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Add = TSCommandProcessorUtil.expandParameterValue(processor, this, Add);
 	}
 	String Subtract = parameters.getValue ( "Subtract" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (Subtract != null) && (Subtract.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Subtract = TSCommandProcessorUtil.expandParameterValue(processor, this, Subtract);
 	}
 	String Multiply = parameters.getValue ( "Multiply" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (Multiply != null) && (Multiply.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Multiply = TSCommandProcessorUtil.expandParameterValue(processor, this, Multiply);
 	}
 	String Divide = parameters.getValue ( "Divide" );
-	if ( (commandPhase == CommandPhaseType.RUN) && (Divide != null) && (Divide.indexOf("${") >= 0) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Divide = TSCommandProcessorUtil.expandParameterValue(processor, this, Divide);
 	}
 
@@ -554,14 +554,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    }
 	    }
 	    else {
-	    	// Not setting to null so expect to have one of:
+	    	// Not setting to null (removing) so expect to have one of:
 	    	// - property value
 	    	// - environment variable
 	    	// - Java property
 	    	// - special value
 	    	String propertyValue = null;
 	    	if ( (PropertyValue != null) && !PropertyValue.isEmpty() ) {
-	    		// Set the property value from PropertyValue.
+	    		// Set the property value (initially a String) from PropertyValue.
 	    		propertyValue = PropertyValue;
 	    	}
 	    	else if ( (EnvironmentVariable != null) && !EnvironmentVariable.isEmpty() ) {
@@ -739,29 +739,57 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    	}
 	    	}
 	    	else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	    		// TODO sam 2017-03-18 evaluate whether this is appropriate for discovery mode:
-	    		// -the problem is ${Property} notation breaks conversions above
-	    		//setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-	    		// Set the property type according to the request so that code that asks for discovery.
-	    		// objects and then filters on type will have the correct type.
-	    		if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
-	    			Property_Object = new Boolean(true);
+	    		// Set the discovery property value:
+	    		// - can only do so much without evaluating everything but could do more if the starting value is not a ${Property}
+	    		// - the problem is ${Property} notation breaks conversions above
+	    		// - set the property type according to the request so that code that asks for discovery
+	    		//   objects and then filters on type will have the correct type
+			    if ( setEmpty ) {
+			    	// Don't do anything.
+			    }
+			    else if ( PropertyType.equalsIgnoreCase(_Double) && setNaN ) {
+		    		Property_Object = Double.NaN;
+	    			Prop prop = new Prop(PropertyName, Property_Object, "NaN");
+	            	prop.setHowSet(Prop.SET_UNKNOWN);
+	    			setDiscoveryProp ( prop );
+		    	}
+			    else if ( PropertyType.equalsIgnoreCase(_String) && setEmpty ) {
+		    		Property_Object = String.valueOf("");
+	    			Prop prop = new Prop(PropertyName, Property_Object, "");
+	            	prop.setHowSet(Prop.SET_UNKNOWN);
+	    			setDiscoveryProp ( prop );
+		    	}
+			    else if ( setNull ) {
+		    		Property_Object = null;
+	    			Prop prop = new Prop(PropertyName, Property_Object, null);
+	            	prop.setHowSet(Prop.SET_UNKNOWN);
+	    			setDiscoveryProp ( prop );
+			    }
+			    else if ( (PropertyValue != null) && !PropertyValue.isEmpty() && !PropertyValue.contains("${") ) {
+	    			// Simple property set so can assign discovery value.
+	    			if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+	    				Property_Object = Boolean.valueOf(PropertyValue);
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+	    				Property_Object = new DateTime(DateTime.DATE_CURRENT);
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(_Double) ) {
+	    				Property_Object = Double.valueOf(PropertyValue);
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
+	    				Property_Object = Integer.valueOf(PropertyValue);
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(_String) ) {
+	    				Property_Object = String.valueOf(PropertyValue);
+	    			}
+	    			else {
+	    				// Default is string but checks should warn about unknown type.
+	    				Property_Object = String.valueOf(PropertyValue);
+	    			}
+	    			Prop prop = new Prop(PropertyName, Property_Object, PropertyValue);
+	            	prop.setHowSet(Prop.SET_UNKNOWN);
+	    			setDiscoveryProp ( prop );
 	    		}
-	    		else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
-	    			Property_Object = new DateTime(DateTime.DATE_CURRENT);
-	    		}
-	    		else if ( PropertyType.equalsIgnoreCase(_Double) ) {
-	    			Property_Object = new Double(1.0);
-	    		}
-	    		else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
-	    			Property_Object = new Integer(1);
-	    		}
-	    		else {
-	    			Property_Object = "";
-	    		}
-	    		Prop prop = new Prop(PropertyName, Property_Object, PropertyValue);
-	            prop.setHowSet(Prop.SET_UNKNOWN);
-	    		setDiscoveryProp ( prop );
 	    	}
 	    }
 	}

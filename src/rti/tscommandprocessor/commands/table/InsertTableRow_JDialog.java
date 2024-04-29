@@ -234,9 +234,9 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     __InsertRow_JTextField.setToolTipText("Table row (1+) to insert before, can use ${Property}");
     __InsertRow_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertRow_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - row (1+) to insert before (default=at end)." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Insert count:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -244,9 +244,9 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     __InsertCount_JTextField.setToolTipText("Number of rows to insert, can use ${Property}");
     __InsertCount_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertCount_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - number of rows to insert (default=1)." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column(s) and value(s) to set:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

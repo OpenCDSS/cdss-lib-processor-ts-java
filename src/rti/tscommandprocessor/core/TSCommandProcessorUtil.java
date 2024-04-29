@@ -448,6 +448,121 @@ public static void displayCommandDocumentation ( Command command ) {
 }
 
 /**
+Expand a string containing command discovery properties.  For example, a parameter value like
+"${DataStore}" will be expanded to include the datastore name set using a property.
+The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
+This method may be called with an incomplete ${Property} string,
+such as if called from an editor while characters are typed.
+@param props the a list of Prop set in discovery mode by commands
+@param command the command that is being processed (may be used later for context sensitive values).
+@param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
+@return the expanded string or null if the input string was null
+*/
+public static String expandParameterDiscoveryValue( List<Prop> props, Command command, String parameterValue ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
+    if ( (parameterValue == null) || parameterValue.isEmpty() || (parameterValue.indexOf("${") < 0) ) { // }
+    	// Nothing to expand:
+    	// - null and empty string can't expand
+    	// - if no ${Property} notation can't expand
+        // - just return the input
+        return parameterValue;
+    }
+   	for ( Prop prop : props ) {
+     	// Print the properties, for troubleshooting.
+        if ( Message.isDebugOn ) {
+        	Message.printStatus(2, routine, "Discovery property list includes " + prop.getKey() + "=\"" + prop.getValue() +"\"");
+        }
+    }
+    // First replace escaped characters.
+    // Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
+    parameterValue = parameterValue.replace("\\\"", "\"" );
+    parameterValue = parameterValue.replace("\\'", "'" );
+    // Else see if the parameter value can be expanded to replace ${} symbolic references with other values.
+    // Search the parameter string for $ until all processor parameters have been resolved.
+    int searchPos = 0; // Position in the "parameter_val" string to search for ${} references.
+    int foundPos; // Position when leading ${ is found.
+    int foundPosEnd; // Position when ending } is found.
+    String propname = null; // Whether a property is found that matches the $ symbol.
+    String delimStart = "${";
+    String delimEnd = "}";
+    while ( searchPos < parameterValue.length() ) {
+        foundPos = parameterValue.indexOf(delimStart, searchPos);
+        foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
+       	if ( Message.isDebugOn ) {
+       		Message.printStatus ( 2, routine, "" + delimStart + " position=" + foundPos);
+        	Message.printStatus ( 2, routine, "" + delimEnd + " position=" + foundPosEnd);
+       	}
+        if ( (foundPos < 0) || (foundPosEnd < 0) ) {
+            // No more $ property names (or an incomplete property), so return what have:
+        	// - for example, could be typing ${abx into an editor field and have not yet typed closing }
+        	if ( Message.isDebugOn ) {
+        		Message.printStatus ( 2, routine, "Don't have surrounding ${ and } so returning \"" + parameterValue + "\".");
+        	}
+            return parameterValue;
+        }
+        // Else found the delimiter so continue with the replacement.
+        // Get the name of the property.
+        propname = parameterValue.substring((foundPos+2),foundPosEnd);
+        if ( Message.isDebugOn ) {
+        	Message.printStatus ( 2, routine, "Trying to match property \"" + propname + "\" in property list.");
+        }
+        // Try to get the property from the processor.
+        // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show the unexpanded property name in the result.
+        Object propval = null;
+        String propvalString = "";
+        boolean foundProp = false;
+       	// Loop through the props to find a matching property name.
+       	for ( Prop prop : props ) {
+       		if ( prop.getKey().equals(propname) ) {
+       			// The following should work for all representations as long as the toString() does not truncate.
+       			//propval = prop.getContents();
+       			//propvalString = "" + propval;
+       			propvalString = prop.getValue();
+       			foundProp = true;
+       			break;
+       		}
+        }
+       	if ( !foundProp ) {
+            // Keep the original literal value to alert user that property could not be expanded.
+       		if ( Message.isDebugOn ) {
+       			Message.printStatus ( 2, routine, "Did not match property \"" + propname + "\" in property list - not expanding property.");
+       		}
+            propvalString = delimStart + propname + delimEnd;
+        }
+        if ( propvalString == null ) {
+            // Keep the original literal value to alert user that property could not be expanded.
+       		if ( Message.isDebugOn ) {
+       			Message.printStatus ( 2, routine, "Null value for property \"" + propname + "\" in property list - not expanding property.");
+       		}
+            propvalString = delimStart + propname + delimEnd;
+        }
+        // If here have a property.
+   		if ( Message.isDebugOn ) {
+   			Message.printStatus ( 2, routine, "Found property \"" + propname + "\" in property list, value=\"" + propvalString + "\".");
+   		}
+        StringBuffer b = new StringBuffer();
+        // Append the start of the string.
+        if ( foundPos > 0 ) {
+            b.append ( parameterValue.substring(0,foundPos) );
+        }
+        // Now append the value of the property.
+        b.append ( propvalString );
+        // Now append the end of the original string if anything is at the end.
+        if ( parameterValue.length() > (foundPosEnd + 1) ) {
+            b.append ( parameterValue.substring(foundPosEnd + 1) );
+        }
+        // Now reset the search position to finish evaluating whether to expand the string.
+        parameterValue = b.toString();
+        searchPos = foundPos + propvalString.length(); // Expanded so no need to consider start and end delimiters.
+        if ( Message.isDebugOn ) {
+            Message.printDebug( 1, routine, "Expanded parameter discovery value is \"" + parameterValue +
+                "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
+        }
+    }
+    return parameterValue;
+}
+
+/**
 Expand a string containing processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
 The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
@@ -459,7 +574,7 @@ The characters \" will be replaced by a literal quote (").  Properties that cann
 public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue ) {
     String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
     if ( (parameterValue == null) || (parameterValue.length() == 0) ||
-    	(parameterValue.indexOf("${") < 0) ) {
+    	(parameterValue.indexOf("${") < 0) ) { // }
     	// Nothing to expand:
     	// - null and empty string can't expand
     	// - if no ${Property} notation can't expand
@@ -482,7 +597,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         foundPos = parameterValue.indexOf(delimStart, searchPos);
         foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
         if ( (foundPos < 0) && (foundPosEnd < 0)  ) {
-            // No more $ property names, so return what we have.
+            // No more $ property names, so return what have.
             return parameterValue;
         }
         // Else found the delimiter so continue with the replacement.
@@ -490,7 +605,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         // Get the name of the property.
         propname = parameterValue.substring((foundPos+2),foundPosEnd);
         // Try to get the property from the processor.
-        // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
+        // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show the unexpanded property name in result.
         Object propval = null;
         String propvalString = "";
         try {
@@ -939,7 +1054,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                             }
                             else {
                                 // Have a property, but still need to check for null value.
-                                // TODO SAM 2013-09-09 should this be represented as "null" in output?
+                                // Show the value as the property name in output.
                                 PropList bean_PropList = bean.getResultsPropList();
                                 Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
                                 if ( o_PropertyValue == null ) {
@@ -982,13 +1097,23 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
 }
 
 /**
- * Get the annotation command parameter from a "#@annotation ..." command.
+ * Get the annotation command parameter from a "#@annotation ..." command, or return null if not found.
+ * The following case is matched:
+ * <pre>
+ * #@annotation ...
+ * # @annotation ...
+ * </pre>
+ * The following is not matched because it is often used in comments for automated tests:
+ * <pre>
+ * # Some text #@annotation ...
+ * </pre>
  * @param command Annotation command to parse
  * @param index position of the parameter 0 is the annotation and 1 is the first parameter
  * @return the parameter or null if not available (command string too short);
  * the parameter name is returned without the leading @
  */
 public static String getAnnotationCommandParameter ( Command command, int index ) {
+	// Trim leading spaces.
 	String commandString = command.toString().trim();
 	if ( !commandString.startsWith("#") ) {
 		// Not in an annotation comment.
@@ -999,39 +1124,66 @@ public static String getAnnotationCommandParameter ( Command command, int index 
 		// Not in an annotation comment.
 		return null;
 	}
+	
+	// Initialize the annotation string to null.
+	String annotation = null;
 	// Advance to the space after the annotation name.
 	int pos2 = commandString.indexOf(" ",pos1);
 	if ( pos2 < 0 ) {
 		// No space after the annotation name so no parameters, something like "# @readOnly"
 		if ( index == 0 ) {
 			// Requested the annotation name so return it without the leading @.
-			return commandString.substring(pos1 + 1).trim();
-		}
-		else {
-			// Requested a parameter that does not exist.
-			return null;
+			annotation = commandString.substring(pos1 + 1).trim();
 		}
 	}
 	else if ( index == 0 ) {
 		// Have annotation name and parameters but want the parameter name.
-		return commandString.substring(pos1 + 1,pos2).trim();
+		annotation = commandString.substring(pos1 + 1,pos2).trim();
 	}
 	else {
 		// Have a space after the annotation name so parse the remaining tokens.
 		List<String> params = StringUtil.breakStringList(commandString.substring(pos2).trim(), " ", 0);
-		if ( params.size() < index ) {
-			// Do not have the requested parameter.
-			return null;
-		}
-		else {
+		if ( params.size() >= index ) {
 			// Have the requested parameter.
-			return params.get(index - 1);
+			annotation = params.get(index - 1);
 		}
 	}
+	
+	// Check for '# ..... #@abc' and '# ..... # @abc', which are normal comments.
+	if ( annotation != null ) {
+		// If there is a '#' before the annotation comment in the original string, then it is a true comment.
+		// First find the '#' immediately before the annotation.
+		for ( int pos = pos1; pos >= 0; --pos ) {
+			if ( commandString.charAt(pos) == '#' ) {
+				// Found the first '#':
+				// - search for a preceding '#':
+				for ( int pos3 = (pos - 1); pos3 >= 0; --pos3 ) {
+					if ( commandString.charAt(pos3) == '#' ) {
+						// Found a preceding '#' so the command is a comment that is intended to NOT be an annotation.
+						annotation = null;
+						break;
+					}
+				}
+			}
+			if ( annotation == null ) {
+				break;
+			}
+		}
+	}
+	
+	// Return the final result, may be null.
+	return annotation;
 }
 
 /**
- * Get commands that match an annotation.
+ * Get commands that match an annotation like:
+ * <pre>
+ * #@annotation
+ * </pre>
+ * The following cases are ignored because they are typically used in documentation comments, including tests:
+ * <pre>
+ * # Some text @annotation
+ * </pre>
  * @param processing command processor
  * @param annotation the annotation of interest (e.g., "author" or "@author")
  * @return a list of commands that match the requested annotation
@@ -1043,13 +1195,13 @@ public static List<Command> getAnnotationCommands ( TSCommandProcessor processor
 		annotation = "@" + annotation;
 	}
 	boolean doAdd;
-    for ( Command c : processor.getCommands() ) {
-        String commandString = c.toString().trim();
+    for ( Command command : processor.getCommands() ) {
+        String commandString = command.toString().trim();
         // The following might match @version for @versionDate.
-       	if ( commandString.startsWith("#") && (commandString.indexOf(annotation) > 0) ) {
+        if ( isAnnotationCommand(command) ) {
        		// Make sure that the annotation is exactly matched (e.g., @versionDate) so have to check:
        		// - the following returns the annotation name without the leading @ but should not be null.
-       		String annotationName = getAnnotationCommandParameter(c,0);
+       		String annotationName = getAnnotationCommandParameter(command,0);
        		annotationName = "@" + annotationName;
        		if ( (annotationName != null) && annotationName.equalsIgnoreCase(annotation) ) {
        			// Have a matching annotation name.
@@ -1069,7 +1221,7 @@ public static List<Command> getAnnotationCommands ( TSCommandProcessor processor
         			}
         		}
         		if ( doAdd ) {
-        			annotationCommands.add(c);
+        			annotationCommands.add(command);
         		}
        		}
         }
@@ -3405,6 +3557,82 @@ public static int indexOf ( CommandProcessor processor, Command command, int sta
         }
     }
     return -1;
+}
+
+/**
+ * Determine whether the command is an annotation command:
+ * The following case is matched:
+ * <pre>
+ * #@annotation ...
+ * # @annotation ...
+ * </pre>
+ * The following is not matched because it is often used in comments for automated tests:
+ * <pre>
+ * # Some text #@annotation ...
+ * </pre>
+ * @param command Annotation command to parse
+ * @return true of the command is an annotation command, false if not
+ */
+public static boolean isAnnotationCommand ( Command command ) {
+	// Trim leading spaces.
+	String commandString = command.toString().trim();
+	if ( !commandString.startsWith("#") ) {
+		// Not in an annotation comment.
+		return false;
+	}
+	int pos1 = commandString.indexOf("@");
+	if ( pos1 < 0 ) {
+		// Not in an annotation comment.
+		return false;
+	}
+	
+	// Try to parse the annotation:
+	// - do so as if requesting the annotation name
+	// - can't call getAnnotationCommandParameter because it is more granular and returns null in various situations
+
+	// Initialize the annotation string to null.
+	String annotationName = null;
+	// Advance to the space after the annotation name.
+	int pos2 = commandString.indexOf(" ",pos1);
+	if ( pos2 < 0 ) {
+		// No space after the annotation name so no parameters, something like "# @readOnly"
+		// Requested the annotation name so return it without the leading @.
+		annotationName = commandString.substring(pos1 + 1).trim();
+	}
+	else {
+		// Have annotation name and parameters but want the parameter name.
+		annotationName = commandString.substring(pos1 + 1,pos2).trim();
+	}
+	
+	// Check for '# ..... #@abc' and '# ..... # @abc', which are normal comments.
+	if ( annotationName != null ) {
+		// If there is a '#' before the annotation comment in the original string, then it is a true comment.
+		// First find the '#' immediately before the annotation.
+		for ( int pos = pos1; pos >= 0; --pos ) {
+			if ( commandString.charAt(pos) == '#' ) {
+				// Found the first '#':
+				// - search for a preceding '#':
+				for ( int pos3 = (pos - 1); pos3 >= 0; --pos3 ) {
+					if ( commandString.charAt(pos3) == '#' ) {
+						// Found a preceding '#' so the command is a comment that is intended to NOT be an annotation.
+						annotationName = null;
+						break;
+					}
+				}
+			}
+			if ( annotationName == null ) {
+				break;
+			}
+		}
+	}
+	
+	// Return the final result, may be null.
+	if ( (annotationName == null) || annotationName.isEmpty() ) {
+		return false;
+	}
+	else {
+		return true;
+	}
 }
 
 /**

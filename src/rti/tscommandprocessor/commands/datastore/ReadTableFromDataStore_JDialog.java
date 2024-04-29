@@ -76,6 +76,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -92,7 +93,12 @@ private SimpleJButton __path_JButton = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
+// User-facing choices.
 private SimpleJComboBox __DataStore_JComboBox = null;
+// Auto-generated DataStore choice.
+private JTextField __DataStoreExpanded_JTextField;
+// Optional choice if need to populate choices for editing, such as when the command is used in a loop.
+private SimpleJComboBox __EditorDataStore_JComboBox = null;
 private JTextField __TableID_JTextField = null;
 private JTextField __RowCountProperty_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
@@ -125,6 +131,10 @@ private boolean __ignoreItemEvents = false; // Used to ignore cascading events w
 private DatabaseDataStore __dataStore = null; // Selected datastore.
 private DMI __dmi = null; // DMI to do queries.
 
+private List<Prop> propList = null; // List of discovery mode Prop so that DataStore can be a ${Property}.
+
+private String dataStoreInitial = null; // Initial DataStore command parameter, to allow ${Property} to be shown in the list.
+
 // Last datastore for which procedures were populated, so can avoid repopulating the procedures.
 private String lastDataStoreForProcedures = "";
 // Last datastore for which functions were populated, so can avoid repopulating the functions.
@@ -134,11 +144,12 @@ private String lastDataStoreForFunctions = "";
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param datastores list of database datastores
+@param datastores list of database datastore
+@param propList list of discovery mode Prop, so that DataStore can be a ${Property}
 */
-public ReadTableFromDataStore_JDialog ( JFrame parent, ReadTableFromDataStore_Command command, List<DatabaseDataStore> datastores ) {
+public ReadTableFromDataStore_JDialog ( JFrame parent, ReadTableFromDataStore_Command command, List<DatabaseDataStore> datastores, List<Prop> propList ) {
 	super(parent, true);
-	initialize ( parent, command, datastores );
+	initialize ( parent, command, datastores, propList );
 }
 
 /**
@@ -306,11 +317,13 @@ private void actionPerformedDataStoreCatalogSelected ( ) {
         // Startup initialization.
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    this.__dataStore = getSelectedDataStore();
+    if ( this.__dataStore != null ) {
+    	this.__dmi = ((DatabaseDataStore)this.__dataStore).getDMI();
+    }
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the schema choices corresponding to the database.
-    populateDataStoreSchemaChoices ( __dmi );
+    populateDataStoreSchemaChoices ( this.__dmi );
 }
 
 /**
@@ -338,6 +351,9 @@ private void actionPerformedDataStoreSelected ( ) {
         // Startup initialization - warning will be printed in checkInput if invalid DataStore parameter.
         return;
     }
+    // Set the expanded datastore.
+    populateDataStoreExpanded();
+
     // Update list of functions, but only if the function tab is shown.
     if ( this.__main_JTabbedPane.getSelectedIndex() == 3) {
     	populateDataStoreFunctionChoices(getDMI() );
@@ -359,11 +375,11 @@ private void actionPerformedDataStoreSchemaSelected ( ) {
         // Startup initialization.
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    this.__dataStore = getSelectedDataStore();
+    this.__dmi = ((DatabaseDataStore)this.__dataStore).getDMI();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the table choices corresponding to the schema
-    populateDataStoreTableChoices ( __dmi );
+    this.populateDataStoreTableChoices ( __dmi );
 }
 
 /**
@@ -374,13 +390,22 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
-    if ( (DataStore != null) && DataStore.length() > 0 ) {
+    /*
+    if ( (DataStore != null) && !DataStore.isEmpty() > 0 ) {
         props.set ( "DataStore", DataStore );
-        __dataStore = getSelectedDataStore();
-        __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        this.__dataStore = getSelectedDataStore();
+        this.__dmi = ((DatabaseDataStore)__dataStore).getDMI();
     }
     else {
         props.set ( "DataStore", "" );
+    }
+    */
+    if ( !DataStore.isEmpty() ) {
+        props.set ( "DataStore", DataStore );
+    }
+    String EditorDataStore = __EditorDataStore_JComboBox.getSelected();
+    if ( EditorDataStore.length() > 0 ) {
+        props.set ( "EditorDataStore", EditorDataStore );
     }
     String DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
     String DataStoreSchema = __DataStoreSchema_JComboBox.getSelected();
@@ -450,7 +475,7 @@ private void checkInput () {
     }
 	try {
 	    // This will warn the user.
-		__command.checkCommandParameters ( props, null, 1 );
+		__command.checkCommandParameters ( getDataStore(), props, null, 1 );
 	}
 	catch ( Exception e ) {
         Message.printWarning(2,"", e);
@@ -465,6 +490,7 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String DataStore = __DataStore_JComboBox.getSelected();
+	String EditorDataStore = __EditorDataStore_JComboBox.getSelected();
     String DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
     String DataStoreSchema = __DataStoreSchema_JComboBox.getSelected();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
@@ -483,6 +509,7 @@ private void commitEdits () {
     String TableID = __TableID_JTextField.getText().trim();
     String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
+    __command.setCommandParameter ( "EditorDataStore", EditorDataStore );
     __command.setCommandParameter ( "DataStoreCatalog", DataStoreCatalog );
     __command.setCommandParameter ( "DataStoreSchema", DataStoreSchema );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
@@ -502,23 +529,49 @@ private void commitEdits () {
 }
 
 /**
+Return the datastore that is in effect.
+This corresponds to the DataStoreExpanded_JComboBox if selected and then DataStore_JComboBox.
+@return the datastore that is in effect
+*/
+private DatabaseDataStore getDataStore() {
+    return this.__dataStore;
+}
+
+/**
 Return the DMI that is currently being used for database interaction, based on the selected data store.
+@return the DMI that is currently being used
 */
 private DMI getDMI () {
     return this.__dmi;
 }
 
 /**
-Get the selected datastore from the processor using the datastore name.
+Get the selected NovaStar5RestDataStore from the processor, which is used to populate editor choices.
+This matches the __EditorDataStore_JComboBox if specified, which includes actual datastore names, and not ${Property}.
+If __EditorDataStore_JComboBox is blank, then use __DataStoreExpanded.
 If there is no datastore in the processor based on startup,
 it may be a dynamic datastore created with OpenDataStore,
 which will have a discovery datastore that is good enough for getting database metadata.
 */
 private DatabaseDataStore getSelectedDataStore () {
     String routine = getClass().getSimpleName() + ".getSelectedDataStore";
-    String DataStore = __DataStore_JComboBox.getSelected();
+    String DataStore = null;
+   	String editorDataStore = __EditorDataStore_JComboBox.getSelected();
+    if ( (editorDataStore != null) && !editorDataStore.isEmpty() ) {
+    	// Use the datastore specified for the editor.
+   		Message.printStatus(2, routine, "Using datastore for EditorDataStore:  " + editorDataStore);
+    	DataStore = editorDataStore;
+    }
+    else {
+    	// Check the expanded datastore.
+    	String datastoreExpanded = __DataStoreExpanded_JTextField.getText();
+    	if ( (datastoreExpanded != null) && !datastoreExpanded.isEmpty() ) {
+    		Message.printStatus(2, routine, "Using datastore for DataStoreExpanded:  " + datastoreExpanded);
+    		DataStore = datastoreExpanded;
+    	}
+    }
    	// If a substitute is defined that matches the datastore, use it.
-	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
+	TSCommandProcessor processor = (TSCommandProcessor)this.__command.getCommandProcessor();
     List<DataStoreSubstitute> datastoreSubstituteList = processor.getDataStoreSubstituteList();
     for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
     	if ( DataStore.equals(dssub.getDatastoreNameInCommands()) ) {
@@ -551,13 +604,15 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 @param datastores list of database datastores
+@param propList list of discovery mode Prop, so that DataStore can be a ${Property}
 */
-private void initialize ( JFrame parent, ReadTableFromDataStore_Command command, List<DatabaseDataStore> datastores ) {
+private void initialize ( JFrame parent, ReadTableFromDataStore_Command command, List<DatabaseDataStore> datastores, List<Prop> propList ) {
 	this.__command = command;
 	this.__parent = parent;
 	this.datastores = datastores;
-	TSCommandProcessor processor = (TSCommandProcessor)__command.getCommandProcessor();
-    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, this.__command );
+	this.propList = propList;
+	TSCommandProcessor processor = (TSCommandProcessor)this.__command.getCommandProcessor();
+    this.__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, this.__command );
 
 	addWindowListener(this);
 
@@ -618,8 +673,10 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStore_JComboBox = new SimpleJComboBox ( false );
-    // Copy the list of datastore names to internal list.
+    __DataStore_JComboBox = new SimpleJComboBox ( true );
+    // Copy the list of datastore names to internal list:
+    // - TODO smalers 2024-04-22 this code is now is populateDataStores().
+    /*
     List<String> datastoreChoices = new ArrayList<>();
     for ( DataStore dataStore : this.datastores ) {
     	datastoreChoices.add(dataStore.getName());
@@ -646,10 +703,34 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
     }
     __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
+    */
     __DataStore_JComboBox.addItemListener ( this );
+    __DataStore_JComboBox.getEditor().getEditorComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data to read."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore (expanded):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreExpanded_JTextField = new JTextField (20);
+    // TODO smalers 2024-04-15 see if this fixes the text fields from compressing.
+    //__DataStoreExpanded_JTextField.setMinimumSize(new Dimension(__DataStoreExpanded_JTextField.getSize()));
+    __DataStoreExpanded_JTextField.setToolTipText("Expanded DataStore parameter, used for editor choices if EditorDataStore is not specified.");
+    __DataStoreExpanded_JTextField.setEditable(false);
+    JGUIUtil.addComponent(main_JPanel, __DataStoreExpanded_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Information - DataStore parameter with ${Property} expanded."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Editor datastore:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EditorDataStore_JComboBox = new SimpleJComboBox ( false ); // Do not allow edits since it needs to be an actual datastore.
+    __EditorDataStore_JComboBox.setToolTipText("Datastore that is used to populate editor choices, when DataStore uses ${Property} dynamically.");
+    __EditorDataStore_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __EditorDataStore_JComboBox,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - If the above datastore uses a dynamic ${Property}, specify to populate choices below."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __main_JTabbedPane = new JTabbedPane ();
@@ -682,7 +763,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
     __DataStoreCatalog_JComboBox = new SimpleJComboBox ( false );
     __DataStoreCatalog_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __DataStoreCatalog_JComboBox,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "<html>Optional - specify if needed for <b>[Database]</b>.[Schema].[Table].</html>"),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -695,7 +776,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
     __DataStoreSchema_JComboBox.setPrototypeDisplayValue(longest);
     __DataStoreSchema_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __DataStoreSchema_JComboBox,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel(
         "<html>Optional - specify if needed for [Database].<b>[Schema]</b>.[Table].</html>"),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -708,7 +789,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
     __DataStoreTable_JComboBox.setPrototypeDisplayValue(longest);
     __DataStoreTable_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __DataStoreTable_JComboBox,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - database table/view to read."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -985,6 +1066,8 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command,
     pack();
     JGUIUtil.center(this);
 	refresh();
+	// Call this directly because it will not have been called above because events are ignored.
+	populateDataStoreExpanded();
     super.setVisible(true);
 }
 
@@ -1063,7 +1146,7 @@ Populate the database list based on the selected datastore.
 @param dmi DMI to use when selecting database list
 */
 private void populateDataStoreCatalogChoices ( DMI dmi ) {
-    String routine = getClass().getSimpleName() + ".populateDataStoreDatastoreChoices";
+    String routine = getClass().getSimpleName() + ".populateDataStoreCatalogChoices";
     List<String> catalogList = null;
     List<String> notIncluded = new ArrayList<>();
     if ( dmi == null ) {
@@ -1095,6 +1178,72 @@ private void populateDataStoreCatalogChoices ( DMI dmi ) {
     __DataStoreCatalog_JComboBox.select ( null );
     if ( __DataStoreCatalog_JComboBox.getItemCount() > 0 ) {
         __DataStoreCatalog_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Set the datastore choices based on the available NovaStar web service datastores.
+Also add a ${Property} choice if available from the original parameter.
+@param commandParameter the initial command parameter
+*/
+private void populateDataStoreChoices ( String commandParameter ) {
+	TSCommandProcessor tsProcessor = (TSCommandProcessor)this.__command.getCommandProcessor();
+    List<String> datastoreChoices = new ArrayList<>();
+    for ( DataStore dataStore : this.datastores ) {
+    	datastoreChoices.add(dataStore.getName());
+    }
+    // Also list any substitute datastore names so the original or substitute can be used.
+    List<DataStoreSubstitute> datastoreSubstituteList = tsProcessor.getDataStoreSubstituteList();
+    for ( DataStoreSubstitute dssub : datastoreSubstituteList ) {
+    	boolean found = false;
+    	for ( String choice : datastoreChoices ) {
+    		if ( choice.equals(dssub.getDatastoreNameToUse()) ) {
+    			// The substitute original name matches a datastore name so also add the alias.
+    			found = true;
+    			break;
+    		}
+    	}
+    	if ( found ) {
+    		datastoreChoices.add(dssub.getDatastoreNameInCommands());
+    	}
+    }
+    if ( (commandParameter != null) && !commandParameter.isEmpty() && commandParameter.contains("${") ) {
+    	// Initial command was a property so add.
+    	if ( datastoreChoices.size() == 0 ) {
+    		datastoreChoices.add(commandParameter);
+    	}
+    	else {
+    		datastoreChoices.add(0, commandParameter);
+    	}
+    }
+    if ( datastoreChoices.size() == 0 ) {
+        // Add an empty item so users can at least bring up the editor.
+    	datastoreChoices.add ( "" );
+    }
+    __DataStore_JComboBox.setData ( datastoreChoices );
+    // Select the default:
+    // - will either be the first in the list or the 'commandParmaeter'
+    // TODO smalers 2018-06-21 evaluate whether need datastore method for default.
+    if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+    	__DataStore_JComboBox.select(0);
+    }
+}
+
+/**
+ * Populate the DataStoreExpanded_JTextField,
+ * called after a datastore is selected or the editor is initialized.
+ */
+private void populateDataStoreExpanded () {
+	String routine = getClass().getSimpleName() + ".populateDataStoreExpanded";
+	String DataStore = __DataStore_JComboBox.getSelected();
+	if ( (DataStore == null) || DataStore.isEmpty() ) {
+		return;
+	}
+	else {
+    	// If the datastore contains ${Property}, expand the property and use that DataStore name:
+    	// - if it can't expand, such as if a property in a loop, then leave as is and use the optional EditorDataStore to provide choices
+	    String expandedDataStore = TSCommandProcessorUtil.expandParameterDiscoveryValue(this.propList, this.__command, DataStore);
+    	this.__DataStoreExpanded_JTextField.setText(expandedDataStore);
     }
 }
 
@@ -1468,7 +1617,7 @@ Populate the schema list based on the selected database.
 @param dmi DMI to use when selecting schema list
 */
 private void populateDataStoreSchemaChoices ( DMI dmi ) {
-    String routine = getClass().getSimpleName() + "populateDataStoreSchemaChoices";
+    String routine = getClass().getSimpleName() + ".populateDataStoreSchemaChoices";
     List<String> schemaList = null;
     List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system tables.
     if ( dmi == null ) {
@@ -1510,7 +1659,7 @@ Populate the table list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
 private void populateDataStoreTableChoices ( DMI dmi ) {
-    String routine = getClass().getSimpleName() + "populateDataStoreTableChoices";
+    String routine = getClass().getSimpleName() + ".populateDataStoreTableChoices";
     List<String> tableList = null;
     List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system tables.
     if ( dmi == null ) {
@@ -1551,12 +1700,37 @@ private void populateDataStoreTableChoices ( DMI dmi ) {
 }
 
 /**
+Set the editor datastore choices based on the available NovaStar web service datastores.
+This DOES NOT include a ${Property} value from the original parameter.
+@param commandParameter the initial command parameter
+*/
+private void populateEditorDataStoreChoices () {
+    List<String> datastoreChoices = new ArrayList<>();
+    for ( DataStore dataStore: this.datastores ) {
+    	datastoreChoices.add ( dataStore.getName() );
+    }
+    // Add a blank because the parameter may not be used.
+    if ( datastoreChoices.size() == 0 ) {
+    	datastoreChoices.add("");
+    }
+    else {
+    	datastoreChoices.add(0, "");
+    }
+    __EditorDataStore_JComboBox.setData ( datastoreChoices );
+    // Select the default:
+    // - will either be the first in the list or the 'commandParmaeter'
+    // TODO smalers 2018-06-21 evaluate whether need datastore method for default.
+    __EditorDataStore_JComboBox.select(0);
+}
+
+/**
 Refresh the command from the other text field contents.
 */
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
-try{
+try {
     String DataStore = "";
+    String EditorDataStore = "";
     String DataStoreCatalog = "";
     String DataStoreSchema = "";
     String DataStoreTable = "";
@@ -1577,6 +1751,7 @@ try{
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
+		EditorDataStore = props.getValue ( "EditorDataStore" );
 		DataStoreCatalog = props.getValue ( "DataStoreCatalog" );
 		DataStoreSchema = props.getValue ( "DataStoreSchema" );
 		DataStoreTable = props.getValue ( "DataStoreTable" );
@@ -1598,7 +1773,55 @@ try{
         OutputProperties = props.getValue ( "OutputProperties" );
 		TableID = props.getValue ( "TableID" );
         RowCountProperty = props.getValue ( "RowCountProperty" );
+
+		// Get initial command parameter values, which will be shown in lists in addition to other values:
+		// - needed to handle ${Property} in parameter values
+        this.dataStoreInitial = this.__command.getCommandParameters().getValue("DataStore");
+
+        // The empty datastore list is set up in initialize() but is populated and selected here.
+
+        populateDataStoreChoices(this.dataStoreInitial );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
+            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the datastore for use in the editor.
+        }
+        else {
+            if ( (DataStore == null) || DataStore.equals("") ) {
+                // New command.  Select the default.
+                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+                if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+                	__DataStore_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command.
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+
+        // The empty editor datastore list is set up in initialize() but is populated and selected here.
+        populateEditorDataStoreChoices();
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
+            __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+            __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the datastore for use in the editor.
+        }
+        else {
+            if ( (DataStore == null) || DataStore.equals("") ) {
+                // New command.  Select the default.
+                __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
+                if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+                	__DataStore_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command.
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
         // The data store list is set up in initialize() but is selected here.
+        /*
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event.
             __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor.
@@ -1615,7 +1838,9 @@ try{
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // First populate the database choices.
+        */
+
+        // First populate the database catalog choices.
         populateDataStoreCatalogChoices(getDMI() );
         // Now select what the command had previously (if specified).
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreCatalog_JComboBox, DataStoreCatalog, JGUIUtil.NONE, null, null ) ) {
@@ -1632,6 +1857,7 @@ try{
                   "DataStoreCatalog parameter \"" + DataStoreCatalog + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+
         // First populate the database schema.
         populateDataStoreSchemaChoices(getDMI() );
         // Now select what the command had previously (if specified).
@@ -1649,6 +1875,7 @@ try{
                   "DataStoreSchema parameter \"" + DataStoreSchema + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+
         // First populate the table choices.
         populateDataStoreTableChoices(getDMI() );
         // Now select what the command had previously (if specified).
@@ -1751,6 +1978,11 @@ try{
     if ( DataStore == null ) {
         DataStore = "";
     }
+    populateDataStoreExpanded ();
+    EditorDataStore = __EditorDataStore_JComboBox.getSelected();
+    if ( EditorDataStore == null ) {
+        EditorDataStore = "";
+    }
     DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
     if ( DataStoreCatalog == null ) {
         DataStoreCatalog = "";
@@ -1789,6 +2021,7 @@ try{
 	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
+	props.add ( "EditorDataStore=" + EditorDataStore );
 	props.add ( "DataStoreCatalog=" + DataStoreCatalog );
 	props.add ( "DataStoreSchema=" + DataStoreSchema );
 	props.add ( "DataStoreTable=" + DataStoreTable );

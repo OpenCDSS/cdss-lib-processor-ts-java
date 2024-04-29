@@ -47,6 +47,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.List;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.Help.HelpViewer;
@@ -69,6 +70,7 @@ private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private NewTable_Command __command = null;
 private boolean __ok = false;
+private JFrame __parent = null;
 
 /**
 Command dialog constructor.
@@ -90,6 +92,36 @@ public void actionPerformed(ActionEvent event) {
     if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumns") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String Columns = __Columns_JTextArea.getText().trim();
+        List<String> typesWithNote = TableField.getDataTypeChoices(true);
+        List<String> types = TableField.getDataTypeChoices(false);
+        int size = typesWithNote.size();
+        String [] notes = new String[size + 3];
+        notes[0] = "Specify the table column names and column type.";
+        notes[1] = "If the column contains an array, surround the type with [ ] brackets.";
+        notes[2] = "";
+        for ( int i = 0; i < types.size(); i++ ) {
+        	notes[i + 3] = "    " + typesWithNote.get(i) + ", for array use: [" + types.get(i) + "]";
+        }
+        String dict = (new DictionaryJDialog (
+        	this.__parent,
+        	true,
+        	Columns,
+        	// Delimiter follows historical use but does not match the dictionary defaults.
+        	";",
+        	",",
+            "Edit Columns Parameter",
+        	notes,
+        	"Column Name",
+        	"Column Data Type",
+        	10)).response();
+        if ( dict != null ) {
+            __Columns_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "NewTable");
 	}
@@ -111,13 +143,13 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
     String TableID = __TableID_JTextField.getText().trim();
-	String Columns = __Columns_JTextArea.getText().trim();
+	String Columns = __Columns_JTextArea.getText().trim().replace("\n"," ");
 	__error_wait = false;
 
-    if ( TableID.length() > 0 ) {
+    if ( !TableID.isEmpty() ) {
         props.set ( "TableID", TableID );
     }
-	if ( Columns.length() > 0 ) {
+	if ( !Columns.isEmpty() ) {
 		props.set ( "Columns", Columns );
 	}
 	try {
@@ -137,7 +169,7 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String TableID = __TableID_JTextField.getText().trim();
-    String Columns = __Columns_JTextArea.getText().trim();
+	String Columns = __Columns_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "Columns", Columns );
 }
@@ -148,7 +180,8 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 */
 private void initialize ( JFrame parent, NewTable_Command command ) {
-	__command = command;
+	this.__command = command;
+	this.__parent = parent;
 
 	addWindowListener(this);
 
@@ -173,17 +206,8 @@ private void initialize ( JFrame parent, NewTable_Command command ) {
         "Columns can be defined here and can also be added later with other commands."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Columns should be defined using syntax:   name,type;name,type"),
+        "Columns should be defined using syntax:   Column1Name,Column1Type;Column2Name,Column2Type;..."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel ("Available types are shown below for single values and arrays of values:"),
-	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    List<String> typesWithNote = TableField.getDataTypeChoices(true);
-    List<String> types = TableField.getDataTypeChoices(false);
-    int size = typesWithNote.size();
-    for ( int i = 0; i < size; i++ ) {
-        JGUIUtil.addComponent(paragraph, new JLabel ("    " + typesWithNote.get(i) + ", for array use: [" + types.get(i) + "]"),
-            0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    }
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -201,14 +225,18 @@ private void initialize ( JFrame parent, NewTable_Command command ) {
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column definitions:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Columns_JTextArea = new JTextArea (4,40);
-    __Columns_JTextArea = new JTextArea ("Column definitions in format ColumnName1,ColumnType1;..., can use ${Property} notation.");
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Columns_JTextArea = new JTextArea (6,35);
+    __Columns_JTextArea.setToolTipText("Column definitions in format ColumnName1,ColumnType1;..., can use ${Property} notation.");
     __Columns_JTextArea.setLineWrap ( true );
     __Columns_JTextArea.setWrapStyleWord ( true );
     __Columns_JTextArea.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Columns_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column names and types."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumns",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -240,7 +268,7 @@ private void initialize ( JFrame parent, NewTable_Command command ) {
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status.
+	refresh();
 	setResizable (false);
     super.setVisible(true);
 }
@@ -302,7 +330,7 @@ private void refresh () {
 	}
 	// Regardless, reset the command from the fields.
     TableID = __TableID_JTextField.getText().trim();
-	Columns = __Columns_JTextArea.getText().trim();
+	Columns = __Columns_JTextArea.getText().trim().replace("\n"," ");
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "Columns=" + Columns );

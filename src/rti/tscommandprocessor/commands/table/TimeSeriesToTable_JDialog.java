@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -106,6 +106,7 @@ private DateTime_JPanel __OutputWindowEnd_JPanel = null;
 private JTextField __OutputWindowStart_JTextField = null; // Used for properties.
 private JTextField __OutputWindowEnd_JTextField = null;
 private SimpleJComboBox __IfTableNotFound_JComboBox = null;
+private JTextField __RowCountProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -237,6 +238,7 @@ private void checkInput () {
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     String IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
     __error_wait = false;
 
@@ -278,6 +280,9 @@ private void checkInput () {
     }
     if ( OutputEnd.length() > 0 ) {
         props.set ( "OutputEnd", OutputEnd );
+    }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
     }
     if ( IfTableNotFound.length() > 0 ) {
         props.set ( "IfTableNotFound", IfTableNotFound );
@@ -335,6 +340,7 @@ private void commitEdits () {
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     String IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -349,6 +355,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "FlagColumn", FlagColumn );
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
+    __command.setCommandParameter ( "RowCountProperty", RowCountProperty );
     __command.setCommandParameter ( "IfTableNotFound", IfTableNotFound );
     if ( __OutputWindow_JCheckBox.isSelected() ){
         String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
@@ -431,8 +438,8 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command ) {
     __TableID_JComboBox.setToolTipText("Specify the table ID for output or use ${Property} notation");
     List<String> TableIDs = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    // If the TableID has been specified and is not in the list, then a new table is being added -
-    // add the table ID at the start of the list
+    // If the TableID has been specified and is not in the list, then a new table is being added.
+    // Add the table ID at the start of the list.
     String TableID = __command.getCommandParameters().getValue("TableID");
     if ( (TableID != null) && !TableID.equals("") ) {
         if ( StringUtil.indexOfIgnoreCase(TableIDs, TableID) < 0 ) {
@@ -601,6 +608,16 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full year)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the output table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if table not found:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfTableNotFound_JComboBox = new SimpleJComboBox ( false );
@@ -710,6 +727,7 @@ private void refresh () {
     String OutputEnd = "";
     String OutputWindowStart = "";
     String OutputWindowEnd = "";
+    String RowCountProperty = "";
     String IfTableNotFound = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -730,6 +748,7 @@ private void refresh () {
         ValueColumn = props.getValue ( "ValueColumn" );
         OutputPrecision = props.getValue ( "OutputPrecision" );
         FlagColumn = props.getValue ( "FlagColumn" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
         if ( TSList == null ) {
             // Select default.
@@ -877,6 +896,9 @@ private void refresh () {
         else {
             __OutputWindow_JCheckBox.setSelected ( false );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
         if ( IfTableNotFound == null ) {
             // Select default.
             __IfTableNotFound_JComboBox.select ( 0 );
@@ -910,6 +932,7 @@ private void refresh () {
     FlagColumn = __FlagColumn_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
     OutputEnd = __OutputEnd_JTextField.getText().trim();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -926,6 +949,7 @@ private void refresh () {
     props.add ( "Transformation=" + IfTableNotFound );
     props.add ( "OutputStart=" + OutputStart );
     props.add ( "OutputEnd=" + OutputEnd );
+	props.add ( "RowCountProperty=" + RowCountProperty );
     props.add ( "IfTableNotFound=" + IfTableNotFound );
     if ( __OutputWindow_JCheckBox.isSelected() ) {
         OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();

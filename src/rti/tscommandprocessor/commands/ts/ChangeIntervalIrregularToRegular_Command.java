@@ -36,6 +36,7 @@ import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSLimits;
 import RTi.TS.TSStatisticType;
+import RTi.TS.TSUtil_ChangeInterval;
 import RTi.TS.TSUtil_ChangeIntervalIrregularToRegular;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
@@ -53,6 +54,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
@@ -76,8 +78,7 @@ TSEnsemble created in discovery mode (basically to get the identifier for other 
 private TSEnsemble discoveryEnsemble = null;
 
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> discoveryTSList = null;
 
@@ -92,8 +93,7 @@ public ChangeIntervalIrregularToRegular_Command () {
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -114,12 +114,13 @@ throws InvalidCommandParameterException {
     String Statistic = parameters.getValue ( "Statistic" );
     String PersistInterval = parameters.getValue ( "PersistInterval" );
     String PersistValue = parameters.getValue ( "PersistValue" );
+    String SequenceValues = parameters.getValue ( "SequenceValues" );
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
 	//String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 
 	// Alias must be specified - for historical command syntax (and generally a good idea).
-	if ( Alias == null || Alias.isEmpty() ) {
+	if ( (Alias == null) || Alias.isEmpty() ) {
         message = "The time series alias must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -160,7 +161,7 @@ throws InvalidCommandParameterException {
             "Specify input as an ensemble or clear the NewEnsembleID."));
 	}
 
-	if ( NewInterval == null || NewInterval.isEmpty() ) {
+	if ( (NewInterval == null) || NewInterval.isEmpty() ) {
 		message = "The new interval must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -183,13 +184,7 @@ throws InvalidCommandParameterException {
 
     if ( (Statistic != null) && !Statistic.isEmpty() ) {
         // Make sure that the statistic is known in general.
-        boolean supported = false;
-        TSStatisticType statisticType = null;
-        try {
-            statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-            supported = true;
-        }
-        catch ( Exception e ) {
+        if ( TSStatisticType.valueOfIgnoreCase(Statistic) == null ) {
             message = "The statistic (" + Statistic + ") is not recognized.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -198,21 +193,11 @@ throws InvalidCommandParameterException {
 
         // Make sure that the statistic is in the supported list for the command.
 
-        if ( supported ) {
-            supported = false;
-            List<TSStatisticType> statistics = TSUtil_ChangeIntervalIrregularToRegular.getStatisticChoices();
-            for ( TSStatisticType statistic : statistics ) {
-                if ( statisticType == statistic ) {
-                    supported = true;
-                    break;
-                }
-            }
-            if ( !supported ) {
-                message = "The statistic (" + Statistic + ") is not supported by this command.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Select a supported statistic using the command editor." ) );
-            }
+        if ( TSStatisticType.valueOfIgnoreCase(TSUtil_ChangeInterval.getStatisticChoices(), Statistic) == null ) {
+            message = "The statistic (" + Statistic + ") is not supported by this command.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported statistic using the command editor." ) );
         }
     }
 
@@ -234,11 +219,25 @@ throws InvalidCommandParameterException {
     		Double.parseDouble(PersistValue);
     	}
     	catch (Exception e) {
-    		message = "The PersistValue (" + PersistValue + ") is invalid.";
+    		message = "The PersistValue (" + PersistValue + ") is not a number.";
     		warning += "\n" + message;
     		status.addToLog ( CommandPhaseType.INITIALIZATION,
     			new CommandLogRecord(CommandStatusType.FAILURE,
     				message, "Specify a number or leave blank.") );
+    	}
+    }
+
+    if ( (SequenceValues != null) && !SequenceValues.isEmpty() ) {
+    	// All values must be numbers.
+    	List<String> values = StringUtil.breakStringList(SequenceValues, ",", StringUtil.DELIM_TRIM_STRINGS);
+    	for ( String value : values ) {
+    		if ( !StringUtil.isDouble(value) ) {
+    			message = "The SequenceValue (" + value + ") is not a number.";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    					message, "Specify a number or leave blank.") );
+    		}
     	}
     }
 
@@ -295,10 +294,13 @@ throws InvalidCommandParameterException {
     validList.add ( "Statistic" );
     validList.add ( "Flag" );
     validList.add ( "FlagDescription" );
+    // Analysis - persist
     validList.add ( "PersistInterval" );
     validList.add ( "PersistValue" );
     validList.add ( "PersistFlag" );
     validList.add ( "PersistFlagDescription" );
+    // Analysis - sequence
+    validList.add ( "SequenceValues" );
     validList.add ( "Alias" );
     validList.add ( "NewInterval" );
     validList.add ( "OutputYearType" );
@@ -333,6 +335,7 @@ public boolean editCommand ( JFrame parent ) {
 
 /**
 Return the ensemble that is read by this class when run in discovery mode.
+@return the ensemble that is read by this class when run in discovery mode.
 */
 private TSEnsemble getDiscoveryEnsemble() {
     return this.discoveryEnsemble;
@@ -340,6 +343,7 @@ private TSEnsemble getDiscoveryEnsemble() {
 
 /**
 Return the list of time series read in discovery phase.
+@return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList () {
     return this.discoveryTSList;
@@ -347,6 +351,7 @@ private List<TS> getDiscoveryTSList () {
 
 /**
 Return the list of data objects created by this object in discovery mode.
+@return the list of data objects created by this object in discovery mode.
 */
 @SuppressWarnings("unchecked")
 public <T> List<T>  getObjectList ( Class<T>  c ) {
@@ -369,7 +374,7 @@ public <T> List<T>  getObjectList ( Class<T>  c ) {
         }
     }
     else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        List<T> v = new ArrayList<T>();
+        List<T> v = new ArrayList<>();
         v.add ( (T)tsensemble );
         return v;
     }
@@ -467,7 +472,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandStatus status = getCommandStatus();
     TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -491,16 +496,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = "" + TSListType.ALL_TS;
     }
     String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 
     String Statistic = parameters.getValue ( "Statistic" );
-	if ( (Statistic != null) && (Statistic.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Statistic = TSCommandProcessorUtil.expandParameterValue(processor, this, Statistic);
 	}
     TSStatisticType statisticType = null;
@@ -508,16 +513,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
     }
     String Flag = parameters.getValue ( "Flag" );
-	if ( (Flag != null) && (Flag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		Flag = TSCommandProcessorUtil.expandParameterValue(processor, this, Flag);
 	}
     String FlagDescription = parameters.getValue ( "FlagDescription" );
-	if ( (FlagDescription != null) && (FlagDescription.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		FlagDescription = TSCommandProcessorUtil.expandParameterValue(processor, this, FlagDescription);
 	}
     String PersistInterval = parameters.getValue ( "PersistInterval" );
     TimeInterval persistInterval = null;
-	if ( (PersistInterval != null) && (PersistInterval.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PersistInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, PersistInterval);
 	}
     if ( (PersistInterval != null) && !PersistInterval.isEmpty() ) {
@@ -525,19 +530,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String PersistValue = parameters.getValue ( "PersistValue" );
     Double persistValue = null;
-	if ( (PersistValue != null) && (PersistValue.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PersistValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PersistValue);
 	}
     if ( (PersistValue != null) && !PersistValue.isEmpty() ) {
         persistValue = Double.valueOf(PersistValue);
     }
     String PersistFlag = parameters.getValue ( "PersistFlag" );
-	if ( (PersistFlag != null) && (PersistFlag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PersistFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, PersistFlag);
 	}
     String PersistFlagDescription = parameters.getValue ( "PersistFlagDescription" );
-	if ( (PersistFlagDescription != null) && (PersistFlagDescription.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		PersistFlagDescription = TSCommandProcessorUtil.expandParameterValue(processor, this, PersistFlagDescription);
+	}
+    String SequenceValues = parameters.getValue ( "SequenceValues" );
+    double [] sequenceValues = new double[0];
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		SequenceValues = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceValues);
+		int parseFlag = 0;
+		StringUtil.parseDoubleSequenceArray(SequenceValues, ",", parseFlag);
 	}
 
     String Alias = parameters.getValue ( "Alias" );
@@ -552,7 +564,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String NewUnits = parameters.getValue( "NewUnits" );
     String ScaleValue = parameters.getValue ( "ScaleValue" );
     Double scaleValue = null;
-	if ( (ScaleValue != null) && (ScaleValue.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		ScaleValue = TSCommandProcessorUtil.expandParameterValue(processor, this, ScaleValue);
 	}
     if ( (ScaleValue != null) && !ScaleValue.isEmpty() ) {
@@ -560,7 +572,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	/*
 	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
-    boolean recalcLimits = false; // Default
+    boolean recalcLimits = false; // Default.
     if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
         recalcLimits = true;
     }
@@ -673,22 +685,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             originalTS.getIdentifier().toStringAliasAndTSID() );
     	try {
     		// Process the change of interval.
-    	    TSUtil_ChangeIntervalIrregularToRegular tsu = new TSUtil_ChangeIntervalIrregularToRegular( originalTS,
-                statisticType, Flag, FlagDescription,
-                persistInterval, persistValue, PersistFlag, PersistFlagDescription,
-                newInterval, outputYearType, NewDataType, NewUnits, scaleValue );
+    	    TSUtil_ChangeIntervalIrregularToRegular tsu = new TSUtil_ChangeIntervalIrregularToRegular (
+    	    	originalTS,
+                statisticType,
+                Flag,
+                FlagDescription,
+                persistInterval,
+                persistValue,
+                PersistFlag,
+                PersistFlagDescription,
+                sequenceValues,
+                // Output.
+                newInterval,
+                outputYearType,
+                NewDataType,
+                NewUnits,
+                scaleValue );
     		resultTS = tsu.changeInterval ( createData );
     		//if ( (commandPhase == CommandPhaseType.RUN) && recalcLimits ) {
     		if ( commandPhase == CommandPhaseType.RUN ) {
-    		    warning_count = recalculateLimits( resultTS, processor,
-    		        warning_level, warning_count, command_tag );
+    		    warning_count = recalculateLimits( resultTS, processor, warning_level, warning_count, command_tag );
     		}
     		resultList.add(resultTS);
 
     		// Update the newly created time series alias (alias is required).
             if ( (Alias != null) && !Alias.equals("") ) {
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, resultTS, Alias, status, commandPhase);
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString ( processor, resultTS, Alias, status, commandPhase );
                 resultTS.setAlias ( alias );
             }
 
@@ -786,6 +808,7 @@ public String toString ( PropList parameters ) {
 		"PersistValue",
 		"PersistFlag",
 		"PersistFlagDescription",
+		"SequenceValues",
 		// Output.
 		"NewTSID",
 		"Alias",

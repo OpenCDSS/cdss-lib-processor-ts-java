@@ -329,7 +329,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message = "The source commands (" + sourceVersion + ") has an older @versionDate than local commands (" + localVersion + ").";
 						Message.printStatus(2, routine, message);
 						status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.NOTIFICATION,
-							message, "Need to update the origional source copy from the local copy." ) );
+							message, "Need to update the original source copy from the local copy." ) );
 					}
 					else {
 						// Versions are the same so no notification.
@@ -376,7 +376,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 							message = "The source commands (" + sourceVersion + ") has an older @version than local commands (" + localVersion + ").";
 							Message.printStatus(2, routine, message);
 							status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.NOTIFICATION,
-								message, "Need to update the origional source copy from the local copy." ) );
+								message, "Need to update the original source copy from the local copy." ) );
 						}
 						else {
 							// Same so no need to do anything.
@@ -436,7 +436,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message = "The source commands (" + sourceVersionDate + ") has an older @versionDate than local commands (" + localVersionDate + ").";
 						Message.printStatus(2, routine, message);
 						status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.NOTIFICATION,
-							message, "Need to update the origional source copy from the local copy." ) );
+							message, "Need to update the original source copy from the local copy." ) );
 					}
 					else {
 						// Version dates are the same so no need to do anything.

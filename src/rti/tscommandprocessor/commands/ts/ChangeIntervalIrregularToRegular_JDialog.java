@@ -88,10 +88,16 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
 private JTextField __Flag_JTextField = null;
 private JTextField __FlagDescription_JTextField = null;
+private JTabbedPane __largerAnalysis_JTabbedPane = null;
+
+// Analysis - persistence.
 private JTextField __PersistInterval_JTextField = null;
 private JTextField __PersistValue_JTextField = null;
 private JTextField __PersistFlag_JTextField = null;
 private JTextField __PersistFlagDescription_JTextField = null;
+
+// Analysis - sequence.
+private JTextField __SequenceValues_JTextField = null;
 
 // Analysis (to Smaller):
 // - not implemented
@@ -282,6 +288,7 @@ private void checkInput () {
 	String PersistValue = __PersistValue_JTextField.getText().trim();
 	String PersistFlag = __PersistFlag_JTextField.getText().trim();
 	String PersistFlagDescription = __PersistFlagDescription_JTextField.getText().trim();
+	String SequenceValues = __SequenceValues_JTextField.getText().trim();
     // Output.
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
@@ -328,6 +335,9 @@ private void checkInput () {
     }
     if ( PersistFlagDescription.length() > 0 ) {
         props.set ( "PersistFlagDescription", PersistFlagDescription );
+    }
+    if ( SequenceValues.length() > 0 ) {
+        props.set ( "SequenceValues", SequenceValues );
     }
     // Output.
     if ( NewTSID.length() > 0 ) {
@@ -396,6 +406,7 @@ private void commitEdits () {
 	String PersistValue = __PersistValue_JTextField.getText().trim();
 	String PersistFlag = __PersistFlag_JTextField.getText().trim();
 	String PersistFlagDescription = __PersistFlagDescription_JTextField.getText().trim();
+	String SequenceValues = __SequenceValues_JTextField.getText().trim();
     // Output.
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
@@ -422,6 +433,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "PersistValue", PersistValue );
     __command.setCommandParameter ( "PersistFlag", PersistFlag );
     __command.setCommandParameter ( "PersistFlagDescription", PersistFlagDescription );
+    __command.setCommandParameter ( "SequenceValues", SequenceValues );
     // Output.
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Alias", Alias );
@@ -572,49 +584,90 @@ private void initialize ( JFrame parent, ChangeIntervalIrregularToRegular_Comman
     JGUIUtil.addComponent(larger_JPanel, new JLabel ( "Optional - flag description (default=no description)."),
         3, yLarger, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // Tabbed panel for "to larger" analysis parameters.
+    __largerAnalysis_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(larger_JPanel, __largerAnalysis_JTabbedPane,
+        0, ++yLarger, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for persistence.
+
+    int yPersist = -1;
+    JPanel persist_JPanel = new JPanel();
+    persist_JPanel.setLayout( new GridBagLayout() );
+    __largerAnalysis_JTabbedPane.addTab ( "Persistence", persist_JPanel );
+
+    JGUIUtil.addComponent(persist_JPanel, new JLabel (
+		"The persistence parameters are used for event-based systems that also report on a regular interval."),
+		0, ++yPersist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, new JLabel (
+		"This ensures that regular reports carry forward within an interval."),
+		0, ++yPersist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     // PersistInterval.
-    JGUIUtil.addComponent(larger_JPanel,new JLabel ("Persist interval:" ),
-        0, ++yLarger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(persist_JPanel,new JLabel ("Persist interval:" ),
+        0, ++yPersist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PersistInterval_JTextField = new JTextField ( "", 10 );
     __PersistInterval_JTextField.setToolTipText("Use interval similar to the new interval, such as 15Minute, 1Hour, Day, Month, Year.");
-    JGUIUtil.addComponent(larger_JPanel, __PersistInterval_JTextField,
-        1, yLarger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, __PersistInterval_JTextField,
+        1, yPersist, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __PersistInterval_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(larger_JPanel, new JLabel ( "Optional - interval that last value persists (default=no persistence)."),
-        3, yLarger, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, new JLabel ( "Optional - interval that last value persists (default=no persistence)."),
+        3, yPersist, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // PersistValue.
-    JGUIUtil.addComponent(larger_JPanel,new JLabel ("Persist value:" ),
-        0, ++yLarger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(persist_JPanel,new JLabel ("Persist value:" ),
+        0, ++yPersist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PersistValue_JTextField = new JTextField ( "", 10 );
     __PersistValue_JTextField.setToolTipText("Value to persist in persist interval, if different than last value (e.g., 0 for precipitation).");
-    JGUIUtil.addComponent(larger_JPanel, __PersistValue_JTextField,
-        1, yLarger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, __PersistValue_JTextField,
+        1, yPersist, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __PersistValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(larger_JPanel, new JLabel ( "Optional - value to use in persist interval (default=last input value)."),
-        3, yLarger, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, new JLabel ( "Optional - value to use in persist interval (default=last input value)."),
+        3, yPersist, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // PersistFlag.
-    JGUIUtil.addComponent(larger_JPanel,new JLabel ("Persist flag:" ),
-        0, ++yLarger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(persist_JPanel,new JLabel ("Persist flag:" ),
+        0, ++yPersist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PersistFlag_JTextField = new JTextField ( "", 10 );
     __PersistFlag_JTextField.setToolTipText("Flag for persisted values.");
-    JGUIUtil.addComponent(larger_JPanel, __PersistFlag_JTextField,
-        1, yLarger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, __PersistFlag_JTextField,
+        1, yPersist, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __PersistFlag_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(larger_JPanel, new JLabel ( "Optional - flag for persisted values (default=no flag)."),
-        3, yLarger, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, new JLabel ( "Optional - flag for persisted values (default=no flag)."),
+        3, yPersist, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // PersistFlagDescription.
-    JGUIUtil.addComponent(larger_JPanel,new JLabel ("Persist flag description:" ),
-        0, ++yLarger, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(persist_JPanel,new JLabel ("Persist flag description:" ),
+        0, ++yPersist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PersistFlagDescription_JTextField = new JTextField ( "", 10 );
     __PersistFlagDescription_JTextField.setToolTipText("Persist flag desecription.");
-    JGUIUtil.addComponent(larger_JPanel, __PersistFlagDescription_JTextField,
-        1, yLarger, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, __PersistFlagDescription_JTextField,
+        1, yPersist, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __PersistFlagDescription_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(larger_JPanel, new JLabel ( "Optional - persist flag description (default=no description)."),
-        3, yLarger, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(persist_JPanel, new JLabel ( "Optional - persist flag description (default=no description)."),
+        3, yPersist, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for sequence time series.
+
+    int ySeq = -1;
+    JPanel seq_JPanel = new JPanel();
+    seq_JPanel.setLayout( new GridBagLayout() );
+    __largerAnalysis_JTabbedPane.addTab ( "Sequence", seq_JPanel );
+
+    JGUIUtil.addComponent(seq_JPanel, new JLabel (
+		"Time series that contain a repeating sequence can be analyzed for gaps."),
+		0, ++ySeq, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // SequenceValues.
+    JGUIUtil.addComponent(seq_JPanel,new JLabel ("Sequence values:" ),
+        0, ++ySeq, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceValues_JTextField = new JTextField ( "", 30 );
+    __SequenceValues_JTextField.setToolTipText("Sequence values to expect, separated by commas.");
+    JGUIUtil.addComponent(seq_JPanel, __SequenceValues_JTextField,
+        1, ySeq, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __SequenceValues_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Optional - expected sequence values."),
+        3, ySeq, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for analysis (to Smaller).
 
@@ -905,6 +958,7 @@ private void refresh () {
     String PersistValue = "";
     String PersistFlag = "";
     String PersistFlagDescription = "";
+    String SequenceValues = "";
     // Output.
 	String NewTSID = "";
 	String Alias = "";
@@ -936,6 +990,7 @@ private void refresh () {
 		PersistValue = props.getValue( "PersistValue" );
 	    PersistFlag = props.getValue ( "PersistFlag" );
 	    PersistFlagDescription = props.getValue ( "PersistFlagDescription" );
+		SequenceValues = props.getValue( "SequenceValues" );
         // Output.
 		NewTSID = props.getValue( "NewTSID" );
 		Alias = props.getValue( "Alias" );
@@ -1028,6 +1083,9 @@ private void refresh () {
         if ( PersistFlagDescription != null ) {
             __PersistFlagDescription_JTextField.setText ( PersistFlagDescription );
         }
+        if ( SequenceValues != null ) {
+            __SequenceValues_JTextField.setText ( SequenceValues );
+        }
         // Output.
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
@@ -1119,6 +1177,7 @@ private void refresh () {
 	PersistValue = __PersistValue_JTextField.getText().trim();
 	PersistFlag = __PersistFlag_JTextField.getText().trim();
 	PersistFlagDescription = __PersistFlagDescription_JTextField.getText().trim();
+	SequenceValues = __SequenceValues_JTextField.getText().trim();
     // Output.
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
@@ -1146,6 +1205,7 @@ private void refresh () {
 	props.add ( "PersistValue=" + PersistValue );
 	props.add ( "PersistFlag=" + PersistFlag );
 	props.add ( "PersistFlagDescription=" + PersistFlagDescription );
+	props.add ( "SequenceValues=" + SequenceValues );
     // Output.
 	props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Alias=" + Alias );

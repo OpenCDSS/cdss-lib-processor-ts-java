@@ -560,6 +560,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	TSCommandProcessorUtil.expandParameterValue(processor,this,TSProductFile)) );
     		boolean useTables = true;
     		String tempFile = IOUtil.tempFileName();
+    		Message.printStatus(2, routine, "Expanding template time series product file to: " + tempFile);
     		TSCommandProcessorUtil.expandTemplateFile(processor, TSProductFile_full, tempFile, useTables,
     			status, commandTag, warningLevel, warningCount );
     		// Reset the template filename to the temporary filename for processing below.

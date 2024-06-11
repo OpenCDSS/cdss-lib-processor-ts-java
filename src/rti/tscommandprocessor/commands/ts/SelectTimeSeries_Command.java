@@ -365,6 +365,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	String TSPosition = parameters.getValue ( "TSPosition" );
+	TSPosition = TSCommandProcessorUtil.expandParameterValue(processor, this, TSPosition);
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
 	boolean DeselectAllFirst_boolean = false;  // Default.
 	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {

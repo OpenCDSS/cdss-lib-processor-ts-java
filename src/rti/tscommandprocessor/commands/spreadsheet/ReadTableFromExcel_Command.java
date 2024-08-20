@@ -984,9 +984,10 @@ CommandWarningException, CommandException {
 			}
 		}
 		else {
+			// File does not exist in run phase, which is a problem.
 			message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
 			++warning_count;
-	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
 	            message, "Verify that the Excel workbook file exists." ) );
 		}
 	}

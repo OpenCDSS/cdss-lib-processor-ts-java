@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -71,7 +71,7 @@ Command editor dialog for the ProcessTSProduct() command.
 public class ProcessTSProduct_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-    
+
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
@@ -107,8 +107,8 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ProcessTSProduct_JDialog ( JFrame parent, ProcessTSProduct_Command command )
-{	super ( parent, true );
+public ProcessTSProduct_JDialog ( JFrame parent, ProcessTSProduct_Command command ) {
+	super ( parent, true );
 	initialize ( parent, command );
 }
 
@@ -116,8 +116,8 @@ public ProcessTSProduct_JDialog ( JFrame parent, ProcessTSProduct_Command comman
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -131,16 +131,16 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle("Select Time Series Product File");
 		SimpleFileFilter sff = new SimpleFileFilter("tsp", "Time Series Product File");
 		fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -163,19 +163,28 @@ public void actionPerformed( ActionEvent event )
 		else {
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
-		fc.setDialogTitle("Select Output Image File");
-		SimpleFileFilter sff = new SimpleFileFilter("png", "PNG Image File");
-		fc.addChoosableFileFilter(sff);
-		
+		fc.setDialogTitle("Select Output File");
+		SimpleFileFilter jpg_sff = new SimpleFileFilter("jpg", "JPG/JPEG Image File");
+		fc.addChoosableFileFilter(jpg_sff);
+		SimpleFileFilter png_sff = new SimpleFileFilter("png", "PNG Image File");
+		fc.addChoosableFileFilter(png_sff);
+		SimpleFileFilter svg_sff = new SimpleFileFilter("svg", "SVG File");
+		fc.addChoosableFileFilter(svg_sff);
+		//SimpleFileFilter jfreesvg_sff = new SimpleFileFilter("svg", "SVG Image File (JFreeChart)");
+		//fc.addChoosableFileFilter(jfreesvg_sff);
+		//SimpleFileFilter batiksvg_sff = new SimpleFileFilter("svg", "SVG Image File (Batik)");
+		//fc.addChoosableFileFilter(batiksvg_sff);
+		fc.setFileFilter(png_sff);
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -199,18 +208,20 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle("Select Output Time Series Product File");
-		SimpleFileFilter sff = new SimpleFileFilter("png", "PNG Image File");
-		fc.addChoosableFileFilter(sff);
-		
+		SimpleFileFilter tspsff = new SimpleFileFilter("tsp", "TSP File");
+		fc.addChoosableFileFilter(tspsff);
+		SimpleFileFilter tspjsonsff = new SimpleFileFilter("json", "TSP JSON File");
+		fc.addChoosableFileFilter(tspjsonsff);
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -298,8 +309,8 @@ public void actionPerformed( ActionEvent event )
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSProductFile = __TSProductFile_JTextField.getText().trim();
 	String RunMode = __RunMode_JComboBox.getSelected();
@@ -349,11 +360,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSProductFile = __TSProductFile_JTextField.getText().trim();
+private void commitEdits () {
+	String TSProductFile = __TSProductFile_JTextField.getText().trim();
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -378,8 +389,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ProcessTSProduct_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, ProcessTSProduct_Command command ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -402,7 +413,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"The working directory is: " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -424,7 +435,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(input_JPanel, new JLabel ("TS product file (TSP):" ), 
+    JGUIUtil.addComponent(input_JPanel, new JLabel ("TS product file (TSP):" ),
 		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSProductFile_JTextField = new JTextField ( 50 );
 	__TSProductFile_JTextField.setToolTipText("Specify the path to the time series product (TSP) file or use ${Property} notation");
@@ -447,7 +458,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	JGUIUtil.addComponent(input_JPanel, TSProductFile_JPanel,
 		1, yInput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Run mode:" ), 
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Run mode:" ),
 		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunMode_JComboBox = new SimpleJComboBox ( false );
 	__RunMode_JComboBox.add ( "" );
@@ -458,7 +469,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
         JGUIUtil.addComponent(input_JPanel, __RunMode_JComboBox,
 		1, yInput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel,
-		new JLabel ( "Optional - when to process products (default=" + __command._GUIAndBatch + ")." ), 
+		new JLabel ( "Optional - when to process products (default=" + __command._GUIAndBatch + ")." ),
 		2, yInput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for output.
@@ -467,7 +478,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     output_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Output", output_JPanel );
 
-    JGUIUtil.addComponent(output_JPanel, new JLabel ( "View:" ), 
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "View:" ),
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__View_JComboBox = new SimpleJComboBox ( false );
 	__View_JComboBox.add ( "" );
@@ -477,13 +488,13 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     JGUIUtil.addComponent(output_JPanel, __View_JComboBox,
 		1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel,
-		new JLabel ( "Optional - display product in window (default=" + __command._True + ")." ), 
+		new JLabel ( "Optional - display product in window (default=" + __command._True + ")." ),
 		2, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output image file:"),
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (30);
-	__OutputFile_JTextField.setToolTipText("Specify the path to the output PNG or JPG file, can use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output PNG, JPG, or SVG file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
     // Output file layout fights back with other rows so put in its own panel.
@@ -503,8 +514,8 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	}
 	JGUIUtil.addComponent(output_JPanel, OutputFile_JPanel,
 		1, yOutput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(output_JPanel, new JLabel ("Visible start:"), 
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Visible start:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleStart_JTextField = new JTextField (20);
     __VisibleStart_JTextField.setToolTipText("Specify the visible period start using a date/time string or ${Property} notation");
@@ -515,7 +526,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
         "Optional - start of (initial) visible period (default=all data visible)."),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Visible end:"), 
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Visible end:"),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleEnd_JTextField = new JTextField (20);
     __VisibleEnd_JTextField.setToolTipText("Specify the visible period end using a date/time string or ${Property} notation");
@@ -552,20 +563,20 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	OutputProductFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputProductFile_JPanel, __OutputProductFile_JTextField,
 		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-	__browseOutput_JButton = new SimpleJButton ( "...", this );
-	__browseOutput_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(OutputProductFile_JPanel, __browseOutput_JButton,
+	__browseOutputProduct_JButton = new SimpleJButton ( "...", this );
+	__browseOutputProduct_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(OutputProductFile_JPanel, __browseOutputProduct_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path.
-		__pathOutput_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
-		JGUIUtil.addComponent(OutputProductFile_JPanel, __pathOutput_JButton,
+		__pathOutputProduct_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputProductFile_JPanel, __pathOutputProduct_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(outputProduct_JPanel, OutputProductFile_JPanel,
 		1, yOutputProduct, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel ( "Output product format:" ), 
+    JGUIUtil.addComponent(outputProduct_JPanel, new JLabel ( "Output product format:" ),
 		0, ++yOutputProduct, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputProductFormat_JComboBox = new SimpleJComboBox ( false );
 	__OutputProductFormat_JComboBox.add ( "" );
@@ -575,7 +586,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     JGUIUtil.addComponent(outputProduct_JPanel, __OutputProductFormat_JComboBox,
 		1, yOutputProduct, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(outputProduct_JPanel,
-		new JLabel ( "Optional - output format (default=" + __command._JSON + ")." ), 
+		new JLabel ( "Optional - output format (default=" + __command._JSON + ")." ),
 		2, yOutputProduct, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for editing.
@@ -593,7 +604,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     JGUIUtil.addComponent(edit_JPanel, __DefaultSaveFile_JTextField,
         1, yEdit, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
     JGUIUtil.addComponent(edit_JPanel,
-        new JLabel ( "Optional - file to save during interactive editing (*.dv)." ), 
+        new JLabel ( "Optional - file to save during interactive editing (*.dv)." ),
         2, yEdit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -611,7 +622,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -635,15 +646,16 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
+@param event key pressed event to handle
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -654,27 +666,34 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+/**
+Respond to KeyEvents.
+@param event key released event to handle
+*/
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+/**
+Respond to KeyEvents.
+@param event key typed event to handle
+*/
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String TSProductFile = "";
+private void refresh () {
+	String TSProductFile = "";
 	String RunMode = "";
 	String View = "";
 	String OutputFile = "";
@@ -712,10 +731,8 @@ private void refresh ()
 			}
 			else {
 			    Message.printWarning ( 1,
-				"processTSProduct_JDialog.refresh", "Existing "+
-				"command references an invalid\n"+
-				"run mode flag \"" + RunMode +
-				"\".  Select a\ndifferent value or Cancel." );
+				"processTSProduct_JDialog.refresh", "Existing command references an invalid\n"+
+				"run mode flag \"" + RunMode + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 		if ( (View == null) || (View.length() == 0) ) {
@@ -729,10 +746,8 @@ private void refresh ()
 			}
 			else {
 			    Message.printWarning ( 1,
-				"processTSProduct_JDialog.refresh", "Existing "+
-				"command references an invalid\n"+
-				"view flag \"" + View +
-				"\".  Select a\ndifferent value or Cancel." );
+				"processTSProduct_JDialog.refresh", "Existing command references an invalid\n"+
+				"view flag \"" + View + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	    if ( OutputFile != null ) {
@@ -742,7 +757,7 @@ private void refresh ()
 	         __OutputProductFile_JTextField.setText( OutputProductFile );
 	    }
 		if ( (OutputProductFormat == null) || (OutputProductFormat.length() == 0) ) {
-			// Select default...
+			// Select the default.
 			__OutputProductFormat_JComboBox.select ( 0 );
 		}
 		else {
@@ -752,10 +767,8 @@ private void refresh ()
 			}
 			else {
 			    Message.printWarning ( 1,
-				"processTSProduct_JDialog.refresh", "Existing "+
-				"command references an invalid\n"+
-				"output product format \"" + OutputProductFormat +
-				"\".  Select a\ndifferent value or Cancel." );
+				"processTSProduct_JDialog.refresh", "Existing command references an invalid\n"+
+				"output product format \"" + OutputProductFormat + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	    if ( DefaultSaveFile != null ) {
@@ -831,8 +844,8 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -850,15 +863,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

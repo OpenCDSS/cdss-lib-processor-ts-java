@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -54,8 +53,8 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DataTableJoinMethodType;
 import RTi.Util.Table.HandleMultipleJoinMatchesHowType;
 
-// TODO SAM 2013-08-19 Don't make discoverable because new table is not created.  In the future may allow the
-// joined table to be a copy
+// TODO SAM 2013-08-19 Don't make discoverable because new table is not created.
+// In the future may allow the joined table to be a copy.
 /**
 This class initializes, checks, and runs the JoinTables() command.
 */
@@ -70,29 +69,28 @@ private DataTable __table = null;
 /**
 Constructor.
 */
-public JoinTables_Command ()
-{	super();
+public JoinTables_Command () {
+	super();
 	setCommandName ( "JoinTables" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
+throws InvalidCommandParameterException {
+	String TableID = parameters.getValue ( "TableID" );
     String TableToJoinID = parameters.getValue ( "TableToJoinID" );
     String JoinMethod = parameters.getValue ( "JoinMethod" );
     String JoinColumns = parameters.getValue ( "JoinColumns" );
     String HandleMultipleJoinMatchesHow = parameters.getValue ( "HandleMultipleJoinMatchesHow" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -103,7 +101,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
+
     if ( (TableToJoinID == null) || (TableToJoinID.length() == 0) ) {
         message = "The table to join identifier must be specified.";
         warning += "\n" + message;
@@ -111,7 +109,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table to join identifier." ) );
     }
-    
+
     if ( (TableID != null) && (TableID.length() != 0) && (TableToJoinID != null) && (TableToJoinID.length() != 0) &&
         TableID.equalsIgnoreCase(TableToJoinID) ) {
         message = "The original and table to join identifiers are the same.";
@@ -120,7 +118,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table to join identifier different from the original table identifier." ) );
     }
-    
+
     if ( (JoinMethod != null) && (JoinMethod.length() != 0) && !JoinMethod.equalsIgnoreCase("" + DataTableJoinMethodType.JOIN_ALWAYS) &&
         !JoinMethod.equalsIgnoreCase("" + DataTableJoinMethodType.JOIN_IF_IN_BOTH)) {
         message = "The join method (" + JoinMethod + ") is invalid.";
@@ -130,16 +128,16 @@ throws InvalidCommandParameterException
                 message, "Specify the join method as " + DataTableJoinMethodType.JOIN_ALWAYS + " or " +
                 DataTableJoinMethodType.JOIN_IF_IN_BOTH) );
     }
-    
+
     if ( (JoinColumns != null) && !JoinColumns.isEmpty() && (JoinColumns.indexOf(":") < 0) ) {
-    	// Probably specified only one column
+    	// Probably specified only one column.
         message = "The join column names must be specified for each table.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table column names for both tables, even if the same." ) );
     }
-    
+
     if ( (HandleMultipleJoinMatchesHow != null) && !HandleMultipleJoinMatchesHow.isEmpty() &&
     	!HandleMultipleJoinMatchesHow.equalsIgnoreCase(""+HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS) &&
         !HandleMultipleJoinMatchesHow.equalsIgnoreCase(""+HandleMultipleJoinMatchesHowType.USE_LAST_MATCH)) {
@@ -150,8 +148,8 @@ throws InvalidCommandParameterException
                 message, "Specify HandleMultipleJoinMatchesHow as " + HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS +
                 	" or " + HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + " (default).") );
     }
- 
-	// Check for invalid parameters...
+
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(9);
     validList.add ( "TableID" );
     validList.add ( "TableToJoinID" );
@@ -162,66 +160,64 @@ throws InvalidCommandParameterException
     validList.add ( "JoinMethod" );
     validList.add ( "HandleMultipleJoinMatchesHow" );
     validList.add ( "RowCountProperty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+	List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
-    // The command will be modified if changed...
+    // The command will be modified if changed.
 	return (new JoinTables_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __table;
 }
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 Classes that can be requested:  DataTable
+@param c the class for the object list that is being requested
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
 }
 
-// Use base class parseCommand()
+// Use base class parseCommand().
 
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -232,8 +228,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -245,15 +240,15 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInteral",message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInteral",message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
     CommandStatus status = getCommandStatus();
 	CommandProcessor processor = getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -261,7 +256,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -284,11 +279,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (JoinColumns != null) && !JoinColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && JoinColumns.indexOf("${") >= 0 ) {
     	JoinColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, JoinColumns);
     }
-    Hashtable<String,String> joinColumnsMap = new Hashtable<String,String>();
+    Hashtable<String,String> joinColumnsMap = new Hashtable<>();
     if ( (JoinColumns != null) && (JoinColumns.length() > 0) && (JoinColumns.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(JoinColumns, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             joinColumnsMap.put(parts[0].trim(),parts[1].trim() );
@@ -309,11 +304,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ColumnMap != null) && !ColumnMap.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnMap.indexOf("${") >= 0 ) {
     	ColumnMap = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnMap);
     }
-    Hashtable<String,String> columnMap = new Hashtable<String,String>();
+    Hashtable<String,String> columnMap = new Hashtable<>();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnMap.put(parts[0].trim(),parts[1].trim());
@@ -323,11 +318,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
     	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
     }
-    Hashtable<String,String> columnFilters = new Hashtable<String,String>();
+    Hashtable<String,String> columnFilters = new Hashtable<>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnFilters.put(parts[0].trim(),parts[1].trim() );
@@ -348,7 +343,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
     	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
     }
-    
+
     // Get the tables to process.
 
     DataTable table = null;
@@ -356,7 +351,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
+            // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
             try {
@@ -383,14 +378,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
-    
+
     DataTable tableToJoin = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         String tableToJoinID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableToJoinID);
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
+            // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", tableToJoinID );
             try {
@@ -426,22 +421,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
-    List<String> problems = new ArrayList<String>();
+    List<String> problems = new ArrayList<>();
     boolean problemsAdded = false;
 	try {
-    	// Join the tables...
+    	// Join the tables:
+		// - the 'rowCount' is the number of rows joined, NOT the size of the output table
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        int rowCount = table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters,
 	        	joinMethodType, handleMultipleJoinMatchesHow, problems );
-	        // Table is already in the processor so no need to resubmit
-	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
+	        // Table is already in the processor so no need to resubmit.
+	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names.
 	        for ( String p : problems ) {
 	            Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, p );
 	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, p, "Check input." ) );
 	        }
 	        problemsAdded = true;
 
-	        // Set the property indicating the number of rows in the table
+	        // Set the property indicating the number of rows in the table.
             if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", RowCountProperty );
@@ -480,7 +476,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	for ( String p : problems ) {
             	++i;
             	if ( i < maxWarn ) {
-                	// TODO SAM 2014-06-26 Cap warnings without hard-coding
+                	// TODO SAM 2014-06-26 Cap warnings without hard-coding.
                 	Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
                 	status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
                     	p, "Check input." ) );
@@ -489,7 +485,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -502,6 +498,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the table that is read by this class in discovery mode.
+@param the data table that is read by this class in discovery mode
 */
 private void setDiscoveryTable ( DataTable table ) {
     __table = table;

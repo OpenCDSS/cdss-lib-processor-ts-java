@@ -596,8 +596,8 @@ public static String expandParameterValue( CommandProcessor processor, Command c
     while ( searchPos < parameterValue.length() ) {
         foundPos = parameterValue.indexOf(delimStart, searchPos);
         foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
-        if ( (foundPos < 0) && (foundPosEnd < 0)  ) {
-            // No more $ property names, so return what have.
+        if ( (foundPos < 0) || (foundPosEnd < 0)  ) {
+            // No more properly formed $ property names, so return what have.
             return parameterValue;
         }
         // Else found the delimiter so continue with the replacement.

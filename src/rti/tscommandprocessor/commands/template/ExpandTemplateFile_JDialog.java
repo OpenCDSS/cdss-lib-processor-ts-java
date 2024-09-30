@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -89,7 +89,7 @@ private JTextArea __command_JTextArea = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private ExpandTemplateFile_Command __command = null; // Command to edit
+private ExpandTemplateFile_Command __command = null; // Command to edit.
 private boolean __ok = false; // Indicates whether the user has pressed OK.
 private JFrame __parent = null;
 
@@ -98,8 +98,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ExpandTemplateFile_JDialog ( JFrame parent, ExpandTemplateFile_Command command )
-{	super(parent, true);
+public ExpandTemplateFile_JDialog ( JFrame parent, ExpandTemplateFile_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -107,8 +107,8 @@ public ExpandTemplateFile_JDialog ( JFrame parent, ExpandTemplateFile_Command co
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	String routine = getClass().getSimpleName() + ".actionPerformed";
+public void actionPerformed( ActionEvent event ) {
+	String routine = getClass().getSimpleName() + ".actionPerformed";
     Object o = event.getSource();
 
 	if ( o == __browseInput_JButton ) {
@@ -121,16 +121,16 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select Template File");
-		
+
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -154,16 +154,16 @@ public void actionPerformed( ActionEvent event )
             fc = JFileChooserFactory.createJFileChooser(__working_dir );
         }
         fc.setDialogTitle( "Specify Expanded File to Create");
-        
+
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION ) {
             String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
+            String filename = fc.getSelectedFile().getName();
+            String path = fc.getSelectedFile().getPath();
+
             if (filename == null || filename.equals("")) {
                 return;
             }
-    
+
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -232,17 +232,17 @@ public void actionPerformed( ActionEvent event )
         refresh ();
     }
 	else {
-	    // Choices...
+	    // Choices.
 		refresh();
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputText = __InputText_JTextArea.getText().trim();
@@ -282,7 +282,7 @@ private void checkInput ()
 	//	props.set ( "IfNotFound", IfNotFound );
 	//}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -292,11 +292,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String InputFile = __InputFile_JTextField.getText().trim();
+private void commitEdits () {
+	String InputFile = __InputFile_JTextField.getText().trim();
     String InputText = __InputText_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
 	String StringProperties = __StringProperties_JTextArea.getText().trim();
 	String TableColumnProperties = __TableColumnProperties_JTextArea.getText().trim();
@@ -321,18 +321,18 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
-{	__parent = parent;
+private void initialize ( JFrame parent, ExpandTemplateFile_Command command ) {
+	__parent = parent;
 	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
-	
+
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	// Main panel...
+	// Main panel.
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -362,17 +362,17 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     }
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
-    // Panel for input template
+
+    // Panel for input template.
     int yIn = -1;
     JPanel in_JPanel = new JPanel();
     in_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Input Template", in_JPanel );
-    
+
     JGUIUtil.addComponent(in_JPanel, new JLabel (
         "The template to be expanded can be specified with a file or text."),
         0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -381,13 +381,13 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(in_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ), 
+
+    JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ),
 		0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
-    // Input file layout fights back with other rows so put in its own panel
+    // Input file layout fights back with other rows so put in its own panel.
 	JPanel InputFile_JPanel = new JPanel();
 	InputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(InputFile_JPanel, __InputFile_JTextField,
@@ -397,15 +397,15 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(InputFile_JPanel, __browseInput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathInput_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(InputFile_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(in_JPanel, InputFile_JPanel,
 		1, yIn, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(in_JPanel, new JLabel ("OR template text:"), 
+
+    JGUIUtil.addComponent(in_JPanel, new JLabel ("OR template text:"),
         0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputText_JTextArea = new JTextArea (9,50);
     __InputText_JTextArea.setLineWrap ( true );
@@ -413,13 +413,13 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __InputText_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(in_JPanel, new JScrollPane(__InputText_JTextArea),
         1, yIn, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for input properties
+
+    // Panel for input properties.
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
     prop_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Input Properties", prop_JPanel );
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "TSTool processor properties accessible with ${Property} are automatically passed to the template processor."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -431,7 +431,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("String properties:"),
         0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StringProperties_JTextArea = new JTextArea (6,35);
@@ -445,13 +445,13 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(prop_JPanel, new SimpleJButton ("Edit","EditStringProperties",this),
         3, ++yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    // Panel for input properties (tables)
+
+    // Panel for input properties (tables).
     int yTableProp = -1;
     JPanel tableProp_JPanel = new JPanel();
     tableProp_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Input Properties (Table)", tableProp_JPanel );
-    
+
     JGUIUtil.addComponent(tableProp_JPanel, new JLabel (
         "One column tables can be passed to the template processor to use as lists."),
         0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -466,8 +466,8 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tableProp_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ( "Use tables as input?:" ), 
+
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ( "Use tables as input?:" ),
         0, ++yTableProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UseTables_JComboBox = new SimpleJComboBox ( false );
     __UseTables_JComboBox.add ( "" );
@@ -477,10 +477,10 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(tableProp_JPanel, __UseTables_JComboBox,
         1, yTableProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tableProp_JPanel,
-        new JLabel ( "Optional - use 1-column tables as input lists (default=" + __command._True + ")." ), 
+        new JLabel ( "Optional - use 1-column tables as input lists (default=" + __command._True + ")." ),
         2, yTableProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ("Table column properties:"), 
+
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ("Table column properties:"),
         0, ++yTableProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableColumnProperties_JTextArea = new JTextArea (9,50);
     __TableColumnProperties_JTextArea.setLineWrap ( true );
@@ -488,25 +488,25 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __TableColumnProperties_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(tableProp_JPanel, new JScrollPane(__TableColumnProperties_JTextArea),
         1, yTableProp, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for output
+
+    // Panel for output.
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Expanded Output", out_JPanel );
-    
+
     JGUIUtil.addComponent(out_JPanel, new JLabel (
         "The expanded output can be saved to a file and/or set to a processor property (access later with ${Property})."),
         0, ++yOut, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yOut, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
     __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
-    // Output file layout fights back with other rows so put in its own panel
+    // Output file layout fights back with other rows so put in its own panel.
 	JPanel OutputFile_JPanel = new JPanel();
 	OutputFile_JPanel.setLayout(new GridBagLayout());
     JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
@@ -516,25 +516,25 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(OutputFile_JPanel, __browseOutput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the button to allow conversion to/from relative path.
 		__pathOutput_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
 	JGUIUtil.addComponent(out_JPanel, OutputFile_JPanel,
 		1, yOut, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
- 
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Expanded property:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Expanded property:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputProperty_JTextField = new JTextField ( 20 );
     __OutputProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(out_JPanel, __OutputProperty_JTextField,
         1, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel,
-        new JLabel ( "Optional - output string property (default=no output property)." ), 
+        new JLabel ( "Optional - output string property (default=no output property)." ),
         2, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   
-    JGUIUtil.addComponent(out_JPanel, new JLabel ( "List output in results?:" ), 
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "List output in results?:" ),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ListInResults_JComboBox = new SimpleJComboBox ( false );
     __ListInResults_JComboBox.add ( "" );
@@ -544,7 +544,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(out_JPanel, __ListInResults_JComboBox,
         1, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel,
-        new JLabel ( "Optional - list expanded file in results (default=" + __command._True + ")." ), 
+        new JLabel ( "Optional - list expanded file in results (default=" + __command._True + ")." ),
         2, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
@@ -560,11 +560,11 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if file not found (default=" + __command._Warn + ")"), 
+		"Optional - action if file not found (default=" + __command._Warn + ")"),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 		*/
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -574,10 +574,10 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -588,13 +588,13 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
-	
-	// Refresh the contents...
+
+	// Refresh the contents.
     refresh ();
 
     pack();
     JGUIUtil.center( this );
-	// Dialogs do not need to be resizable...
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -603,39 +603,51 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{   refresh();
+public void itemStateChanged ( ItemEvent e ) {
+    refresh();
 }
 
 /**
 Respond to KeyEvents.
+@param event KeyEvent to handle
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+/**
+Respond to key release event.
+@param event KeyEvent to handle
+*/
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+/**
+Respond to key typed event.
+@param event KeyEvent to handle
+*/
+public void keyTyped ( KeyEvent event ) {
+	// Ignore since handled by press and release events.
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
+@return true if OK was pressed, false otherwise
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getSimpleName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
 	String InputText = "";
 	String StringProperties = "";
@@ -677,7 +689,7 @@ private void refresh ()
             __OutputProperty_JTextField.setText ( OutputProperty );
         }
         if ( (UseTables == null) || (UseTables.length() == 0) ) {
-            // Select default...
+            // Select default.
             __UseTables_JComboBox.select ( 0 );
         }
         else {
@@ -693,7 +705,7 @@ private void refresh ()
             }
         }
         if ( (ListInResults == null) || (ListInResults.length() == 0) ) {
-            // Select default...
+            // Select default.
             __ListInResults_JComboBox.select ( 0 );
         }
         else {
@@ -788,37 +800,72 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.
+If true, the edit is committed and the dialog is closed.
 */
-public void response ( boolean ok )
-{	__ok = ok;
+public void response ( boolean ok ) {
+	__ok = ok;
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
 
 /**
-Responds to WindowEvents.
+Respond to window closing event.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+/**
+Respond to window activated event.
+@param event WindowEvent object
+*/
+public void windowActivated( WindowEvent evt ) {
+}
+
+/**
+Respond to window closed event.
+@param event WindowEvent object
+*/
+public void windowClosed( WindowEvent evt ) {
+}
+
+/**
+Respond to window deactivated event.
+@param event WindowEvent object
+*/
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+/**
+Respond to window deiconified event.
+@param event WindowEvent object
+*/
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+/**
+Respond to window iconified event.
+@param event WindowEvent object
+*/
+public void windowIconified( WindowEvent evt ) {
+}
+
+/**
+Respond to window opened event.
+@param event WindowEvent object
+*/
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

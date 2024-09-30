@@ -4316,6 +4316,7 @@ throws Exception {
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases.
     __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
+    __propertyHashmap.put ( "TempDirPosix", IOUtil.toPosixPath(System.getProperty("java.io.tmpdir")) );
     // FIXME smalers 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     // FIXME smalers 2022-12-06 before this date used the following.
     //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";

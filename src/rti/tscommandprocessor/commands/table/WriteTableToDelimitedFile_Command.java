@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -63,7 +63,7 @@ This class initializes, checks, and runs the WriteTableToDelimitedFile() command
 public class WriteTableToDelimitedFile_Command extends AbstractCommand implements Command, FileGenerator
 {
 
-/** 
+/**
 Values for use with WriteHeaderComments parameter.
 */
 protected final String _False = "False";
@@ -93,8 +93,8 @@ private File __OutputSchemaFile_File = null;
 /**
 Constructor.
 */
-public WriteTableToDelimitedFile_Command ()
-{	super();
+public WriteTableToDelimitedFile_Command () {
+	super();
 	setCommandName ( "WriteTableToDelimitedFile" );
 }
 
@@ -106,8 +106,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String OutputFile = parameters.getValue ( "OutputFile" );
+throws InvalidCommandParameterException {
+	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
@@ -123,7 +123,7 @@ throws InvalidCommandParameterException
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
     if ( (TableID == null) || TableID.isEmpty()) {
         message = "The table identifier for the table to write has not been specified.";
         warning += "\n" + message;
@@ -139,7 +139,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "The delimiter, if specified, must be a single character." ) );
     }
-	
+
 	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file must be specified.";
 		warning += "\n" + message;
@@ -188,7 +188,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
-		// Also check schema file
+		// Also check schema file.
 		if ( (OutputSchemaFile != null) && (OutputSchemaFile.indexOf("${") < 0) ) {
 			try {
 	            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputSchemaFile));
@@ -214,7 +214,7 @@ throws InvalidCommandParameterException
 			}
 		}
 	}
-	
+
     if ( (WriteHeaderComments != null) && !WriteHeaderComments.equals("") ) {
         if ( !WriteHeaderComments.equalsIgnoreCase(_False) && !WriteHeaderComments.equalsIgnoreCase(_True) ) {
             message = "The WriteHeaderComments parameter (" + WriteHeaderComments + ") must be " + _False +
@@ -236,7 +236,7 @@ throws InvalidCommandParameterException
                         message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
-    
+
     if ( (AlwaysQuoteDateTimes != null) && !AlwaysQuoteDateTimes.equals("") ) {
         if ( !AlwaysQuoteDateTimes.equalsIgnoreCase(_False) && !AlwaysQuoteDateTimes.equalsIgnoreCase(_True) ) {
             message = "The AlwaysQuoteDateTimes parameter (" + AlwaysQuoteDateTimes + ") must be " + _False +
@@ -258,7 +258,7 @@ throws InvalidCommandParameterException
                     message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
-    
+
     if ( (OutputSchemaFormat != null) && !OutputSchemaFormat.equals("")
     	&& !OutputSchemaFormat.equalsIgnoreCase(_JSONTableSchema) && !OutputSchemaFormat.equalsIgnoreCase(_GoogleBigQuery)) {
         message = "The OutputSchemaFormat parameter (" + OutputSchemaFormat + ") must be " + _JSONTableSchema +
@@ -297,11 +297,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
     List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
@@ -310,9 +309,9 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command
 */
-public List<File> getGeneratedFileList ()
-{
+public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
@@ -326,16 +325,14 @@ public List<File> getGeneratedFileList ()
 /**
 Return the output file generated by this file.  This method is used internally.
 */
-private File getOutputFile ()
-{
+private File getOutputFile () {
 	return __OutputFile_File;
 }
 
 /**
 Return the output schema file generated by this file.  This method is used internally.
 */
-private File getOutputSchemaFile ()
-{
+private File getOutputSchemaFile () {
 	return __OutputSchemaFile_File;
 }
 
@@ -346,17 +343,17 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	// Clear the output file.
-	
+
 	setOutputFile ( null );
 	setOutputSchemaFile ( null );
-	
+
 	// Check whether the processor wants output files to be created.
 
 	CommandProcessor processor = getCommandProcessor();
@@ -365,7 +362,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	PropList parameters = getCommandParameters();
-	
+
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     Boolean clearStatus = new Boolean(true); // Default.
@@ -381,7 +378,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-	
+
 	String OutputFile_full = null;
 
     // Get the table information.
@@ -479,7 +476,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     else {
         table = (DataTable)o_Table;
     }
-        
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings for command parameters.";
         Message.printWarning ( 2,
@@ -487,12 +484,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         routine,message);
         throw new InvalidCommandParameterException ( message );
     }
-        
+
     try {
     	// Now try to write.
-    
+
         OutputFile_full = OutputFile;
-    
+
 		// Convert to an absolute path.
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -524,37 +521,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Check log file for details." ) );
 		throw new CommandException ( message );
 	}
-	
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
         throw new CommandWarningException ( message );
     }
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
+@param file the output file created by this command
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
 /**
 Set the output schema file that is created by this command.  This is only used internally.
+@param file the output schema file created by this command
 */
-private void setOutputSchemaFile ( File file )
-{
+private void setOutputSchemaFile ( File file ) {
 	__OutputSchemaFile_File = file;
 }
 
@@ -685,8 +682,8 @@ private int writeTable ( DataTable table,
 	boolean writeColumnNames, HashMap<String,Object> writeProps,
 	String outputSchemaFile, String outputSchemaFormat,
 	int warning_level, String command_tag, int warning_count )
-throws IOException
-{	String routine = getClass().getSimpleName() + ".writeTable";
+throws IOException {
+	String routine = getClass().getSimpleName() + ".writeTable";
 	String message;
 
 	// Clear the output file.
@@ -724,7 +721,7 @@ throws IOException
             Message.printDebug(10, routine, message );
         }
     }
-	
+
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
 		table.writeDelimitedFile(OutputFile, delimiter, writeColumnNames, outputCommentsList, "#", writeProps );
@@ -739,7 +736,7 @@ throws IOException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
@@ -770,7 +767,7 @@ private void writeJSONTableSchema ( DataTable table, String outputSchemaFile ) t
 	//TableField field;
 	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
 		colName = table.getFieldName(icol);
-		// TODO sam 2017-01-18 need to enable
+		// TODO sam 2017-01-18 need to enable.
 		//colDescription = table.getFieldDescription(icol);
 		colType = table.getFieldDataType(icol);
 		dataTypeSchema = "string"; // default

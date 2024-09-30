@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -1010,7 +1010,6 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     super.setVisible( true );
 }
 
-
 /**
 Handle ItemEvent events.
 @param e ItemEvent to handle.
@@ -1021,7 +1020,8 @@ public void itemStateChanged ( ItemEvent e ) {
 }
 
 /**
-Respond to KeyEvents.
+Respond to key pressed event.
+@param e KeyEvent to handle.
 */
 public void keyPressed(KeyEvent event) {
 	int code = event.getKeyCode();
@@ -1035,12 +1035,17 @@ public void keyPressed(KeyEvent event) {
 }
 
 /**
-Need this to properly capture key events, especially deletes.
+Respond to key released events.
+@param e KeyEvent to handle.
 */
 public void keyReleased(KeyEvent event) {
 	refresh();
 }
 
+/**
+Respond to key typed events.
+@param e KeyEvent to handle.
+*/
 public void keyTyped(KeyEvent event) {
 	refresh();
 }
@@ -1163,8 +1168,8 @@ private void refresh() {
             __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
         if (DateTimeFormat != null) {
-            // The front part of the string may match a formatter type (e.g., "C:") in which case
-            // only the latter part of the string should be displayed.
+            // The front part of the string may match a formatter type (e.g., "C:"),
+        	// in which case only the latter part of the string should be displayed.
             int pos = DateTimeFormat.indexOf(":");
             if ( pos > 0 ) {
                 try {
@@ -1455,28 +1460,52 @@ public void response ( boolean ok ) {
 }
 
 /**
-Responds to WindowEvents.
+Responds to window closing events.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event ) {
 	response(false);
 }
 
+/**
+Responds to window activated events.
+@param event WindowEvent object
+*/
 public void windowActivated( WindowEvent evt ) {
 }
 
+/**
+Responds to window closed events.
+@param event WindowEvent object
+*/
 public void windowClosed( WindowEvent evt ) {
 }
 
+/**
+Responds to window deactivated events.
+@param event WindowEvent object
+*/
 public void windowDeactivated( WindowEvent evt ) {
 }
 
+/**
+Responds to window deiconified events.
+@param event WindowEvent object
+*/
 public void windowDeiconified( WindowEvent evt ) {
 }
 
+/**
+Responds to window iconified events.
+@param event WindowEvent object
+*/
 public void windowIconified( WindowEvent evt ) {
 }
 
+/**
+Responds to window opened events.
+@param event WindowEvent object
+*/
 public void windowOpened( WindowEvent evt ) {
 }
 

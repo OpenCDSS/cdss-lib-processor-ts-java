@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -70,7 +70,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
-	
+
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __browse_schema_JButton = null;
 private SimpleJButton __cancel_JButton = null;
@@ -127,11 +127,11 @@ public void actionPerformed( ActionEvent event ) {
 		fc.setDialogTitle("Select Delimited File to Write");
 	    SimpleFileFilter sff_csv = new SimpleFileFilter("csv", "Comma Separated Value File");
 	    fc.addChoosableFileFilter(sff_csv);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
 					// Enforce extension.
@@ -161,11 +161,11 @@ public void actionPerformed( ActionEvent event ) {
 		fc.setDialogTitle("Select Schema File to Write");
 	    SimpleFileFilter sff_csv = new SimpleFileFilter("json", "Table Schema File (JSON)");
 	    fc.addChoosableFileFilter(sff_csv);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
-	
+
 			if (path != null) {
 				if ( fc.getFileFilter() == sff_csv ) {
 					// Enforce extension.
@@ -255,7 +255,7 @@ private void checkInput () {
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
 
 	__error_wait = false;
-	
+
     if ( (TableID != null) && TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
     }
@@ -593,7 +593,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
 	__help_JButton.setToolTipText("Show command documentation in web browser");
-	
+
     refresh();
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );

@@ -137,7 +137,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 */
 private void checkGUIState () {
     String TSList = __SubtractTSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) || TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+    	TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+    	TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __SubtractTSID_JComboBox.setEnabled(true);
         __SubtractTSID_JLabel.setEnabled ( true );
     }
@@ -311,7 +313,7 @@ private void initialize ( JFrame parent, Subtract_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    // Time series to be subtracted to.
+    // Time series to be subtracted from.
 
     JLabel TSID_JLabel = new JLabel ("Time series to receive results:");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
@@ -337,7 +339,7 @@ private void initialize ( JFrame parent, Subtract_Command command ) {
     // Default is not to add SelectedTSID so add it here.
     __SubtractTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
-    __SubtractTSID_JLabel = new JLabel ("Subtract TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __SubtractTSID_JLabel = new JLabel ("Subtract TSID (for TSList=*MatchingTSID):");
     __SubtractTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __SubtractTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -366,6 +368,7 @@ private void initialize ( JFrame parent, Subtract_Command command ) {
 		__SubtractSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
 	}
 	__SubtractSpecifiedTSID_JList = new JList<String> ( __SubtractSpecifiedTSID_JListModel );
+	__SubtractSpecifiedTSID_JList.setToolTipText("Select time series to subtract from the list.");
     __SubtractSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__SubtractSpecifiedTSID_JList.addListSelectionListener ( this );
 	__SubtractSpecifiedTSID_JList.addKeyListener ( this );
@@ -462,7 +465,8 @@ public void itemStateChanged ( ItemEvent e ) {
 }
 
 /**
-Respond to KeyEvents.
+Respond to key pressed events.
+@param e KeyEvent to handle.
 */
 public void keyPressed ( KeyEvent event ) {
 	int code = event.getKeyCode();
@@ -476,33 +480,45 @@ public void keyPressed ( KeyEvent event ) {
 	}
 }
 
+/**
+Handle key release events.
+@param event KeyEvent to handle.
+*/
 public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Handle key typed events.
+@param event KeyEvent to handle.
+*/
 public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Handle mouse clicked event.
+@param event MouseEvent to handle.
 */
 public void mouseClicked ( MouseEvent event ) {
 }
 
 /**
 Handle mouse entered event.
+@param event MouseEvent to handle.
 */
 public void mouseEntered ( MouseEvent event ) {
 }
 
 /**
 Handle mouse exited event.
+@param event MouseEvent to handle.
 */
 public void mouseExited ( MouseEvent event ) {
 }
 
 /**
 Handle mouse pressed event.
+@param event MouseEvent to handle.
 */
 public void mousePressed ( MouseEvent event ) {
 	int mods = event.getModifiers();
@@ -514,6 +530,7 @@ public void mousePressed ( MouseEvent event ) {
 
 /**
 Handle mouse released event.
+@param event MouseEvent to handle.
 */
 public void mouseReleased ( MouseEvent event ) {
 }
@@ -758,29 +775,53 @@ public void valueChanged ( ListSelectionEvent e ) {
 }
 
 /**
-Responds to WindowEvents.
+Respond to window closing event.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event ) {
 	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ) {
+/**
+Respond to window activated event.
+@param event WindowEvent object
+*/
+public void windowActivated( WindowEvent event ) {
 }
 
-public void windowClosed( WindowEvent evt ) {
+/**
+Respond to window closed event.
+@param event WindowEvent object
+*/
+public void windowClosed( WindowEvent event ) {
 }
 
-public void windowDeactivated( WindowEvent evt ) {
+/**
+Respond to window deactivated event.
+@param event WindowEvent object
+*/
+public void windowDeactivated( WindowEvent event ) {
 }
 
-public void windowDeiconified( WindowEvent evt ) {
+/**
+Respond to window deiconified event.
+@param event WindowEvent object
+*/
+public void windowDeiconified( WindowEvent event ) {
 }
 
-public void windowIconified( WindowEvent evt ) {
+/**
+Respond to window iconified event.
+@param event WindowEvent object
+*/
+public void windowIconified( WindowEvent event ) {
 }
 
-public void windowOpened( WindowEvent evt ) {
+/**
+Respond to window opened event.
+@param event WindowEvent object
+*/
+public void windowOpened( WindowEvent event ) {
 }
 
 }

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -91,8 +91,8 @@ private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 //private JTextField __Delimiter_JTextField = null;
 //private SimpleJComboBox __AlwaysQuoteDateTimes_JComboBox = null;
 //private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
-//private JTextField __NewlineReplacement_JTextField = null;
 private JTextArea __LinkColumns_JTextArea = null;
+private JTextField __NewlineReplacement_JTextField = null;
 private JTextField __NaNValue_JTextField = null;
 private JTextField __OutputSchemaFile_JTextField = null;
 private SimpleJComboBox __OutputSchemaFormat_JComboBox = null;
@@ -272,8 +272,8 @@ private void checkInput () {
     //String Delimiter = __Delimiter_JTextField.getText().trim();
     //String AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
     //String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
-    //String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	String LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
+    String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     String NaNValue = __NaNValue_JTextField.getText().trim();
     String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -311,12 +311,12 @@ private void checkInput () {
     if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
         parameters.set ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
     }
-    if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
-        parameters.set ( "NewlineReplacement", NewlineReplacement );
-    }
     */
     if ( LinkColumns.length() > 0 ) {
         parameters.set ( "LinkColumns", LinkColumns );
+    }
+    if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
+        parameters.set ( "NewlineReplacement", NewlineReplacement );
     }
     if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
         parameters.set ( "NaNValue", NaNValue );
@@ -354,9 +354,9 @@ private void commitEdits () {
     String Delimiter = __Delimiter_JTextField.getText().trim();
 	String AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
-	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	*/
 	String LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
+	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	String NaNValue = __NaNValue_JTextField.getText().trim();
     String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -371,9 +371,9 @@ private void commitEdits () {
 	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "AlwaysQuoteDateTimes", AlwaysQuoteDateTimes );
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
-	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 	*/
 	__command.setCommandParameter ( "LinkColumns", LinkColumns );
+	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 	__command.setCommandParameter ( "NaNValue", NaNValue );
 	__command.setCommandParameter ( "OutputSchemaFile", OutputSchemaFile );
 	__command.setCommandParameter ( "OutputSchemaFormat", OutputSchemaFormat );
@@ -534,18 +534,6 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
          */
 
-    /*
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Newline replacement:"),
-         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     __NewlineReplacement_JTextField = new JTextField (10);
-     __NewlineReplacement_JTextField.addKeyListener (this);
-     JGUIUtil.addComponent(main_JPanel, __NewlineReplacement_JTextField,
-         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(main_JPanel, new JLabel (
-         "Optional - replacement for newline character (use \\t for tab or \\s for space)."),
-         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-         */
-
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Link columns:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LinkColumns_JTextArea = new JTextArea (6,35);
@@ -559,6 +547,17 @@ private void initialize ( JFrame parent, WriteTableToMarkdown_Command command, L
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditLinkColumns",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Newline replacement:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __NewlineReplacement_JTextField = new JTextField (10);
+     __NewlineReplacement_JTextField.setToolTipText("Replacement for newline character (use \\t for tab, \\s for space, and <br> for HTML break).");
+     __NewlineReplacement_JTextField.addKeyListener (this);
+     JGUIUtil.addComponent(main_JPanel, __NewlineReplacement_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - replacement for newline character (default=single space)."),
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ("NaN value:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -697,8 +696,8 @@ private void refresh () {
     //String Delimiter = "";
     //String AlwaysQuoteDateTimes = "";
     //String AlwaysQuoteStrings = "";
-    //String NewlineReplacement = "";
     String LinkColumns = "";
+    String NewlineReplacement = "";
     String NaNValue = "";
     String OutputSchemaFile = "";
     String OutputSchemaFormat = "";
@@ -718,8 +717,8 @@ private void refresh () {
         //Delimiter = parameters.getValue ( "Delimiter" );
         //AlwaysQuoteDateTimes = parameters.getValue ( "AlwaysQuoteDateTimes" );
         //AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
-        //NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
         LinkColumns = parameters.getValue ( "LinkColumns" );
+        NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
         NaNValue = parameters.getValue ( "NaNValue" );
         OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
         OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
@@ -833,14 +832,14 @@ private void refresh () {
                   "AlwaysQuoteStrings parameter \"" + AlwaysQuoteStrings + "\".  Select a different value or Cancel." );
             }
         }
-        if (NewlineReplacement != null) {
-            __NewlineReplacement_JTextField.setText(NewlineReplacement);
-        }
         */
         if ( LinkColumns != null ) {
             __LinkColumns_JTextArea.setText ( LinkColumns );
         }
-        if (NaNValue != null) {
+        if (NewlineReplacement != null) {
+            __NewlineReplacement_JTextField.setText(NewlineReplacement);
+        }
+        if ( NaNValue != null ) {
             __NaNValue_JTextField.setText(NaNValue);
         }
 		if ( OutputSchemaFile != null ) {
@@ -859,9 +858,9 @@ private void refresh () {
     Delimiter = __Delimiter_JTextField.getText().trim();
     AlwaysQuoteDateTimes = __AlwaysQuoteDateTimes_JComboBox.getSelected();
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
-    NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     */
 	LinkColumns = __LinkColumns_JTextArea.getText().trim().replace("\n"," ");
+    NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     NaNValue = __NaNValue_JTextField.getText().trim();
     OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
     OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
@@ -887,9 +886,9 @@ private void refresh () {
     if ( AlwaysQuoteStrings != null ) {
         parameters.add ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
     }
-    parameters.add("NewlineReplacement=" + NewlineReplacement );
     */
 	parameters.add ( "LinkColumns=" + LinkColumns );
+    parameters.add("NewlineReplacement=" + NewlineReplacement );
     parameters.add("NaNValue=" + NaNValue );
     parameters.add ( "OutputSchemaFile=" + OutputSchemaFile );
     if ( OutputSchemaFormat != null ) {

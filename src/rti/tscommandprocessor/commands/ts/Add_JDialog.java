@@ -340,7 +340,7 @@ private void initialize ( JFrame parent, Add_Command command ) {
     // Default is not to add SpecifiedTSID so add it here.
     __AddTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
-    __AddTSID_JLabel = new JLabel ("Add TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __AddTSID_JLabel = new JLabel ("Add TSID (for TSList=*MatchingTSID):");
     __AddTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
     __AddTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -369,6 +369,7 @@ private void initialize ( JFrame parent, Add_Command command ) {
 		__AddSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
 	}
 	__AddSpecifiedTSID_JList = new JList<String> ( __AddSpecifiedTSID_JListModel );
+	__AddSpecifiedTSID_JList.setToolTipText("Select time series to add from the list.");
     __AddSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__AddSpecifiedTSID_JList.addListSelectionListener ( this );
 	__AddSpecifiedTSID_JList.addKeyListener ( this );
@@ -430,7 +431,7 @@ private void initialize ( JFrame parent, Add_Command command ) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField = new JTextField ( "", 30 );
     __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
@@ -441,7 +442,7 @@ private void initialize ( JFrame parent, Add_Command command ) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField = new JTextField ( "", 30 );
     __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
@@ -495,8 +496,8 @@ public void itemStateChanged ( ItemEvent e ) {
 }
 
 /**
-Respond to KeyEvents.
-@param e ItemEvent to handle.
+Respond to key pressed events.
+@param event KeyEvent to handle.
 */
 public void keyPressed ( KeyEvent event ) {
 	int code = event.getKeyCode();
@@ -512,12 +513,16 @@ public void keyPressed ( KeyEvent event ) {
 
 /**
 Handle key release events.
-@param e ItemEvent to handle.
+@param event KeyEvent to handle.
 */
 public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Handle key typed events.
+@param event KeyEvent to handle.
+*/
 public void keyTyped ( KeyEvent event ) {
 }
 
@@ -790,34 +795,58 @@ private void setupAddSpecifiedTSID ( String AddTSList, String AddSpecifiedTSID )
 Handle ListSelectionListener events.
 @param event Event object to handle
 */
-public void valueChanged ( ListSelectionEvent e ) {
+public void valueChanged ( ListSelectionEvent event ) {
 	refresh ();
 }
 
 /**
-Responds to WindowEvents.
+Responds to window closing event.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event ) {
 	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ) {
+/**
+Responds to window activated event.
+@param event WindowEvent object
+*/
+public void windowActivated( WindowEvent event ) {
 }
 
-public void windowClosed( WindowEvent evt ) {
+/**
+Responds to window closed event.
+@param event WindowEvent object
+*/
+public void windowClosed( WindowEvent event ) {
 }
 
-public void windowDeactivated( WindowEvent evt ) {
+/**
+Responds to window deactivated event.
+@param event WindowEvent object
+*/
+public void windowDeactivated( WindowEvent event ) {
 }
 
-public void windowDeiconified( WindowEvent evt ) {
+/**
+Responds to window deiconified event.
+@param event WindowEvent object
+*/
+public void windowDeiconified( WindowEvent event ) {
 }
 
-public void windowIconified( WindowEvent evt ) {
+/**
+Responds to window iconified event.
+@param event WindowEvent object
+*/
+public void windowIconified( WindowEvent event ) {
 }
 
-public void windowOpened( WindowEvent evt ) {
+/**
+Responds to window opened event.
+@param event WindowEvent object
+*/
+public void windowOpened( WindowEvent event ) {
 }
 
 }

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -347,7 +347,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property value:" ),
 		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__PropertyValue_JTextField = new JTextField ( 30 );
+	__PropertyValue_JTextField = new JTextField ( 60 );
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyValue_JTextField,
 		1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -553,7 +553,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Add:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Add_JTextField = new JTextField ( 20 );
+	__Add_JTextField = new JTextField ( 40 );
 	__Add_JTextField.setToolTipText("Value to add to the property being set, can use ${Property}.");
 	__Add_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Add_JTextField,
@@ -563,7 +563,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Subtract:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Subtract_JTextField = new JTextField ( 20 );
+	__Subtract_JTextField = new JTextField ( 40 );
 	__Subtract_JTextField.setToolTipText("Value to subtract from the property being set, can use ${Property}.");
 	__Subtract_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Subtract_JTextField,
@@ -573,7 +573,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Multiply:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Multiply_JTextField = new JTextField ( 20 );
+	__Multiply_JTextField = new JTextField ( 40 );
 	__Multiply_JTextField.setToolTipText("Value to multiply the property by, can use ${Property}.");
 	__Multiply_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Multiply_JTextField,
@@ -583,7 +583,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(math_JPanel, new JLabel ( "Divide:" ),
 		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Divide_JTextField = new JTextField ( 20 );
+	__Divide_JTextField = new JTextField ( 40 );
 	__Divide_JTextField.setToolTipText("Value to divide the property by, can use ${Property}.");
 	__Divide_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(math_JPanel, __Divide_JTextField,

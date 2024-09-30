@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -69,7 +68,7 @@ Possible value for Endianness.
 */
 protected final String _Big = "Big";
 protected final String _Little = "Little";
-	
+
 /**
 Possible value for PropertyType.
 */
@@ -77,31 +76,30 @@ protected final String _DateTime = "DateTime";
 protected final String _Double = "Double";
 protected final String _Integer = "Integer";
 protected final String _String = "String";
-	
+
 /**
 Property set during discovery.
 */
 private Prop __discovery_Prop = null;
-    
+
 /**
 Constructor.
 */
-public FormatStringProperty_Command ()
-{   super();
+public FormatStringProperty_Command () {
+    super();
     setCommandName ( "FormatStringProperty" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   String Format = parameters.getValue ( "Format" );
+throws InvalidCommandParameterException {
+    String Format = parameters.getValue ( "Format" );
     String IntegerFormat = parameters.getValue ( "IntegerFormat" );
     String Endianness = parameters.getValue ( "Endianness" );
     String NumBytes = parameters.getValue ( "NumBytes" );
@@ -109,14 +107,13 @@ throws InvalidCommandParameterException
     String PropertyType = parameters.getValue ( "PropertyType" );
     String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
     if ( ((Format == null) || Format.isEmpty()) && ((IntegerFormat == null) || IntegerFormat.isEmpty()) ) {
         message = "The Format or IntegerFormat must be specified.";
-        // TODO smalers 2022-01-30 could implement more complex checks to make sure that integer values are only
-        // allowed to use IntegerFormat.
+        // TODO smalers 2022-01-30 could implement more complex checks to make sure that integer values are only allowed to use IntegerFormat.
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a format to process input." ) );
@@ -138,7 +135,7 @@ throws InvalidCommandParameterException
               	  		", or " + _HexBytesUpperCase + " (default)." ) );
     	}
     	// Output property type must be a string.
-    	if ( (PropertyType != null) && !PropertyType.equalsIgnoreCase(_String) ) { 
+    	if ( (PropertyType != null) && !PropertyType.equalsIgnoreCase(_String) ) {
 			message = "The property type must be " + _String + " when IntegerFormat is specified.";
         	warning += "\n" + message;
         	status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -179,8 +176,8 @@ throws InvalidCommandParameterException
                 message, "Specify the property type as " + _DateTime + ", " + _Double + ", " +
                 	_Integer + ", or " + _String + " (default)." ) );
     }
-    
-    // Check for invalid parameters...
+
+    // Check for invalid parameters.
     List<String> validList = new ArrayList<>(8);
     validList.add ( "InputProperties" );
     validList.add ( "Format" );
@@ -191,13 +188,13 @@ throws InvalidCommandParameterException
     validList.add ( "OutputProperty" );
     validList.add ( "PropertyType" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,warning_level), warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -206,8 +203,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   return (new FormatStringProperty_JDialog ( parent, this )).ok();
+public boolean editCommand ( JFrame parent ) {
+    return (new FormatStringProperty_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -220,13 +217,13 @@ Format a string property using input from other properties.
 @return the formatted string property
 */
 public String format ( TSCommandProcessor processor, String [] inputProperties, String format,
-	String outputProperty, List<String> problems )
-{   //String routine = getClass().getSimpleName() + ".format" ;
+	String outputProperty, List<String> problems ) {
+    //String routine = getClass().getSimpleName() + ".format" ;
 
-    // Loop through the records, get the input column objects, and format for output
+    // Loop through the records, get the input column objects, and format for output.
     String outputVal = null;
     List<Object> values = new ArrayList<>();
-    // Get the input values
+    // Get the input values.
     values.clear();
     for ( int iProp = 0; iProp < inputProperties.length; iProp++ ) {
         try {
@@ -239,7 +236,7 @@ public String format ( TSCommandProcessor processor, String [] inputProperties, 
         }
     }
     if ( inputProperties.length != values.size() ) {
-        // Don't have the right number of values from the number of specified input properties
+        // Don't have the right number of values from the number of specified input properties.
     	problems.add ( "Have " + inputProperties.length + " input properties but only found " +
     		values.size() + " corresponding values.  Cannot format string." );
         outputVal = null;
@@ -268,12 +265,12 @@ Format a string property using a list of integers and input from other propertie
 */
 public String formatIntegers ( TSCommandProcessor processor, String [] inputProperties,
 	String integerFormat, String endianness, String delimiter, int numBytes,
-	String outputProperty, List<String> problems )
-{   //String routine = getClass().getSimpleName() + ".format" ;
+	String outputProperty, List<String> problems ) {
+    //String routine = getClass().getSimpleName() + ".format" ;
 
-    // Loop through the records, get the input column objects, and format for output
+    // Loop through the records, get the input column objects, and format for output.
     List<Object> values = new ArrayList<>();
-    // Get the input values
+    // Get the input values.
     values.clear();
     for ( int iProp = 0; iProp < inputProperties.length; iProp++ ) {
     	Object value = null;
@@ -410,9 +407,9 @@ public <T> List<T> getObjectList ( Class<T> c ) {
         return null;
     }
     Prop prop = new Prop();
-    // Check for TS request or class that matches the data...
+    // Check for TS request or class that matches the data.
     if ( c == prop.getClass() ) {
-        List<T> v = new Vector<T> (1);
+        List<T> v = new ArrayList<> (1);
         v.add ( (T)discovery_Prop );
         return v;
     }
@@ -421,31 +418,27 @@ public <T> List<T> getObjectList ( Class<T> c ) {
     }
 }
 
-// Parse command is in the base class
+// Parse command is in the parent class.
 
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -458,16 +451,16 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommandInternal";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+    String message, routine = getClass().getSimpleName() + ".runCommandInternal";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
     int log_level = 3;  // Level for non-use messages for log file.
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -475,19 +468,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
     PropList parameters = getCommandParameters();
-    
+
 	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 		setDiscoveryProp(null);
 	}
-    
-    // Get the input parameters...
-    
+
+    // Get the input parameters.
+
     String InputProperties = parameters.getValue ( "InputProperties" );
     String [] inputPropertyNames = new String[0];
     if ( (InputProperties != null) && !InputProperties.equals("") ) {
@@ -519,24 +512,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	Endianness = _Big; // Default.
     }
     String Delimiter = parameters.getValue ( "Delimiter" );
-    String delimiter = null; // Default - no delimiter
+    String delimiter = null; // Default - no delimiter.
     if ( (Delimiter != null)  && !Delimiter.isEmpty() ) {
     	delimiter = Delimiter;
     	// Replace \s with space.
     	delimiter = delimiter.replace("\\s", " ");
     }
     String NumBytes = parameters.getValue ( "NumBytes" );
-    int numBytes = 0; // Default - determine from integer being formatted
+    int numBytes = 0; // Default - determine from integer being formatted.
     if ( (NumBytes != null) && !NumBytes.isEmpty() ) {
     	numBytes = Integer.parseInt(NumBytes);
     }
     String OutputProperty = parameters.getValue ( "OutputProperty" );
     String PropertyType = parameters.getValue ( "PropertyType" );
-    String propertyType = _String; // default
+    String propertyType = _String; // Default.
     if ( (PropertyType != null) && !PropertyType.isEmpty() ) {
     	propertyType = PropertyType;
     }
-    
+
     if ( warning_count > 0 ) {
         // Input error.
         message = "Insufficient input to run command.";
@@ -545,7 +538,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-    
+
     // Now process.
 
     List<String> problems = new ArrayList<>();
@@ -619,7 +612,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     catch ( Exception e ) {
         message = "Unexpected error formatting string (" + e + ").";
-        Message.printWarning ( warning_level, 
+        Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
         status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -652,14 +645,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
 	    }
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
         throw new CommandWarningException ( message );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -667,8 +660,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Set the property defined in discovery phase.
 @param prop Property set during discovery phase.
 */
-private void setDiscoveryProp ( Prop prop )
-{
+private void setDiscoveryProp ( Prop prop ) {
     __discovery_Prop = prop;
 }
 
@@ -677,7 +669,7 @@ Return the string representation of the command.
 @param parameters to include in the command
 @return the string representation of the command
 */
-public String toString ( PropList parameters ) {   
+public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
     	"InputProperties",
     	"Format",

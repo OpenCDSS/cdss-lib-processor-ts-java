@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -296,7 +296,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command ) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(30);
     __Alias_JTextField.getTextField().setToolTipText("Specify alias using % format specifiers, ${ts:Property} or ${Property} notation");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
@@ -461,16 +461,25 @@ public void itemStateChanged ( ItemEvent e ) {
 }
 
 /**
-Respond to KeyEvents.
+Respond to key pressed events.
+@param event KeyEvent to handle
 */
 public void keyPressed ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Respond to key released events.
+@param event KeyEvent to handle
+*/
 public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Respond to key typed events.
+@param event KeyEvent to handle
+*/
 public void keyTyped ( KeyEvent event ) {
 }
 
@@ -598,29 +607,53 @@ private void response ( boolean ok ) {
 }
 
 /**
-Responds to WindowEvents.
+Respond to window closing event.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event ) {
 	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ) {
+/**
+Respond to window activated event.
+@param event WindowEvent object
+*/
+public void windowActivated ( WindowEvent evt ) {
 }
 
-public void windowClosed( WindowEvent evt ) {
+/**
+Respond to window closed event.
+@param event WindowEvent object
+*/
+public void windowClosed ( WindowEvent evt ) {
 }
 
-public void windowDeactivated( WindowEvent evt ) {
+/**
+Respond to window deactivated event.
+@param event WindowEvent object
+*/
+public void windowDeactivated ( WindowEvent evt ) {
 }
 
-public void windowDeiconified( WindowEvent evt ) {
+/**
+Respond to window deiconified event.
+@param event WindowEvent object
+*/
+public void windowDeiconified ( WindowEvent evt ) {
 }
 
-public void windowIconified( WindowEvent evt ) {
+/**
+Respond to window iconified event.
+@param event WindowEvent object
+*/
+public void windowIconified ( WindowEvent evt ) {
 }
 
-public void windowOpened( WindowEvent evt ) {
+/**
+Respond to window opened event.
+@param event WindowEvent object
+*/
+public void windowOpened ( WindowEvent evt ) {
 }
 
 }

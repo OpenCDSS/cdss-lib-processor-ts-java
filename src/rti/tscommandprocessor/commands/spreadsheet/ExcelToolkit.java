@@ -76,8 +76,7 @@ public class ExcelToolkit
 Construct an Excel toolkit instance.
 Once an instance is created, its methods can be called to manipulate Excel workbook, worksheet, and cell objects.
 */
-public ExcelToolkit()
-{
+public ExcelToolkit() {
 }
 
 /**
@@ -98,8 +97,8 @@ Create table columns from the first row of the area.
 /*
 public String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
-    String [] excelDateTimeColumns, int precisionForFloats, boolean readAllAsText, List<String> problems )
-{   String routine = "ReadTableFromExcel_Command.createTableColumns";
+    String [] excelDateTimeColumns, int precisionForFloats, boolean readAllAsText, List<String> problems ) {
+    String routine = getClass().getSimpleName() + ".createTableColumns";
     Row dataRow; // First row of data.
     Row headerRow = null; // Row containing column headings.
     Cell cell;
@@ -920,13 +919,15 @@ public boolean isRowComment ( Sheet sheet, int iRow, String comment ) {
         return false;
     }
     Row dataRow = sheet.getRow(iRow);
-    Cell cell = dataRow.getCell(0);
-    if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
-        String cellValue = cell.getStringCellValue();
-        if ( (cellValue != null) && (cellValue.length() >= comment.length()) &&
-            cellValue.substring(0,comment.length()).equals(comment) ) {
-            return true;
-        }
+    if ( dataRow != null ) {
+    	Cell cell = dataRow.getCell(0);
+    	if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
+        	String cellValue = cell.getStringCellValue();
+        	if ( (cellValue != null) && (cellValue.length() >= comment.length()) &&
+            	cellValue.substring(0,comment.length()).equals(comment) ) {
+            	return true;
+        	}
+    	}
     }
     return false;
 }

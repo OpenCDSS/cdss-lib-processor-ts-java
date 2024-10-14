@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -112,7 +112,8 @@ throws InvalidCommandParameterException {
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the pattern to search for."));
 	}
-	if ( (ReplaceWith == null) || (ReplaceWith.length() == 0) ) {
+	if ( ReplaceWith == null ) {
+		// Allow empty string.
 		message = "The pattern to replace with must be specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -264,6 +265,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		ReplaceWith = TSCommandProcessorUtil.expandParameterValue(processor, this, ReplaceWith);
 	}
 	if ( ReplaceWith != null ) {
+		if ( ReplaceWith.equals("EMPTY_STRING") ) {
+			ReplaceWith = "";
+		}
 		// Replace literal strings with equivalent internal characters.
 		ReplaceWith = ReplaceWith.
 			replace("\\n", "\n").

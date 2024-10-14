@@ -136,7 +136,8 @@ private void checkInput () {
 	PropList parameters = new PropList ( "" );
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
-	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    // Don't trim because value can include surrounding whitespace.
+	String PropertyValue = __PropertyValue_JTextField.getText();
 	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
 	String JavaProperty = __JavaProperty_JTextField.getText().trim();
 	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
@@ -211,7 +212,8 @@ In this case the command parameters have already been checked and no errors were
 private void commitEdits () {
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
-	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    // Don't trim because value can include surrounding whitespace.
+	String PropertyValue = __PropertyValue_JTextField.getText();
 	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
 	String JavaProperty = __JavaProperty_JTextField.getText().trim();
 	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();

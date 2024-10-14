@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -227,8 +227,10 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
-	String SearchFor = __SearchFor_JTextField.getText().trim();
-	String ReplaceWith = __ReplaceWith_JTextField.getText().trim();
+	// Don't trimp since spaces are allowed.
+	String SearchFor = __SearchFor_JTextField.getText();
+	// Don't trimp since spaces are allowed.
+	String ReplaceWith = __ReplaceWith_JTextField.getText();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	__error_wait = false;
@@ -263,8 +265,10 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String InputFile = __InputFile_JTextField.getText().trim();
-    String SearchFor = __SearchFor_JTextField.getText().trim();
-    String ReplaceWith = __ReplaceWith_JTextField.getText().trim();
+	// Don't trim since spaces are allowed.
+    String SearchFor = __SearchFor_JTextField.getText();
+	// Don't trim since spaces are allowed.
+    String ReplaceWith = __ReplaceWith_JTextField.getText();
     String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -352,7 +356,8 @@ private void initialize ( JFrame parent, TextEdit_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replace with:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ReplaceWith_JTextField = new JTextField ( 40 );
-	__ReplaceWith_JTextField.setToolTipText("Literal string to replace in output, can use ${Property} notation.");
+	__ReplaceWith_JTextField.setToolTipText(
+		"Literal string to replace in output, can use ${Property} notation. Use EMPTY_STRING to remove the 'SearchFor' string.");
     __ReplaceWith_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ReplaceWith_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -511,8 +516,10 @@ private void refresh () {
 	// Regardless, reset the command from the fields.
 	// This is only visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	SearchFor = __SearchFor_JTextField.getText().trim();
-	ReplaceWith = __ReplaceWith_JTextField.getText().trim();
+	// Don't trimp since spaces are allowed.
+	SearchFor = __SearchFor_JTextField.getText();
+	// Don't trimp since spaces are allowed.
+	ReplaceWith = __ReplaceWith_JTextField.getText();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );

@@ -131,12 +131,13 @@ throws InvalidCommandParameterException {
     }
     else {
         // Check for allowed characters.
-        if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
+        //if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
+        if ( StringUtil.containsAny(PropertyName,"() \t", true)) {
             message = "The property name contains invalid characters.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE, message,
-                    "Specify a property name that does not include the characters $(){}, space, or tab." ) );
+                    "Specify a property name that does not include the characters (), space, or tab." ) );
         }
     }
     if ( (PropertyType == null) || PropertyType.equals("") ) {
@@ -474,9 +475,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 
 	String PropertyName = parameters.getValue ( "PropertyName" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		// Allow expansion of the property name to set dynamic names:
+		// - the property name will be a string
+		PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
+	}
     String PropertyType = parameters.getValue ( "PropertyType" );
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
+		// The following will return a string.
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
 	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );

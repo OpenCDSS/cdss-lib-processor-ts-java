@@ -313,6 +313,9 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
         "    CurrentToMinute + 7Day = current date/time plus 7 days"),
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "    Use LastSunday, LastMonday, etc. for a date/time for a recent day ('Last' is inclusive of the current day)."),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
         "See also the SetInputPeriod() command for examples of date/time modifiers, such as .Timezone(), which sets the time zone."),
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -320,12 +323,12 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property name:" ),
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyName_JTextField = new JTextField ( 30 );
+    __PropertyName_JTextField = new JTextField ( 60 );
+    __PropertyName_JTextField.setToolTipText("Property name to set, can use ${Property}");
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyName_JTextField,
         1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(set_JPanel, new JLabel(
-        "Required - do not use spaces $, { or } in name."),
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required - do not use spaces in name."),
         3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ),

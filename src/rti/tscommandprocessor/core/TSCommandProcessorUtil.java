@@ -566,81 +566,333 @@ public static String expandParameterDiscoveryValue( List<Prop> props, Command co
 Expand a string containing processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
 The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
+Properties ${${property}-abc} are nested and will be expanded twice to get the value of the property from the inner expansion.
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
 @param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
 @return the expanded string or null if the input string was null
 */
-public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue ) {
+public static String expandParameterValue ( CommandProcessor processor, Command command, String parameterValue ) {
     String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
-    if ( (parameterValue == null) || (parameterValue.length() == 0) ||
-    	(parameterValue.indexOf("${") < 0) ) { // }
+    // Normal property start delimiter.
+   	String delimStart = "${";
+    if ( (parameterValue == null) || (parameterValue.length() == 0) || !parameterValue.contains(delimStart) ) { // }
     	// Nothing to expand:
     	// - null and empty string can't expand
     	// - if no ${Property} notation can't expand
         // - just return the input
         return parameterValue;
     }
-    // First replace escaped characters.
-    // Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
-    parameterValue = parameterValue.replace("\\\"", "\"" );
-    parameterValue = parameterValue.replace("\\'", "'" );
-    // Else see if the parameter value can be expanded to replace ${} symbolic references with other values.
-    // Search the parameter string for $ until all processor parameters have been resolved.
-    int searchPos = 0; // Position in the "parameter_val" string to search for ${} references.
-    int foundPos; // Position when leading ${ is found.
-    int foundPosEnd; // Position when ending } is found.
-    String propname = null; // Whether a property is found that matches the $ symbol.
-    String delimStart = "${";
-    String delimEnd = "}";
-    while ( searchPos < parameterValue.length() ) {
-        foundPos = parameterValue.indexOf(delimStart, searchPos);
-        foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
-        if ( (foundPos < 0) || (foundPosEnd < 0)  ) {
-            // No more properly formed $ property names, so return what have.
-            return parameterValue;
-        }
-        // Else found the delimiter so continue with the replacement.
-        //Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
-        // Get the name of the property.
-        propname = parameterValue.substring((foundPos+2),foundPosEnd);
-        // Try to get the property from the processor.
-        // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show the unexpanded property name in result.
-        Object propval = null;
-        String propvalString = "";
-        try {
-            propval = processor.getPropContents ( propname );
-            // The following should work for all representations as long as the toString() does not truncate.
-            propvalString = "" + propval;
-        }
-        catch ( Exception e ) {
-            // Keep the original literal value to alert user that property could not be expanded.
-            propvalString = delimStart + propname + delimEnd;
-        }
-        if ( propval == null ) {
-            // Keep the original literal value to alert user that property could not be expanded.
-            propvalString = delimStart + propname + delimEnd;
-        }
-        // If here have a property.
-        StringBuffer b = new StringBuffer();
-        // Append the start of the string.
-        if ( foundPos > 0 ) {
-            b.append ( parameterValue.substring(0,foundPos) );
-        }
-        // Now append the value of the property.
-        b.append ( propvalString );
-        // Now append the end of the original string if anything is at the end.
-        if ( parameterValue.length() > (foundPosEnd + 1) ) {
-            b.append ( parameterValue.substring(foundPosEnd + 1) );
-        }
-        // Now reset the search position to finish evaluating whether to expand the string.
-        parameterValue = b.toString();
-        searchPos = foundPos + propvalString.length(); // Expanded so no need to consider start and end delimiters.
-        if ( Message.isDebugOn ) {
-            Message.printDebug( 1, routine, "Expanded parameter value is \"" + parameterValue +
-                "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
-        }
+   	// End of property.
+   	String delimEnd = "}";
+   	// Nested delimiter:
+  	// - special case to ignore (advance to inner).
+   	// - currently only handle an the start of 'paramValue' but in the future might handle anywhere
+   	String delimStartNested = "${${";
+   	// End delimiter is not guaranteed to look like the following, could be "} ....}".
+   	// String delimEndNested = "}}";
+
+   	// First replace escaped characters.
+   	// Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
+   	parameterValue = parameterValue.replace("\\\"", "\"" );
+   	parameterValue = parameterValue.replace("\\'", "'" );
+
+   	// See if the parameter value can be expanded to replace ${} symbolic references with other values.
+    // There are several possible cases:
+   	//
+    // 1. No ${ - done.
+    // 2  Only ${} (no nesting) - simple expansion.
+    // 3. Nested properties:
+    //    ${${ .... } ...} - nesting at the front
+    //    ${ ... ${...} ... } - nesting in the middle
+    //    ${ .... ${...}} - nesting at the end
+   	//
+    // To handle, two passes must occur.  The first handles all ${} that DO NOT have nesting (process the inner values).
+    // Then process the result of the first pass.
+
+   	int searchPos = 0; // Position in the "parameterValue" string to search for '${' references.
+   	int foundStartPos; // Position when leading ${ is found.
+   	// Position when leading ${${ is found.
+    boolean doNested = false;
+   	int foundEndPos; // Position when ending } is found.
+   	String propname = null; // The property name for the ${}.
+
+   	// Determine the list of all ${} substrings:
+   	// - may contain proper syntax
+   	// - may contain malformed syntax such as '${${ ...}' - will be ignored because no property name will match
+   	List<String> propertyStrings = new ArrayList<>();
+   	while ( searchPos < parameterValue.length() ) {
+       	foundStartPos = parameterValue.indexOf(delimStart, searchPos);
+       	foundEndPos = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
+       	if ( (foundStartPos >= 0) && (foundEndPos >= 0) ) {
+       		// Have a ${ ... } string (could also be nested like ${... ${...} ...}
+       		// Keep the surrounding characters since they are needed for the "from" string in the replacement.
+       		String propertyString = parameterValue.substring(foundStartPos,(foundEndPos + 1));
+  			if ( Message.isDebugOn ) {
+	    		Message.printDebug( 1, routine, "Delimiter start count for \"" + propertyString + "\" is " + StringUtil.patternCount(propertyString, delimStart));
+   			}
+       		if ( StringUtil.patternCount(propertyString, delimStart) > 1 ) {
+       			// Nested property:
+   				// - could be '${${...}' or '${...${ ... }'.
+       			// - advance the search position past the redundant ${ but don't try to replace
+       			searchPos += 2;
+       			// Indicate that nested properties were found so a second pass can occur.
+       			doNested = true;
+       			if ( Message.isDebugOn ) {
+   		    		Message.printDebug( 1, routine, "Ignoring nested property string \"" + propertyString + "\".");
+       			}
+       		}
+       		else {
+       			// Not nested so an internal property.
+       			propertyStrings.add(propertyString);
+       			if ( Message.isDebugOn ) {
+   		    		Message.printDebug( 1, routine, "Found inner property string \"" + propertyString + "\".");
+       			}
+       			// Advance the search position past the inner property.
+       			searchPos = foundEndPos;
+       		}
+       	}
+   		else {
+   			// No more properly formatted property remain.
+   			break;
+   		}
+   	}
+	if ( Message.isDebugOn ) {
+   		Message.printDebug( 1, routine, "Found " + propertyStrings.size() + " inner property strings.");
+	}
+
+   	// Replace the pairs if have a matching property:
+   	// - only simple property replaces should work at this point
+   	for ( String propertyString : propertyStrings ) {
+   		Object propval = null;
+   		String propvalString = "";
+       	try {
+       		// 'propname' is the property name without the surrounding ${ }.
+       		propname = propertyString.substring(2,(propertyString.length() - 1));
+       		// An exception will be thrown in the property is not found.
+           	propval = processor.getPropContents ( propname );
+       		if ( propval == null ) {
+       			if ( Message.isDebugOn ) {
+   	   			 	Message.printDebug( 1, routine, "Did not match inner property \"" + propname + "\".");
+   			 	}
+       		}
+       		else {
+       			// The following should work for all representations as long as the toString() does not truncate:
+       			// - TODO smalers 2024-10-22 this may format badly if floating point and engineering notation results
+       			propvalString = "" + propval;
+       			if ( Message.isDebugOn ) {
+       				Message.printDebug( 1, routine, "Found inner property \"" + propname + "\"=\"" + propvalString + "\".");
+       			}
+       			parameterValue = parameterValue.replace(propertyString, propvalString);
+       		}
+       	}
+       	catch ( Exception e ) {
+           	// Keep the original literal value to alert the user that the property could not be expanded.
+       		if ( Message.isDebugOn ) {
+       	   		Message.printDebug( 1, routine, "Did not match inner property \"" + propname + "\".");
+   	   		}
+       	}
+   	}
+   	if ( Message.isDebugOn ) {
+       	Message.printDebug( 1, routine, "Expanded parameter value after first pass is \"" + parameterValue + "\"");
+   	}
+
+   	if ( doNested ) {
+   		// Have nested input and will have expanded inner properties above.
+   		// Could use recursion but the repeated logic is not very complex.
+   		// Therefore, do the same logic as above.
+		if ( Message.isDebugOn ) {
+   			Message.printDebug( 1, routine, "Doing second pass to handle nested parameter values.");
+		}
+
+   		// Determine the list of all ${} substrings:
+   		// - may contain proper syntax
+   		// - may contain malformed syntax such as '${${ ...}' - will be ignored because no property name will match
+   		propertyStrings = new ArrayList<>();
+   		// Search from the start of the parameter string.
+   		searchPos = 0;
+   		while ( searchPos < parameterValue.length() ) {
+       		foundStartPos = parameterValue.indexOf(delimStart, searchPos);
+       		foundEndPos = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
+       		if ( (foundStartPos >= 0) && (foundEndPos >= 0) ) {
+       			// Have a ${ ... } string (could also be nested like ${... ${...} ...}
+       			// Keep the surrounding characters since they are needed for the "from" string in the replacement.
+       			String propertyString = parameterValue.substring(foundStartPos,(foundEndPos + 1));
+       			if ( StringUtil.patternCount(propertyString, delimStart) > 1 ) {
+       				// Nested property:
+       				// - could be '${${...}' or '${...${ ... }'.
+       				// - advance the search position past the redundant ${
+       				searchPos += 2;
+       				if ( Message.isDebugOn ) {
+   		    			Message.printDebug( 1, routine, "Ignoring nested property string \"" + propertyString + "\".");
+       				}
+       			}
+       			else {
+       				// Not nested so an internal property.
+       				propertyStrings.add(propertyString);
+       				if ( Message.isDebugOn ) {
+   		    			Message.printDebug( 1, routine, "Found outer property string \"" + propertyString + "\".");
+       				}
+       				// Advance the search position past the inner property.
+       				searchPos = foundEndPos;
+       			}
+       		}
+   			else {
+   				// No more properly formatted property remain.
+   				break;
+   			}
+   		}
+   		if ( Message.isDebugOn ) {
+   			Message.printDebug( 1, routine, "Found " + propertyStrings.size() + " outer property strings.");
+	  	}
+
+   		// Replace the pairs if have a matching property:
+   		// - only simple property replaces should work at this point
+   		for ( String propertyString : propertyStrings ) {
+   			Object propval = null;
+   			String propvalString = "";
+       		try {
+       			// 'propname' is the property name without the surrounding ${ }.
+       			propname = propertyString.substring(2,(propertyString.length() - 1));
+           		propval = processor.getPropContents ( propname );
+           		if ( propval == null ) {
+           			if ( Message.isDebugOn ) {
+       	   			 	Message.printDebug( 1, routine, "Did not match outer property \"" + propname + "\".");
+   	   			 	}
+           		}
+           		else {
+           			// The following should work for all representations as long as the toString() does not truncate:
+           			// - TODO smalers 2024-10-22 this may format badly if floating point and engineering notation results
+           			propvalString = "" + propval;
+       				if ( Message.isDebugOn ) {
+       	   				Message.printDebug( 1, routine, "Found outer property \"" + propname + "\"=\"" + propvalString + "\".");
+   	   				}
+           			parameterValue = parameterValue.replace(propertyString, propvalString);
+           		}
+       		}
+       		catch ( Exception e ) {
+           		// Keep the original literal value to alert user that property could not be expanded.
+       			if ( Message.isDebugOn ) {
+       	   			Message.printDebug( 1, routine, "Did not match outer property \"" + propname + "\".");
+   	   			}
+       		}
+   		}
+   		if ( Message.isDebugOn ) {
+       		Message.printDebug( 1, routine, "Expanded parameter value after second pass (for nested properties) is \"" + parameterValue + "\"");
+   		}
+   	}
+   	else {
+		if ( Message.isDebugOn ) {
+   			Message.printDebug( 1, routine, "Not doing second pass since no nested parameter values.");
+		}
+   	}
+   	
+   	// Return the expanded property value.
+    return parameterValue;
+}
+
+/**
+Save this version, which does not handle ${${ in the body (only at the front).
+Expand a string containing processor-level properties.  For example, a parameter value like
+"${WorkingDir}/morepath" will be expanded to include the working directory.
+The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
+Properties ${${property}-abc} are nested and will be expanded twice to get the value of the property from the inner expansion.
+@param processor the CommandProcessor that has a list of named properties.
+@param command the command that is being processed (may be used later for context sensitive values).
+@param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
+@param doRecurse if true, will call itself again to handle nested properties (should only be called with care to avoid infinite loop)
+@return the expanded string or null if the input string was null
+*/
+private static String x_expandParameterValue ( CommandProcessor processor, Command command, String parameterValue, boolean doRecurse ) {
+    String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
+    if ( (parameterValue == null) || (parameterValue.length() == 0) || !parameterValue.contains("${") ) { // }
+    	// Nothing to expand:
+    	// - null and empty string can't expand
+    	// - if no ${Property} notation can't expand
+        // - just return the input
+        return parameterValue;
     }
+    // Normal property start delimiter.
+   	String delimStart = "${";
+   	// End of property.
+   	String delimEnd = "}";
+   	// Nested delimiter:
+  	// - special case to ignore (advance to inner).
+   	// - currently only handle an the start of 'paramValue' but in the future might handle anywhere
+   	String delimStartNested = "${${";
+   	String delimEndNested = "}}";
+   	boolean nested = false;
+   	if ( parameterValue.startsWith(delimStartNested) && parameterValue.endsWith(delimEndNested)) {
+   		nested = true;
+   		// Cut off the leading '${' and trailing extra }.
+   		parameterValue = parameterValue.substring(2,(parameterValue.length() - 1));
+   	}
+   	// First replace escaped characters.
+   	// Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
+   	parameterValue = parameterValue.replace("\\\"", "\"" );
+   	parameterValue = parameterValue.replace("\\'", "'" );
+
+   	// See if the parameter value can be expanded to replace ${} symbolic references with other values.
+   	// Search the parameter string for $ until all processor parameters have been resolved.
+   	// TODO smalers 2024-10-22 is this logic better than simply doing a search and replace?
+   	// - current logic always walks the string whereas search and replace jumps around
+   	int searchPos = 0; // Position in the "parameterValue" string to search for '${' references.
+   	int foundPos; // Position when leading ${ is found.
+   	int foundPosEnd; // Position when ending } is found.
+   	String propname = null; // Whether a property is found that matches the $ symbol.
+   	while ( searchPos < parameterValue.length() ) {
+       	foundPos = parameterValue.indexOf(delimStart, searchPos);
+       	foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
+       	if ( (foundPos < 0) || (foundPosEnd < 0) ) {
+           	// No more properly formed $ property names, so break:
+       		// - may still need to handle nested parameters below
+           	break;
+       	}
+       	// Else found the delimiter so continue with the replacement.
+       	//Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
+       	// Get the name of the property.
+       	propname = parameterValue.substring((foundPos+2),foundPosEnd);
+       	// Try to get the property from the processor.
+       	// TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show the unexpanded property name in result.
+       	Object propval = null;
+       	String propvalString = "";
+       	try {
+           	propval = processor.getPropContents ( propname );
+           	// The following should work for all representations as long as the toString() does not truncate:
+           	// - TODO smalers 2024-10-22 this may format badly if floating point and engineering notation results
+           	propvalString = "" + propval;
+       	}
+       	catch ( Exception e ) {
+           	// Keep the original literal value to alert user that property could not be expanded.
+           	propvalString = delimStart + propname + delimEnd;
+       	}
+       	if ( propval == null ) {
+           	// Keep the original literal value to alert user that property could not be expanded.
+           	propvalString = delimStart + propname + delimEnd;
+       	}
+       	// If here have a property.
+       	StringBuffer b = new StringBuffer();
+       	// Append the start of the string.
+       	if ( foundPos > 0 ) {
+           	b.append ( parameterValue.substring(0,foundPos) );
+       	}
+       	// Now append the value of the property.
+       	b.append ( propvalString );
+       	// Now append the end of the original string if anything is at the end.
+       	if ( parameterValue.length() > (foundPosEnd + 1) ) {
+           	b.append ( parameterValue.substring(foundPosEnd + 1) );
+       	}
+       	// Now reset the search position to finish evaluating whether to expand the string.
+       	parameterValue = b.toString();
+       	searchPos = foundPos + propvalString.length(); // Expanded so no need to consider start and end delimiters.
+       	if ( Message.isDebugOn ) {
+           	Message.printDebug( 1, routine, "Expanded parameter value is \"" + parameterValue + "\" searchpos=" + searchPos + " doRecurse=" + doRecurse);
+       	}
+   	}
+   	// If nested, try to expand again.
+   	if ( nested && doRecurse) {
+   		parameterValue = expandParameterValue ( processor, command, "${" + parameterValue + "}" );
+   	}
     return parameterValue;
 }
 

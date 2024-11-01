@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -68,6 +69,7 @@ Editor for SetPropertyFromTimeSeries() command.
 public class SetPropertyFromTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
@@ -78,8 +80,14 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+
 private JTextField __PropertyName_JTextField = null;
 private TSFormatSpecifiersJPanel __PropertyValue_JTextField = null;
+
+private JTextField __DateTime_JTextField = null;
+private JTextField __PropertyNameForValue_JTextField = null;
+private JTextField __PropertyNameForFlag_JTextField = null;
+
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -184,6 +192,9 @@ private void checkInput () {
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String DateTime = __DateTime_JTextField.getText().trim();
+    String PropertyNameForValue = __PropertyNameForValue_JTextField.getText().trim();
+    String PropertyNameForFlag = __PropertyNameForFlag_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -200,6 +211,15 @@ private void checkInput () {
 	}
 	if ( PropertyValue.length() > 0 ) {
 	    parameters.set ( "PropertyValue", PropertyValue );
+	}
+	if ( DateTime.length() > 0 ) {
+	    parameters.set ( "DateTime", DateTime );
+	}
+	if ( PropertyNameForValue.length() > 0 ) {
+	    parameters.set ( "PropertyNameForValue", PropertyNameForValue );
+	}
+	if ( PropertyNameForFlag.length() > 0 ) {
+	    parameters.set ( "PropertyNameForFlag", PropertyNameForFlag );
 	}
 	try {
 	    // This will warn the user.
@@ -221,11 +241,17 @@ private void commitEdits () {
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String DateTime = __DateTime_JTextField.getText().trim();
+    String PropertyNameForValue = __PropertyNameForValue_JTextField.getText().trim();
+    String PropertyNameForFlag = __PropertyNameForFlag_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "PropertyValue", PropertyValue );
+    __command.setCommandParameter ( "DateTime", DateTime );
+    __command.setCommandParameter ( "PropertyNameForValue", PropertyNameForValue );
+    __command.setCommandParameter ( "PropertyNameForFlag", PropertyNameForFlag );
 }
 
 /**
@@ -247,28 +273,13 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set a processor property from time series properties." ),
+		"Set a processor property from a time series property and/or data value." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"One processor property can be set for each \"TS list\" time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is useful when setting a processor property in a For() loop."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The property value can include a combination of:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    - literal text"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    - processor properties using ${Property} syntax"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    - built-in time series properties using % syntax"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    - ${ts:Property} syntax for dynamic time series properties set by previous commands"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -289,28 +300,107 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for property.
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Property", prop_JPanel );
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The property name can be set using ${Property}, % specifiere, and ${ts:Property} syntax to use property names specific to a time series."),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The property value can include a combination of:"),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    - literal text"),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    - processor properties using ${Property} syntax"),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    - built-in time series properties using % syntax"),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"    - ${ts:Property} syntax for dynamic time series properties set by previous commands"),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property name:" ),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(prop_JPanel, __PropertyName_JTextField,
+        1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
         "Required - do not use spaces $, { or } in name."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Property value:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Property value:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new TSFormatSpecifiersJPanel(10);
     __PropertyValue_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, ${ts:Property}, ${Property}.");
     __PropertyValue_JTextField.addKeyListener ( this );
     __PropertyValue_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(prop_JPanel, __PropertyValue_JTextField,
+        1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for data.
+    int yData = -1;
+    JPanel data_JPanel = new JPanel();
+    data_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Data", data_JPanel );
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+		"Properties can be set based on the time series data value and flag for a date/time."),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+		"The property name can be set using ${Property}, % specifiere, and ${ts:Property} syntax to use property names specific to a time series."),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Date/time:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTime_JTextField = new JTextField ( 30 );
+    __DateTime_JTextField.setToolTipText("Date/time for the data, can use ${Property}");
+    __DateTime_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __DateTime_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel(
+        "Required - date/time for the data."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Property name for value:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyNameForValue_JTextField = new JTextField ( 50 );
+    __PropertyNameForValue_JTextField.setToolTipText("Property name for data value, can use ${Property}");
+    __PropertyNameForValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __PropertyNameForValue_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel(
+        "Optional - can use ${Property}."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Property name for flag:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyNameForFlag_JTextField = new JTextField ( 50 );
+    __PropertyNameForFlag_JTextField.setToolTipText("Property name for data flag, can use ${Property}");
+    __PropertyNameForFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __PropertyNameForFlag_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel(
+        "Optional - can use ${Property}."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -398,6 +488,9 @@ private void refresh () {
     String EnsembleID = "";
     String PropertyName = "";
     String PropertyValue = "";
+    String DateTime = "";
+    String PropertyNameForValue = "";
+    String PropertyNameForFlag = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -407,6 +500,9 @@ private void refresh () {
         EnsembleID = props.getValue ( "EnsembleID" );
         PropertyName = props.getValue ( "PropertyName" );
         PropertyValue = props.getValue ( "PropertyValue" );
+        DateTime = props.getValue ( "DateTime" );
+        PropertyNameForValue = props.getValue ( "PropertyNameForValue" );
+        PropertyNameForFlag = props.getValue ( "PropertyNameForFlag" );
         if ( TSList == null ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -454,9 +550,24 @@ private void refresh () {
         }
 	    if ( PropertyName != null ) {
 	         __PropertyName_JTextField.setText ( PropertyName );
+            // Also select tab.
+		    __main_JTabbedPane.setSelectedIndex(0);
 	    }
 	    if ( PropertyValue != null ) {
 	         __PropertyValue_JTextField.setText ( PropertyValue );
+	    }
+	    if ( DateTime != null ) {
+	         __DateTime_JTextField.setText ( DateTime );
+	    }
+	    if ( PropertyNameForValue != null ) {
+	         __PropertyNameForValue_JTextField.setText ( PropertyNameForValue );
+            // Also select tab.
+		    __main_JTabbedPane.setSelectedIndex(1);
+	    }
+	    if ( PropertyNameForFlag != null ) {
+	         __PropertyNameForFlag_JTextField.setText ( PropertyNameForFlag );
+            // Also select tab.
+		    __main_JTabbedPane.setSelectedIndex(1);
 	    }
 	}
 	// Regardless, reset the command from the fields.
@@ -465,12 +576,18 @@ private void refresh () {
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyValue = __PropertyValue_JTextField.getText().trim();
+    DateTime = __DateTime_JTextField.getText().trim();
+    PropertyNameForValue = __PropertyNameForValue_JTextField.getText().trim();
+    PropertyNameForFlag = __PropertyNameForFlag_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
+	props.add ( "DateTime=" + DateTime );
+	props.add ( "PropertyNameForValue=" + PropertyNameForValue );
+	props.add ( "PropertyNameForFlag=" + PropertyNameForFlag );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

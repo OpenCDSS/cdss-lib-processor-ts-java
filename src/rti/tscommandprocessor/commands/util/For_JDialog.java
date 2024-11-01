@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -55,6 +55,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
@@ -82,6 +83,9 @@ private JTextField __SequenceIncrement_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
 private JTextArea __TablePropertyMap_JTextArea = null;
+private JTextField __PeriodStart_JTextField = null;
+private JTextField __PeriodEnd_JTextField = null;
+private SimpleJComboBox __PeriodIncrement_JComboBox = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -205,6 +209,9 @@ private void checkInput () {
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
 	String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+    String PeriodStart = __PeriodStart_JTextField.getText().trim();
+    String PeriodEnd = __PeriodEnd_JTextField.getText().trim();
+    String PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -238,6 +245,15 @@ private void checkInput () {
     }
     if ( TablePropertyMap.length() > 0 ) {
         props.set ( "TablePropertyMap", TablePropertyMap );
+    }
+    if ( PeriodStart.length() > 0 ) {
+        props.set ( "PeriodStart", PeriodStart );
+    }
+    if ( PeriodEnd.length() > 0 ) {
+        props.set ( "PeriodEnd", PeriodEnd );
+    }
+    if ( PeriodIncrement.length() > 0 ) {
+        props.set ( "PeriodIncrement", PeriodIncrement );
     }
 	if ( TSList.length() > 0 ) {
 		props.set ( "TSList", TSList );
@@ -275,6 +291,9 @@ private void commitEdits () {
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+    String PeriodStart = __PeriodStart_JTextField.getText().trim();
+    String PeriodEnd = __PeriodEnd_JTextField.getText().trim();
+    String PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -289,6 +308,9 @@ private void commitEdits () {
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
     __command.setCommandParameter ( "TablePropertyMap", TablePropertyMap );
+    __command.setCommandParameter ( "PeriodStart", PeriodStart );
+    __command.setCommandParameter ( "PeriodEnd", PeriodEnd );
+    __command.setCommandParameter ( "PeriodIncrement", PeriodIncrement );
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -299,6 +321,7 @@ private void commitEdits () {
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIdChoices a list of table identifiers from the processor
 */
 private void initialize ( JFrame parent, For_Command command, List<String> tableIDChoices ) {
     __command = command;
@@ -321,8 +344,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         "value of an iterator variable for each iteration."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The iterator value is set as a processor property that can be accessed by other commands using " +
-        "the ${Property} notation."),
+        "The iterator value is set as a processor property that can be accessed by other commands using the ${Property} notation."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use an EndFor() command with matching name to indicate the end of the for loop."),
@@ -378,7 +400,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(list_JPanel, new JLabel("Required - list of values for iterator."),
         3, yList, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel to use sequence for iteration.
+    // Panel to use integer or double sequence for iteration.
     int ySeq = -1;
     JPanel seq_JPanel = new JPanel();
     seq_JPanel.setLayout( new GridBagLayout() );
@@ -461,7 +483,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __TableColumn_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(table_JPanel, __TableColumn_JTextField,
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."),
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column for iterator values."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Table property map:"),
@@ -477,6 +499,62 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTablePropertyMap",this),
         3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel to use period for iteration.
+    int yPeriod = -1;
+    JPanel period_JPanel = new JPanel();
+    period_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Period", period_JPanel );
+
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "The for loop can iterate over a time period, given a start, end, and increment."),
+        0, ++yPeriod, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "The start and end must have the same time precision and the increment must be smaller than the start and end precision."),
+        0, ++yPeriod, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "The increment should be specified as a time interval like Day, 3Hour, etc."),
+        0, ++yPeriod, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "Specify the start before the end to indicate that the increment should be negative."),
+        0, ++yPeriod, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yPeriod, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Period start:" ),
+        0, ++yPeriod, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PeriodStart_JTextField = new JTextField (20);
+    __PeriodStart_JTextField.setToolTipText("The period start as date/time, can specify with ${Property}.");
+    __PeriodStart_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(period_JPanel, __PeriodStart_JTextField,
+        1, yPeriod, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel("Required - period start."),
+        3, yPeriod, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Period end:" ),
+        0, ++yPeriod, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PeriodEnd_JTextField = new JTextField (20);
+    __PeriodEnd_JTextField.setToolTipText("The period end as date/time, can specify with ${Property}.");
+    __PeriodEnd_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(period_JPanel, __PeriodEnd_JTextField,
+        1, yPeriod, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel("Required - period end."),
+        3, yPeriod, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Period increment:" ),
+        0, ++yPeriod, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PeriodIncrement_JComboBox = new SimpleJComboBox(false); // Do not allow editing text.
+    __PeriodIncrement_JComboBox.setToolTipText("The period increment as an interval (Day, -Day, 3Hour, etc.), can specify with ${Property}.");
+	List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(
+		TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, false);
+	// Add a blank for default.
+	intervalChoices.add(0,"");
+	__PeriodIncrement_JComboBox.setData ( intervalChoices );
+	__PeriodIncrement_JComboBox.addActionListener ( this );
+	JGUIUtil.addComponent(period_JPanel, __PeriodIncrement_JComboBox,
+		1, yPeriod, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel("Optional - period increment (default=Day)."),
+        3, yPeriod, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel to use time series list for iteration.
     int yTs = -1;
@@ -556,7 +634,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     checkGUIState();
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -631,6 +709,9 @@ private void refresh () {
 	String TableID = "";
 	String TableColumn = "";
 	String TablePropertyMap = "";
+    String PeriodStart = "";
+    String PeriodEnd = "";
+    String PeriodIncrement = "";
     String TSList = "";
     String TSID = "";
 	String EnsembleID = "";
@@ -649,6 +730,9 @@ private void refresh () {
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
 		TablePropertyMap = props.getValue ( "TablePropertyMap" );
+	    PeriodStart = props.getValue( "PeriodStart" );
+	    PeriodEnd = props.getValue( "PeriodEnd" );
+	    PeriodIncrement = props.getValue( "PeriodIncrement" );
 		TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
@@ -698,6 +782,29 @@ private void refresh () {
         if ( TablePropertyMap != null ) {
             __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
         }
+		if ( PeriodStart != null ) {
+		    __PeriodStart_JTextField.setText( PeriodStart );
+		    __main_JTabbedPane.setSelectedIndex(3);
+		}
+		if ( PeriodEnd != null ) {
+		    __PeriodEnd_JTextField.setText( PeriodEnd );
+		}
+        if ( (PeriodIncrement == null) || PeriodIncrement.isEmpty() ) {
+            // Select default.
+            __PeriodIncrement_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PeriodIncrement_JComboBox,PeriodIncrement, JGUIUtil.NONE, null, null ) ) {
+                __PeriodIncrement_JComboBox.select ( PeriodIncrement );
+                __main_JTabbedPane.setSelectedIndex(3);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nPeriodIncrement value \"" + PeriodIncrement +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( (TSList == null) || TSList.isEmpty() ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -713,7 +820,7 @@ private void refresh () {
                 __error_wait = true;
             }
             // Also select tab.
-		    __main_JTabbedPane.setSelectedIndex(3);
+		    __main_JTabbedPane.setSelectedIndex(4);
         }
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
                 __TSID_JComboBox.select ( TSID );
@@ -760,6 +867,9 @@ private void refresh () {
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
 	TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+    PeriodStart = __PeriodStart_JTextField.getText().trim();
+    PeriodEnd = __PeriodEnd_JTextField.getText().trim();
+    PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -775,6 +885,9 @@ private void refresh () {
     props.set ( "TableID", TableID ); // May contain = so handle differently.
     props.add ( "TableColumn=" + TableColumn );
     props.add ( "TablePropertyMap=" + TablePropertyMap );
+    props.add ( "PeriodStart=" + PeriodStart );
+    props.add ( "PeriodEnd=" + PeriodEnd );
+    props.add ( "PeriodIncrement=" + PeriodIncrement );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -56,8 +56,8 @@ public class SetInputPeriod_Command extends AbstractCommand implements Command
 /**
 Constructor.
 */
-public SetInputPeriod_Command ()
-{	super();
+public SetInputPeriod_Command () {
+	super();
 	setCommandName ( "SetInputPeriod" );
 }
 
@@ -69,17 +69,17 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String InputStart = parameters.getValue ( "InputStart" );
+throws InvalidCommandParameterException {
+	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	// When checking InputStart and InputEnd, all we care about is that the
-	// syntax is correct.  In runCommand() the parameter will be reparsed with runtime data...
+	// When checking InputStart and InputEnd, all we care about is that the syntax is correct.
+	// In runCommand() the parameter will be reparsed with runtime data.
 
 	PropList dateprops = new PropList ( "SetInputPeriod" );
 	// The instance is not needed when checking syntax but will be checked at runtime.
@@ -89,7 +89,7 @@ throws InvalidCommandParameterException
 	DateTime InputEnd_DateTime = null;
 	if ( (InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${") ) {
 		try {
-		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
+		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			InputStart_DateTime = DateTime.parse(InputStart, dateprops );
 		}
 		catch ( Exception e ) {
@@ -103,7 +103,7 @@ throws InvalidCommandParameterException
 	}
 	if ( (InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
 		try {
-		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
+		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
 		}
 		catch ( Exception e ) {
@@ -131,31 +131,30 @@ throws InvalidCommandParameterException
 							message, "Correct so that the date/times are specified to the same precision." ) );
 		}
 	}
-	
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(2);
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>(2);
 	validList.add ( "InputStart" );
 	validList.add ( "InputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-	
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetInputPeriod_JDialog ( parent, this )).ok();
 }
 
@@ -166,18 +165,17 @@ Parse the command string into a PropList of parameters.
 @exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "SetInputPeriod_Command.parseCommand";
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	String routine = getClass().getSimpleName() + ".parseCommand";
 
 	String InputStart = null;
 	String InputEnd = null;
 	if ( (command.indexOf('=') > 0) || command.endsWith("()") ) {
-		// Current syntax...
+		// Current syntax.
 	    super.parseCommand(command);
 	}
 	else {
-		// TODO SAM 2005-04-29 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new syntax.
+		// TODO SAM 2005-04-29 This whole block of code needs to be removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
 		List<String> tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
@@ -190,16 +188,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		InputStart = ((String)tokens.get(1)).trim();
 		if ( InputStart.equals("*") ) {
-		    // Phase out old style
+		    // Phase out old style.
 			InputStart = "";
 		}
 		InputEnd = ((String)tokens.get(2)).trim();
 		if ( InputEnd.equals("*") ) {
-		    // Phase out old style
+		    // Phase out old style.
 			InputEnd = "";
 		}
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -221,44 +219,44 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
-	
+
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	PropList dateprops = new PropList ( "SetInputPeriod" );
 	try {
-		// If the parameters start with ${ get from the utility code
+		// If the parameters start with ${ get from the utility code.
 		if ( (InputStart != null) && !InputStart.isEmpty() ) {
 			if ( InputStart.startsWith("${") ) {
-			    // Otherwise parse the date/times to take advantage of run-time data values...
+			    // Otherwise parse the date/times to take advantage of run-time data values.
 				try {
 					InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
 						status, warning_level, command_tag );
 				}
 				catch ( InvalidCommandParameterException e ) {
-					// Warning will have been added above...
+					// Warning will have been added above.
 				}
 			}
 			else {
-			    // Otherwise parse the date/times to take advantage of run-time data values...
+			    // Otherwise parse the date/times to take advantage of run-time data values.
 				try {
-				    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+				    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 					InputStart_DateTime = DateTime.parse(InputStart, dateprops );
 				}
 				catch ( Exception e ) {
 					message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time.";
-					Message.printWarning ( warning_level, 
+					Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );
 					status.addToLog ( CommandPhaseType.RUN,
@@ -268,20 +266,20 @@ throws CommandWarningException, CommandException
 				}
 			}
 			if ( InputStart_DateTime != null ) {
-				// Set the value and contents, which may be used when setting the InputEnd below...
+				// Set the value and contents, which may be used when setting the InputEnd below.
 				Prop prop = new Prop ( "InputStart",InputStart_DateTime,InputStart_DateTime.toString() );
 				dateprops.set ( prop );
 			}
 		}
 		if ( (InputEnd != null) && !InputEnd.isEmpty() ) {
 			if ( InputEnd.startsWith("${") ) {
-			    // Otherwise parse the date/times to take advantage of run-time data values...
+			    // Otherwise parse the date/times to take advantage of run-time data values.
 				try {
 					InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
 						status, warning_level, command_tag );
 				}
 				catch ( InvalidCommandParameterException e ) {
-					// Warning will have been added above...
+					// Warning will have been added above.
 				}
 			}
 			else {
@@ -290,7 +288,7 @@ throws CommandWarningException, CommandException
 				}
 				catch ( Exception e ) {
 					message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time.";
-					Message.printWarning ( warning_level, 
+					Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );
 					Message.printWarning ( 3, routine, e );
@@ -301,7 +299,7 @@ throws CommandWarningException, CommandException
 			}
 		}
 		if ( warning_count > 0 ) {
-			// Input error...
+			// Input error.
 			message = "Cannot process command parameters - invalid date/time.";
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
@@ -315,7 +313,7 @@ throws CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting input period in processor (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );

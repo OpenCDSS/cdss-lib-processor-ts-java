@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -50,6 +50,8 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the For() command.
@@ -106,6 +108,11 @@ Indicate that the iterator is using a table.
 private boolean iteratorIsTable = false;
 
 /**
+Indicate that the iterator is using a time period.
+*/
+private boolean iteratorIsPeriod = false;
+
+/**
 Indicate that the iterator is using a time series list.
 */
 private boolean iteratorIsTsList = false;
@@ -119,6 +126,26 @@ private boolean forInitialized = false;
 Data table to get list to iterate through.
 */
 private DataTable table = null;
+
+/**
+Iterator start if period.
+*/
+private DateTime iteratorPeriodStart = null;
+
+/**
+Iterator end if period.
+*/
+private DateTime iteratorPeriodEnd = null;
+
+/**
+Iterator increment if period.
+*/
+private TimeInterval iteratorPeriodIncrement = null;
+
+/**
+Iterator increment sign if period.
+*/
+private int iteratorPeriodIncrementSign = 1;
 
 /**
 Iterator start if sequence.
@@ -198,6 +225,9 @@ throws InvalidCommandParameterException {
 	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
 	String TableID = parameters.getValue ( "TableID" );
 	String TableColumn = parameters.getValue ( "TableColumn" );
+	String PeriodStart = parameters.getValue ( "PeriodStart" );
+	String PeriodEnd = parameters.getValue ( "PeriodEnd" );
+	String PeriodIncrement = parameters.getValue ( "PeriodIncrement" );
 	String TSList = parameters.getValue ( "TSList" );
 	String warning = "";
 	String message;
@@ -206,16 +236,17 @@ throws InvalidCommandParameterException {
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	this.iteratorIsList = false;
+	this.iteratorIsPeriod = false;
 	this.iteratorIsSequence = false;
 	this.iteratorIsTable = false;
 	this.iteratorIsTsList = false;
     if ( (Name == null) || Name.equals("") ) {
-        message = "A name for the for block must be specified";
+        message = "A name for the 'For' block must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    // TODO smalers 2021-05-09 remove when code tests out
+    // TODO smalers 2021-05-09 remove when code tests out.
     //if ( ((TableID == null) || (TableID.isEmpty()) && ((List == null)) || (List.isEmpty()) && ((SequenceStart == null)) || SequenceStart.isEmpty())) {
     //    message = "A list of values, sequence, table, or time series list must be specified";
     //    warning += "\n" + message;
@@ -270,6 +301,7 @@ throws InvalidCommandParameterException {
 			this.iteratorSequenceIncrement = sequenceIncrementD;
 		}
     }
+
     if ( (TableID != null) && !TableID.isEmpty() ) {
     	this.iteratorIsTable = true;
     	++count;
@@ -280,11 +312,67 @@ throws InvalidCommandParameterException {
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table column." ) );
 	    }
     }
+
+    DateTime periodStart = null;
+    if ( (PeriodStart != null) && !PeriodStart.isEmpty() ) {
+    	this.iteratorIsPeriod = true;
+    	++count;
+    	if ( ! PeriodStart.contains("${") ) {
+    		try {
+    			periodStart = DateTime.parse(PeriodStart);
+    		}
+    		catch ( Exception e ) {
+    			message = "The period start (" + PeriodStart + ") is invalid.";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify a valid date/time." ) );
+    		}
+    	}
+    }
+    DateTime periodEnd = null;
+    if ( (PeriodEnd != null) && !PeriodEnd.isEmpty() ) {
+    	if ( ! PeriodEnd.contains("${") ) {
+    		try {
+    			periodEnd = DateTime.parse(PeriodEnd);
+    		}
+    		catch ( Exception e ) {
+    			message = "The period end (" + PeriodEnd + ") is invalid.";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify a valid date/time." ) );
+    		}
+    	}
+    }
+    if ( (periodStart != null) && (periodEnd != null) && (periodStart.getPrecision() != periodEnd.getPrecision()) ) {
+    	message = "Period start (" + PeriodStart + ") and period end (" + PeriodEnd + ") have different precision.";
+    	warning += "\n" + message;
+    	status.addToLog ( CommandPhaseType.INITIALIZATION,
+    		new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify start and end with the same precision." ) );
+    }
+    if ( (PeriodIncrement != null) && !PeriodIncrement.isEmpty() ) {
+    	if ( ! PeriodIncrement.contains("${") ) {
+    		try {
+    			if ( PeriodIncrement.startsWith("-") ) {
+    				TimeInterval.parseInterval(PeriodIncrement.substring(1));
+    			}
+    			else {
+    				TimeInterval.parseInterval(PeriodIncrement);
+    			}
+    		}
+    		catch ( Exception e ) {
+    			message = "The period increment (" + PeriodIncrement + ") is invalid.";
+    			warning += "\n" + message;
+    			status.addToLog ( CommandPhaseType.INITIALIZATION,
+    				new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify a valid increment (interval)." ) );
+    		}
+    	}
+    }
+
     if ( (TSList != null) && !TSList.isEmpty() ) {
     	this.iteratorIsTsList = true;
     	++count;
 	    if ( (TSList == null) || TSList.equals("") ) {
-	        message = "The TSList parameter value must be specified";
+	        message = "The TSList parameter value must be specified.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the TSList parameter." ) );
@@ -298,14 +386,14 @@ throws InvalidCommandParameterException {
             	"Specify the list OR sequence OR table ID/column OR time series list." ) );
     }
     else if ( count > 1 ) {
-        message = "A list, sequence, table, or time series list must be specified, but not more than one";
+        message = "A list, sequence, table, or time series list must be specified, but not more than one.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
     }
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(13);
+    List<String> validList = new ArrayList<>(16);
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
 	validList.add ( "IteratorValueProperty" );
@@ -316,6 +404,9 @@ throws InvalidCommandParameterException {
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
 	validList.add ( "TablePropertyMap" );
+	validList.add ( "PeriodStart" );
+	validList.add ( "PeriodEnd" );
+	validList.add ( "PeriodIncrement" );
 	validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -370,6 +461,7 @@ public String getName () {
 
 /**
  * Initialize the iterator for a list.
+ * @param processor the time series processor
  */
 private void initializeListIterator ( TSCommandProcessor processor ) {
 	String List = getCommandParameters().getValue ( "List" );
@@ -385,13 +477,77 @@ private void initializeListIterator ( TSCommandProcessor processor ) {
 }
 
 /**
+ * Initialize the iterator for a period.
+ * @param processor the command processor instance
+ */
+private void initializePeriodIterator ( TSCommandProcessor processor ) {
+	PropList parameters = getCommandParameters();
+	String PeriodStart = parameters.getValue ( "PeriodStart" );
+	if ( (PeriodStart != null) && (PeriodStart.indexOf("${") >= 0) ) { // }
+		// Can specify with a property.
+		String s0 = PeriodStart;
+		PeriodStart = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodStart);
+		/*
+		if ( s0.equals(PeriodStart) ) {
+            message = "For loop 'PeriodStart' (" + PeriodStart + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+		*/
+	}
+	DateTime periodStart = null;
+	if ( (PeriodStart != null) && !PeriodStart.isEmpty() ) {
+		periodStart = DateTime.parse(PeriodStart);
+		this.iteratorIsPeriod = true;
+		this.iteratorPeriodStart = periodStart;
+	}
+	String PeriodEnd = parameters.getValue ( "PeriodEnd" );
+	if ( (PeriodEnd != null) && (PeriodEnd.indexOf("${") >= 0) ) { // }
+		// Can specify with a property.
+		//String s0 = PeriodEnd;
+		PeriodEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodEnd);
+		/*
+		if ( s0.equals(PeriodEnd) ) {
+            message = "For loop 'PeriodEnd' (" + PeriodEnd + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+		*/
+	}
+	DateTime periodEnd = null;
+	if ( (PeriodEnd != null) && !PeriodEnd.isEmpty() ) {
+		periodEnd = DateTime.parse(PeriodEnd);
+		this.iteratorPeriodEnd = periodEnd;
+	}
+	String PeriodIncrement = parameters.getValue ( "PeriodIncrement" );
+	TimeInterval periodIncrement = null;
+	if ( (PeriodIncrement != null) && !PeriodIncrement.isEmpty() ) {
+		if ( PeriodIncrement.startsWith("-") ) {
+			// Negative increment.
+			this.iteratorPeriodIncrementSign = -1;
+			periodIncrement = TimeInterval.parseInterval(PeriodIncrement.substring(1));
+		}
+		else {
+			this.iteratorPeriodIncrementSign = 1;
+			periodIncrement = TimeInterval.parseInterval(PeriodIncrement);
+		}
+		this.iteratorPeriodIncrement = periodIncrement;
+	}
+}
+
+/**
  * Initialize the iterator for a sequence.
+ * @param processor the command processor instance
  */
 private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 	PropList parameters = getCommandParameters();
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
-	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) {
-		// Can specify with property
+	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) { // }
+		// Can specify with property.
 		String s0 = SequenceStart;
 		SequenceStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceStart);
 		/*
@@ -422,7 +578,7 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 		this.iteratorIsSequence = true;
 	}
 	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
-	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) {
+	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) { // }
 		// Can specify with property.
 		String s0 = SequenceEnd;
 		SequenceEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceEnd);
@@ -584,6 +740,66 @@ public boolean next () {
 	            throw new RuntimeException ( message, e );
 	        }
 	    }
+    	else if ( this.iteratorIsPeriod ) {
+    		// Iterating on a time period.
+    		// Initialize the loop.
+    		setIteratorPropertyValue(null);
+	        initializePeriodIterator(processor);
+	        CommandStatus status = getCommandStatus();
+	        status.clearLog(CommandPhaseType.RUN);
+	        try {
+	            this.iteratorObjectListIndex = 0;
+	            //this.iteratorObjectList = this.list;
+	            setIteratorPropertyValue ( this.iteratorPeriodStart );
+	            if ( this.iteratorPeriodIncrement == null ) {
+	            	// Defaults:
+	            	// - currently Day but could make more intelligent
+	            	this.iteratorPeriodIncrement = TimeInterval.parseInterval("Day");
+	            	this.iteratorPeriodIncrementSign = 1;
+	            }
+	            this.forInitialized = true;
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            }
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error initializing For() iterator to initial value (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+    	}
+    	else if ( this.iteratorIsPeriod ) {
+    		// Iterating on a time period.
+    		// Initialize the loop.
+    		setIteratorPropertyValue(null);
+	        initializePeriodIterator(processor);
+	        CommandStatus status = getCommandStatus();
+	        status.clearLog(CommandPhaseType.RUN);
+	        try {
+	            this.iteratorObjectListIndex = 0;
+	            //this.iteratorObjectList = this.list;
+	            setIteratorPropertyValue ( this.iteratorPeriodStart );
+	            if ( this.iteratorPeriodIncrement == null ) {
+	            	// Defaults:
+	            	// - TODO smalers 2020-11-02 should be set in runCommand()
+	            	this.iteratorPeriodIncrement = TimeInterval.parseInterval("Day");
+	            	this.iteratorPeriodIncrementSign = 1;
+	            }
+	            this.forInitialized = true;
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            }
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error initializing For() iterator to initial value (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+    	}
     	else if ( this.iteratorIsSequence ) {
     		// Iterating on a sequence.
     		// Initialize the loop.
@@ -798,6 +1014,54 @@ public boolean next () {
 	            return true;
 	        }
     	}
+    	else if ( this.iteratorIsPeriod ) {
+    		// If the iterator object is already at or will exceed the maximum, then done iterating.
+    		if ( Message.isDebugOn ) {
+    			Message.printStatus(2, routine, "start=" + this.iteratorPeriodStart +
+    				", end=" + this.iteratorPeriodEnd + ", increment=" + this.iteratorPeriodIncrementSign + this.iteratorPeriodIncrement +
+    				", object=" + this.iteratorObject);
+    		}
+    		if ( this.iteratorPeriodIncrementSign > 0 ) {
+    			if ( ((DateTime)this.iteratorObject).greaterThanOrEqualTo((DateTime)this.iteratorPeriodEnd) ) {
+    				// Done iterating.
+    				if ( Message.isDebugOn ) {
+    					Message.printDebug(1, routine, "Done iterating on time period." );
+    				}
+    				return false;
+    			}
+    			else {
+    				// Iterate by adding increment to iterator object:
+    				// - no need to reset the iterator object since it is mutable
+    				// - multiply by the sign that was detected when the command was parsed
+    				if ( Message.isDebugOn ) {
+    					Message.printStatus(2,routine, "Incrementing date/time by " + this.iteratorPeriodIncrementSign + this.iteratorPeriodIncrement );
+    				}
+    				((DateTime)this.iteratorObject).addInterval (
+    						this.iteratorPeriodIncrement.getBase(), this.iteratorPeriodIncrementSign*this.iteratorPeriodIncrement.getMultiplier() );
+    				return true;
+    			}
+	    	}
+    		else {
+    			if ( ((DateTime)this.iteratorObject).lessThanOrEqualTo((DateTime)this.iteratorPeriodEnd) ) {
+    				// Done iterating.
+    				if ( Message.isDebugOn ) {
+    					Message.printDebug(1, routine, "Done iterating on time period." );
+    				}
+    				return false;
+    			}
+    			else {
+    				// Iterate by adding increment to iterator object:
+    				// - no need to reset the iterator object since it is mutable
+    				// - multiply by the sign that was detected when the command was parsed
+    				if ( Message.isDebugOn ) {
+    					Message.printStatus(2,routine, "Incrementing date/time by " + this.iteratorPeriodIncrementSign + this.iteratorPeriodIncrement );
+    				}
+    				((DateTime)this.iteratorObject).addInterval (
+    						this.iteratorPeriodIncrement.getBase(), this.iteratorPeriodIncrementSign*this.iteratorPeriodIncrement.getMultiplier() );
+    				return true;
+    			}
+	    	}
+    	}
     	else if ( this.iteratorIsSequence ) {
     		// If the iterator object is already at or will exceed the maximum, then done iterating.
     		Message.printStatus(2, routine, "start=" + this.iteratorSequenceStart +
@@ -810,9 +1074,9 @@ public boolean next () {
 	    			(((Double)this.iteratorObject >= (Double)this.iteratorSequenceEnd) ||
 	    			((Double)this.iteratorObject + (Double)this.iteratorSequenceIncrement) >= (Double)this.iteratorSequenceEnd))
 	    			) {
-	    		// Done iterating
+	    		// Done iterating.
 	        	if ( Message.isDebugOn ) {
-	        		Message.printDebug(1, routine, "Done iterating on list." );
+	        		Message.printDebug(1, routine, "Done iterating on sequence." );
 	        	}
 	            return false;
 	    	}
@@ -1107,6 +1371,7 @@ private void parseTablePropertyMap ( String TablePropertyMap ) {
 /**
 Parse the TimeSeriesPropertyMap command parameter and set internal data.
 This is necessary because the next() method is called before runCommand().
+@param TimeSeriesPropertyMap command parameter to parse
 */
 private void parseTimeSeriesPropertyMap ( String TimeSeriesPropertyMap ) {
     this.timeSeriesPropertyMap = new Hashtable<String,String>();
@@ -1150,6 +1415,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	status.clearLog(commandPhase);
 
 	this.iteratorIsList = false;
+	this.iteratorIsPeriod = false;
 	this.iteratorIsSequence = false;
 	this.iteratorIsTable = false;
 
@@ -1159,6 +1425,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	    IteratorProperty = Name;
 	}
     this.iteratorPropertyName = IteratorProperty;
+
 	String List = parameters.getValue ( "List" );
 	if ( (List != null) && !List.isEmpty() ) {
 		if ( List.indexOf("${") >= 0 ) {
@@ -1172,6 +1439,66 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		}
 		this.iteratorIsList = true;
 	}
+
+	String PeriodStart = parameters.getValue ( "PeriodStart" );
+	if ( (PeriodStart != null) && (PeriodStart.indexOf("${") >= 0) ) {
+		// Can specify with property.
+		String s0 = PeriodStart;
+		PeriodStart = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodStart);
+		if ( s0.equals(PeriodStart) ) {
+            message = "For loop 'PeriodStart' (" + PeriodStart + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+	}
+	DateTime periodStart = null;
+	if ( (PeriodStart != null) && !PeriodStart.isEmpty() ) {
+		periodStart = DateTime.parse(PeriodStart);
+		this.iteratorPeriodStart = periodStart;
+		this.iteratorPeriodIncrement = TimeInterval.parseInterval("Day");
+		this.iteratorPeriodIncrementSign = 1;
+		this.iteratorIsPeriod = true;
+	}
+	String PeriodEnd = parameters.getValue ( "PeriodEnd" );
+	if ( (PeriodEnd != null) && (PeriodEnd.indexOf("${") >= 0) ) {
+		// Can specify with property.
+		String s0 = PeriodEnd;
+		PeriodEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodEnd);
+		if ( s0.equals(PeriodEnd) ) {
+            message = "For loop 'PeriodEnd' (" + PeriodEnd + ") value cannot be determined.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property has a valid value." ) );
+		}
+	}
+	DateTime periodEnd = null;
+	if ( (PeriodEnd != null) && !PeriodEnd.isEmpty() ) {
+		periodEnd = DateTime.parse(PeriodEnd);
+		this.iteratorPeriodEnd = periodEnd;
+	}
+	String PeriodIncrement = parameters.getValue ( "PeriodIncrement" );
+	PeriodIncrement = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodIncrement);
+	if ( (PeriodIncrement != null) && !PeriodIncrement.isEmpty() ) {
+		TimeInterval periodIncrement = null;
+		// Negative in front of the increment is allowed but should not occur because choices don't provide negatives.
+		if ( PeriodIncrement.startsWith("-") ) {
+			periodIncrement = TimeInterval.parseInterval(PeriodIncrement.substring(1));
+		    this.iteratorPeriodIncrementSign = -1;
+		}
+		else {
+			periodIncrement = TimeInterval.parseInterval(PeriodIncrement);
+		    this.iteratorPeriodIncrementSign = 1;
+			// If the Period start is after the period end then use a negative increment.
+		    if ( periodStart.greaterThan(periodEnd) ) {
+		    	this.iteratorPeriodIncrementSign = -1;
+		    }
+		}
+		this.iteratorPeriodIncrement = periodIncrement;
+	}
+
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
 	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) {
 		// Can specify with property.
@@ -1421,6 +1748,9 @@ public String toString ( PropList parameters ) {
     	"TableID",
     	"TableColumn",
     	"TablePropertyMap",
+    	"PeriodStart",
+    	"PeriodEnd",
+    	"PeriodIncrement",
 		"TSList",
 		"TSID",
 		"EnsembleID",

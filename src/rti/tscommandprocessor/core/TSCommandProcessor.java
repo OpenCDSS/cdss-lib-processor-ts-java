@@ -1294,7 +1294,7 @@ reflecting the initial working directory and changes from setWorkingDir() comman
 
 </table>
 @return the contents for a named property, or null if a value is not found.
-@exception UnrecognizedRequestException if an unknown property is requested.
+@exception UnrecognizedRequestException if an unknown property is requested (actually null is returned if not found).
 */
 public Object getPropContents ( String propName ) throws Exception {
 	if ( propName.equalsIgnoreCase("AutoExtendPeriod") ) {

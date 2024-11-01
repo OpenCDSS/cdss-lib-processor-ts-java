@@ -1077,6 +1077,7 @@ throws CommandWarningException, CommandException {
             else {
                	// Time series exists but may not have data.
             	if ( !ts.hasData() ) {
+            		// Time series does not have data.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does not have data.");
             		}

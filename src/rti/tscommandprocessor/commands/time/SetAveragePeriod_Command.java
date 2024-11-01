@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -57,32 +57,30 @@ public class SetAveragePeriod_Command extends AbstractCommand implements Command
 /**
 Constructor.
 */
-public SetAveragePeriod_Command ()
-{	super();
+public SetAveragePeriod_Command () {
+	super();
 	setCommandName ( "SetAveragePeriod" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String AverageStart = parameters.getValue ( "AverageStart" );
+throws InvalidCommandParameterException {
+	String AverageStart = parameters.getValue ( "AverageStart" );
 	String AverageEnd = parameters.getValue ( "AverageEnd" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	// When checking AverageStart and AverageEnd, all we care about is that the
-	// syntax is correct.  In runCommand() the parameter will be reparsed with runtime data...
+	// When checking AverageStart and AverageEnd, all we care about is that the syntax is correct.
+	// In runCommand() the parameter will be reparsed with runtime data.
 
 	PropList dateprops = new PropList ( "SetAveragePeriod" );
 	// The instance is not needed when checking syntax but will be checked at runtime.
@@ -92,7 +90,7 @@ throws InvalidCommandParameterException
 	DateTime AverageEnd_DateTime = null;
 	if ( (AverageStart != null) && !AverageStart.equals("") ) {
 		try {
-		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			AverageStart_DateTime = DateTime.parse(AverageStart, dateprops );
 		}
 		catch ( Exception e ) {
@@ -106,7 +104,7 @@ throws InvalidCommandParameterException
 	}
 	if ( (AverageEnd != null) && !AverageEnd.equals("") ) {
 		try {
-		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			AverageEnd_DateTime = DateTime.parse(AverageEnd, dateprops );
 		}
 		catch ( Exception e ) {
@@ -134,48 +132,45 @@ throws InvalidCommandParameterException
 							message, "Correct so that the date/times are specified to the same precision." ) );
 		}
 	}
-	
-	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+
+	// Check for invalid parameters.
+	List<String> validList = new ArrayList<>();
 	validList.add ( "AverageStart" );
 	validList.add ( "AverageEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-	
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new SetAveragePeriod_JDialog ( parent, this )).ok();
 }
 
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String AverageStart = null;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	String AverageStart = null;
 	String AverageEnd = null;
 	if ( (command.indexOf('=') > 0) || command.endsWith("()") ) {
-		// Current syntax...
+		// Current syntax.
 	    super.parseCommand(command);
 	}
 	else {
@@ -186,15 +181,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ("Bad command \"" + command + "\"" );
 		}
 		AverageStart = ((String)tokens.get(1)).trim();
-		if ( AverageStart.equals("*") ) {	// Phase out old style
+		if ( AverageStart.equals("*") ) { // Phase out old style.
 			AverageStart = "";
 		}
 		AverageEnd = ((String)tokens.get(2)).trim();
-		if ( AverageEnd.equals("*") ) {	// Phase out old style
+		if ( AverageEnd.equals("*") ) {	// Phase out old style.
 			AverageEnd = "";
 		}
 
-		// Set parameters and new defaults...
+		// Set parameters and new defaults.
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -212,37 +207,36 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException
-{	String routine = "SetAveragePeriod_Command.runCommand", message;
+throws CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	
+
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
-	
+
 	String AverageStart = parameters.getValue ( "AverageStart" );
 	String AverageEnd = parameters.getValue ( "AverageEnd" );
 	DateTime AverageStart_DateTime = null;
 	DateTime AverageEnd_DateTime = null;
 	PropList dateprops = new PropList ( "SetAveragePeriod" );
 	try {
-	    // Reparse the date/times to take advantage of run-time data values...
+	    // Reparse the date/times to take advantage of run-time data values.
 		if ( (AverageStart != null) && !AverageStart.equals("") ) {
 			try {
-			    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+			    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 				AverageStart_DateTime = DateTime.parse(AverageStart, dateprops );
 			}
 			catch ( Exception e ) {
 				message = "The average start date/time \"" + AverageStart + "\" is not a valid date/time.";
-				Message.printWarning ( warning_level, 
+				Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(command_tag,
 				++warning_count), routine, message );
 				status.addToLog ( CommandPhaseType.RUN,
@@ -252,7 +246,7 @@ throws CommandWarningException, CommandException
 			}
 		}
 		if ( AverageStart_DateTime != null ) {
-			// Set the value and contents...
+			// Set the value and contents.
 			Prop prop = new Prop ( "AverageStart",AverageStart_DateTime,AverageStart_DateTime.toString() );
 			dateprops.set ( prop );
 		}
@@ -262,7 +256,7 @@ throws CommandWarningException, CommandException
 			}
 			catch ( Exception e ) {
 				message = "The average end date/time \"" + AverageEnd +	"\" is not a valid date/time.";
-				Message.printWarning ( warning_level, 
+				Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(command_tag,
 				++warning_count), routine, message );
 				Message.printWarning ( 3, routine, e );
@@ -272,7 +266,7 @@ throws CommandWarningException, CommandException
 			}
 		}
 		if ( warning_count > 0 ) {
-			// Input error...
+			// Input error.
 			message = "Cannot process command parameters - invalid date/time.";
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
@@ -284,7 +278,7 @@ throws CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting average period in processor (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );

@@ -39,10 +39,10 @@ import java.util.Set;
 import javax.swing.JFrame;
 
 import freemarker.cache.FileTemplateLoader;
+import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
-import freemarker.template.Version;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -418,7 +418,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StringProperties != null) && !StringProperties.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StringProperties.indexOf("${") >= 0 ) {
     	StringProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, StringProperties);
     }
-    Hashtable<String,String> stringProperties = new Hashtable<String,String>();
+    Hashtable<String,String> stringProperties = new Hashtable<>();
     if ( (StringProperties != null) && (StringProperties.length() > 0) && (StringProperties.indexOf(":") > 0) ) {
         // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(StringProperties, ",", 0 );
@@ -535,7 +535,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Call the FreeMarker API.
         	// TODO sam 2017-04-08 figure out whether can re-use a singleton.
         	// Configuration is intended to be a shared singleton but templates can exist in many folders.
-            Configuration config = new Configuration(new Version(2,3,0));
+        	// Make sure the version is the same as the FreeMarker jar file packaged with the software.
+            Configuration config = new Configuration(Configuration.VERSION_2_3_33);
+            // TODO smalers 2024-10-22 may need to handle format to enable specific FreeMarker features.
+            //config.setOutputFormat(HTMLOutputFormat.INSTANCE);
             // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
             // templates will be located with command files and user data.
             //config.setSharedVariable("shared", "avoid global variables");
@@ -587,6 +590,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // Add properties from the processor.
                     Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
                     for ( String propertyName : propertyNames ) {
+                    	//Message.printStatus(2, routine, "Adding model property " + propertyName + "=" + tsprocessor.getPropContents(propertyName));
                         model.put(propertyName, tsprocessor.getPropContents(propertyName) );
                     }
                     // Add single column tables from the processor, using the table ID as the object key.

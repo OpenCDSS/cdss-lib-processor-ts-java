@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __browseInput_JButton = null;
 private SimpleJButton __pathInput_JButton = null;
+private SimpleJButton __clearInput_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __cancel_JButton = null;
@@ -127,7 +128,14 @@ public void actionPerformed( ActionEvent event ) {
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
-					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+					if ( __InputFile_JTextField.getText().isEmpty() ) {
+						// Set.
+						__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+					}
+					else {
+						// Append.
+						__InputFile_JTextField.setText(__InputFile_JTextField.getText() + "," + IOUtil.toRelativePath(__working_dir, path));
+					}
 				}
 				catch ( Exception e ) {
 					Message.printWarning ( 1, "AppendFile", "Error converting file to relative path." );
@@ -137,7 +145,7 @@ public void actionPerformed( ActionEvent event ) {
 			}
 		}
 	}
-    if ( o == __browseOutput_JButton ) {
+	else if ( o == __browseOutput_JButton ) {
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
         JFileChooser fc = null;
         if ( last_directory_selected != null ) {
@@ -173,6 +181,9 @@ public void actionPerformed( ActionEvent event ) {
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+	else if ( o == __clearInput_JButton ) {
+		__InputFile_JTextField.setText("");
+	}
 	else if ( o == __help_JButton ) {
 		HelpViewer.getInstance().showHelp("command", "AppendFile");
 	}
@@ -184,17 +195,48 @@ public void actionPerformed( ActionEvent event ) {
 		}
 	}
 	else if ( o == __pathInput_JButton ) {
+		String inputFiles = __InputFile_JTextField.getText();
 		if ( __pathInput_JButton.getText().equals(__AddWorkingDirectory) ) {
-			__InputFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ) );
+			if ( inputFiles.contains(",") ) {
+				// Split.
+				String [] parts = inputFiles.split(",");
+				StringBuilder b = new StringBuilder();
+				for ( String part : parts ) {
+					if ( b.length() > 0 ) {
+						b.append(",");
+					}
+					b.append (IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(__working_dir,part ), true) );
+				}
+				__InputFile_JTextField.setText (b.toString());
+			}
+			else {
+				// Single file.
+				__InputFile_JTextField.setText (IOUtil.verifyPathForOS(
+					IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ), true) );
+			}
 		}
 		else if ( __pathInput_JButton.getText().equals(__RemoveWorkingDirectory) ) {
 			try {
-                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
-                        __InputFile_JTextField.getText() ) );
+				if ( inputFiles.contains(",") ) {
+					// Split.
+					String [] parts = inputFiles.split(",");
+					StringBuilder b = new StringBuilder();
+					for ( String part : parts ) {
+						if ( b.length() > 0 ) {
+							b.append(",");
+						}
+						b.append (IOUtil.verifyPathForOS(IOUtil.toRelativePath(__working_dir,part ), true) );
+					}
+					__InputFile_JTextField.setText (b.toString());
+				}
+				else {
+					// Single file.
+					__InputFile_JTextField.setText ( IOUtil.verifyPathForOS(
+						IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ), true) );
+				}
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"AppendFile_JDialog",
-				"Error converting input file name to relative path." );
+				Message.printWarning ( 1,"PDFMerge_JDialog", "Error converting input file name to relative path." );
 			}
 		}
 		refresh ();
@@ -353,6 +395,10 @@ private void initialize ( JFrame parent, AppendFile_Command command ) {
 		JGUIUtil.addComponent(InputFile_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	__clearInput_JButton = new SimpleJButton ( "Clear", this );
+	__clearInput_JButton.setToolTipText("Clear input files");
+    JGUIUtil.addComponent(InputFile_JPanel, __clearInput_JButton,
+		3, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 

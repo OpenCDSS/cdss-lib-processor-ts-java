@@ -30,9 +30,8 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandListListener;
 
 /**
-This class provides a way for the Swing JList and other components to
-display commands that are managed in a TSCommandProcessor.
-It allows the TSCommandProcessor to be the data model for the UI components.
+This class provides a way for the Swing JList and other components to display commands that are managed in a TSCommandProcessor.
+It allows the TSCommandProcessor to be the data model (contain commands) for the UI components.
 Therefore, there is a single data model for UI and processing.
 */
 @SuppressWarnings("serial")
@@ -73,7 +72,8 @@ public void addElement ( String command_string ) {
 }
 
 /**
-Called when one or more commands have been added in the TSCommandProcessor.
+Called when one or more commands have been added in the TSCommandProcessor,
+will notify the UI list of the change.
 @param index0 The index (0+) of the first command that is added.
 @param index1 The index (0+) of the last command that is added.
 */
@@ -82,8 +82,8 @@ public void commandAdded ( int index0, int index1 ) {
 }
 
 /**
-Called when one or more commands have changed in the TSCommandProcessor,
-for example in a change in definition or status.
+Called when one or more commands have changed in the TSCommandProcessor, for example in a change in definition or status,
+will notify the UI list of the change.
 @param index0 The index (0+) of the first command that is changed.
 @param index1 The index (0+) of the last command that is changed.
 */
@@ -92,7 +92,8 @@ public void commandChanged ( int index0, int index1 ) {
 }
 
 /**
-Handle when one or more commands have been removed in the TSCommandProcessor.
+Handle when one or more commands have been removed in the TSCommandProcessor,
+will notify the UI list of the change.
 @param index0 The index (0+) of the first command that is removed.
 @param index1 The index (0+) of the last command that is removed.
 */

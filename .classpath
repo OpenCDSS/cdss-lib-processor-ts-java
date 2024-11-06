@@ -43,5 +43,8 @@
 	<classpathentry kind="lib" path="lib/heclib/hec-monolith-3.0.1-rc03.jar"/>
 	<classpathentry kind="lib" path="lib/heclib/hec-nucleus-metadata-1.1.0.jar"/>
 	<classpathentry kind="lib" path="lib/freemarker/freemarker-2.3.33.jar"/>
+	<classpathentry kind="lib" path="lib/PDFBox/pdfbox-3.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/PDFBox/pdfbox-tools-3.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/PDFBox/pdfbox-io-3.0.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

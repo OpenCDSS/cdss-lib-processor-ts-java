@@ -408,7 +408,7 @@ CommandWarningException, CommandException {
                 // Expand the property value to utilize %L, ${ts:property}.
                 PropertyValue = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, PropertyValue, status, CommandPhaseType.RUN);
-                Message.printStatus(2,routine,"Expanded property value=\"" + PropertyValue + "\"");
+                //Message.printStatus(2,routine,"Expanded property value=\"" + PropertyValue + "\"");
                 if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
                     Property_Object = DateTime.parse(PropertyValue);
                     ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to \"" + PropertyValue + "\"");

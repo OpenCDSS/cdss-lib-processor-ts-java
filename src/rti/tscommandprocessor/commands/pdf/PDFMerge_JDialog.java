@@ -323,7 +323,7 @@ private void initialize ( JFrame parent, PDFMerge_Command command ) {
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"<html><b>This command is under development.</b></html>"),
+		"<html><b>This command is under development and may not be functional as documented.</b></html>"),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"<html><b>If the TSTool interface command editor does not work, try loading or editing a command other than PDFMerge, and then use PDFMerge command.</b></html>"),

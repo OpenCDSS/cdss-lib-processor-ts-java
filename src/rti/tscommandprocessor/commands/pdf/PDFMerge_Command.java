@@ -31,7 +31,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import org.apache.pdfbox.multipdf.PDFMergerUtility;
+//import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -148,6 +148,7 @@ private int doMerge ( String OutputFile_full, String IfNotFound, List<File> file
 	String routine = getClass().getSimpleName() + ".doMerge";
 	String message;
 
+	/*
 	// Instantiate the PDFMergerUtility class.
 	PDFMergerUtility pdfMerger = new PDFMergerUtility();
 		
@@ -184,6 +185,7 @@ private int doMerge ( String OutputFile_full, String IfNotFound, List<File> file
 	// Merge the added documents.
 	//MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
 	pdfMerger.mergeDocuments(null);
+	*/
 	
 	return warningCount;
 }

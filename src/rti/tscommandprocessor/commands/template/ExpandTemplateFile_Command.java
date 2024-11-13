@@ -39,9 +39,8 @@ import java.util.Set;
 import javax.swing.JFrame;
 
 import freemarker.cache.FileTemplateLoader;
-import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
-import freemarker.template.SimpleSequence;
+//import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -602,7 +601,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             if ( table.getNumberOfFields() == 1 ) {
                                 // One-column table so add as a hash (list) property in the data model.
                                 int numRecords = table.getNumberOfRecords();
-                                SimpleSequence list = new SimpleSequence();
+                                //SimpleSequence list = new SimpleSequence();
+                                List<Object> list = new ArrayList<>();
                                 for ( int irec = 0; irec < numRecords; irec++ ) {
                                     // Check for null because this fouls up the template.
                                     tableVal = table.getFieldValue(irec, 0);
@@ -680,7 +680,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 		// Process the column out of the table.
             	        if ( table != null ) {
 	                		int numRecords = table.getNumberOfRecords();
-	                        SimpleSequence list = new SimpleSequence();
+	                        //SimpleSequence list = new SimpleSequence();
+	                        List<Object> list = new ArrayList<>();
 	                        for ( int irec = 0; irec < numRecords; irec++ ) {
 	                            // Check for null because this fouls up the template.
 	                            Object tableVal = table.getFieldValue(irec, columnNumber);

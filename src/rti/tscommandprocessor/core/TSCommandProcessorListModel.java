@@ -45,6 +45,11 @@ The TSCommand processor that the list model maps to.
 private TSCommandProcessor __processor;
 
 /**
+ * Whether to ignore events, used to optimize bulk operations like loading a command file.
+ */
+private boolean ignoreEvents = false;
+
+/**
 Constructor for ListModel for TSCommandProcessor instance.
 @param TSCommandProcessor processor A TSCommandProcessor instance that can be displayed in a JList or other list via this ListModel.
 */
@@ -78,6 +83,10 @@ will notify the UI list of the change.
 @param index1 The index (0+) of the last command that is added.
 */
 public void commandAdded ( int index0, int index1 ) {
+	if ( this.ignoreEvents ) {
+		// Don't pass on events to the UI.
+		return;
+	}
 	fireIntervalAdded ( this, index0, index1 );
 }
 
@@ -88,6 +97,10 @@ will notify the UI list of the change.
 @param index1 The index (0+) of the last command that is changed.
 */
 public void commandChanged ( int index0, int index1 ) {
+	if ( this.ignoreEvents ) {
+		// Don't pass on events to the UI.
+		return;
+	}
 	fireContentsChanged ( this, index0, index1 );
 }
 
@@ -98,6 +111,10 @@ will notify the UI list of the change.
 @param index1 The index (0+) of the last command that is removed.
 */
 public void commandRemoved ( int index0, int index1 ) {
+	if ( this.ignoreEvents ) {
+		// Don't pass on events to the UI.
+		return;
+	}
 	fireIntervalRemoved ( this, index0, index1 );
 }
 
@@ -171,6 +188,14 @@ Remove a command at an index.
 */
 public void removeElementAt ( int index ) {
 	this.__processor.removeCommandAt ( index );
+}
+
+/**
+ * Whether to ignore sending events to the UI data model.
+ * @param ignoreEvents whether to ignore sending events to the UI data model
+ */
+public void setIgnoreEvents ( boolean ignoreEvents ) {
+	this.ignoreEvents = ignoreEvents;
 }
 
 /**

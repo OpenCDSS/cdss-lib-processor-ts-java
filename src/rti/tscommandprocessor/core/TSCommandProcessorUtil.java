@@ -588,7 +588,7 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
    	// Nested delimiter:
   	// - special case to ignore (advance to inner).
    	// - currently only handle an the start of 'paramValue' but in the future might handle anywhere
-   	String delimStartNested = "${${";
+   	//String delimStartNested = "${${";
    	// End delimiter is not guaranteed to look like the following, could be "} ....}".
    	// String delimEndNested = "}}";
 

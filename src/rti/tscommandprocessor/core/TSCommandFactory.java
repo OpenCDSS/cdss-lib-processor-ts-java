@@ -139,6 +139,9 @@ import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Co
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Command;
 
+// PDF commands.
+import rti.tscommandprocessor.commands.pdf.PDFMerge_Command;
+
 // R (statistics) commands.
 import rti.tscommandprocessor.commands.r.RunR_Command;
 
@@ -885,6 +888,9 @@ throws UnknownCommandException {
 
 	// "P" commands.
 
+    else if ( commandNameUpper.equals("PDFMERGE") ) { // "PDFMerge"
+        return new PDFMerge_Command ();
+    }
     else if ( commandNameUpper.equals("PRINTTEXTFILE") ) { // "PrintTextFile"
         return new PrintTextFile_Command ();
     }

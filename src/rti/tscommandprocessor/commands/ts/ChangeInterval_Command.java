@@ -949,10 +949,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		}
     		resultList.add(result_ts);
     		
-    		// Update the newly created time series alias (alias is required).
+    		// Update the newly created time series alias (alias is required):
+    		// - can only expand the property values at run-time
             if ( (Alias != null) && !Alias.equals("") ) {
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, result_ts, Alias, status, commandPhase);
+                String alias = Alias;
+                if ( commandPhase == CommandPhaseType.RUN ) {
+                	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString( processor, result_ts, Alias, status, commandPhase);
+                }
                 result_ts.setAlias ( alias );
             }
     

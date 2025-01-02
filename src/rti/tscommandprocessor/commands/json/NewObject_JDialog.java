@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -66,8 +66,8 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
-private boolean __error_wait = false; // To track errors
-private boolean __first_time = true; // Indicate first time display
+private boolean __error_wait = false; // To track errors.
+private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea=null;
 private JTextField __ObjectID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
@@ -87,8 +87,8 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public NewObject_JDialog ( JFrame parent, NewObject_Command command )
-{	super(parent, true);
+public NewObject_JDialog ( JFrame parent, NewObject_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -96,8 +96,8 @@ public NewObject_JDialog ( JFrame parent, NewObject_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed(ActionEvent event)
-{	Object o = event.getSource();
+public void actionPerformed(ActionEvent event) {
+	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read.
@@ -107,7 +107,7 @@ public void actionPerformed(ActionEvent event)
         fc.addChoosableFileFilter(sff);
         sff = new SimpleFileFilter("geojson","GeoJSON File");
         fc.addChoosableFileFilter(sff);
-		
+
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		if ( last_directory_selected != null ) {
 			fc.setCurrentDirectory(	new File(last_directory_selected));
@@ -117,13 +117,13 @@ public void actionPerformed(ActionEvent event)
 		}
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -171,8 +171,8 @@ public void actionPerformed(ActionEvent event)
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check.
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
     String ObjectID = __ObjectID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
@@ -200,11 +200,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String ObjectID = __ObjectID_JTextField.getText().trim();
+private void commitEdits () {
+	String ObjectID = __ObjectID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
     String JSONText = __JSONText_JTextArea.getText().trim();
     __command.setCommandParameter ( "ObjectID", ObjectID );
@@ -217,8 +217,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, NewObject_Command command )
-{	__command = command;
+private void initialize ( JFrame parent, NewObject_Command command ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -236,7 +236,7 @@ private void initialize ( JFrame parent, NewObject_Command command )
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
-    
+
     JGUIUtil.addComponent(paragraph, new JLabel (
         "<html><b>This command is under development.</b></html>"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -257,7 +257,7 @@ private void initialize ( JFrame parent, NewObject_Command command )
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Object ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ObjectID_JTextField = new JTextField (10);
@@ -268,7 +268,7 @@ private void initialize ( JFrame parent, NewObject_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the object."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"JSON input file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"JSON input file to read:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -289,8 +289,8 @@ private void initialize ( JFrame parent, NewObject_Command command )
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("JSON text:"), 
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("JSON text:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JSONText_JTextArea = new JTextArea (4,40);
     __JSONText_JTextArea.setLineWrap ( true );
@@ -299,7 +299,7 @@ private void initialize ( JFrame parent, NewObject_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__JSONText_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -311,12 +311,12 @@ private void initialize ( JFrame parent, NewObject_Command command )
 	// Refresh the contents.
 	refresh ();
 
-	// South JPanel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
- 
+
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add (__ok_JButton);
 	__ok_JButton.setToolTipText("Save changes to command");
@@ -374,8 +374,8 @@ public boolean ok ()
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String ObjectID = "";
+private void refresh () {
+	String ObjectID = "";
     String InputFile = "";
     String JSONText = "";
 	PropList props = __command.getCommandParameters();
@@ -427,8 +427,8 @@ private void refresh ()
 React to the user response.
 @param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -444,18 +444,30 @@ private void response ( boolean ok )
 
 /**
 Responds to WindowEvents.
-@param event WindowEvent object 
+@param event WindowEvent object
 */
 public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
 // The following methods are all necessary because this class implements WindowListener.
-public void windowActivated(WindowEvent evt) {}
-public void windowClosed(WindowEvent evt) {}
-public void windowDeactivated(WindowEvent evt) {}
-public void windowDeiconified(WindowEvent evt) {}
-public void windowIconified(WindowEvent evt) {}
-public void windowOpened(WindowEvent evt) {}
+
+public void windowActivated(WindowEvent evt) {
+}
+
+public void windowClosed(WindowEvent evt) {
+}
+
+public void windowDeactivated(WindowEvent evt) {
+}
+
+public void windowDeiconified(WindowEvent evt) {
+}
+
+public void windowIconified(WindowEvent evt) {
+}
+
+public void windowOpened(WindowEvent evt) {
+}
 
 }

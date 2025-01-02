@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -58,7 +58,7 @@ This class initializes, checks, and runs the NewObject() command.
 */
 public class NewObject_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
 The JSON object that is created, which contains identifier and JSON complex object.
 */
@@ -67,8 +67,8 @@ private JSONObject jsonObject = null;
 /**
 Constructor.
 */
-public NewObject_Command ()
-{	super();
+public NewObject_Command () {
+	super();
 	setCommandName ( "NewObject" );
 }
 
@@ -80,14 +80,14 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String routine = getClass().getSimpleName() + ".checkCommandParameters";
+throws InvalidCommandParameterException {
+	String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String ObjectID = parameters.getValue ( "ObjectID" );
 	String InputFile = parameters.getValue("InputFile");
     String JSONText = parameters.getValue ( "JSONText" );
 	String warning = "";
     String message;
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -129,9 +129,9 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify an existing input file." ) );
             }
-    
+
         try {
-            //String adjusted_path = 
+            //String adjusted_path =
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         }
@@ -150,7 +150,7 @@ throws InvalidCommandParameterException
         // Check the JSON for validity.
 		// TODO smalers 2022-10-11 fill out functionality.
 	}
- 
+
 	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(3);
     validList.add ( "ObjectID" );
@@ -163,7 +163,7 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -172,13 +172,14 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new NewObject_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the object that is read by this class when run in discovery mode.
+@return the object that is read by this class when run in discovery mode
 */
 private JSONObject getDiscoveryJSONObject() {
     return this.jsonObject;
@@ -187,10 +188,11 @@ private JSONObject getDiscoveryJSONObject() {
 /**
 Return a list of objects of the requested type.  This class only keeps a list of JSONObject objects.
 Classes that can be requested:  JSONObject
+@return a list of objects of the requested type
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   JSONObject object = getDiscoveryJSONObject();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    JSONObject object = getDiscoveryJSONObject();
     List<T> v = null;
     if ( (object != null) && (c == object.getClass()) ) {
         v = new ArrayList<>();
@@ -207,10 +209,8 @@ public <T> List<T> getObjectList ( Class<T> c )
  * The resulting array(s) can be processed into one merged table.
  * If the name is in a list of such objects, the first array (list) is returned.
  * This method is called recursively to dig down into the JSON object model.
- * @param map read from a JSON string, can be a top level map the first call or an embedded
- * map from recursive call
- * @param arrayName name of the array to find or empty to use the first array,
- * such as a top-level array
+ * @param map read from a JSON string, can be a top level map the first call or an embedded * map from recursive call
+ * @param arrayName name of the array to find or empty to use the first array, such as a top-level array
  * @param appendArrays whether to append multiple matched arrays (false will return the first instance)
  * @param arrays list of arrays to return.  If null, a new array will be created.
  * If non-null, the list will be modified, such as by recursive calls.
@@ -311,17 +311,17 @@ private int readJSONUsingJackson ( String inputFile, JSONObject object,
 	//String [] doubleColumns, String [] integerColumns, String [] textColumns,
 	//int top,
 	CommandStatus status, int warningCount )
-throws FileNotFoundException, IOException
-{	String routine = getClass().getSimpleName() + ".readJSONUsingJackson";
+throws FileNotFoundException, IOException {
+	String routine = getClass().getSimpleName() + ".readJSONUsingJackson";
 
 	boolean useMapper = true;
 	if ( useMapper ) {
 		// Map the JSON string into an object hierarchy and then pull out what is needed:
 		// - may fail on very large input files by running out of memory
-		
+
 		// First read the input file into a string.
 		StringBuilder responseJson = IOUtil.fileToStringBuilder(inputFile);
-		
+
 		// Parse the string into object hierarchy:
 		// - if the JSON string starts with '{', read into a map
 		// - if the JSON string starts with '[', read into an array and add to a map for further processing
@@ -381,10 +381,9 @@ throws FileNotFoundException, IOException
         	return warningCount;
 		}
 		*/
-		
+
 		List<String> problems = new ArrayList<>();
-		//readTableData ( table, arrays, arrayColumns, excludeNames, top, problems );
-		
+
 		// Log the problems.
 		int maxProblems = 100;
 		int iProblem = -1;
@@ -442,7 +441,7 @@ throws FileNotFoundException, IOException
 	else {
 		// Other options.
 	}
-	
+
 	return warningCount;
 }
 
@@ -476,11 +475,10 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
@@ -503,7 +501,7 @@ CommandWarningException, CommandException
     }
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
     String ObjectID = parameters.getValue ( "ObjectID" );
@@ -526,10 +524,10 @@ CommandWarningException, CommandException
 
 	try {
     	// Create the object.
-    
+
 	    JSONObject object = null;
 	    String InputFile_full = InputFile;
-        
+
         if ( commandPhase == CommandPhaseType.RUN ) {
         	if ( (JSONText != null) && !JSONText.isEmpty() ) {
         		// Create the object from the JSON text.
@@ -547,16 +545,12 @@ CommandWarningException, CommandException
    			  		object = new JSONObject(ObjectID);
    			  		warning_count = readJSONUsingJackson ( InputFile_full,
    			  			object,
-   			  			//table,
-   				  		//ArrayName, appendArrays, excludeNames,
-   				  		//arrayColumns, booleanColumns, dateTimeColumns, doubleColumns, integerColumns, textColumns,
-   				  		//top,
    				  		status, warning_count);
    		  		}
         	}
-		
-            // Set the table in the processor.
-            
+
+            // Set the object in the processor.
+
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "Object", object );
             try {
@@ -586,7 +580,7 @@ CommandWarningException, CommandException
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -598,7 +592,8 @@ CommandWarningException, CommandException
 }
 
 /**
-Set the table that is read by this class in discovery mode.
+Set the object that is created by this class in discovery mode.
+@param objec the object that is created in discovery mode
 */
 private void setDiscoveryJSONObject ( JSONObject object ) {
     this.jsonObject = object;

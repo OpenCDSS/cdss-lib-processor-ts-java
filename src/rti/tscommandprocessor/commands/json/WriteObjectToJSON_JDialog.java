@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -73,18 +73,17 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
 
-private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private SimpleJButton __path_JButton = null;
 private WriteObjectToJSON_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __ObjectID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
-// TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter,
-// similar to TSFormatSpecifiersJPanel
+// TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter, similar to TSFormatSpecifiersJPanel.
 private JTextField __Indent_JTextField = null;
 private SimpleJComboBox __PrettyPrint_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -120,16 +119,16 @@ public void actionPerformed( ActionEvent event ) {
 		fc.setDialogTitle("Select JSON File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("json", "JSON file");
 		fc.addChoosableFileFilter(sff);
-		
+
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
-			String filename = fc.getSelectedFile().getName(); 
-			String path = fc.getSelectedFile().getPath(); 
-	
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
 			if (filename == null || filename.equals("")) {
 				return;
 			}
-	
+
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
@@ -179,8 +178,8 @@ public void actionPerformed( ActionEvent event ) {
 Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
 This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Create a list of parameters to check.
 	PropList parameters = new PropList ( "" );
     String ObjectID = __ObjectID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
@@ -188,7 +187,7 @@ private void checkInput ()
 	String Indent = __Indent_JTextField.getText().trim();
 
 	__error_wait = false;
-	
+
 	if ( ObjectID.length() > 0 ) {
 		parameters.set ( "ObjectID", ObjectID );
 	}
@@ -202,7 +201,7 @@ private void checkInput ()
 		parameters.set ( "Indent", Indent );
 	}
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -213,11 +212,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{   String ObjectID = __ObjectID_JComboBox.getSelected();
+private void commitEdits () {
+    String ObjectID = __ObjectID_JComboBox.getSelected();
  	String OutputFile = __OutputFile_JTextField.getText().trim();
     String PrettyPrint = __PrettyPrint_JComboBox.getSelected();
 	String Indent = __Indent_JTextField.getText().trim();
@@ -232,8 +231,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List<String> objectIDChoices )
-{	__command = command;
+private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List<String> objectIDChoices ) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -250,12 +249,12 @@ private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List
 		"Write an object to a JSON file." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the output file be relative to the current working directory." ), 
+		"It is recommended that the output file be relative to the current working directory." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is:" ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is:" ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "   " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "   " + __working_dir ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
@@ -272,7 +271,7 @@ private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - object identifier."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "JSON file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "JSON file to write:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 40 );
 	__OutputFile_JTextField.setToolTipText("Specify the file to output, can use ${Property} notation");
@@ -304,7 +303,7 @@ private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List
     __PrettyPrint_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __PrettyPrint_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - pretty print (default=" + __command._True + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - pretty print (default=" + __command._True + ")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Indent for pretty print:"),
@@ -317,7 +316,7 @@ private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List
 		"Optional - number of spaces to indent (default=2)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
@@ -326,10 +325,10 @@ private void initialize ( JFrame parent, WriteObjectToJSON_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
     		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+        JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -400,7 +399,7 @@ private void refresh () {
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
 		ObjectID = parameters.getValue ( "ObjectID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
@@ -477,8 +476,7 @@ private void refresh () {
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok ) {
 	__ok = ok;	// Save to be returned by ok().

@@ -299,14 +299,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    File in = new File(InputFile_full);
 	    if ( in.exists() ) {
 	    	// Read the file into a StringBuilder.
-	    	Message.printStatus(2,routine,"Reading file into StringBuilder.");
+	    	//Message.printStatus(2,routine,"Reading file into StringBuilder.");
     		StringBuilder sb = IOUtil.fileToStringBuilder(InputFile_full);
-	    	Message.printStatus(2,routine,"Replacing string \"" + SearchFor + "\" with \"" + ReplaceWith + "\".");
+	    	//Message.printStatus(2,routine,"Replacing string \"" + SearchFor + "\" with \"" + ReplaceWith + "\".");
 	    	replaceString ( sb, SearchFor, ReplaceWith );
 	    	// Write the output file.
-	    	Message.printStatus(2,routine,"Writing StringBuilder to file.");
+	    	//Message.printStatus(2,routine,"Writing StringBuilder to file.");
 	    	IOUtil.writeFile(OutputFile_full, sb.toString());
-	    	Message.printStatus(2,routine,"Back from writing file.");
+	    	//Message.printStatus(2,routine,"Back from writing file.");
 	        // Save the output file name.
 	        setOutputFile ( new File(OutputFile_full));
 	    }

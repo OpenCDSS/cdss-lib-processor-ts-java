@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -51,6 +51,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringDictionary;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 
@@ -83,6 +84,7 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
 	String TableID = parameters.getValue ( "TableID" );
+    String Row = parameters.getValue ( "Row" );
     String PropertyName = parameters.getValue ( "PropertyName" );
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     String ColumnCountProperty = parameters.getValue ( "ColumnCountProperty" );
@@ -99,7 +101,17 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
+
+    if ( (Row != null) && !Row.isEmpty() ) {
+    	// TODO smalers 2021-08-19 need to create validation tools.
+    	if ( !StringUtil.isLong(Row) && !Row.equalsIgnoreCase("last") ) {
+			message = "The table row (" + Row + ") is invalid.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Provide the row as an integer 1+ or \"last\"." ) );
+	  	}
+    }
+
     int propCount = 0;
     if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
     	++propCount;
@@ -117,11 +129,12 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(8);
+	List<String> validList = new ArrayList<>(9);
     validList.add ( "TableID" );
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
+    validList.add ( "Row" );
     validList.add ( "PropertyName" );
     validList.add ( "DefaultValue" );
     validList.add ( "RowCountProperty" );
@@ -153,12 +166,21 @@ public boolean editCommand ( JFrame parent ) {
 // TODO SAM 2015-02-25 may include this in utility code at some point.
 /**
 Find the table rows that match the include and exclude filters.
+@param table the data table to retrieve records (only the first matching row is returned)
 @param columnIncludeFilters include filters to match column values
 @param columnExcludeFilters include filters to match column values
+@param row the specific row to match, a number 1+ or "last" for the last row
+@param errors a list of strings to set errors
+@param return the list of matching table records
 */
 private List<TableRecord> findTableRecords ( DataTable table,
-	StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
+	StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters, String row,
 	List<String>errors ) {
+	// Check whether the a row is specified.
+	boolean doRow = false;
+	if ( (row != null) && !row.isEmpty() ) {
+		doRow = true;
+	}
     // Get include filter columns and glob-style regular expressions.
     int [] columnIncludeFiltersNumbers = new int[0];
     String [] columnIncludeFiltersGlobs = null;
@@ -211,136 +233,163 @@ private List<TableRecord> findTableRecords ( DataTable table,
     }
     // Loop through the table and match rows.
     List<TableRecord> matchedRows = new ArrayList<>();
-    boolean filterMatches;
-    int icol;
-    Object o;
-    String s;
-    boolean debug = true; // Set to true when troubleshooting code.
-    for ( int irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
-        filterMatches = true; // Default is match all.
-        if ( debug ) {
-            Message.printStatus(2,"","columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
-        }
-        if ( columnIncludeFiltersNumbers.length > 0 ) {
-            // Filters can be done on any columns so loop through to see if row matches.
-            for ( icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
-                if ( columnIncludeFiltersNumbers[icol] < 0 ) {
-                	if ( debug ) {
-                    	Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] < 0" );
-                	}
-                    filterMatches = false;
-                    break;
-                }
-                try {
-                    o = table.getFieldValue(irow, columnIncludeFiltersNumbers[icol]);
-                    if ( o == null ) {
-                        filterMatches = false;
-                        if ( debug ) {
-                    	     Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] object is null" );
-               	        }
-                        break; // Don't include nulls when checking values.
-                    }
-                    s = ("" + o).toUpperCase();
-                    if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
-                        // A filter did not match so don't include the record.
-                        filterMatches = false;
-                        if ( debug ) {
-                    	     Message.printStatus(2,"","Skipping filter because value \"" + s +
-                    	    	"\" does not match columnIncludeFiltersGlobs[" + icol + "] = " + columnIncludeFiltersGlobs[icol] );
-               	        }
-                        break;
-                    }
-                }
-                catch ( Exception e ) {
-                    errors.add("Error getting table data for [" + irow + "][" +
-                    	columnIncludeFiltersNumbers[icol] + "] (" + e + ")." );
-                    filterMatches = false;
-                }
-            }
-            if ( !filterMatches ) {
-                // Skip the record.
-            	if ( debug ) {
-                	Message.printStatus(2,"","Filter(s) do not match row [" + irow + "] ... skipping." );
-            	}
-                continue;
-            }
-            else {
-            	if ( debug ) {
-                	Message.printStatus(2,"","Filter(s) not match row [" + irow + "] ... not skipping." );
-            	}
-            }
-        }
-        if ( debug ) {
-            Message.printStatus(2,"","columnExcludeFiltersNumbers.length=" + columnExcludeFiltersNumbers.length );
-        }
-        if ( columnExcludeFiltersNumbers.length > 0 ) {
-            int matchesCount = 0;
-            // Filters can be done on any columns so loop through to see if row matches.
-            for ( icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
-                if ( columnExcludeFiltersNumbers[icol] < 0 ) {
-                    // Can't do filter so don't try.
-                    break;
-                }
-                try {
-                    o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
-                    if ( debug ) {
-                    	Message.printStatus(2,"","Got cell object " + o );
-                    }
-                    if ( o == null ) {
-                    	if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
-                    		// Trying to match blank cells.
-                    		++matchesCount;
-                    	}
-                    	else {
-                    		// Don't include nulls when checking values.
-                    		break;
-                    	}
-                    }
-                    s = ("" + o).toUpperCase();
-                    if ( debug ) {
-                    	Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
-                    }
-                    if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
-                        // A filter matched so don't copy the record.
-                    	if ( debug ) {
-                    		Message.printStatus(2,"","Exclude filter matches.");
-                    	}
-                        ++matchesCount;
-                    }
-                }
-                catch ( Exception e ) {
-                	errors.add("Error getting table data for [" + irow + "][" +
-                       	columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
-                }
-            }
-            if ( debug ) {
-            	Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
-            }
-            if ( matchesCount == columnExcludeFiltersNumbers.length ) {
-                // Skip the record since all exclude filters were matched.
-            	if ( debug ) {
-            		Message.printStatus(2,"","Skipping since all exclude filters matched.");
-            	}
-                continue;
-            }
-        }
-        // If here then the row should be included.
-        try {
+    if ( doRow ) {
+    	int irow = -1;
+    	if ( row.equalsIgnoreCase("Last") ) {
+    		irow = table.getNumberOfRecords() - 1;
+    	}
+    	else {
+    		// Command parameter Row has value 1+, but table is 0+.
+    		irow = Integer.valueOf(row) - 1;
+    	}
+    	if ( (irow >= 0) && (irow < table.getNumberOfRecords()) ) {
+    		try {
+    			matchedRows.add(table.getRecord(irow));
+    		}
+    		catch ( Exception e ) {
+    			errors.add ( "Error getting table row: " + row );
+    		}
+    	}
+    	else if ( irow < 0 ) {
+    		errors.add ( "Requested row (" + row + ") is invalid (must be >= 1)." );
+    	}
+    	else {
+    		errors.add ( "Requested row (" + row + ") is invalid (is greater than table number of rows " + table.getNumberOfRecords() + ")." );
+    	}
+    }
+    else {
+    	boolean filterMatches;
+    	int icol;
+    	Object o;
+    	String s;
+    	boolean debug = false; // Set to true when troubleshooting code.
+    	for ( int irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
+        	filterMatches = true; // Default is match all.
         	if ( debug ) {
-        		Message.printStatus(2,"","Matched table row [" + irow + "]");
+            	Message.printStatus(2,"","columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
         	}
-        	matchedRows.add(table.getRecord(irow));
-        }
-        catch ( Exception e ) {
-        	// Should not happen since row was accessed above.
-        	errors.add("Error getting table data for row [" + irow + "] (" + e + ")." );
-        }
+        	if ( columnIncludeFiltersNumbers.length > 0 ) {
+            	// Filters can be done on any columns so loop through to see if row matches.
+            	for ( icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
+                	if ( columnIncludeFiltersNumbers[icol] < 0 ) {
+                		if ( debug ) {
+                    		Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] < 0" );
+                		}
+                    	filterMatches = false;
+                    	break;
+                	}
+                	try {
+                    	o = table.getFieldValue(irow, columnIncludeFiltersNumbers[icol]);
+                    	if ( o == null ) {
+                        	filterMatches = false;
+                        	if ( debug ) {
+                    	     	Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] object is null" );
+               	        	}
+                        	break; // Don't include nulls when checking values.
+                    	}
+                    	s = ("" + o).toUpperCase();
+                    	if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
+                        	// A filter did not match so don't include the record.
+                        	filterMatches = false;
+                        	if ( debug ) {
+                    	     	Message.printStatus(2,"","Skipping filter because value \"" + s +
+                    	    		"\" does not match columnIncludeFiltersGlobs[" + icol + "] = " + columnIncludeFiltersGlobs[icol] );
+               	        	}
+                        	break;
+                    	}
+                	}
+                	catch ( Exception e ) {
+                    	errors.add("Error getting table data for [" + irow + "][" +
+                    		columnIncludeFiltersNumbers[icol] + "] (" + e + ")." );
+                    	filterMatches = false;
+                	}
+            	}
+            	if ( !filterMatches ) {
+                	// Skip the record.
+            		if ( debug ) {
+                		Message.printStatus(2,"","Filter(s) do not match row [" + irow + "] ... skipping." );
+            		}
+                	continue;
+            	}
+            	else {
+            		if ( debug ) {
+                		Message.printStatus(2,"","Filter(s) not match row [" + irow + "] ... not skipping." );
+            		}
+            	}
+        	}
+        	if ( debug ) {
+            	Message.printStatus(2,"","columnExcludeFiltersNumbers.length=" + columnExcludeFiltersNumbers.length );
+        	}
+        	if ( columnExcludeFiltersNumbers.length > 0 ) {
+            	int matchesCount = 0;
+            	// Filters can be done on any columns so loop through to see if row matches.
+            	for ( icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
+                	if ( columnExcludeFiltersNumbers[icol] < 0 ) {
+                    	// Can't do filter so don't try.
+                    	break;
+                	}
+                	try {
+                    	o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
+                    	if ( debug ) {
+                    		Message.printStatus(2,"","Got cell object " + o );
+                    	}
+                    	if ( o == null ) {
+                    		if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
+                    			// Trying to match blank cells.
+                    			++matchesCount;
+                    		}
+                    		else {
+                    			// Don't include nulls when checking values.
+                    			break;
+                    		}
+                    	}
+                    	s = ("" + o).toUpperCase();
+                    	if ( debug ) {
+                    		Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
+                    	}
+                    	if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
+                        	// A filter matched so don't copy the record.
+                    		if ( debug ) {
+                    			Message.printStatus(2,"","Exclude filter matches.");
+                    		}
+                        	++matchesCount;
+                    	}
+                	}
+                	catch ( Exception e ) {
+                		errors.add("Error getting table data for [" + irow + "][" +
+                       		columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
+                	}
+            	}
+            	if ( debug ) {
+            		Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
+            	}
+            	if ( matchesCount == columnExcludeFiltersNumbers.length ) {
+                	// Skip the record since all exclude filters were matched.
+            		if ( debug ) {
+            			Message.printStatus(2,"","Skipping since all exclude filters matched.");
+            		}
+                	continue;
+            	}
+        	}
+        	// If here then the row should be included.
+        	try {
+        		if ( debug ) {
+        			Message.printStatus(2,"","Matched table row [" + irow + "]");
+        		}
+        		matchedRows.add(table.getRecord(irow));
+        	}
+        	catch ( Exception e ) {
+        		// Should not happen since row was accessed above.
+        		errors.add("Error getting table data for row [" + irow + "] (" + e + ")." );
+        	}
+    	}
     }
     return matchedRows;
 }
 
 /**
 Return the property defined in discovery phase.
+@return the property defined in discovery phase
 */
 private Prop getDiscoveryProp () {
     return __discovery_Prop;
@@ -349,6 +398,7 @@ private Prop getDiscoveryProp () {
 /**
 Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
+@return the list of data objects read by this object in discovery mode
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c ) {
@@ -429,11 +479,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String Column = parameters.getValue ( "Column" );
-    if ( (Column != null) && !Column.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Column.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN )  {
    		Column = TSCommandProcessorUtil.expandParameterValue(processor, this, Column);
     }
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
@@ -481,12 +531,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
+    String Row = parameters.getValue ( "Row" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	Row = TSCommandProcessorUtil.expandParameterValue(processor, this, Row);
+    }
     String PropertyName = parameters.getValue ( "PropertyName" );
-    if ( (PropertyName != null) && !PropertyName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && PropertyName.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
     }
     String DefaultValue = parameters.getValue ( "DefaultValue" );
-    if ( (DefaultValue != null) && !DefaultValue.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DefaultValue.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	DefaultValue = TSCommandProcessorUtil.expandParameterValue(processor, this, DefaultValue);
     }
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
@@ -546,9 +600,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    if ( commandPhase == CommandPhaseType.RUN ) {
 		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 		    if ( (PropertyName != null) && !PropertyName.isEmpty() ) {
+		    	// Setting a property from a cell value.
+
 		    	// Match 1+ rows so first match can be used.
 	    		List<String> errors = new ArrayList<>();
-	        	List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, errors );
+	        	List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, Row, errors );
 	        	for ( String error : errors ) {
 	        		Message.printWarning(3, routine, "Error: " + error);
 	        	}
@@ -580,8 +636,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        		// Have a matching record so set the property based on the column value.
 	        		int col = table.getFieldIndex(Column);
 	        		if ( col < 0 ) {
-		        		message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" +
-		        			Column + "\". Can't set property.";
+		        		message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" + Column + "\". Can't set property.";
 	                	Message.printWarning(warning_level,
 	                    	MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	                	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -589,6 +644,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                	prop = null;
 	        		}
 	        		else {
+	        			// Create an object with the column value.
 		        		Object o = records.get(0).getFieldValue(col);
 		        		Message.printStatus(2,routine,"Column \"" + Column + "\" col=" + col + " value="+ o);
 		        		if ( o == null ) {
@@ -599,6 +655,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		        		}
 	        		}
 	        	}
+
 	    		// Set the property in the processor.
 
 	    		PropList requestParams = new PropList ( "" );
@@ -607,7 +664,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    			requestParams.setUsingObject ( "PropertyValue", null );
 	    		}
 	    		else {
-	    			requestParams.setUsingObject ( "PropertyValue", prop.getValue() );
+	    			// Set using the property contents (not the String value).
+	    			requestParams.setUsingObject ( "PropertyValue", prop.getContents() );
 	    		}
 	    		try {
 	            	processor.processRequest( "SetProperty", requestParams);
@@ -715,6 +773,7 @@ public String toString ( PropList parameters ) {
 		"Column",
 		"ColumnIncludeFilters",
 		"ColumnExcludeFilters",
+		"Row",
     	"PropertyName",
     	"DefaultValue",
 		"RowCountProperty",

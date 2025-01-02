@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -68,7 +68,7 @@ Values for PrettyPrint property.
 */
 protected final String _False = "False";
 protected final String _True = "True";
-	
+
 /**
 Output file that is created by this command.
 */
@@ -77,8 +77,8 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public WriteObjectToJSON_Command ()
-{	super();
+public WriteObjectToJSON_Command () {
+	super();
 	setCommandName ( "WriteObjectToJSON" );
 }
 
@@ -90,8 +90,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String ObjectID = parameters.getValue ( "ObjectID" );
+throws InvalidCommandParameterException {
+	String ObjectID = parameters.getValue ( "ObjectID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String PrettyPrint = parameters.getValue ( "PrettyPrint" );
 	String Indent = parameters.getValue ( "Indent" );
@@ -134,15 +134,14 @@ throws InvalidCommandParameterException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Software error - report problem to support." ) );
 		}
-		// Expand for ${} properties...
+		// Expand for ${} properties.
 		OutputFile = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile);
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				message = "The output parent directory does " +
-				"not exist for the output file: \"" + adjusted_path + "\".";
+				message = "The output parent directory does not exist for the output file: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -162,7 +161,7 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
-	
+
    if ( (PrettyPrint != null) && !PrettyPrint.isEmpty() &&
 	   !PrettyPrint.equals(_False) && !PrettyPrint.equals(_True) ) {
        message = "The PrettyPrint value (" + PrettyPrint + ") is invalid.";
@@ -179,9 +178,8 @@ throws InvalidCommandParameterException
            new CommandLogRecord(CommandStatusType.FAILURE,
                message, "Specify the indent as an integer (default=2 if not specified).") );
    }
-   
-	
-	// Check for invalid parameters...
+
+	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(4);
 	validList.add ( "ObjectID" );
 	validList.add ( "OutputFile" );
@@ -200,11 +198,10 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
     List<String> objectIDChoices =
         TSCommandProcessorUtil.getObjectIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
@@ -213,6 +210,7 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command
 */
 public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<>();
@@ -236,17 +234,16 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -254,17 +251,17 @@ CommandWarningException, CommandException
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-	
-	// Clear the output file
-	
+
+	// Clear the output file.
+
 	setOutputFile ( null );
-	
-	// Check whether the processor wants output files to be created...
+
+	// Check whether the processor wants output files to be created.
 
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 		Message.printStatus ( 2, routine,
@@ -362,22 +359,21 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing object to file \"" + OutputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
 			new CommandLogRecord(CommandStatusType.FAILURE, message, "Check log file for details." ) );
 		throw new CommandException ( message );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 

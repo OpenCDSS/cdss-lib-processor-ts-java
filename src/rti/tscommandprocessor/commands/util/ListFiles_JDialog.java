@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -82,6 +82,7 @@ private JTextField __IncludeNames_JTextField = null;
 private JTextField __ExcludeNames_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private SimpleJComboBox __Append_JComboBox = null;
+private JTextField __CountProperty_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private boolean __error_wait = false;
@@ -189,6 +190,7 @@ private void checkInput () {
 	String ExcludeNames = __ExcludeNames_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
 	String Append = __Append_JComboBox.getSelected();
+	String CountProperty = __CountProperty_JTextField.getText().trim();
 	__error_wait = false;
 	if ( Folder.length() > 0 ) {
 		props.set ( "Folder", Folder );
@@ -214,6 +216,9 @@ private void checkInput () {
 	if ( Append.length() > 0 ) {
 		props.set ( "Append", Append );
 	}
+	if ( CountProperty.length() > 0 ) {
+		props.set ( "CountProperty", CountProperty );
+	}
 	try {
 		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
@@ -237,6 +242,7 @@ private void commitEdits () {
     String ExcludeNames = __ExcludeNames_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String Append = __Append_JComboBox.getSelected();
+	String CountProperty = __CountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "Folder", Folder );
     __command.setCommandParameter ( "ListScope", ListScope );
     __command.setCommandParameter ( "ListFiles", ListFiles );
@@ -245,6 +251,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "ExcludeNames", ExcludeNames );
 	__command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "Append", Append );
+	__command.setCommandParameter ( "CountProperty", CountProperty );
 }
 
 /**
@@ -271,7 +278,10 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a list of files and folders given a starting folder and filtering parameters  Output is to a table." ),
+		"Create a list of files and/or folders given a starting folder and filtering parameters." ),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The output can be saved to the table and/or a property with the count." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The include and exclude name patterns can use * and will match the name only." ),
@@ -388,7 +398,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table contain file list."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - table containing the output list."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:"),
@@ -407,6 +417,16 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 		"Optional - whether to append to table (default=" + __command._False + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CountProperty_JTextField = new JTextField ( "", 20 );
+    __CountProperty_JTextField.setToolTipText("Specify the property name for the output count, can use ${Property} notation");
+    __CountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as the output count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
@@ -417,7 +437,7 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -443,15 +463,16 @@ private void initialize ( JFrame parent, ListFiles_Command command, List<String>
 }
 
 /**
-Handle ItemEvent events.
-@param e ItemEvent to handle.
+Handle item state changed events.
+@param e ItemEvent for item state change
 */
 public void itemStateChanged ( ItemEvent e ) {
      refresh();
 }
 
 /**
-Respond to KeyEvents.
+Handle key press events.
+@param event KeyEvent for key pressed
 */
 public void keyPressed ( KeyEvent event ) {
 	int code = event.getKeyCode();
@@ -461,18 +482,27 @@ public void keyPressed ( KeyEvent event ) {
 	}
 }
 
+/**
+Handle key release events.
+@param event KeyEvent for key release
+*/
 public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Handle key typed events.
+@param event KeyEvent for key typed
+*/
 public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
+@return true of OK was pressed
 */
 public boolean ok () {
-	return __ok;
+	return this.__ok;
 }
 
 /**
@@ -488,6 +518,7 @@ private void refresh () {
 	String ExcludeNames = "";
 	String TableID = "";
 	String Append = "";
+    String CountProperty = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -500,6 +531,7 @@ private void refresh () {
 		ExcludeNames = parameters.getValue ( "ExcludeNames" );
 		TableID = parameters.getValue ( "TableID" );
 		Append = parameters.getValue ( "Append" );
+		CountProperty = parameters.getValue ( "CountProperty" );
 		if ( Folder != null ) {
 			__Folder_JTextField.setText ( Folder );
 		}
@@ -592,6 +624,9 @@ private void refresh () {
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+        if ( CountProperty != null ) {
+            __CountProperty_JTextField.setText ( CountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
@@ -603,6 +638,7 @@ private void refresh () {
 	ExcludeNames = __ExcludeNames_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
 	Append = __Append_JComboBox.getSelected();
+	CountProperty = __CountProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "Folder=" + Folder );
 	props.add ( "ListScope=" + ListScope );
@@ -612,6 +648,7 @@ private void refresh () {
 	props.add ( "ExcludeNames=" + ExcludeNames );
 	props.add ( "TableID=" + TableID );
 	props.add ( "Append=" + Append );
+	props.add ( "CountProperty=" + CountProperty );
 	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {

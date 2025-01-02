@@ -750,7 +750,7 @@ private void refresh () {
             __List_JTextArea.setText( List );
             __main_JTabbedPane.setSelectedIndex(0);
         }
-		if ( SequenceStart != null ) {
+		if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
 		    __SequenceStart_JTextField.setText( SequenceStart );
 		    __main_JTabbedPane.setSelectedIndex(1);
 		}
@@ -782,11 +782,11 @@ private void refresh () {
         if ( TablePropertyMap != null ) {
             __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
         }
-		if ( PeriodStart != null ) {
+		if ( (PeriodStart != null) && !PeriodStart.isEmpty() ) {
 		    __PeriodStart_JTextField.setText( PeriodStart );
 		    __main_JTabbedPane.setSelectedIndex(3);
 		}
-		if ( PeriodEnd != null ) {
+		if ( (PeriodEnd != null) && !PeriodEnd.isEmpty() ) {
 		    __PeriodEnd_JTextField.setText( PeriodEnd );
 		}
         if ( (PeriodIncrement == null) || PeriodIncrement.isEmpty() ) {
@@ -796,7 +796,6 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __PeriodIncrement_JComboBox,PeriodIncrement, JGUIUtil.NONE, null, null ) ) {
                 __PeriodIncrement_JComboBox.select ( PeriodIncrement );
-                __main_JTabbedPane.setSelectedIndex(3);
             }
             else {
                 Message.printWarning ( 1, routine,

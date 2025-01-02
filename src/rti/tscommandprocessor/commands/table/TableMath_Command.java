@@ -48,6 +48,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DataTableMath;
 import RTi.Util.Table.DataTableMathOperatorType;
+import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRowConditionEvaluator;
 
 /**
@@ -85,6 +86,7 @@ throws InvalidCommandParameterException {
     String Operator = parameters.getValue ( "Operator" );
     String Input2 = parameters.getValue ( "Input2" );
     String Output = parameters.getValue ( "Output" );
+    String OutputType = parameters.getValue ( "OutputType" );
     String NonValue = parameters.getValue ( "NonValue" );
     String warning = "";
     String message;
@@ -256,6 +258,13 @@ throws InvalidCommandParameterException {
             message, "Provide a column name for output." ) );
     }
 
+    if ( (OutputType != null) && !OutputType.isEmpty() && (TableField.lookupDataType(OutputType) < 0) ) {
+        message = "The output type (" + OutputType + ") is invalid";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify a valid output type using the command editor choices." ) );
+    }
+
     if ( (NonValue != null) && !NonValue.equals("") && !NonValue.equals(_NaN) && !NonValue.equals(_Null) ) {
         message = "The NonValue value is invalid.";
         warning += "\n" + message;
@@ -264,7 +273,7 @@ throws InvalidCommandParameterException {
     }
 
     // Check for invalid parameters.
-    List<String> validList = new ArrayList<>(8);
+    List<String> validList = new ArrayList<>(9);
     validList.add ( "TableID" );
     validList.add ( "Condition" );
     validList.add ( "ProcessRows" );
@@ -272,6 +281,7 @@ throws InvalidCommandParameterException {
     validList.add ( "Operator" );
     validList.add ( "Input2" );
     validList.add ( "Output" );
+    validList.add ( "OutputType" );
     validList.add ( "NonValue" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -363,6 +373,13 @@ CommandWarningException, CommandException {
    	Input2 = TSCommandProcessorUtil.expandParameterValue(processor, this, Input2);
     String Output = parameters.getValue ( "Output" );
    	Output = TSCommandProcessorUtil.expandParameterValue(processor, this, Output);
+    String OutputType = parameters.getValue ( "OutputType" );
+    Message.printStatus(2, routine, "Output=\"" + Output + "\" OutputType=\"" + OutputType + "\"");
+    int outputType = -1;
+    if ( (OutputType != null) && !OutputType.isEmpty() ) {
+    	outputType = TableField.lookupDataType(OutputType);
+    }
+    Message.printStatus(2, routine, "OutputType=\"" + OutputType + "\" outputType=" + outputType);
     String NonValue = parameters.getValue ( "NonValue" );
     Double NonValue_Double = null;
     if ( (NonValue != null) && !NonValue.equals("") ) {
@@ -419,14 +436,13 @@ CommandWarningException, CommandException {
     try {
     	// By default will process all rows without using an evaluator.
 		TableRowConditionEvaluator evaluator = null;
-		if ( ((Condition != null) && !Condition.isEmpty()) ||
-			(processRows.length > 0)) {
+		if ( ((Condition != null) && !Condition.isEmpty()) || (processRows.length > 0)) {
 			// Process rows that match a condition:
 			// - currently this is simple logic
 			evaluator = new TableRowConditionEvaluator(table, Condition, processRows );
 		}
         DataTableMath dtm = new DataTableMath ( table );
-        dtm.math ( Input1, operator, Input2, Output, NonValue_Double, evaluator, problems );
+        dtm.math ( Input1, operator, Input2, Output, outputType, NonValue_Double, evaluator, problems );
     }
     catch ( Exception e ) {
         message = "Unexpected error performing table math (" + e + ").";
@@ -487,6 +503,7 @@ public String toString ( PropList parameters ) {
     	"Operator",
     	"Input2",
     	"Output",
+    	"OutputType",
     	"NonValue"
 	};
 	return this.toString(parameters, parameterOrder);

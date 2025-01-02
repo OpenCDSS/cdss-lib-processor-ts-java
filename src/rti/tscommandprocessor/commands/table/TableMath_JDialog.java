@@ -55,6 +55,7 @@ import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableMath;
+import RTi.Util.Table.TableField;
 
 @SuppressWarnings("serial")
 public class TableMath_JDialog extends JDialog
@@ -72,6 +73,7 @@ private SimpleJComboBox __Input1_JComboBox = null;
 private SimpleJComboBox __Operator_JComboBox = null;
 private SimpleJComboBox __Input2_JComboBox = null;
 private SimpleJComboBox __Output_JComboBox = null;
+private SimpleJComboBox __OutputType_JComboBox = null;
 private SimpleJComboBox __NonValue_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -129,6 +131,7 @@ private void checkInput () {
     String Input2 = __Input2_JComboBox.getSelected();
     String Operator = __Operator_JComboBox.getSelected();
     String Output = __Output_JComboBox.getSelected();
+    String OutputType = __OutputType_JComboBox.getSelected();
     String NonValue = __NonValue_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
 
@@ -155,6 +158,9 @@ private void checkInput () {
     if ( Output.length() > 0 ) {
         parameters.set ( "Output", Output );
     }
+    if ( OutputType.length() > 0 ) {
+        parameters.set ( "OutputType", OutputType );
+    }
     if ( NonValue.length() > 0 ) {
         parameters.set ( "NonValue", NonValue );
     }
@@ -180,6 +186,7 @@ private void commitEdits () {
     String Input2 = __Input2_JComboBox.getSelected();
     String Operator = __Operator_JComboBox.getSelected();
     String Output = __Output_JComboBox.getSelected();
+    String OutputType = __OutputType_JComboBox.getSelected();
     String NonValue = __NonValue_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "Condition", Condition );
@@ -188,6 +195,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "Input2", Input2 );
     __command.setCommandParameter ( "Operator", Operator );
     __command.setCommandParameter ( "Output", Output );
+    __command.setCommandParameter ( "OutputType", OutputType );
     __command.setCommandParameter ( "NonValue", NonValue );
 
 }
@@ -225,6 +233,9 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The output column type, width, and precision are determined automatically from input, or use OutputType to specify." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -316,6 +327,21 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, __Output_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - output column name."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output type:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputType_JComboBox = new SimpleJComboBox ( 12, false );  // Do not allow edit.
+    __OutputType_JComboBox.setToolTipText("Output column type. Use if automatic type determination is not correct");
+    List<String> outputTypeChoices = TableField.getDataTypeChoices(false);
+    outputTypeChoices.add(0,"");
+    __OutputType_JComboBox.setData ( outputTypeChoices );
+    __OutputType_JComboBox.addItemListener ( this );
+    __OutputType_JComboBox.getJTextComponent().addKeyListener ( this );
+    __OutputType_JComboBox.setMaximumRowCount(outputTypeChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __OutputType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - output column type (default=auto detect from input)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-value:" ),
@@ -430,6 +456,7 @@ private void refresh () {
     String Input2 = "";
     String Operator = "";
     String Output = "";
+    String OutputType = "";
     String NonValue = "";
 
 	PropList props = __command.getCommandParameters();
@@ -443,6 +470,7 @@ private void refresh () {
         Input2 = props.getValue ( "Input2" );
         Operator = props.getValue ( "Operator" );
 		Output = props.getValue ( "Output" );
+		OutputType = props.getValue ( "OutputType" );
 		NonValue = props.getValue ( "NonValue" );
         if ( TableID == null ) {
             // Select default.
@@ -519,6 +547,19 @@ private void refresh () {
                 __Output_JComboBox.setText( Output );
             }
         }
+        if ( OutputType == null ) {
+            // Select default.
+            __OutputType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __OutputType_JComboBox,OutputType, JGUIUtil.NONE, null, null ) ) {
+                __OutputType_JComboBox.select ( OutputType );
+            }
+            else {
+                // Just set the user-specified value.
+                __OutputType_JComboBox.setText( OutputType );
+            }
+        }
         if ( NonValue == null ) {
             // Select default.
             __NonValue_JComboBox.select ( 0 );
@@ -543,6 +584,7 @@ private void refresh () {
     Operator = __Operator_JComboBox.getSelected();
     Input2 = __Input2_JComboBox.getSelected();
     Output = __Output_JComboBox.getSelected();
+    OutputType = __OutputType_JComboBox.getSelected();
     NonValue = __NonValue_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -553,6 +595,7 @@ private void refresh () {
     props.add ( "Operator=" + Operator );
     props.add ( "Input2=" + Input2 );
     props.add ( "Output=" + Output );
+    props.add ( "OutputType=" + OutputType );
     props.add ( "NonValue=" + NonValue );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }

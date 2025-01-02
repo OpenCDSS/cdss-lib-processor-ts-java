@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
+import org.openwaterfoundation.geoprocessor.core.GeoMapProject;
 import org.openwaterfoundation.network.NodeNetwork;
 
 import java.awt.event.WindowListener; // To know when graph window closes to close entire application.
@@ -236,6 +237,11 @@ List<DataTable> __TableList = new Vector<>();
 List of NodeNetwork objects maintained by the processor.
 */
 List<NodeNetwork> __NodeNetworkList = new Vector<>();
+
+/**
+List of GeoMapProject objects maintained by the processor.
+*/
+List<GeoMapProject> __GeoMapProjectList = new ArrayList<>();
 
 /**
 List of JSON objects maintained by the processor.
@@ -764,6 +770,9 @@ which calls this method.
 */
 public void clearResults() {
 	this.__tsengine.clearTimeSeriesResults();
+    if ( this.__GeoMapProjectList != null ) {
+        this.__GeoMapProjectList.clear();
+    }
     if ( this.__NodeNetworkList != null ) {
         this.__NodeNetworkList.clear();
     }
@@ -1556,8 +1565,16 @@ private DateTime getPropContents_InputStart() {
 }
 
 /**
+Handle the GeoMapProjectResultsList property request.
+@return the GeoMapProject results list
+*/
+private List<GeoMapProject> getPropContents_GeoMapProjectList() {
+    return this.__GeoMapProjectList;
+}
+
+/**
 Handle the NetworkResultsList property request.
-@return The network results list, as a List of NodeNetwork.
+@return the network results list, as a List of NodeNetwork
 */
 private List<NodeNetwork> getPropContents_NetworkResultsList() {
     return this.__NodeNetworkList;
@@ -2429,6 +2446,9 @@ throws Exception {
     else if ( request.equalsIgnoreCase("GetEnsembleAt") ) {
         return processRequest_GetEnsembleAt ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("GetGeoMapProject") ) {
+        return processRequest_GetGeoMapProject ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("GetHydroBaseDMI") ) {
 		return processRequest_GetHydroBaseDMI ( request, request_params );
 	}
@@ -2493,6 +2513,9 @@ throws Exception {
     else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
         return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("RemoveGeoMapProjectFromResultsList") ) {
+        return processRequest_RemoveGeoMapProjectFromResultsList ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("RemoveObjectFromResultsList") ) {
         return processRequest_RemoveObjectFromResultsList ( request, request_params );
     }
@@ -2510,8 +2533,12 @@ throws Exception {
 		return processRequest_RunCommands ( request, request_params, processorProps );
 	}
     else if ( request.equalsIgnoreCase("DataStore") ) {
+    	// TODO smalers 2024-11-20 should this be SetDataStore?
         return processRequest_SetDataStore ( request, request_params );
     }
+	else if ( request.equalsIgnoreCase("SetGeoMapProject") ) {
+		return processRequest_SetGeoMapProject ( request, request_params );
+	}
 	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
 		return processRequest_SetHydroBaseDMI ( request, request_params );
 	}
@@ -2727,6 +2754,44 @@ throws Exception {
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference.
     results.setUsingObject("TSEnsemble", tsensemble );
+    return bean;
+}
+
+/**
+Process the GetGeoMapProject request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetGeoMapProject (
+        String request, PropList request_params )
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "GeoMapProjectID" );
+    if ( o == null ) {
+            String warning = "Request GetGeoMapProject() does not provide a GeoMapProjectID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String GeoMapProjectID = (String)o;
+    int size = 0;
+    if ( this.__GeoMapProjectList != null ) {
+        size = this.__GeoMapProjectList.size();
+    }
+    GeoMapProject project = null;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        project = (GeoMapProject)__GeoMapProjectList.get(i);
+        if ( project.getGeoMapProjectId().equalsIgnoreCase(GeoMapProjectID) ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        project = null;
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference.
+    results.setUsingObject("GeoMapProject", project );
     return bean;
 }
 
@@ -3530,6 +3595,35 @@ throws Exception {
 }
 
 /**
+Process the RemoveGeoMapProjectFromResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveGeoMapProjectFromResultsList (
+    String request, PropList request_params )
+throws Exception {
+    //String routine = "TSCommandProcessor.processRequest_RemoveGeoMapProjectFromResultsList";
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "GeoMapProjectID" );
+    if ( o == null ) {
+        String warning = "Request RemoveGeoMapProjectFromResultsList() does not provide a GeoMapProjectID parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    String GeoMapProjectID = (String)o;
+    // Remove all objects having the same identifier.
+    GeoMapProject project;
+    for ( int i = 0; i < this.__GeoMapProjectList.size(); i++ ) {
+        project = this.__GeoMapProjectList.get(i);
+        // Remove and decrement the counter so that the next table is checked.
+        if ( project.getGeoMapProjectId().equalsIgnoreCase(GeoMapProjectID) ) {
+            this.__GeoMapProjectList.remove(i--);
+        }
+    }
+    return bean;
+}
+
+/**
 Process the RemoveObjectFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveObjectFromResultsList (
@@ -3714,6 +3808,41 @@ throws Exception {
     //
     __tsengine.setDataStore( dataStore, true );
     // No results need to be returned.
+    return bean;
+}
+
+/**
+Process the SetGeoMapProject request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetGeoMapProject (
+        String request, PropList request_params )
+throws Exception {
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters.
+    Object o = request_params.getContents ( "GeoMapProject" );
+    if ( o == null ) {
+            String warning = "Request SetGeoMapProject() does not provide a GeoMapProject parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ("This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    GeoMapProject o_Project = (GeoMapProject)o;
+    // Loop through the projects in memory.  If a matching project ID is found, reset.  Otherwise, add at the end.
+    int size = this.__GeoMapProjectList.size();
+    GeoMapProject project;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        project = (GeoMapProject)this.__GeoMapProjectList.get(i);
+        if ( project.getGeoMapProjectId().equalsIgnoreCase(o_Project.getGeoMapProjectId())) {
+        	this.__GeoMapProjectList.set(i,o_Project);
+            found = true;
+        }
+    }
+    if ( !found ) {
+    	// Add the project at the end.
+    	this.__GeoMapProjectList.add ( o_Project );
+    }
+    // No data are returned in the bean.
     return bean;
 }
 

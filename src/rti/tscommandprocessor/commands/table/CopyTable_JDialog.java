@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -90,8 +90,8 @@ public CopyTable_JDialog ( JFrame parent, CopyTable_Command command, List<String
 }
 
 /**
-Responds to ActionEvents.
-@param event ActionEvent object
+Handle action events.
+@param event ActionEvent for action
 */
 public void actionPerformed(ActionEvent event) {
 	Object o = event.getSource();
@@ -283,7 +283,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewTableID_JTextField = new JTextField (10);
@@ -403,15 +403,16 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
 }
 
 /**
-Handle ItemEvent events.
-@param e ItemEvent to handle.
+Handle item changed events.
+@param e ItemEvent for item state changed
 */
 public void itemStateChanged (ItemEvent e) {
 	refresh();
 }
 
 /**
-Respond to KeyEvents.
+Respond to key press event.
+@param event KeyEvent for key press
 */
 public void keyPressed (KeyEvent event) {
 	int code = event.getKeyCode();
@@ -425,10 +426,18 @@ public void keyPressed (KeyEvent event) {
 	}
 }
 
+/**
+Handle key released event.
+@param event KeyEvent for key release
+*/
 public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
+/**
+Handle key typed event.
+@param event KeyEvent for key typed
+*/
 public void keyTyped (KeyEvent event) {
 }
 

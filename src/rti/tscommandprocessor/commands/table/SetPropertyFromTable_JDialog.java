@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -69,6 +69,7 @@ private JTabbedPane __main_JTabbedPane = null;
 private JTextField __Column_JTextField = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
+private JTextField __Row_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private JTextField __DefaultValue_JTextField = null;
 private JTextField __RowCountProperty_JTextField = null;
@@ -148,8 +149,8 @@ public void actionPerformed(ActionEvent event) {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
 private void checkInput () {
 	// Put together a list of parameters to check.
@@ -159,6 +160,7 @@ private void checkInput () {
 	String Column = __Column_JTextField.getText().trim();
 	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+    String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
     // Table.
@@ -177,6 +179,9 @@ private void checkInput () {
     }
     if ( !ColumnExcludeFilters.isEmpty() ) {
         props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
+    }
+    if ( !Row.isEmpty() ) {
+        props.set ( "Row", Row );
     }
     if ( !PropertyName.isEmpty() ) {
         props.set ( "PropertyName", PropertyName );
@@ -212,6 +217,7 @@ private void commitEdits () {
     String Column = __Column_JTextField.getText().trim();
     String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+    String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
     // Table.
@@ -222,6 +228,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "Column", Column );
 	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
+	__command.setCommandParameter ( "Row", Row );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "DefaultValue", DefaultValue );
     // Table.
@@ -254,7 +261,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command sets a processor property using a value from a table cell or full table."),
+        "This command sets a processor property using a value from a table cell or a property associated with the table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -292,6 +299,9 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
         0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cell_JPanel, new JLabel (
         "This is useful when iteration uses a property value."),
+        0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel (
+        "The table row is matched using the filters OR by specfying a row number."),
         0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cell_JPanel, new JLabel (
         "Using the filter parameters to match row(s) may result in multiple matches - " +
@@ -338,6 +348,16 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(cell_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
         3, ++yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Row:"),
+        0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Row_JTextField = new JTextField (20);
+    __Row_JTextField.setToolTipText("Specify the row number (1+) or 'last', can use ${Property} notation");
+    __Row_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(cell_JPanel, __Row_JTextField,
+        1, yCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Optional - specify the row to match (can use ${property})."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
     JGUIUtil.addComponent(cell_JPanel, new JLabel ("Property name:"),
         0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField (20);
@@ -365,7 +385,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     __main_JTabbedPane.addTab ( "Table Property", table_JPanel );
 
     JGUIUtil.addComponent(table_JPanel, new JLabel (
-        "Use the following parameters to set a property value using a full table property."),
+        "Use the following parameters to set a property value using a property associated with the table."),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "This is useful when comparing the table size against the expected size."),
@@ -405,7 +425,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 	// Refresh the contents.
 	refresh ();
 
-	// South JPanel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -423,7 +443,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
-	refresh();	// Sets the __path_JButton status
+	refresh();	// Sets the __path_JButton status.
 	setResizable (false);
     super.setVisible(true);
 }
@@ -455,7 +475,8 @@ public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
-public void keyTyped (KeyEvent event) {}
+public void keyTyped (KeyEvent event) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -469,11 +490,12 @@ public boolean ok () {
 Refresh the command from the other text field contents.
 */
 private void refresh () {
-	String routine = getClass().getName() + ".refresh";
+	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String Column = "";
     String ColumnIncludeFilters = "";
     String ColumnExcludeFilters = "";
+    String Row = "";
     String PropertyName = "";
     String DefaultValue = "";
     String RowCountProperty = "";
@@ -485,6 +507,7 @@ private void refresh () {
         Column = props.getValue ( "Column" );
         ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
         ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
+        Row = props.getValue ( "Row" );
         PropertyName = props.getValue ( "PropertyName" );
         DefaultValue = props.getValue ( "DefaultValue" );
         RowCountProperty = props.getValue ( "RowCountProperty" );
@@ -513,6 +536,9 @@ private void refresh () {
         if ( ColumnExcludeFilters != null ) {
             __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
+        if ( Row != null ) {
+            __Row_JTextField.setText ( Row );
+        }
         if ( PropertyName != null ) {
             __PropertyName_JTextField.setText ( PropertyName );
         }
@@ -531,6 +557,7 @@ private void refresh () {
 	Column = __Column_JTextField.getText().trim();
 	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+	Row = __Row_JTextField.getText().trim();
     PropertyName = __PropertyName_JTextField.getText().trim();
     DefaultValue = __DefaultValue_JTextField.getText().trim();
 	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
@@ -540,6 +567,7 @@ private void refresh () {
 	props.add ( "Column=" + Column );
 	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
+	props.add ( "Row=" + Row );
     props.add ( "PropertyName=" + PropertyName );
     props.add ( "DefaultValue=" + DefaultValue );
 	props.add ( "RowCountProperty=" + RowCountProperty );

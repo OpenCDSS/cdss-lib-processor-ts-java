@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -180,14 +180,16 @@ public boolean editCommand ( JFrame parent ) {
 // Use base class parseCommand().
 
 /**
-Return the property defined in discovery phase.
+Return the delete count property defined in discovery phase.
+@return the delete count property defined in discovery phase.
 */
 private Prop getDiscoveryDeleteCountProp () {
     return this.discoveryDeleteCountProp;
 }
 
 /**
-Return the property defined in discovery phase.
+Return the table row count property defined in discovery phase.
+@return the table row count property defined in discovery phase
 */
 private Prop getDiscoveryRowCountProp () {
     return this.discoveryRowCountProp;
@@ -196,6 +198,7 @@ private Prop getDiscoveryRowCountProp () {
 /**
 Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  Prop
+@return the list of data objects read by this object in discovery mode
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c ) {
@@ -411,20 +414,30 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			else if ( (Condition != null) && !Condition.isEmpty() ) {
 				// Delete by matching rows that adhere to condition:
 				// - currently this is simple logic
+				// - process in reverse order so that the shift does not cause an issue
 				TableRowConditionEvaluator evaluator = new TableRowConditionEvaluator(table, Condition);
-				for ( int row = 0; row < table.getNumberOfRecords(); row++ ) {
+				for ( int row = (table.getNumberOfRecords() - 1); row >= 0; row-- ) {
 					if ( evaluator.evaluate(table, row) ) {
 						// Condition was met so delete the row:
 						// - decrement the row since same row needs to be reprocessed
+						if ( Message.isDebugOn ) {
+							message = "Condition evaluated to true for row [" + row + "].";
+							Message.printDebug ( 1, routine, message );
+						}
 						try {
 							table.deleteRecord(row);
-							--row;
 						}
 						catch ( Exception e ) {
 							message = "Exception deleting row \"" + row + "\" from table \"" + table.getTableID() + "\" (" + e + ").";
 							Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-								status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-									message, "Check the log file for errors." ) );
+							status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+								message, "Check the log file for errors." ) );
+						}
+					}
+					else {
+						if ( Message.isDebugOn ) {
+							message = "Condition evaluated to false for row [" + row + "].";
+							Message.printDebug ( 1, routine, message );
 						}
 					}
 				}
@@ -490,7 +503,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 
-			// Set the property indicating the number of rows in the table.
+			// Set the property indicating the number of rows in the table after rows are deleted.
 			if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
 				PropList request_params = new PropList ( "" );
 				request_params.setUsingObject ( "PropertyName", RowCountProperty );

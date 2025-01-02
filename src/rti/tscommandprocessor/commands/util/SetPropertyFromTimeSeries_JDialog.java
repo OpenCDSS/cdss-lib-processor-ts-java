@@ -559,12 +559,12 @@ private void refresh () {
 	    if ( DateTime != null ) {
 	         __DateTime_JTextField.setText ( DateTime );
 	    }
-	    if ( PropertyNameForValue != null ) {
+	    if ( (PropertyNameForValue != null) && !PropertyNameForValue.isEmpty() ) {
 	         __PropertyNameForValue_JTextField.setText ( PropertyNameForValue );
             // Also select tab.
 		    __main_JTabbedPane.setSelectedIndex(1);
 	    }
-	    if ( PropertyNameForFlag != null ) {
+	    if ( (PropertyNameForFlag != null) && !PropertyNameForFlag.isEmpty() ) {
 	         __PropertyNameForFlag_JTextField.setText ( PropertyNameForFlag );
             // Also select tab.
 		    __main_JTabbedPane.setSelectedIndex(1);

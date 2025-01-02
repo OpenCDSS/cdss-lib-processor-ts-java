@@ -161,7 +161,8 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 // SHEF commands.
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
-
+import rti.tscommandprocessor.commands.spatial.GeoMapProject_Command;
+import rti.tscommandprocessor.commands.spatial.GeoMap_Command;
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
@@ -639,6 +640,12 @@ throws UnknownCommandException {
     }
     else if ( commandNameUpper.equals("CREATEFROMLIST") ) { // "CreateFromList"
         return new CreateFromList_Command ();
+    }
+    else if ( commandNameUpper.equals("GEOMAP") ) { // "GeoMap"
+        return new GeoMap_Command ();
+    }
+    else if ( commandNameUpper.equals("GEOMAPPROJECT") ) { // "GeoMapProject"
+        return new GeoMapProject_Command ();
     }
     else if ( commandNameUpper.equals("CREATENETWORKFROMTABLE") ) { // "CreateNetworkFromTable"
         return new CreateNetworkFromTable_Command ();

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2024 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -107,12 +107,13 @@ throws InvalidCommandParameterException {
 	String ListFolders = parameters.getValue ( "ListFolders" );
     String TableID = parameters.getValue ( "TableID" );
 	String Append = parameters.getValue ( "Append" );
+	String CountProperty = parameters.getValue ( "CountProperty" );
 	String warning = "";
 	String message;
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
@@ -150,12 +151,19 @@ throws InvalidCommandParameterException {
 					message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
 		}
 	}
-    if ( (TableID == null) || (TableID.length() == 0) ) {
-        message = "The table ID must be specified.";
+	int outputCount = 0;
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	++outputCount;
+    }
+    if ( (CountProperty != null) && !CountProperty.isEmpty() ) {
+    	++outputCount;
+    }
+    if ( outputCount == 0 ) {
+        message = "The table ID or count property must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the table ID."));
+                message, "Specify the table ID or count property."));
     }
 	if ( (Append != null) && !Append.equals("") ) {
 		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
@@ -167,7 +175,7 @@ throws InvalidCommandParameterException {
 		}
 	}
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(8);
+	List<String> validList = new ArrayList<>(9);
 	validList.add ( "Folder" );
 	validList.add ( "ListScope" );
 	validList.add ( "ListFiles" );
@@ -176,6 +184,7 @@ throws InvalidCommandParameterException {
 	validList.add ( "ExcludeNames" );
 	validList.add ( "TableID" );
 	validList.add ( "Append" );
+	validList.add ( "CountProperty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -201,6 +210,7 @@ public boolean editCommand ( JFrame parent ) {
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
 private DataTable getDiscoveryTable() {
     return __table;
@@ -209,6 +219,7 @@ private DataTable getDiscoveryTable() {
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 The following classes can be requested:  DataTable
+@return a list of objects of the requested type
 */
 @SuppressWarnings("unchecked")
 public <T> List<T> getObjectList ( Class<T> c ) {
@@ -224,6 +235,7 @@ public <T> List<T> getObjectList ( Class<T> c ) {
 /**
  * Parse the command.
  * Implement because old IncludeFiles is now IncludeNames and ExcludeFiles is ExcludeNames.
+ * @param commandString the full command string to parse
  */
 public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException {
@@ -281,19 +293,20 @@ throws InvalidCommandParameterException,
 CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
+	int logLevel = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	PropList parameters = getCommandParameters();
-	
+
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(commandPhase);
-	
+
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
-	
+
 	String Folder = parameters.getValue ( "Folder" );
 	String ListScope = parameters.getValue ( "ListScope" );
 	boolean listRecursive = false; // Default, based on historical command behavior.
@@ -334,6 +347,10 @@ CommandWarningException, CommandException {
 	    excludePatterns.add(excludePattern);
     }
 	String TableID = parameters.getValue ( "TableID" );
+	boolean doTable = false;
+	if ( (TableID != null) && !TableID.isEmpty() ) {
+		doTable = true;
+	}
 	String Append = parameters.getValue ( "Append" );
 	boolean append = false;
 	if ( (Append != null) && !Append.equals("")) {
@@ -341,13 +358,17 @@ CommandWarningException, CommandException {
 	        append = true;
 	    }
 	}
-	
+    String CountProperty = parameters.getValue ( "CountProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	CountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, CountProperty);
+    }
+
     // Get the table to process.
 
     DataTable table = null;
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
-    if ( (TableID != null) && !TableID.equals("") ) {
+    if ( doTable ) {
         // Get the table to be updated/created.
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
@@ -375,9 +396,9 @@ CommandWarningException, CommandException {
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
 	// Process the files.  Each input file is opened to get information.
-	
+
 	try {
 	    // Make sure the table has the columns that are needed.
 	    if ( commandPhase == CommandPhaseType.RUN ) {
@@ -389,79 +410,83 @@ CommandWarningException, CommandException {
 	        int sizeCol = -1;
 	        int ownerCol = -1;
 	        int lastModifiedCol = -1;
-    	    if ( (table == null) || !append ) {
-    	        // The table needs to be created.
-    	        List<TableField> columnList = new ArrayList<>();
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Name", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "ParentFolder", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Type", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Size", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Owner", -1) );
-    	        columnList.add ( new TableField(TableField.DATA_TYPE_DATETIME, "LastModified", -1) );
-                table = new DataTable( columnList );
-                fileNameCol = table.getFieldIndex("Name");
-                relPathCol = table.getFieldIndex("RelativePath");
-                absPathCol = table.getFieldIndex("AbsolutePath");
-                parentFolderCol = table.getFieldIndex("ParentFolder");
-                typeCol = table.getFieldIndex("Type");
-                sizeCol = table.getFieldIndex("Size");
-                ownerCol = table.getFieldIndex("Owner");
-                lastModifiedCol = table.getFieldIndex("LastModified");
-                table.setTableID ( TableID );
-                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-                // Set the table in the processor.
-                request_params = new PropList ( "" );
-                request_params.setUsingObject ( "Table", table );
-                try {
-                    processor.processRequest( "SetTable", request_params);
-                }
-                catch ( Exception e ) {
-                    message = "Error requesting SetTable(Table=...) from processor.";
-                    Message.printWarning(warning_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
-                }
-    	    }
-    	    else {
-    	        // Make sure that the needed columns exist - otherwise add them.
-    	        fileNameCol = table.getFieldIndex("Name");
-    	        if ( fileNameCol < 0 ) {
-    	            fileNameCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Name", -1), "");
-    	        }
-    	        relPathCol = table.getFieldIndex("RelativePath");
-                if ( relPathCol < 0 ) {
-                    relPathCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1), "");
-                }
-    	        absPathCol = table.getFieldIndex("AbsolutePath");
-                if ( absPathCol < 0 ) {
-                    absPathCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1), "");
-                }
-    	        parentFolderCol = table.getFieldIndex("ParentFolder");
-                if ( parentFolderCol < 0 ) {
-                    parentFolderCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "ParentFolder", -1), "");
-                }
-    	        typeCol = table.getFieldIndex("Type");
-                if ( typeCol < 0 ) {
-                    typeCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Type", -1), "");
-                }
-    	        sizeCol = table.getFieldIndex("Size");
-                if ( sizeCol < 0 ) {
-                    sizeCol = table.addField(new TableField(TableField.DATA_TYPE_INT, "Size", -1), "");
-                }
-    	        ownerCol = table.getFieldIndex("Owner");
-                if ( ownerCol < 0 ) {
-                    ownerCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Owner", -1), "");
-                }
-    	        lastModifiedCol = table.getFieldIndex("LastModified");
-                if ( lastModifiedCol < 0 ) {
-                    lastModifiedCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "LastModified", -1), "");
-                }
-    	    }
+   	    	if ( doTable ) {
+   	    		if ( (table == null) || !append ) {
+    	    		// The table needs to be created.
+    	    		List<TableField> columnList = new ArrayList<>();
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Name", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "ParentFolder", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Type", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Size", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Owner", -1) );
+    	    		columnList.add ( new TableField(TableField.DATA_TYPE_DATETIME, "LastModified", -1) );
+    	    		table = new DataTable( columnList );
+    	    		fileNameCol = table.getFieldIndex("Name");
+    	    		relPathCol = table.getFieldIndex("RelativePath");
+    	    		absPathCol = table.getFieldIndex("AbsolutePath");
+    	    		parentFolderCol = table.getFieldIndex("ParentFolder");
+    	    		typeCol = table.getFieldIndex("Type");
+    	    		sizeCol = table.getFieldIndex("Size");
+    	    		ownerCol = table.getFieldIndex("Owner");
+    	    		lastModifiedCol = table.getFieldIndex("LastModified");
+    	    		table.setTableID ( TableID );
+    	    		Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
+    	    		// Set the table in the processor.
+    	    		request_params = new PropList ( "" );
+    	    		request_params.setUsingObject ( "Table", table );
+    	    		try {
+    	    			processor.processRequest( "SetTable", request_params);
+    	    		}
+    	    		catch ( Exception e ) {
+    	    			message = "Error processing request SetTable(Table=...) from processor.";
+    	    			Message.printWarning(warning_level,
+    	    				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+    	    			status.addToLog ( commandPhase,
+    	    				new CommandLogRecord(CommandStatusType.FAILURE,
+    	    					message, "Report problem to software support." ) );
+    	    		}
+    	    	}
+   	    		else {
+   	    			// Make sure that the needed columns exist - otherwise add them.
+   	    			fileNameCol = table.getFieldIndex("Name");
+   	    			if ( fileNameCol < 0 ) {
+   	    				fileNameCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Name", -1), "");
+   	    			}
+   	    			relPathCol = table.getFieldIndex("RelativePath");
+   	    			if ( relPathCol < 0 ) {
+   	    				relPathCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "RelativePath", -1), "");
+   	    			}
+   	    			absPathCol = table.getFieldIndex("AbsolutePath");
+   	    			if ( absPathCol < 0 ) {
+   	    				absPathCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "AbsolutePath", -1), "");
+   	    			}
+   	    			parentFolderCol = table.getFieldIndex("ParentFolder");
+   	    			if ( parentFolderCol < 0 ) {
+   	    				parentFolderCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "ParentFolder", -1), "");
+   	    			}
+   	    			typeCol = table.getFieldIndex("Type");
+   	    			if ( typeCol < 0 ) {
+   	    				typeCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Type", -1), "");
+   	    			}
+   	    			sizeCol = table.getFieldIndex("Size");
+   	    			if ( sizeCol < 0 ) {
+   	    				sizeCol = table.addField(new TableField(TableField.DATA_TYPE_INT, "Size", -1), "");
+   	    			}
+   	    			ownerCol = table.getFieldIndex("Owner");
+   	    			if ( ownerCol < 0 ) {
+   	    				ownerCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Owner", -1), "");
+   	    			}
+   	    			lastModifiedCol = table.getFieldIndex("LastModified");
+   	    			if ( lastModifiedCol < 0 ) {
+   	    				lastModifiedCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "LastModified", -1), "");
+   	    			}
+   	    		}
+   	    	}
+
     	    // Get the list of all the files in the folder.
+
     	    String workingDir = TSCommandProcessorUtil.getWorkingDir(processor);
 
     	    boolean oldCode = false;
@@ -484,6 +509,7 @@ CommandWarningException, CommandException {
     	    // - TODO smalers 2023-03-28 this should never happen anyhow?
     	    boolean allowDuplicates = false;
     	    TableRecord rec = null;
+    	    int count = 0;
         	for ( File filePath : filePathList ) {
         	    // See if the file matches the include and exclude patterns.  To do this split out the filename from the parent.
         	    String file = filePath.getName();
@@ -532,16 +558,39 @@ CommandWarningException, CommandException {
                	// Use the local timezone.
                	DateTime modDateTime = new DateTime(modTime.toInstant(), 0, null);
                	rec.setFieldValue(lastModifiedCol,modDateTime);
+               	// Increment the counter.
+               	++count;
         	}
+
+        	// Set the property indicating the number of output items.
+           	if ( (CountProperty != null) && !CountProperty.isEmpty() ) {
+               	request_params = new PropList ( "" );
+               	request_params.setUsingObject ( "PropertyName", CountProperty );
+               	request_params.setUsingObject ( "PropertyValue", new Integer(count) );
+               	try {
+                   	processor.processRequest( "SetProperty", request_params);
+               	}
+               	catch ( Exception e ) {
+                   	message = "Error requesting SetProperty(Property=\"" + CountProperty + "\") from processor.";
+                   	Message.printWarning(logLevel,
+                       	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                       	routine, message );
+                   	status.addToLog ( CommandPhaseType.RUN,
+                       	new CommandLogRecord(CommandStatusType.FAILURE,
+                           	message, "Report the problem to software support." ) );
+               	}
+           	}
 	    }
 	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	        if ( table == null ) {
-	            // Did not find table so is being created in this command.
-	            // Create an empty table and set the ID.
-	            table = new DataTable();
-	            table.setTableID ( TableID );
-	        }
-	        setDiscoveryTable ( table );
+	    	if ( doTable ) {
+	    		if ( table == null ) {
+	    			// Did not find table so is being created in this command.
+	    			// Create an empty table and set the ID.
+	    			table = new DataTable();
+	    			table.setTableID ( TableID );
+	    		}
+	    		setDiscoveryTable ( table );
+	    	}
 	    }
 	}
 	catch ( Exception e ) {
@@ -553,7 +602,7 @@ CommandWarningException, CommandException {
             message, "Check log file for details." ) );
         throw new CommandException ( message );
 	}
-	
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -587,7 +636,8 @@ public String toString ( PropList parameters ) {
 		"IncludeNames",
 		"ExcludeNames",
 		"TableID",
-		"Append"
+		"Append",
+		"CountProperty"
 	};
 	return this.toString(parameters, parameterOrder);
 }

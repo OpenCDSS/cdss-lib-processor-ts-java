@@ -161,7 +161,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(CommandPhaseType.RUN);
 	}
 
-    Message.printStatus(2, routine, "Checking comment string as upper case: " + commandStringUpper);
+    //Message.printStatus(2, routine, "Checking comment string as upper case: " + commandStringUpper);
     // Check below needs to not match strings like:
     // # - use @sourceUrl and @version
     if ( TSCommandProcessorUtil.isAnnotationCommand(this) && (commandStringUpper.contains("#@SOURCEURL") || commandStringUpper.contains("# @SOURCEURL")) ) {

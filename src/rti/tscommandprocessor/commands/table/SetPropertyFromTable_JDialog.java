@@ -46,6 +46,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.DictionaryJDialog;
@@ -69,6 +70,7 @@ private JTabbedPane __main_JTabbedPane = null;
 private JTextField __Column_JTextField = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
+private SimpleJComboBox __IgnoreCase_JComboBox = null;
 private JTextField __Row_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private JTextField __DefaultValue_JTextField = null;
@@ -117,10 +119,19 @@ public void actionPerformed(ActionEvent event) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
         String [] notes = {
-            "Match rows in the table by filtering on column values.",
-            "All specified conditions must be true to include the row.",
-            "Column Name - column name in the table to filter (can use ${property})",
-            "Column Value Filter Pattern - a literal value to match (to include), or a pattern using * as a wildcard (can use ${property})"
+            "Match rows in the table ito include by filtering on column values (treated as strings).",
+            "All conditions must be true to include (filters are ANDed).",
+            "Column Name:",
+            "   - column name in the table to filter",
+            "   - can use ${property}",
+            // TODO smalers 2025-01-18 not yet enabled
+            //"   - specify | as the first character to OR the column (default is AND)",
+            //"   - specifying OR for the second column causes the first to automatically be an OR",
+            "Column Value Filter Pattern:",
+            "   - a literal value to match",
+            "   - or a pattern using * as a wildcard",
+            "   - can use ${property}",
+            "   - specify blank to filter out columns with no value (null or empty string)"
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
             notes, "Column Name", "Column Value Include Filter Pattern",10)).response();
@@ -133,11 +144,16 @@ public void actionPerformed(ActionEvent event) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
         String [] notes = {
-            "Rows in the table can be excluded by filtering on column values.",
-            "All specified conditions must be true to exclude the row.",
-            "Column Name - column name in the table to filter (can use ${property})",
-            "Column Value Filter Pattern - a literal value to match (to exclude), or a pattern using * as a wildcard (can use ${property})",
-            "(specify blank to filter out columns with no values)"
+            "Match rows in the table to exclude by filtering on column values (treated as strings).",
+            "All conditions must be true to exclude (filters are ANDed).",
+            "Column Name:",
+            "   - column name in the table to filter",
+            "   - can use ${property}",
+            "Column Value Filter Pattern:",
+            "   - a literal value to match",
+            "   - or a pattern using * as a wildcard",
+            "   - can use ${property}",
+            "   - specify blank to filter out columns with no value (null or empty string)"
         };
         String columnExcludeFilters = (new DictionaryJDialog ( __parent, true, ColumnExcludeFilters, "Edit ColumnExcludeFilters Parameter",
             notes, "Column Name", "Column Value Filter Pattern",10)).response();
@@ -160,6 +176,7 @@ private void checkInput () {
 	String Column = __Column_JTextField.getText().trim();
 	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+	String IgnoreCase = __IgnoreCase_JComboBox.getSelected();
     String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
@@ -179,6 +196,9 @@ private void checkInput () {
     }
     if ( !ColumnExcludeFilters.isEmpty() ) {
         props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
+    }
+    if ( !IgnoreCase.isEmpty() ) {
+        props.set ( "IgnoreCase", IgnoreCase );
     }
     if ( !Row.isEmpty() ) {
         props.set ( "Row", Row );
@@ -217,6 +237,7 @@ private void commitEdits () {
     String Column = __Column_JTextField.getText().trim();
     String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+	String IgnoreCase = __IgnoreCase_JComboBox.getSelected();
     String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
@@ -228,6 +249,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "Column", Column );
 	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
+	__command.setCommandParameter ( "IgnoreCase", IgnoreCase );
 	__command.setCommandParameter ( "Row", Row );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "DefaultValue", DefaultValue );
@@ -298,10 +320,10 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
         "Use the following parameters to set a property based on a cell value."),
         0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cell_JPanel, new JLabel (
-        "This is useful when iteration uses a property value."),
+        "This is useful when iteration uses a property value found in multiple time series."),
         0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cell_JPanel, new JLabel (
-        "The table row is matched using the filters OR by specfying a row number."),
+        "The table row is matched using the filters (treating the column value as a string) OR by specfying a row number."),
         0, ++yCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cell_JPanel, new JLabel (
         "Using the filter parameters to match row(s) may result in multiple matches - " +
@@ -348,6 +370,21 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(cell_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
         3, ++yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ( "Ignore case in filters?:" ),
+        0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IgnoreCase_JComboBox = new SimpleJComboBox (); // Do not allow edit.
+    __IgnoreCase_JComboBox.setToolTipText("Should column include and exclude filters ignore case?");
+    List<String> caseChoices = new ArrayList<>();
+    caseChoices.add("");
+    caseChoices.add(this.__command._False);
+    caseChoices.add(this.__command._True);
+    __IgnoreCase_JComboBox.setData ( caseChoices );
+    __IgnoreCase_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(cell_JPanel, __IgnoreCase_JComboBox,
+        1, yCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cell_JPanel, new JLabel( "Optional - ignore case for filters? (default=" + this.__command._True + ")."),
+        3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(cell_JPanel, new JLabel ("Row:"),
         0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Row_JTextField = new JTextField (20);
@@ -368,7 +405,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(cell_JPanel, new JLabel ("Required - property name to set (can use ${property})."),
         3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Default value:"),
+    JGUIUtil.addComponent(cell_JPanel, new JLabel ("Default property value:"),
         0, ++yCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultValue_JTextField = new JTextField (20);
     __DefaultValue_JTextField.setToolTipText("Specify the property default value or use ${Property} notation");

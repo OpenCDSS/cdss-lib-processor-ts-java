@@ -61,6 +61,12 @@ This class initializes, checks, and runs the SetPropertyFromTable() command.
 public class SetPropertyFromTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
+	/**
+	 * Values used with IgnoreCase.
+	 */
+	protected String _False = "False";
+	protected String _True = "True";
+
 /**
 Property set during discovery - only name will be available.
 */
@@ -85,6 +91,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException {
 	String TableID = parameters.getValue ( "TableID" );
     String Row = parameters.getValue ( "Row" );
+    String IgnoreCase = parameters.getValue ( "IgnoreCase" );
     String PropertyName = parameters.getValue ( "PropertyName" );
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     String ColumnCountProperty = parameters.getValue ( "ColumnCountProperty" );
@@ -100,6 +107,15 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
+    }
+
+    if ( (IgnoreCase != null) && !IgnoreCase.isEmpty() &&
+    	!IgnoreCase.equalsIgnoreCase(this._False) && !IgnoreCase.equalsIgnoreCase(this._True) ) {
+        message = "The ignore case value (" + IgnoreCase +") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify whether to ignore case as " + this._False + " or " + this._True + " (default)." ) );
     }
 
     if ( (Row != null) && !Row.isEmpty() ) {
@@ -129,12 +145,14 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(11);
     validList.add ( "TableID" );
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
+    validList.add ( "IgnoreCase" );
     validList.add ( "Row" );
+    validList.add ( "IgnoreCase" );
     validList.add ( "PropertyName" );
     validList.add ( "DefaultValue" );
     validList.add ( "RowCountProperty" );
@@ -168,26 +186,56 @@ public boolean editCommand ( JFrame parent ) {
 Find the table rows that match the include and exclude filters.
 @param table the data table to retrieve records (only the first matching row is returned)
 @param columnIncludeFilters include filters to match column values
+@param columnIncludeOrs include filter ORs to match column values - NOT IMPLEMENTED
 @param columnExcludeFilters include filters to match column values
+@param columnExcludeOrs exclude filter ORs to match column values - NOT IMPLEMENTED
+@param ignoreCase whether to ignore case when checking the filters
 @param row the specific row to match, a number 1+ or "last" for the last row
 @param errors a list of strings to set errors
 @param return the list of matching table records
 */
 private List<TableRecord> findTableRecords ( DataTable table,
-	StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters, String row,
-	List<String>errors ) {
+	StringDictionary columnIncludeFilters,
+	//boolean [] columnIncludeOrs,
+	StringDictionary columnExcludeFilters,
+	//boolean [] columnExcludeOrs,
+	boolean ignoreCase,
+	String row,
+	List<String> errors ) {
+	String routine = getClass().getSimpleName() + ".findTableRecords";
 	// Check whether the a row is specified.
 	boolean doRow = false;
 	if ( (row != null) && !row.isEmpty() ) {
 		doRow = true;
 	}
+	// Determine whether any ORs need to be processed:
+	// - if so, all filter items need to be checked and at least one OR needs to be matched for an overall match
+	// - if not, the first AND that is not matched causes a break
+	int columnIncludeOrCount = 0;
+	int columnIncludeOrMatchCount = 0;
+	/*
+	for ( boolean columnIncludeOr : columnIncludeOrs ) {
+		if ( columnIncludeOr ) {
+			++columnIncludeOrCount;
+		}
+	}
+	*/
+	int columnExcludeOrCount = 0;
+	int columnExcludeOrMatchCount = 0;
+	/*
+	for ( boolean columnExcludeOr : columnExcludeOrs ) {
+		if ( columnExcludeOr ) {
+			++columnExcludeOrCount;
+		}
+	}
+	*/
     // Get include filter columns and glob-style regular expressions.
     int [] columnIncludeFiltersNumbers = new int[0];
-    String [] columnIncludeFiltersGlobs = null;
+    String [] columnIncludeFiltersRegex = null;
     if ( columnIncludeFilters != null ) {
         LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
         columnIncludeFiltersNumbers = new int[map.size()];
-        columnIncludeFiltersGlobs = new String[map.size()];
+        columnIncludeFiltersRegex = new String[map.size()];
         int ikey = -1;
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
@@ -196,9 +244,20 @@ private List<TableRecord> findTableRecords ( DataTable table,
             try {
                 key = entry.getKey();
                 columnIncludeFiltersNumbers[ikey] = table.getFieldIndex(key);
-                columnIncludeFiltersGlobs[ikey] = map.get(key);
+                columnIncludeFiltersRegex[ikey] = map.get(key);
                 // Turn default globbing notation into internal Java regex notation.
-                columnIncludeFiltersGlobs[ikey] = columnIncludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
+                if ( ignoreCase ) {
+                	// Use upper case for comparisons.
+                	columnIncludeFiltersRegex[ikey] = columnIncludeFiltersRegex[ikey].replace("*", ".*").toUpperCase();
+                }
+                else {
+                	// Use original case for comparisons.
+                	columnIncludeFiltersRegex[ikey] = columnIncludeFiltersRegex[ikey].replace("*", ".*");
+                }
+                if ( Message.isDebugOn ) {
+                	Message.printStatus ( 2, routine, "Include filter column \"" + key + "\" [" +
+                		columnIncludeFiltersNumbers[ikey] + "] regex \"" + columnIncludeFiltersRegex[ikey] + "\"" );
+                }
             }
             catch ( Exception e ) {
                 errors.add ( "ColumnIncludeFilters column \"" + key + "\" not found in table.");
@@ -207,11 +266,11 @@ private List<TableRecord> findTableRecords ( DataTable table,
     }
     // Get exclude filter columns and glob-style regular expressions.
     int [] columnExcludeFiltersNumbers = new int[0];
-    String [] columnExcludeFiltersGlobs = null;
+    String [] columnExcludeFiltersRegex = null;
     if ( columnExcludeFilters != null ) {
         LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
         columnExcludeFiltersNumbers = new int[map.size()];
-        columnExcludeFiltersGlobs = new String[map.size()];
+        columnExcludeFiltersRegex = new String[map.size()];
         int ikey = -1;
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
@@ -220,11 +279,20 @@ private List<TableRecord> findTableRecords ( DataTable table,
             try {
                 key = entry.getKey();
                 columnExcludeFiltersNumbers[ikey] = table.getFieldIndex(key);
-                columnExcludeFiltersGlobs[ikey] = map.get(key);
+                columnExcludeFiltersRegex[ikey] = map.get(key);
                 // Turn default globbing notation into internal Java regex notation.
-                columnExcludeFiltersGlobs[ikey] = columnExcludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
-                Message.printStatus(2,"","Exclude filter column \"" + key + "\" [" +
-                	columnExcludeFiltersNumbers[ikey] + "] glob \"" + columnExcludeFiltersGlobs[ikey] + "\"" );
+                if ( ignoreCase ) {
+                	// Use upper case for comparisons.
+                	columnExcludeFiltersRegex[ikey] = columnExcludeFiltersRegex[ikey].replace("*", ".*").toUpperCase();
+                }
+                else {
+                	// Use original case for comparisons.
+                	columnExcludeFiltersRegex[ikey] = columnExcludeFiltersRegex[ikey].replace("*", ".*");
+                }
+                if ( Message.isDebugOn ) {
+                	Message.printStatus ( 2, routine, "Exclude filter column \"" + key + "\" [" +
+                		columnExcludeFiltersNumbers[ikey] + "] regex \"" + columnExcludeFiltersRegex[ikey] + "\"" );
+                }
             }
             catch ( Exception e ) {
                 errors.add ( "ColumnExcludeFilters column \"" + key + "\" not found in table.");
@@ -234,6 +302,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
     // Loop through the table and match rows.
     List<TableRecord> matchedRows = new ArrayList<>();
     if ( doRow ) {
+    	// Matching based on the row number.
     	int irow = -1;
     	if ( row.equalsIgnoreCase("Last") ) {
     		irow = table.getNumberOfRecords() - 1;
@@ -258,129 +327,239 @@ private List<TableRecord> findTableRecords ( DataTable table,
     	}
     }
     else {
-    	boolean filterMatches;
+    	// Try matching rows based on the include and exclude filters.
+    	boolean includeFilterMatches;
+    	boolean excludeFilterMatches;
     	int icol;
     	Object o;
     	String s;
     	boolean debug = false; // Set to true when troubleshooting code.
     	for ( int irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
-        	filterMatches = true; // Default is match all.
+        	// Initialize the filter result:
+    		// - true is as if the previous item was matched
+    		// - if AND the current value must match
+    		// - if OR, the previous 'filterMatches' must be true
+    		// - also use true if no input filters
+        	includeFilterMatches = true;
         	if ( debug ) {
-            	Message.printStatus(2,"","columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
+            	Message.printStatus ( 2, routine, "columnIncludeFiltersNumbers.length=" + columnIncludeFiltersNumbers.length );
         	}
+        	// Check input filters to see if the row is matched.
         	if ( columnIncludeFiltersNumbers.length > 0 ) {
-            	// Filters can be done on any columns so loop through to see if row matches.
+            	// Filters can be done on any columns so loop through to see if row matches:
+        		// - the row is assumed to match until a condition occurs that indicates not a match
+        		// - the default is all filters AND'ed, but each item can optionally be OR'ed
+        		// - icol will be 0, 1, ...
             	for ( icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
                 	if ( columnIncludeFiltersNumbers[icol] < 0 ) {
                 		if ( debug ) {
-                    		Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] < 0" );
+                    		Message.printStatus ( 2, routine, "No match because columnIncludeFiltersNumbers[" + icol + "] < 0" );
                 		}
-                    	filterMatches = false;
+                    	includeFilterMatches = false;
                     	break;
                 	}
                 	try {
+                		// Have a column to check so get the value.
                     	o = table.getFieldValue(irow, columnIncludeFiltersNumbers[icol]);
                     	if ( o == null ) {
-                        	filterMatches = false;
-                        	if ( debug ) {
-                    	     	Message.printStatus(2,"","Skipping filter because columnIncludeFiltersNumbers[" + icol + "] object is null" );
-               	        	}
-                        	break; // Don't include nulls when checking values.
+                    		if ( columnIncludeFiltersRegex[icol].isEmpty() ) {
+                    			// The filter is an empty string so match null:
+                    			// - no need to compare the value below
+                    			continue;
+                    		}
+                    		else {
+                    			// Don't match nulls when checking values.
+                    			includeFilterMatches = false;
+                    			if ( debug ) {
+                    				Message.printStatus ( 2, routine, "No match because columnIncludeFiltersNumbers[" + icol + "] object is null." );
+                    			}
+                    			break;
+                    		}
                     	}
-                    	s = ("" + o).toUpperCase();
-                    	if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
+                    	else if ( ignoreCase ) {
+                    		// Compare using upper case.
+                    		s = ("" + o).toUpperCase();
+                    	}
+                    	else {
+                    		// Compare using original case.
+                    		s = ("" + o);
+                    	}
+                    	if ( s.isEmpty() & columnIncludeFiltersRegex[icol].isEmpty() ) {
+                    		// Want to include empty values.
+                    	}
+                    	else if ( s.matches(columnIncludeFiltersRegex[icol]) ) {
+                    		// A filter matches.
+                    		/*
+                    		if ( columnIncludeOrs[icol] ) {
+                    			// Increase the count of matching ORs.
+                    			++columnIncludeOrMatchCount;
+                    		}
+                    		*/
+                    	}
+                    	else {
                         	// A filter did not match so don't include the record.
-                        	filterMatches = false;
-                        	if ( debug ) {
-                    	     	Message.printStatus(2,"","Skipping filter because value \"" + s +
-                    	    		"\" does not match columnIncludeFiltersGlobs[" + icol + "] = " + columnIncludeFiltersGlobs[icol] );
-               	        	}
-                        	break;
+                    		/*
+                    		if ( columnIncludeOrs[icol] ) {
+                    			// Evaluating an OR:
+                    			// - nothing to do but need to continue evaluating
+                    		}
+                    		else {
+                    		*/
+                    			// Evaluating an AND:
+                    			// - did not match so can't continue
+                    			includeFilterMatches = false;
+                    			if ( debug ) {
+                    				Message.printStatus ( 2, routine, "Skipping include filter because value \"" + s +
+                    					"\" does not match columnIncludeFiltersRegex[" + icol + "] = " + columnIncludeFiltersRegex[icol] );
+                    			}
+                    			break;
+                    		//}
                     	}
                 	}
                 	catch ( Exception e ) {
-                    	errors.add("Error getting table data for [" + irow + "][" +
+                    	errors.add ( "Error getting table data for [" + irow + "][" +
                     		columnIncludeFiltersNumbers[icol] + "] (" + e + ")." );
-                    	filterMatches = false;
+                    	includeFilterMatches = false;
                 	}
             	}
-            	if ( !filterMatches ) {
+            	if ( includeFilterMatches && (columnIncludeOrCount > 0) && (columnIncludeOrMatchCount == 0) ) {
+            		// All AND filters were matched but did not match any OR filters so no match.
+            		includeFilterMatches = false;
+            	}
+            	if ( includeFilterMatches ) {
+            		// Row was matched.
+            		if ( debug ) {
+                		Message.printStatus ( 2, routine, "Include filter(s) match row [" + irow + "] ... not skipping." );
+            		}
+            	}
+            	else {
                 	// Skip the record.
             		if ( debug ) {
-                		Message.printStatus(2,"","Filter(s) do not match row [" + irow + "] ... skipping." );
+                		Message.printStatus ( 2, routine, "Include filter(s) do not match row [" + irow + "] ... skipping." );
+            		}
+                	continue;
+            	}
+        	}
+   			if ( debug ) {
+   				Message.printStatus ( 2, routine, "After evaluating include filters, includeFilterMatches=" + includeFilterMatches );
+   			}
+        	// Check input filter to see if the row is matched:
+        	// - this is a copy of the above code with "include" replaced with "exclude"
+        	// - initialize the exclude filters to true but check if any were specified at the end for the final result
+        	// Set exclude to true by default but check for whether any exclude filters are specified.
+        	excludeFilterMatches = true;
+        	if ( columnExcludeFiltersNumbers.length > 0 ) {
+            	// Filters can be done on any columns so loop through to see if row matches:
+        		// - the row is assumed to match until a condition occurs that indicates not a match
+        		// - the default is all filters AND'ed, but each item can optionally be OR'ed
+        		// - icol will be 0, 1, ...
+            	for ( icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
+                	if ( columnExcludeFiltersNumbers[icol] < 0 ) {
+                		if ( debug ) {
+                    		Message.printStatus ( 2, routine, "No match because columnExcludeFiltersNumbers[" + icol + "] < 0" );
+                		}
+                    	excludeFilterMatches = false;
+                    	break;
+                	}
+                	try {
+                		// Have a column to check so get the value.
+                    	o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
+                    	if ( o == null ) {
+                    		if ( columnExcludeFiltersRegex[icol].isEmpty() ) {
+                    			// The filter is an empty string so match null:
+                    			// - no need to compare the value below
+                    			continue;
+                    		}
+                    		else  {
+                    			// Don't match nulls when checking values.
+                    			excludeFilterMatches = false;
+                    			if ( debug ) {
+                    				Message.printStatus( 2, routine, "No match because columnExcludeFiltersNumbers[" + icol + "] object is null." );
+                    			}
+                    			break;
+                    		}
+                    	}
+                    	else if ( ignoreCase ) {
+                    		// Compare using upper case.
+                    		s = ("" + o).toUpperCase();
+                    	}
+                    	else {
+                    		// Compare using original case.
+                    		s = ("" + o);
+                    	}
+                    	if ( s.isEmpty() & columnExcludeFiltersRegex[icol].isEmpty() ) {
+                    		// Want to exclude empty values.
+                    	}
+                    	else if ( s.matches(columnExcludeFiltersRegex[icol]) ) {
+                    		// A filter matches.
+                    		/*
+                    		if ( columnExcludeOrs[icol] ) {
+                    			// Increase the count of matching ORs.
+                    			++columnExcludeOrMatchCount;
+                    		}
+                    		*/
+                    	}
+                    	else {
+                        	// A filter did not match so don't exclude the record.
+                    		/*
+                    		if ( columnExcludeOrs[icol] ) {
+                    			// Evaluating an OR:
+                    			// - nothing to do but need to continue evaluating
+                    		}
+                    		else {
+                    		*/
+                    			// Evaluating an AND:
+                    			// - did not match so can't continue
+                    			excludeFilterMatches = false;
+                    			if ( debug ) {
+                    				Message.printStatus ( 2, routine, "Skipping exclude filter because value \"" + s +
+                    					"\" does not match columnExcludeFiltersRegex[" + icol + "] = " + columnExcludeFiltersRegex[icol] );
+                    			}
+                    			break;
+                    		//}
+                    	}
+                	}
+                	catch ( Exception e ) {
+                    	errors.add ( "Error getting table data for [" + irow + "][" +
+                    		columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
+                    	excludeFilterMatches = false;
+                	}
+                	if ( debug ) {
+   				      	Message.printStatus ( 2, routine, "After evaluating exclude filters, excludeFilterMatches=" + excludeFilterMatches );
+   			        }
+            	}
+            	if ( excludeFilterMatches ) {
+            		// Row was matched.
+            		if ( debug ) {
+                		Message.printStatus ( 2, routine, "Exclude filter(s) match row [" + irow + "] ... skipping." );
             		}
                 	continue;
             	}
             	else {
+                	// Did not match the row don't omit.
             		if ( debug ) {
-                		Message.printStatus(2,"","Filter(s) not match row [" + irow + "] ... not skipping." );
+                		Message.printStatus ( 2, routine, "Exclude filter(s) do not match row [" + irow + "]." );
             		}
             	}
         	}
-        	if ( debug ) {
-            	Message.printStatus(2,"","columnExcludeFiltersNumbers.length=" + columnExcludeFiltersNumbers.length );
+        	// Initialize the final filter to the result of the include filters.
+        	boolean filterMatches = includeFilterMatches;
+        	if ( (columnExcludeFilters.size() > 0) && excludeFilterMatches ) {
+        		// The needs to be excluded.
+        		filterMatches = false;
         	}
-        	if ( columnExcludeFiltersNumbers.length > 0 ) {
-            	int matchesCount = 0;
-            	// Filters can be done on any columns so loop through to see if row matches.
-            	for ( icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
-                	if ( columnExcludeFiltersNumbers[icol] < 0 ) {
-                    	// Can't do filter so don't try.
-                    	break;
-                	}
-                	try {
-                    	o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
-                    	if ( debug ) {
-                    		Message.printStatus(2,"","Got cell object " + o );
-                    	}
-                    	if ( o == null ) {
-                    		if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
-                    			// Trying to match blank cells.
-                    			++matchesCount;
-                    		}
-                    		else {
-                    			// Don't include nulls when checking values.
-                    			break;
-                    		}
-                    	}
-                    	s = ("" + o).toUpperCase();
-                    	if ( debug ) {
-                    		Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
-                    	}
-                    	if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
-                        	// A filter matched so don't copy the record.
-                    		if ( debug ) {
-                    			Message.printStatus(2,"","Exclude filter matches.");
-                    		}
-                        	++matchesCount;
-                    	}
-                	}
-                	catch ( Exception e ) {
-                		errors.add("Error getting table data for [" + irow + "][" +
-                       		columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
-                	}
-            	}
-            	if ( debug ) {
-            		Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
-            	}
-            	if ( matchesCount == columnExcludeFiltersNumbers.length ) {
-                	// Skip the record since all exclude filters were matched.
-            		if ( debug ) {
-            			Message.printStatus(2,"","Skipping since all exclude filters matched.");
-            		}
-                	continue;
-            	}
-        	}
-        	// If here then the row should be included.
-        	try {
-        		if ( debug ) {
-        			Message.printStatus(2,"","Matched table row [" + irow + "]");
+        	if ( filterMatches ) {
+        		// If here then the row should be included.
+        		try {
+        			if ( debug ) {
+        				Message.printStatus ( 2, routine, "Matched table row [" + irow + "]" );
+        			}
+        			matchedRows.add(table.getRecord(irow));
         		}
-        		matchedRows.add(table.getRecord(irow));
-        	}
-        	catch ( Exception e ) {
-        		// Should not happen since row was accessed above.
-        		errors.add("Error getting table data for row [" + irow + "] (" + e + ")." );
+        		catch ( Exception e ) {
+        			// Should not happen since row was accessed above.
+        			errors.add ( "Error getting table data for row [" + irow + "] (" + e + ")." );
+        		}
         	}
     	}
     }
@@ -487,8 +666,42 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    		Column = TSCommandProcessorUtil.expandParameterValue(processor, this, Column);
     }
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		ColumnIncludeFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnIncludeFilters);
+    }
     StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
+    // Check for OR operator | at the front of values:
+    // - set a boolean in the array and remove the vertical bar
+    /*
+    LinkedHashMap<String,String> includeMap = columnIncludeFilters.getLinkedHashMap();
+    boolean [] columnIncludeOrs = new boolean[0];
+    if ( (ColumnIncludeFilters != null) && !ColumnIncludeFilters.isEmpty() ) {
+    	int i = -1;
+        for ( Map.Entry<String,String> entry : includeMap.entrySet() ) {
+        	++i;
+            String key = entry.getKey();
+            String value = entry.getValue();
+           	columnIncludeOrs[i] = false;
+            if ( key.startsWith("|") ) {
+            	if ( value.length() > 1 ) {
+            		includeMap.put(key, value.substring(1));
+            	}
+            	else {
+            		includeMap.put(key, "");
+            	}
+            	columnIncludeOrs[i] = true;
+            	// Also adjust the first item.
+            	if ( i == 1 ) {
+            		// Include matching column [0] or column [1] or ...
+            		columnIncludeOrs[0] = true;
+            	}
+            }
+        }
+    }
+    */
     // Expand the filter information.
+    /*
+   	 * TODO smalers 2025-01-16 no need for the complexity since expanded above before conversion to map.
     if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) {
         LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
         String key = null;
@@ -509,8 +722,43 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
+    */
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		ColumnExcludeFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnExcludeFilters);
+    }
     StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
+    // Check for OR operator | at the front of values:
+    // - set a boolean in the array and remove the vertical bar
+    /*
+    LinkedHashMap<String,String> excludeMap = columnIncludeFilters.getLinkedHashMap();
+    boolean [] columnExcludeOrs = new boolean[0];
+    if ( (ColumnExcludeFilters != null) && !ColumnExcludeFilters.isEmpty() ) {
+    	int i = -1;
+        for ( Map.Entry<String,String> entry : excludeMap.entrySet() ) {
+        	++i;
+            String key = entry.getKey();
+            String value = entry.getValue();
+           	columnExcludeOrs[i] = false;
+            if ( key.startsWith("|") ) {
+            	if ( value.length() > 1 ) {
+            		excludeMap.put(key, value.substring(1));
+            	}
+            	else {
+            		excludeMap.put(key, "");
+            	}
+            	columnExcludeOrs[i] = true;
+            	// Also adjust the first item.
+            	if ( i == 1 ) {
+            		// Exclude column [0] or column [1] ...
+            		columnExcludeOrs[0] = true;
+            	}
+            }
+        }
+    }
+    */
+   	/*
+   	 * TODO smalers 2025-01-16 no need for the complexity since expanded above before conversion to map.
     if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.indexOf("${") >= 0) ) {
         LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
         String key = null;
@@ -530,6 +778,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	map.remove(key);
             }
         }
+    }
+    */
+    String IgnoreCase = parameters.getValue ( "IgnoreCase" );
+    boolean ignoreCase = true; // Default.
+    if ( (IgnoreCase != null) && IgnoreCase.equalsIgnoreCase(this._False)) {
+    	ignoreCase = false;
     }
     String Row = parameters.getValue ( "Row" );
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -598,13 +852,50 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 	    Prop prop = null;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 		    if ( (PropertyName != null) && !PropertyName.isEmpty() ) {
 		    	// Setting a property from a cell value.
+		    	String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 
-		    	// Match 1+ rows so first match can be used.
+		    	// Make sure that include filter columns exist in the table.
+		    	for ( Map.Entry<String,String> entry : columnIncludeFilters.getLinkedHashMap().entrySet() ) {
+		    		String key = entry.getKey();
+		    		try {
+		    			table.getFieldIndex(key);
+		    		}
+		    		catch ( Exception e ) {
+		    			message = "Unable to find table column \"" + key + "\" used in ColumnIncludeFilters.";
+		    			Message.printWarning ( warning_level,
+		    				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+		    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		    				message, "Verify that a table column exists." ) );
+		    		}
+		    	}
+
+		    	// Make sure that exclude filter columns exist in the table.
+		    	for ( Map.Entry<String,String> entry : columnExcludeFilters.getLinkedHashMap().entrySet() ) {
+		    		String key = entry.getKey();
+		    		try {
+		    			table.getFieldIndex(key);
+		    		}
+		    		catch ( Exception e ) {
+		    			message = "Unable to find table column \"" + key + "\" used in ColumnExcludeFilters.";
+		    			Message.printWarning ( warning_level,
+		    				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+		    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		    				message, "Verify that a table column exists." ) );
+		    		}
+		    	}
+
+		    	// THe filters may match 1+ rows so use the first match to set the property.
 	    		List<String> errors = new ArrayList<>();
-	        	List<TableRecord> records = findTableRecords ( table, columnIncludeFilters, columnExcludeFilters, Row, errors );
+	        	List<TableRecord> records = findTableRecords (
+	        		table,
+	        		columnIncludeFilters,
+	        		//columnIncludeOrs,
+	        		columnExcludeFilters,
+	        		//columnExcludeOrs,
+	        		ignoreCase,
+	        		Row, errors );
 	        	for ( String error : errors ) {
 	        		Message.printWarning(3, routine, "Error: " + error);
 	        	}
@@ -633,7 +924,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        		}
 	        	}
 	        	else {
-	        		// Have a matching record so set the property based on the column value.
+	        		// Have 1+ matching records so set the property based on the column value:
+	        		// - use the first matching record
 	        		int col = table.getFieldIndex(Column);
 	        		if ( col < 0 ) {
 		        		message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" + Column + "\". Can't set property.";
@@ -773,6 +1065,7 @@ public String toString ( PropList parameters ) {
 		"Column",
 		"ColumnIncludeFilters",
 		"ColumnExcludeFilters",
+		"IgnoreCase",
 		"Row",
     	"PropertyName",
     	"DefaultValue",

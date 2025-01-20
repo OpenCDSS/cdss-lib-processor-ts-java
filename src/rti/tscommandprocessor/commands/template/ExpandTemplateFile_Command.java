@@ -583,14 +583,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             if ( !error ) {
                 // Create a model.
-                Map<String,Object> model = new HashMap<String,Object>();
+                Map<String,Object> model = new HashMap<>();
                 TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
+                // In addition to adding the properties individually, add to a map:
+                // - this will allow dynamically-named properties to be looked up in the dictionary using the property name
+                // - it is somewhat redundant but allows flexibility
+                Map<String,Object> propertyDict = new HashMap<>();
+                model.put("propertymap", propertyDict);
                 if ( processor instanceof TSCommandProcessor ) {
                     // Add properties from the processor.
                     Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
                     for ( String propertyName : propertyNames ) {
                     	//Message.printStatus(2, routine, "Adding model property " + propertyName + "=" + tsprocessor.getPropContents(propertyName));
                         model.put(propertyName, tsprocessor.getPropContents(propertyName) );
+                        propertyDict.put(propertyName, tsprocessor.getPropContents(propertyName) );
                     }
                     // Add single column tables from the processor, using the table ID as the object key.
                     if ( UseTables_boolean ) {
@@ -625,6 +631,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 	Set<String> keys = stringProperties.keySet();
                 	for ( String key: keys ) {
                 		model.put(key, stringProperties.get(key) );
+                		propertyDict.put(key, stringProperties.get(key) );
                 	}
                 }
                 if ( (TableColumnProperties != null) && !TableColumnProperties.isEmpty() ) {

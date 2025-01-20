@@ -146,7 +146,9 @@ public void actionPerformed( ActionEvent event ) {
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
         }
         fc.setDialogTitle("Select Append File");
-        SimpleFileFilter sff = new SimpleFileFilter("txt", "Append File (text)");
+        SimpleFileFilter sff = new SimpleFileFilter("md", "Append File (markdown)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("txt", "Append File (text)");
         fc.addChoosableFileFilter(sff);
 
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -215,7 +217,9 @@ public void actionPerformed( ActionEvent event ) {
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
         }
         fc.setDialogTitle("Select Prepend File");
-        SimpleFileFilter sff = new SimpleFileFilter("txt", "Prepend File (text)");
+        SimpleFileFilter sff = new SimpleFileFilter("md", "Prepend File (markdown)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("txt", "Prepend File (text)");
         fc.addChoosableFileFilter(sff);
 
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {

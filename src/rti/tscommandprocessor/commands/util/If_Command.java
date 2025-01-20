@@ -88,12 +88,14 @@ throws InvalidCommandParameterException {
 	String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
+	String CompareAsVersions = parameters.getValue ( "CompareAsVersions" );
 	String FileExists = parameters.getValue ( "FileExists" );
 	String FileDoesNotExist = parameters.getValue ( "FileDoesNotExist" );
 	String ObjectExists = parameters.getValue ( "ObjectExists" );
 	String ObjectDoesNotExist = parameters.getValue ( "ObjectDoesNotExist" );
 	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
 	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
+	String PropertyIsDefinedAndIsNotEmpty = parameters.getValue ( "PropertyIsDefinedAndIsNotEmpty" );
 	String TableExists = parameters.getValue ( "TableExists" );
 	String TableDoesNotExist = parameters.getValue ( "TableDoesNotExist" );
 	String TSExists = parameters.getValue ( "TSExists" );
@@ -109,6 +111,7 @@ throws InvalidCommandParameterException {
 	boolean conditionProvided = false;
 	boolean fileExistsProvided = false;
 	boolean objectExistsProvided = false;
+	// Any of the property checks.
 	boolean propertyDefinedProvided = false;
 	boolean tableExistsProvided = false;
 	boolean tsExistsProvided = false;
@@ -127,6 +130,9 @@ throws InvalidCommandParameterException {
 		propertyDefinedProvided = true;
 	}
 	if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
+		propertyDefinedProvided = true;
+	}
+	if ( (PropertyIsDefinedAndIsNotEmpty != null) && !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
 		propertyDefinedProvided = true;
 	}
 	if ( ((TableExists != null) && !TableExists.isEmpty()) || ((TableDoesNotExist != null) && !TableDoesNotExist.isEmpty()) ) {
@@ -152,7 +158,7 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
     }
-    if ( CompareAsStrings != null && !CompareAsStrings.isEmpty() &&
+    if ( (CompareAsStrings != null) && !CompareAsStrings.isEmpty() &&
     	!CompareAsStrings.equalsIgnoreCase(_False) && !CompareAsStrings.equalsIgnoreCase(_True) ) {
 		message = "The property value \"" + CompareAsStrings + "\" is not valid.";
         warning += "\n" + message;
@@ -160,18 +166,28 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify CompareAsStrings as " + _False + " (default) or " + _True + "." ));
 	}
+    if ( (CompareAsVersions != null) && !CompareAsVersions.isEmpty() &&
+    	!CompareAsVersions.equalsIgnoreCase(_False) && !CompareAsVersions.equalsIgnoreCase(_True) ) {
+		message = "The property value \"" + CompareAsVersions + "\" is not valid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify CompareAsVersions as " + _False + " (default) or " + _True + "." ));
+	}
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(15);
+    List<String> validList = new ArrayList<>(17);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
+	validList.add ( "CompareAsVersions" );
 	validList.add ( "FileExists" );
 	validList.add ( "FileDoesNotExist" );
 	validList.add ( "ObjectExists" );
 	validList.add ( "ObjectDoesNotExist" );
 	validList.add ( "PropertyIsNotDefinedOrIsEmpty" );
 	validList.add ( "PropertyIsDefined" );
+	validList.add ( "PropertyIsDefinedAndIsNotEmpty" );
 	validList.add ( "TableExists" );
 	validList.add ( "TableDoesNotExist" );
 	validList.add ( "TSExists" );
@@ -254,9 +270,14 @@ throws CommandWarningException, CommandException {
 		conditionUpper = Condition.toUpperCase();
 	}
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
-	boolean compareAsStrings = false;
+	boolean compareAsStrings = false; // Default.
 	if ( (CompareAsStrings != null) && CompareAsStrings.equalsIgnoreCase(_True) ) {
 		compareAsStrings = true;
+	}
+	String CompareAsVersions = parameters.getValue ( "CompareAsVersions" );
+	boolean compareAsVersions = false; // Default.
+	if ( (CompareAsVersions != null) && CompareAsVersions.equalsIgnoreCase(_True) ) {
+		compareAsVersions = true;
 	}
 	String FileExists = parameters.getValue ( "FileExists" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -281,6 +302,10 @@ throws CommandWarningException, CommandException {
 	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		PropertyIsDefined = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsDefined);
+	}
+	String PropertyIsDefinedAndIsNotEmpty = parameters.getValue ( "PropertyIsDefinedAndIsNotEmpty" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		PropertyIsDefinedAndIsNotEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsDefinedAndIsNotEmpty);
 	}
 	String TableExists = parameters.getValue ( "TableExists" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -447,118 +472,24 @@ throws CommandWarningException, CommandException {
             // Strip surrounding double quotes for comparisons below - do after above checks for type.
             value1 = value1.replace("\"", "");
             value2 = value2.replace("\"", "");
-            if ( !compareAsStrings && isValue1Integer && isValue2Integer ) {
-            	// Do an integer comparison.
-	    	    int ivalue1 = Integer.parseInt(value1);
-	    	    int ivalue2 = Integer.parseInt(value2);
-	    	    if ( op.equals("<=") ) {
-	    	        if ( ivalue1 <= ivalue2 ) {
-	    	            conditionEval = true;
-	    	        }
-	    	    }
-	    	    else if ( op.equals("<") ) {
-	                if ( ivalue1 < ivalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">=") ) {
-	                if ( ivalue1 >= ivalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">") ) {
-	                if ( ivalue1 > ivalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("==") ) {
-	                if ( ivalue1 == ivalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("!=") ) {
-	                if ( ivalue1 != ivalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
+            // Default is to compare as strings if the input data type is not understood.
+            if ( !isValue1Integer || !isValue2Integer || !isValue1Double || !isValue2Double || !isValue1Boolean || !isValue2Boolean ) {
+            	// Types of some of the input are not handled so compare as strings.
+            	compareAsStrings = true;
             }
-            else if ( !compareAsStrings && isValue1Double && isValue2Double ) {
-            	// Compare doubles.
-	    	    double dvalue1 = Double.parseDouble(value1);
-	    	    double dvalue2 = Double.parseDouble(value2);
-	    	    if ( op.equals("<=") ) {
-	    	        if ( dvalue1 <= dvalue2 ) {
-	    	            conditionEval = true;
-	    	        }
-	    	    }
-	    	    else if ( op.equals("<") ) {
-	                if ( dvalue1 < dvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">=") ) {
-	                if ( dvalue1 >= dvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">") ) {
-	                if ( dvalue1 > dvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("==") ) {
-	                if ( dvalue1 == dvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("!=") ) {
-	                if ( dvalue1 != dvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
+            if ( compareAsVersions ) {
+            	// Compare the values as semantic versions (1.3.3.4, etc.):
+            	// - make sure values are strings
+    	    	int maxParts = 0; // No limit on comparison.
+    	    	if ( Message.isDebugOn ) {
+    	    		Message.printStatus(2, routine, "Comparing semantic versions \"" + value1 + "\" " + op + " \"" + value2 + "\" maxParts=" + maxParts +
+    	    		" isValue1Double="+ isValue1Double + " isvalue1Integer=" + isValue1Integer + " isValue1Boolean=" + isValue1Boolean +
+    	    		" isValue2Double="+ isValue2Double + " isvalue2Integer=" + isValue2Integer + " isValue2Boolean=" + isValue2Boolean );
+    	    	}
+    	    	conditionEval = StringUtil.compareSemanticVersions(value1, op, value2, maxParts);
             }
-            else if ( !compareAsStrings && isValue1Boolean && isValue2Boolean ) {
-            	// Do a boolean comparison.
-	    	    boolean bvalue1 = Boolean.parseBoolean(value1);
-	    	    boolean bvalue2 = Boolean.parseBoolean(value2);
-	    	    if ( op.equals("<=") ) {
-	    	        if ( !bvalue1 ) {
-	    	        	// false <= false or true.
-	    	            conditionEval = true;
-	    	        }
-	    	    }
-	    	    else if ( op.equals("<") ) {
-	                if ( !bvalue1 && bvalue2 ) {
-	                	// false < true.
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">=") ) {
-	                if ( bvalue1 ) {
-	                	// true >= false or true.
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals(">") ) {
-	                if ( bvalue1 && !bvalue2 ) {
-	                	// true > false.
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("==") ) {
-	                if ( bvalue1 == bvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-	    	    else if ( op.equals("!=") ) {
-	                if ( bvalue1 != bvalue2 ) {
-	                    conditionEval = true;
-	                }
-	    	    }
-            }
-            else if ( compareAsStrings || (!isValue1Integer && !isValue2Integer &&
-            	!isValue1Double && !isValue2Double && !isValue1Boolean && !isValue2Boolean) ) {
-            	// Always compare the string values or the input is not other types so assume strings.
+            else if ( compareAsStrings ) {
+            	// Always compare the string values or the input is not other understood type so assume strings.
  	    	    if ( op.equals("CONTAINS") ) {
  	    	    	if ( value1.indexOf(value2) >= 0 ) {
  	    	    	     conditionEval = true;
@@ -602,6 +533,115 @@ throws CommandWarningException, CommandException {
 	 	                }
 	 	    	    }
  	    	    }
+            }
+            else if ( isValue1Integer && isValue2Integer ) {
+            	// Do an integer comparison.
+	    	    int ivalue1 = Integer.parseInt(value1);
+	    	    int ivalue2 = Integer.parseInt(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( ivalue1 <= ivalue2 ) {
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( ivalue1 < ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( ivalue1 >= ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( ivalue1 > ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( ivalue1 == ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( ivalue1 != ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+            }
+            else if ( isValue1Double && isValue2Double ) {
+            	// Compare doubles.
+	    	    double dvalue1 = Double.parseDouble(value1);
+	    	    double dvalue2 = Double.parseDouble(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( dvalue1 <= dvalue2 ) {
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( dvalue1 < dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( dvalue1 >= dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( dvalue1 > dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( dvalue1 == dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( dvalue1 != dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+            }
+            else if ( isValue1Boolean && isValue2Boolean ) {
+            	// Do a boolean comparison.
+	    	    boolean bvalue1 = Boolean.parseBoolean(value1);
+	    	    boolean bvalue2 = Boolean.parseBoolean(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( !bvalue1 ) {
+	    	        	// false <= false or true.
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( !bvalue1 && bvalue2 ) {
+	                	// false < true.
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( bvalue1 ) {
+	                	// true >= false or true.
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( bvalue1 && !bvalue2 ) {
+	                	// true > false.
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( bvalue1 == bvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( bvalue1 != bvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
             }
             else {
             	// Check to see if a property exists for left or right.
@@ -807,6 +847,38 @@ throws CommandWarningException, CommandException {
 	    	}
 	    	else {
 		    	if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to false.
+		    			conditionEval = false;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to false.
+		    			conditionEval = false;
+		    		}
+		    	}
+	    	}
+            setConditionEval(conditionEval);
+	    }
+	    if ( (PropertyIsDefinedAndIsNotEmpty != null) && !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
+	    	// Check to see whether the specified property exists and is not an empty string.
+	    	Object o = processor.getPropContents(PropertyIsDefinedAndIsNotEmpty);
+	    	conditionEval = true; // Assume property is defined, is not null, and is not an empty string.
+	    	if ( o == null ) {
+	    		// Property is null so condition evaluates to false.
+	    		conditionEval = false;
+	    	}
+	    	else {
+		    	if ( o instanceof String ) {
+		    		String s = (String)o;
+		    		if ( s.isEmpty() ) {
+		    			conditionEval = false;
+		    		}
+		    	}
+		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
 		    			// Property is Double NaN so condition evaluates to false.
@@ -1131,12 +1203,14 @@ public String toString ( PropList parameters ) {
 		"Name",
 		"Condition",
 		"CompareAsStrings",
+		"CompareAsVersions",
 		"FileExists",
 		"FileDoesNotExist",
 		"ObjectExists",
 		"ObjectDoesNotExist",
 		"PropertyIsNotDefinedOrIsEmpty",
 		"PropertyIsDefined",
+		"PropertyIsDefinedAndIsNotEmpty",
 		"TableExists",
 		"TableDoesNotExist",
 		"TSExists",

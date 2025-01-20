@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,7 +49,6 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringDictionary;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -91,7 +90,7 @@ throws InvalidCommandParameterException {
     String SortOrder = parameters.getValue ( "SortOrder" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -137,21 +136,21 @@ throws InvalidCommandParameterException {
     		}
     	}
     }
- 
+
 	// Check for invalid parameters.
 	List<String> validList = new ArrayList<>(4);
     validList.add ( "TableID" );
     validList.add ( "SortColumns" );
     validList.add ( "SortOrder" );
     validList.add ( "OrderColumns" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -198,7 +197,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	CommandProcessor processor = getCommandProcessor();
@@ -219,7 +218,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	// Make sure there are time series available to operate on.
-	
+
 	PropList parameters = getCommandParameters();
 
     String TableID = parameters.getValue ( "TableID" );
@@ -260,7 +259,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		orderColumns[0] = OrderColumns.trim();
     	}
     }
-    
+
     // Get the table to process.
 
     DataTable table = null;
@@ -355,7 +354,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,

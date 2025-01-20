@@ -71,12 +71,14 @@ private JTextField __Name_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
 private SimpleJComboBox __CompareAsStrings_JComboBox = null;
+private SimpleJComboBox __CompareAsVersions_JComboBox = null;
 private JTextField __FileExists_JTextField = null;
 private JTextField __FileDoesNotExist_JTextField = null;
 private JTextField __ObjectExists_JTextField = null;
 private JTextField __ObjectDoesNotExist_JTextField = null;
 private JTextField __PropertyIsNotDefinedOrIsEmpty_JTextField = null;
 private JTextField __PropertyIsDefined_JTextField = null;
+private JTextField __PropertyIsDefinedAndIsNotEmpty_JTextField = null;
 private JTextField __TableExists_JTextField = null;
 private JTextField __TableDoesNotExist_JTextField = null;
 private JTextField __TSExists_JTextField = null;
@@ -137,12 +139,14 @@ private void checkInput () {
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
     String ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
     String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+    String PropertyIsDefinedAndIsNotEmpty = __PropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     String TableExists = __TableExists_JTextField.getText().trim();
     String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
@@ -157,6 +161,9 @@ private void checkInput () {
     }
     if ( CompareAsStrings.length() > 0 ) {
         props.set ( "CompareAsStrings", CompareAsStrings );
+    }
+    if ( CompareAsVersions.length() > 0 ) {
+        props.set ( "CompareAsVersions", CompareAsVersions );
     }
     if ( FileExists.length() > 0 ) {
         props.set ( "FileExists", FileExists );
@@ -175,6 +182,9 @@ private void checkInput () {
     }
     if ( PropertyIsDefined.length() > 0 ) {
         props.set ( "PropertyIsDefined", PropertyIsDefined );
+    }
+    if ( PropertyIsDefinedAndIsNotEmpty.length() > 0 ) {
+        props.set ( "PropertyIsDefinedAndIsNotEmpty", PropertyIsDefinedAndIsNotEmpty );
     }
     if ( TableExists.length() > 0 ) {
         props.set ( "TableExists", TableExists );
@@ -211,12 +221,14 @@ private void commitEdits () {
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
     String ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
     String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+    String PropertyIsDefinedAndIsNotEmpty = __PropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     String TableExists = __TableExists_JTextField.getText().trim();
     String TableDoesNotExist = __TableDoesNotExist_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
@@ -226,12 +238,14 @@ private void commitEdits () {
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
+    __command.setCommandParameter ( "CompareAsVersions", CompareAsVersions );
     __command.setCommandParameter ( "FileExists", FileExists );
     __command.setCommandParameter ( "FileDoesNotExist", FileDoesNotExist );
     __command.setCommandParameter ( "ObjectExists", ObjectExists );
     __command.setCommandParameter ( "ObjectDoesNotExist", ObjectDoesNotExist );
     __command.setCommandParameter ( "PropertyIsNotDefinedOrIsEmpty", PropertyIsNotDefinedOrIsEmpty );
     __command.setCommandParameter ( "PropertyIsDefined", PropertyIsDefined );
+    __command.setCommandParameter ( "PropertyIsDefinedAndIsNotEmpty", PropertyIsDefinedAndIsNotEmpty );
     __command.setCommandParameter ( "TableExists", TableExists );
     __command.setCommandParameter ( "TableDoesNotExist", TableDoesNotExist );
     __command.setCommandParameter ( "TSExists", TSExists );
@@ -306,6 +320,9 @@ private void initialize ( JFrame parent, If_Command command ) {
         "String evaluations can also use the contains and !contains operators (comparisons are case-specific)."),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "A string value containing spaces can be surrounded by double quotes."),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Values can use ${Property} processor property syntax."),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
@@ -328,7 +345,7 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as strings?:" ),
         0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareAsStrings_JComboBox = new SimpleJComboBox ( false );
-    List<String> compareChoices = new ArrayList<String>();
+    List<String> compareChoices = new ArrayList<>();
     compareChoices.add ( "" );
     compareChoices.add ( __command._False );
     compareChoices.add ( __command._True );
@@ -338,6 +355,22 @@ private void initialize ( JFrame parent, If_Command command ) {
         1, yCond, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel(
         "Optional - compare values as strings (default = " + __command._False + ")."),
+        3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as versions?:" ),
+        0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CompareAsVersions_JComboBox = new SimpleJComboBox ( false );
+    __CompareAsVersions_JComboBox.setToolTipText("Compare as semantic version strings (e.g, 1.2.3.4).");
+    List<String> versionChoices = new ArrayList<>();
+    versionChoices.add ( "" );
+    versionChoices.add ( __command._False );
+    versionChoices.add ( __command._True );
+    __CompareAsVersions_JComboBox.setData(versionChoices);
+    __CompareAsVersions_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(cond_JPanel, __CompareAsVersions_JComboBox,
+        1, yCond, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel(
+        "Optional - compare values as versions (default = " + __command._False + ")."),
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for whether file exists.
@@ -418,7 +451,7 @@ private void initialize ( JFrame parent, If_Command command ) {
         "These parameters, if specified, check whether the specified property name is defined (not null) or is empty."),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel (
-        "Double is considered empty if value is NaN."),
+        "Double is considered empty if the value is NaN."),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -443,6 +476,17 @@ private void initialize ( JFrame parent, If_Command command ) {
         1, yPropDefined, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(propDefined_JPanel, new JLabel(
         "Optional - If() will be true if the specified property is defined (not null)."),
+        3, yPropDefined, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is defined and is not empty:" ),
+        0, ++yPropDefined, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyIsDefinedAndIsNotEmpty_JTextField = new JTextField ( 20 );
+    __PropertyIsDefinedAndIsNotEmpty_JTextField.setToolTipText("Specify a property name to check.");
+    __PropertyIsDefinedAndIsNotEmpty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(propDefined_JPanel, __PropertyIsDefinedAndIsNotEmpty_JTextField,
+        1, yPropDefined, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel(
+        "Optional - If() will be true if the specified property is defined (not null) and is not empty."),
         3, yPropDefined, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for whether table exists.
@@ -617,12 +661,14 @@ private void refresh () {
 	String Name = "";
 	String Condition = "";
 	String CompareAsStrings = "";
+	String CompareAsVersions = "";
 	String FileExists = "";
 	String FileDoesNotExist = "";
 	String ObjectExists = "";
 	String ObjectDoesNotExist = "";
 	String PropertyIsNotDefinedOrIsEmpty = "";
 	String PropertyIsDefined = "";
+	String PropertyIsDefinedAndIsNotEmpty = "";
 	String TableExists = "";
 	String TableDoesNotExist = "";
 	String TSExists = "";
@@ -636,12 +682,14 @@ private void refresh () {
 		Name = props.getValue( "Name" );
 		Condition = props.getValue( "Condition" );
 		CompareAsStrings = props.getValue( "CompareAsStrings" );
+		CompareAsVersions = props.getValue( "CompareAsVersions" );
 		FileExists = props.getValue( "FileExists" );
 		FileDoesNotExist = props.getValue( "FileDoesNotExist" );
 		ObjectExists = props.getValue( "ObjectExists" );
 		ObjectDoesNotExist = props.getValue( "ObjectDoesNotExist" );
 		PropertyIsNotDefinedOrIsEmpty = props.getValue( "PropertyIsNotDefinedOrIsEmpty" );
 		PropertyIsDefined = props.getValue( "PropertyIsDefined" );
+		PropertyIsDefinedAndIsNotEmpty = props.getValue( "PropertyIsDefinedAndIsNotEmpty" );
 		TableExists = props.getValue( "TableExists" );
 		TableDoesNotExist = props.getValue( "TableDoesNotExist" );
 		TSExists = props.getValue( "TSExists" );
@@ -668,6 +716,21 @@ private void refresh () {
             else {
                 Message.printWarning ( 1, routine,
                 "Existing command references an invalid\nCompareAsStrings value \"" + CompareAsStrings +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( CompareAsVersions == null ) {
+            // Select default.
+            __CompareAsVersions_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __CompareAsVersions_JComboBox,CompareAsVersions, JGUIUtil.NONE, null, null ) ) {
+                __CompareAsVersions_JComboBox.select ( CompareAsVersions );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nCompareAsVersions value \"" + CompareAsVersions +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -705,6 +768,12 @@ private void refresh () {
         if ( PropertyIsDefined != null ) {
             __PropertyIsDefined_JTextField.setText( PropertyIsDefined );
             if ( !PropertyIsDefined.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.propertyTabNum);
+            }
+        }
+        if ( PropertyIsDefinedAndIsNotEmpty != null ) {
+            __PropertyIsDefinedAndIsNotEmpty_JTextField.setText( PropertyIsDefinedAndIsNotEmpty );
+            if ( !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
             	__main_JTabbedPane.setSelectedIndex(this.propertyTabNum);
             }
         }
@@ -749,10 +818,12 @@ private void refresh () {
 	Name = __Name_JTextField.getText().trim();
 	Condition = __Condition_JTextArea.getText().trim();
 	CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+	CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     FileExists = __FileExists_JTextField.getText().trim();
     FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
 	PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
 	PropertyIsDefined = __PropertyIsDefined_JTextField.getText().trim();
+	PropertyIsDefinedAndIsNotEmpty = __PropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     ObjectExists = __ObjectExists_JTextField.getText().trim();
     ObjectDoesNotExist = __ObjectDoesNotExist_JTextField.getText().trim();
     TableExists = __TableExists_JTextField.getText().trim();
@@ -765,12 +836,14 @@ private void refresh () {
     props.add ( "Name=" + Name );
     props.set ( "Condition", Condition ); // May contain = so handle differently.
     props.add ( "CompareAsStrings=" + CompareAsStrings );
+    props.add ( "CompareAsVersions=" + CompareAsVersions );
     props.add ( "FileExists=" + FileExists );
     props.add ( "FileDoesNotExist=" + FileDoesNotExist );
     props.add ( "ObjectExists=" + ObjectExists );
     props.add ( "ObjectDoesNotExist=" + ObjectDoesNotExist );
     props.add ( "PropertyIsNotDefinedOrIsEmpty=" + PropertyIsNotDefinedOrIsEmpty );
     props.add ( "PropertyIsDefined=" + PropertyIsDefined );
+    props.add ( "PropertyIsDefinedAndIsNotEmpty=" + PropertyIsDefinedAndIsNotEmpty );
     props.add ( "TableExists=" + TableExists );
     props.add ( "TableDoesNotExist=" + TableDoesNotExist );
     props.add ( "TSExists=" + TSExists );

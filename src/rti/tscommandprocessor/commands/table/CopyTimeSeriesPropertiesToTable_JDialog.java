@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -77,13 +77,17 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __IncludeProperties_JTextField = null;
+private JTextField __ExcludeProperties_JTextField = null;
 private JTextField __IncludeBuiltInProperties_JTextField = null;
+private JTextField __ExcludeBuiltInProperties_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers.
 private SimpleJComboBox __AllowDuplicates_JComboBox = null;
 private JTextArea __NameMap_JTextArea = null;
-private JTextField __TableOutputColumns_JTextField = null;
+// TODO smalers 29025-01-08 Remove this because it is unreliable:
+// - use the NameMap parameter instead
+//private JTextField __TableOutputColumns_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private JFrame __parent = null;
@@ -114,7 +118,8 @@ public void actionPerformed( ActionEvent event ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String NameMap = __NameMap_JTextArea.getText().trim();
         String [] notes = {
-            "Property names can be renamed as column names by specifying information below."
+            "Column names are by default the same as the property names.",
+            "Column names can be reset from the default by specifying information below."
         };
         String dict = (new DictionaryJDialog ( __parent, true, NameMap,
             "Edit NameMap Parameter", notes, "Original Property Name", "Column Name",10)).response();
@@ -201,13 +206,15 @@ private void checkInput () {
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     String IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
+    String ExcludeBuiltInProperties = __ExcludeBuiltInProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
 	String NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n", " ").replace("\n"," ");
-    String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
+    //String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	PropList parameters = new PropList ( "" );
 
 	__error_wait = false;
@@ -224,8 +231,14 @@ private void checkInput () {
     if ( IncludeProperties.length() > 0 ) {
         parameters.set ( "IncludeProperties", IncludeProperties );
     }
+    if ( ExcludeProperties.length() > 0 ) {
+        parameters.set ( "ExcludeProperties", ExcludeProperties );
+    }
     if ( IncludeBuiltInProperties.length() > 0 ) {
         parameters.set ( "IncludeBuiltInProperties", IncludeBuiltInProperties );
+    }
+    if ( ExcludeBuiltInProperties.length() > 0 ) {
+        parameters.set ( "ExcludeBuiltInProperties", ExcludeBuiltInProperties );
     }
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
@@ -245,9 +258,11 @@ private void checkInput () {
     if ( NameMap.length() > 0 ) {
         parameters.set ( "NameMap", NameMap );
     }
+    /*
     if ( TableOutputColumns.length() > 0 ) {
         parameters.set ( "TableOutputColumns", TableOutputColumns );
     }
+    */
 
 	try {
 	    // This will warn the user.
@@ -268,24 +283,28 @@ private void commitEdits () {
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     String IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
+    String ExcludeBuiltInProperties = __ExcludeBuiltInProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
 	String NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n", " ").replace("\n"," ");
-    String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
+    //String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "IncludeProperties", IncludeProperties );
+    __command.setCommandParameter ( "ExcludeProperties", ExcludeProperties );
     __command.setCommandParameter ( "IncludeBuiltInProperties", IncludeBuiltInProperties );
+    __command.setCommandParameter ( "ExcludeBuiltInProperties", ExcludeBuiltInProperties );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "AllowDuplicates", AllowDuplicates );
     __command.setCommandParameter ( "NameMap", NameMap );
-    __command.setCommandParameter ( "TableOutputColumns", TableOutputColumns );
+    //__command.setCommandParameter ( "TableOutputColumns", TableOutputColumns );
 }
 
 /**
@@ -325,8 +344,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
         "If the formatted TSID is not matched or AllowDuplicates=True, a new row will be created for the properties." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The table output columns will default to the property names.  Use * as the column name to match a property name " +
-        "when specifying a list of column names." ),
+        "Properties can be dynamic (user-defined) and built-in (automatic)."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -352,23 +370,47 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Dynamic properties to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeProperties_JTextField = new JTextField ( 10 );
-    __IncludeProperties_JTextField.setToolTipText("Comma-separated list of user-defined (dynamic) properties to include");
+    __IncludeProperties_JTextField.setToolTipText("Comma-separated list of user-defined (dynamic) properties to include, can use *");
     __IncludeProperties_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - property names to copy (default=all)."),
+        "Optional - names of properties to copy (default=all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Dynamic properties to exclude:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeProperties_JTextField = new JTextField ( 10 );
+    __ExcludeProperties_JTextField.setToolTipText("Comma-separated list of user-defined (dynamic) properties to exclude, can use *");
+    __ExcludeProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeProperties_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - names of properties to not copy (default=exclude none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Built-in properties to include:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeBuiltInProperties_JTextField = new JTextField ( 10 );
-    __IncludeBuiltInProperties_JTextField.setToolTipText("Comma-separated list of built-in properties to include (alias, description, units, tsid), * for all");
+    __IncludeBuiltInProperties_JTextField.setToolTipText(
+    	"Comma-separated list of built-in properties to include (alias, description, units, tsid), can use *");
     __IncludeBuiltInProperties_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeBuiltInProperties_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - names of built-in properties (default=none)."),
+        "Optional - names of built-in properties to copy (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Built-in properties to exclude:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeBuiltInProperties_JTextField = new JTextField ( 10 );
+    __ExcludeBuiltInProperties_JTextField.setToolTipText(
+    	"Comma-separated list of built-in properties to exclude (alias, description, units, tsid, etc.), can use *");
+    __ExcludeBuiltInProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeBuiltInProperties_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - names of built-in properties to not copy (default=see include)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ),
@@ -428,11 +470,12 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     __NameMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NameMap_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change column names (default=colum name is the same as property)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change column names (default=column name is the same as property)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditNameMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    /*
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "<html>Table output columns (<b>use NameMap above</b>):</html>" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableOutputColumns_JTextField = new JTextField ( 10 );
@@ -443,6 +486,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - column names to receive properties (default=property names)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -528,7 +572,9 @@ private void refresh () {
     String TSID = "";
     String EnsembleID = "";
     String IncludeProperties = "";
+    String ExcludeProperties = "";
     String IncludeBuiltInProperties = "";
+    String ExcludeBuiltInProperties = "";
     String TableID = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
@@ -544,7 +590,9 @@ private void refresh () {
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         IncludeProperties = props.getValue ( "IncludeProperties" );
+        ExcludeProperties = props.getValue ( "ExcludeProperties" );
         IncludeBuiltInProperties = props.getValue ( "IncludeBuiltInProperties" );
+        ExcludeBuiltInProperties = props.getValue ( "ExcludeBuiltInProperties" );
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
@@ -598,8 +646,14 @@ private void refresh () {
         if ( IncludeProperties != null ) {
             __IncludeProperties_JTextField.setText ( IncludeProperties );
         }
+        if ( ExcludeProperties != null ) {
+            __ExcludeProperties_JTextField.setText ( ExcludeProperties );
+        }
         if ( IncludeBuiltInProperties != null ) {
             __IncludeBuiltInProperties_JTextField.setText ( IncludeBuiltInProperties );
+        }
+        if ( ExcludeBuiltInProperties != null ) {
+            __ExcludeBuiltInProperties_JTextField.setText ( ExcludeBuiltInProperties );
         }
         if ( TableID == null ) {
             // Select default.
@@ -643,28 +697,34 @@ private void refresh () {
         if ( NameMap != null ) {
             __NameMap_JTextArea.setText ( NameMap );
         }
+        /*
         if ( TableOutputColumns != null ) {
             __TableOutputColumns_JTextField.setText ( TableOutputColumns );
         }
+        */
 	}
 	// Regardless, reset the command from the fields.
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     IncludeBuiltInProperties = __IncludeBuiltInProperties_JTextField.getText().trim();
+    ExcludeBuiltInProperties = __ExcludeBuiltInProperties_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
 	NameMap = __NameMap_JTextArea.getText().trim().replace("\r\n"," ").replace("\n"," ");
-    TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
+    //TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "IncludeProperties=" + IncludeProperties );
+    props.add ( "ExcludeProperties=" + ExcludeProperties );
     props.add ( "IncludeBuiltInProperties=" + IncludeBuiltInProperties );
+    props.add ( "ExcludeBuiltInProperties=" + ExcludeBuiltInProperties );
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );

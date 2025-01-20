@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -49,8 +49,9 @@ import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the SetInputPeriod() command.
+The command is discoverable because need to postpone expansion of run-time properties.
 */
-public class SetInputPeriod_Command extends AbstractCommand implements Command
+public class SetInputPeriod_Command extends AbstractCommand implements CommandDiscoverable
 {
 
 /**
@@ -87,7 +88,7 @@ throws InvalidCommandParameterException {
 	dateprops.set ( new Prop ("InputStart", now, now.toString()) );
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
-	if ( (InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${") ) {
+	if ( (InputStart != null) && !InputStart.isEmpty() && !InputStart.contains("${") ) {
 		try {
 		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			InputStart_DateTime = DateTime.parse(InputStart, dateprops );
@@ -101,7 +102,7 @@ throws InvalidCommandParameterException {
 			Message.printWarning ( 3, "", e );
 		}
 	}
-	if ( (InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
+	if ( (InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.contains("${")) {
 		try {
 		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
 			InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
@@ -214,16 +215,39 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 
 /**
 Run the command.
-@param command_number Number of command in sequence.
+@param commandNumber Command number (1+) in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
-public void runCommand ( int command_number )
-throws CommandWarningException, CommandException {
+public void runCommand ( int commandNumber )
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+    runCommandInternal ( commandNumber, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param commandNumber Command number (1+) in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int commandNumber )
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+    runCommandInternal ( commandNumber, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param commandNumber number of command (1+) in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int commandNumber, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
-	String command_tag = "" + command_number;
+	String command_tag = "" + commandNumber;
 
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -231,85 +255,123 @@ throws CommandWarningException, CommandException {
 	status.clearLog(CommandPhaseType.RUN);
 
 	String InputStart = parameters.getValue ( "InputStart" );
+	if ( (commandPhase == CommandPhaseType.RUN) &&
+		(InputStart != null) && !InputStart.isEmpty() && InputStart.startsWith("Current") ) {
+		// Expand the string:
+		// - this allows something like:  CurrentToDay = ${SomeProperty}
+		// - doing it always could e an issue if the first part expands to a date with dashes and the dashes confuse the offset
+    	InputStart = TSCommandProcessorUtil.expandParameterValue(processor, this, InputStart);
+	}
 	String InputEnd = parameters.getValue ( "InputEnd" );
-	DateTime InputStart_DateTime = null;
-	DateTime InputEnd_DateTime = null;
-	PropList dateprops = new PropList ( "SetInputPeriod" );
-	try {
-		// If the parameters start with ${ get from the utility code.
-		if ( (InputStart != null) && !InputStart.isEmpty() ) {
-			if ( InputStart.startsWith("${") ) {
-			    // Otherwise parse the date/times to take advantage of run-time data values.
-				try {
-					InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
-						status, warning_level, command_tag );
-				}
-				catch ( InvalidCommandParameterException e ) {
-					// Warning will have been added above.
-				}
-			}
-			else {
-			    // Otherwise parse the date/times to take advantage of run-time data values.
-				try {
-				    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
-					InputStart_DateTime = DateTime.parse(InputStart, dateprops );
-				}
-				catch ( Exception e ) {
-					message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time.";
-					Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-					status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid date/time for the input start (use command editor)." ) );
-					Message.printWarning ( 3, routine, e );
-				}
-			}
-			if ( InputStart_DateTime != null ) {
-				// Set the value and contents, which may be used when setting the InputEnd below.
-				Prop prop = new Prop ( "InputStart",InputStart_DateTime,InputStart_DateTime.toString() );
-				dateprops.set ( prop );
-			}
-		}
-		if ( (InputEnd != null) && !InputEnd.isEmpty() ) {
-			if ( InputEnd.startsWith("${") ) {
-			    // Otherwise parse the date/times to take advantage of run-time data values.
-				try {
-					InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
-						status, warning_level, command_tag );
-				}
-				catch ( InvalidCommandParameterException e ) {
-					// Warning will have been added above.
-				}
-			}
-			else {
-				try {
-				    InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
-				}
-				catch ( Exception e ) {
-					message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time.";
-					Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-					Message.printWarning ( 3, routine, e );
-					status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid date/time for the input end (use command editor)." ) );
-				}
-			}
-		}
-		if ( warning_count > 0 ) {
-			// Input error.
-			message = "Cannot process command parameters - invalid date/time.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-			throw new InvalidCommandParameterException ( message );
-		}
-		processor.setPropContents ( "InputStart", InputStart_DateTime);
-        Message.printStatus(2, routine, "Input period start set to:  " + InputStart_DateTime );
-		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
-        Message.printStatus(2, routine, "Input period end set to:  " + InputEnd_DateTime );
+	if ( (commandPhase == CommandPhaseType.RUN) &&
+		(InputEnd != null) && !InputEnd.isEmpty() && InputEnd.startsWith("Current") ) {
+    	InputEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, InputEnd);
+	}
+
+    if ( warning_count > 0 ) {
+        // Input error.
+        message = "Insufficient data to run the command.";
+        status.addToLog ( commandPhase,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to the command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
+    }
+
+	// Now process the input period:
+    // - can't determine errors until the input is parsed
+
+    try {
+        if ( commandPhase == CommandPhaseType.RUN ) {
+        	DateTime InputStart_DateTime = null;
+	       	DateTime InputEnd_DateTime = null;
+	       	PropList dateprops = new PropList ( "SetInputPeriod" );
+		    // If the parameters start with ${ get from the utility code. // closing }
+		    if ( (InputStart != null) && !InputStart.isEmpty() ) {
+			   	if ( InputStart.startsWith("${") ) { // closing }
+			       	// Otherwise parse the date/times to take advantage of run-time data values.
+			       	try {
+				       	InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+					       	status, warning_level, command_tag );
+			       	}
+			       	catch ( InvalidCommandParameterException e ) {
+				       	message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time.";
+				       	Message.printWarning ( warning_level,
+				       	MessageUtil.formatMessageTag(command_tag,
+				       	++warning_count), routine, message );
+				       	status.addToLog ( CommandPhaseType.RUN,
+					       	new CommandLogRecord(CommandStatusType.FAILURE,
+						       	message, "Specify a valid date/time for the input start (use command editor)." ) );
+				       	Message.printWarning ( 3, routine, e );
+			       	}
+			   	}
+			   	else {
+			       	// Otherwise parse the date/times to take advantage of run-time data values.
+			       	try {
+			           	// This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour".
+				       	InputStart_DateTime = DateTime.parse(InputStart, dateprops );
+			       	}
+			       	catch ( Exception e ) {
+				       	message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time.";
+				       	Message.printWarning ( warning_level,
+				       	MessageUtil.formatMessageTag(command_tag,
+				       	++warning_count), routine, message );
+				       	status.addToLog ( CommandPhaseType.RUN,
+					       	new CommandLogRecord(CommandStatusType.FAILURE,
+						       	message, "Specify a valid date/time for the input start (use command editor)." ) );
+				       	Message.printWarning ( 3, routine, e );
+			       	}
+			   	}
+			   	if ( InputStart_DateTime != null ) {
+			      	// Set the value and contents, which may be used when setting the InputEnd below.
+			       	Prop prop = new Prop ( "InputStart",InputStart_DateTime,InputStart_DateTime.toString() );
+			       	dateprops.set ( prop );
+			   	}
+		   	}
+		   	if ( (InputEnd != null) && !InputEnd.isEmpty() ) {
+			   	if ( InputEnd.startsWith("${") ) { // Closing }.
+			       	// Otherwise parse the date/times to take advantage of run-time data values.
+			      	try {
+				       	InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+					       	status, warning_level, command_tag );
+			       	}
+			       	catch ( InvalidCommandParameterException e ) {
+				       	message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time.";
+				       	Message.printWarning ( warning_level,
+				       	MessageUtil.formatMessageTag(command_tag,
+				       	++warning_count), routine, message );
+				       	Message.printWarning ( 3, routine, e );
+				       	status.addToLog ( CommandPhaseType.RUN,
+					       	new CommandLogRecord(CommandStatusType.FAILURE,
+						       	message, "Specify a valid date/time for the input end (use command editor)." ) );
+			       	}
+			   	}
+			   	else {
+			      	try {
+			           	InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
+			       	}
+			       	catch ( Exception e ) {
+				       	message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time.";
+				       	Message.printWarning ( warning_level,
+				       	MessageUtil.formatMessageTag(command_tag,
+				       	++warning_count), routine, message );
+				       	Message.printWarning ( 3, routine, e );
+				       	status.addToLog ( CommandPhaseType.RUN,
+					       	new CommandLogRecord(CommandStatusType.FAILURE,
+						       	message, "Specify a valid date/time for the input end (use command editor)." ) );
+			       	}
+		       	}
+	       	}
+
+	      	// Set the period in the processor.
+	      	if ( InputStart_DateTime != null ) {
+	      		processor.setPropContents ( "InputStart", InputStart_DateTime);
+           		Message.printStatus(2, routine, "Input period start set to:  " + InputStart_DateTime );
+	      	}
+	      	if ( InputEnd_DateTime != null ) {
+	      		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
+           		Message.printStatus(2, routine, "Input period end set to:  " + InputEnd_DateTime );
+	      	}
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting input period in processor (" + e + ").";
@@ -322,6 +384,16 @@ throws CommandWarningException, CommandException {
 				message, "Report problem to software support (see log file for details)." ) );
 		throw new CommandException ( message );
 	}
+
+	if ( warning_count > 0 ) {
+		message = "There were " + warning_count + " warnings processing the command.";
+		Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag, ++warning_count),
+			routine,message);
+		throw new CommandWarningException ( message );
+	}
+
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

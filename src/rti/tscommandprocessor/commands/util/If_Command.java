@@ -333,6 +333,9 @@ throws CommandWarningException, CommandException {
 	}
 
 	try {
+		// Result from evaluating the condition:
+		// - default is false
+		// - set to true if the condition evaluates to true
 	    boolean conditionEval = false;
 	    setConditionEval ( conditionEval );
 	    if ( (Condition != null) && !Condition.isEmpty() ) {
@@ -383,14 +386,16 @@ throws CommandWarningException, CommandException {
                 op = "!CONTAINS";
                 pos1 = pos;
                 pos2 = pos + 9;
-                compareAsStrings = true; // "!contains" is only used on strings.
+                // "!contains" is only used on strings.
+                compareAsStrings = true;
             }
             else if ( conditionUpper.indexOf("CONTAINS") > 0 ) {
                 pos = conditionUpper.indexOf("CONTAINS");
                 op = "CONTAINS";
                 pos1 = pos;
                 pos2 = pos + 8;
-                compareAsStrings = true; // "contains" is only used on strings.
+                // "contains" is only used on strings.
+                compareAsStrings = true;
             }
             else if ( Condition.indexOf("=") > 0 ) {
                 message = "Bad use of = in condition.";
@@ -414,12 +419,12 @@ throws CommandWarningException, CommandException {
     	    if ( Message.isDebugOn ) {
     	    	Message.printStatus(2, routine, "Left side: " + arg1 );
     	    }
-    	    if ( arg1.indexOf("${") >= 0 ) {
+    	    if ( arg1.contains("${") ) {
     	    	value1 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg1 );
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Left side after expansion: " + value1 );
     	    	}
-    	    	if ( value1.indexOf("${") >= 0 ) {
+    	    	if ( value1.contains("${") ) {
     	    		// Expansion did not match property.
     	    		int p1 = value1.indexOf("${");
     	    		int p2 = value1.indexOf("}",p1);
@@ -440,12 +445,12 @@ throws CommandWarningException, CommandException {
     	    if ( Message.isDebugOn ) {
     	    	Message.printStatus(2, routine, "Right side:" + arg2 );
     	    }
-    	    if ( arg2.indexOf("${") >= 0 ) {
+    	    if ( arg2.contains("${") ) {
     	    	value2 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg2 );
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Right side after expansion: " + value2 );
     	    	}
-    	    	if ( value2.indexOf("${") >= 0 ) {
+    	    	if ( value2.contains("${") ) {
     	    		// Expansion did not match property.
     	    		int p1 = value2.indexOf("${");
     	    		int p2 = value2.indexOf("}",p1);
@@ -472,14 +477,29 @@ throws CommandWarningException, CommandException {
             // Strip surrounding double quotes for comparisons below - do after above checks for type.
             value1 = value1.replace("\"", "");
             value2 = value2.replace("\"", "");
-            // Default is to compare as strings if the input data type is not understood.
-            if ( !isValue1Integer || !isValue2Integer || !isValue1Double || !isValue2Double || !isValue1Boolean || !isValue2Boolean ) {
-            	// Types of some of the input are not handled so compare as strings.
+            // Check whether pairs are available:
+            // - if not, compare as strings
+            if ( compareAsVersions ) {
+            }
+            else if ( isValue1Integer && isValue2Integer ) {
+            }
+            else if ( isValue1Double && isValue2Double ) {
+            }
+            else if ( isValue1Boolean && isValue2Boolean ) {
+            }
+            else {
+            	// Not comparing versions and not have pairs so compare as strings.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Values are not the same type so compare as strings.");
+            	}
             	compareAsStrings = true;
             }
             if ( compareAsVersions ) {
             	// Compare the values as semantic versions (1.3.3.4, etc.):
             	// - make sure values are strings
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Comparing version values.");
+            	}
     	    	int maxParts = 0; // No limit on comparison.
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Comparing semantic versions \"" + value1 + "\" " + op + " \"" + value2 + "\" maxParts=" + maxParts +
@@ -490,13 +510,16 @@ throws CommandWarningException, CommandException {
             }
             else if ( compareAsStrings ) {
             	// Always compare the string values or the input is not other understood type so assume strings.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Comparing string values.");
+            	}
  	    	    if ( op.equals("CONTAINS") ) {
- 	    	    	if ( value1.indexOf(value2) >= 0 ) {
+ 	    	    	if ( value1.contains(value2) ) {
  	    	    	     conditionEval = true;
  	    	    	}
  	    	    }
  	    	    else if ( op.equals("!CONTAINS") ) {
- 	    	    	if ( value1.indexOf(value2) < 0 ) {
+ 	    	    	if ( !value1.contains(value2) ) {
  	    	    	     conditionEval = true;
  	    	    	}
  	    	    }
@@ -536,6 +559,9 @@ throws CommandWarningException, CommandException {
             }
             else if ( isValue1Integer && isValue2Integer ) {
             	// Do an integer comparison.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Comparing integer values.");
+            	}
 	    	    int ivalue1 = Integer.parseInt(value1);
 	    	    int ivalue2 = Integer.parseInt(value2);
 	    	    if ( op.equals("<=") ) {
@@ -571,6 +597,9 @@ throws CommandWarningException, CommandException {
             }
             else if ( isValue1Double && isValue2Double ) {
             	// Compare doubles.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Comparing double values.");
+            	}
 	    	    double dvalue1 = Double.parseDouble(value1);
 	    	    double dvalue2 = Double.parseDouble(value2);
 	    	    if ( op.equals("<=") ) {
@@ -606,6 +635,9 @@ throws CommandWarningException, CommandException {
             }
             else if ( isValue1Boolean && isValue2Boolean ) {
             	// Do a boolean comparison.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Comparing boolean values.");
+            	}
 	    	    boolean bvalue1 = Boolean.parseBoolean(value1);
 	    	    boolean bvalue2 = Boolean.parseBoolean(value2);
 	    	    if ( op.equals("<=") ) {
@@ -645,6 +677,9 @@ throws CommandWarningException, CommandException {
             }
             else {
             	// Check to see if a property exists for left or right.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Fall through comparison (not version, string, double, integer, or boolean.");
+            	}
             	if ( !value1.startsWith("${") && (processor.getProp(value1) != null) ) {
             		message = "Left and right have different type (is Value1 missing ${ }?) - cannot evaluate condition \"" + Condition + "\"";
 	            	Message.printWarning(3,
@@ -674,7 +709,7 @@ throws CommandWarningException, CommandException {
 	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
             	}
             }
-    	    if ( Condition.indexOf("${") >= 0 ) {
+    	    if ( Condition.contains("${") ) {
     	        // Show the original.
     	        status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.SUCCESS,

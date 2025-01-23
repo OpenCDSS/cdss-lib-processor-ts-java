@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@ import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -53,7 +52,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class initializes, checks, and runs the DeselectTimeSeries() command.
 */
-public class DeselectTimeSeries_Command extends AbstractCommand implements Command
+public class DeselectTimeSeries_Command extends AbstractCommand
 {
 
 /**
@@ -284,6 +283,17 @@ CommandWarningException, CommandException {
 	String UnselectedCountProperty = parameters.getValue ( "UnselectedCountProperty" );
 	UnselectedCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, UnselectedCountProperty);
 
+	// Put this check before the following logic so that no time series will result in zero selected count, not a warning.
+	
+	if ( warning_count > 0 ) {
+		// Input error (e.g., missing time series).
+		message = "Command parameter data has errors.  Unable to run command.";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(
+		command_tag,++warning_count), routine, message );
+		throw new CommandException ( message );
+	}
+
 	// If necessary, get the list of all time series.
 	List<TS> tslistAll = new ArrayList<>();
 	if ( SelectAllFirst_boolean ) {
@@ -398,15 +408,6 @@ CommandWarningException, CommandException {
 		}
 	}
 
-	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series).
-		message = "Command parameter data has errors.  Unable to run command.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		throw new CommandException ( message );
-	}
-
 	// Now process the time series.
 
 	TS ts = null;
@@ -447,7 +448,7 @@ CommandWarningException, CommandException {
 
     // Set the SelectedCountProperty.
     if ( (SelectedCountProperty != null) && !SelectedCountProperty.equals("") ) {
-    	int selectCount = 0;
+    	int selectedCount = 0;
         Object o = null;
         try {
             o = processor.getPropContents("TSResultsList");
@@ -466,28 +467,28 @@ CommandWarningException, CommandException {
 			List<TS> allTS = (List<TS>)o;
             for ( TS ats: allTS ) {
                 if ( (ats != null) && ats.isSelected() ) {
-                    ++selectCount;
+                    ++selectedCount;
                 }
             }
-            request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", SelectedCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
-                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
-                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-                //}
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + SelectedCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
+        }
+        request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", SelectedCountProperty );
+        request_params.setUsingObject ( "PropertyValue", new Integer(selectedCount) );
+        try {
+            processor.processRequest( "SetProperty", request_params);
+            // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
+            //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+            //}
+        }
+        catch ( Exception e ) {
+            message = "Error requesting SetProperty(Property=\"" + SelectedCountProperty + "\") from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
         }
     }
 
@@ -515,25 +516,25 @@ CommandWarningException, CommandException {
                     ++unselectedCount;
                 }
             }
-            request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", UnselectedCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(unselectedCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
-                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
-                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-                //}
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + UnselectedCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
+        }
+        request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", UnselectedCountProperty );
+        request_params.setUsingObject ( "PropertyValue", new Integer(unselectedCount) );
+        try {
+            processor.processRequest( "SetProperty", request_params);
+            // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
+            //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+            //}
+        }
+        catch ( Exception e ) {
+            message = "Error processing SetProperty(Property=\"" + UnselectedCountProperty + "\") processor request.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
         }
     }
 

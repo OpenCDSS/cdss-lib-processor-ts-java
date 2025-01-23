@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -422,6 +422,9 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command ) {
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "TSTool processor properties accessible with ${Property} are automatically passed to the template processor."),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+        "Processor properties are also passed as a dictionary (map) named 'propertymap' where the key is the property name."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "The following allows additional string properties to be defined only for this command.  Use the following syntax:"),

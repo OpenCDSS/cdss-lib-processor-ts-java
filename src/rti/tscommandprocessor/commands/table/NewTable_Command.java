@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -167,9 +167,10 @@ public boolean editCommand ( JFrame parent ) {
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
 private DataTable getDiscoveryTable() {
-    return __table;
+    return this.__table;
 }
 
 /**
@@ -406,7 +407,7 @@ Set the table that is read by this class in discovery mode.
 @param table discovery table with TableID set
 */
 private void setDiscoveryTable ( DataTable table ) {
-    __table = table;
+    this.__table = table;
 }
 
 /**

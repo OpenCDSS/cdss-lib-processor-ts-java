@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -333,7 +333,7 @@ private void initialize ( JFrame parent, Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfNotFound_JComboBox = new SimpleJComboBox ( false );
-    List<String> notFoundChoices = new ArrayList<String>();
+    List<String> notFoundChoices = new ArrayList<>();
     notFoundChoices.add ( "" );
     notFoundChoices.add ( __command._Ignore );
     notFoundChoices.add ( __command._Warn );
@@ -417,16 +417,25 @@ public void itemStateChanged ( ItemEvent event ) {
 }
 
 /**
-Respond to KeyEvents.
+Respond to key pressed events.
+@param event KeyEvent to handle
 */
 public void keyPressed ( KeyEvent event ) {
 	refresh ();
 }
 
+/**
+Respond to key released events.
+@param event KeyEvent to handle
+*/
 public void keyReleased ( KeyEvent event ) {
 	refresh();
 }
 
+/**
+Respond to key typed events.
+@param event KeyEvent to handle
+*/
 public void keyTyped ( KeyEvent event ) {
 }
 

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -125,7 +125,7 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series product file." ) );
 	}
-	else if ( TSProductFile.indexOf("${") < 0 ) {
+	else if ( ! TSProductFile.contains("${") ) {
 		// Can only check when ${Property} is not used.
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
@@ -146,11 +146,14 @@ throws InvalidCommandParameterException {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, TSProductFile) );
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
+				/*
+				 * Do not warn because want to allow the command to saved if the file does not exist.
                 message = "The TSProduct file does not exist for: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the time series product file to process exists." ) );
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify that the time series product file to process exists - OK if the file will be created at run time." ) );
+                        */
 			}
 		}
 		catch ( Exception e ) {
@@ -315,15 +318,20 @@ throws InvalidCommandParameterException {
 	}
 
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(9);
+	List<String> validList = new ArrayList<>(10);
+	// Input.
     validList.add ( "TSProductFile" );
     validList.add ( "RunMode" );
+    // Output.
     validList.add ( "View" );
     validList.add ( "OutputFile" );
     validList.add ( "VisibleStart" );
     validList.add ( "VisibleEnd" );
+    validList.add ( "CommandStatusProperty" );
+    // Output product.
     validList.add ( "OutputProductFile" );
     validList.add ( "OutputProductFormat" );
+    // Editing.
     validList.add ( "DefaultSaveFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -462,8 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Check whether the application wants output files to be created.
 
     if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
-            Message.printStatus ( 2, routine,
-            "Skipping \"" + toString() + "\" because output is not being created." );
+        Message.printStatus ( 2, routine, "Skipping \"" + toString() + "\" because output is not being created." );
     }
 
 	PropList parameters = getCommandParameters();
@@ -481,6 +488,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// No output file so view is true by default.
 		View = _True;
 	}
+    String CommandStatusProperty = parameters.getValue ( "CommandStatusProperty" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	CommandStatusProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandStatusProperty);
+    }
 	String OutputProductFile = parameters.getValue ( "OutputProductFile" );  // Property expansion below.
 	String OutputProductFormat = parameters.getValue ( "OutputProductFormat" );
 	String DefaultSaveFile = parameters.getValue ( "DefaultSaveFile" );  // Property expansion below.
@@ -489,7 +500,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	WindowListener tsview_window_listener = null;
 
-	try { Object o = processor.getPropContents ( "TSViewWindowListener" );
+	try {
+		Object o = processor.getPropContents ( "TSViewWindowListener" );
 		// TSViewWindowListener is available so use it.
 		if ( o != null ) {
 			tsview_window_listener = (WindowListener)o;
@@ -499,8 +511,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Not fatal, but of use to developers.
 		message = "Error requesting TSViewWindowListener from processor - not using.";
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Report problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.WARNING,
+                message, "Report problem to software support." ) );
 	}
 
 	if ( warningCount > 0 ) {
@@ -653,7 +665,30 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( (OutputProductFile_full != null) && !OutputProductFile_full.equals("") ) {
                 setOutputProductFile ( new File(OutputProductFile_full));
             }
+            // Get whether the product was successfully created.
 		}
+
+	    // Set the property indicating the command status:
+		// - use nice text "Success", "Warning", "Failure"
+		// - set to success here because if a serious error occurred an exception would have been thrown and is caught below
+		// - do not use the cumulative status from the command because it will hold loop results
+        if ( (CommandStatusProperty != null) && !CommandStatusProperty.equals("") ) {
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", CommandStatusProperty );
+            request_params.setUsingObject ( "PropertyValue", CommandStatusType.SUCCESS.toMixedCaseString() );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error processing request SetProperty(Property=\"" + CommandStatusProperty + "\").";
+                Message.printWarning(warningLevel,
+                    MessageUtil.formatMessageTag( commandTag, ++warningCount),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -663,6 +698,30 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Check the log file." ) );
+
+	    // Set the property indicating the command status:
+		// - use nice text "Success", "Warning", "Failure"
+		// - set to success here because if a serious error occurred an exception would have been thrown and is caught below
+		// - do not use the cumulative status from the command because it will hold loop results
+        if ( (CommandStatusProperty != null) && !CommandStatusProperty.equals("") ) {
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", CommandStatusProperty );
+            request_params.setUsingObject ( "PropertyValue", CommandStatusType.FAILURE.toMixedCaseString() );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e2 ) {
+                message = "Error processing request SetProperty(Property=\"" + CommandStatusProperty + "\").";
+                Message.printWarning(warningLevel,
+                    MessageUtil.formatMessageTag( commandTag, ++warningCount),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+
+        // Rethrow the exception.
 		throw new CommandException ( message );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -691,14 +750,19 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// Input.
 		"TSProductFile",
 		"RunMode",
+		// Output.
 		"View",
 		"OutputFile",
     	"VisibleStart",
     	"VisibleEnd",
+    	"CommandStatusProperty",
+    	// Output product.
 		"OutputProductFile",
 		"OutputProductFormat",
+		// Editing.
 		"DefaultSaveFile"
 	};
 	return this.toString(parameters, parameterOrder);

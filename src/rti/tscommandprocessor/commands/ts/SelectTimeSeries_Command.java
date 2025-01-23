@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilterStringCriterionType;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -56,7 +55,7 @@ import cdss.domain.hydrology.network.HydrologyNodeNetwork;
 /**
 This class initializes, checks, and runs the SelectTimeSeries() command.
 */
-public class SelectTimeSeries_Command extends AbstractCommand implements Command
+public class SelectTimeSeries_Command extends AbstractCommand
 {
 
 /**
@@ -409,10 +408,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<String> upstreamNodeIds = null;
 	if ( (UpstreamNodeIDs != null) && !UpstreamNodeIDs.isEmpty() ) {
 		String [] parts = UpstreamNodeIDs.split(",");
-		upstreamNodeIds = new ArrayList<String>();
+		upstreamNodeIds = new ArrayList<>();
 		for ( int i = 0; i < parts.length; i++ ) {
 			upstreamNodeIds.add(parts[i].trim());
 		}
+	}
+
+	// Put this check before the following logic because want to allow setting the selected count to zero if no time series.
+	
+	if ( warning_count > 0 ) {
+		// Input error (e.g., missing time series).
+		message = "Command parameter data has errors.  Unable to run command.";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(
+		command_tag,++warning_count), routine, message );
+		throw new CommandException ( message );
 	}
 
 	// If necessary, get the list of all time series.
@@ -429,7 +439,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 ntsAll = tslistAll.size();
             }
             for ( int its = 0; its < ntsAll; its++ ) {
-                TS ts = (TS)tslistAll.get(its);    // Will throw Exception.
+                TS ts = tslistAll.get(its);    // Will throw Exception.
                 ts.setSelected ( false );
             }
 	    }
@@ -458,7 +468,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+			"\", TSID=\"" + TSID + "\") from processor.";
+		if ( EnsembleID != null ) {
+			message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+				"\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+		}
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -474,7 +488,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+			"\" TSID=\"" + TSID + "\").";
+		if ( EnsembleID != null ) {
+			message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+				"\" EnsembleID=\"" + EnsembleID + "\").";
+		}
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -486,9 +504,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		@SuppressWarnings("unchecked")
 		List<TS> tslist0 = (List<TS>)o_TSList;
         tslist = tslist0;
-		if ( tslist.size() == 0 ) {
+		if ( (tslist == null) || (tslist.size() == 0) ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+				"\" TSID=\"" + TSID + "\").";
+			if ( EnsembleID != null ) {
+				message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+					"\" EnsembleID=\"" + EnsembleID + "\").";
+			}
 			if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
 	             Message.printWarning ( log_level,
                      MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
@@ -506,10 +528,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 
-	int nts = tslist.size();
+	int nts = 0;
+	if ( tslist != null ) {
+		nts = tslist.size();
+	}
 	if ( nts == 0 ) {
-		message = "Unable to find time series to select using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-            "\", EnsembleID=\"" + EnsembleID + "\".";
+		message = "Unable to find time series to select using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+		if ( EnsembleID != null ) {
+			message = "Unable to find time series to select using TSList=\"" + TSList + "\" EnsembleID=\"" + EnsembleID + "\".";
+		}
 		if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
 		    Message.printWarning ( warning_level,
 	            MessageUtil.formatMessageTag(
@@ -526,15 +553,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 new CommandLogRecord(CommandStatusType.FAILURE, message,
                     "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 		}
-	}
-
-	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series).
-		message = "Command parameter data has errors.  Unable to run command.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		throw new CommandException ( message );
 	}
 
 	// Get the network.
@@ -615,7 +633,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		else {
 	    		// Get the nodes upstream of the requested node:
     			// - upstream nodes will limit the search if specified
-	    		foundNetworkNodes = new ArrayList<HydrologyNode>();
+	    		foundNetworkNodes = new ArrayList<>();
 	    		boolean addFirstNode = true;
 	    		if ( DownstreamNodeID.startsWith("-") ) {
 	    			addFirstNode = false;
@@ -633,7 +651,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	TS ts = null;
 	Object o_ts = null;
-    int selectCount = 0;
 	for ( int its = 0; its < nts; its++ ) {
 		// The the time series to process, from the list that was returned above.
 		o_ts = tslist.get(its);
@@ -721,7 +738,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
     // Set the SelectCountProperty.
-    if ( (SelectCountProperty != null) && !SelectCountProperty.equals("") ) {
+    if ( (SelectCountProperty != null) && !SelectCountProperty.isEmpty() ) {
         Object o = null;
         try {
             o = processor.getPropContents("TSResultsList");
@@ -735,7 +752,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report the problem to software support." ) );
         }
+        int selectCount = 0;
         if ( o != null ) {
+        	// Have time series to determine how many are selected.
             @SuppressWarnings("unchecked")
 			List<TS> allTS = (List<TS>)o;
             for ( TS ats: allTS ) {
@@ -743,25 +762,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     ++selectCount;
                 }
             }
-            request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", SelectCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
-                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
-                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-                //}
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + SelectCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
+        }
+        request_params = new PropList ( "" );
+        request_params.setUsingObject ( "PropertyName", SelectCountProperty );
+        request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
+        try {
+            processor.processRequest( "SetProperty", request_params);
+            // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
+            //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+            //}
+        }
+        catch ( Exception e ) {
+            message = "Error processing SetProperty(Property=\"" + SelectCountProperty + "\") processor request.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
         }
     }
 

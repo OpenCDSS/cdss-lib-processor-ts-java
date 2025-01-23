@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ This class initializes, checks, and runs the SetPropertyFromTimeSeries() command
 */
 public class SetPropertyFromTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-	
+
 /**
 Property set during discovery for the PropertyName/PropertyValue.
 */
@@ -98,7 +98,7 @@ throws InvalidCommandParameterException {
 	String PropertyNameForFlag = parameters.getValue ( "PropertyNameForFlag" );
 	String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -181,7 +181,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Provide at least one property name to set." ) );
     }
-    
+
     // Check for invalid parameters.
 	List<String> validList = new ArrayList<>(8);
     validList.add ( "TSList" );
@@ -193,12 +193,12 @@ throws InvalidCommandParameterException {
     validList.add ( "PropertyNameForValue" );
     validList.add ( "PropertyNameForFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level, MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -272,7 +272,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -320,7 +320,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-	
+
 	PropList parameters = getCommandParameters();
 
 	String TSList = parameters.getValue ( "TSList" );
@@ -354,7 +354,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
-	
+
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -368,8 +368,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-			"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+			message = "Error processing GetTimeSeriesToProcess(TSList=\"" + TSList + "\", TSID=\"" + TSID + "\") request.";
+			if ( EnsembleID != null ) {
+				message = "Error processing GetTimeSeriesToProcess(TSList=\"" + TSList + "\", EnsembleID=\"" + EnsembleID + "\") request.";
+			}
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -383,8 +385,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		PropList bean_PropList = bean.getResultsPropList();
 		Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 		if ( o_TSList == null ) {
-			message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+			message = "Null TSToProcessList returned for processor request GetTimeSeriesToProcess(TSList=\"" + TSList +
+			"\" TSID=\"" + TSID + "\").";
+			if ( EnsembleID != null ) {
+				message = "Null TSToProcessList returned for processor request GetTimeSeriesToProcess(TSList=\"" + TSList +
+					"\" EnsembleID=\"" + EnsembleID + "\").";
+			}
 			Message.printWarning ( log_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
@@ -398,8 +404,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			List<TS> tslist0 = (List<TS>)o_TSList;
 	        tslist = tslist0;
 			if ( tslist.size() == 0 ) {
-				message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-				"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+				message = "No time series are available from processor request GetTimeSeriesToProcess (TSList=\"" + TSList +
+				"\" TSID=\"" + TSID + "\").";
+				if ( EnsembleID != null ) {
+					message = "No time series are available from processor request GetTimeSeriesToProcess (TSList=\"" + TSList +
+							"\" EnsembleID=\"" + EnsembleID + "\").";
+				}
 				Message.printWarning ( log_level,
 						MessageUtil.formatMessageTag(
 								command_tag,++warning_count), routine, message );
@@ -409,11 +419,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 			}
 		}
-		
+
 		nts = tslist.size();
 		if ( nts == 0 ) {
-			message = "Unable to find time series to scale using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-	            "\", EnsembleID=\"" + EnsembleID + "\".";
+			message = "Unable to find time series using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+			if ( EnsembleID != null ) {
+				message = "Unable to find time series using TSList=\"" + TSList + "\" EnsembleID=\"" + EnsembleID + "\".";
+			}
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
@@ -506,7 +518,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Expand the property here because can make granular with time series properties.
 			String PropertyNameForValueExpanded = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, PropertyNameForValue, status, commandPhase);
 			String PropertyNameForFlagExpanded = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, PropertyNameForFlag, status, commandPhase);
-	
+
 			// Reusable data object.
 			TSData tsdata = null;
 			if ( (PropertyName != null) && !PropertyName.isEmpty() ) {

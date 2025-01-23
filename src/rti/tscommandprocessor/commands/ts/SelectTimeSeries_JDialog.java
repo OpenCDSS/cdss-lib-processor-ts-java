@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -326,8 +326,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
         "Location.DataSource.DataType.Interval.Scenario"),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
-        "    The pattern used to select/deselect time series will be " +
-        "matched against aliases and identifiers."),
+        "    The pattern used to select/deselect time series will be matched against aliases and identifiers."),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "    Use * to match all time series."),
@@ -414,7 +413,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property criterion:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyCriterion_JComboBox = new SimpleJComboBox ( false );
-    List<String> critChoices = new ArrayList<String>();
+    List<String> critChoices = new ArrayList<>();
     critChoices.add ( "" );
     critChoices.add ( "" + InputFilterStringCriterionType.CONTAINS );
     critChoices.add ( "" + InputFilterStringCriterionType.ENDS_WITH );
@@ -460,7 +459,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Has data?:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HasData_JComboBox = new SimpleJComboBox ( false );
-    List<String> hasDataChoices = new ArrayList<String>();
+    List<String> hasDataChoices = new ArrayList<>();
     hasDataChoices.add ( "" );
     hasDataChoices.add ( command._False);
     hasDataChoices.add ( command._True);
@@ -557,7 +556,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfNotFound_JComboBox = new SimpleJComboBox ( false );
-    List<String> notFoundChoices = new ArrayList<String>();
+    List<String> notFoundChoices = new ArrayList<>();
     notFoundChoices.add ( "" );
     notFoundChoices.add ( __command._Ignore );
     notFoundChoices.add ( __command._Warn );

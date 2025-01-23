@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -86,15 +86,20 @@ private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __pathOutputProduct_JButton = null;
 private ProcessTSProduct_Command __command = null;
 private JTextArea __command_JTextArea = null;
+// Input.
 private JTextField __TSProductFile_JTextField = null;
+private SimpleJComboBox	__RunMode_JComboBox = null;
+// Output
+private SimpleJComboBox	__View_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
-private JTextField __OutputProductFile_JTextField = null;
-private SimpleJComboBox	__OutputProductFormat_JComboBox = null;
-private JTextField __DefaultSaveFile_JTextField = null;
 private JTextField __VisibleStart_JTextField = null;
 private JTextField __VisibleEnd_JTextField = null;
-private SimpleJComboBox	__RunMode_JComboBox = null;
-private SimpleJComboBox	__View_JComboBox = null;
+private JTextField __CommandStatusProperty_JTextField = null;
+// Output product.
+private JTextField __OutputProductFile_JTextField = null;
+private SimpleJComboBox	__OutputProductFormat_JComboBox = null;
+// Editing.
+private JTextField __DefaultSaveFile_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 
 private String __working_dir = null;
@@ -310,44 +315,56 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	// Put together a list of parameters to check.
+	// Create the list of parameters to check.
 	PropList props = new PropList ( "" );
+	// Input.
 	String TSProductFile = __TSProductFile_JTextField.getText().trim();
 	String RunMode = __RunMode_JComboBox.getSelected();
+	// Output.
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
-	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
-	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
+	String CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	// Output product.
+	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
+	// Editing.
+	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
 	__error_wait = false;
+	// Input.
 	if ( TSProductFile.length() > 0 ) {
 		props.set ( "TSProductFile", TSProductFile );
 	}
 	if ( RunMode.length() > 0 ) {
 		props.set ( "RunMode", RunMode );
 	}
+	// Output.
 	if ( View.length() > 0 ) {
 		props.set ( "View", View );
 	}
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
 	}
+    if ( VisibleStart.length() > 0 ) {
+        props.set ( "VisibleStart", VisibleStart );
+    }
+    if ( VisibleEnd.length() > 0 ) {
+        props.set ( "VisibleEnd", VisibleEnd );
+    }
+    if ( CommandStatusProperty.length() > 0 ) {
+        props.set ( "CommandStatusProperty", CommandStatusProperty );
+    }
+	// Output product.
 	if ( OutputProductFile.length() > 0 ) {
 		props.set ( "OutputProductFile", OutputProductFile );
 	}
 	if ( OutputProductFormat.length() > 0 ) {
 		props.set ( "OutputProductFormat", OutputProductFormat );
 	}
+	// Editing.
     if ( DefaultSaveFile.length() > 0 ) {
         props.set ( "DefaultSaveFile", DefaultSaveFile );
-    }
-    if ( VisibleStart.length() > 0 ) {
-        props.set ( "VisibleStart", VisibleStart );
-    }
-    if ( VisibleEnd.length() > 0 ) {
-        props.set ( "VisibleEnd", VisibleEnd );
     }
 	try {
 	    // This will warn the user.
@@ -365,23 +382,33 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String TSProductFile = __TSProductFile_JTextField.getText().trim();
+	// Input.
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
+	// Output.
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
-	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
-	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
+	String CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	// Output product.
+	String OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	String OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
+	// Editing.
+	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
+	// Input.
 	__command.setCommandParameter ( "TSProductFile", TSProductFile );
 	__command.setCommandParameter ( "RunMode", RunMode );
+	// Output.
 	__command.setCommandParameter ( "View", View );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
-	__command.setCommandParameter ( "OutputProductFile", OutputProductFile );
-	__command.setCommandParameter ( "OutputProductFormat", OutputProductFormat );
-	__command.setCommandParameter ( "DefaultSaveFile", DefaultSaveFile );
     __command.setCommandParameter ( "VisibleStart", VisibleStart );
     __command.setCommandParameter ( "VisibleEnd", VisibleEnd );
+    __command.setCommandParameter ( "CommandStatusProperty", CommandStatusProperty );
+	// Output product.
+	__command.setCommandParameter ( "OutputProductFile", OutputProductFile );
+	__command.setCommandParameter ( "OutputProductFormat", OutputProductFormat );
+	// Editing.
+	__command.setCommandParameter ( "DefaultSaveFile", DefaultSaveFile );
 }
 
 /**
@@ -536,6 +563,16 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command ) {
     JGUIUtil.addComponent(output_JPanel, new JLabel (
         "Optional - end of (initial) visible period (default=all data visible)."),
         3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Command status property:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CommandStatusProperty_JTextField = new JTextField ( "", 20 );
+    __CommandStatusProperty_JTextField.setToolTipText("Specify the property name for the command exit status, can use ${Property} notation");
+    __CommandStatusProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __CommandStatusProperty_JTextField,
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as the command status." ),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for output product.
     int yOutputProduct = -1;
@@ -693,29 +730,41 @@ public boolean ok () {
 Refresh the command from the other text field contents.
 */
 private void refresh () {
+	// Input.
 	String TSProductFile = "";
 	String RunMode = "";
+	// Output.
 	String View = "";
 	String OutputFile = "";
-	String OutputProductFile = "";
-	String OutputProductFormat = "";
-	String DefaultSaveFile = "";
     String VisibleStart = "";
     String VisibleEnd = "";
+    String CommandStatusProperty = "";
+    // Output product.
+	String OutputProductFile = "";
+	String OutputProductFormat = "";
+	// Editing
+	String DefaultSaveFile = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command.
 		props = __command.getCommandParameters();
+		// Input.
 		TSProductFile = props.getValue ( "TSProductFile" );
 		RunMode = props.getValue ( "RunMode" );
+		// Output.
 		View = props.getValue ( "View" );
 		OutputFile = props.getValue("OutputFile");
-		OutputProductFile = props.getValue("OutputProductFile");
-		OutputProductFormat = props.getValue("OutputProductFormat");
-		DefaultSaveFile = props.getValue("DefaultSaveFile");
 		VisibleStart = props.getValue ( "VisibleStart" );
 		VisibleEnd = props.getValue ( "VisibleEnd" );
+		CommandStatusProperty = props.getValue ( "CommandStatusProperty" );
+		// Output product.
+		OutputProductFile = props.getValue("OutputProductFile");
+		OutputProductFormat = props.getValue("OutputProductFormat");
+		// Editing.
+		DefaultSaveFile = props.getValue("DefaultSaveFile");
+
+		// Input.
 		if ( TSProductFile != null ) {
 			__TSProductFile_JTextField.setText( TSProductFile );
 		}
@@ -735,6 +784,7 @@ private void refresh () {
 				"run mode flag \"" + RunMode + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+		// Output.
 		if ( (View == null) || (View.length() == 0) ) {
 			// Select default.
 			__View_JComboBox.select ( 0 );
@@ -753,6 +803,16 @@ private void refresh () {
 	    if ( OutputFile != null ) {
 	         __OutputFile_JTextField.setText( OutputFile );
 	    }
+        if ( VisibleStart != null ) {
+            __VisibleStart_JTextField.setText (VisibleStart);
+        }
+        if ( VisibleEnd != null ) {
+            __VisibleEnd_JTextField.setText (VisibleEnd);
+        }
+        if ( CommandStatusProperty != null ) {
+            __CommandStatusProperty_JTextField.setText ( CommandStatusProperty );
+        }
+	    // Output product.
 	    if ( OutputProductFile != null ) {
 	         __OutputProductFile_JTextField.setText( OutputProductFile );
 	    }
@@ -771,36 +831,42 @@ private void refresh () {
 				"output product format \"" + OutputProductFormat + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+		// Editing.
 	    if ( DefaultSaveFile != null ) {
 	         __DefaultSaveFile_JTextField.setText( DefaultSaveFile );
 	    }
-        if ( VisibleStart != null ) {
-            __VisibleStart_JTextField.setText (VisibleStart);
-        }
-        if ( VisibleEnd != null ) {
-            __VisibleEnd_JTextField.setText (VisibleEnd);
-        }
 	}
 	// Regardless, reset the command from the fields.
+	// Input.
 	TSProductFile = __TSProductFile_JTextField.getText().trim();
 	RunMode = __RunMode_JComboBox.getSelected();
+	// Output.
 	View = __View_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	OutputProductFile = __OutputProductFile_JTextField.getText().trim();
-	OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
-	DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
     VisibleStart = __VisibleStart_JTextField.getText().trim();
     VisibleEnd = __VisibleEnd_JTextField.getText().trim();
+    CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	// Output product.
+	OutputProductFile = __OutputProductFile_JTextField.getText().trim();
+	OutputProductFormat = __OutputProductFormat_JComboBox.getSelected();
+	// Editing.
+	DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
+
 	props = new PropList ( __command.getCommandName() );
+	// Input.
 	props.add ( "TSProductFile=" + TSProductFile );
 	props.add ( "RunMode=" + RunMode );
+	// Output.
 	props.add ( "View=" + View );
 	props.add ( "OutputFile=" + OutputFile );
-	props.add ( "OutputProductFile=" + OutputProductFile );
-	props.add ( "OutputProductFormat=" + OutputProductFormat );
-	props.add ( "DefaultSaveFile=" + DefaultSaveFile );
 	props.add ( "VisibleStart=" + VisibleStart );
 	props.add ( "VisibleEnd=" + VisibleEnd );
+	props.add ( "CommandStatusProperty=" + CommandStatusProperty );
+	// Output product.
+	props.add ( "OutputProductFile=" + OutputProductFile );
+	props.add ( "OutputProductFormat=" + OutputProductFormat );
+	// Editing.
+	props.add ( "DefaultSaveFile=" + DefaultSaveFile );
 	__command_JTextArea.setText(__command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {

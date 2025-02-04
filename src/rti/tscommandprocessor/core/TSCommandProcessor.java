@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -218,14 +218,14 @@ private PropList initialProps = new PropList("AppProperties");
 Indicates whether the processor is currently running (false if has not started or has completed).
 The running occurs in TSEngine.processCommands().
 */
-private volatile boolean __is_running = false;
+private volatile boolean isRunning = false;
 
 /**
 Indicates whether the processing loop should be canceled.
 This is a request (e.g., from a GUI) that needs to be handled as soon as possible during command processing.
 It is envisioned that cancel can always occur between commands and as time allows it will also be enabled within a command.
 */
-private volatile boolean __cancel_processing_requested = false;
+private volatile boolean cancelProcessingRequested = false;
 
 // TODO SAM 2007-12-06 Evaluate how to make the DataTable object more generic.
 /**
@@ -267,23 +267,23 @@ public TSCommandProcessor ( PropList initialProps ) {
 	super();
 
 	// Create a TSEngine that works parallel to this class.
-	__tsengine = new TSEngine ( this );
+	this.__tsengine = new TSEngine ( this );
     // Define some standard properties, even before the command processor has run.
 	// TODO SAM 2010-05-26 Need to evaluate how to set important global properties up front but also
 	// dynamically in resetWorkflowProperties.
-    __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    this.__propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     // This is used to locate the HTML documentation for command editor dialogs, etc.
-    __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    this.__propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     // FIXME smalers 2022-12-06 Prior to this date used the following:
     // - not sure why .tstool is included
     // - as of TSTool 14.5.1 add UserTstoolDir
     //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     String homeDir = System.getProperty("user.home");
-    __propertyHashmap.put ( "UserHomeDir", homeDir );
-    __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
-    __propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
-    __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
+    this.__propertyHashmap.put ( "UserHomeDir", homeDir );
+    this.__propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    this.__propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
+    this.__propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
     // TODO smalers set based on the version from ProgramVersionString property.
     //__propertyHashmap.put ( "UserTstoolVersionDir", homeDir + File.separator + ".tstool" + File.separator + majorVersion);
     //__propertyHashmap.put ( "UserTstoolVersionDirURL", "file:///" + homeDir.replace("\\", "/") );
@@ -317,7 +317,7 @@ public void addCommand ( Command command, boolean notifyCommandListListeners ) {
 	    ep.addCommandProcessorEventListener(this);
 	}
 	if ( notifyCommandListListeners ) {
-		notifyCommandListListenersOfAdd ( __CommandList.size() - 1, __CommandList.size() - 1 );
+		notifyCommandListListenersOfAdd ( this.__CommandList.size() - 1, this.__CommandList.size() - 1 );
 	}
 	if ( Message.isDebugOn ) {
 	    Message.printDebug(1, routine, "Added command object \"" + command + "\"." );
@@ -353,27 +353,27 @@ public void addCommandListListener ( CommandListListener listener ) {
 	// See if the listener has already been added.
 	// Resize the listener array.
 	int size = 0;
-	if ( __CommandListListener_array != null ) {
-		size = __CommandListListener_array.length;
+	if ( this.__CommandListListener_array != null ) {
+		size = this.__CommandListListener_array.length;
 	}
 	for ( int i = 0; i < size; i++ ) {
-		if ( __CommandListListener_array[i] == listener ) {
+		if ( this.__CommandListListener_array[i] == listener ) {
 			return;
 		}
 	}
-	if ( __CommandListListener_array == null ) {
-		__CommandListListener_array = new CommandListListener[1];
-		__CommandListListener_array[0] = listener;
+	if ( this.__CommandListListener_array == null ) {
+		this.__CommandListListener_array = new CommandListListener[1];
+		this.__CommandListListener_array[0] = listener;
 	}
 	else {
 	    // Need to resize and transfer the list.
-		size = __CommandListListener_array.length;
+		size = this.__CommandListListener_array.length;
 		CommandListListener [] newlisteners = new CommandListListener[size + 1];
 		for ( int i = 0; i < size; i++ ) {
-				newlisteners[i] = __CommandListListener_array[i];
+				newlisteners[i] = this.__CommandListListener_array[i];
 		}
-		__CommandListListener_array = newlisteners;
-		__CommandListListener_array[size] = listener;
+		this.__CommandListListener_array = newlisteners;
+		this.__CommandListListener_array[size] = listener;
 		newlisteners = null;
 	}
 }
@@ -392,27 +392,27 @@ private void addCommandProcessorEventListener ( CommandProcessorEventListener li
     // See if the listener has already been added.
     // Resize the listener array.
     int size = 0;
-    if ( __CommandProcessorEventListener_array != null ) {
-        size = __CommandProcessorEventListener_array.length;
+    if ( this.__CommandProcessorEventListener_array != null ) {
+        size = this.__CommandProcessorEventListener_array.length;
     }
     for ( int i = 0; i < size; i++ ) {
-        if ( __CommandProcessorEventListener_array[i] == listener ) {
+        if ( this.__CommandProcessorEventListener_array[i] == listener ) {
             return;
         }
     }
-    if ( __CommandProcessorEventListener_array == null ) {
-        __CommandProcessorEventListener_array = new CommandProcessorEventListener[1];
-        __CommandProcessorEventListener_array[0] = listener;
+    if ( this.__CommandProcessorEventListener_array == null ) {
+        this.__CommandProcessorEventListener_array = new CommandProcessorEventListener[1];
+        this.__CommandProcessorEventListener_array[0] = listener;
     }
     else {
         // Need to resize and transfer the list.
-        size = __CommandProcessorEventListener_array.length;
+        size = this.__CommandProcessorEventListener_array.length;
         CommandProcessorEventListener [] newlisteners = new CommandProcessorEventListener[size + 1];
         for ( int i = 0; i < size; i++ ) {
-            newlisteners[i] = __CommandProcessorEventListener_array[i];
+            newlisteners[i] = this.__CommandProcessorEventListener_array[i];
         }
-        __CommandProcessorEventListener_array = newlisteners;
-        __CommandProcessorEventListener_array[size] = listener;
+        this.__CommandProcessorEventListener_array = newlisteners;
+        this.__CommandProcessorEventListener_array[size] = listener;
         newlisteners = null;
     }
 }
@@ -430,27 +430,27 @@ public void addCommandProcessorListener ( CommandProcessorListener listener ) {
 	// See if the listener has already been added.
 	// Resize the listener array.
 	int size = 0;
-	if ( __CommandProcessorListener_array != null ) {
+	if ( this.__CommandProcessorListener_array != null ) {
 		size = __CommandProcessorListener_array.length;
 	}
 	for ( int i = 0; i < size; i++ ) {
-		if ( __CommandProcessorListener_array[i] == listener ) {
+		if ( this.__CommandProcessorListener_array[i] == listener ) {
 			return;
 		}
 	}
-	if ( __CommandProcessorListener_array == null ) {
-		__CommandProcessorListener_array = new CommandProcessorListener[1];
-		__CommandProcessorListener_array[0] = listener;
+	if ( this.__CommandProcessorListener_array == null ) {
+		this.__CommandProcessorListener_array = new CommandProcessorListener[1];
+		this.__CommandProcessorListener_array[0] = listener;
 	}
 	else {
 	    // Need to resize and transfer the list.
-		size = __CommandProcessorListener_array.length;
+		size = this.__CommandProcessorListener_array.length;
 		CommandProcessorListener [] newlisteners = new CommandProcessorListener[size + 1];
 		for ( int i = 0; i < size; i++ ) {
-				newlisteners[i] = __CommandProcessorListener_array[i];
+				newlisteners[i] = this.__CommandProcessorListener_array[i];
 		}
-		__CommandProcessorListener_array = newlisteners;
-		__CommandProcessorListener_array[size] = listener;
+		this.__CommandProcessorListener_array = newlisteners;
+		this.__CommandProcessorListener_array[size] = listener;
 		newlisteners = null;
 	}
 }
@@ -751,7 +751,7 @@ public boolean areCommandsTemplate () {
     Command c;
     String cst, csu;
     for ( int i = 0; i < size; i++ ) {
-        c = __CommandList.get(i);
+        c = this.__CommandList.get(i);
         cst = c.toString().trim();
         if ( cst.startsWith("#") ) {
 	        csu = cst.toUpperCase();
@@ -802,10 +802,11 @@ public void closeDataConnections ( boolean closeAll ) {
 
 /**
 Return the Command instance at the requested position.
+@param pos the command position (0+).
 @return The number of commands being managed by the processor
 */
 public Command get( int pos ) {
-	return __CommandList.get(pos);
+	return this.__CommandList.get(pos);
 }
 
 /**
@@ -813,7 +814,7 @@ Indicate whether canceling processing has been requested.
 @return true if canceling has been requested.
 */
 public boolean getCancelProcessingRequested () {
-	return __cancel_processing_requested;
+	return this.cancelProcessingRequested;
 }
 
 /**
@@ -821,7 +822,7 @@ Get the name of the command file associated with the processor.
 @return the name of the command file associated with the processor.
 */
 public String getCommandFileName () {
-	return __commandFilename;
+	return this.__commandFilename;
 }
 
 /**
@@ -829,7 +830,7 @@ Return the list of commands.
 @return the list of commands.
 */
 public List<Command> getCommands () {
-	return __CommandList;
+	return this.__CommandList;
 }
 
 /**
@@ -837,7 +838,7 @@ Indicate whether output files should be created when processing.
 @return true if files should be created, false if not.
 */
 public Boolean getCreateOutput () {
-	return __CreateOutput_Boolean;
+	return this.__CreateOutput_Boolean;
 }
 
 /**
@@ -935,18 +936,21 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
 Return the list of all DataStore instances known to the processor.
 These are named database connections that correspond to input type/name for time series.
 Active and inactive datastores are returned.
+@return the list of all DataStore instances known to the processor
 */
 public List<DataStore> getDataStores() {
-    return __tsengine.getDataStoreList();
+    return this.__tsengine.getDataStoreList();
 }
 
 /**
-Return the list of all DataStore instances known to the processor.
+Return the list of all active DataStore instances known to the processor,
+which are active because no error occurred when initializing.
 These are named database connections that correspond to input type/name for time series.
+@return the list of all DataStore instances known to the processor.
 */
 public List<DataStore> getDataStores ( boolean activeOnly ) {
 	// Get the list of all datastores.
-	List<DataStore> datastoreList = __tsengine.getDataStoreList();
+	List<DataStore> datastoreList = this.__tsengine.getDataStoreList();
 	if ( activeOnly ) {
 		// Loop through and remove datastores where status != 0 (no error).
 		for ( int i = datastoreList.size() - 1; i >= 0; i-- ) {
@@ -1046,7 +1050,7 @@ Return the list of DataStore substitutions.
 @return the list of DataStore substitutions.
 */
 public List<DataStoreSubstitute> getDataStoreSubstituteList() {
-    return __tsengine.getDataStoreSubstituteList();
+    return this.__tsengine.getDataStoreSubstituteList();
 }
 
 /**
@@ -1059,14 +1063,14 @@ protected TSEnsemble getEnsemble ( String EnsembleID ) {
     if ( (EnsembleID == null) || EnsembleID.equals("") ) {
         return null;
     }
-    int size = __TSEnsembleList.size();
+    int size = this.__TSEnsembleList.size();
     TSEnsemble tsensemble = null, tsensemble2;
     String ensembleIDPattern = null;
     if ( EnsembleID.indexOf("*") >= 0 ) {
     	ensembleIDPattern = EnsembleID.replace("*", ".*").toUpperCase();
     }
     for ( int i = 0; i < size; i++ ) {
-        tsensemble2 = __TSEnsembleList.get(i);
+        tsensemble2 = this.__TSEnsembleList.get(i);
         if ( tsensemble2 == null ) {
             continue;
         }
@@ -1105,15 +1109,15 @@ Return the initial working directory for the processor.
 @return the initial working directory for the processor.
 */
 public String getInitialWorkingDir () {
-	return __InitialWorkingDir_String;
+	return this.__InitialWorkingDir_String;
 }
 
 /**
 Indicate whether the processing is running.
-@return true if the command processor is running, false if not.
+@return true if the command processor is running, false if not (new instance or has been stopped).
 */
 public boolean getIsRunning () {
-	return __is_running;
+	return this.isRunning;
 }
 
 /**
@@ -1423,7 +1427,7 @@ public Object getPropContents ( String propName ) throws Exception {
 	else {
 	    // Property is not one of the individual objects that have been historically maintained,
 		// but it may be a user-supplied property in the hashtable.
-	    Object o = __propertyHashmap.get ( propName );
+	    Object o = this.__propertyHashmap.get ( propName );
 	    if ( o == null ) {
 	    	// Changed on 2016-09-18 to allow null to be returned,
 	    	// generally indicating that user-supplied property is being processed.
@@ -1444,7 +1448,7 @@ Handle the AutoExtendPeriod property request.
 @return Boolean depending on whether time series periods should automatically be extended during reads.
 */
 private Boolean getPropContents_AutoExtendPeriod() {
-	boolean b = __tsengine.getAutoExtendPeriod();
+	boolean b = this.__tsengine.getAutoExtendPeriod();
 	return new Boolean ( b );
 }
 
@@ -1453,7 +1457,7 @@ Handle the AverageEnd property request.
 @return DateTime for AverageEnd, or null if not set.
 */
 private DateTime getPropContents_AverageEnd() {
-    return __tsengine.getAverageEnd();
+    return this.__tsengine.getAverageEnd();
 }
 
 /**
@@ -1461,7 +1465,7 @@ Handle the AverageStart property request.
 @return DateTime for AverageStart, or null if not set.
 */
 private DateTime getPropContents_AverageStart() {
-    return __tsengine.getAverageStart();
+    return this.__tsengine.getAverageStart();
 }
 
 /**
@@ -1469,7 +1473,7 @@ Handle the CommandsShouldClearRunStatus property request.
 @return Boolean indicating whether run status should be cleared.
 */
 private Boolean getPropContents_CommandsShouldClearRunStatus() {
-	return __commandsShouldClearRunStatus;
+	return this.__commandsShouldClearRunStatus;
 }
 
 /**
@@ -1477,7 +1481,7 @@ Handle the CreateOutput property request.
 @return Boolean indicating whether output should be created.
 */
 private Boolean getPropContents_CreateOutput() {
-	return __CreateOutput_Boolean;
+	return this.__CreateOutput_Boolean;
 }
 
 /**
@@ -1485,7 +1489,7 @@ Handle the EnsembleResultsList property request.
 @return The ensemble results list, as a List of TSEnsemble.
 */
 private List<TSEnsemble> getPropContents_EnsembleResultsList() {
-    return __TSEnsembleList;
+    return this.__TSEnsembleList;
 }
 
 /**
@@ -1493,7 +1497,7 @@ Handle the HaveOutputPeriod property request.
 @return Boolean depending on whether the output period has been set.
 */
 private Boolean getPropContents_HaveOutputPeriod() {
-	boolean b = __tsengine.haveOutputPeriod();
+	boolean b = this.__tsengine.haveOutputPeriod();
 	return new Boolean ( b );
 }
 
@@ -1502,7 +1506,7 @@ Handle the HydroBaseDMIList property request.
 @return list of open HydroBaseDMI instances.
 */
 private List<HydroBaseDMI> getPropContents_HydroBaseDMIList() {
-	return __tsengine.getHydroBaseDMIList();
+	return this.__tsengine.getHydroBaseDMIList();
 }
 
 /**
@@ -1510,7 +1514,7 @@ Handle the HydroBaseDMIListSize property request.
 @return Number of open HydroBaseDMI instances.
 */
 private Integer getPropContents_HydroBaseDMIListSize() {
-    List<HydroBaseDMI> v = __tsengine.getHydroBaseDMIList();
+    List<HydroBaseDMI> v = this.__tsengine.getHydroBaseDMIList();
     if ( v == null ) {
         return new Integer(0);
     }
@@ -1524,7 +1528,7 @@ Handle the IgnoreLEZero property request.
 @return Boolean indicating whether values <= 0 should be included in historical averages.
 */
 private Boolean getPropContents_IgnoreLEZero() {
-    boolean b = __tsengine.getIgnoreLEZero();
+    boolean b = this.__tsengine.getIgnoreLEZero();
     return new Boolean ( b );
 }
 
@@ -1533,7 +1537,7 @@ Handle the IncludeMissingTS property request.
 @return Boolean indicating whether missing time series should be created when no data found.
 */
 private Boolean getPropContents_IncludeMissingTS() {
-	boolean b = __tsengine.getIncludeMissingTS();
+	boolean b = this.__tsengine.getIncludeMissingTS();
 	return new Boolean ( b );
 }
 
@@ -1553,7 +1557,7 @@ Handle the InputEnd property request.
 @return DateTime for InputEnd, or null if not set.
 */
 private DateTime getPropContents_InputEnd() {
-	return __tsengine.getInputEnd();
+	return this.__tsengine.getInputEnd();
 }
 
 /**
@@ -1561,7 +1565,7 @@ Handle the InputStart property request.
 @return DateTime for InputStart, or null if not set.
 */
 private DateTime getPropContents_InputStart() {
-	return __tsengine.getInputStart();
+	return this.__tsengine.getInputStart();
 }
 
 /**
@@ -1595,7 +1599,7 @@ The leading comment character is NOT included since it will be added before fina
 @return list of String containing comments for output.
 */
 private List<String> getPropContents_OutputComments() {
-	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
+	String [] array = this.__tsengine.formatOutputHeaderComments(getCommands());
 	List<String> v = new ArrayList<>();
 	if ( array != null ) {
 		for ( int i = 0; i < array.length; i++ ) {
@@ -1610,7 +1614,7 @@ Handle the OutputEnd property request.
 @return DateTime for OutputEnd, or null if not set.
 */
 private DateTime getPropContents_OutputEnd() {
-	return __tsengine.getOutputEnd();
+	return this.__tsengine.getOutputEnd();
 }
 
 /**
@@ -1618,7 +1622,7 @@ Handle the OutputFileList property request.
 @return DateTime for OutputFileList, or null if not set.
 */
 private List<File> getPropContents_OutputFileList() {
-	return __outputFileList;
+	return this.__outputFileList;
 }
 
 /**
@@ -1626,7 +1630,7 @@ Handle the OutputStart property request.
 @return DateTime for OutputStart, or null if not set.
 */
 private DateTime getPropContents_OutputStart() {
-	return __tsengine.getOutputStart();
+	return this.__tsengine.getOutputStart();
 }
 
 /**
@@ -1634,7 +1638,7 @@ Handle the OutputYearType property request.
 @return YearType for OutputYearType, should always be non-null (default is calendar).
 */
 private YearType getPropContents_OutputYearType() {
-	return __tsengine.getOutputYearType();
+	return this.__tsengine.getOutputYearType();
 }
 
 /**
@@ -1642,7 +1646,7 @@ Handle the PatternTSList property request.
 @return The pattern time series results list, as a List of StringMonthTS.
 */
 private List<StringMonthTS> getPropContents_PatternTSList() {
-    return __patternTSList;
+    return this.__patternTSList;
 }
 
 /**
@@ -1650,7 +1654,7 @@ Handle the StartLogEnabled property request.
 @return whether the StartLog command is enabled
 */
 private Boolean getPropContents_StartLogEnabled() {
-    return __StartLogEnabled_Boolean;
+    return this.__StartLogEnabled_Boolean;
 }
 
 /**
@@ -1658,7 +1662,7 @@ Handle the TableResultsList property request.
 @return The table results list, as a List of DataTable.
 */
 private List<DataTable> getPropContents_TableResultsList() {
-    return __TableList;
+    return this.__TableList;
 }
 
 /**
@@ -1666,7 +1670,7 @@ Handle the TimeSeriesViewResultsList property request.
 @return The TimeSeriesView results list.
 */
 private List<TimeSeriesView> getPropContents_TimeSeriesViewResultsList() {
-    return __TimeSeriesViewList;
+    return this.__TimeSeriesViewList;
 }
 
 /**
@@ -1674,7 +1678,7 @@ Handle the TSEnsembleResultsListSize property request.
 @return Size of the time series ensemble results list, as an Integer.
 */
 private Integer getPropContents_TSEnsembleResultsListSize() {
-    return new Integer( __TSEnsembleList.size());
+    return new Integer( this.__TSEnsembleList.size());
 }
 
 /**
@@ -1682,7 +1686,7 @@ Handle the TSProductAnnotationProviderList property request.
 @return The time series product annotation provider list, as a list of TSProductAnnotationProvider.
 */
 private List<TSProductAnnotationProvider> getPropContents_TSProductAnnotationProviderList() {
-	return __tsengine.getTSProductAnnotationProviders();
+	return this.__tsengine.getTSProductAnnotationProviders();
 }
 
 /**
@@ -1690,7 +1694,7 @@ Handle the TSResultsList property request.
 @return The time series results list, as a list of TS.
 */
 private List<TS> getPropContents_TSResultsList() {
-	return __tsengine.getTimeSeriesList(null);
+	return this.__tsengine.getTimeSeriesList(null);
 }
 
 /**
@@ -1698,7 +1702,7 @@ Handle the TSResultsListSize property request.
 @return Size of the time series results list, as an Integer.
 */
 private Integer getPropContents_TSResultsListSize() {
-	return new Integer( __tsengine.getTimeSeriesList(null).size());
+	return new Integer( this.__tsengine.getTimeSeriesList(null).size());
 }
 
 /**
@@ -1706,7 +1710,7 @@ Handle the TSViewWindowListener property request.
 @return TSViewWindowListener that listens for plot windows closing.
 */
 private WindowListener getPropContents_TSViewWindowListener() {
-	return __tsengine.getTSViewWindowListener();
+	return this.__tsengine.getTSViewWindowListener();
 }
 
 /**
@@ -1764,7 +1768,7 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
 	}
     if ( includeDynamicProperties ) {
         // Add the hashtable keys and make a unique list.
-        set.addAll ( __propertyHashmap.keySet() );
+        set.addAll ( this.__propertyHashmap.keySet() );
     }
 	return set;
 }
@@ -1782,7 +1786,7 @@ public boolean getReadOnly () {
     int size = size();
     Command c;
     for ( int i = 0; i < size; i++ ) {
-        c = __CommandList.get(i);
+        c = this.__CommandList.get(i);
         String commandString = c.toString();
         if ( commandString.trim().startsWith("#") &&
                 (StringUtil.indexOfIgnoreCase(commandString,readOnlyString,0) > 0) ) {
@@ -1797,7 +1801,7 @@ Return the TSSupplier name.
 @return the TSSupplier name ("TSEngine").
 */
 public String getTSSupplierName() {
-	return __tsengine.getTSSupplierName();
+	return this.__tsengine.getTSSupplierName();
 }
 
 /**
@@ -1805,7 +1809,7 @@ Return the current working directory for the processor.
 @return the current working directory for the processor.
 */
 protected String getWorkingDir () {
-	return __WorkingDir_String;
+	return this.__WorkingDir_String;
 }
 
 /**
@@ -1814,9 +1818,9 @@ Currently this method passes on the events to listeners registered on this proce
 @param event CommandProcessorEvent to handle.
 */
 public void handleCommandProcessorEvent ( CommandProcessorEvent event ) {
-    if ( __CommandProcessorEventListener_array != null ) {
-        for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
-            __CommandProcessorEventListener_array[i].handleCommandProcessorEvent(event);
+    if ( this.__CommandProcessorEventListener_array != null ) {
+        for ( int i = 0; i < this.__CommandProcessorEventListener_array.length; i++ ) {
+            this.__CommandProcessorEventListener_array[i].handleCommandProcessorEvent(event);
         }
     }
 }
@@ -1837,7 +1841,7 @@ Add a command using the Command instance.
 */
 public void insertCommandAt ( Command command, int index ) {
 	String routine = getClass().getSimpleName() + ".insertCommandAt";
-	__CommandList.add( index, command);
+	this.__CommandList.add( index, command);
 	// Also add this processor as a listener for events.
     if ( command instanceof CommandProcessorEventProvider ) {
         CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
@@ -1900,9 +1904,9 @@ Notify registered CommandListListeners about one or more commands being added.
 @param index1 The index (0+) of the last command that is added.
 */
 private void notifyCommandListListenersOfAdd ( int index0, int index1 ) {
-	if ( __CommandListListener_array != null ) {
-		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
-			__CommandListListener_array[i].commandAdded(index0, index1);
+	if ( this.__CommandListListener_array != null ) {
+		for ( int i = 0; i < this.__CommandListListener_array.length; i++ ) {
+			this.__CommandListListener_array[i].commandAdded(index0, index1);
 		}
 	}
 }
@@ -1914,9 +1918,9 @@ Notify registered CommandListListeners about one or more commands being changed.
 */
 @SuppressWarnings("unused")
 private void notifyCommandListListenersOfChange ( int index0, int index1 ) {
-	if ( __CommandListListener_array != null ) {
+	if ( this.__CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
-			__CommandListListener_array[i].commandChanged(index0, index1);
+			this.__CommandListListener_array[i].commandChanged(index0, index1);
 		}
 	}
 }
@@ -1927,9 +1931,9 @@ Notify registered CommandListListeners about one or more commands being removed.
 @param index1 The index (0+) of the last command that is added.
 */
 private void notifyCommandListListenersOfRemove ( int index0, int index1 ) {
-	if ( __CommandListListener_array != null ) {
-		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
-			__CommandListListener_array[i].commandRemoved(index0, index1);
+	if ( this.__CommandListListener_array != null ) {
+		for ( int i = 0; i < this.__CommandListListener_array.length; i++ ) {
+			this.__CommandListListener_array[i].commandRemoved(index0, index1);
 		}
 	}
 }
@@ -1941,11 +1945,11 @@ Notify registered CommandProcessorListeners about a command being canceled.
 This will often be the total number of commands but calling code may process a subset.
 @param command The instance of the nearest command that is being canceled.
 */
-protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand, int ncommand, Command command ) {
+protected void notifyCommandProcessorListenersOfCommandCanceled ( int icommand, int ncommand, Command command ) {
 	// This method is protected to allow TSEngine to call.
-	if ( __CommandProcessorListener_array != null ) {
-		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandCanceled(icommand,ncommand,command,-1.0F,"Command cancelled.");
+	if ( this.__CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < this.__CommandProcessorListener_array.length; i++ ) {
+			this.__CommandProcessorListener_array[i].commandCanceled(icommand,ncommand,command,-1.0F,"Command canceled.");
 		}
 	}
 }
@@ -1959,9 +1963,9 @@ This will often be the total number of commands but calling code may process a s
 */
 protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, int ncommand, Command command ) {
 	// This method is protected to allow TSEngine to call.
-	if ( __CommandProcessorListener_array != null ) {
-		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandCompleted(icommand,ncommand,command,-1.0F,"Command completed.");
+	if ( this.__CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < this.__CommandProcessorListener_array.length; i++ ) {
+			this.__CommandProcessorListener_array[i].commandCompleted(icommand,ncommand,command,-1.0F,"Command completed.");
 		}
 	}
 }
@@ -1975,9 +1979,9 @@ This will often be the total number of commands but calling code may process a s
 */
 protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, int ncommand, Command command ) {
 	// This method is protected to allow TSEngine to call.
-	if ( __CommandProcessorListener_array != null ) {
-		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandStarted(icommand,ncommand,command,-1.0F,"Command started.");
+	if ( this.__CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < this.__CommandProcessorListener_array.length; i++ ) {
+			this.__CommandProcessorListener_array[i].commandStarted(icommand,ncommand,command,-1.0F,"Command started.");
 		}
 	}
 }
@@ -2614,7 +2618,7 @@ throws Exception {
             throw new RequestParameterNotFoundException ( warning );
     }
     TSEnsemble tsensemble = (TSEnsemble)o;
-    __TSEnsembleList.add ( tsensemble );
+    this.__TSEnsembleList.add ( tsensemble );
     // No data are returned in the bean.
     return bean;
 }
@@ -2635,7 +2639,7 @@ throws Exception {
 		throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o;
-	__tsengine.appendTimeSeries ( ts );
+	this.__tsengine.appendTimeSeries ( ts );
 	// No data are returned in the bean.
 	return bean;
 }
@@ -2657,7 +2661,7 @@ throws Exception {
 		throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o_TS;
-	TSLimits tslimits = __tsengine.calculateTSAverageLimits(ts);
+	TSLimits tslimits = this.__tsengine.calculateTSAverageLimits(ts);
 	// Return the limits.
 	PropList results = bean.getResultsPropList();
 	results.setUsingObject ( "TSLimits", tslimits );
@@ -2696,7 +2700,7 @@ throws Exception {
 	String DateTime = (String)o;
 	// Call the TSEngine class method to expand the DateTime:
 	// - handles the variants in the method documentation above
-	DateTime dt = __tsengine.getDateTime ( DateTime );
+	DateTime dt = this.__tsengine.getDateTime ( DateTime );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.
 	results.setUsingObject("DateTime", dt );
@@ -2742,14 +2746,14 @@ throws Exception {
             throw new RequestParameterNotFoundException ( warning );
     }
     Integer Index = (Integer)o;
-    int size = __TSEnsembleList.size();
+    int size = this.__TSEnsembleList.size();
     int i = Index.intValue();
     TSEnsemble tsensemble = null;
     if ( i > (size - 1) ) {
         tsensemble = null;
     }
     else {
-        tsensemble = __TSEnsembleList.get ( i );
+        tsensemble = this.__TSEnsembleList.get ( i );
     }
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference.
@@ -2780,7 +2784,7 @@ throws Exception {
     GeoMapProject project = null;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        project = (GeoMapProject)__GeoMapProjectList.get(i);
+        project = (GeoMapProject)this.__GeoMapProjectList.get(i);
         if ( project.getGeoMapProjectId().equalsIgnoreCase(GeoMapProjectID) ) {
             found = true;
             break;
@@ -2835,13 +2839,13 @@ throws Exception {
     }
     String NetworkID = (String)o;
     int size = 0;
-    if ( __NodeNetworkList != null ) {
-        size = __NodeNetworkList.size();
+    if ( this.__NodeNetworkList != null ) {
+        size = this.__NodeNetworkList.size();
     }
     NodeNetwork network = null;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        network = (NodeNetwork)__NodeNetworkList.get(i);
+        network = (NodeNetwork)this.__NodeNetworkList.get(i);
         if ( network.getNetworkId().equalsIgnoreCase(NetworkID) ) {
             found = true;
             break;
@@ -2872,7 +2876,7 @@ throws Exception {
         throw new RequestParameterNotFoundException ( warning );
     }
     String InputName = (String)o;
-    NWSRFS_DMI dmi = __tsengine.getNWSRFSFS5FilesDMI ( InputName, true );
+    NWSRFS_DMI dmi = this.__tsengine.getNWSRFSFS5FilesDMI ( InputName, true );
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference.
     results.setUsingObject("NwsrfsDMI", dmi );
@@ -2986,7 +2990,7 @@ throws Exception {
         throw new RequestParameterNotFoundException ( warning );
     }
     String PropertyName = (String)o;
-    Object PropertyValue = __propertyHashmap.get ( PropertyName );
+    Object PropertyValue = this.__propertyHashmap.get ( PropertyName );
     if ( PropertyValue == null ) {
         // Try the built-in properties.
         PropertyValue = getPropContents(PropertyName);
@@ -3016,9 +3020,9 @@ throws Exception {
 		String propval = (String)o;
 		if ( (propval != null) && propval.equalsIgnoreCase("true") ) {
 			// Transfer the user-specified properties.
-			Set<String> keys = __propertyHashmap.keySet();
+			Set<String> keys = this.__propertyHashmap.keySet();
 			for ( String key : keys ) {
-				o = __propertyHashmap.get ( key );
+				o = this.__propertyHashmap.get ( key );
 				ph.put(key,o);
 			}
 		}
@@ -3047,13 +3051,13 @@ throws Exception {
     }
     String TableID = (String)o;
     int size = 0;
-    if ( __TableList != null ) {
-        size = __TableList.size();
+    if ( this.__TableList != null ) {
+        size = this.__TableList.size();
     }
     DataTable table = null;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        table = (DataTable)__TableList.get(i);
+        table = (DataTable)this.__TableList.get(i);
         if ( table.getTableID().equalsIgnoreCase(TableID) ) {
             found = true;
             break;
@@ -3079,12 +3083,11 @@ throws Exception {
 	if ( o == null ) {
 			String warning = "Request GetTimeSeries() does not provide an Index parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error." );
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Integer Index = (Integer)o;
-	TS ts = __tsengine.getTimeSeries ( Index.intValue() );
+	TS ts = this.__tsengine.getTimeSeries ( Index.intValue() );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.
 	results.setUsingObject("TS", ts );
@@ -3115,7 +3118,7 @@ throws Exception {
 	if ( o != null ) {
 		CommandTag = (String)o;
 	}
-	TS ts = __tsengine.getTimeSeries ( CommandTag, TSID );
+	TS ts = this.__tsengine.getTimeSeries ( CommandTag, TSID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.
 	results.setUsingObject("TS", ts );
@@ -3160,7 +3163,7 @@ throws Exception {
 	// Get the information from TSEngine, which is returned as a list
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
-    TimeSeriesToProcess tsToProcess = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
+    TimeSeriesToProcess tsToProcess = this.__tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
 	List<TS> tsList = tsToProcess.getTimeSeriesList();
 	int [] tsPos = tsToProcess.getTimeSeriesPositions();
 	List<String> errorList = tsToProcess.getErrors();
@@ -3275,7 +3278,7 @@ throws Exception {
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String TSID = (String)o;
-	int index = __tsengine.indexOf ( TSID );
+	int index = this.__tsengine.indexOf ( TSID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.
 	results.setUsingObject("Index", new Integer(index));
@@ -3307,7 +3310,7 @@ throws Exception {
 			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
-	__tsengine.processCommands( commands, (PropList)o_Properties );
+	this.__tsengine.processCommands( commands, (PropList)o_Properties );
 	// No results need to be set in the bean.
 	return bean;
 }
@@ -3356,11 +3359,11 @@ throws Exception {
 	int ts_pos = Index.intValue();
     if ( action == TSCommandProcessorActionType.INSERT_TS ) {
         // Add new time series to the list.
-        __tsengine.setTimeSeries ( ts, ts_pos );
+        this.__tsengine.setTimeSeries ( ts, ts_pos );
     }
     else if ( action == TSCommandProcessorActionType.UPDATE_TS ) {
         // Update in the time series list.
-        __tsengine.setTimeSeries ( ts, ts_pos );
+        this.__tsengine.setTimeSeries ( ts, ts_pos );
     }
 	// No results need to be set in the bean.
 	return bean;
@@ -3411,12 +3414,12 @@ throws Exception {
 	// Take action based on what was passed in.
 	if ( (tslist != null) && (tslist.size() > 0) ) {
 		// Have a list of time series to process.
-		__tsengine.processTimeSeries( tslist, Properties );
+		this.__tsengine.processTimeSeries( tslist, Properties );
 	}
 	else {
 		// Treat as if indices were passed (legacy approach before TSList option was added).
 		// OK if o_Indices is null because it means to process all time series in the results list.
-		__tsengine.processTimeSeries( Indices_array, Properties );
+		this.__tsengine.processTimeSeries( Indices_array, Properties );
 	}
 	// No results need to be set in the bean.
 	return bean;
@@ -3515,27 +3518,27 @@ throws Exception {
     // If values have been specified for default time series,
     // save the current IgnoreMissingTS global flag, set to the value for this command, and then reset to the global value.
     TS ts = null;
-    boolean includeMissingTsOld = __tsengine.getIncludeMissingTS();
-    DateTime outputStartOld = __tsengine.getIncludeMissingTSOutputStart();
-    DateTime outputEndOld = __tsengine.getIncludeMissingTSOutputEnd();
+    boolean includeMissingTsOld = this.__tsengine.getIncludeMissingTS();
+    DateTime outputStartOld = this.__tsengine.getIncludeMissingTSOutputStart();
+    DateTime outputEndOld = this.__tsengine.getIncludeMissingTSOutputEnd();
     try {
-        __tsengine.setIncludeMissingTS ( includeMissingTS );
+        this.__tsengine.setIncludeMissingTS ( includeMissingTS );
         if ( defaultOutputStart != null ) {
-        	__tsengine.setIncludeMissingTSOutputStart(defaultOutputStart);
+        	this.__tsengine.setIncludeMissingTSOutputStart(defaultOutputStart);
         }
         if ( defaultOutputEnd != null ) {
-        	__tsengine.setIncludeMissingTSOutputEnd(defaultOutputEnd);
+        	this.__tsengine.setIncludeMissingTSOutputEnd(defaultOutputEnd);
         }
-        ts = __tsengine.readTimeSeries ( warningLevel, commandTag, TSID, readData );
+        ts = this.__tsengine.readTimeSeries ( warningLevel, commandTag, TSID, readData );
     }
     finally {
     	// Reset the global property to include missing time series.
-        __tsengine.setIncludeMissingTS ( includeMissingTsOld );
+        this.__tsengine.setIncludeMissingTS ( includeMissingTsOld );
         if ( defaultOutputStart != null ) {
-        	__tsengine.setIncludeMissingTSOutputStart(outputStartOld);
+        	this.__tsengine.setIncludeMissingTSOutputStart(outputStartOld);
         }
         if ( defaultOutputEnd != null ) {
-        	__tsengine.setIncludeMissingTSOutputEnd(outputEndOld);
+        	this.__tsengine.setIncludeMissingTSOutputEnd(outputEndOld);
         }
     }
     PropList results = bean.getResultsPropList();
@@ -3561,7 +3564,7 @@ throws Exception {
 	}
 	@SuppressWarnings("unchecked")
 	List<TS> TSList = (List<TS>)o;
-	__tsengine.readTimeSeries2 ( TSList );
+	this.__tsengine.readTimeSeries2 ( TSList );
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;
@@ -3588,7 +3591,7 @@ private CommandProcessorRequestResultsBean processRequest_RemoveAllFromTimeSerie
 throws Exception {
     TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters.
-    __tsengine.removeAllTimeSeries ();
+    this.__tsengine.removeAllTimeSeries ();
     //PropList results = bean.getResultsPropList();
     // No data are returned in the bean.
     return bean;
@@ -3670,10 +3673,10 @@ throws Exception {
     String PropertyName = (String)o;
     // Do not allow removing official property like InputStart as this would likely cause problems.
     // First see if it is a known user-defined property.
-    Object o2 = __propertyHashmap.get ( PropertyName );
+    Object o2 = this.__propertyHashmap.get ( PropertyName );
     if ( o2 != null ) {
     	// Found it so remove (for some reason can't pass in o2 and have it work).
-    	__propertyHashmap.remove(PropertyName);
+    	this.__propertyHashmap.remove(PropertyName);
     }
     // No data are returned in the bean.
     return bean;
@@ -3698,11 +3701,11 @@ throws Exception {
     String TableID = (String)o;
     // Remove all tables having the same identifier.
     DataTable table;
-    for ( int i = 0; i < __TableList.size(); i++ ) {
-        table = __TableList.get(i);
+    for ( int i = 0; i < this.__TableList.size(); i++ ) {
+        table = this.__TableList.get(i);
         // Remove and decrement the counter so that the next table is checked.
         if ( table.getTableID().equalsIgnoreCase(TableID) ) {
-            __TableList.remove(i--);
+            this.__TableList.remove(i--);
         }
     }
     return bean;
@@ -3731,20 +3734,20 @@ throws Exception {
         FreeEnsembleIfEmpty_Boolean = (Boolean)o;
     }
     // Get the time series that will be removed.
-    TS ts = __tsengine.getTimeSeries(Index.intValue());
+    TS ts = this.__tsengine.getTimeSeries(Index.intValue());
     // Remove the time series.
-    __tsengine.removeTimeSeries ( Index.intValue() );
+    this.__tsengine.removeTimeSeries ( Index.intValue() );
     // Remove the time series from ensembles and remove ensembles if empty.
     // Time series are only removed if the time series reference in the ensemble matches the removed time series
     // (identifiers are not checked).
-    for ( int i = 0; i < __TSEnsembleList.size(); i++ ) {
-        TSEnsemble ensemble = __TSEnsembleList.get(i);
+    for ( int i = 0; i < this.__TSEnsembleList.size(); i++ ) {
+        TSEnsemble ensemble = this.__TSEnsembleList.get(i);
         if ( ensemble.remove ( ts ) ) {
             // Time series was in the ensemble.
             // Also remove empty ensembles.
             if ( FreeEnsembleIfEmpty_Boolean.booleanValue() && (ensemble.size() == 0) ) {
                 Message.printStatus(2, routine, "Ensemble is empty, removing ensemble." );
-                __TSEnsembleList.remove(i);
+                this.__TSEnsembleList.remove(i);
             }
         }
     }
@@ -3806,7 +3809,7 @@ throws Exception {
     DataStore dataStore = (DataStore)o;
     // Add an open DataStore instance, closing and discarding a previous data store of the same id if it exists.
     //
-    __tsengine.setDataStore( dataStore, true );
+    this.__tsengine.setDataStore( dataStore, true );
     // No results need to be returned.
     return bean;
 }
@@ -3863,7 +3866,7 @@ throws Exception {
 	}
 	HydroBaseDMI dmi = (HydroBaseDMI)o;
 	// Add an open HydroBaseDMI instance, closing a previous connection of the same name if it exists.
-	__tsengine.setHydroBaseDMI( dmi, true );
+	this.__tsengine.setHydroBaseDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
 }
@@ -3885,18 +3888,18 @@ throws Exception {
     }
     NodeNetwork o_Network = (NodeNetwork)o;
     // Loop through the networks in memory.  If a matching network ID is found, reset.  Otherwise, add at the end.
-    int size = __NodeNetworkList.size();
+    int size = this.__NodeNetworkList.size();
     NodeNetwork nodeNetwork;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        nodeNetwork = (NodeNetwork)__NodeNetworkList.get(i);
+        nodeNetwork = (NodeNetwork)this.__NodeNetworkList.get(i);
         if ( nodeNetwork.getNetworkId().equalsIgnoreCase(o_Network.getNetworkId())) {
-        	__NodeNetworkList.set(i,o_Network);
+        	this.__NodeNetworkList.set(i,o_Network);
             found = true;
         }
     }
     if ( !found ) {
-    	__NodeNetworkList.add ( o_Network );
+    	this.__NodeNetworkList.add ( o_Network );
     }
     // No data are returned in the bean.
     return bean;
@@ -3919,7 +3922,7 @@ throws Exception {
 	}
 	NWSRFS_DMI dmi = (NWSRFS_DMI)o;
 	// Add an open NWSRFS_DMI instance, closing a previous connection of the same name if it exists.
-	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
+	this.__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
 }
@@ -3981,16 +3984,16 @@ throws Exception {
         // See if the item is already in the list.  If so, replace it.  If not, add at the end.
         boolean found = false;
         tsi = tslist.get(i);
-        for ( int j = 0; j < __patternTSList.size(); j++ ) {
+        for ( int j = 0; j < this.__patternTSList.size(); j++ ) {
             tsj = tslist.get(j);
             if ( tsi.getIdentifier().toString().equalsIgnoreCase(tsj.getIdentifier().toString()) ) {
-                __patternTSList.set(j, tsi);
+                this.__patternTSList.set(j, tsi);
                 found = true;
                 break;
             }
         }
         if ( !found ) {
-            __patternTSList.add ( tsi );
+            this.__patternTSList.add ( tsi );
         }
     }
     // No data are returned in the bean.
@@ -4039,7 +4042,7 @@ throws Exception {
     }
     else {
 	    // Otherwise it is a user-defined property.
-	    __propertyHashmap.put ( PropertyName, o2 );
+	    this.__propertyHashmap.put ( PropertyName, o2 );
     }
     // No data are returned in the bean.
     return bean;
@@ -4062,18 +4065,18 @@ throws Exception {
     }
     DataTable o_DataTable = (DataTable)o;
     // Loop through the tables.  If a matching table ID is found, reset.  Otherwise, add at the end.
-    int size = __TableList.size();
+    int size = this.__TableList.size();
     DataTable table;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        table = (DataTable)__TableList.get(i);
+        table = (DataTable)this.__TableList.get(i);
         if ( table.getTableID().equalsIgnoreCase(o_DataTable.getTableID())) {
-            __TableList.set(i,o_DataTable);
+            this.__TableList.set(i,o_DataTable);
             found = true;
         }
     }
     if ( !found ) {
-        __TableList.add ( o_DataTable );
+        this.__TableList.add ( o_DataTable );
     }
     // No data are returned in the bean.
     return bean;
@@ -4103,7 +4106,7 @@ throws Exception {
 		throw new RequestParameterNotFoundException ( warning );
 	}
 	Integer Index = (Integer)o2;
-	__tsengine.setTimeSeries ( ts, Index.intValue() );
+	this.__tsengine.setTimeSeries ( ts, Index.intValue() );
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;
@@ -4126,18 +4129,18 @@ throws Exception {
     }
     TimeSeriesView o_TimeSeriesView = (TimeSeriesView)o;
     // Loop through the views.  If a matching table ID is found, reset.  Otherwise, add at the end.
-    int size = __TimeSeriesViewList.size();
+    int size = this.__TimeSeriesViewList.size();
     TimeSeriesView view;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        view = (TimeSeriesView)__TimeSeriesViewList.get(i);
+        view = (TimeSeriesView)this.__TimeSeriesViewList.get(i);
         if ( view.getViewID().equalsIgnoreCase(o_TimeSeriesView.getViewID())) {
-            __TimeSeriesViewList.set(i,o_TimeSeriesView);
+            this.__TimeSeriesViewList.set(i,o_TimeSeriesView);
             found = true;
         }
     }
     if ( !found ) {
-        __TimeSeriesViewList.add ( o_TimeSeriesView );
+        this.__TimeSeriesViewList.add ( o_TimeSeriesView );
     }
     // No data are returned in the bean.
     return bean;
@@ -4259,12 +4262,12 @@ If specified as null or an empty string the units will not be converted.
 public TS readTimeSeries (	String tsident_string, DateTime req_date1, DateTime req_date2,
 				String req_units, boolean read_data )
 throws Exception {
-	return __tsengine.readTimeSeries ( tsident_string, req_date1, req_date2, req_units, read_data );
+	return this.__tsengine.readTimeSeries ( tsident_string, req_date1, req_date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
-Read a time series given an existing time series and a file name.  The specified period is read.
+Read a time series given an existing time series and a file name. The specified period is read.
 The data are converted to the requested units.
 @param req_ts Requested time series to fill.  If null, return a new time series.
 If not null, all data are reset, except for the identifier,
@@ -4281,7 +4284,7 @@ If specified as null or an empty string the units will not be converted.
 */
 public TS readTimeSeries ( TS req_ts, String fname, DateTime date1, DateTime date2, String req_units, boolean read_data )
 throws Exception {
-	return __tsengine.readTimeSeries ( req_ts, fname, date1, date2, req_units, read_data );
+	return this.__tsengine.readTimeSeries ( req_ts, fname, date1, date2, req_units, read_data );
 }
 
 /**
@@ -4300,7 +4303,7 @@ If specified as null or an empty string the units will not be converted.
 */
 public List<TS> readTimeSeriesList ( String fname, DateTime date1, DateTime date2, String req_units, boolean read_data )
 throws Exception {
-	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
+	return this.__tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
 }
 
 /**
@@ -4323,7 +4326,7 @@ If specified as null or an empty string the units will not be converted.
 public List<TS> readTimeSeriesList ( TSIdent tsident, String fname, DateTime date1, DateTime date2,
 					String req_units, boolean read_data )
 throws Exception {
-	return __tsengine.readTimeSeriesList ( tsident, fname, date1, date2, req_units, read_data );
+	return this.__tsengine.readTimeSeriesList ( tsident, fname, date1, date2, req_units, read_data );
 }
 
 /**
@@ -4331,16 +4334,16 @@ Remove all CommandProcessorEventListener.
 */
 public void removeAllCommandProcessorEventListeners ( ) {
     // Just reset the array to null.
-    __CommandProcessorEventListener_array = null;
+    this.__CommandProcessorEventListener_array = null;
 }
 
 /**
 Remove all commands.
 */
 public void removeAllCommands () {
-	int size = __CommandList.size();
+	int size = this.__CommandList.size();
 	if ( size > 0 ) {
-		__CommandList.clear ();
+		this.__CommandList.clear ();
 		notifyCommandListListenersOfRemove ( 0, size - 1 );
 	}
 }
@@ -4349,8 +4352,8 @@ public void removeAllCommands () {
 Remove all ensembles.
 */
 private void removeAllEnsembles () {
-    if ( __TSEnsembleList != null ) {
-        __TSEnsembleList.clear();
+    if ( this.__TSEnsembleList != null ) {
+        this.__TSEnsembleList.clear();
     }
 }
 
@@ -4358,8 +4361,8 @@ private void removeAllEnsembles () {
 Remove all pattern time series, for example at the start of a run.
 */
 private void removeAllPatternTS () {
-    if ( __patternTSList != null ) {
-        __patternTSList.clear();
+    if ( this.__patternTSList != null ) {
+        this.__patternTSList.clear();
     }
 }
 
@@ -4369,7 +4372,7 @@ Remove a command at a position.
 */
 public void removeCommandAt ( int index ) {
 	String routine = getClass().getSimpleName() + ".removeCommandAt";
-	__CommandList.remove ( index );
+	this.__CommandList.remove ( index );
 	notifyCommandListListenersOfRemove ( index, index );
 	Message.printStatus(2, routine, "Remove command object at [" + index + "]" );
 }
@@ -4382,13 +4385,13 @@ public void removeCommandListListener ( CommandListListener listener ) {
 	if ( listener == null ) {
 		return;
 	}
-	if ( __CommandListListener_array != null ) {
+	if ( this.__CommandListListener_array != null ) {
 		// Loop through and set to null any listeners that match the requested listener.
-		int size = __CommandListListener_array.length;
+		int size = this.__CommandListListener_array.length;
 		int count = 0;
 		for ( int i = 0; i < size; i++ ) {
-			if ( (__CommandListListener_array[i] != null) && (__CommandListListener_array[i] == listener) ) {
-				__CommandListListener_array[i] = null;
+			if ( (this.__CommandListListener_array[i] != null) && (this.__CommandListListener_array[i] == listener) ) {
+				this.__CommandListListener_array[i] = null;
 			}
 			else {
 			    ++count;
@@ -4398,11 +4401,11 @@ public void removeCommandListListener ( CommandListListener listener ) {
 		CommandListListener [] newlisteners = new CommandListListener[count];
 		count = 0;
 		for ( int i = 0; i < size; i++ ) {
-			if ( __CommandListListener_array[i] != null ) {
-				newlisteners[count++] = __CommandListListener_array[i];
+			if ( this.__CommandListListener_array[i] != null ) {
+				newlisteners[count++] = this.__CommandListListener_array[i];
 			}
 		}
-		__CommandListListener_array = newlisteners;
+		this.__CommandListListener_array = newlisteners;
 		newlisteners = null;
 	}
 }
@@ -4432,31 +4435,31 @@ throws Exception {
     Message.printStatus(2, routine, "Resetting workflow properties." );
 
     // First clear user-defined properties.
-    __propertyHashmap.clear();
+    this.__propertyHashmap.clear();
 
     // Define some standard properties.
-    __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages.
+    this.__propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages.
     // Use new time zone class.
     ZonedDateTime now = ZonedDateTime.now();
-    __propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
-    __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
-    __propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
-    __propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );
-    __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    this.__propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
+    this.__propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    this.__propertyHashmap.put ( "InstallDirPortable", IOUtil.toPortablePath(IOUtil.getApplicationHomeDir()) );
+    this.__propertyHashmap.put ( "InstallDirPosix", IOUtil.toPosixPath(IOUtil.getApplicationHomeDir()) );
+    this.__propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases.
-    __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
-    __propertyHashmap.put ( "TempDirPosix", IOUtil.toPosixPath(System.getProperty("java.io.tmpdir")) );
+    this.__propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
+    this.__propertyHashmap.put ( "TempDirPosix", IOUtil.toPosixPath(System.getProperty("java.io.tmpdir")) );
     // FIXME smalers 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     // FIXME smalers 2022-12-06 before this date used the following.
     //String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     String homeDir = System.getProperty("user.home");
-    __propertyHashmap.put ( "UserHomeDir", homeDir );
-    __propertyHashmap.put ( "UserHomeDirPosix", IOUtil.toPosixPath(homeDir) );
-    __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
-    __propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
-    __propertyHashmap.put ( "UserTstoolDirPosix", IOUtil.toPosixPath(homeDir) + "/.tstool" );
-    __propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
-    __propertyHashmap.put ( "UserName", System.getProperty("user.name") );
+    this.__propertyHashmap.put ( "UserHomeDir", homeDir );
+    this.__propertyHashmap.put ( "UserHomeDirPosix", IOUtil.toPosixPath(homeDir) );
+    this.__propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    this.__propertyHashmap.put ( "UserTstoolDir", homeDir + File.separator + ".tstool");
+    this.__propertyHashmap.put ( "UserTstoolDirPosix", IOUtil.toPosixPath(homeDir) + "/.tstool" );
+    this.__propertyHashmap.put ( "UserTstoolDirURL", "file:///" + homeDir.replace("\\", "/") + "/.tstool");
+    this.__propertyHashmap.put ( "UserName", System.getProperty("user.name") );
     // Set the program version as a property, useful for version-dependent command logic.
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period.
     // Save the program version as a string.
@@ -4465,7 +4468,7 @@ throws Exception {
     if ( pos > 0 ) {
     	programVersion = programVersion.substring(0,pos);
     }
-    __propertyHashmap.put ( "ProgramVersionString", programVersion );
+    this.__propertyHashmap.put ( "ProgramVersionString", programVersion );
     // Also save the numerical version.
     double programVersionNumber = -1.0;
     pos = programVersion.indexOf(".");
@@ -4506,7 +4509,7 @@ throws Exception {
     catch ( NumberFormatException e ) {
     	programVersionNumber = -1.0;
     }
-    __propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
+    this.__propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
 
     // Set initial properties, such as from the command line:
     // - all are strings, so are immutable
@@ -4521,7 +4524,7 @@ throws Exception {
     	for ( Prop prop : this.initialProps.getList() ) {
 			Message.printStatus(2, routine, "  Setting initial (command line) application property in processor: " +
 				prop.getKey() + "=" + prop.getValue() );
-    		__propertyHashmap.put(prop.getKey(), prop.getValue());
+    		this.__propertyHashmap.put(prop.getKey(), prop.getValue());
     	}
     }
 
@@ -4549,13 +4552,13 @@ throws Exception {
 
     // Now make sure that specific controlling properties that may be set with commands are cleared out.
     // FIXME SAM 2008-07-15 Move data members from TSEngine to this class.
-    __tsengine.setIgnoreLEZero ( false );
-    __tsengine.setIncludeMissingTS ( false );
-    __tsengine.setInputEnd ( null );
-    __tsengine.setInputStart ( null );
-    __tsengine.setOutputEnd ( null );
-    __tsengine.setOutputStart ( null );
-    __tsengine.setOutputYearType ( YearType.CALENDAR );
+    this.__tsengine.setIgnoreLEZero ( false );
+    this.__tsengine.setIncludeMissingTS ( false );
+    this.__tsengine.setInputEnd ( null );
+    this.__tsengine.setInputStart ( null );
+    this.__tsengine.setOutputEnd ( null );
+    this.__tsengine.setOutputStart ( null );
+    this.__tsengine.setOutputYearType ( YearType.CALENDAR );
 }
 
 /**
@@ -4603,13 +4606,13 @@ throws Exception {
     // Now call the TSEngine method to do the processing.
     // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands have been converted to classes,
     // then code size should be more manageable and can remove redundant code in the two classes.
-	__tsengine.processCommands ( commands, runProps );
+	this.__tsengine.processCommands ( commands, runProps );
 
 	// Now finalize the results by processing the check files, if any.
 
-	if ( __CommandProcessorEventListener_array != null ) {
-    	for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
-    	    CommandProcessorEventListener listener = __CommandProcessorEventListener_array[i];
+	if ( this.__CommandProcessorEventListener_array != null ) {
+    	for ( int i = 0; i < this.__CommandProcessorEventListener_array.length; i++ ) {
+    	    CommandProcessorEventListener listener = this.__CommandProcessorEventListener_array[i];
     	    if ( listener instanceof CheckFileCommandProcessorEventListener ) {
     	        CheckFileCommandProcessorEventListener cflistener = (CheckFileCommandProcessorEventListener)listener;
     	        cflistener.finalizeOutput();
@@ -4626,10 +4629,10 @@ throws Exception {
 Request that processing be canceled.
 This sets a flag that is detected in the TSEngine.processCommands() method.
 Processing will be canceled as soon as the current command completes its processing.
-@param cancel_processing_requested Set to true to cancel processing.
+@param cancelProcessingRequested Set to true to cancel processing.
 */
-public void setCancelProcessingRequested ( boolean cancel_processing_requested ) {
-	__cancel_processing_requested = cancel_processing_requested;
+public void setCancelProcessingRequested ( boolean cancelProcessingRequested ) {
+	this.cancelProcessingRequested = cancelProcessingRequested;
 }
 
 /**
@@ -4637,7 +4640,7 @@ Set the name of the commands file where the commands are saved.
 @param filename Name of commands file (should be absolute since it will be used in output headers).
 */
 public void setCommandFileName ( String filename ) {
-	__commandFilename = filename;
+	this.__commandFilename = filename;
 }
 
 /**
@@ -4645,7 +4648,7 @@ Set whether commands should clear their run status before running, used to accum
 @param clear true if commands should clear their status before running, false if status should be accumulated.
 */
 private void setCommandsShouldClearRunStatus ( Boolean clear ) {
-	__commandsShouldClearRunStatus = clear;
+	this.__commandsShouldClearRunStatus = clear;
 }
 
 /**
@@ -4653,7 +4656,7 @@ Indicate output files should be created.
 @param CreateOutput_boolean true if output should be created, false if not.
 */
 protected void setCreateOutput ( Boolean CreateOutput_Boolean ) {
-	__CreateOutput_Boolean = CreateOutput_Boolean;
+	this.__CreateOutput_Boolean = CreateOutput_Boolean;
 }
 
 /**
@@ -4670,7 +4673,7 @@ for example, a list of data stores from one processor is passed to another)
 */
 public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld ) {
     for ( DataStore dataStore : dataStoreList ) {
-        __tsengine.setDataStore(dataStore, closeOld );
+        this.__tsengine.setDataStore(dataStore, closeOld );
     }
 }
 
@@ -4680,7 +4683,7 @@ public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld ) {
  * @param dssubList datastore substitute list
  */
 public void setDatastoreSubstituteList ( List<DataStoreSubstitute> dssubList ) {
-	__tsengine.setDatastoreSubstituteList(dssubList);
+	this.__tsengine.setDatastoreSubstituteList(dssubList);
 }
 
 /**
@@ -4692,21 +4695,21 @@ Also set the current working directory by calling setWorkingDir() with the same 
 public void setInitialWorkingDir ( String InitialWorkingDir ) {
     String routine = getClass().getSimpleName() + ".setInitialWorkingDir";
     Message.printStatus(2, routine, "Setting the initial working directory to \"" + InitialWorkingDir + "\"" );
-	__InitialWorkingDir_String = InitialWorkingDir;
+	this.__InitialWorkingDir_String = InitialWorkingDir;
 	// Also set the working directory.
-	setWorkingDir ( __InitialWorkingDir_String );
+	setWorkingDir ( this.__InitialWorkingDir_String );
 }
 
 /**
 Indicate whether the processor is running.
-This should be set in processCommands() and can be monitored by code (e.g., GUI)
-that has behavior that depends on whether the processor is running.
+This should be set in TSEngine.processCommands() and can be monitored by code (e.g., UI)
+that has behavior that depends on whether the processor is running (e.g, enable/disable menus).
 The method is protected to allow it to be called from TSEngine (for example when an interrupt occurs)
 but would normally not be called from other code.
-@param is_running indicates whether the processor is running (processing commands).
+@param isRunning indicates whether the processor is running (processing commands).
 */
-protected void setIsRunning ( boolean is_running ) {
-	__is_running = is_running;
+protected void setIsRunning ( boolean isRunning ) {
+	this.isRunning = isRunning;
 }
 
 /**
@@ -4716,7 +4719,7 @@ The output files can then be retrieved, for example, in the TSTool results area.
 */
 private void setOutputFileList ( List<File> outputFileList )
 throws Exception {
-	__outputFileList = outputFileList;
+	this.__outputFileList = outputFileList;
 }
 
 /**
@@ -4868,43 +4871,43 @@ application can close when the TSView window is closed.</td>
 */
 public void setPropContents ( String propName, Object contents ) throws Exception {
 	if ( propName.equalsIgnoreCase("AutoExtendPeriod" ) ) {
-        __tsengine.setAutoExtendPeriod ( ((Boolean)contents).booleanValue() );
+        this.__tsengine.setAutoExtendPeriod ( ((Boolean)contents).booleanValue() );
     }
     else if ( propName.equalsIgnoreCase("AverageEnd") ) {
-        __tsengine.setAverageEnd ( (DateTime)contents );
+        this.__tsengine.setAverageEnd ( (DateTime)contents );
     }
     else if ( propName.equalsIgnoreCase("AverageStart") ) {
-        __tsengine.setAverageStart ( (DateTime)contents );
+        this.__tsengine.setAverageStart ( (DateTime)contents );
     }
     else if ( propName.equalsIgnoreCase("CommandsShouldClearRunStatus") ) {
         setCommandsShouldClearRunStatus((Boolean)contents);
     }
     else if ( propName.equalsIgnoreCase("DataStore" ) ) {
     	// Open the datastore, closing the old datastore if the name is matched.
-        __tsengine.setDataStore ( (DataStore)contents, true );
+        this.__tsengine.setDataStore ( (DataStore)contents, true );
     }
 	else if ( propName.equalsIgnoreCase("HydroBaseDMIList" ) ) {
 		@SuppressWarnings("unchecked")
 		List<HydroBaseDMI> contents2 = (List<HydroBaseDMI>)contents;
-		__tsengine.setHydroBaseDMIList ( contents2 );
+		this.__tsengine.setHydroBaseDMIList ( contents2 );
 	}
     else if ( propName.equalsIgnoreCase("IgnoreLEZero" ) ) {
-        __tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
+        this.__tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
     }
     else if ( propName.equalsIgnoreCase("IncludeMissingTS" ) ) {
-        __tsengine.setIncludeMissingTS ( ((Boolean)contents).booleanValue() );
+        this.__tsengine.setIncludeMissingTS ( ((Boolean)contents).booleanValue() );
     }
 	else if ( propName.equalsIgnoreCase("InitialWorkingDir" ) ) {
 		setInitialWorkingDir ( (String)contents );
 	}
 	else if ( propName.equalsIgnoreCase("InputEnd") ) {
-		__tsengine.setInputEnd ( (DateTime)contents );
+		this.__tsengine.setInputEnd ( (DateTime)contents );
 	}
 	else if ( propName.equalsIgnoreCase("InputStart") ) {
-		__tsengine.setInputStart ( (DateTime)contents );
+		this.__tsengine.setInputStart ( (DateTime)contents );
 	}
 	else if ( propName.equalsIgnoreCase("OutputEnd") ) {
-		__tsengine.setOutputEnd ( (DateTime)contents );
+		this.__tsengine.setOutputEnd ( (DateTime)contents );
 	}
 	else if ( propName.equalsIgnoreCase("OutputFileList") ) {
 		@SuppressWarnings("unchecked")
@@ -4912,11 +4915,11 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
 		setOutputFileList ( contents2 );
 	}
 	else if ( propName.equalsIgnoreCase("OutputStart") ) {
-		__tsengine.setOutputStart ( (DateTime)contents );
+		this.__tsengine.setOutputStart ( (DateTime)contents );
 	}
     else if ( propName.equalsIgnoreCase("OutputYearType") ) {
         YearType outputYearType = (YearType)contents;
-        __tsengine.setOutputYearType ( outputYearType );
+        this.__tsengine.setOutputYearType ( outputYearType );
     }
     else if ( propName.equalsIgnoreCase("StartLogEnabled") ) {
     	// Use the built-in properties.
@@ -4925,10 +4928,10 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
 	else if ( propName.equalsIgnoreCase("TSResultsList") ) {
 		@SuppressWarnings("unchecked")
 		List<TS> contents2 = (List<TS>)contents;
-		__tsengine.setTimeSeriesList ( contents2 );
+		this.__tsengine.setTimeSeriesList ( contents2 );
 	}
     else if ( propName.equalsIgnoreCase("TSViewWindowListener") ) {
-        __tsengine.addTSViewWindowListener((WindowListener)contents );
+        this.__tsengine.addTSViewWindowListener((WindowListener)contents );
     }
     else if ( propName.equalsIgnoreCase("WorkingDir") ) {
         setWorkingDir ( (String)contents );
@@ -4969,7 +4972,7 @@ public void setProperty ( String propName, Object contents ) {
     }
     else {
 	    // Otherwise it is a user-defined property.
-	    __propertyHashmap.put ( propName, contents );
+	    this.__propertyHashmap.put ( propName, contents );
     }
 }
 
@@ -4978,7 +4981,7 @@ Indicate whether StartLog commands should be enabled.
 @param StartLogEnabled_Boolean true if StartLog commands are enabled, false if not.
 */
 protected void setStartLogEnabled ( Boolean StartLogEnabled_Boolean ) {
-	__StartLogEnabled_Boolean = StartLogEnabled_Boolean;
+	this.__StartLogEnabled_Boolean = StartLogEnabled_Boolean;
 }
 
 /**
@@ -4987,7 +4990,7 @@ This is typically set by SetInitialWorkingDir() method when initializing the pro
 @param WorkingDir The current working directory.
 */
 protected void setWorkingDir ( String WorkingDir ) {
-	__WorkingDir_String = WorkingDir;
+	this.__WorkingDir_String = WorkingDir;
 }
 
 /**
@@ -4996,7 +4999,7 @@ This matches the Collection interface, although that is not yet fully implemente
 @return The number of commands being managed by the processor
 */
 public int size() {
-	return __CommandList.size();
+	return this.__CommandList.size();
 }
 
 }

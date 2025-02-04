@@ -35,7 +35,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -52,14 +51,25 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 /**
 This class initializes, checks, and runs the For() command.
 See also Continue(), which will be handled in the processor to jump to the end of a loop.
 See also Break(), which will be handled in the processor to interrupt a loop.
+
+The command processor (TSEngine) first calls 'next'.
+If not at the end of the loop, true will be returned, indicating that the command can be run.
+The first time that next() is called, the loop is positioned at the starting value.
 */
-public class For_Command extends AbstractCommand implements Command
+public class For_Command extends AbstractCommand
 {
+
+/**
+Data values for boolean parameters.
+*/
+protected String _False = "False";
+protected String _True = "True";
 
 /**
 Indicate whether breakFor() has been called, indicating that the iteration is complete.
@@ -71,6 +81,30 @@ private boolean breakSet = false;
  * This reflects the user's value and default of the property name.
  */
 private String iteratorPropertyName = "";
+
+/**
+ * Index property name, whose value will be set during iteration for use in the processor as
+ * 0 for initial value 1 for first iteration, and increment by 1.
+ * This is useful for checking if at the start of the loop.
+ */
+private String indexPropertyName = null; // Set to null to indicate not set in the processor.
+
+/**
+ * Index property value.
+ * This is useful for checking if at the start of the loop.
+ * <ul>
+ * <li> 0 for initial value</li>
+ * <li> 1 for first iteration</li>
+ * <li> increment by 1</li>
+ * </ul>
+ */
+private int indexPropertyValue = 0;
+
+/**
+ * Maximum number of iterations, used for showing progress,
+ * where 1 is the first iteration and 'indexPropertyMax' is the maximum expected value.
+ */
+private int indexPropertyMax = -1;
 
 /**
 Current iterator property value, a simple value that can be used in iterating.
@@ -193,6 +227,13 @@ private int iteratorObjectListIndex = -1;
 private List<String> nextProblems = new ArrayList<>();
 
 /**
+ * Whether or not to show progress in the UI:
+ * - default is false
+ * - true will update the command progress indicator in the TSTool UI
+ */
+private boolean showProgress;
+
+/**
 Constructor.
 */
 public For_Command () {
@@ -218,16 +259,25 @@ to allow a cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
 	String routine = getCommandName() + "_checkCommandParameters";
+	// General.
 	String Name = parameters.getValue ( "Name" );
+	String IteratorProperty = parameters.getValue ( "IteratorProperty" );
+	String IndexProperty = parameters.getValue ( "IndexProperty" );
+	String ShowProgress = parameters.getValue ( "ShowProgress" );
+	// List.
 	String List = parameters.getValue ( "List" );
+	// Sequence.
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
 	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
 	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
+	// Table.
 	String TableID = parameters.getValue ( "TableID" );
 	String TableColumn = parameters.getValue ( "TableColumn" );
+	// Time Period.
 	String PeriodStart = parameters.getValue ( "PeriodStart" );
 	String PeriodEnd = parameters.getValue ( "PeriodEnd" );
 	String PeriodIncrement = parameters.getValue ( "PeriodIncrement" );
+	// Time series list.
 	String TSList = parameters.getValue ( "TSList" );
 	String warning = "";
 	String message;
@@ -245,6 +295,15 @@ throws InvalidCommandParameterException {
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
+    }
+
+    if ( (IteratorProperty != null) && !IteratorProperty.equals("") && (IndexProperty != null) && !IndexProperty.isEmpty() ) {
+    	if ( IteratorProperty.equals(IndexProperty) ) {
+    		message = "The IteratorProperty and IndexProperty cannot be the same.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+    			new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify different values for IteratorProperty and IndexProperty." ) );
+    	}
     }
     // TODO smalers 2021-05-09 remove when code tests out.
     //if ( ((TableID == null) || (TableID.isEmpty()) && ((List == null)) || (List.isEmpty()) && ((SequenceStart == null)) || SequenceStart.isEmpty())) {
@@ -378,6 +437,17 @@ throws InvalidCommandParameterException {
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the TSList parameter." ) );
 	    }
     }
+
+	if ( (ShowProgress != null) && !ShowProgress.isEmpty() ) {
+		if ( !ShowProgress.equalsIgnoreCase(_True) && !ShowProgress.equalsIgnoreCase(_False) ) {
+            message = "Invalid ShowProgress parameter \"" + ShowProgress + "\"";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify " + _False + " (default) or " + _True + "." ) );
+		}
+	}
+
     if ( count == 0 ) {
         message = "A list, sequence, table, or time series list must be specified.";
         warning += "\n" + message;
@@ -393,20 +463,28 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(16);
+    List<String> validList = new ArrayList<>(19);
+    // General.
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
+	validList.add ( "IndexProperty" );
+	validList.add ( "ShowProgress" );
+	// List.
 	validList.add ( "IteratorValueProperty" );
 	validList.add ( "List" );
+	// Sequence.
 	validList.add ( "SequenceStart" );
 	validList.add ( "SequenceEnd" );
 	validList.add ( "SequenceIncrement" );
+	// Table.
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
 	validList.add ( "TablePropertyMap" );
+	// Time period.
 	validList.add ( "PeriodStart" );
 	validList.add ( "PeriodEnd" );
 	validList.add ( "PeriodIncrement" );
+	// Time series.
 	validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -460,6 +538,43 @@ public String getName () {
 }
 
 /**
+Set the value of the index property.
+This is the current index value that can be used by commands within the loop to control logic.
+The property is only set if IndexProperty parameter is specified.
+@param initialValue initial value of the index property, >= 0 set the value to 1,
+if < 0 increment the existing value
+*/
+private void incrementIndexPropertyValue ( int initialValue ) {
+	if ( initialValue >= 0 ) {
+		this.indexPropertyValue = 1;
+	}
+	else {
+		// Increment the property value.
+		++this.indexPropertyValue;
+	}
+	if ( this.indexPropertyName != null ) {
+		// The 'IndexProperty' command parameter was provided so set the property in the processor.
+		String routine = getClass().getSimpleName() + ".setIndexPropertyValue";
+		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+    	Integer indexPropertyValueO = Integer.valueOf(this.indexPropertyValue);
+    	PropList request_params = new PropList ( "" );
+		request_params.setUsingObject ( "PropertyName", this.indexPropertyName );
+		request_params.setUsingObject ( "PropertyValue", indexPropertyValueO );
+		try {
+        	processor.processRequest( "SetProperty", request_params);
+        	if ( Message.isDebugOn ) {
+	       		Message.printDebug(1, routine, "Set index object " + this.indexPropertyName + " to: " + indexPropertyValue );
+        	}
+		}
+		catch ( Exception e ) {
+			String message = "Error processing request SetProperty(Property=\"" + this.indexPropertyName + "\").";
+    		message = "Error setting property \"" + this.indexPropertyName + " value (" + e + ").";
+        	Message.printWarning(3, routine, message);
+		}
+	}
+}
+
+/**
  * Initialize the iterator for a list.
  * @param processor the time series processor
  */
@@ -470,9 +585,16 @@ private void initializeListIterator ( TSCommandProcessor processor ) {
 		List = TSCommandProcessorUtil.expandParameterValue(processor, this, List);
  	}
 	String [] parts = List.split(",");
-	this.list = new ArrayList<Object>();
+	this.list = new ArrayList<>();
 	for ( int i = 0; i < parts.length; i++ ) {
 		this.list.add(parts[i].trim());
+	}
+
+	if ( this.showProgress ) {
+		// Initialize notify progress listeners.
+		this.indexPropertyMax = this.list.size();
+		String message = "Initializing 'For' list iterator to value " + parts[0];
+		notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
 	}
 }
 
@@ -483,9 +605,8 @@ private void initializeListIterator ( TSCommandProcessor processor ) {
 private void initializePeriodIterator ( TSCommandProcessor processor ) {
 	PropList parameters = getCommandParameters();
 	String PeriodStart = parameters.getValue ( "PeriodStart" );
-	if ( (PeriodStart != null) && (PeriodStart.indexOf("${") >= 0) ) { // }
+	if ( (PeriodStart != null) && PeriodStart.contains("${") ) { // }
 		// Can specify with a property.
-		String s0 = PeriodStart;
 		PeriodStart = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodStart);
 		/*
 		if ( s0.equals(PeriodStart) ) {
@@ -504,9 +625,8 @@ private void initializePeriodIterator ( TSCommandProcessor processor ) {
 		this.iteratorPeriodStart = periodStart;
 	}
 	String PeriodEnd = parameters.getValue ( "PeriodEnd" );
-	if ( (PeriodEnd != null) && (PeriodEnd.indexOf("${") >= 0) ) { // }
+	if ( (PeriodEnd != null) && PeriodEnd.contains("${") ) { // }
 		// Can specify with a property.
-		//String s0 = PeriodEnd;
 		PeriodEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, PeriodEnd);
 		/*
 		if ( s0.equals(PeriodEnd) ) {
@@ -537,6 +657,16 @@ private void initializePeriodIterator ( TSCommandProcessor processor ) {
 		}
 		this.iteratorPeriodIncrement = periodIncrement;
 	}
+
+	if ( this.showProgress ) {
+		// Notify progress listeners with initial value.
+		if ( (this.iteratorPeriodStart != null) && (this.iteratorPeriodEnd != null) && (this.iteratorPeriodIncrement != null) ) {
+			String message = "Initializing 'For' period iterator to value " + PeriodStart;
+			this.indexPropertyMax = TimeUtil.getNumIntervals(this.iteratorPeriodStart, this.iteratorPeriodEnd,
+			this.iteratorPeriodIncrement.getBase(), this.iteratorPeriodIncrement.getMultiplier() );
+			notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+		}
+	}
 }
 
 /**
@@ -548,7 +678,6 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
 	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) { // }
 		// Can specify with property.
-		String s0 = SequenceStart;
 		SequenceStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceStart);
 		/*
 		if ( s0.equals(SequenceStart) ) {
@@ -580,7 +709,6 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
 	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) { // }
 		// Can specify with property.
-		String s0 = SequenceEnd;
 		SequenceEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceEnd);
 		/*
 		if ( s0.equals(SequenceEnd) ) {
@@ -611,16 +739,29 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 		if ( StringUtil.isInteger(SequenceIncrement) ) {
 			sequenceIncrementI = Integer.parseInt(SequenceIncrement);
 			this.iteratorSequenceIncrement = sequenceIncrementI;
+			// Set number of steps for progress notification.
+			this.indexPropertyMax = (sequenceEndI - sequenceStartI)/sequenceIncrementI + 1;
 		}
 		else if ( StringUtil.isDouble(SequenceIncrement) ) {
 			sequenceIncrementD = Double.parseDouble(SequenceIncrement);
 			this.iteratorSequenceIncrement = sequenceIncrementD;
+			// Set number of steps for progress notification.
+			this.indexPropertyMax = (int)((sequenceEndD - sequenceStartD)/sequenceIncrementD + 1);
 		}
+	}
+
+	if ( this.showProgress ) {
+		// Notify progress listeners with initial value.
+		String message = "Initializing 'For' loop value iterator to " + SequenceStart;
+		notifyCommandProgressListeners ( sequenceStartI, sequenceEndI, (float)(0.0), message );
 	}
 }
 
 /**
  * Initialize the iterator for a time series list.
+ * @param processor the command processor instance
+ * @param status command status, for logging
+ * @param warning_level warning level for warning messages
  */
 private int initializeTsListIterator ( TSCommandProcessor processor,
 	CommandStatus status, int warning_level, String command_tag, int warning_count ) {
@@ -686,13 +827,20 @@ private int initializeTsListIterator ( TSCommandProcessor processor,
 		Message.printStatus(2, routine, "TSList iterator has " + tslist.size() + " time series.");
 	}
 
+	if ( this.showProgress ) {
+		// Notify progress listeners with initial value.
+		String message = "Initializing 'For' time series list iterator to value " + 0;
+		this.indexPropertyMax = tslist.size();
+		notifyCommandProgressListeners ( 0, tslist.size(), (float)(0.0), message );
+	}
+
 	this.tslist = tslist;
 	return warning_count;
 }
 
 /**
 Increment the loop counter.
-If called the first time, initialize.
+If called the first time, initialize to the first value to be iterated.
 This is called before runCommands() when processing commands so initialize some command runtime data here.
 @return If the increment will go past the end (for loop is done), return false.
 If the loop advanced, return true.
@@ -703,17 +851,33 @@ public boolean next () {
 		Message.printDebug(1, routine, "forInitialized=" + this.forInitialized);
 	}
   	if ( !this.forInitialized ) {
-    	// Initialize the loop.
+    	// Initialize the loop:
+  		// - set the value to the initial value
+  		// - if a list or table, set the object list index to 0
+  		// - subsequent calls to 'next' will increment
   		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-
+  		
   		// Set important properties so don't need to retrieve repetitively.
   		PropList parameters = this.getCommandParameters();
   		String IteratorProperty = parameters.getValue ( "IteratorProperty" );
 	 	if ( (IteratorProperty == null) || IteratorProperty.equals("") ) {
+	 		// Default the iterator property to the same as the For name.
 	 		String Name = parameters.getValue ( "Name" );
 	    	IteratorProperty = Name;
 	 	}
     	this.iteratorPropertyName = IteratorProperty;
+
+  		String IndexProperty = parameters.getValue ( "IndexProperty" );
+	 	if ( (IndexProperty != null) && IndexProperty.isEmpty() ) {
+	 		// Empty property name.  Use null to indicate that the property will not be set in the processor.
+	    	this.indexPropertyName = null;
+	 	}
+	 	else {
+	 		// Have a property name to set in the processor.
+	 		this.indexPropertyName = IndexProperty;
+	 	}
+	 	// Always set the index to 1, even if 'IndexProperty' is not used.
+    	incrementIndexPropertyValue(1);
 
   		this.breakSet = false;
     	if ( this.iteratorIsList ) {
@@ -731,6 +895,11 @@ public boolean next () {
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
 	            }
+        		if ( this.showProgress ) {
+    				// Notify of the initial value.
+    				message = "Initialize 'For' iteration.";
+    				notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+    		  	}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -761,36 +930,11 @@ public boolean next () {
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
 	            }
-	            return true;
-	        }
-	        catch ( Exception e ) {
-	            message = "Error initializing For() iterator to initial value (" + e + ").";
-	            Message.printWarning(3, routine, message);
-	            Message.printWarning(3, routine, e);
-	            throw new RuntimeException ( message, e );
-	        }
-    	}
-    	else if ( this.iteratorIsPeriod ) {
-    		// Iterating on a time period.
-    		// Initialize the loop.
-    		setIteratorPropertyValue(null);
-	        initializePeriodIterator(processor);
-	        CommandStatus status = getCommandStatus();
-	        status.clearLog(CommandPhaseType.RUN);
-	        try {
-	            this.iteratorObjectListIndex = 0;
-	            //this.iteratorObjectList = this.list;
-	            setIteratorPropertyValue ( this.iteratorPeriodStart );
-	            if ( this.iteratorPeriodIncrement == null ) {
-	            	// Defaults:
-	            	// - TODO smalers 2020-11-02 should be set in runCommand()
-	            	this.iteratorPeriodIncrement = TimeInterval.parseInterval("Day");
-	            	this.iteratorPeriodIncrementSign = 1;
-	            }
-	            this.forInitialized = true;
-	            if ( Message.isDebugOn ) {
-	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
-	            }
+        		if ( this.showProgress ) {
+    				// Notify of the initial value.
+    				message = "Initialize 'For' iteration.";
+    				notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+    		  	}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -825,6 +969,11 @@ public boolean next () {
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
 	            }
+        		if ( this.showProgress ) {
+    				// Notify of the initial value.
+    				message = "Initialize 'For' iteration.";
+    				notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+    		  	}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -907,6 +1056,11 @@ public boolean next () {
 	        		}
 	                throw new RuntimeException ( b.toString() );
         		}
+        		if ( this.showProgress ) {
+    				// Notify of the initial value.
+    				message = "Initialize 'For' iteration.";
+    				notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+    		  	}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -961,6 +1115,11 @@ public boolean next () {
 	        		}
 	                throw new RuntimeException ( b.toString() );
         		}
+        		if ( this.showProgress ) {
+    				// Notify of the initial value.
+    				message = "Initialize 'For' iteration.";
+    				notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(0.0), message );
+    		  	}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -970,14 +1129,16 @@ public boolean next () {
 	            throw new RuntimeException ( message, e );
 	        }
 	    }
-	    else {
-	    	message = "Unknown iteration type (not list, sequence, or table).";
+    	else {
+	    	message = "Unknown iteration type (not list, sequence, table, time period, or time series list).";
             Message.printWarning(3, routine, message);
             throw new RuntimeException ( message );
 	    }
   	}
     else {
-    	// For loop was previously initialized and is now being run.
+    	// The For loop was previously initialized and is now being run:
+    	// - the first call to next will initialize 'this.indexPropertyValue' to 1 (above)
+    	// - subsequent calls will increment to 2, 3, etc. (below)
     	if ( this.breakSet ) {
     		// Loop is complete because it was broken out of with Break() command:
     		// - leave iterator as it was before with no further action
@@ -986,18 +1147,44 @@ public boolean next () {
     	}
         // Increment the property and optionally set properties from table columns.
     	else if ( this.iteratorIsList || this.iteratorIsTable ) {
+    		// Notify progress listeners with initial value.
 	        if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
 	            // Done iterating.
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Done iterating on list." );
 	        	}
+	        	if ( this.showProgress ) {
+	        		// Notify of the last value.
+	        		message = "Completed 'For' iteration.";
+	        		notifyCommandProgressListeners ( this.indexPropertyMax, this.indexPropertyMax, (float)(100.0), message );
+	        	}
 	            return false;
 	        }
 	        else {
+	        	// Increment the object list index.
 	            ++this.iteratorObjectListIndex;
+	            // Increment the general loop index:
+	            // - will only be set in the processor if the index property was specified
+	            incrementIndexPropertyValue(-1);
 	            this.setIteratorPropertyValue(this.iteratorObjectList.get(this.iteratorObjectListIndex));
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
+	        	}
+	        	if ( this.showProgress ) {
+	        		// Notify every 5%.
+        			if ( (this.indexPropertyMax > 0) && ((this.indexPropertyValue*100/this.indexPropertyMax)%5) == 0 ) {
+        				float progressPercent = (float)(this.iteratorObjectListIndex*100/this.indexPropertyMax);
+        				if ( progressPercent > 100.0 ) {
+        					progressPercent = 100.0F;
+        				}
+        				if ( this.iteratorIsList ) {
+	        				message = String.format("Processing 'For' list item at %.2f%%.", progressPercent );
+        				}
+        				else {
+	        				message = String.format("Processing 'For' table row at %.2f%%.", progressPercent );
+	        			}
+        				notifyCommandProgressListeners ( 0, this.list.size(), (float)(progressPercent), message );
+	        		}
 	        	}
 	        	// If properties were requested, set.
 	        	// The column number is looked up each time because columns may be added in the loop.
@@ -1022,14 +1209,23 @@ public boolean next () {
     				", object=" + this.iteratorObject);
     		}
     		if ( this.iteratorPeriodIncrementSign > 0 ) {
+    			// Incrementing forward in time.
     			if ( ((DateTime)this.iteratorObject).greaterThanOrEqualTo((DateTime)this.iteratorPeriodEnd) ) {
     				// Done iterating.
     				if ( Message.isDebugOn ) {
     					Message.printDebug(1, routine, "Done iterating on time period." );
     				}
+    				if ( this.showProgress ) {
+    					// Notify of the last value.
+    					message = "Completed 'For' iteration.";
+    					notifyCommandProgressListeners ( this.indexPropertyMax, this.indexPropertyMax, (float)(100.0), message );
+    				}
     				return false;
     			}
     			else {
+    				// Increment the general index:
+    				// - will only be set in the processor if the index property was specified
+    				incrementIndexPropertyValue(-1);
     				// Iterate by adding increment to iterator object:
     				// - no need to reset the iterator object since it is mutable
     				// - multiply by the sign that was detected when the command was parsed
@@ -1038,18 +1234,38 @@ public boolean next () {
     				}
     				((DateTime)this.iteratorObject).addInterval (
     						this.iteratorPeriodIncrement.getBase(), this.iteratorPeriodIncrementSign*this.iteratorPeriodIncrement.getMultiplier() );
+    				if ( this.showProgress ) {
+    					// Notify every 5%.
+    					if ( (this.indexPropertyMax > 0) && ((this.indexPropertyValue*100/this.indexPropertyMax)%5) == 0 ) {
+	        				float progressPercent = (float)(this.indexPropertyValue*100/this.indexPropertyMax);
+	        				if ( progressPercent > 100.0 ) {
+	        					progressPercent = 100.0F;
+	        				}
+    						message = String.format("Processing 'For' date/time at %.2f%%.", progressPercent );
+    						notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(progressPercent), message );
+    					}
+    				}
     				return true;
     			}
 	    	}
     		else {
+    			// Incrementing backward in time.
     			if ( ((DateTime)this.iteratorObject).lessThanOrEqualTo((DateTime)this.iteratorPeriodEnd) ) {
     				// Done iterating.
     				if ( Message.isDebugOn ) {
     					Message.printDebug(1, routine, "Done iterating on time period." );
     				}
+    				if ( this.showProgress ) {
+    					// Notify of the last value.
+    					message = "Completed 'For' iteration.";
+    					notifyCommandProgressListeners ( this.indexPropertyMax, this.indexPropertyMax, (float)(100.0), message );
+    				}
     				return false;
     			}
     			else {
+    				// Increment the index:
+    				// - will only be set in the processor if the index property was specified
+    				incrementIndexPropertyValue(-1);
     				// Iterate by adding increment to iterator object:
     				// - no need to reset the iterator object since it is mutable
     				// - multiply by the sign that was detected when the command was parsed
@@ -1058,6 +1274,17 @@ public boolean next () {
     				}
     				((DateTime)this.iteratorObject).addInterval (
     						this.iteratorPeriodIncrement.getBase(), this.iteratorPeriodIncrementSign*this.iteratorPeriodIncrement.getMultiplier() );
+    				if ( this.showProgress ) {
+    					// Notify every 5%.
+    					if ( (this.indexPropertyMax > 0) && ((this.indexPropertyValue*100/this.indexPropertyMax)%5) == 0 ) {
+	        				float progressPercent = (float)(this.indexPropertyValue*100/this.indexPropertyMax);
+	        				if ( progressPercent > 100.0 ) {
+	        					progressPercent = 100.0F;
+	        				}
+    						message = String.format("Processing 'For' date/time at %.2f%%.", progressPercent );
+    						notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(progressPercent), message );
+    					}
+    				}
     				return true;
     			}
 	    	}
@@ -1078,9 +1305,16 @@ public boolean next () {
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Done iterating on sequence." );
 	        	}
+   				if ( this.showProgress ) {
+   					// Notify of the last value.
+   					message = "Completed 'For' iteration.";
+   					notifyCommandProgressListeners ( this.indexPropertyMax, this.indexPropertyMax, (float)(100.0), message );
+   				}
 	            return false;
 	    	}
 	    	else {
+	            // Increment the index.
+	            incrementIndexPropertyValue(-1);
 	    		// Iterate by adding increment to iterator object.
 	    		if ( this.iteratorSequenceStart instanceof Integer ) {
 	    			Integer o = (Integer)this.iteratorObject;
@@ -1094,6 +1328,17 @@ public boolean next () {
 	    			o = o + oinc;
 	    			setIteratorPropertyValue(o);
 	    		}
+   				if ( this.showProgress ) {
+   					// Notify every 5%.
+   					if ( (this.indexPropertyMax > 0) && ((this.indexPropertyValue*100/this.indexPropertyMax)%5) == 0 ) {
+	       				float progressPercent = (float)(this.indexPropertyValue*100/this.indexPropertyMax);
+	        			if ( progressPercent > 100.0 ) {
+	        				progressPercent = 100.0F;
+	        			}
+   						message = String.format("Processing 'For' sequence at %.2f%%.", progressPercent );
+   						notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(progressPercent), message );
+   					}
+   				}
 	    		return true;
 	    	}
     	}
@@ -1103,9 +1348,17 @@ public boolean next () {
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Done iterating on time series list." );
 	        	}
+   				if ( this.showProgress ) {
+   					// Notify of the last value.
+   					message = "Completed 'For' iteration.";
+   					notifyCommandProgressListeners ( this.indexPropertyMax, this.indexPropertyMax, (float)(100.0), message );
+   				}
 	            return false;
 	        }
 	        else {
+	            // Increment the index.
+   				// - will only be set in the processor if the index property was specified
+	            incrementIndexPropertyValue(-1);
 	        	// Increment the position for the time series.
 	            ++this.iteratorObjectListIndex;
 	            // Get the next time series from the time series list.
@@ -1121,6 +1374,17 @@ public boolean next () {
 		                throw new RuntimeException ( b.toString() );
 	        		}
 	        	}
+   				if ( this.showProgress ) {
+   					// Notify every 5%.
+   					if ( (this.indexPropertyMax > 0) && ((this.indexPropertyMax*100/this.indexPropertyMax)%5) == 0 ) {
+	       				float progressPercent = (float)(this.indexPropertyMax*100/this.indexPropertyMax);
+	        			if ( progressPercent > 100.0 ) {
+	        				progressPercent = 100.0F;
+	        			}
+   						message = String.format("Processing 'For' sequence at %.2f%%.", progressPercent );
+   						notifyCommandProgressListeners ( 0, this.indexPropertyMax, (float)(progressPercent), message );
+   					}
+   				}
 	            return true;
 	        }
     	}
@@ -1389,6 +1653,8 @@ private void parseTimeSeriesPropertyMap ( String TimeSeriesPropertyMap ) {
 /**
 Reset the command to an uninitialized state.
 This is needed to ensure that re-executing commands will restart the loop on the first call to next().
+This method is called from TSEngine when processing commands and the end of a loop is found.
+Resetting allows the For loop to be rerun in the next iteration of nested loops.
 */
 public void resetCommand () {
     this.forInitialized = false;
@@ -1418,6 +1684,8 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	this.iteratorIsPeriod = false;
 	this.iteratorIsSequence = false;
 	this.iteratorIsTable = false;
+
+	this.showProgress = false;
 
 	String Name = parameters.getValue ( "Name" );
 	String IteratorProperty = parameters.getValue ( "IteratorProperty" );
@@ -1569,7 +1837,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	}
 
 	String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) { // {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     if ( (TableID != null) && !TableID.isEmpty() ) {
@@ -1578,6 +1846,12 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	// TableColumn is looked up in next() method because table columns may be added within the loop.
     // TablePropertyMap is handled in next(), which is called before this method.
     // TimeSeriesPropertyMap is handled in next(), which is called before this method.
+
+	String ShowProgress = parameters.getValue ( "ShowProgress" );
+	this.showProgress = false;
+	if ( (ShowProgress != null) && !ShowProgress.isEmpty() && ShowProgress.equalsIgnoreCase(this._True) ) {
+		this.showProgress = true;
+	}
 
     // Get the table to process.  This logic is repeated in next() because next() is called first.
 
@@ -1694,9 +1968,9 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 }
 
 /**
-Set the value of the index property.
-This is the current index value that can be used by commands within the loop to control logic.
-@param IteratorPropertyValue value of the index property
+Set the value of the iterator property.
+This is the current iterator value that can be used by commands within the loop to control logic.
+@param iteratorPropertyValue value of the iterator property
 */
 private void setIteratorPropertyValue ( Object iteratorPropertyValue ) {
 	String routine = getClass().getSimpleName() + ".setIteratorPropertyValue";
@@ -1738,19 +2012,27 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// General.
     	"Name",
     	"IteratorProperty",
+    	"IndexProperty",
+    	"ShowProgress",
+    	// List.
     	"IteratorValueProperty",
     	"List",
+    	// Sequence.
     	"SequenceStart",
     	"SequenceEnd",
     	"SequenceIncrement",
+    	// Table.
     	"TableID",
     	"TableColumn",
     	"TablePropertyMap",
+    	// Time period.
     	"PeriodStart",
     	"PeriodEnd",
     	"PeriodIncrement",
+    	// Time series.
 		"TSList",
 		"TSID",
 		"EnsembleID",

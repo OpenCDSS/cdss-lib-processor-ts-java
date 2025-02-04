@@ -2263,8 +2263,10 @@ throws Exception {
 		if ( iCommand > 0 ) {
 			commandPrev = command;
 		}
-		// Check for a cancel, which would have been set by pressing
-		// the cancel button on the warning dialog or by using the other TSTool menus.
+		// Check for a cancel:
+		// - would have been set by pressing the cancel button on the warning dialog or by using the other TSTool menus
+		// - the value of 'iCommand' was incremented above but the cancel would have been the previous command
+		//   so decrement 'iCommand'
 		if ( __ts_processor.getCancelProcessingRequested() ) {
 			// Set Warning dialog settings back to normal.
             Message.setPropValue ( "ShowWarningDialog=true" );
@@ -2272,7 +2274,7 @@ throws Exception {
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
-			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	iCommand, size, command );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCanceled ( (iCommand - 1), size, command );
 			// Set the command file run time to help evaluate performance.
 			stopwatch.stop();
 			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
@@ -2287,7 +2289,7 @@ throws Exception {
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that processing has been cancelled.
 			__ts_processor.setCancelProcessingRequested ( false );
-			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	iCommand, size, command );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCanceled ( (iCommand - 1), size, command );
 			// Set the command file run time to help evaluate performance.
 			stopwatch.stop();
 			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
@@ -2295,6 +2297,8 @@ throws Exception {
 		}
 		try {
 			// Catch errors in all the commands.
+			// Set the command instance here:
+			// - don't set earlier because cancel uses the previous command
     		command = commandList.get(iCommand);
     		commandString = command.toString();
     		if ( commandString == null ) {
@@ -2800,9 +2804,10 @@ throws Exception {
     		            Message.setPropValue ( "ShowWarningDialog=true" );
     					// Set flag so code interested in processor knows it is not running...
     					__ts_processor.setIsRunning ( false );
-    					// Reset the cancel processing request and let interested code know that processing has been cancelled.
+    					// Reset the cancel processing request and let interested code know that processing has been cancelled:
+    					// - at this place in the code 'iCommand' and 'command' are aligned so use as is
     					__ts_processor.setCancelProcessingRequested ( false );
-    					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled ( iCommand, size, command );
+    					__ts_processor.notifyCommandProcessorListenersOfCommandCanceled ( iCommand, size, command );
     					// Set the command file run time to help evaluate performance.
 			 			stopwatch.stop();
 			 			setProcessorRunEndProperties ( stopwatch, commandList, iCommand );
@@ -3008,8 +3013,9 @@ throws Exception {
 	// Indicate that processing is done and now there is no need to handle canceling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
-		// Have gotten to here probably because the last command was processed and need to notify the listeners.
-		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled ( iCommand, size, command );
+		// Have gotten to here probably because the last command was processed and need to notify the listeners:
+		// - at this point in the code 'iCommand' and 'command' are aligned so use without modification
+		__ts_processor.notifyCommandProcessorListenersOfCommandCanceled ( iCommand, size, command );
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
 

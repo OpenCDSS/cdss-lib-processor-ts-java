@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -302,7 +302,7 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	// Put together a list of parameters to check.
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
@@ -579,7 +579,10 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx)."),
+    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx, *.xlsm)."),
+    	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+    	"Use a 'NewExcelWorkbook or 'ReadExcelWorkbook' command before this command to initialize a workbook."),
     	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"Time series are written as a sequence of columns, for simple data transfer of large amounts of data."),
@@ -1177,7 +1180,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 	// Refresh the contents.
 	refresh ();
 
-	// South JPanel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -1203,15 +1206,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
 
 /**
 Handle ItemEvent events.
-@param e ItemEvent to handle.
+@param event ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e) {
+public void itemStateChanged (ItemEvent event) {
 	checkGUIState();
 	refresh();
 }
 
 /**
-Respond to KeyEvents.
+Respond to key pressed event.
+@param event KeyEvent to handle.
 */
 public void keyPressed (KeyEvent event) {
 	int code = event.getKeyCode();
@@ -1225,10 +1229,18 @@ public void keyPressed (KeyEvent event) {
 	}
 }
 
+/**
+Respond to key released event.
+@param event KeyEvent to handle.
+*/
 public void keyReleased (KeyEvent event) {
 	refresh();
 }
 
+/**
+Respond to key typed event.
+@param event KeyEvent to handle.
+*/
 public void keyTyped (KeyEvent event) {
 }
 
@@ -1721,22 +1733,22 @@ public void windowClosing(WindowEvent event) {
 }
 
 // The following methods are all necessary because this class implements WindowListener.
-public void windowActivated(WindowEvent evt) {
+public void windowActivated(WindowEvent event) {
 }
 
-public void windowClosed(WindowEvent evt) {
+public void windowClosed(WindowEvent event) {
 }
 
-public void windowDeactivated(WindowEvent evt) {
+public void windowDeactivated(WindowEvent event) {
 }
 
-public void windowDeiconified(WindowEvent evt) {
+public void windowDeiconified(WindowEvent event) {
 }
 
-public void windowIconified(WindowEvent evt) {
+public void windowIconified(WindowEvent event) {
 }
 
-public void windowOpened(WindowEvent evt) {
+public void windowOpened(WindowEvent event) {
 }
 
 }

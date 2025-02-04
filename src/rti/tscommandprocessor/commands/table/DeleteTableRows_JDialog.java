@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -243,22 +243,31 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
     __param_JTabbedPane.addTab ( "Condition", cond_JPanel );
 
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Specify a condition to match rows to delete using syntax:  ColumnName Operator Value"),
+        "Specify a condition to match rows to delete using syntax:"),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "ColumnName can be a column name or ${Property}."),
+        "    ColumnName Operator Value"),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Operator can be:  <, <=, >, >=, ==, !="),
+        "where:"),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Operator for strings also can be:  contains, !contains, isempty, !isempty"),
+        "    'ColumnName' can be a column name or ${Property}."),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Strings comparisons are case-specific and null value is treated as an empty string."),
+        "    'Operator' can be:  <, <=, >, >=, ==, !="),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "Value should agree with column type, for example don't specify text characters for numeric column type."),
+        "    'Operator' for strings also can be:  contains, !contains, isempty, !isempty"),
+        0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "    'Operator' for all types to check for null values can be:  isempty"),
+        0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "    String comparisons are case-specific and a null value is treated as an empty string."),
+        0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "    'Value' should agree with column type, for example don't specify text characters for numeric column type."),
         0, ++yCond, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Currently only one condition can be evaluated.  Use multiple commands to evaluate multiple independent conditions."),
@@ -268,7 +277,7 @@ private void initialize ( JFrame parent, DeleteTableRows_Command command, List<S
 
     JGUIUtil.addComponent(cond_JPanel, new JLabel("Condition:"),
         0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Condition_JTextField = new JTextField ( "", 25 );
+    __Condition_JTextField = new JTextField ( 50 );
     __Condition_JTextField.setToolTipText("Specify condition to evaluate for each row.  If true, delete the row.");
     __Condition_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(cond_JPanel, __Condition_JTextField,

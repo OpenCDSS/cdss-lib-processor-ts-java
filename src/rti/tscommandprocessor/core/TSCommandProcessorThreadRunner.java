@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -52,8 +52,7 @@ private PropList requestParams = null;
 
 /**
 Construct a TSCommandProcessorThreadRunner using a TSCommandProcessor instance.
-When run() is called, all commands will be run using the working directory from
-the commands file that was originally read.
+When run() is called, all commands will be run using the working directory from the commands file that was originally read.
 */
 public TSCommandProcessorThreadRunner ( TSCommandProcessor processor ) {
 	this.processor = processor;
@@ -70,6 +69,8 @@ requestParams.setUsingObject ( "CommandList", List<Command> commands );
 requestParams.setUsingObject ( "InitialWorkingDir", String getInitialWorkingDir() );
 requestParams.setUsingObject ( "CreateOutput", new Boolean(create_output) );
 </pre>
+@param the TSCommandProcessor instance to run
+@param requestParams the processor "RunCommands" request properties
 */
 public TSCommandProcessorThreadRunner ( TSCommandProcessor processor, PropList requestParams ) {
 	this.processor = processor;
@@ -78,13 +79,12 @@ public TSCommandProcessorThreadRunner ( TSCommandProcessor processor, PropList r
 
 /**
 Run the commands in the current command processor.
-@param initialProps initial properties for processor runs
 */
 public void run () {
 	try {
 		if ( this.requestParams == null ) {
 			this.processor.runCommands(
-					null, // Subset of Command instances to run - just run all.
+					null, // List of Command instances to run.  If null, run all.
 					null ); // Properties to control run.
 		}
 		else {
@@ -93,6 +93,7 @@ public void run () {
 				"RunCommands",
 				this.requestParams);
 		}
+		// Clean up.
 		this.processor = null;
 		this.requestParams = null;
 	}

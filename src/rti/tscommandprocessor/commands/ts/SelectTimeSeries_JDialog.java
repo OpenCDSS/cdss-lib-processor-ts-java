@@ -332,7 +332,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command ) {
         "    Use * to match all time series."),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
-        "    Use A* to match all time series with alias or location starting with A."),
+        "    Use A* to match all time series with alias or location starting with A (can include location type)."),
         0, ++yList, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),

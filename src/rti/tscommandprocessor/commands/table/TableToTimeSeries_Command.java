@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -2207,8 +2207,7 @@ throws IOException
                 catch ( Exception e ) {
                     // Set the TS to null to match the column positions but won't be able to set data below.
                     ts = null;
-                    errorMessages.add ( "Error initializing time series \"" +
-                        tsidentstr + "\" (" + e + ") - will not read.");
+                    errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
                     Message.printWarning(3,routine,e);
                 }
             }
@@ -2923,30 +2922,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(CommandPhaseType.RUN);
 	}
 
+    // General.
+
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
     if ( commandPhase == CommandPhaseType.RUN ) {
     	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
-	//String LocationType = parameters.getValue("LocationType");
+	String DateTimeColumn = parameters.getValue("DateTimeColumn");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumn);
+	}
+	String DateTimeFormat = parameters.getValue("DateTimeFormat");
+	String DateColumn = parameters.getValue("DateColumn");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DateColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DateColumn);
+	}
+	String TimeColumn = parameters.getValue("TimeColumn");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeColumn);
+	}
+
+    // Multiple Data Value Columns.
+
 	String LocationID = parameters.getValue("LocationID");
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
 	}
-	// Because the irregular interval precision is a separate parameter, the "base" is used for precision.
-	// TODO smalers 2022-03-04 enable "IrregSecond", etc. as the "Interval".
-	String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision");
-	TimeInterval irregularIntervalPrecision = null;
-	if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
-		irregularIntervalPrecision = TimeInterval.parseInterval(IrregularIntervalPrecision);
-		if ( Message.isDebugOn ) {
-			Message.printStatus(2,routine,"IrregularIntervalPrecision after parsing \"" +
-				IrregularIntervalPrecision + "\" = " +
-				irregularIntervalPrecision.getBase() + " (" +
-				TimeInterval.getName(irregularIntervalPrecision.getBase(),0) + ")");
-		}
-	}
+
+    // Single Data Value Column.
+
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		LocationTypeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationTypeColumn);
@@ -2975,19 +2981,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		UnitsColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, UnitsColumn);
 	}
-	String DateTimeColumn = parameters.getValue("DateTimeColumn");
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		DateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumn);
+
+	// TSID and Alias:
+	// - location type - handled dynamically below
+	// - data source - handled dynamically below
+	// - data type - handled dynamically below
+	// - interval - handled dynamically below
+	// - scenario - handled dynamically below
+	// - sequence ID - handled dynamically below
+
+	// Because the irregular interval precision is a separate parameter, the "base" is used for precision.
+	// TODO smalers 2022-03-04 enable "IrregSecond", etc. as the "Interval".
+	String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision");
+	TimeInterval irregularIntervalPrecision = null;
+	if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
+		irregularIntervalPrecision = TimeInterval.parseInterval(IrregularIntervalPrecision);
+		if ( Message.isDebugOn ) {
+			Message.printStatus(2,routine,"IrregularIntervalPrecision after parsing \"" +
+				IrregularIntervalPrecision + "\" = " +
+				irregularIntervalPrecision.getBase() + " (" +
+				TimeInterval.getName(irregularIntervalPrecision.getBase(),0) + ")");
+		}
 	}
-	String DateTimeFormat = parameters.getValue("DateTimeFormat");
-	String DateColumn = parameters.getValue("DateColumn");
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		DateColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DateColumn);
-	}
-	String TimeColumn = parameters.getValue("TimeColumn");
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		TimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeColumn);
-	}
+	String Alias = parameters.getValue("Alias"); // Expanded below.
+
+	// Data:
+	// - units - handled dynamically below
+	// - precision - handled dynamically below
+	// - initial value - handle dynamically below
+	// - missing value - handle dynamically below
+
 	String ValueColumn = parameters.getValue("ValueColumn");
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		ValueColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ValueColumn);
@@ -2996,13 +3019,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		FlagColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, FlagColumn);
 	}
-	String Alias = parameters.getValue("Alias"); // Expanded below.
 	String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow");
 	HandleDuplicatesHowType handleDuplicatesHow = HandleDuplicatesHowType.valueOfIgnoreCase(HandleDuplicatesHow);
+
+	// Block Data.
+
 	String BlockLayout = parameters.getValue("BlockLayout");
 	String BlockLayoutColumns = parameters.getValue("BlockLayoutColumns");
 	String BlockLayoutRows = parameters.getValue("BlockLayoutRows");
 	String BlockOutputYearType = parameters.getValue("BlockOutputYearType");
+
+	// Period.
+
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
 		InputStart = "${InputStart}"; // Global default.
@@ -3451,11 +3479,16 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// General.
 		"TableID",
     	"DateTimeColumn",
     	"DateTimeFormat",
     	"DateColumn",
     	"TimeColumn",
+    	//"SkipRows",
+    	// Multiple Data Value Columns.
+    	"LocationID",
+    	// Single Data Value Column.
     	"LocationTypeColumn",
     	"LocationColumn",
     	"DataSourceColumn",
@@ -3463,26 +3496,28 @@ public String toString ( PropList parameters ) {
     	"ScenarioColumn",
     	"SequenceIDColumn",
     	"UnitsColumn",
+    	// TSID and Alias.
     	"LocationType",
-    	"LocationID",
-    	"ValueColumn",
-    	"FlagColumn",
-    	//"SkipRows",
     	"DataSource",
     	"DataType",
     	"Interval",
     	"IrregularIntervalPrecision",
     	"Scenario",
     	"SequenceID",
+    	"Alias",
+    	// Data.
+    	"ValueColumn",
+    	"FlagColumn",
     	"Units",
     	"Precision",
     	"MissingValue",
     	"HandleDuplicatesHow",
-    	"Alias",
+    	// Block Data.
 		"BlockLayout",
 		"BlockLayoutColumns",
 		"BlockLayoutRows",
 		"BlockOutputYearType",
+		// Period.
 		"InputStart",
 		"InputEnd"
 	};

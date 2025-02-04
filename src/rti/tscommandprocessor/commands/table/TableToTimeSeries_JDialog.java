@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -196,14 +196,18 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag t
 This should be called before response() is allowed to complete.
 */
 private void checkInput () {
-	// Put together a list of parameters to check.
+	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
+	// General.
 	String TableID = __TableID_JComboBox.getSelected();
 //	String SkipRows = __SkipRows_JTextField.getText().trim();
-	String DateColumn = __DateColumn_JTextField.getText().trim();
-	String TimeColumn = __TimeColumn_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
 	String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
+	String DateColumn = __DateColumn_JTextField.getText().trim();
+	String TimeColumn = __TimeColumn_JTextField.getText().trim();
+	// Multiple Data Value Columns.
+	String LocationID = __LocationID_JTextField.getText().trim();
+	// Single Data Value Column.
 	String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
 	String LocationColumn = __LocationColumn_JTextField.getText().trim();
 	String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
@@ -211,48 +215,57 @@ private void checkInput () {
 	String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
 	String SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
 	String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+	// TSID and Alias.
 	String LocationType = __LocationType_JTextField.getText().trim();
-	String LocationID = __LocationID_JTextField.getText().trim();
-	String ValueColumn = __ValueColumn_JTextField.getText().trim();
-	String FlagColumn = __FlagColumn_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Interval = __Interval_JComboBox.getSelected();
 	String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
 	String Scenario = __Scenario_JTextField.getText().trim();
 	String SequenceID = __SequenceID_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
+	// Data.
+	String ValueColumn = __ValueColumn_JTextField.getText().trim();
+	String FlagColumn = __FlagColumn_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
-	String Alias = __Alias_JTextField.getText().trim();
+	// Block data.
 	String BlockLayout = __BlockLayout_JComboBox.getSelected();
 	String BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
 	String BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
 	String BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
+	// Period.
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 
 	__error_wait = false;
 
+	// General.
 	if (TableID.length() > 0) {
 		props.set("TableID", TableID);
 	}
 //    if (SkipRows.length() > 0) {
 //        props.set("SkipRows", SkipRows);
 //    }
-    if (DateColumn.length() > 0) {
-        props.set("DateColumn", DateColumn);
-    }
-    if (TimeColumn.length() > 0) {
-        props.set("TimeColumn", TimeColumn);
-    }
     if (DateTimeColumn.length() > 0) {
         props.set("DateTimeColumn", DateTimeColumn);
     }
     if (DateTimeFormat.length() > 0) {
         props.set("DateTimeFormat", DateTimeFormat);
     }
+    if (DateColumn.length() > 0) {
+        props.set("DateColumn", DateColumn);
+    }
+    if (TimeColumn.length() > 0) {
+        props.set("TimeColumn", TimeColumn);
+    }
+    // Multiple Data Value Columns.
+    if (LocationID.length() > 0) {
+        props.set("LocationID", LocationID);
+    }
+    // Single Data Value Column.
     if (LocationTypeColumn.length() > 0) {
         props.set("LocationTypeColumn", LocationTypeColumn);
     }
@@ -274,17 +287,9 @@ private void checkInput () {
     if (UnitsColumn.length() > 0) {
         props.set("UnitsColumn", UnitsColumn);
     }
+    // TSID and Alias
     if (LocationType.length() > 0) {
         props.set("LocationType", LocationType);
-    }
-    if (LocationID.length() > 0) {
-        props.set("LocationID", LocationID);
-    }
-    if (ValueColumn.length() > 0) {
-        props.set("ValueColumn", ValueColumn);
-    }
-    if (FlagColumn.length() > 0) {
-        props.set("FlagColumn", FlagColumn);
     }
     if (DataSource.length() > 0) {
         props.set("DataSource", DataSource);
@@ -304,6 +309,16 @@ private void checkInput () {
     if (SequenceID.length() > 0) {
         props.set("SequenceID", SequenceID);
     }
+    if (Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
+    // Data.
+    if (ValueColumn.length() > 0) {
+        props.set("ValueColumn", ValueColumn);
+    }
+    if (FlagColumn.length() > 0) {
+        props.set("FlagColumn", FlagColumn);
+    }
     if (Units.length() > 0) {
         props.set("Units", Units);
     }
@@ -316,9 +331,7 @@ private void checkInput () {
     if (HandleDuplicatesHow.length() > 0) {
         props.set("HandleDuplicatesHow", HandleDuplicatesHow);
     }
-    if (Alias.length() > 0) {
-        props.set("Alias", Alias);
-    }
+    // Block Data.
     if ( BlockLayout.length() > 0 ) {
         props.set ( "BlockLayout", BlockLayout );
     }
@@ -331,6 +344,7 @@ private void checkInput () {
     if ( BlockOutputYearType.length() > 0 ) {
         props.set ( "BlockOutputYearType", BlockOutputYearType );
     }
+    // Period.
 	if (InputStart.length() > 0 ) {
 		props.set("InputStart", InputStart);
 	}
@@ -353,14 +367,16 @@ Commit the edits to the command.
 In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits() {
+	// General.
     String TableID = __TableID_JComboBox.getSelected();
 //	String SkipRows = __SkipRows_JTextField.getText().trim();
-    String DateColumn = __DateColumn_JTextField.getText().trim();
-    String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
-    String TimeColumn = __TimeColumn_JTextField.getText().trim();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
-    String ValueColumn = __ValueColumn_JTextField.getText().trim();
-    String FlagColumn = __FlagColumn_JTextField.getText().trim();
+    String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
+    String DateColumn = __DateColumn_JTextField.getText().trim();
+    String TimeColumn = __TimeColumn_JTextField.getText().trim();
+    // Multiple Data Value Columns.
+    String LocationID = __LocationID_JTextField.getText().trim();
+    // Single Data Value Column.
     String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
     String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
@@ -368,32 +384,41 @@ private void commitEdits() {
     String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
     String SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
     String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+    // TSID and Alias.
     String LocationType = __LocationType_JTextField.getText().trim();
-    String LocationID = __LocationID_JTextField.getText().trim();
     String DataSource = __DataSource_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
     String SequenceID = __SequenceID_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
+    // Data.
+    String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
-    String Alias = __Alias_JTextField.getText().trim();
+    // Block Data.
 	String BlockLayout = __BlockLayout_JComboBox.getSelected();
 	String BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
 	String BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
 	String BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
+	// Period.
     String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 
+	// General.
 	__command.setCommandParameter("TableID", TableID);
 //	__command.setCommandParameter("SkipRows", SkipRows);
-	__command.setCommandParameter("DateColumn", DateColumn);
-	__command.setCommandParameter("TimeColumn", TimeColumn);
 	__command.setCommandParameter("DateTimeColumn", DateTimeColumn);
 	__command.setCommandParameter("DateTimeFormat", DateTimeFormat);
+	__command.setCommandParameter("DateColumn", DateColumn);
+	__command.setCommandParameter("TimeColumn", TimeColumn);
+	// Multiple Data Value Columns.
+    __command.setCommandParameter("LocationID", LocationID);
+	// Single Data Value Column.
 	__command.setCommandParameter("LocationTypeColumn", LocationTypeColumn);
     __command.setCommandParameter("LocationColumn", LocationColumn);
     __command.setCommandParameter("DataSourceColumn", DataSourceColumn);
@@ -401,10 +426,8 @@ private void commitEdits() {
     __command.setCommandParameter("ScenarioColumn", ScenarioColumn);
     __command.setCommandParameter("SequenceIDColumn", SequenceIDColumn);
     __command.setCommandParameter("UnitsColumn", UnitsColumn);
+    // TSID and Alias.
     __command.setCommandParameter("LocationType", LocationType);
-    __command.setCommandParameter("LocationID", LocationID);
-	__command.setCommandParameter("ValueColumn", ValueColumn);
-	__command.setCommandParameter("FlagColumn", FlagColumn);
 	__command.setCommandParameter("DataSource", DataSource );
 	__command.setCommandParameter("DataType", DataType);
 	__command.setCommandParameter("Interval", Interval);
@@ -412,14 +435,19 @@ private void commitEdits() {
 	__command.setCommandParameter("Scenario", Scenario);
 	__command.setCommandParameter("SequenceID", SequenceID);
 	__command.setCommandParameter("Units", Units);
+	__command.setCommandParameter("Alias", Alias);
+    // Data.
+	__command.setCommandParameter("ValueColumn", ValueColumn);
+	__command.setCommandParameter("FlagColumn", FlagColumn);
 	__command.setCommandParameter("Precision", Precision);
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("HandleDuplicatesHow", HandleDuplicatesHow);
-	__command.setCommandParameter("Alias", Alias);
+	// Block Data.
 	__command.setCommandParameter("BlockLayout", BlockLayout);
 	__command.setCommandParameter("BlockLayoutColumns", BlockLayoutColumns);
 	__command.setCommandParameter("BlockLayoutRows", BlockLayoutRows);
 	__command.setCommandParameter("BlockOutputYearType", BlockOutputYearType);
+	// Period.
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 }
@@ -538,15 +566,21 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     int yMult = -1;
 
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
+        "Each value column must contain data for a single location." ),
+        0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(multTS_JPanel, new JLabel (
         "Example table input (first row shown is column headings):" ),
         0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
         "<html><pre>| DateTime | ID1_Value1 | ID1_Value2 | ID1_Value2 | ID2_Value1 | ID2_Value2 |<br>" +
-                   "| 2012-01  |        1.0 |       37.5 |      -12.5 |            |       77.3 |</pre></html>" ),
+                   "| 2012-01  |        1.0 |       37.5 |      -12.5 |            |       77.3 |<br>" +
+                   "| 2012-02  |        1.2 |       40.5 |      -13.5 |        8.7 |       78.5 |</pre></html>" ),
         0, ++yMult, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
-        "Because time series values are in multiple columns, the location IDs must be specified " +
-        "(may extract from column headings in the future)." ),
+        "Specify the location IDs as comma-separated or use TC[N:N] to use table column names."),
+        0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(multTS_JPanel, new JLabel (
+        "Specify the columns to match the location IDs using the 'Data' tab 'Value column(s)' field below."),
         0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
         0, ++yMult, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -565,12 +599,16 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     int ySingle = -1;
 
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
-        "Values are expected to be in a single column, properties can be" +
-        " read from columns (or use \"TSID and Alias\" tab below).  Example table input (first row shown is column headings):" ),
+        "Values for 1+ locations are expected to be in a single column ('Value' in example), and properties can be" +
+        " read from other columns (or use 'TSID and Alias' tab below)." ),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
-        "<html><pre>| Date     | LocationTypes | LocationIDs | Data Sources | Data Types | Scenarios | Data Units |<br>" +
-                   "| 2012-01  |          Gage |    Station1 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ),
+        "Example table input (first row shown is column headings):" ),
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "<html><pre>| Date     | LocationTypes | LocationIDs | Value | Data Sources | Data Types | Scenarios | Data Units |<br>" +
+                   "| 2012-01  |          Gage |    Station1 |  1.23 |         USGS | Streamflow |    Filled |        cfs |<br>" +
+                   "| 2012-01  |          Gage |    Station2 |  4.56 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ),
         0, ++ySingle, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -847,7 +885,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Missing value(s):"),
-        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField (10);
     __MissingValue_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __MissingValue_JTextField,
@@ -858,7 +896,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Handle duplicates how?:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __HandleDuplicatesHow_JComboBox = new SimpleJComboBox ( 12, false );
+    __HandleDuplicatesHow_JComboBox = new SimpleJComboBox ( false );
     List<String> choices = new ArrayList<>(5);
     choices.add(""); // Add blank to ignore table.
     choices.add("" + HandleDuplicatesHowType.ADD);
@@ -1062,13 +1100,17 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh() {
-   String routine = getClass().getSimpleName() + ".refresh", message;
+    String routine = getClass().getSimpleName() + ".refresh", message;
+    // General.
     String TableID = "";
     //String SkipRows = "";
-    String DateColumn = "";
-    String TimeColumn = "";
     String DateTimeColumn = "";
     String DateTimeFormat = "";
+    String DateColumn = "";
+    String TimeColumn = "";
+    // Multiple Data Value Columns.
+    String LocationID = "";
+    // Single Data Value Column.
     String LocationTypeColumn = "";
     String LocationColumn = "";
     String DataSourceColumn = "";
@@ -1076,25 +1118,28 @@ private void refresh() {
     String ScenarioColumn = "";
     String SequenceIDColumn = "";
     String UnitsColumn = "";
+    // TSID and Alias.
     String LocationType = "";
-    String LocationID = "";
-    String ValueColumn = "";
-    String FlagColumn = "";
     String DataSource = "";
     String DataType = "";
     String Interval = "";
     String IrregularIntervalPrecision = "";
     String Scenario = "";
     String SequenceID = "";
+    String Alias = "";
+    // Data.
+    String ValueColumn = "";
+    String FlagColumn = "";
     String Units = "";
     String Precision = "";
     String MissingValue = "";
     String HandleDuplicatesHow = "";
-    String Alias = "";
+    // Block Data.
 	String BlockLayout = "";
 	String BlockLayoutColumns = "";
 	String BlockLayoutRows = "";
 	String BlockOutputYearType = "";
+	// Period.
     String InputStart = "";
     String InputEnd = "";
 
@@ -1103,14 +1148,17 @@ private void refresh() {
 	if (__first_time) {
 		__first_time = false;
 
+		// General.
 		// Get the properties from the command.
 		props = __command.getCommandParameters();
 		TableID = props.getValue ( "TableID" );
 //		SkipRows = props.getValue("SkipRows");
-	    DateColumn = props.getValue("DateColumn");
-	    TimeColumn = props.getValue("TimeColumn");
 	    DateTimeColumn = props.getValue("DateTimeColumn");
 	    DateTimeFormat = props.getValue("DateTimeFormat");
+	    DateColumn = props.getValue("DateColumn");
+	    TimeColumn = props.getValue("TimeColumn");
+	    // Multiple Data Value Columns.
+	    // Single Data Value Column.
 	    LocationTypeColumn = props.getValue("LocationTypeColumn");
         LocationColumn = props.getValue("LocationColumn");
         DataSourceColumn = props.getValue("DataSourceColumn");
@@ -1118,28 +1166,34 @@ private void refresh() {
         ScenarioColumn = props.getValue("ScenarioColumn");
         SequenceIDColumn = props.getValue("SequenceIDColumn");
         UnitsColumn = props.getValue("UnitsColumn");
+        // TSID and Alias.
         LocationType = props.getValue("LocationType");
         LocationID = props.getValue("LocationID");
-	    ValueColumn = props.getValue("ValueColumn");
-	    FlagColumn = props.getValue("FlagColumn");
 	    DataSource = props.getValue("DataSource");
 	    DataType = props.getValue("DataType");
 	    Interval = props.getValue("Interval");
 	    IrregularIntervalPrecision = props.getValue("IrregularIntervalPrecision");
 	    Scenario = props.getValue("Scenario");
 	    SequenceID = props.getValue("SequenceID");
+	    Alias = props.getValue("Alias");
+        // Data.
+	    ValueColumn = props.getValue("ValueColumn");
+	    FlagColumn = props.getValue("FlagColumn");
 	    Units = props.getValue("Units");
 	    Precision = props.getValue("Precision");
 	    MissingValue = props.getValue("MissingValue");
 	    HandleDuplicatesHow = props.getValue("HandleDuplicatesHow");
-	    Alias = props.getValue("Alias");
+	    // Block Data.
 		BlockLayout = props.getValue ( "BlockLayout" );
 		BlockLayoutColumns = props.getValue ( "BlockLayoutColumns" );
 		BlockLayoutRows = props.getValue ( "BlockLayoutRows" );
 		BlockOutputYearType = props.getValue ( "BlockOutputYearType" );
+		// Period.
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
+
 		// Set the control fields.
+		// General.
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -1158,12 +1212,6 @@ private void refresh() {
 //        if ( SkipRows != null) {
 //            __SkipRows_JTextField.setText(SkipRows);
 //        }
-        if (DateColumn != null) {
-            __DateColumn_JTextField.setText(DateColumn);
-        }
-        if (TimeColumn != null) {
-            __TimeColumn_JTextField.setText(TimeColumn);
-        }
         if (DateTimeColumn != null) {
             __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
@@ -1188,6 +1236,20 @@ private void refresh() {
                 __DateTimeFormat_JPanel.setText(DateTimeFormat);
             }
         }
+        if (DateColumn != null) {
+            __DateColumn_JTextField.setText(DateColumn);
+        }
+        if (TimeColumn != null) {
+            __TimeColumn_JTextField.setText(TimeColumn);
+        }
+        // Multiple Data Value Columns.
+        if (LocationID != null) {
+            __LocationID_JTextField.setText(LocationID);
+            if ( !LocationID.equals("") ) {
+                __location_JTabbedPane.setSelectedIndex(0);
+            }
+        }
+        // Single Data Value Column.
         if (LocationTypeColumn != null) {
             __LocationTypeColumn_JTextField.setText(LocationTypeColumn);
         }
@@ -1212,20 +1274,9 @@ private void refresh() {
         if (UnitsColumn != null) {
             __UnitsColumn_JTextField.setText(UnitsColumn);
         }
+        // TSID and Alias.
         if (LocationType != null) {
             __LocationType_JTextField.setText(LocationType);
-        }
-        if (LocationID != null) {
-            __LocationID_JTextField.setText(LocationID);
-            if ( !LocationID.equals("") ) {
-                __location_JTabbedPane.setSelectedIndex(0);
-            }
-        }
-        if (ValueColumn != null) {
-            __ValueColumn_JTextField.setText(ValueColumn);
-        }
-        if (FlagColumn != null) {
-            __FlagColumn_JTextField.setText(FlagColumn);
         }
         if (DataSource != null) {
             __DataSource_JTextField.setText(DataSource);
@@ -1269,6 +1320,16 @@ private void refresh() {
         if (SequenceID != null) {
             __SequenceID_JTextField.setText(SequenceID);
         }
+        if ( Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
+        // Data.
+        if (ValueColumn != null) {
+            __ValueColumn_JTextField.setText(ValueColumn);
+        }
+        if (FlagColumn != null) {
+            __FlagColumn_JTextField.setText(FlagColumn);
+        }
         if (Units != null) {
             __Units_JTextField.setText(Units);
         }
@@ -1293,9 +1354,7 @@ private void refresh() {
                 __error_wait = true;
             }
         }
-        if ( Alias != null ) {
-            __Alias_JTextField.setText(Alias.trim());
-        }
+        // Block Data.
         if ( BlockLayout == null ) {
             // Select default.
             __BlockLayout_JComboBox.select ( 0 );
@@ -1356,6 +1415,7 @@ private void refresh() {
                 __error_wait = true;
             }
         }
+        // Period.
 		if (InputStart != null) {
 			__InputStart_JTextField.setText(InputStart);
 		}
@@ -1366,12 +1426,16 @@ private void refresh() {
 
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
+	// General.
 	TableID = __TableID_JComboBox.getSelected();
 //    SkipRows = __SkipRows_JTextField.getText().trim();
-    DateColumn = __DateColumn_JTextField.getText().trim();
-    TimeColumn = __TimeColumn_JTextField.getText().trim();
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText(true,true).trim();
+    DateColumn = __DateColumn_JTextField.getText().trim();
+    TimeColumn = __TimeColumn_JTextField.getText().trim();
+    // Multiple Data Value Columns.
+    LocationID = __LocationID_JTextField.getText().trim();
+    // Single Data Value Column.
     LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     LocationColumn = __LocationColumn_JTextField.getText().trim();
     DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
@@ -1379,35 +1443,42 @@ private void refresh() {
     ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
     SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
     UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+    // TSID and Alias.
     LocationType = __LocationType_JTextField.getText().trim();
-    LocationID = __LocationID_JTextField.getText().trim();
-    ValueColumn = __ValueColumn_JTextField.getText().trim();
-    FlagColumn = __FlagColumn_JTextField.getText().trim();
     DataSource = __DataSource_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
     IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
     SequenceID = __SequenceID_JTextField.getText().trim();
+    Alias = __Alias_JTextField.getText().trim();
+    // Data.
+    ValueColumn = __ValueColumn_JTextField.getText().trim();
+    FlagColumn = __FlagColumn_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
     Precision = __Precision_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
-    Alias = __Alias_JTextField.getText().trim();
+    // Block Data.
 	BlockLayout = __BlockLayout_JComboBox.getSelected();
 	BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
 	BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
 	BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
+	// Period.
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
+	// General.
 	props.add("TableID=" + TableID);
 //	props.add("SkipRows=" + SkipRows );
-    props.add("DateColumn=" + DateColumn );
-    props.add("TimeColumn=" + TimeColumn );
     props.add("DateTimeColumn=" + DateTimeColumn );
     props.add("DateTimeFormat=" + DateTimeFormat );
+    props.add("DateColumn=" + DateColumn );
+    props.add("TimeColumn=" + TimeColumn );
+    // Multiple Data Value Columns.
+    props.add("LocationID=" + LocationID );
+    // Single Data Value Column.
     props.add("LocationTypeColumn=" + LocationTypeColumn );
     props.add("LocationColumn=" + LocationColumn );
     props.add("DataSourceColumn=" + DataSourceColumn );
@@ -1415,25 +1486,28 @@ private void refresh() {
     props.add("ScenarioColumn=" + ScenarioColumn );
     props.add("SequenceIDColumn=" + SequenceIDColumn );
     props.add("UnitsColumn=" + UnitsColumn );
+    // TSID and Alias.
     props.add("LocationType=" + LocationType );
-    props.add("LocationID=" + LocationID );
-    props.add("ValueColumn=" + ValueColumn );
-    props.add("FlagColumn=" + FlagColumn );
     props.add("DataSource=" + DataSource );
     props.add("DataType=" + DataType );
     props.add("Interval=" + Interval );
     props.add("IrregularIntervalPrecision=" + IrregularIntervalPrecision );
     props.add("Scenario=" + Scenario );
     props.add("SequenceID=" + SequenceID );
+    props.add("Alias=" + Alias );
+    // Data.
+    props.add("ValueColumn=" + ValueColumn );
+    props.add("FlagColumn=" + FlagColumn );
     props.add("Units=" + Units );
     props.add("Precision=" + Precision );
     props.add("MissingValue=" + MissingValue );
     props.add("HandleDuplicatesHow=" + HandleDuplicatesHow );
-    props.add("Alias=" + Alias );
+    // Block Data.
 	props.add("BlockLayout=" + BlockLayout );
 	props.add("BlockLayoutColumns=" + BlockLayoutColumns );
 	props.add("BlockLayoutRows=" + BlockLayoutRows );
 	props.add("BlockOutputYearType=" + BlockOutputYearType );
+	// Period.
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -50,7 +50,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSData;
@@ -59,7 +58,6 @@ import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 //import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -88,7 +86,7 @@ import RTi.Util.Time.TimeUtil;
 This class initializes, checks, and runs the WriteTimeSeriesToExcel() command, using Apache POI.
 A useful link is:  http://poi.apache.org/spreadsheet/quick-guide.html
 */
-public class WriteTimeSeriesToExcel_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteTimeSeriesToExcel_Command extends AbstractCommand implements FileGenerator
 {
 
 /**
@@ -118,8 +116,8 @@ private int outputMaxColumn = 0;
 /**
 Constructor.
 */
-public WriteTimeSeriesToExcel_Command ()
-{	super();
+public WriteTimeSeriesToExcel_Command () {
+	super();
 	setCommandName ( "WriteTimeSeriesToExcel" );
 }
 
@@ -131,8 +129,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String Precision = parameters.getValue ( "Precision" );
+throws InvalidCommandParameterException {
+	String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
@@ -148,19 +146,19 @@ throws InvalidCommandParameterException
 	String CommentHeight = parameters.getValue ( "CommentHeight" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
-	// If the input file does not exist, warn the user...
-	
+
+	// If the input file does not exist, warn the user.
+
 	String working_dir = null;
-	
+
 	CommandProcessor processor = getCommandProcessor();
-	
+
 	try {
 	    Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
+		// Working directory is available so use it.
 		if ( o != null ) {
 			working_dir = (String)o;
 		}
@@ -172,7 +170,7 @@ throws InvalidCommandParameterException
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                    message, "Report the problem to software support." ) );
 	}
-	
+
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 	    message = "The Excel output file must be specified.";
 	    warning += "\n" + message;
@@ -204,7 +202,7 @@ throws InvalidCommandParameterException
 	                message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
-	
+
 	if ( (Append != null) && !Append.equals("") ) {
 		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
 			message = "The Append parameter \"" + Append + "\" is invalid.";
@@ -214,7 +212,7 @@ throws InvalidCommandParameterException
 					message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
 		}
 	}
-	
+
 	if ( ((ExcelAddress == null) || ExcelAddress.equals("")) && ((ExcelNamedRange == null) || ExcelNamedRange.equals("")) &&
 		((ExcelTableName == null) || ExcelTableName.equals("")) ) {
 		message = "The address for the output must be specified.";
@@ -223,7 +221,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the output address, named range, or Excel table name."));
 	}
-	
+
 	if ( Precision != null && !Precision.equals("") ) {
 	    try {
 	        Integer.parseInt(Precision);
@@ -236,7 +234,7 @@ throws InvalidCommandParameterException
 	                message, "Specify the output precision as a positive integer." ) );
 	    }
 	}
-	
+
 	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
@@ -265,8 +263,8 @@ throws InvalidCommandParameterException
 						message, "Specify a valid output end date/time." ) );
 		}
 	}
-	
-	if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
+
+	if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) &&
 	    !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
 	    message = "KeepOpen is invalid.";
 	    warning += "\n" + message;
@@ -274,8 +272,8 @@ throws InvalidCommandParameterException
 	        new CommandLogRecord(CommandStatusType.FAILURE,
 	            message, "KeepOpen must be " + _False + " (default) or " + _True ) );
 	}
-	
-	if ( SkipValueCommentIfNoFlag != null && !SkipValueCommentIfNoFlag.equalsIgnoreCase(_True) && 
+
+	if ( SkipValueCommentIfNoFlag != null && !SkipValueCommentIfNoFlag.equalsIgnoreCase(_True) &&
 	    !SkipValueCommentIfNoFlag.equalsIgnoreCase(_False) && !SkipValueCommentIfNoFlag.equalsIgnoreCase("") ) {
 	    message = "SkipValueCommentIfNoFlag is invalid.";
 	    warning += "\n" + message;
@@ -283,7 +281,7 @@ throws InvalidCommandParameterException
 	        new CommandLogRecord(CommandStatusType.FAILURE,
 	            message, "SkipValueCommentIfNoFlag must be " + _False + " or " + _True + " (default)") );
 	}
-	
+
     if ( (ColumnCommentWidth != null) && !ColumnCommentWidth.isEmpty() && !StringUtil.isInteger(ColumnCommentWidth) ) {
         message = "Column comment width (" + ColumnCommentWidth + ") is invalid.";
         warning += "\n" + message;
@@ -291,7 +289,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify column comment width as the number of columns." ) );
     }
-    
+
     if ( (ColumnCommentHeight != null) && !ColumnCommentHeight.isEmpty() && !StringUtil.isInteger(ColumnCommentHeight) ) {
         message = "Column comment height (" + ColumnCommentHeight + ") is invalid.";
         warning += "\n" + message;
@@ -299,7 +297,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify column comment height as the number of rows." ) );
     }
-	
+
     if ( (CommentWidth != null) && !CommentWidth.isEmpty() && !StringUtil.isInteger(CommentWidth) ) {
         message = "Comment width (" + CommentWidth + ") is invalid.";
         warning += "\n" + message;
@@ -307,7 +305,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify comment width as the number of columns." ) );
     }
-    
+
     if ( (CommentHeight != null) && !CommentHeight.isEmpty() && !StringUtil.isInteger(CommentHeight) ) {
         message = "Comment height (" + CommentHeight + ") is invalid.";
         warning += "\n" + message;
@@ -315,11 +313,11 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify comment height as the number of rows." ) );
     }
-	
+
 	// TODO SAM 2005-11-18 Check the format.
-	
-	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(36);
+
+	//  Check for invalid parameters.
+	List<String> validList = new ArrayList<>(36);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -358,15 +356,15 @@ throws InvalidCommandParameterException
     validList.add ( "StyleTableID" );
     validList.add ( "LegendWorksheet" );
     validList.add ( "LegendAddress" );
-	
-	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
-	
+
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -375,8 +373,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
     List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)getCommandProcessor(), this);
 	return (new WriteTimeSeriesToExcel_JDialog ( parent, this, tableIDChoices )).ok();
@@ -384,10 +382,10 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command.
 */
-public List<File> getGeneratedFileList ()
-{
-	List<File> list = new Vector<File>();
+public List<File> getGeneratedFileList () {
+	List<File> list = new ArrayList<>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -396,25 +394,26 @@ public List<File> getGeneratedFileList ()
 
 /**
 Return the output file generated by this file.  This method is used internally.
+@return the output file generated by this file
 */
-private File getOutputFile ()
-{
+private File getOutputFile () {
 	return __OutputFile_File;
 }
 
 /**
 Parse the command.
+@param command the command string to parse
 */
-public void parseCommand(String command)
-throws InvalidCommandParameterException, InvalidCommandSyntaxException
-{	super.parseCommand(command);
+public void parseCommand ( String command )
+throws InvalidCommandParameterException, InvalidCommandSyntaxException {
+	super.parseCommand(command);
 	// If TSID is specified but TSList is not, it is a legacy command that needs to be updated.
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList");
 	String TSID = parameters.getValue ( "TSID");
 	if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
 	    ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
-	    // Assume old-style where TSList was not specified but TSID was...
+	    // Assume old-style where TSList was not specified but TSID was.
 	    if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
 	        parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 	    }
@@ -431,12 +430,12 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
-	String command_tag = "" + command_number;	
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
@@ -448,23 +447,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
-    
-	// Check whether the processor wants output files to be created...
+
+	// Check whether the processor wants output files to be created.
 
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
 	}
 
-	// Make sure there are time series available to operate on...
-	
+	// Make sure there are time series available to operate on.
+
 	PropList parameters = getCommandParameters();
-	
+
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
@@ -479,11 +478,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     String MissingValue = parameters.getValue ( "MissingValue" );
     if ( (MissingValue != null) && MissingValue.equals("") ) {
-        // Set to null to indicate default internal value should be used
+        // Set to null to indicate default internal value should be used.
         MissingValue = null;
     }
 	String Precision = parameters.getValue ( "Precision" );
-	Integer precision = null; // default
+	Integer precision = null; // Default.
 	if ( (Precision != null) && !Precision.equals("") ) {
 		try {
 		    precision = Integer.parseInt(Precision);
@@ -565,14 +564,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
     }
-    // Don't expand because ${Property} is expected to be internal
+    // Don't expand because ${Property} is expected to be internal.
     String LegendAddress = parameters.getValue ( "LegendAddress" );
     String LegendWorksheet = parameters.getValue ( "LegendWorksheet" );
     if ( (LegendWorksheet != null) && !LegendWorksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && LegendWorksheet.indexOf("${") >= 0 ) {
     	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
     }
-    
-	// Get the time series to process...
+
+	// Get the time series to process.
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -624,7 +623,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
 	try {
@@ -632,12 +631,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			status, warning_level, command_tag );
 	}
 	catch ( InvalidCommandParameterException e ) {
-		// Warning will have been added above...
+		// Warning will have been added above.
 		++warning_count;
 	}
-	
-	// Get the column style table
-	
+
+	// Get the column style table.
+
     DataTable columnStyleTable = null;
     if ( (ColumnStyleTableID != null) && !ColumnStyleTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -666,8 +665,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
     }
 
-	// Get the column condition table
-	
+	// Get the column condition table.
+
     DataTable columnConditionTable = null;
     if ( (ColumnConditionTableID != null) && !ColumnConditionTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -695,9 +694,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        columnConditionTable = (DataTable)o_Table;
 	    }
     }
-	
-	// Get the style table
-	
+
+	// Get the style table.
+
     DataTable styleTable = null;
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -725,9 +724,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        styleTable = (DataTable)o_Table;
 	    }
     }
-	    
-	// Get the condition table
-	
+
+	// Get the condition table.
+
     DataTable conditionTable = null;
     if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
@@ -764,9 +763,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now process the time series...
+	// Now process the time series.
 
-	List<String> problems = new ArrayList<String>();
+	List<String> problems = new ArrayList<>();
 	String OutputFile_full = null;
 	try {
         OutputFile_full = IOUtil.verifyPathForOS(
@@ -792,7 +791,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Check the log file for exceptions." ) );
         }
-        // Set the table identifier...
+        // Set the table identifier.
         setOutputFile(new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
@@ -803,7 +802,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message, "Verify that the folder to write exists and permissions allow writing." ) );
 		throw new CommandWarningException ( message );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
@@ -816,9 +815,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the output file that is created by this command.  This is only used internally.
+@param file the output file that is created by this command
 */
-private void setOutputFile ( File file )
-{
+private void setOutputFile ( File file ) {
 	__OutputFile_File = file;
 }
 
@@ -880,8 +879,7 @@ Write the legend to the Excel worksheet.
 */
 private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSeriesConditionAndStyleManager styleManager,
 	String legendWorksheet, String legendAddress,
-	List<String> problems )
-{
+	List<String> problems ) {
 	// If the legend worksheet does not exist create it.
     Sheet sheet = reqSheet;
     boolean sheetGiven = false;
@@ -889,16 +887,16 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSer
     	sheet = wb.getSheet(legendWorksheet);
     	sheetGiven = true;
 	    if ( sheet == null ) {
-	        // Create the worksheet
+	        // Create the worksheet.
 	    	String sheetNameSafe = WorkbookUtil.createSafeSheetName(legendWorksheet);
 	    	sheet = wb.createSheet(sheetNameSafe);
 	    }
     }
-	// Parse the legend address
+	// Parse the legend address.
     int rowOut = 0;
     int colOut = 0;
     if ( sheetGiven ) {
-    	// Parse the address that is given - for now don't accept named range
+    	// Parse the address that is given - for now don't accept named range.
     	AreaReference area = tk.getAreaReference ( wb, sheet, legendAddress, null, null );
         if ( area == null ) {
             problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
@@ -909,30 +907,30 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSer
         }
     }
     else {
-    	 // For now hard-code to the right of the block
+    	 // For now hard-code to the right of the block.
 		if ( (this.outputMaxRow < 0) || (this.outputMinColumn < 0) ) {
 			return;
 		}
 		rowOut = this.outputMinRow;
 		colOut = this.outputMaxColumn + 1;
-		// Write the legend - only write legend information that is actually used
+		// Write the legend - only write legend information that is actually used.
     }
 	Cell cell;
-    // Write legend header
+    // Write legend header.
     cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
-	// Loop through the conditions
+	// Loop through the conditions.
 	DataTable ct = styleManager.getConditionTable();
 	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
 		++rowOut;
 		try {
-			// Write the condition string
-			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
+			// Write the condition string:
+			// - TODO SAM 2015-07-11 evaluate how to make presentation-friendly
 			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
 			// Write a cell with the format - blank string to force column size
 			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
         	if ( styleManager != null ) {
         		// Get the cell style for the style ID.
-        		// Use time series position 0 since styles are initialized for the single time series
+        		// Use time series position 0 since styles are initialized for the single time series.
         		int its = 0;
         		cell.setCellStyle(styleManager.getCellStyleForStyleID(its,styleManager.getStyleIDForCondition(i)));
         	}
@@ -941,7 +939,7 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSer
 			continue;
 		}
 	}
-	// If the sheet was given, auto-size the column (don't do by default because raster plot by definition uses narrow columns)
+	// If the sheet was given, auto-size the column (don't do by default because raster plot by definition uses narrow columns).
 	if ( sheetGiven ) {
 		sheet.autoSizeColumn(colOut);
 		sheet.setColumnWidth(colOut+1,256*4);
@@ -949,8 +947,9 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSer
 }
 
 /**
-Read the table from an Excel worksheet.  The cells must be specified by a contiguous address block specified
-by one of the parameters excelAddress, excelNamedRange, excelTableName.
+Read the table from an Excel worksheet.
+The cells must be specified by a contiguous address block specified by one of the parameters excelAddress,
+excelNamedRange, excelTableName.
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
 @param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
@@ -1009,21 +1008,21 @@ private void writeTimeSeries ( List<TS> tslist,
 	DataTable columnConditionTable, DataTable columnStyleTable,
 	DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
-throws FileNotFoundException, IOException
-{   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
+throws FileNotFoundException, IOException {
+   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
     Workbook wb = null;
     InputStream inp = null;
     Message.printStatus(2,routine,"author=\""+author+"\" columnComment=\""+columnComment+"\" valueComment=\""+valueComment+"\"");
     try {
-    	// Create toolkit instance for useful Excel methods
+    	// Create toolkit instance for useful Excel methods.
     	ExcelToolkit tk = new ExcelToolkit();
-        // See if an open workbook by the same name exists
+        // See if an open workbook by the same name exists.
         WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
         if ( wbMeta != null ) {
         	wb = wbMeta.getWorkbook();
         }
         if ( wb == null ) {
-            // Workbook is not open in memory so Open the file
+            // Workbook is not open in memory so Open the file.
         	if ( append ) {
 	            try {
 	                inp = new FileInputStream(workbookFile);
@@ -1033,7 +1032,7 @@ throws FileNotFoundException, IOException
 	                return;
 	            }
 	            try {
-	                // Open the existing workbook...
+	                // Open the existing workbook.
 	                wb = WorkbookFactory.create(inp);
 	            }
 	            catch ( InvalidFormatException e ) {
@@ -1041,14 +1040,14 @@ throws FileNotFoundException, IOException
 	                return;
 	            }
 	            finally {
-	                // Close the file because will need to re-write it below and close
+	                // Close the file because will need to re-write it below and close.
 	                if ( !keepOpen ) {
 	                    inp.close();
 	                }
 	            }
         	}
         	else {
-        		// Create a new workbook
+        		// Create a new workbook.
         		try {
         		    if ( workbookFile.toLowerCase().endsWith(".xls") ) {
         		        wb = new HSSFWorkbook();
@@ -1072,7 +1071,7 @@ throws FileNotFoundException, IOException
         }
         Sheet sheet = null;
         if ( (sheetName == null) || (sheetName.length() == 0) ) {
-            // Default is to use the first sheet
+            // Default is to use the first sheet.
         	try {
         		sheet = wb.getSheetAt(0);
         	}
@@ -1085,7 +1084,7 @@ throws FileNotFoundException, IOException
             }
         }
         else {
-        	// Get the sheet from the open workbook
+        	// Get the sheet from the open workbook.
             sheet = wb.getSheet(sheetName);
             if ( sheet == null ) {
                 // Create the worksheet
@@ -1101,9 +1100,9 @@ throws FileNotFoundException, IOException
                 }
             }
         }
-        // Get the contiguous block of data to process by evaluating user input
+        // Get the contiguous block of data to process by evaluating user input.
         AreaReference area = tk.getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
-        int rowOutStart = 0, colOutStart = 0; // Position of upper-left start of output
+        int rowOutStart = 0, colOutStart = 0; // Position of upper-left start of output.
         if ( area == null ) {
             problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
         }
@@ -1112,22 +1111,22 @@ throws FileNotFoundException, IOException
             colOutStart = area.getFirstCell().getCol();
             rowOutStart = area.getFirstCell().getRow();
         }
-	    
+
         if ( (tslist == null) || (tslist.size() == 0) ) {
-        	// Cannot continue because time series need to be accessed below
+        	// Cannot continue because time series need to be accessed below.
         	// Don't save a problem because it is OK to process zero time series in some cases.
             return;
         }
-	    // Make sure the time series have the same interval
-        // TODO SAM 2013-10-22 For now do not support irregular data - when do have to use TSIterator
+	    // Make sure the time series have the same interval.
+        // TODO SAM 2013-10-22 For now do not support irregular data - when do have to use TSIterator.
         if ( !TSUtil.areIntervalsSame(tslist) ) {
             throw new InvalidTimeIntervalException("Time series time intervals are not the same.  Cannot write file.");
         }
-        // Set up for writing time series data - determine output properties
+        // Set up for writing time series data - determine output properties.
         int [] tsPrecision = new int[tslist.size()];
         for ( int its = 0; its < tslist.size(); its++ ) {
             if ( precision == null ) {
-            	// Get the precision from the data units
+            	// Get the precision from the data units.
             	DataUnits units = null;
             	try {
             		units = DataUnits.lookupUnits(tslist.get(its).getDataUnits());
@@ -1143,16 +1142,16 @@ throws FileNotFoundException, IOException
             	}
             }
         }
-        // Create a DateTimeFormatter to format the data values
+        // Create a DateTimeFormatter to format the data values.
         if ( dateTimeFormatterType == null ) {
             dateTimeFormatterType = DateTimeFormatterType.C;
         }
         if ( (dateTimeFormat != null) && dateTimeFormat.equals("") ) {
-            // Set to null to simplify checks below
+            // Set to null to simplify checks below.
             dateTimeFormat = null;
         }
-        // Determine the period of record for output
-        // Loop through the specified period or if not specified the full overlapping period
+        // Determine the period of record for output.
+        // Loop through the specified period or if not specified the full overlapping period.
         if ( (outputStart == null) || (outputEnd == null) ) {
             TSLimits limits = TSUtil.getPeriodFromTS(tslist, TSUtil.MAX_POR);
             if ( outputStart == null ) {
@@ -1167,10 +1166,10 @@ throws FileNotFoundException, IOException
         String [] missingValueStrings = new String[tslist.size()];
         boolean missingValueBlank = false;
         if ( (missingValue != null) && missingValue.equalsIgnoreCase("Blank") ) {
-        	// Use a blank cell
+        	// Use a blank cell.
         	missingValueBlank = true;
         }
-        // Comment width and height
+        // Comment width and height.
     	int columnCommentWidthInt = -1;
     	int columnCommentHeightInt = -1;
     	if ( StringUtil.isInteger(columnCommentWidth) ) {
@@ -1194,19 +1193,19 @@ throws FileNotFoundException, IOException
                 intervalBase = ts.getDataIntervalBase();
                 intervalMult = ts.getDataIntervalMult();
             }
-            // Missing value can be output as a string so check
+            // Missing value can be output as a string so check.
             if ( (missingValue == null) || missingValue.equals("") ) {
-                // Use the time series value
+                // Use the time series value.
             	if ( !StringUtil.isDouble(missingValue) ) {
-            		// Missing value is a string
+            		// Missing value is a string.
             		missingValueStrings[its] = missingValue;
             	}
             	else if ( Double.isNaN(ts.getMissing()) ) {
-            		// Use string NaN
+            		// Use string NaN.
                     missingValueStrings[its] = "NaN";
                 }
             	else {
-            		missingValueStrings[its] = null; // Indicates to use the time series missing value or missingValueBlank
+            		missingValueStrings[its] = null; // Indicates to use the time series missing value or missingValueBlank.
             	}
             }
             else {
@@ -1226,7 +1225,7 @@ throws FileNotFoundException, IOException
                 dateTimeColumn = "DateTime";
             }
         }
-        // Output the column headings and optionally comments
+        // Output the column headings and optionally comments.
         // Process column metadata:
         //  1) determine column Excel data type
         //  2) write column names (if requested)
@@ -1248,7 +1247,8 @@ throws FileNotFoundException, IOException
         	timeCol = dateCol + 1;
         	++numDateTimeCol;
         }
-        int cols = tslist.size() + numDateTimeCol; // Number of columns to output including date/time, date, time columns and time series values
+        // Number of columns to output including date/time, date, time columns and time series values.
+        int cols = tslist.size() + numDateTimeCol;
         // Set the cell formats for output (will be used for the data rows).
         // All formats for the column headings are text.
         DataFormat [] cellFormats = new DataFormat[cols];
@@ -1268,8 +1268,8 @@ throws FileNotFoundException, IOException
         int [] cellTypes = new int[cols];
         //int cellTypeHeader = Cell.CELL_TYPE_STRING;
         int col = 0;
-        // TODO SAM 2015-02-17 Need to figure out how to store date/time in numeric - for now format a string
-        List<String> columnNames = new ArrayList<String>();
+        // TODO SAM 2015-02-17 Need to figure out how to store date/time in numeric - for now format a string.
+        List<String> columnNames = new ArrayList<>();
         if ( dateTimeCol >= 0 ) {
         	cellFormats[col] = wb.createDataFormat();
             cellStyles[col] = wb.createCellStyle();
@@ -1299,26 +1299,26 @@ throws FileNotFoundException, IOException
             cellTypes[col] = Cell.CELL_TYPE_NUMERIC;
             columnNames.add(ts.formatExtendedLegend(valueColumns));
         }
-        // Write the column names - but output column comments after data because need more rows to position comments
+        // Write the column names - but output column comments after data because need more rows to position comments.
         int rowOutColumnNames = rowOutStart;
         int colOut = colOutStart - 1;
         for ( String columnName: columnNames ) {
         	++colOut;
-            // 2. Write the column names
-            // First try to get an existing cell for the heading
-            // First try to get an existing row
+            // 2. Write the column names:
+            // - first try to get an existing cell for the heading
+            // - first try to get an existing row
         	try {
         		tk.setCellValue(sheet,rowOutColumnNames,colOut,columnName);
             }
             catch ( Exception e ) {
-                // Log but let the output continue
+                // Log but let the output continue.
                 Message.printWarning(3, routine, "Unexpected error writing table heading at Excel row [" + rowOutColumnNames + "][" +
                     colOut + "] (" + e + ")." );
                 Message.printWarning(3, routine, e);
             }
         }
-        // Output the data rows
-        // Loop through date/time corresponding to each row in the output file
+        // Output the data rows:
+        // - loop through date/time corresponding to each row in the output file
         double value;
         String flag;
         String dateTimeString = "", dateString = "", timeString = "";
@@ -1327,18 +1327,18 @@ throws FileNotFoundException, IOException
         if ( (valueComment != null) && !valueComment.isEmpty() ) {
         	doValueComment = true;
         }
-        // Output each row by outputting the date/time and then each time series value left (ts[0]) to right (ts[...])
+        // Output each row by outputting the date/time and then each time series value left (ts[0]) to right (ts[...]).
         for ( DateTime date = new DateTime(outputStart); date.lessThanOrEqualTo(outputEnd); date.addInterval(intervalBase, intervalMult)) {
         	++row;
-            // Output the date/time as per the format
+            // Output the date/time as per the format.
             if ( dateTimeCol >= 0 ) {
                 if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
                     if ( dateTimeFormat == null ) {
-                        // Just use the default
+                        // Just use the default.
                         dateTimeString = date.toString();
                     }
                     else {
-                        // Format according to the requested
+                        // Format according to the requested.
                         dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
                     }
                 }
@@ -1346,18 +1346,18 @@ throws FileNotFoundException, IOException
             		tk.setCellValue(sheet,row,dateTimeCol,dateTimeString);
                 }
                 catch ( Exception e ) {
-                    // Log but let the output continue
+                    // Log but let the output continue.
                     Message.printWarning(3, routine, "Unexpected error writing date/time at Excel row [" + row + "][" + col + "] (" + e + ")." );
                 }
             }
             if ( dateCol >= 0 ) {
             	if ( dateFormatterType == DateTimeFormatterType.C ) {
                     if ( dateFormat == null ) {
-                        // Just use the default
+                        // Just use the default.
                         dateString = date.toString();
                     }
                     else {
-                        // Format according to the requested
+                        // Format according to the requested.
                         dateString = TimeUtil.formatDateTime(date, dateFormat);
                     }
                 }
@@ -1365,18 +1365,18 @@ throws FileNotFoundException, IOException
             		tk.setCellValue(sheet,row,dateCol,dateString);
                 }
                 catch ( Exception e ) {
-                    // Log but let the output continue
+                    // Log but let the output continue.
                     Message.printWarning(3, routine, "Unexpected error writing date at Excel row [" + row + "][" + col + "] (" + e + ")." );
                 }
             }
             if ( timeCol >= 0 ) {
             	if ( timeFormatterType == DateTimeFormatterType.C ) {
                     if ( timeFormat == null ) {
-                        // Just use the default
+                        // Just use the default.
                         timeString = date.toString();
                     }
                     else {
-                        // Format according to the requested
+                        // Format according to the requested.
                         timeString = TimeUtil.formatDateTime(date, timeFormat);
                     }
                 }
@@ -1384,11 +1384,11 @@ throws FileNotFoundException, IOException
             		tk.setCellValue(sheet,row,timeCol,timeString);
                 }
                 catch ( Exception e ) {
-                    // Log but let the output continue
+                    // Log but let the output continue.
                     Message.printWarning(3, routine, "Unexpected error writing time at Excel row [" + row + "][" + col + "] (" + e + ")." );
                 }
             }
-            // Loop through the time series list and output each value
+            // Loop through the time series list and output each value.
             its = -1;
             Cell cell;
             for ( TS ts : tslist ) {
@@ -1397,30 +1397,30 @@ throws FileNotFoundException, IOException
                 col = colOutStart + numDateTimeCol + its;
                 TSData tsdata = new TSData();
                 tsdata = ts.getDataPoint(date, tsdata);
-                // First expand the line to replace time series properties
+                // First expand the line to replace time series properties.
                 value = tsdata.getDataValue();
                 flag = tsdata.getDataFlag();
             	try {
 	                if ( ts.isDataMissing(value) ) {
 	                	if ( missingValueBlank ) {
-	                		// Set the cell value to blank
+	                		// Set the cell value to blank.
 	                		cell = tk.setCellBlank(sheet,row,col);
 	                	}
 	                	else if ( missingValueStrings[its] != null ) {
-	                		// A string missing value is specified so set the cell value to the string
+	                		// A string missing value is specified so set the cell value to the string.
 	                   		cell = tk.setCellValue(sheet,row,col,missingValueStrings[its]);
 	                    }
 	                	else {
-	                    	// Set the cell value to the numerical missing value
+	                    	// Set the cell value to the numerical missing value.
 	                		cell = tk.setCellValue(sheet,row,col,ts.getMissing(),cellStyles[col - colOutStart]);
 	                	}
                         if ( styleManager != null ) {
-                        	// New-style...
+                        	// New-style.
                         	cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
                         }
 	                }
 	                else {
-	                    // Not missing so set to the numerical value
+	                    // Not missing so set to the numerical value.
 	                	cell = tk.setCellValue(sheet,row,col,value,cellStyles[col- colOutStart]);
                         if ( styleManager != null ) {
                         	// New-style...
@@ -1428,15 +1428,15 @@ throws FileNotFoundException, IOException
                         }
 	                }
 	                if ( doValueComment ) {
-                		// Create the comment and set
-                		// Brute force expand other properties
+                		// Create the comment and set:
+                		// - brute force expand other properties
 	                	if ( flag == null ) {
 	                		flag = "";
 	                	}
 	                	if ( !flag.isEmpty() || !skipValueCommentIfNoFlag ) {
-	                		// OK to put comment on data value cell
+	                		// OK to put comment on data value cell.
 	                		String comment = valueComment.replace("${tsdata:flag}", "" + flag );
-		                	// Then expand for the processor and time series properties
+		                	// Then expand for the processor and time series properties.
 	                		comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
 	                            processor, ts, comment, cs, commandPhase );
 	                		tk.setCellComment(wb, sheet, cell, comment, author, commentWidthInt, commentHeightInt);
@@ -1444,7 +1444,7 @@ throws FileNotFoundException, IOException
 	                }
             	}
                 catch ( Exception e ) {
-                    // Log but let the output continue
+                    // Log but let the output continue.
                     Message.printWarning(3, routine, "Unexpected error writing data value at Excel row [" + row + "][" + col + "] (" + e + ")." );
                     if ( Message.isDebugOn ) {
                     	Message.printWarning(3, routine, e);
@@ -1461,31 +1461,31 @@ throws FileNotFoundException, IOException
             col = colOutStart + numDateTimeCol + its;
     		Cell cell = sheet.getRow(rowOutStart).getCell(col);
             if ( (columnComment != null) && !columnComment.isEmpty() ) {
-            	// Create the column comment and set
+            	// Create the column comment and set.
             	String comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
             		processor, ts, columnComment, cs, commandPhase );
         		tk.setCellComment(wb, sheet, cell, comment, author, columnCommentWidthInt, columnCommentHeightInt);
             }
             if ( columnStyleManager != null ) {
-            	// Can set the style independent of the column comment
-            	// New-style - data value and flag are not used
+            	// Can set the style independent of the column comment.
+            	// New-style - data value and flag are not used.
             	cell.setCellStyle(columnStyleManager.getStyle(ts,its,0.0,null));
             }
         }
-        // Now do post-data set operations
-        // Set the column width
-        // TODO SAM 2015-02-17 Need to enable a parameter control width similar to WriteTableToExcel
+        // Now do post-data set operations:
+        // - get the column width
+        // - TODO SAM 2015-02-17 Need to enable a parameter control width similar to WriteTableToExcel
         colOut = colOutStart;
         for ( col = colOutStart; col < (colOutStart + cols); col++ ) {
         	String width = "Auto";
             if ( width != null ) {
-                // Set the column width
+                // Set the column width.
                 if ( width.equalsIgnoreCase("Auto") ) {
                     sheet.autoSizeColumn(col);
                     Message.printStatus(2,routine,"Setting column [" + col + "] width to auto.");
                 }
                 else {
-                    // Set the column width to 1/256 of character width, max of 256*256 since 256 is max characters shown
+                    // Set the column width to 1/256 of character width, max of 256*256 since 256 is max characters shown.
                     try {
                         int w = Integer.parseInt(width.trim());
                         sheet.setColumnWidth(col, w);
@@ -1497,7 +1497,7 @@ throws FileNotFoundException, IOException
                 }
             }
         }
-        // Write the legend
+        // Write the legend.
         if ( (legendAddress != null) && !legendAddress.isEmpty() && (styleManager != null) ) {
         	writeLegend ( tk, wb, sheet, styleManager, legendWorksheet, legendAddress, problems );
         }
@@ -1509,12 +1509,12 @@ throws FileNotFoundException, IOException
     finally {
         // Now write the workbook and close.  If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
-            // Save the open workbook for other commands to use
+            // Save the open workbook for other commands to use.
             ExcelUtil.setOpenWorkbook(workbookFile,"w",wb);
         }
         else {
-            // Close the workbook and remove from the cache
-            wb.setForceFormulaRecalculation(true); // Will cause Excel to recalculate formulas when it opens
+            // Close the workbook and remove from the cache.
+            wb.setForceFormulaRecalculation(true); // Will cause Excel to recalculate formulas when it opens.
             FileOutputStream fout = new FileOutputStream(workbookFile);
             wb.write(fout);
             fout.close();

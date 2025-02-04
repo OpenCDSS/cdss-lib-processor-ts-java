@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -129,9 +129,15 @@ public void actionPerformed(ActionEvent event) {
         String [] notes = {
             "Rows in the original table can be included in the copy by filtering on column values.",
             "All specified conditions must be true to include the row.",
-            "Column Name - column name in the original table to filter, can include ${Property}",
-            "Column Value Filter Pattern - a literal value to match (to include), or a pattern using * as a wildcard,",
-            "   can include ${Property}"
+            "Column Name:",
+            "- column name in the original table to filter",
+            "- can include ${Property}",
+            "Column Value Filter Pattern:",
+            "- values are converted to strings to check for matches",
+            "- comparisons ignore case",
+            "- a literal value to match (to include)",
+            "- or a pattern using * as a wildcard",
+            "- can include ${Property}"
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
             notes, "Column Name", "Column Value Filter Pattern",10)).response();
@@ -146,9 +152,15 @@ public void actionPerformed(ActionEvent event) {
         String [] notes = {
             "Rows in the original table can be excluded from the copy by filtering on column values.",
             "All specified conditions must be true to exclude the row.",
-            "Column Name - column name in the original table to filter",
-            "Column Value Filter Pattern - a literal value to match (to exclude), or a pattern using * as a wildcard",
-            "(specify blank to filter out columns with no values)"
+            "Column Name:",
+            "- column name in the original table to filter",
+            "- can include ${Property}",
+            "Column Value Filter Pattern:",
+            "- values are converted to strings to check for matches",
+            "- comparisons ignore case",
+            "- a literal value to match (to exclude)",
+            "- or a pattern using * as a wildcard",
+            "- specify blank to filter out columns with no values"
         };
         String columnExcludeFilters = (new DictionaryJDialog ( __parent, true, ColumnExcludeFilters, "Edit ColumnExcludeFilters Parameter",
             notes, "Column Name", "Column Value Filter Pattern",10)).response();
@@ -259,10 +271,13 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command creates a new table by copying another table."),
+        "This command creates a new table by copying another table, for example:"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "For example, single column tables can be created from a larger table to use as a list with a template."),
+        "  - filter columns and rows from a table to create a subset of the original table"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "  - single column tables can be created from a larger table to use as a list with an 'ExpandTemplateFile' command"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

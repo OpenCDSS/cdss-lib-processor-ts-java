@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -240,7 +240,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	IncludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeColumns);
     }
     String [] includeColumns = null;
-    if ( (commandPhase == CommandPhaseType.RUN) && (IncludeColumns != null) && !IncludeColumns.equals("") ) {
+    if ( (commandPhase == CommandPhaseType.RUN) && (IncludeColumns != null) && !IncludeColumns.isEmpty() ) {
         includeColumns = IncludeColumns.split(",");
         for ( int i = 0; i < includeColumns.length; i++ ) {
             includeColumns[i] = includeColumns[i].trim();
@@ -251,7 +251,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	DistinctColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DistinctColumns);
     }
     String [] distinctColumns = null;
-    if ( (commandPhase == CommandPhaseType.RUN) && (DistinctColumns != null) && !DistinctColumns.equals("") ) {
+    if ( (commandPhase == CommandPhaseType.RUN) && (DistinctColumns != null) && !DistinctColumns.isEmpty() ) {
         distinctColumns = DistinctColumns.split(",");
         for ( int i = 0; i < distinctColumns.length; i++ ) {
             distinctColumns[i] = distinctColumns[i].trim();
@@ -295,7 +295,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
-        if ( (TableID != null) && !TableID.equals("") ) {
+        if ( (TableID != null) && !TableID.isEmpty() ) {
             // Get the table to be updated.
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
@@ -364,7 +364,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             setDiscoveryTable ( newTable );
         }
 	    // Set the property indicating the number of rows in the table.
-        if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
             int rowCount = 0;
             if ( newTable != null ) {
                 rowCount = newTable.getNumberOfRecords();

@@ -35,6 +35,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -72,20 +73,28 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private For_Command __command = null;
+// General (top).
 private JTextField __Name_JTextField = null;
 private JTextField __IteratorProperty_JTextField = null;
-private JTextField __IteratorValueProperty_JTextField = null;
+private JTextField __IndexProperty_JTextField = null;
+private SimpleJComboBox __ShowProgress_JComboBox;
 private JTabbedPane __main_JTabbedPane = null;
+// List.
+private JTextField __IteratorValueProperty_JTextField = null;
 private JTextArea __List_JTextArea = null;
+// Sequence.
 private JTextField __SequenceStart_JTextField = null;
 private JTextField __SequenceEnd_JTextField = null;
 private JTextField __SequenceIncrement_JTextField = null;
+// Table.
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
 private JTextArea __TablePropertyMap_JTextArea = null;
+// Time period.
 private JTextField __PeriodStart_JTextField = null;
 private JTextField __PeriodEnd_JTextField = null;
 private SimpleJComboBox __PeriodIncrement_JComboBox = null;
+// Time series list.
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -156,6 +165,10 @@ public void actionPerformed( ActionEvent event ) {
             refresh();
         }
     }
+    else {
+    	// No special action.
+    	refresh();
+    }
 }
 
 /**
@@ -201,33 +214,49 @@ private void checkInput () {
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String IndexProperty = __IndexProperty_JTextField.getText().trim();
+	String ShowProgress = __ShowProgress_JComboBox.getSelected();
+	// List.
     String IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    // Sequence.
     String SequenceStart = __SequenceStart_JTextField.getText().trim();
     String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
     String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
+    // Table.
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
 	String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	// Time period.
     String PeriodStart = __PeriodStart_JTextField.getText().trim();
     String PeriodEnd = __PeriodEnd_JTextField.getText().trim();
     String PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
+    // Time Series.
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	// General.
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
-    if ( IteratorProperty.length() > 0 ) {
+    if ( !IteratorProperty.isEmpty() ) {
         props.set ( "IteratorProperty", IteratorProperty );
     }
+    if ( !IndexProperty.isEmpty() ) {
+        props.set ( "IndexProperty", IndexProperty );
+    }
+	if ( !ShowProgress.isEmpty() ) {
+		props.set ( "ShowProgress", ShowProgress );
+	}
+	// List.
     if ( IteratorValueProperty.length() > 0 ) {
         props.set ( "IteratorValueProperty", IteratorValueProperty );
     }
     if ( List.length() > 0 ) {
         props.set ( "List", List );
     }
+    // Sequence.
     if ( SequenceStart.length() > 0 ) {
         props.set ( "SequenceStart", SequenceStart );
     }
@@ -237,6 +266,7 @@ private void checkInput () {
     if ( SequenceIncrement.length() > 0 ) {
         props.set ( "SequenceIncrement", SequenceIncrement );
     }
+    // Table.
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
     }
@@ -246,6 +276,7 @@ private void checkInput () {
     if ( TablePropertyMap.length() > 0 ) {
         props.set ( "TablePropertyMap", TablePropertyMap );
     }
+    // Time period.
     if ( PeriodStart.length() > 0 ) {
         props.set ( "PeriodStart", PeriodStart );
     }
@@ -255,6 +286,7 @@ private void checkInput () {
     if ( PeriodIncrement.length() > 0 ) {
         props.set ( "PeriodIncrement", PeriodIncrement );
     }
+    // Time Series.
 	if ( TSList.length() > 0 ) {
 		props.set ( "TSList", TSList );
 	}
@@ -281,36 +313,52 @@ private void checkInput () {
 Commit the edits to the command.
 */
 private void commitEdits () {
+	// General.
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String IndexProperty = __IndexProperty_JTextField.getText().trim();
+    String ShowProgress = __ShowProgress_JComboBox.getSelected();
+	// List.
     String IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    // Sequence.
     String SequenceStart = __SequenceStart_JTextField.getText().trim();
     String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
     String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
+    // Table.
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+    // Time period.
     String PeriodStart = __PeriodStart_JTextField.getText().trim();
     String PeriodEnd = __PeriodEnd_JTextField.getText().trim();
     String PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
+    // Time Series.
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
+    // General.
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
+    __command.setCommandParameter ( "IndexProperty", IndexProperty );
+    __command.setCommandParameter ( "ShowProgress", ShowProgress );
+    // List.
     __command.setCommandParameter ( "IteratorValueProperty", IteratorValueProperty );
     __command.setCommandParameter ( "List", List );
+    // Sequence.
     __command.setCommandParameter ( "SequenceStart", SequenceStart );
     __command.setCommandParameter ( "SequenceEnd", SequenceEnd );
     __command.setCommandParameter ( "SequenceIncrement", SequenceIncrement );
+    // Table.
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
     __command.setCommandParameter ( "TablePropertyMap", TablePropertyMap );
+    // Time period.
     __command.setCommandParameter ( "PeriodStart", PeriodStart );
     __command.setCommandParameter ( "PeriodEnd", PeriodEnd );
     __command.setCommandParameter ( "PeriodIncrement", PeriodIncrement );
+    // Time series.
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -372,6 +420,35 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - name of iterator property for iteration (default=for loop name)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop index property:" ),
+        0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IndexProperty_JTextField = new JTextField (20);
+    __IndexProperty_JTextField.setToolTipText("Property name for property that will contain the iterator index (1+).");
+    __IndexProperty_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(main_JPanel, __IndexProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - name of index property for iteration (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show progress?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> ShowProgress_List = new ArrayList<>( 3 );
+	ShowProgress_List.add ( "" );
+	ShowProgress_List.add ( __command._False );
+	ShowProgress_List.add ( __command._True );
+	__ShowProgress_JComboBox = new SimpleJComboBox ( false );
+	__ShowProgress_JComboBox.setToolTipText("Show command progress in the TSTool UI progress bar?.");
+	__ShowProgress_JComboBox.setData ( ShowProgress_List);
+	__ShowProgress_JComboBox.select ( 0 );
+	__ShowProgress_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ShowProgress_JComboBox,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - show progress in TSTool (default=" + __command._False + ")."),
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Tabbed panel for For input types.
 
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -465,7 +542,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
 
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ),
         0, ++yTable, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
+    __TableID_JComboBox = new SimpleJComboBox ( true ); // Allow edit.
     __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table.
     __TableID_JComboBox.setData ( tableIDChoices );
@@ -699,19 +776,27 @@ Refresh the command from the other text field contents.
 */
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
+	// General.
     String Name = "";
     String IteratorProperty = "";
+    String IndexProperty = "";
+	String ShowProgress = "";
+	// List.
     String IteratorValueProperty = "";
     String List = "";
+    // Sequence.
     String SequenceStart = "";
     String SequenceEnd = "";
     String SequenceIncrement = "";
+    // Table.
 	String TableID = "";
 	String TableColumn = "";
 	String TablePropertyMap = "";
+	// Time period.
     String PeriodStart = "";
     String PeriodEnd = "";
     String PeriodIncrement = "";
+    // Time series.
     String TSList = "";
     String TSID = "";
 	String EnsembleID = "";
@@ -720,29 +805,58 @@ private void refresh () {
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
+		// General.
 		Name = props.getValue( "Name" );
 	    IteratorProperty = props.getValue( "IteratorProperty" );
+	    IndexProperty = props.getValue( "IndexProperty" );
+		ShowProgress = props.getValue ( "ShowProgress" );
+		// List.
 	    IteratorValueProperty = props.getValue( "IteratorValueProperty" );
 	    List = props.getValue( "List" );
+	    // Sequence.
 	    SequenceStart = props.getValue( "SequenceStart" );
 	    SequenceEnd = props.getValue( "SequenceEnd" );
 	    SequenceIncrement = props.getValue( "SequenceIncrement" );
+	    // Table.
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
 		TablePropertyMap = props.getValue ( "TablePropertyMap" );
+		// Time period.
 	    PeriodStart = props.getValue( "PeriodStart" );
 	    PeriodEnd = props.getValue( "PeriodEnd" );
 	    PeriodIncrement = props.getValue( "PeriodIncrement" );
+	    // Time series.
 		TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
 		TimeSeriesPropertyMap = props.getValue ( "TimeSeriesPropertyMap" );
+		// General.
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
         if ( IteratorProperty != null ) {
             __IteratorProperty_JTextField.setText( IteratorProperty );
         }
+        if ( IndexProperty != null ) {
+            __IndexProperty_JTextField.setText( IndexProperty );
+        }
+		if ( (ShowProgress == null) || ShowProgress.isEmpty() ) {
+			// Select default.
+			__ShowProgress_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __ShowProgress_JComboBox,
+				ShowProgress, JGUIUtil.NONE, null, null ) ) {
+				__ShowProgress_JComboBox.select ( ShowProgress );
+			}
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid ShowProgress value \"" +
+				ShowProgress + "\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
+		// List.
         if ( IteratorValueProperty != null ) {
             __IteratorValueProperty_JTextField.setText( IteratorValueProperty );
         }
@@ -750,6 +864,7 @@ private void refresh () {
             __List_JTextArea.setText( List );
             __main_JTabbedPane.setSelectedIndex(0);
         }
+        // Sequence.
 		if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
 		    __SequenceStart_JTextField.setText( SequenceStart );
 		    __main_JTabbedPane.setSelectedIndex(1);
@@ -760,6 +875,7 @@ private void refresh () {
 		if ( SequenceIncrement != null ) {
 		    __SequenceIncrement_JTextField.setText( SequenceIncrement );
 		}
+		// Table.
         if ( (TableID == null) || TableID.isEmpty() ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -782,6 +898,7 @@ private void refresh () {
         if ( TablePropertyMap != null ) {
             __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
         }
+        // Time period.
 		if ( (PeriodStart != null) && !PeriodStart.isEmpty() ) {
 		    __PeriodStart_JTextField.setText( PeriodStart );
 		    __main_JTabbedPane.setSelectedIndex(3);
@@ -804,6 +921,7 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+        // Time series.
         if ( (TSList == null) || TSList.isEmpty() ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -856,37 +974,53 @@ private void refresh () {
         }
 	}
 	// Regardless, reset the command from the fields.
+	// General.
 	Name = __Name_JTextField.getText().trim();
     IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    IndexProperty = __IndexProperty_JTextField.getText().trim();
+    ShowProgress = __ShowProgress_JComboBox.getSelected();
+    // List.
     IteratorValueProperty = __IteratorValueProperty_JTextField.getText().trim();
     List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    // Sequence.
     SequenceStart = __SequenceStart_JTextField.getText().trim();
     SequenceEnd = __SequenceEnd_JTextField.getText().trim();
     SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
+    // Table.
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
 	TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
+	// Time period.
     PeriodStart = __PeriodStart_JTextField.getText().trim();
     PeriodEnd = __PeriodEnd_JTextField.getText().trim();
     PeriodIncrement = __PeriodIncrement_JComboBox.getSelected();
+    // Time series.
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	TimeSeriesPropertyMap = __TimeSeriesPropertyMap_JTextArea.getText().trim().replace("\n"," ");
     props = new PropList ( __command.getCommandName() );
+    // General.
     props.add ( "Name=" + Name );
     props.add ( "IteratorProperty=" + IteratorProperty );
+    props.add ( "IndexProperty=" + IndexProperty );
+    props.add ( "ShowProgress=" + ShowProgress );
+    // List.
     props.add ( "IteratorValueProperty=" + IteratorValueProperty );
     props.add ( "List=" + List );
+    // Sequence.
     props.add ( "SequenceStart=" + SequenceStart );
     props.add ( "SequenceEnd=" + SequenceEnd );
     props.add ( "SequenceIncrement=" + SequenceIncrement );
+    // Table.
     props.set ( "TableID", TableID ); // May contain = so handle differently.
     props.add ( "TableColumn=" + TableColumn );
     props.add ( "TablePropertyMap=" + TablePropertyMap );
+    // Time period.
     props.add ( "PeriodStart=" + PeriodStart );
     props.add ( "PeriodEnd=" + PeriodEnd );
     props.add ( "PeriodIncrement=" + PeriodIncrement );
+    // Time series.
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -122,7 +122,8 @@ throws InvalidCommandParameterException {
 
     if ( (InputFile != null) && !InputFile.isEmpty() && (InputFile.indexOf("${") < 0) ) {
         String working_dir = null;
-        try { Object o = processor.getPropContents ( "WorkingDir" );
+        try {
+        	Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
                 working_dir = (String)o;
             }
@@ -134,6 +135,7 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Software error - report problem to support." ) );
         }
+        /* Don't check for file becausae it may be created dynamically.
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
             File f = new File ( adjusted_path );
@@ -156,6 +158,7 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
+        */
         if ( (InputText != null) && !InputText.isEmpty() ) {
             message = "The input template file and input text cannot both be specified.";
             warning += "\n" + message;
@@ -467,33 +470,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	*/
 
 	String InputFile_full = null;
-	if ( commandPhase == CommandPhaseType.RUN ) {
-		if ( (InputFile != null) && !InputFile.equals("") ) {
-		    InputFile_full = IOUtil.verifyPathForOS(
-		        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-		        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
-	        File file = new File ( InputFile_full );
-	    	if ( !file.exists() ) {
-	            message = "Template command file \"" + InputFile_full + "\" does not exist.";
-	            /*
-	            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-	                Message.printWarning ( warning_level,
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-	                        message, "Verify that the file exists at the time the command is run."));
-	            }
-	            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
-	                Message.printWarning ( warning_level,
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	if ( (InputFile != null) && !InputFile.equals("") ) {
+	    InputFile_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+        File file = new File ( InputFile_full );
+    	if ( !file.exists() ) {
+            message = "Template command file \"" + InputFile_full + "\" does not exist.";
+            CommandStatusType statusType = CommandStatusType.WARNING;
+            if ( commandPhase == CommandPhaseType.RUN ) {
+            	statusType = CommandStatusType.FAILURE;
+            }
+            else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            	statusType = CommandStatusType.WARNING;
+            }
+	        /*
+	        if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+	           Message.printWarning ( warning_level,
+	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 	                    message, "Verify that the file exists at the time the command is run."));
-	                /*
-	            }
-	            else {
-	                Message.printStatus( 2, routine, message + "  Ignoring.");
-	            }*/
-	    	}
-		}
+	        }
+	        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
+	            Message.printWarning ( warning_level,
+	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(statusType,
+	                message, "Verify that the file exists at the time the command is run."));
+	            /*
+	        }
+	        else {
+	            Message.printStatus( 2, routine, message + "  Ignoring.");
+	        }*/
+	   	}
 	}
 
 	// Output file parent folder is only checked if it does not contain a property.

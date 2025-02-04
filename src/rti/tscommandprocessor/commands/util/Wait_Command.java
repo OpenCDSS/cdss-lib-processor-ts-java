@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -53,27 +53,26 @@ public class Wait_Command extends AbstractCommand implements Command
 /**
 Constructor.
 */
-public Wait_Command ()
-{	super();
+public Wait_Command () {
+	super();
 	setCommandName ( "Wait" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String routine = getCommandName() + "_checkCommandParameters";
+throws InvalidCommandParameterException {
+	String routine = getCommandName() + "_checkCommandParameters";
 	String WaitTime = parameters.getValue ( "WaitTime" );
 	String ProgressIncrement = parameters.getValue ( "ProgressIncrement" );
 	String warning = "";
 	String message;
-	
+
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -94,7 +93,7 @@ throws InvalidCommandParameterException
   				new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the wait time as >= .001" ) );
   		}
 	}
-    
+
     if ( (ProgressIncrement != null) && !ProgressIncrement.equals("") ) {
     	if ( (ProgressIncrement.indexOf("${") < 0) && !StringUtil.isDouble(ProgressIncrement)) {
 	        message = "The progress increment (" + ProgressIncrement + ") is invalid.";
@@ -104,19 +103,19 @@ throws InvalidCommandParameterException
     	}
     }
 
-	// Check for invalid parameters...
+	// Check for invalid parameters.
     List<String> validList = new ArrayList<>(2);
 	validList.add ( "WaitTime" );
 	validList.add ( "ProgressIncrement" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-	
+
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -125,8 +124,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new Wait_JDialog ( parent, this )).ok();
 }
 
@@ -137,8 +136,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException, InvalidCommandParameterException, InterruptedException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws CommandWarningException, CommandException, InvalidCommandParameterException, InterruptedException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -146,7 +145,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = new Boolean(true); // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -154,7 +153,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
@@ -170,32 +169,32 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	if ( (ProgressIncrement != null) && (ProgressIncrement.indexOf("${") >= 0) ) {
 		ProgressIncrement = TSCommandProcessorUtil.expandParameterValue(processor, this, ProgressIncrement);
 	}
-	int progressIncrementMs = 0; 
+	int progressIncrementMs = 0;
 	if ( (ProgressIncrement != null) && !ProgressIncrement.equals("") && StringUtil.isDouble(ProgressIncrement) ) {
 		progressIncrementMs = (int)(Double.parseDouble(ProgressIncrement)*1000);
 	}
-	
+
 	// Do a runtime check in case the wait time was specified with a property.
 	if ( waitTimeMs == 0 ) {
 		message = "Wait time is < 1ms.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a wait time >= .001." ) );
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-	
+
 	try {
-		long waitDelta = waitTimeMs/10; // Default
-		// Change the delta to be the update if specified
+		long waitDelta = waitTimeMs/10; // Default.
+		// Change the delta to be the update if specified.
 		if ( progressIncrementMs > 0 ) {
 			waitDelta = progressIncrementMs;
 		}
@@ -207,7 +206,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		numSteps = (int)(waitTimeMs/waitDelta);
 		int i = 0;
 		for ( long wait = 0; wait < waitTimeMs; wait += waitDelta, i++ ) {
-			// Do a simple sleep
+			// Do a simple sleep.
 			Thread.sleep(waitDelta);
 			message = "Waited " + wait/1000 + " seconds of " + WaitTime;
             notifyCommandProgressListeners ( i, numSteps, (float)-1.0, message );
@@ -215,14 +214,14 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
     }
 	catch ( Exception e ) {
 		if ( Thread.interrupted() ) {
-			// Processing was killed so just rethrow exception to catch in the processor
+			// Processing was killed so just rethrow exception to catch in the processor.
 			Message.printStatus(2, routine, "Wait command was interrupted.");
 			Message.printWarning(3, routine, e);
 			throw new InterruptedException();
 		}
 		Message.printWarning ( 3, routine, e );
 		message = "Error waiting (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,

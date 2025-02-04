@@ -559,7 +559,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	HydrologyNodeNetwork network = null;
 	List<HydrologyNode> foundNetworkNodes = null;
-	if ( (NetworkID != null) && !NetworkID.equals("") ) {
+	if ( (NetworkID != null) && !NetworkID.isEmpty() ) {
 	    request_params = null;
 	    bean = null;
         // Get the table to be updated.

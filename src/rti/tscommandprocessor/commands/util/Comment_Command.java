@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,11 +68,11 @@ public Comment_Command () {
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
+@param commandTag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
+@param warningLevel The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
+public void checkCommandParameters ( PropList parameters, String commandTag, int warningLevel )
 throws InvalidCommandParameterException {
 	// Currently nothing to check.
     String warning = "";
@@ -100,8 +100,8 @@ throws InvalidCommandParameterException {
    	}
 
 	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
+		Message.printWarning ( warningLevel,
+		MessageUtil.formatMessageTag(commandTag,warningLevel),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
@@ -137,7 +137,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int commandNumber )
-throws InvalidCommandParameterException, CommandWarningException, CommandException {   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
 	String routine = getClass().getSimpleName() + ".runCommand";
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
@@ -237,7 +237,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 		}
-		
+
 		if ( warningCount == 0 ) {
 			// Get the source command file using the URL and compare the version:
 			// - time out is 5 seconds
@@ -488,6 +488,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    	}
 
    	status.refreshPhaseSeverity ( CommandPhaseType.RUN, CommandStatusType.SUCCESS );
+}
+
+/**
+Return the command string with the specified parameter string.
+This can be called, for example, with "..." or "" for use in the TSTool UI progress messages when a full command string is too long.
+For this command return "#" if parameterString is null or empty and otherwise return "# " + parameterString.
+@param parameterString the parameter string in the command parentheses ()
+@return the formatted command string.
+*/
+public String toString ( String parameterString ) {
+	if ( (parameterString == null) || parameterString.isEmpty() ) {
+		return "#";
+	}
+	else {
+		return "# " + parameterString ;
+	}
 }
 
 /**

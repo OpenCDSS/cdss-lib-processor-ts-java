@@ -124,10 +124,22 @@ CommandWarningException, CommandException
 }
 
 /**
-Return the string representation of the command.
+Return the command string with the specified parameter string.
+This can be called, for example, with "..." or "" for use in the TSTool UI progress messages when a full command string is too long.
+For this command always returns the comment block end.
+@param parameterString ignored
+@return the formatted command string.
 */
-public String toString ( PropList parameters )
-{	return getCommandName();
+public String toString ( String parameterString ) {
+	return "*/";
+}
+
+/**
+Return the string representation of the command.
+@param parameters the command parameters
+*/
+public String toString ( PropList parameters ) {
+	return getCommandName();
 }
 
 }

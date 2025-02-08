@@ -225,7 +225,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Should not occur." ) );
+                message, "Should not occur unless processing was manually interrupted." ) );
 		throw new CommandException ( message );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

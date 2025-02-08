@@ -1,22 +1,22 @@
-// ReadUsgsInstantaneous_Command - initialize, check, and run the Add() command
+// ReadUsgsInstantaneous_Command - initialize, check, and run the ReadUsgsNwisInstantaneous() command
 
 /* NoticeStart
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -352,7 +352,7 @@ private List<TS> getDiscoveryTSList () {
 Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList () {
-    List<File> list = new ArrayList<File>();
+    List<File> list = new ArrayList<>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -460,7 +460,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
 	}
-    List<String> siteList = new ArrayList<String>();
+    List<String> siteList = new ArrayList<>();
     if ( (Sites != null) && !Sites.equals("") ) {
         if ( Sites.indexOf(",") < 0 ) {
             siteList.add(Sites.trim());
@@ -481,7 +481,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
 	}
-    List<String> stateList = new ArrayList<String>();
+    List<String> stateList = new ArrayList<>();
     if ( (States != null) && !States.equals("") ) {
         if ( States.indexOf(",") < 0 ) {
             stateList.add(States.trim());
@@ -502,7 +502,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
 	}
-    List<String> hucList = new ArrayList<String>();
+    List<String> hucList = new ArrayList<>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
         if ( HUCs.indexOf(",") < 0 ) {
             hucList.add(HUCs.trim());
@@ -523,7 +523,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
 	}
-    List<String> countyList = new ArrayList<String>();
+    List<String> countyList = new ArrayList<>();
     if ( (Counties != null) && !Counties.equals("") ) {
         if ( Counties.indexOf(",") < 0 ) {
             countyList.add(Counties.trim());
@@ -544,7 +544,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		propertiesUsedInParameters = true;
     	}
 	}
-    List<UsgsNwisParameterType> parameterList = new ArrayList<UsgsNwisParameterType>();
+    List<UsgsNwisParameterType> parameterList = new ArrayList<>();
     if ( (Parameters != null) && !Parameters.equals("") ) {
         if ( Parameters.indexOf(",") < 0 ) {
             parameterList.add(new UsgsNwisParameterType(Parameters.trim(), "", "", "", "", ""));
@@ -571,7 +571,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
 
-    List<UsgsNwisSiteType> siteTypeList = new ArrayList<UsgsNwisSiteType>();
+    List<UsgsNwisSiteType> siteTypeList = new ArrayList<>();
     if ( (SiteTypes != null) && !SiteTypes.equals("") ) {
         if ( SiteTypes.indexOf(",") < 0 ) {
             siteTypeList.add(new UsgsNwisSiteType(SiteTypes.trim(), "", ""));

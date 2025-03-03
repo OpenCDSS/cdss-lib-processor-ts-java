@@ -172,6 +172,7 @@ throws CommandWarningException, CommandException {
 		status.clearLog(CommandPhaseType.RUN);
 	}
 
+    // Use 'Message2' internally because 'Message' is a global static class for logging.
 	String Message2 = parameters.getValue ( "Message" );
 	String PromptActions = parameters.getValue ( "PromptActions" );
     PromptActions = TSCommandProcessorUtil.expandParameterValue(processor,this,PromptActions);

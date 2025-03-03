@@ -2458,7 +2458,7 @@ throws Exception {
     				// Initialize the command (parse).
     				// TODO SAM 2007-09-05 Need to evaluate where the initialization occurs (probably the initial edit or load)?
     				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Initializing the Command for \"" + commandString + "\"" );
+    					Message.printDebug ( 1, routine, "Initializing the command: \"" + commandString + "\"" );
     				}
     				if ( commandStatusProvider != null ) {
     					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
@@ -2469,7 +2469,7 @@ throws Exception {
     				// TODO SAM 2005-05-11 Is this the best place for this or should it be in RunCommand()?
     				// Check the command parameters.
     				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + commandString + "\"" );
+    					Message.printDebug ( 1, routine, "Checking the parameters for command: \"" + commandString + "\"" );
     				}
     				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
     				// TODO SAM 2015-06-06 Seems to be multiple places where status is cleared.
@@ -2482,7 +2482,7 @@ throws Exception {
     				if ( ifStackOkToRun ) {
         				// Run the command.
         				if ( Message.isDebugOn ) {
-        					Message.printDebug ( 1, routine, "Running command through new code..." );
+        					Message.printDebug ( 1, routine, "Running the command..." );
         				}
         	    		if ( command instanceof Break_Command ) {
         	    			// First find the For command that starts the loop.

@@ -563,7 +563,7 @@ public static String expandParameterDiscoveryValue( List<Prop> props, Command co
 }
 
 /**
-Expand a string containing processor-level properties.  For example, a parameter value like
+Expand a command parameter string containing processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
 The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
 Properties ${${property}-abc} are nested and will be expanded twice to get the value of the property from the inner expansion.
@@ -619,22 +619,30 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
 
    	// Determine the list of all ${} substrings:
    	// - may contain proper syntax
-   	// - may contain malformed syntax such as '${${ ...}' - will be ignored because no property name will match
+   	// - may contain malformed syntax such as '${${ ...}' (only one right bracket) - will be ignored because no property name will match
    	List<String> propertyStrings = new ArrayList<>();
    	while ( searchPos < parameterValue.length() ) {
+		if ( Message.isDebugOn ) {
+    		Message.printDebug( 1, routine, "searchPos=" + searchPos );
+		}
+		// Search for the start delimiter.
        	foundStartPos = parameterValue.indexOf(delimStart, searchPos);
+       	// Search for the end delimiter after the start delimiter.
        	foundEndPos = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
-       	if ( (foundStartPos >= 0) && (foundEndPos >= 0) ) {
+       	if ( (foundStartPos >= 0) && (foundEndPos >= 0) && (foundEndPos > foundStartPos) ) {
        		// Have a ${ ... } string (could also be nested like ${... ${...} ...}
        		// Keep the surrounding characters since they are needed for the "from" string in the replacement.
+  			if ( Message.isDebugOn ) {
+	    		Message.printDebug( 1, routine, "foundStartPos=" + foundStartPos + " foundEndPos=" + foundEndPos );
+   			}
        		String propertyString = parameterValue.substring(foundStartPos,(foundEndPos + 1));
   			if ( Message.isDebugOn ) {
 	    		Message.printDebug( 1, routine, "Delimiter start count for \"" + propertyString + "\" is " + StringUtil.patternCount(propertyString, delimStart));
    			}
        		if ( StringUtil.patternCount(propertyString, delimStart) > 1 ) {
        			// Nested property:
-   				// - could be '${${...}' or '${...${ ... }'.
-       			// - advance the search position past the redundant ${ but don't try to replace
+   				// - could be '${${...}' or '${...${ ... }'. // } } to close
+       			// - advance the search position past the redundant ${ but don't try to replace // } to close
        			searchPos += 2;
        			// Indicate that nested properties were found so a second pass can occur.
        			doNested = true;

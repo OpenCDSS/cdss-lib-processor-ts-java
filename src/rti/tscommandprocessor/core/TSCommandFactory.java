@@ -428,18 +428,19 @@ public TSCommandFactory ( List<Class> pluginCommandClassList ) {
 Return a new command, based on the command name.
 DO NOT create an UnknownCommand if the command is not recognized.
 @return a new command, based on the command name.
-@param command_string The command string to process.
+@param commandString The command string to process, can include leading indent spaces.
 @throws UnknownCommandException if the command name is not recognized.
 */
-public Command newCommand ( String command_string )
+public Command newCommand ( String commandString )
 throws UnknownCommandException {
-	return newCommand ( command_string, false );
+	return newCommand ( commandString, false );
 }
 
 /**
 Return a new command, based on the command name.
 @return a new command, based on the command name.
-@param commandString The command string to process.
+The command string saved with the command WILL NOT include leading spaces so these need to be added independently.
+@param commandString The command string to process, can include leading indent spaces.
 The command string can contain parameters but they are not parsed.
 At a minimum, the command string needs to be of the form "CommandName()" or "TS Alias = CommandName()".
 @param createUnknownCommandIfNotRecognized If true and the command is not recognized,

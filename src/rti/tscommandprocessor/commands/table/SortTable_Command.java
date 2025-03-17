@@ -228,9 +228,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String SortOrder = parameters.getValue ( "SortOrder" );
     StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
+    // Array to hold sort order for the sorted columns:
+    // 1 = ascending (default)
+    // -1 = descending
 	int [] sortOrderArray = new int[sortColumns.length];
 	for ( int i = 0; i < sortColumns.length; i++ ) {
-		sortOrderArray[i] = 1; // Default.
+		sortOrderArray[i] = 1; // Default (1=Ascending).
 		Object o = sortOrder.get(sortColumns[i]);
 		if ( o != null ) {
 			String s = (String)o;

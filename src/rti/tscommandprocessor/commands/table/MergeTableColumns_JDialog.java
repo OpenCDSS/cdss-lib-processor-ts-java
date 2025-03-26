@@ -4,38 +4,22 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
-// ----------------------------------------------------------------------------
-// MergeTableColumns_JDialog - merge columns in a table
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-11-18	Steven A. Malers, RTi	Initial version - copy and modify
-//					readFromList_JDialog.
-// 2005-11-23	SAM, RTi		Update to make available as a command
-//					and a tool.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-// EndHeader
 
 package rti.tscommandprocessor.commands.table;
 
@@ -316,26 +300,6 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Columns", Columns );
 	__command.setCommandParameter ( "NewColumnName", NewColumnName );
 	__command.setCommandParameter ( "SimpleMergeFormat", SimpleMergeFormat);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__ListFile_JTextField = null;
-	__OutputFile_JTextField = null;
-	__browse_JButton = null;
-	__browse2_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__path2_JButton = null;
-	__parent_JFrame = null;
-	__working_dir = null;
-	super.finalize ();
 }
 
 /**

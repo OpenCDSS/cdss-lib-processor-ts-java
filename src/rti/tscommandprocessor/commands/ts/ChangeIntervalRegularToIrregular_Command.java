@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -344,7 +344,7 @@ throws InvalidCommandParameterException {
                 CommandStatusType.FAILURE, message, "Specify the allowed missing count as an interger."));
 	    }
 	    else {
-	        allowMissingCount = new Integer(AllowMissingCount);
+	        allowMissingCount = Integer.valueOf(AllowMissingCount);
 	    }
 	}
 
@@ -359,7 +359,7 @@ throws InvalidCommandParameterException {
                 CommandStatusType.FAILURE, message, "Specify the allowed missing consecutive value as an interger."));
         }
         else {
-            allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+            allowMissingConsecutive = Integer.valueOf(AllowMissingConsecutive);
         }
     }
 
@@ -731,7 +731,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandStatus status = getCommandStatus();
     TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -809,7 +809,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
 	Integer allowMissingCount = null;
 	if ( StringUtil.isInteger(AllowMissingCount) ) {
-	    allowMissingCount = new Integer(AllowMissingCount);
+	    allowMissingCount = Integer.valueOf(AllowMissingCount);
 	}
 	/* TODO SAM 2005-02-18 may enable later.
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
@@ -817,7 +817,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String AllowMissingConsecutive = parameters.getValue("AllowMissingConsecutive" );
     Integer allowMissingConsecutive = null;
     if ( StringUtil.isInteger(AllowMissingConsecutive) ) {
-        allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+        allowMissingConsecutive = Integer.valueOf(AllowMissingConsecutive);
     }
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	TSUtil_ChangeInterval_OutputFillMethodType outputFillMethod = null;

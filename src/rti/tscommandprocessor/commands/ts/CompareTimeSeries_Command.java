@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1160,7 +1160,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -2196,16 +2196,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				   	// Save information for the report.
 				   	outputTSList.add ( ts1 );
 				   	matchedList.add ( "yes" );
-				   	compare_numvalues.add (	new Integer(diffStats.totalcount) );
+				   	compare_numvalues.add (	Integer.valueOf(diffStats.totalcount) );
 				   	compare_diffcount.add ( diffcount );
 				   	compare_diffabsavg.add ( diffabsavg );
 				   	compare_diffavg.add ( diffavg );
 				   	if ( is_diff ) {
-					   	compare_diffmax.add (new Double(diffStats.diffmax) );
+					   	compare_diffmax.add (Double.valueOf(diffStats.diffmax) );
 					   	compare_diffmaxdate.add (new DateTime(diffStats.diffmax_DateTime) );
 				   	}
 				   	else {
-				       	compare_diffmax.add (new Double(0.0) );
+				       	compare_diffmax.add (Double.valueOf(0.0) );
 					   	compare_diffmaxdate.add (null );
 				   	}
 			   	} // End time series matched.
@@ -2231,7 +2231,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					   	idata[it] = ndata;
 				   	}
 				   	double [] ddata = new double[Tolerance_count];
-				   	compare_numvalues.add (	new Integer(ndata) );
+				   	compare_numvalues.add (	Integer.valueOf(ndata) );
 				   	compare_diffcount.add ( diffcount );
 				   	compare_diffabsavg.add ( ddata );
 				   	compare_diffavg.add ( ddata );
@@ -2384,7 +2384,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
            	if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
                	PropList request_params = new PropList ( "" );
                	request_params.setUsingObject ( "PropertyName", DiffCountProperty );
-               	request_params.setUsingObject ( "PropertyValue", new Integer(diffCountTotal) );
+               	request_params.setUsingObject ( "PropertyValue", Integer.valueOf(diffCountTotal) );
                	try {
                    	processor.processRequest( "SetProperty", request_params);
                	}

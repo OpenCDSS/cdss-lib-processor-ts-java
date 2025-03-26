@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -450,7 +450,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     status.clearLog(CommandPhaseType.RUN);
     PropList parameters = getCommandParameters();
 
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -485,13 +485,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CheckValue1 = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckValue1);
     Integer CheckValue1_Integer = null;
     if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
-        CheckValue1_Integer = new Integer(CheckValue1);
+        CheckValue1_Integer = Integer.valueOf(CheckValue1);
     }
     String CheckValue2 = parameters.getValue ( "CheckValue2" );
 	CheckValue2 = TSCommandProcessorUtil.expandParameterValue(processor, this, CheckValue2);
     Integer CheckValue2_Integer = null;
     if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
-        CheckValue2_Integer = new Integer(CheckValue2);
+        CheckValue2_Integer = Integer.valueOf(CheckValue2);
     }
     String IfCriteriaMet = parameters.getValue ( "IfCriteriaMet" );
     if ( (IfCriteriaMet == null) || IfCriteriaMet.equals("") ) {
@@ -627,7 +627,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                    	Integer statisticInt = null;
                	   	File f = new File(InputFile_full);
                    	if ( Statistic.equalsIgnoreCase(this._FileSizeBytes) ) {
-                	   	statisticInt = new Integer((int)f.length());
+                	   	statisticInt = Integer.valueOf((int)f.length());
                    	}
                    	else if ( Statistic.equalsIgnoreCase(this._FileSizeLines) ) {
                 	   	statisticInt = IOUtil.lineCount(f);

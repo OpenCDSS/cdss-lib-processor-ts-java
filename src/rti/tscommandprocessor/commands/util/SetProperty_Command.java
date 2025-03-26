@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -458,7 +458,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -634,7 +634,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
 			    	if ( setNaN ) {
-			    		Property_Object = new Double(Double.NaN);
+			    		Property_Object = Double.NaN;
 			    	}
 			    	else if ( !setNull ) {
 			    		// Set a number value.
@@ -642,15 +642,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
-			    			Property_Object = new Double(d.doubleValue() + Double.parseDouble(Add));
+			    			Property_Object = Double.valueOf(d.doubleValue() + Double.parseDouble(Add));
 			    		}
 			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
-			    			Property_Object = new Double(d.doubleValue() - Double.parseDouble(Subtract));
+			    			Property_Object = Double.valueOf(d.doubleValue() - Double.parseDouble(Subtract));
 			    		}
 			    		else if ( (Multiply != null) && !Multiply.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
-			    			Property_Object = new Double(d.doubleValue()*Double.parseDouble(Multiply));
+			    			Property_Object = Double.valueOf(d.doubleValue()*Double.parseDouble(Multiply));
 			    		}
 			    		else if ( (Divide != null) && !Divide.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
@@ -659,7 +659,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    				// TODO sam 2017-03-25 should this throw an exception?
 			    			}
 			    			else {
-			    				Property_Object = new Double(d.doubleValue()/Double.parseDouble(Divide));
+			    				Property_Object = Double.valueOf(d.doubleValue()/Double.parseDouble(Divide));
 			    			}
 			    		}
 			    	}
@@ -670,15 +670,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
-			    			Property_Object = new Integer(i.intValue() + Integer.parseInt(Add));
+			    			Property_Object = Integer.valueOf(i.intValue() + Integer.parseInt(Add));
 			    		}
 			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
-			    			Property_Object = new Integer(i.intValue() - Integer.parseInt(Subtract));
+			    			Property_Object = Integer.valueOf(i.intValue() - Integer.parseInt(Subtract));
 			    		}
 			    		else if ( (Multiply != null) && !Multiply.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
-			    			Property_Object = new Integer(i.intValue()*Integer.parseInt(Multiply));
+			    			Property_Object = Integer.valueOf(i.intValue()*Integer.parseInt(Multiply));
 			    		}
 			    		else if ( (Divide != null) && !Divide.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
@@ -687,7 +687,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    				// TODO sam 2017-03-25 evaluate whether to throw an exception.
 			    			}
 			    			else {
-			    				Property_Object = new Integer(i.intValue()/Integer.parseInt(Divide));
+			    				Property_Object = Integer.valueOf(i.intValue()/Integer.parseInt(Divide));
 			    			}
 			    		}
 			    	}

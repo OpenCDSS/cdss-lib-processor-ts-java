@@ -121,11 +121,11 @@ throws InvalidCommandParameterException {
 	// because files may be created dynamically at runtime.
 
     if ( (InputFile != null) && !InputFile.isEmpty() && (InputFile.indexOf("${") < 0) ) {
-        String working_dir = null;
+        //String working_dir = null;
         try {
         	Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
-                working_dir = (String)o;
+                //working_dir = (String)o;
             }
         }
         catch ( Exception e ) {
@@ -135,7 +135,7 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Software error - report problem to support." ) );
         }
-        /* Don't check for file becausae it may be created dynamically.
+        /* Don't check for file because it may be created dynamically.
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
             File f = new File ( adjusted_path );
@@ -400,7 +400,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {

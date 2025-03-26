@@ -441,7 +441,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
 
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {

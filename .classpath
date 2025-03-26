@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-nwsrfs-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-models-java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-common-java"/>
-	<classpathentry kind="lib" path="lib/Jython/jython.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-cdss-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-rest-java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/poi-3.9-20121203.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/commons-codec-1.5.jar"/>
@@ -14,16 +19,12 @@
 	<classpathentry kind="lib" path="lib/apache-poi/dom4j-1.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/poi-ooxml-3.9-20121203.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/poi-ooxml-schemas-3.9-20121203.jar"/>
-	<classpathentry kind="lib" path="lib/apache-poi/xmlbeans-2.3.0.jar"/>
-	<classpathentry kind="lib" path="lib/apache-poi/stax-api-1.0.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-cdss-java"/>
 	<classpathentry kind="lib" path="lib/apache-commons-net/commons-net-3.3.jar"/>
 	<classpathentry kind="lib" path="lib/MySQL_JDBC/mysql-connector-java-5.1.36-bin.jar"/>
 	<classpathentry kind="lib" path="lib/gson/gson-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/javax-mail/javax.mail.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/ojdbc8.jar"/>
 	<classpathentry kind="lib" path="lib/WaterML2.0/waterml20.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-rest-java"/>
 	<classpathentry kind="lib" path="lib/PostgreSQL_JDBC/postgresql-42.2.9.jar"/>
 	<classpathentry kind="lib" path="lib/SQLite_JDBC/sqlite-jdbc-3.32.3.2.jar"/>
 	<classpathentry kind="lib" path="/cdss-lib-common-java/lib/Jackson/jackson-annotations-2.9.10.jar"/>
@@ -43,5 +44,22 @@
 	<classpathentry kind="lib" path="lib/heclib/hec-monolith-3.0.1-rc03.jar"/>
 	<classpathentry kind="lib" path="lib/heclib/hec-nucleus-metadata-1.1.0.jar"/>
 	<classpathentry kind="lib" path="lib/freemarker/freemarker-2.3.33.jar"/>
+	<classpathentry kind="lib" path="lib/apache-poi/xmlbeans-2.3.0-fixed.jar"/>
+	<classpathentry kind="lib" path="lib/jakarta-activation/jakarta.activation-api-2.1.3.jar"/>
+	<classpathentry kind="lib" path="lib/Jython/jython-fixed.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api/jaxb-api-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api/jaxb-runtime-2.3.2.jar"/>
+	<classpathentry kind="lib" path="lib/javax-api/javax.jws-api-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jaxws-api/jaxws-api-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/jaxws-api/jaxws-rt-2.3.3.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api/jaxb-core-2.3.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api/jaxb-impl-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/streambuffer/streambuffer-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/ws-policy/policy-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/stax-ex/stax-ex-1.8.3.jar"/>
+	<classpathentry kind="lib" path="lib/javax-xml-soap/javax.xml.soap-api-1.4.0.jar"/>
+	<classpathentry kind="lib" path="lib/javax-xml-soap/saaj-impl-1.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/javax-xml-soap/activation-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/javax-xml-soap/gmbal-api-only-4.0.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

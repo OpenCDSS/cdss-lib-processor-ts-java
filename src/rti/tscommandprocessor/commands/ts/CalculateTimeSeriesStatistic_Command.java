@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -387,7 +387,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -423,17 +423,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Value1 = parameters.getValue ( "Value1" );
     Double Value1_Double = null;
     if ( (Value1 != null) && !Value1.equals("") ) {
-        Value1_Double = new Double(Value1);
+        Value1_Double = Double.valueOf(Value1);
     }
     String Value2 = parameters.getValue ( "Value2" );
     Double Value2_Double = null;
     if ( (Value2 != null) && !Value2.equals("") ) {
-        Value2_Double = new Double(Value2);
+        Value2_Double = Double.valueOf(Value2);
     }
     String Value3 = parameters.getValue ( "Value3" );
     Double Value3_Double = null;
     if ( (Value3 != null) && !Value3.equals("") ) {
-        Value3_Double = new Double(Value3);
+        Value3_Double = Double.valueOf(Value3);
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // Property expansion is handled below
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );

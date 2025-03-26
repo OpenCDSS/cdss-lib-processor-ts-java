@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -220,8 +220,8 @@ private List<TableRecord> findTableRecords ( DataTable table,
 		}
 	}
 	*/
-	int columnExcludeOrCount = 0;
-	int columnExcludeOrMatchCount = 0;
+	//int columnExcludeOrCount = 0;
+	//int columnExcludeOrMatchCount = 0;
 	/*
 	for ( boolean columnExcludeOr : columnExcludeOrs ) {
 		if ( columnExcludeOr ) {
@@ -637,7 +637,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_count = 0;
 
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
 	CommandProcessor processor = getCommandProcessor();
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -981,7 +981,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	}
             	PropList requestParams = new PropList ( "" );
             	requestParams.setUsingObject ( "PropertyName", RowCountProperty );
-            	requestParams.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            	requestParams.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
             	try {
                 	processor.processRequest( "SetProperty", requestParams);
             	}
@@ -1004,7 +1004,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             	}
             	PropList requestParams = new PropList ( "" );
             	requestParams.setUsingObject ( "PropertyName", ColumnCountProperty );
-            	requestParams.setUsingObject ( "PropertyValue", new Integer(colCount) );
+            	requestParams.setUsingObject ( "PropertyValue", Integer.valueOf(colCount) );
             	try {
                 	processor.processRequest( "SetProperty", requestParams);
             	}

@@ -4,33 +4,22 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
-//------------------------------------------------------------------------------
-// writeNWSRFSESPTraceEnsemble_Command - handle the 
-//	writeNWSRFSESPTraceEnsemble() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2006-01-17	J. Thomas Sapienza, RTi	Initial version.
-//------------------------------------------------------------------------------
 
 package rti.tscommandprocessor.commands.nwsrfs;
 
@@ -240,14 +229,6 @@ public boolean editCommand(JFrame parent) {
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-	super.finalize();
-}
-
-/**
 Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
@@ -283,14 +264,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	String routine = "writeNWSRFSESPTraceEnsemble_Command.parseCommand", 
 	       message = null;
 	int warning_level = 2;
-	int warning_count = 0;
+	//int warning_count = 0;
 
 	List<String> tokens = StringUtil.breakStringList(command, "()", 0);
 	if ((tokens == null) || tokens.size() < 2) {
 		// Must have at least the command name and the InputFile
 		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
 		Message.printWarning ( warning_level, routine, message);
-		++warning_count;
+		//++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
@@ -302,7 +283,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
 		Message.printWarning ( warning_level,routine, message);
-		++warning_count;
+		//++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 }

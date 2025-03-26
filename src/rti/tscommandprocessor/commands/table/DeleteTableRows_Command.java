@@ -266,7 +266,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -488,7 +488,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			if ( (DeleteCountProperty != null) && !DeleteCountProperty.equals("") ) {
 				PropList request_params = new PropList ( "" );
 				request_params.setUsingObject ( "PropertyName", DeleteCountProperty );
-				request_params.setUsingObject ( "PropertyValue", new Integer(deleteCount) );
+				request_params.setUsingObject ( "PropertyValue", Integer.valueOf(deleteCount) );
 				try {
 					processor.processRequest( "SetProperty", request_params);
 				}
@@ -507,7 +507,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
 				PropList request_params = new PropList ( "" );
 				request_params.setUsingObject ( "PropertyName", RowCountProperty );
-				request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+				request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
 				try {
 					processor.processRequest( "SetProperty", request_params);
 				}

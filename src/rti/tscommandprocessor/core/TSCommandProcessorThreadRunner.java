@@ -67,7 +67,7 @@ which recognizes parameters as per the following pseudocode:
 PropList request_params = new PropList ( "" );
 requestParams.setUsingObject ( "CommandList", List<Command> commands );
 requestParams.setUsingObject ( "InitialWorkingDir", String getInitialWorkingDir() );
-requestParams.setUsingObject ( "CreateOutput", new Boolean(create_output) );
+requestParams.setUsingObject ( "CreateOutput", Boolean.valueOf(create_output) );
 </pre>
 @param the TSCommandProcessor instance to run
 @param requestParams the processor "RunCommands" request properties

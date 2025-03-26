@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -403,7 +403,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -1131,7 +1131,7 @@ throws Exception {
         for ( Map.Entry<String,String> entry : linkColumns.entrySet() ) {
         	String textColumn = entry.getValue();
         	try {
-        		linkTextMap.put(textColumn,new Integer(table.getFieldIndex(textColumn)));
+        		linkTextMap.put(textColumn,Integer.valueOf(table.getFieldIndex(textColumn)));
         	}
         	catch ( Exception e ) {
         		// Don't need to do anything - link won't have text.
@@ -1241,17 +1241,18 @@ throws Exception {
     	Object fieldValue;
     	Double fieldValueDouble;
     	Float fieldValueFloat;
-    	int icolOut = 0; // Count of columns actually written.
+    	// TODO smalers 2025-03-21 Need to use the data or remove.
+    	//int icolOut = 0; // Count of columns actually written.
     	String columnName = null;
     	for ( irow = 0; irow < rows; irow++) {
-    		icolOut = 0;
+    		//icolOut = 0;
     		// Start a row.
     		writer.tableRowStart();
     		for ( icol = 0; icol < cols; icol++) {
        			if ( !columnOkToWrite[icol] ) {
        				continue;
        			}
-       			++icolOut;
+       			//++icolOut;
     		    tableFieldType = table.getFieldDataType(icol);
     		    precision = table.getFieldPrecision(icol);
     		    fieldValue = table.getFieldValue(irow,icol);
@@ -1313,11 +1314,12 @@ throws Exception {
     		    		// https:some/relative/path
     		    		int colonPos = cell.indexOf(":");
     		    		int colonSlash2Pos = cell.indexOf("://");
-    		    		boolean isRelative = false;
+    		    		// TODO smalers 2025-03-21 need to use or remove the following.
+    		    		//boolean isRelative = false;
     		    		String link = null;
     		    		if ( colonSlash2Pos < 0 ) {
     		    			// No :// so relative path.
-    		    			isRelative = true;
+    		    			//isRelative = true;
     		    			link = cell.substring(colonPos + 1).trim();
     		    		}
     		    		else {

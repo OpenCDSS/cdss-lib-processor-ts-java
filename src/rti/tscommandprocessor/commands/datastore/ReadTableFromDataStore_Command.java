@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -435,7 +435,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandStatus status = getCommandStatus();
 	CommandProcessor processor = getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -1000,7 +1000,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
            	}
            	PropList request_params = new PropList ( "" );
            	request_params.setUsingObject ( "PropertyName", rowCountProperty );
-           	request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+           	request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
            	try {
                	processor.processRequest( "SetProperty", request_params);
            	}

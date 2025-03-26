@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -48,31 +48,28 @@ import net.opengis.waterml._2.CollectionType;
 
 /**
  * This class writes WaterML 2 files.
- * @author sam
- *
  */
 public class WaterML2Writer {
-	
+
 	/**
 	 * Values for Dialect parameter.
 	 * TODO smalers 2017-07-16 could make an enum.
 	*/
 	public final static String USGS = "USGS";
-	
+
 	/**
 	 * Constructor.
 	 */
 	public WaterML2Writer () {
-		
 	}
-	
+
 	/**
 	 * Determine the stations from the time series.
 	 * @param tslist list of time series to extract stations.
 	 * @return list of stations, at this point just identifiers but in the future could be more complex object.
 	 */
 	private List<String> getTimeSeriesStations ( List<TS> tslist ) {
-		List<String> stationList = new ArrayList<String>();
+		List<String> stationList = new ArrayList<>();
 		for ( TS ts : tslist ) {
 			String stationId = ts.getLocation();
 			boolean found = false;
@@ -88,7 +85,7 @@ public class WaterML2Writer {
 		}
 		return stationList;
 	}
-	
+
 	/**
 	Write the version 2.0 format WaterML by using the API.
 	@param fout open PrintWriter to write to
@@ -105,51 +102,51 @@ public class WaterML2Writer {
  		JAXBContext context = JAXBContext.newInstance("net.opengis.waterml._2");
 		Marshaller marshaller = context.createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "http://www.opengis.net/waterml/2.0 " + "http://schemas.opengis.net/waterml/2.0/waterml2.xsd");
-		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true); // Should indent output
-		// Factories that make it a bit easier to understand scopes of objects related to schema
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true); // Should indent output.
+		// Factories that make it a bit easier to understand scopes of objects related to schema.
  		net.opengis.waterml._2.ObjectFactory WaterML_Factory = new net.opengis.waterml._2.ObjectFactory();
  		net.opengis.gml._3.ObjectFactory GML_Factory = new net.opengis.gml._3.ObjectFactory();
- 		// Root objects that are marshalled at the end
- 		CollectionType collection = null; // USGS dialect wrapper class
-		FeatureCollectionType featureCollection = null; // General WaterML 2
-		// Collection is the normal WaterML 2.0 root element
+ 		// Root objects that are marshalled at the end.
+ 		CollectionType collection = null; // USGS dialect wrapper class.
+		FeatureCollectionType featureCollection = null; // General WaterML 2.
+		// Collection is the normal WaterML 2.0 root element.
 		collection = WaterML_Factory.createCollectionType();
 		if ( dialect.equalsIgnoreCase(USGS) ) {
-			// The USGS adds a FeatureCollection element as a wrapper around the normal WaterML 2.0 Collection root element
+			// The USGS adds a FeatureCollection element as a wrapper around the normal WaterML 2.0 Collection root element:
 			// - seems like this is related to the service information (time generated, etc.?)
 			featureCollection = new FeatureCollectionType();
 			FeatureArrayPropertyType featureArrayProperty = GML_Factory.createFeatureArrayPropertyType();
 			JAXBElement<CollectionType> jaxbCollection = WaterML_Factory.createCollection(collection);
 			featureArrayProperty.getAbstractFeature().add(jaxbCollection);
 			featureCollection.setFeatureMembers(featureArrayProperty);
-			// Now the FeatureCollection is set up and the remainder of data can be added as per normal WaterML 2 API
+			// Now the FeatureCollection is set up and the remainder of data can be added as per normal WaterML 2 API.
 		}
-		// Transfer the time series to the data objects by adding to the Collection and digging in
-		// ObservationMember is equivalent to station so have to determine the unique list of stations in the time series
+		// Transfer the time series to the data objects by adding to the Collection and digging in.
+		// ObservationMember is equivalent to station so have to determine the unique list of stations in the time series:
 		// - do so by looking for the unique location IDs
 		List<String> stationList = getTimeSeriesStations ( tslist );
 		for ( String stationId : stationList ) {
 			//collection.add
-			// TODO smalers 2017-07-16 Need to transfer Kory Clark's example code into product code
+			// TODO smalers 2017-07-16 Need to transfer Kory Clark's example code into product code.
 		}
-		// Output the WaterML file
+		// Output the WaterML file.
 		File of = new File(outputFile);
 		//QName qName = new QName("com.codenotfound.jaxb.model", "car");
 		// See:  https://www.codenotfound.com/2013/07/jaxb-marshal-element-missing-xmlrootelement-annotation.html
 		// See (better):  https://stackoverflow.com/questions/33823139/jaxb-unmarshalling-without-xmlrootelement-annotation
 		//JAXBElement<FeatureCollectionType> root = new JAXBElement<>(qName, FeatureCollectionType.class, root);
 		if ( dialect.equalsIgnoreCase(USGS) ) {
-			// USGS dialect WaterML 2.0 is to output with the FeatureCollection as the root element
+			// USGS dialect WaterML 2.0 is to output with the FeatureCollection as the root element.
 			marshaller.marshal(new JAXBElement<FeatureCollectionType>(
 				new QName("", "FeatureCollection"), FeatureCollectionType.class, null, featureCollection), of);
 		}
 		else {
-			// Standard WaterML 2.0 is to output with the Collection as the root element
+			// Standard WaterML 2.0 is to output with the Collection as the root element.
 			marshaller.marshal(new JAXBElement<CollectionType>(
 				new QName("", "Collection"), CollectionType.class, null, collection), of);
 		}
 	}
-	
+
 	/**
 	Write the version 2.0 format WaterML by creating the DOM as text.
 	This code is essentially the same as found in the WriteWaterML class but is expected to be filled out more completely.
@@ -163,14 +160,14 @@ public class WaterML2Writer {
 	@param errors list of error strings to be propagated to calling code
 	*/
 	public void writeTimeSeriesListUsingDOM ( List<TS> tslist, String outputFile, Integer precision, String missingValue,
-	    DateTime outputStart, DateTime outputEnd, boolean printNice, List<String> errors )
-	{   String routine = getClass().getSimpleName() + "writeTimeSeriesListUsingDOM";
+	    DateTime outputStart, DateTime outputEnd, boolean printNice, List<String> errors ) {
+		String routine = getClass().getSimpleName() + "writeTimeSeriesListUsingDOM";
 		PrintWriter fout = null;
     	try {
 	        FileOutputStream fos = new FileOutputStream ( outputFile );
 	        fout = new PrintWriter ( fos );
 			Message.printStatus(2,routine,"Writing " + tslist.size() + " time series to WaterML 2.0 file." );
-			// TODO brute force output until WaterML package can be generated in a robust way
+			// TODO brute force output until WaterML package can be generated in a robust way.
 			String s2 = "  ";
 			String s4 = s2 + "  ";
 			String s6 = s4 + "  ";
@@ -180,7 +177,7 @@ public class WaterML2Writer {
 			String s14 = s12 + "  ";
 			String s16 = s14 + "  ";
 			String s18 = s16 + "  ";
-			// First write the header
+			// First write the header.
 			fout.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 			fout.println("<wml2:Collection xmlns:wml2=\"http://www.opengis.net/waterml/2.0\" "
 					+ "xmlns:gml=\"http://www.opengis.net/gml/3.2\" "
@@ -193,7 +190,7 @@ public class WaterML2Writer {
 					// TODO SAM 2015-09-13 What is the following?
 					//+ "gml:id="C.USGS.01646500" "
 					+ "xsi:schemaLocation=\"http://www.opengis.net/waterml/2.0 http://schemas.opengis.net/waterml/2.0/waterml2.xsd\">");
-			// TODO SAM 2015-09-13 Need to enable something like the following
+			// TODO SAM 2015-09-13 Need to enable something like the following.
 			//fout.println(s2+"  <gml:identifier codeSpace=\"http://waterservices.usgs.gov/nwis/dv\">USGS.01646500</gml:identifier>");
 			//fout.println(s2+"  <gml:name codeSpace=\"http://waterservices.usgs.gov/nwis/dv\">Timeseries collected at POTOMAC RIVER NEAR WASH, DC LITTLE FALLS PUMP STA</gml:name>");
 			fout.println(s2+"<wml2:metadata>");
@@ -203,7 +200,7 @@ public class WaterML2Writer {
 			//fout.println(s6+"<wml2:version xlink:href="http://www.opengis.net/waterml/2.0" xlink:title="WaterML 2.0" />");
 			//fout.println(s4+"</wml2:DocumentMetadata>");
 			fout.println(s2+"</wml2:metadata>");
-			// Loop through time series
+			// Loop through time series.
 			for ( TS ts : tslist ) {
 				if ( (missingValue == null) || missingValue.isEmpty() ) {
 					missingValue = "" + ts.getMissing();
@@ -260,7 +257,7 @@ public class WaterML2Writer {
 				fout.println(s6+"</om:featureOfInterest>" );
 				fout.println(s6+"<om:result>" );
 				fout.println(s8+"<wml2:MeasurementTimeseries gml:id=\"TS." + tsid + "\">" );
-				// TODO SAM 2015-09-14 these are flag descriptions - need to handle
+				// TODO SAM 2015-09-14 these are flag descriptions - need to handle.
 				fout.println(s10+"<wml2:defaultPointMetadata>" );
 				fout.println(s12+"<wml2:DefaultTVPMeasurementMetadata>" );
 				fout.println(s14+"<wml2:qualifier xlink:title=\"Provisional data subject to revision.\">" );
@@ -279,14 +276,14 @@ public class WaterML2Writer {
 				}
 				catch ( Exception e ) {
 					Message.printWarning(3,routine,"Error creating iterator for time series (" + e + ").");
-					// Skip data output
+					// Skip data output.
 					continue;
 				}
 				TSData tsdata = null;
 				double value;
 				String flag;
-				// Precision for numerical values controls the format
-				// TODO SAM 2015-09-13 Evaluate whether to default based on units
+				// Precision for numerical values controls the format.
+				// TODO SAM 2015-09-13 Evaluate whether to default based on units.
 				String format = "%.4f";
 				if ( precision != null ) {
 					format = "%." + precision + "f";
@@ -294,7 +291,7 @@ public class WaterML2Writer {
 				while ( (tsdata = tsi.next()) != null ) {
 					fout.println(s10+"<wml2:point>" );
 					fout.println(s12+"<wml2:MeasurementTVP>" );
-					// TODO SAM 2015-09-13 Need to handle time zone
+					// TODO SAM 2015-09-13 Need to handle time zone.
 					fout.println(s14+"<wml2:time>" + tsdata.getDate() + "</wml2:time>" );
 					value = tsdata.getDataValue();
 					flag = tsdata.getDataFlag();
@@ -316,7 +313,7 @@ public class WaterML2Writer {
 				fout.println(s4+"</om:OM_Observation>" );
 				fout.println(s2+"</wl2:observationMember>" );
 			}
-			// Write the footer
+			// Write the footer.
 			fout.println("</wml2:Collection>");
 		}
 	    catch ( FileNotFoundException e ) {

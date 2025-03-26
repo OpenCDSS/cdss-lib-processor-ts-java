@@ -339,7 +339,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -765,7 +765,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", SelectCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(selectCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
             // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.

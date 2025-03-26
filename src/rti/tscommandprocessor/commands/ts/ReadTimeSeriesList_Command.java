@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -344,7 +344,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -671,7 +671,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Reading time series " + tsid);
                     PropList request_params = new PropList ( "" );
                     request_params.set ( "TSID", tsidentString.toString() );
-                    request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
+                    request_params.setUsingObject ( "WarningLevel", Integer.valueOf(warning_level) );
                     request_params.set ( "CommandTag", command_tag );
                     if ( iDataSource == (nDataSource - 1) ) {
                         // Only default on the last data source.
@@ -683,7 +683,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         	request_params.setUsingObject( "DefaultOutputEnd", DefaultOutputEnd_DateTime );
                         }
                     }
-                    request_params.setUsingObject ( "ReadData", new Boolean(readData) );
+                    request_params.setUsingObject ( "ReadData", Boolean.valueOf(readData) );
                     CommandProcessorRequestResultsBean bean = null;
                     try {
                         bean = processor.processRequest( "ReadTimeSeries", request_params);
@@ -825,7 +825,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
                 if ( TimeSeriesIndex1Property != null ) {
                     // Set a property indicating the position in the list.
-                    ts.setProperty(TimeSeriesIndex1Property, new Integer((i + 1)) );
+                    ts.setProperty(TimeSeriesIndex1Property, Integer.valueOf((i + 1)) );
                 }
                 // Set the alias - do this after setting the properties because the alias may use the properties.
                 if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
@@ -867,7 +867,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( (TimeSeriesCountProperty != null) && !TimeSeriesCountProperty.isEmpty() ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", TimeSeriesCountProperty );
-                request_params.setUsingObject ( "PropertyValue", new Integer(tslist.size()) );
+                request_params.setUsingObject ( "PropertyValue", Integer.valueOf(tslist.size()) );
                 try {
                     processor.processRequest( "SetProperty", request_params);
                 }
@@ -885,7 +885,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        if ( (TimeSeriesDefaultCountProperty != null) && !TimeSeriesDefaultCountProperty.isEmpty() ) {
 	            PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "PropertyName", TimeSeriesDefaultCountProperty );
-	            request_params.setUsingObject ( "PropertyValue", new Integer(defaultCount) );
+	            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(defaultCount) );
 	            try {
 	                processor.processRequest( "SetProperty", request_params);
 	            }
@@ -902,7 +902,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        if ( (TimeSeriesReadCountProperty != null) && !TimeSeriesReadCountProperty.isEmpty() ) {
 	            PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "PropertyName", TimeSeriesReadCountProperty );
-	            request_params.setUsingObject ( "PropertyValue", new Integer(tslist.size() - defaultCount) );
+	            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(tslist.size() - defaultCount) );
 	            try {
 	                processor.processRequest( "SetProperty", request_params);
 	            }

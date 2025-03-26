@@ -375,7 +375,7 @@ CommandWarningException, CommandException {
 
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -409,12 +409,12 @@ CommandWarningException, CommandException {
     String Value1 = parameters.getValue ( "Value1" );
     Double Value1_Double = null;
     if ( (Value1 != null) && !Value1.equals("") ) {
-        Value1_Double = new Double(Value1);
+        Value1_Double = Double.valueOf(Value1);
     }
     String Value2 = parameters.getValue ( "Value2" );
     Double Value2_Double = null;
     if ( (Value2 != null) && !Value2.equals("") ) {
-        Value2_Double = new Double(Value2);
+        Value2_Double = Double.valueOf(Value2);
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -712,7 +712,7 @@ CommandWarningException, CommandException {
 	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountProperty, status, commandPhase);
 	                	PropList request_params = new PropList ( "" );
 	                    request_params.setUsingObject ( "PropertyName", propName );
-	                    request_params.setUsingObject ( "PropertyValue", new Integer(checkCriteriaMetCount) );
+	                    request_params.setUsingObject ( "PropertyValue", Integer.valueOf(checkCriteriaMetCount) );
 	                    try {
 	                        processor.processRequest( "SetProperty", request_params);
 	                    }
@@ -728,7 +728,7 @@ CommandWarningException, CommandException {
 	                }
 	                if ( (CheckCountTimeSeriesProperty != null) && !CheckCountTimeSeriesProperty.isEmpty() ) {
 	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountTimeSeriesProperty, status, commandPhase);
-	                	ts.setProperty(propName, new Integer(checkCriteriaMetCount));
+	                	ts.setProperty(propName, Integer.valueOf(checkCriteriaMetCount));
 	                }
 	            }
 	            catch ( Exception e ) {

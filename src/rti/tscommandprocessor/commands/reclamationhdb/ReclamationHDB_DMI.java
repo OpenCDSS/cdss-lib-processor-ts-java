@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -1280,7 +1280,7 @@ throws Exception
     TSEnsemble ensemble = new TSEnsemble(ensembleID,ensembleName,tslist);
     // Set ensemble properties
     // DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude())
-    ensemble.setProperty("ENSEMBLE_ID", new Integer(hensemble.getEnsembleID()) );
+    ensemble.setProperty("ENSEMBLE_ID", Integer.valueOf(hensemble.getEnsembleID()) );
     ensemble.setProperty("ENSEMBLE_NAME", (hensemble.getEnsembleName() == null) ? "" : hensemble.getEnsembleName());
     return ensemble;
 }
@@ -2023,7 +2023,7 @@ throws SQLException
         while (rs.next()) {
             i = rs.getInt(1);
             if ( !rs.wasNull() ) {
-                results.add ( new Integer(i));
+                results.add ( Integer.valueOf(i));
             }
         }
     }
@@ -2500,7 +2500,7 @@ public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumbe
         cs.executeUpdate();
         int mri = cs.getInt(1);
         cs.close();
-        return new Long(mri);
+        return Long.valueOf(mri);
     }
     catch (BatchUpdateException e) {
         // Will happen if any of the batch commands fail.
@@ -2599,7 +2599,7 @@ throws SQLException
         while (rs.next()) {
             i = rs.getInt(1);
             if ( !rs.wasNull() ) {
-                results.add(new Integer(i));
+                results.add(Integer.valueOf(i));
             }
         }
     }
@@ -3014,7 +3014,7 @@ throws SQLException
             result.setEnsembleTraceName(t.getTraceName());
             // Also read the ensemble data
             List<Integer> ensembleIDList = new ArrayList<Integer>(1);
-            ensembleIDList.add(new Integer(t.getEnsembleID()));
+            ensembleIDList.add(Integer.valueOf(t.getEnsembleID()));
             List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(null, ensembleIDList, -1);
             if ( ensembleList.size() == 1 ) {
                 ReclamationHDB_Ensemble e = ensembleList.get(0);
@@ -3373,7 +3373,7 @@ throws Exception
         if ( readingEnsemble ) {
             // Read the trace information for the MRI in order to get the trace identifier
         	// TODO SAM 2017-03-13 is the above comment relevant?  "traceList" is not used below?
-            List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID, null);
+            //List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID, null);
         }
     }
     int intervalBase = interval.getBase();
@@ -4092,17 +4092,17 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
     ts.setProperty("REAL_MODEL_TYPE", tsm.getRealModelType());
     
     // Site information...
-    ts.setProperty("SITE_ID", DMIUtil.isMissing(tsm.getSiteID()) ? null : new Integer(tsm.getSiteID()) );
+    ts.setProperty("SITE_ID", DMIUtil.isMissing(tsm.getSiteID()) ? null : Integer.valueOf(tsm.getSiteID()) );
     ts.setProperty("SITE_NAME", tsm.getSiteName() );
     ts.setProperty("SITE_COMMON_NAME", tsm.getSiteCommonName() );
     ts.setProperty("STATE_CODE", tsm.getSiteCommonName() );
-    ts.setProperty("BASIN_ID", DMIUtil.isMissing(tsm.getBasinID()) ? null : new Integer(tsm.getBasinID()) );
-    ts.setProperty("LATITUDE", DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude()) );
-    ts.setProperty("LONGITUDE", DMIUtil.isMissing(tsm.getLongitude()) ? null : new Double(tsm.getLongitude()) );
+    ts.setProperty("BASIN_ID", DMIUtil.isMissing(tsm.getBasinID()) ? null : Integer.valueOf(tsm.getBasinID()) );
+    ts.setProperty("LATITUDE", DMIUtil.isMissing(tsm.getLatitude()) ? null : Double.valueOf(tsm.getLatitude()) );
+    ts.setProperty("LONGITUDE", DMIUtil.isMissing(tsm.getLongitude()) ? null : Double.valueOf(tsm.getLongitude()) );
     ts.setProperty("HUC", tsm.getHuc() );
-    ts.setProperty("SEGMENT_NO", DMIUtil.isMissing(tsm.getSegmentNo()) ? null : new Integer(tsm.getSegmentNo()) );
-    ts.setProperty("RIVER_MILE", DMIUtil.isMissing(tsm.getRiverMile()) ? null : new Float(tsm.getRiverMile()) );
-    ts.setProperty("ELEVATION", DMIUtil.isMissing(tsm.getElevation()) ? null : new Float(tsm.getElevation()) );
+    ts.setProperty("SEGMENT_NO", DMIUtil.isMissing(tsm.getSegmentNo()) ? null : Integer.valueOf(tsm.getSegmentNo()) );
+    ts.setProperty("RIVER_MILE", DMIUtil.isMissing(tsm.getRiverMile()) ? null : Float.valueOf(tsm.getRiverMile()) );
+    ts.setProperty("ELEVATION", DMIUtil.isMissing(tsm.getElevation()) ? null : Float.valueOf(tsm.getElevation()) );
     ts.setProperty("DESCRIPTION", tsm.getDescription() );
     ts.setProperty("NWS_CODE", tsm.getNwsCode() );
     ts.setProperty("SCS_ID", tsm.getScsID() );
@@ -4122,11 +4122,11 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
     ts.setProperty("DATA_TYPE_COMMON_NAME", tsm.getDataTypeCommonName());
     ts.setProperty("PHYSICAL_QUANTITY_NAME", tsm.getPhysicalQuantityName());
     ts.setProperty("UNIT_COMMON_NAME", tsm.getUnitCommonName());
-    ts.setProperty("AGEN_ID", DMIUtil.isMissing(tsm.getAgenID()) ? null : new Integer(tsm.getAgenID()) );
+    ts.setProperty("AGEN_ID", DMIUtil.isMissing(tsm.getAgenID()) ? null : Integer.valueOf(tsm.getAgenID()) );
     ts.setProperty("AGEN_ABBREV", tsm.getAgenAbbrev());
 
     // From HDB_SITE_DATATYPE
-    ts.setProperty("SITE_DATATYPE_ID", DMIUtil.isMissing(tsm.getSiteDataTypeID()) ? null : new Integer(tsm.getSiteDataTypeID()) );
+    ts.setProperty("SITE_DATATYPE_ID", DMIUtil.isMissing(tsm.getSiteDataTypeID()) ? null : Integer.valueOf(tsm.getSiteDataTypeID()) );
 
     // From HDB_MODEL
     ts.setProperty("MODEL_NAME", tsm.getModelName());
@@ -4547,7 +4547,7 @@ throws SQLException
         List<ReclamationHDB_SiteDataType> matchedList = findSiteDataType(
             siteDataTypeList, siteCommonName, dataTypeCommonName);
         if ( matchedList.size() == 1 ) {
-            siteDataTypeID = new Long(matchedList.get(0).getSiteDataTypeID());
+            siteDataTypeID = Long.valueOf(matchedList.get(0).getSiteDataTypeID());
         }
         else {
             throw new IllegalArgumentException("Unable to determine site_datatype_id from SiteCommonName=\"" +
@@ -4555,7 +4555,7 @@ throws SQLException
         }
     }
     if ( modelRunID == null ) {
-        modelRunID = new Long(-1);
+        modelRunID = Long.valueOf(-1);
         if ( (modelName != null) && !modelName.equals("") ) {
             // Try to get from the parts
             List<ReclamationHDB_Model> modelList = readHdbModelList(modelName);
@@ -4577,7 +4577,7 @@ throws SQLException
                         " records in HDB.  Expecting exactly 1.");
                 }
                 ReclamationHDB_ModelRun modelRun = modelRunList.get(0);
-                modelRunID = new Long(modelRun.getModelRunID());
+                modelRunID = Long.valueOf(modelRun.getModelRunID());
             }
         }
     }
@@ -4677,11 +4677,12 @@ throws SQLException
     // Repeatedly call the stored procedure that writes the data
     if ( modelRunID < 0 ) {
         // Stored procedure wants value of zero if no MRI
-        modelRunID = new Long(0);
+        modelRunID = Long.valueOf(0);
     }
     Timestamp startTimeStamp, endTimeStamp; // Timestamps for SQL inserts, using timeZone data
     //long startTimeStampMsDelta = 0;
-    long startTimeStampMsPrev = 0;
+    // TODO smalers 2025-03-21 The following is not used.
+    //long startTimeStampMsPrev = 0;
     long startTimeStampBeforeShiftMs;
     long startTimeStampMs;
     int batchCount = 0;
@@ -4740,7 +4741,7 @@ throws SQLException
                     startTimeStampBeforeShiftMs = dateTime.getDate(timeZone).getTime(); // UNIX GMT time reflecting that date/time is in the specified time zone such as MST
                     startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStart; // UNIX GMT, will be non-zero only for hourly data
                     //startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
-                    startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
+                    //startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
                     // Version to create Timestamp from date/time parts is deprecated so use millisecond version
                     startTimeStamp = new Timestamp(startTimeStampMs);
                     cs.setTimestamp(iParam++,startTimeStamp,calendarForTimeZone); // SAMPLE_DATE_TIME - now back to MST, for example, so JDBC driver sets as MST in database
@@ -5094,7 +5095,7 @@ throws SQLException
         List<ReclamationHDB_SiteDataType> matchedList = findSiteDataType(
             siteDataTypeList, siteCommonName, dataTypeCommonName);
         if ( matchedList.size() == 1 ) {
-            siteDataTypeID = new Long(matchedList.get(0).getSiteDataTypeID());
+            siteDataTypeID = Long.valueOf(matchedList.get(0).getSiteDataTypeID());
         }
         else {
             throw new IllegalArgumentException("Unable to determine site_datatype_id from SiteCommonName=\"" +
@@ -5102,7 +5103,7 @@ throws SQLException
         }
     }
     if ( modelRunID == null ) {
-        modelRunID = new Long(-1);
+        modelRunID = Long.valueOf(-1);
         if ( (modelName != null) && !modelName.equals("") ) {
             // Try to get from the parts
             List<ReclamationHDB_Model> modelList = readHdbModelList(modelName);
@@ -5124,7 +5125,7 @@ throws SQLException
                         " records in HDB.  Expecting exactly 1.");
                 }
                 ReclamationHDB_ModelRun modelRun = modelRunList.get(0);
-                modelRunID = new Long(modelRun.getModelRunID());
+                modelRunID = Long.valueOf(modelRun.getModelRunID());
             }
         }
     }
@@ -5149,9 +5150,10 @@ throws SQLException
     // - Specify time zone only for instantaneous and hourly data, not day, month, year interval
     
     String tsTimeZone = ts.getDate1().getTimeZoneAbbreviation();
-    DateTime tsStartDateTime = ts.getDate1();
-    OffsetDateTime tsStartOffsetDateTime = null;
-    OffsetDateTime tsEndOffsetDateTime = null;
+    // TODO smalers 2025-03-21 the following are not used.
+    //DateTime tsStartDateTime = ts.getDate1();
+    //OffsetDateTime tsStartOffsetDateTime = null;
+    //OffsetDateTime tsEndOffsetDateTime = null;
     ZoneId tsZoneId;
     ZoneOffset tsZoneOffset;
     if ( (tsTimeZone == null) || tsTimeZone.isEmpty() ) {
@@ -5174,10 +5176,12 @@ throws SQLException
 	    		throw new IllegalArgumentException("Time zone default \"" + tsTimeZoneDefault + "\" cannot be converted to offset - "
 	        		+ " valid time zone must be specified for data loader to work." );
 	    	}
+	    	/*
 	    	tsStartOffsetDateTime = OffsetDateTime.of(tsStartDateTime.getYear(),
 	    		tsStartDateTime.getMonth(), tsStartDateTime.getDay(),
 	    		tsStartDateTime.getHour(), tsStartDateTime.getMinute(),
 	    		tsStartDateTime.getSecond(), tsStartDateTime.getHSecond()*10000000, tsZoneOffset);
+	    		*/
     	}
     }
     else {
@@ -5198,10 +5202,12 @@ throws SQLException
     		throw new IllegalArgumentException("Time zone from time series \"" + tsTimeZone + "\" cannot be converted to offset - "
         		+ " valid time zone must be specified for data loader to work." );
     	}
+    	/*
     	tsStartOffsetDateTime = OffsetDateTime.of(tsStartDateTime.getYear(),
     		tsStartDateTime.getMonth(), tsStartDateTime.getDay(),
     		tsStartDateTime.getHour(), tsStartDateTime.getMinute(),
     		tsStartDateTime.getSecond(), tsStartDateTime.getHSecond()*10000000, tsZoneOffset);
+    		*/
     }
     // Make sure the time zone is one the HDB recognizes "MST", etc.
     // - see: https://docs.oracle.com/cd/B19306_01/server.102/b14200/functions092.htm
@@ -5581,7 +5587,7 @@ throws SQLException
         TSData tsdata;
         DateTime dateTime;
         // Used for Timestamp approach
-        long startTimeStampMsPrev = 0; // Was used for daylight savings check but not used now?
+        //long startTimeStampMsPrev = 0; // TODO smalers 2025-03-21 Was used for daylight savings check but not used now?
         long startTimeStampBeforeShiftMs;
         long startTimeStampMs;
         while ( true ) {
@@ -5662,7 +5668,7 @@ throws SQLException
                 startTimeStampBeforeShiftMs = dateTime.getDate(tsTimeZoneDefault).getTime(); // UNIX GMT time reflecting that date/time is in the specified time zone such as MST
                 startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStartMs; // UNIX GMT, will be non-zero only for hourly data
                 //startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
-                startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
+                //startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
                 // Version to create Timestamp from date/time parts is deprecated so use millisecond version
                 timestampArrayAllValues[valuesToWrite] = new Timestamp(startTimeStampMs);
                 // TODO sam 2017-04-13 legacy WriteTimeSeries also calculated endTime but new stored procedure does not use

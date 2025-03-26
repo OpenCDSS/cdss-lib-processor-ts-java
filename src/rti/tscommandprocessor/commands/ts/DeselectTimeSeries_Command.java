@@ -473,7 +473,7 @@ CommandWarningException, CommandException {
         }
         request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", SelectedCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(selectedCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(selectedCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
             // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.
@@ -519,7 +519,7 @@ CommandWarningException, CommandException {
         }
         request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", UnselectedCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(unselectedCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(unselectedCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
             // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode.

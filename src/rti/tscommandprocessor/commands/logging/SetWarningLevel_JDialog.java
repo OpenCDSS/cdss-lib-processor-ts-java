@@ -4,36 +4,22 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
-// ----------------------------------------------------------------------------
-// setWarningLevel_JDialog - editor for setWarningLevel()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 27 Mar 2001	Steven A. Malers, RTi	Initial version (copy and modify
-//					setDebugLevel_Dialog).
-// 2002-04-08	SAM, RTi		Clean up interface and add comments.
-// 2003-12-06	SAM, RTi		Update to Swing.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 
 package rti.tscommandprocessor.commands.logging;
 
@@ -147,20 +133,6 @@ private void commitEdits ()
     String LogFileLevel = __LogFileLevel_JTextField.getText().trim();
     __command.setCommandParameter ( "ScreenLevel", ScreenLevel );
     __command.setCommandParameter ( "LogFileLevel", LogFileLevel );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__LogFileLevel_JTextField = null;
-	__ScreenLevel_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**

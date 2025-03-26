@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -30,8 +30,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -65,7 +65,6 @@ import RTi.Util.Time.DateTime;
 /**
 Data store for Regional Climate Center Applied Climate Information System (RCC ACIS) web services.
 This class provides a general interface to the web service, consistent with TSTool conventions.
-@author sam
 */
 public class RccAcisDataStore extends AbstractWebServiceDataStore
 {
@@ -73,17 +72,17 @@ public class RccAcisDataStore extends AbstractWebServiceDataStore
 /**
 The web service API version, critical for forming the request URL and parsing the results.
 */
-private int __apiVersion = 2; // Default
-    
+private int __apiVersion = 2; // Default.
+
 /**
 The records of table variables, for version 1 read from:  http://data.rcc-acis.org/doc/VariableTable.html
 */
-private List<RccAcisVariableTableRecord> __variableTableRecordList = new Vector<RccAcisVariableTableRecord>();
+private List<RccAcisVariableTableRecord> __variableTableRecordList = new ArrayList<>();
 
 /**
 The station codes for provider agency station identifiers.
 */
-private List<RccAcisStationType> __stationTypeList = new Vector<RccAcisStationType>();
+private List<RccAcisStationType> __stationTypeList = new ArrayList<>();
 
 /**
 Indicates whether global data store properties have been initialized, set by initialize().
@@ -97,14 +96,13 @@ call to setProperties().  Consequently, initialization should occur from public 
 that information is available for initialization.
 */
 public RccAcisDataStore ( String name, String description, URI serviceRootURI )
-throws URISyntaxException, IOException
-{
+throws URISyntaxException, IOException {
     setName ( name );
     setDescription ( description );
     setServiceRootURI ( serviceRootURI );
-    // Determine the web service version
+    // Determine the web service version.
     determineAPIVersion();
-    // OK to initialize since no properties other than the main properties impact anything
+    // OK to initialize since no properties other than the main properties impact anything.
     initialize();
 }
 
@@ -113,17 +111,16 @@ Factory method to construct a data store connection from a properties file.
 @param filename name of file containing property strings
 */
 public static RccAcisDataStore createFromFile ( String filename )
-throws IOException, Exception
-{
-    // Read the properties from the file
+throws IOException, Exception {
+    // Read the properties from the file.
     PropList props = new PropList ("");
     props.setPersistentName ( filename );
     props.readPersistent ( false );
     String name = IOUtil.expandPropertyForEnvironment("Name",props.getValue("Name"));
     String description = IOUtil.expandPropertyForEnvironment("Description",props.getValue("Description"));
     String serviceRootURI = IOUtil.expandPropertyForEnvironment("ServiceRootURI",props.getValue("ServiceRootURI"));
-    
-    // Get the properties and create an instance
+
+    // Get the properties and create an instance.
 
     RccAcisDataStore ds = new RccAcisDataStore( name, description, new URI(serviceRootURI) );
     ds.setProperties(props);
@@ -133,14 +130,14 @@ throws IOException, Exception
 /**
 Determine the web service API version.
 */
-private void determineAPIVersion()
-{   String routine = "RccAcisDataStore.determineAPIVersion";
+private void determineAPIVersion() {
+    String routine = getClass().getSimpleName() + ".RccAcisDataStore.determineAPIVersion";
     __apiVersion = 2; // Default is most current
     String urlString = "" + getServiceRootURI() + "/version";
     try {
         String resultString = IOUtil.readFromURL(urlString);
         // Format of result is JSON like:  "2.0.0-beta.1"
-        // Therefore check the 2nd character
+        // Therefore check the 2nd character.
         if ( resultString.length() >= 2 ) {
             if ( resultString.charAt(1) == '1' ) {
                 __apiVersion = 1;
@@ -153,7 +150,7 @@ private void determineAPIVersion()
         }
     }
     catch ( Exception e ) {
-        // Might be disconnected from the internet - usually safe to default to latest version
+        // Might be disconnected from the internet - usually safe to default to latest version.
         Message.printWarning ( 2, routine,
             "Error reading version for web service API using \"" + urlString +
             "\" - possibly due to not being connected to internet.  Assuming version is " + __apiVersion );
@@ -164,18 +161,17 @@ private void determineAPIVersion()
 Return the service API version as determined from determineAPIVersion().
 @return the API version
 */
-public int getAPIVersion ()
-{
+public int getAPIVersion () {
     return __apiVersion;
 }
 
 /**
-Return the unique list of data interval strings available for a data type, returning values that
-are consistent with TSTool ("Day", rather than "daily").
+Return the unique list of data interval strings available for a data type,
+returning values that are consistent with TSTool ("Day", rather than "daily").
 @param dataType data type string of form "N" or "N - name" or "name", where N is the major number.
 */
-public List<String> getDataIntervalStringsForDataType ( String dataType )
-{   List<String> dataIntervalStrings = new Vector<String>();
+public List<String> getDataIntervalStringsForDataType ( String dataType ) {
+    List<String> dataIntervalStrings = new ArrayList<>();
     // For now a data type should only have one interval because of the uniqueness of the data type.
     RccAcisVariableTableRecord variable = lookupVariable(dataType);
     String interval = translateAcisIntervalToInternal(variable.getReportInterval());
@@ -186,28 +182,27 @@ public List<String> getDataIntervalStringsForDataType ( String dataType )
 }
 
 /**
-Return the list of data types that are available.  Currently this returns the major number and optionally
-the name.  Duplicates in the table are ignored.
-TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations - work with Bill Noon
-on this.
+Return the list of data types that are available.
+Currently this returns the major number and optionally the name.  Duplicates in the table are ignored.
+TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations - work with Bill Noon on this.
 @param includeName whether to include the name
 @param includeInterval whether to include the interval as (daily), etc.
 */
-public List<String> getDataTypeStrings ( boolean includeName, boolean includeInterval )
-{   try {
+public List<String> getDataTypeStrings ( boolean includeName, boolean includeInterval ) {
+    try {
         initialize();
     }
     catch ( Exception e ) {
-        ; // Ignore.
+        // Ignore.
     }
     int version = getAPIVersion();
-    List<String> typeList = new Vector<String>();
+    List<String> typeList = new ArrayList<>();
     RccAcisVariableTableRecord recPrev = null;
     String nameString = "";
     String intervalString = "";
     for ( RccAcisVariableTableRecord rec: __variableTableRecordList ) {
         if ( (typeList.size() > 0) && (rec.getMajor() == recPrev.getMajor()) ) {
-            // Same information as previous record so don't add again
+            // Same information as previous record so don't add again.
             continue;
         }
         nameString = "";
@@ -220,7 +215,7 @@ public List<String> getDataTypeStrings ( boolean includeName, boolean includeInt
         }
         if ( version == 1 ) {
             // Perhaps mistakenly was using the var major for user-facing choices but the
-            // abbreviation is used in the REST API so it should be OK to use (do so in version 2+)
+            // abbreviation is used in the REST API so it should be OK to use (do so in version 2+).
             typeList.add( "" + rec.getMajor() + nameString + intervalString );
         }
         else {
@@ -236,30 +231,29 @@ Initialize internal data store data.
 This method should be called from all methods that are likely to be called from external code.
 */
 private void initialize ()
-throws URISyntaxException, IOException
-{
+throws URISyntaxException, IOException {
     if ( __initialized ) {
-        // Already initialized
+        // Already initialized.
         return;
     }
-    // Otherwise initialize the global data for the data store
+    // Otherwise initialize the global data for the data store.
     __initialized = true;
-    // Determine the API version from a web request
+    // Determine the API version from a web request.
     if ( getAPIVersion() == 1 ) {
-        // Read variables from the HTML file on the website
+        // Read variables from the HTML file on the website.
         readVariableTableVersion1();
     }
     else {
         // TODO SAM 2012-06-25 where does the list of variables come from for the version 2 API?
         // TODO SAM 2012-07-25 Version 2 documentation lists a few more variables so add below
         // 2012-06-26 Bill Noon pointed to test site (http://scacis.rcc-acis.org/ACIS_Builder.html) but this
-        // only shows "Common Element Names" - an API call will be made available
-        // Hard-code in order of major variable
+        // only shows "Common Element Names" - an API call will be made available.
+        // Hard-code in order of major variable:
         // Elem, major, minor, name, method, measInterval, reportInterval, units, source
         // Version 2 uses the element abbreviation and if VarMajor is not known, use a  negative number
-        // All VarMajor need to be unique because duplicates are ignored
+        // All VarMajor need to be unique because duplicates are ignored.
         //
-        // Precipitation...
+        // Precipitation.
         __variableTableRecordList.add(new RccAcisVariableTableRecord("pcpn", 4, 1, "Precipitation", "sum",
             "daily", "daily", "Inch", ""));
         // Snow...
@@ -267,7 +261,7 @@ throws URISyntaxException, IOException
             "inst", "daily", "Inch", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("snow", 10, 1, "Snowfall", "sum",
             "daily", "daily", "Inch", ""));
-        // Temperature...
+        // Temperature.
         __variableTableRecordList.add(new RccAcisVariableTableRecord("avgt", 43, 1, "Temperature, average", "ave",
             "daily", "daily", "DegF", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("maxt", 1, 1, "Temperature, maximum", "max",
@@ -276,7 +270,7 @@ throws URISyntaxException, IOException
             "daily", "daily", "DegF", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("obst", 3, 1, "Temperature, at obs time", "inst",
             "inst", "daily", "DegF", ""));
-        // Degree days based on temperature...
+        // Degree days based on temperature.
         __variableTableRecordList.add(new RccAcisVariableTableRecord("hdd", 45, 1, "Heating degree days (base 65)", "sum",
             "daily", "daily", "Day", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("cdd", 44, 1, "Cooling degree days (base 65)", "sum",
@@ -286,14 +280,14 @@ throws URISyntaxException, IOException
         __variableTableRecordList.add(new RccAcisVariableTableRecord("gdd40", 9991, 1, "Growing degree days (base 40)", "sum",
             "daily", "daily", "Day", ""));
     }
-    // Initialize the station types - this may be available as a service at some point but for now inline
+    // Initialize the station types - this may be available as a service at some point but for now inline.
     __stationTypeList.add ( new RccAcisStationType(0,"ACIS","ACIS internal id"));
     __stationTypeList.add ( new RccAcisStationType(1,"WBAN","5-digit WBAN id"));
     __stationTypeList.add ( new RccAcisStationType(2,"COOP","6-digit COOP id"));
     __stationTypeList.add ( new RccAcisStationType(3,"FAA","3-character FAA id"));
     __stationTypeList.add ( new RccAcisStationType(4,"WMO","5-digit WMO id"));
     __stationTypeList.add ( new RccAcisStationType(5,"ICAO","4-character ICAO id"));
-    // Note that ACIS documentation calls it GHCN-Daily but daily is the interval so leave out of the station type here
+    // Note that ACIS documentation calls it GHCN-Daily but daily is the interval so leave out of the station type here.
     __stationTypeList.add ( new RccAcisStationType(6,"GHCN","?-character GHCN id"));
     __stationTypeList.add ( new RccAcisStationType(7,"NWSLI","5-character NWSLI"));
     __stationTypeList.add ( new RccAcisStationType(9,"ThreadEx","6-character ThreadEx id"));
@@ -306,8 +300,7 @@ throws URISyntaxException, IOException
 Look up the station type given the station code (return null if not found).
 @param code station code (e.g., 2 for COOP).
 */
-public RccAcisStationType lookupStationTypeFromCode ( int code )
-{
+public RccAcisStationType lookupStationTypeFromCode ( int code ) {
     for ( RccAcisStationType stationType: __stationTypeList ) {
         if ( stationType.getCode() == code ) {
             return stationType;
@@ -320,12 +313,12 @@ public RccAcisStationType lookupStationTypeFromCode ( int code )
 Look up the station type given the station type string (return null if not found).
 @param type station type (e.g., "COOP").
 */
-public RccAcisStationType lookupStationTypeFromType ( String type )
-{   try {
+public RccAcisStationType lookupStationTypeFromType ( String type ) {
+    try {
         initialize();
     }
     catch ( Exception e ) {
-        // Should not happen
+        // Should not happen.
     }
     for ( RccAcisStationType stationType: __stationTypeList ) {
         if ( stationType.getType().equalsIgnoreCase(type) ) {
@@ -342,19 +335,19 @@ Look up the variable information given the data type, which is a string of the f
 @param dataType data type to match in variable data.
 @return the ACIS variable that matches the data type.
 */
-public RccAcisVariableTableRecord lookupVariable ( String dataType )
-{   String elemString = null;
+public RccAcisVariableTableRecord lookupVariable ( String dataType ) {
+    String elemString = null;
     String name = null;
     int pos = dataType.indexOf("-");
     if ( pos > 0) {
-        // Assume that the elem or major variable is specified and also the name
+        // Assume that the elem or major variable is specified and also the name.
         elemString = dataType.substring(0,pos).trim();
         name = dataType.substring(pos + 1).trim();
     }
     else {
         // Only one piece of information specified, such as the data type from a TSID.
         if ( StringUtil.isInteger(dataType) ) {
-            // Actually the varMajor
+            // Actually the varMajor.
             elemString = dataType.trim();
         }
         else {
@@ -364,7 +357,7 @@ public RccAcisVariableTableRecord lookupVariable ( String dataType )
     }
     if ( elemString != null ) {
         if ( StringUtil.isInteger(elemString) ) {
-            // Use the major number to look up the variable
+            // Use the major number to look up the variable.
             int majorInt = -1;
             try {
                 majorInt = Integer.parseInt(elemString);
@@ -379,7 +372,7 @@ public RccAcisVariableTableRecord lookupVariable ( String dataType )
             }
         }
         else {
-            // Use the element to look up the variable
+            // Use the element to look up the variable.
             for ( RccAcisVariableTableRecord variable: __variableTableRecordList ) {
                 if ( variable.getElem().equalsIgnoreCase(elemString) ) {
                     return variable;
@@ -388,14 +381,14 @@ public RccAcisVariableTableRecord lookupVariable ( String dataType )
         }
     }
     else if ( name != null ){
-        // Use the variable name to look up the variable
+        // Use the variable name to look up the variable.
         for ( RccAcisVariableTableRecord variable: __variableTableRecordList ) {
             if ( variable.getName().equalsIgnoreCase(name) ) {
                 return variable;
             }
         }
     }
-    // No match...
+    // No match.
     return null;
 }
 
@@ -404,24 +397,24 @@ Read a list of MultiStn data records.
 */
 public List<RccAcisStationTimeSeriesMetadata> readStationTimeSeriesMetadataList(
     String dataType, String timeStep, InputFilter_JPanel ifp )
-throws IOException, MalformedURLException, URISyntaxException
-{   String routine = getClass().getName() + ".readStationTimeSeriesMetadataList";
-    // Make sure data store is initialized
+throws IOException, MalformedURLException, URISyntaxException {
+    String routine = getClass().getName() + ".readStationTimeSeriesMetadataList";
+    // Make sure data store is initialized.
     initialize();
-    // Look up the metadata for the data types
+    // Look up the metadata for the data types.
     RccAcisVariableTableRecord variable = lookupVariable ( dataType );
     int apiVersion = getAPIVersion();
     if ( apiVersion == 1 ) {
         return readStationTimeSeriesMetadataListVersion1 ( dataType, timeStep, ifp );
     }
     // Else, use the current version 2 API, which uses the StnMeta call instead of version 1 MultiStnData call
-    // Form the URL - ask for as much metadata as possible
+    // Form the URL - ask for as much metadata as possible.
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
         "/StnMeta?meta=sIds,uid,name,state,county,basin,climdiv,cwa,ll,elev,valid_daterange" );
-    // Specify constraints from input filter
-    // Element being read (currently only one data type per call)...
+    // Specify constraints from input filter.
+    // Element being read (currently only one data type per call).
     urlString.append("&elems="+variable.getElem());
-    // Bounding box...
+    // Bounding box.
     List<String> bboxList = ifp.getInput(null, "bbox", true, null);
     if ( bboxList.size() > 1 ) {
         throw new IOException ( "<= 1 bounding box filters can be specified." );
@@ -430,7 +423,7 @@ throws IOException, MalformedURLException, URISyntaxException
         String bbox = bboxList.get(0).trim();
         urlString.append("&bbox="+URLEncoder.encode(bbox,"UTF-8"));
     }
-    // Climate division (always use newest syntax in filter)...
+    // Climate division (always use newest syntax in filter).
     List<String> climdivList = ifp.getInput(null, "climdiv", true, null);
     if ( climdivList.size() > 1 ) {
         throw new IOException ( "<= 1 climate division filters can be specified." );
@@ -439,7 +432,7 @@ throws IOException, MalformedURLException, URISyntaxException
         String climdiv = climdivList.get(0).split("-")[0].trim();
         urlString.append("&climdiv="+URLEncoder.encode(climdiv,"UTF-8"));
     }
-    // FIPS county...
+    // FIPS county.
     List<String> countyList = ifp.getInput(null, "county", true, null);
     if ( countyList.size() > 1 ) {
         throw new IOException ( "<= 1 FIPS county filters can be specified." );
@@ -448,7 +441,7 @@ throws IOException, MalformedURLException, URISyntaxException
         String county = countyList.get(0).split("-")[0].trim();
         urlString.append("&county="+URLEncoder.encode(county,"UTF-8"));
     }
-    // NWS CWA...
+    // NWS CWA.
     List<String> cwaList = ifp.getInput(null, "cwa", true, null);
     if ( cwaList.size() > 1 ) {
         throw new IOException ( "<= 1 NWS CWA county filters can be specified." );
@@ -457,7 +450,7 @@ throws IOException, MalformedURLException, URISyntaxException
         String cwa = cwaList.get(0).trim();
         urlString.append("&cwa="+URLEncoder.encode(cwa,"UTF-8"));
     }
-    // Drainage basin (HUC)...
+    // Drainage basin (HUC).
     List<String> basinList = ifp.getInput(null, "basin", true, null);
     if ( basinList.size() > 1 ) {
         throw new IOException ( "<= 1 basin filters can be specified." );
@@ -466,7 +459,7 @@ throws IOException, MalformedURLException, URISyntaxException
         String basin = basinList.get(0).trim();
         urlString.append("&basin="+URLEncoder.encode(basin,"UTF-8"));
     }
-    // State code...
+    // State code.
     List<String> stateList = ifp.getInput(null, "state", true, null);
     if ( stateList.size() > 1 ) {
         throw new IOException ( "<= 1 state code filters can be specified." );
@@ -475,19 +468,19 @@ throws IOException, MalformedURLException, URISyntaxException
         String state = stateList.get(0).split("-")[0].trim();
         urlString.append("&state="+URLEncoder.encode(state,"UTF-8"));
     }
-    // Always want JSON results...
+    // Always want JSON results.
     urlString.append("&output=json");
     Message.printStatus(2, routine, "Performing the following request:  " + urlString );
     String resultString = IOUtil.readFromURL(urlString.toString() );
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Returned data="+resultString);
     }
-    // Check for error in response string...
+    // Check for error in response string.
     if ( resultString.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " + resultString );
     }
     else {
-        // Parse the JSON
+        // Parse the JSON.
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -497,9 +490,9 @@ throws IOException, MalformedURLException, URISyntaxException
                 metadata.setVariable(variable);
                 metadata.setDataStore ( this );
                 // TODO SAM 2011-01-07 Some metadata like HUC do not return so may need to set based
-                // on whether the information was entered in the filter
+                // on whether the information was entered in the filter.
             }
-            // Remove records that have no period
+            // Remove records that have no period.
             try {
                 metadataListObject.cleanupData();
             }
@@ -509,8 +502,8 @@ throws IOException, MalformedURLException, URISyntaxException
             return metadataListObject.getMeta();
         }
         else {
-            // Return an empty list
-            List<RccAcisStationTimeSeriesMetadata> data = new Vector<RccAcisStationTimeSeriesMetadata>();
+            // Return an empty list.
+            List<RccAcisStationTimeSeriesMetadata> data = new ArrayList<>();
             return data;
         }
     }
@@ -521,11 +514,11 @@ Read a list of RccAcisStationTimeSeriesMetadata data records for the Version 1 R
 */
 public List<RccAcisStationTimeSeriesMetadata> readStationTimeSeriesMetadataListVersion1(
     String dataType, String timeStep, InputFilter_JPanel ifp )
-throws IOException, MalformedURLException
-{   String routine = getClass().getName() + ".readStationTimeSeriesMetadataListVersion1";
-    // Look up the metadata for the data types
+throws IOException, MalformedURLException {
+    String routine = getClass().getName() + ".readStationTimeSeriesMetadataListVersion1";
+    // Look up the metadata for the data types.
     RccAcisVariableTableRecord variable = lookupVariable ( dataType );
-    // Form the URL - ask for as much metadata as possible
+    // Form the URL - ask for as much metadata as possible.
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
         "/MultiStnData?meta=sIds,uid,name,postal,county,ll,elev,valid_daterange" );
     // To deal with slow performance, the following was done (only needed with version 1):
@@ -540,10 +533,10 @@ throws IOException, MalformedURLException
     //    --Bill"
     //    </pre>
     urlString.append("&no_awdn=1");
-    // Specify constraints from input filter
-    // Element being read...
+    // Specify constraints from input filter.
+    // Element being read.
     urlString.append("&elems="+variable.getMajor());
-    // Bounding box...
+    // Bounding box.
     List<String> bboxList = ifp.getInput(null, "bbox", true, null);
     if ( bboxList.size() > 1 ) {
         throw new IOException ( "<= 1 bounding box filters can be specified." );
@@ -552,7 +545,7 @@ throws IOException, MalformedURLException
         String bbox = bboxList.get(0).trim();
         urlString.append("&bbox="+URLEncoder.encode(bbox,"UTF-8"));
     }
-    // Climate division (always use newest syntax in filter)...
+    // Climate division (always use newest syntax in filter).
     List<String> climdivList = ifp.getInput(null, "climdiv", true, null);
     if ( climdivList.size() > 1 ) {
         throw new IOException ( "<= 1 climate division filters can be specified." );
@@ -561,7 +554,7 @@ throws IOException, MalformedURLException
         String climdiv = climdivList.get(0).split("-")[0].trim();
         urlString.append("&clim_div="+URLEncoder.encode(climdiv,"UTF-8"));
     }
-    // FIPS county...
+    // FIPS county.
     List<String> countyList = ifp.getInput(null, "county", true, null);
     if ( countyList.size() > 1 ) {
         throw new IOException ( "<= 1 FIPS county filters can be specified." );
@@ -570,7 +563,7 @@ throws IOException, MalformedURLException
         String county = countyList.get(0).split("-")[0].trim();
         urlString.append("&county="+URLEncoder.encode(county,"UTF-8"));
     }
-    // NWS CWA...
+    // NWS CWA.
     List<String> cwaList = ifp.getInput(null, "cwa", true, null);
     if ( cwaList.size() > 1 ) {
         throw new IOException ( "<= 1 NWS CWA county filters can be specified." );
@@ -579,7 +572,7 @@ throws IOException, MalformedURLException
         String cwa = cwaList.get(0).trim();
         urlString.append("&cwa="+URLEncoder.encode(cwa,"UTF-8"));
     }
-    // Drainage basin (HUC)...
+    // Drainage basin (HUC).
     List<String> basinList = ifp.getInput(null, "basin", true, null);
     if ( basinList.size() > 1 ) {
         throw new IOException ( "<= 1 basin filters can be specified." );
@@ -588,7 +581,7 @@ throws IOException, MalformedURLException
         String basin = basinList.get(0).trim();
         urlString.append("&basin="+URLEncoder.encode(basin,"UTF-8"));
     }
-    // State code...
+    // State code.
     List<String> stateList = ifp.getInput(null, "state", true, null);
     if ( stateList.size() > 1 ) {
         throw new IOException ( "<= 1 state code filters can be specified." );
@@ -597,7 +590,7 @@ throws IOException, MalformedURLException
         String state = stateList.get(0).split("-")[0].trim();
         urlString.append("&postal="+URLEncoder.encode(state,"UTF-8"));
     }
-    // Always want JSON results...
+    // Always want JSON results.
     urlString.append("&output=json");
     Message.printStatus(2, routine, "Performing the following request:  " + urlString );
     String resultString = IOUtil.readFromURL(urlString.toString());
@@ -608,7 +601,7 @@ throws IOException, MalformedURLException
         throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " + resultString );
     }
     else {
-        // Parse the JSON
+        // Parse the JSON.
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -621,9 +614,9 @@ throws IOException, MalformedURLException
                 metadata.setVariable(variable);
                 metadata.setDataStore ( this );
                 // TODO SAM 2011-01-07 Some metadata like HUC do not return so may need to set based
-                // on whether the information was entered in the filter
+                // on whether the information was entered in the filter.
             }
-            // Remove records that have no period
+            // Remove records that have no period.
             try {
                 metadataListObject.cleanupData();
             }
@@ -633,8 +626,8 @@ throws IOException, MalformedURLException
             return metadataListObject.getMeta();
         }
         else {
-            // Return an empty list
-            List<RccAcisStationTimeSeriesMetadata> data = new Vector<RccAcisStationTimeSeriesMetadata>();
+            // Return an empty list.
+            List<RccAcisStationTimeSeriesMetadata> data = new ArrayList<>();
             return data;
         }
     }
@@ -642,29 +635,30 @@ throws IOException, MalformedURLException
 
 /**
 Read a time series.  Only one element type is read.
-@param tsidentString the time series identifier string as per TSTool conventions.  The location should be
-LocationType:ID (e.g., COOP:1234).  The data type should be the variable name (might implement abbreviation later but
-trying to stay away from opaque variable major).
+@param tsidentString the time series identifier string as per TSTool conventions.
+The location should be LocationType:ID (e.g., COOP:1234).
+The data type should be the variable name
+(might implement abbreviation later but trying to stay away from opaque variable major).
 @param readStart the starting date/time to read, or null to read all data.
 @param readEnd the ending date/time to read, or null to read all data.
-@param readData if true, read the data; if false, construct the time series and populate properties but do
-not read the data
+@param readData if true, read the data;
+if false, construct the time series and populate properties but do not read the data
 @return the time series read from the ACIS web services
 */
 public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, boolean readData )
-throws MalformedURLException, Exception
-{   // Make sure data store is initialized
+throws MalformedURLException, Exception {
+    // Make sure data store is initialized.
     initialize();
     TS ts = null;
     String routine = getClass().getName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString);
-    // Look up the metadata for the data name
+    // Look up the metadata for the data name.
     RccAcisVariableTableRecord variable = lookupVariable ( tsident.getType() );
     if ( variable == null ) {
         throw new IllegalArgumentException("Data type is not recognized:  " + tsident.getType() );
     }
     int apiVersion = getAPIVersion();
-    // The station ID needs to specify the location type...
+    // The station ID needs to specify the location type.
     String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocationType(), tsident.getLocation() );
     if ( Message.isDebugOn ) {
     	Message.printStatus(2, routine, "stationIDAndStationType=\"" + stationIDAndStationType + "\"");
@@ -680,7 +674,7 @@ throws MalformedURLException, Exception
         readStart = DateTime.parse("2011-01-01");
         readEnd = DateTime.parse("2011-01-01");
     }
-    // TODO SAM 2011-01-21 ACIS always seems to want precision to day on request
+    // TODO SAM 2011-01-21 ACIS always seems to want precision to day on request.
     if ( readStart != null ) {
         //if ( intervalBase == TimeInterval.DAY ) {
             readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM_DD);
@@ -690,7 +684,7 @@ throws MalformedURLException, Exception
         //}
         //else if ( intervalBase == TimeInterval.HOUR ) {
         //    readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM_DD_HH);
-        //} 
+        //}
         //else {
         //    readStartString = readStart.toString();
         //}
@@ -709,25 +703,25 @@ throws MalformedURLException, Exception
         //    readEndString = readEnd.toString();
         //}
     }
-    // Only one data type is requested as per readTimeSeries() conventions
+    // Only one data type is requested as per readTimeSeries() conventions.
     String elems = "";
     if ( apiVersion == 1 ) {
-        // Version 1 uses var major number
+        // Version 1 uses var major number.
         // Note this may cause an error if VarMajor is not known, but since the Version 1 API is obsolete
         // this hopefully should not be an issue.
         elems = "" + variable.getMajor();
     }
     else {
         // Version 2 uses element name or var major (but use element name because some data types don't
-        // seem to have documented var major)
+        // seem to have documented var major).
         elems = "" + variable.getElem();
     }
     // Form the URL - no need to ask for metadata?
-    // Always specify the station id type to avoid ambiguity
-    boolean requestJSON = true; // JSON more work to parse, CSV is verified to work
+    // Always specify the station id type to avoid ambiguity.
+    boolean requestJSON = true; // JSON more work to parse, CSV is verified to work.
     if ( apiVersion == 1 ) {
-        // Version 1 worked with CSV so leave it as is
-        // For version 2 can focus on new features in JSON
+        // Version 1 worked with CSV so leave it as is.
+        // For version 2 can focus on new features in JSON.
         requestJSON = false;
     }
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() + "/StnData" );
@@ -735,11 +729,11 @@ throws MalformedURLException, Exception
         urlString.append("?output=json");
     }
     else {
-        // Request CSV
+        // Request CSV.
         urlString.append("?output=csv");
     }
-    // Only JSON format allows metadata to be requested
-    // Version 1 requires sId... whereas version 2 is case-independent
+    // Only JSON format allows metadata to be requested.
+    // Version 1 requires sId... whereas version 2 is case-independent.
     if ( requestJSON ) {
         urlString.append( "&meta=sIds,uid,name,state,county,basin,climdiv,cwa,ll,elev,valid_daterange" );
     }
@@ -760,10 +754,10 @@ throws MalformedURLException, Exception
     else {
         RccAcisStationTimeSeriesMetaAndData metaAndData = null;
         if ( requestJSON ) {
-            // Parse the JSON for time series ("meta" and "data)
+            // Parse the JSON for time series ("meta" and "data).
             Gson gson = new Gson();
             metaAndData = gson.fromJson(resultString, RccAcisStationTimeSeriesMetaAndData.class);
-            // Should only be one record since a specific time series is requested
+            // Should only be one record since a specific time series is requested.
             if ( metaAndData == null ) {
                 throw new IOException ( "Expecting metadata for 1 time series, no metadata returned." );
             }
@@ -773,56 +767,56 @@ throws MalformedURLException, Exception
             }
         }
         else {
-            // No metadata for CSV.  Get the station name from the first line of data
+            // No metadata for CSV.  Get the station name from the first line of data.
         }
         // Create the time series.
         ts = TSUtil.newTimeSeries(tsidentString, true);
         ts.setIdentifier(tsidentString);
-        ts.setMissing(Double.NaN);// Use this instead of legacy default -999
-        // Parse the data into short strings
+        ts.setMissing(Double.NaN); // Use this instead of legacy default -999.
+        // Parse the data into short strings.
         String [] dataStringsArray = new String[0];
-        DateTime dataStart = null; // Determined from data records
+        DateTime dataStart = null; // Determined from data records.
         DateTime dataEnd = null;
-        DateTime validDataStart = null; // Determined from valid_daterange metadata (only if JSON)
+        DateTime validDataStart = null; // Determined from valid_daterange metadata (only if JSON).
         DateTime validDataEnd = null;
         String stationName = "";
         int mCount = 0;
         int tCount = 0;
-        int commaPos = 0; // Position of comma
-        // Set the time series properties from returned data
+        int commaPos = 0; // Position of comma.
+        // Set the time series properties from returned data.
         String [][] data = null;
-        int nData = 0; // Number of records to process
-        int iFirstData = 0; // Index of first data record to process
+        int nData = 0; // Number of records to process.
+        int iFirstData = 0; // Index of first data record to process.
         if ( requestJSON ) {
-            // Set time series properties from the metadata
+            // Set time series properties from the metadata.
             stationName = metaAndData.getMeta().getName();
             data = metaAndData.getData();
-            nData = data.length; // Number of rows in 2D array
+            nData = data.length; // Number of rows in 2D array.
             iFirstData = 0;
             Message.printStatus(2, routine, "Have " + nData + " data records." );
             if ( nData > 0 ) {
                 dataStart = DateTime.parse(data[iFirstData][0]);
                 dataEnd = DateTime.parse(data[nData - 1][0]);
             }
-            // Also get the valid data start and end from the metadata
+            // Also get the valid data start and end from the metadata.
             validDataStart = DateTime.parse(metaAndData.getMeta().getValid_daterange()[0][0]);
             validDataEnd = DateTime.parse(metaAndData.getMeta().getValid_daterange()[0][1]);
         }
         else {
-            // Used by default with version 1 API...
+            // Used by default with version 1 API.
             // CSV, each newline delimited row has YYYY-MM-DD,valueFlag
-            // (Flag character is optional) with the first line being the station name
+            // (Flag character is optional) with the first line being the station name.
             dataStringsArray = resultString.split("\n");
             Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data records (first is station name)." );
             nData = dataStringsArray.length;
-            iFirstData = 1; // Station name is record 1
+            iFirstData = 1; // Station name is record 1.
             if ( nData > 1 ) {
                 stationName = dataStringsArray[0];
                 commaPos = dataStringsArray[1].indexOf(",");
                 dataStart = DateTime.parse(dataStringsArray[1].substring(0,commaPos));
                 commaPos = dataStringsArray[dataStringsArray.length - 1].indexOf(",");
                 dataEnd = DateTime.parse(dataStringsArray[dataStringsArray.length - 1].substring(0,commaPos));
-                // Since CSV does not have metadata and not doing a round-trip would be a hit, use the same dates
+                // Since CSV does not have metadata and not doing a round-trip would be a hit, use the same dates.
                 validDataStart = new DateTime(dataStart);
                 validDataEnd = new DateTime(dataEnd);
             }
@@ -832,9 +826,9 @@ throws MalformedURLException, Exception
         ts.setDescription(stationName);
         boolean setPropertiesFromMetadata = true;
         if ( setPropertiesFromMetadata ) {
-            // Set time series properties from the station metadata
+            // Set time series properties from the station metadata.
             if ( metaAndData != null ) {
-                // Get metadata from the object and set as properties, using the JSON property names
+                // Get metadata from the object and set as properties, using the JSON property names.
                 RccAcisStationTimeSeriesMetadata meta = metaAndData.getMeta();
                 ts.setProperty("uid", (meta.getUid() == null) ? "" : meta.getUid() );
                 ts.setProperty("name", (meta.getName() == null) ? "" : meta.getName() );
@@ -843,20 +837,20 @@ throws MalformedURLException, Exception
                 ts.setProperty("climdiv", (meta.getClimdiv() == null) ? "" : meta.getClimdiv() );
                 ts.setProperty("cwa", (meta.getCwa() == null) ? "" : meta.getCwa() );
                 ts.setProperty("state", (meta.getState() == null) ? "" : meta.getState() );
-                ts.setProperty("elev", new Double(meta.getElev()) );
+                ts.setProperty("elev", Double.valueOf(meta.getElev()) );
                 double [] ll = meta.getLl();
                 if ( (ll != null) && (ll.length == 2) ) {
-                    ts.setProperty("longitude", new Double(ll[0]) );
-                    ts.setProperty("latitude", new Double(ll[1]) );
+                    ts.setProperty("longitude", Double.valueOf(ll[0]) );
+                    ts.setProperty("latitude", Double.valueOf(ll[1]) );
                 }
                 String [] sids = meta.getSids();
                 if ( sids != null ) {
-                    // Set each identifier for the different station types
+                    // Set each identifier for the different station types.
                     for ( int i = 0; i < sids.length; i++ ) {
-                        // Each string is "ID type"
+                        // Each string is "ID type".
                         String [] parts = sids[i].split(" ");
                         if ( (parts != null) && (parts.length == 2) ) {
-                            // Set a property "ID-type"
+                            // Set a property "ID-type".
                             RccAcisStationType stype = lookupStationTypeFromCode(Integer.parseInt(parts[1]));
                             if ( stype != null ) {
                                 ts.setProperty("ID-" + stype.getType(), parts[0] );
@@ -864,9 +858,9 @@ throws MalformedURLException, Exception
                         }
                     }
                 }
-                // Also set the preferred identifier with location type so it can be used to read the time series
+                // Also set the preferred identifier with location type so it can be used to read the time series.
                 ts.setProperty("IDWithLocType", meta.getIDPreferred(true));
-                // Valid dates will only have two dates since one element was requested
+                // Valid dates will only have two dates since one element was requested.
                 String [][] validDates = meta.getValid_daterange();
                 if ( validDates.length > 0 ) {
                     if ( validDates[0].length == 2 ) {
@@ -883,13 +877,13 @@ throws MalformedURLException, Exception
         ts.setDate2Original(validDataEnd);
         DateTime date = null;
         String [] dataStringParts = null;
-        String dateString = ""; // string containing the date
-        String valueString = ""; // string containing value and optionally flag part of data
-        String flagString; // string containing flag part of data (split out of "valueString")
+        String dateString = ""; // string containing the date.
+        String valueString = ""; // string containing value and optionally flag part of data.
+        String flagString; // string containing flag part of data (split out of "valueString").
         int valueStringLength;
-        // Nolan Doesken and Bill Noon indicate that 0 is what people use for trace
+        // Nolan Doesken and Bill Noon indicate that 0 is what people use for trace.
         double traceValue = 0.0;
-        double missing = ts.getMissing(); // Will be Double.NaN, based on initialization
+        double missing = ts.getMissing(); // Will be Double.NaN, based on initialization.
         if ( readData ) {
             ts.allocateDataSpace();
             // Process each data string.  Trace values result in setting the data flag.
@@ -900,7 +894,7 @@ throws MalformedURLException, Exception
                         valueString = data[i][1];
                     }
                     else {
-                        // CSV
+                        // CSV.
                         dataStringParts = dataStringsArray[i].split(",");
                         dateString = dataStringParts[0];
                         valueString = dataStringParts[1];
@@ -909,17 +903,17 @@ throws MalformedURLException, Exception
                     date = DateTime.parse(dateString);
                     valueStringLength = valueString.length();
                     if ( valueString.equals("M") ) {
-                        // No value and missing flag.  Do set a flag since ACIS specific sets a flag
+                        // No value and missing flag.  Do set a flag since ACIS specific sets a flag.
                         ts.setDataValue(date, missing, "M", 0 );
                         ++mCount;
                     }
                     else if ( valueString.equals("T") ) {
-                        // No value and trace flag.  Do set a flag since ACIS specific sets a flag
+                        // No value and trace flag.  Do set a flag since ACIS specific sets a flag.
                         ts.setDataValue(date, traceValue, "T", 0 );
                         ++tCount;
                     }
-                    // Check for data string form ##F or ##F1 (two one-character flags may occur, with
-                    // the second flag possibly being a character or digit)
+                    // Check for data string form ##F or ##F1 (two one-character flags may occur,
+                    // with the second flag possibly being a character or digit).
                     else if ( (valueString.length() > 0) &&
                         Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
                         flagString = valueString.substring(valueStringLength - 1);
@@ -928,7 +922,7 @@ throws MalformedURLException, Exception
                             ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
                         }
                         else {
-                            // Only flag was available
+                            // Only flag was available.
                             ts.setDataValue(date, missing, flagString, 0 );
                         }
                     }
@@ -941,20 +935,20 @@ throws MalformedURLException, Exception
                             ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
                         }
                         else {
-                            // Only flag was available
+                            // Only flag was available.
                             ts.setDataValue(date, missing, flagString, 0 );
                         }
                     }
                     else {
-                        // Just the data value
+                        // Just the data value.
                         ts.setDataValue(date,Double.parseDouble(valueString));
                     }
                 }
                 catch ( NumberFormatException e ) {
                     Message.printWarning(3,routine,"Error parsing data point date=" + dateString + " valueString=\"" +
                         valueString + "\" (" + e + ") - treating as flagged data.");
-                    // TODO SAM 2011-04-04 Have seen data values like "S", "0.20A".  Should these be
-                    // considered valid data points or treated as missing because they failed some test?
+                    // TODO SAM 2011-04-04 Have seen data values like "S", "0.20A".
+                    // Should these be considered valid data points or treated as missing because they failed some test?
                     // Submitted an email request to the ACIS contact page to see if I can get an answer.
                     // For now, strip the characters off the end and treat as the flag and use the numerical
                     // part (if present) for the value.
@@ -972,7 +966,7 @@ throws MalformedURLException, Exception
                                 valueString.substring(lastDigitPos + 1),0);
                         }
                         else {
-                            // Set the entire string as the flag
+                            // Set the entire string as the flag.
                             ts.setDataValue(date,ts.getMissing(),valueString,0);
                         }
                     }
@@ -987,11 +981,11 @@ throws MalformedURLException, Exception
             }
         }
         if ( tCount > 0 ) {
-            // Add a specific data flag type 
+            // Add a specific data flag type.
             ts.addDataFlagMetadata(new TSDataFlagMetadata("T", "Trace - value of " + traceValue + " is used."));
         }
         if ( mCount > 0 ) {
-            // Add a specific data flag type 
+            // Add a specific data flag type.
             ts.addDataFlagMetadata(new TSDataFlagMetadata("M", "Missing value."));
         }
     }
@@ -1004,8 +998,7 @@ where ID is the station.
 @param tsidLocationType the location type part of a time series identifier (station ID network abbreviation).
 @param tsidLocation the location part of a time series identifier (station ID).
 */
-private String readTimeSeries_FormHttpRequestStationID ( String tsidLocationType, String tsidLocation )
-{
+private String readTimeSeries_FormHttpRequestStationID ( String tsidLocationType, String tsidLocation ) {
     if ( tsidLocationType.length() == 0 ) {
         throw new InvalidParameterException ( "Station location type abbreviation is not specified." );
     }
@@ -1016,11 +1009,11 @@ private String readTimeSeries_FormHttpRequestStationID ( String tsidLocationType
                 "\" cannot be determined." );
         }
         else if ( stationType.getCode() == 0 ) {
-            // No station type code is expected since the ACIS type, just pass ACIS ID
+            // No station type code is expected since the ACIS type, just pass ACIS ID.
             return tsidLocation.trim();
         }
         else {
-            // Station ID followed by the station type code
+            // Station ID followed by the station type code.
             return tsidLocation.trim() + " " + stationType.getCode();
         }
     }
@@ -1037,16 +1030,16 @@ The table comes back as HTML so need to use a DOM and extract cells.
 TODO SAM 2011-01-08 Need Bill Noon to implement an API to get the variable table.
 */
 private void readVariableTableVersion1 ()
-throws URISyntaxException, IOException
-{   String routine = getClass().getName() + ".readVariableTableVersion1";
+throws URISyntaxException, IOException {
+    String routine = getClass().getName() + ".readVariableTableVersion1";
     // Get the variable table file
     String urlString = "" + getServiceRootURI() + "/doc/VariableTable.html";
     StringBuffer b = new StringBuffer ( IOUtil.readFromURL(urlString) );
-    // TODO SAM 2011-01-11 Need to perhaps use standalone="yes" rather than using a DTD when parsing the HTML
-    // Prepend the DTD information so document parsing/verification will work properly
+    // TODO SAM 2011-01-11 Need to perhaps use standalone="yes" rather than using a DTD when parsing the HTML.
+    // Prepend the DTD information so document parsing/verification will work properly.
     // And content does not have html tag at start?
     // The commented versions did not work (asking for > at end of HTML.Version, etc.)
-    // In the end probably could have just defined the entity for nbsp, etc. and not specified a DTD
+    // In the end probably could have just defined the entity for nbsp, etc. and not specified a DTD.
     boolean useDTD = false;
     if ( useDTD ) {
         b.insert(0, //"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -1058,19 +1051,19 @@ throws URISyntaxException, IOException
                 "\"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd\">\n" );
     }
     else {
-        // Just handle the specific elements that cause trouble
+        // Just handle the specific elements that cause trouble.
         b.insert(0, "<?xml version=\"1.0\"?>\n" +
                     "<!DOCTYPE some_name [\n" +
                     "<!ENTITY nbsp \"&#160;\">\n" +
-                    "]>" ); 
+                    "]>" );
     }
-   
-    // Page seems to have extra <table> at start
-    // Units does not have leading <td>
+
+    // Page seems to have extra <table> at start.
+    // Units does not have leading <td>.
     String tableString = b.toString().
-        replace("<body>", "<head></head><body>"). // Extra <table> at front
-        replace("<table>", ""). // Extra <table> at front
-        replace("height=\"30\"",""). // height not supported by DTD
+        replace("<body>", "<head></head><body>"). // Extra <table> at front.
+        replace("<table>", ""). // Extra <table> at front.
+        replace("height=\"30\"",""). // height not supported by DTD.
         replace("Units</td>", "Units</th>").
         replace("Source</td><tr>", "Source</th></tr>").
         replace("<br>","<br/>");
@@ -1109,7 +1102,7 @@ throws URISyntaxException, IOException
     Document doc = null;
     try {
         doc = builder.parse(new ReaderInputStream(new StringReader(tableString)));
-        // Spit it out..
+        // Spit it out.
         // Code from:  http://stackoverflow.com/questions/139076/how-to-pretty-print-xml-from-java
         /*
         OutputFormat format = new OutputFormat(doc);
@@ -1128,7 +1121,7 @@ throws URISyntaxException, IOException
     XPath xpath = XPathFactory.newInstance().newXPath();
     boolean doXpath = false;
     try {
-        // Extract the rows of the table
+        // Extract the rows of the table.
         NodeList nodes = null;
         if ( doXpath ) {
             XPathExpression expr = xpath.compile("//table//td");
@@ -1136,13 +1129,13 @@ throws URISyntaxException, IOException
             nodes = (NodeList)result;
         }
         else {
-            // Just use the document
+            // Just use the document.
             nodes = doc.getElementsByTagName("td");
         }
         //Message.printStatus(2,routine, "Have " + nodes.getLength() + " <td> elements");
         int major = -1, minor = -1;
         // Note "elem" corresponding to web service API is not in the HTML file so use blank
-        // "elem" is initialized for the version 2 API
+        // "elem" is initialized for the version 2 API.
         String elem = "", name = "", method = "", measureInterval = "", reportInterval = "", units = "", source = "";
         int imod9;
         String nodeContent;
@@ -1157,7 +1150,7 @@ throws URISyntaxException, IOException
                     major = Integer.parseInt(nodeContent);
                 }
                 catch ( NumberFormatException e ) {
-                    // Just don't set
+                    // Just don't set.
                 }
             }
             else if ( imod9 == 1 ) {
@@ -1166,7 +1159,7 @@ throws URISyntaxException, IOException
                     minor = Integer.parseInt(nodeContent);
                 }
                 catch ( NumberFormatException e ) {
-                    // Just don't set
+                    // Just don't set.
                 }
             }
             else if ( imod9 == 2 ) {
@@ -1188,8 +1181,8 @@ throws URISyntaxException, IOException
                 source = nodeContent;
             }
             else if ( imod9 == 8 ) {
-                // Last column in the table is blank
-                // TODO SAM 2011-03-31 Only include daily data as per Bill Noon - need to figure out aggregations
+                // Last column in the table is blank.
+                // TODO SAM 2011-03-31 Only include daily data as per Bill Noon - need to figure out aggregations.
                 if ( reportInterval.equalsIgnoreCase("DAILY") ) {
                     __variableTableRecordList.add(new RccAcisVariableTableRecord(elem, major, minor, name, method,
                            measureInterval, reportInterval, units, source));
@@ -1207,8 +1200,7 @@ Translate RCS ACIS time intervals to internal (e.g., "daily" becomes "Day").
 @param acisInterval ACIS interval to translate
 @return internal interval equivalent, or null if not matched
 */
-public String translateAcisIntervalToInternal ( String acisInterval )
-{
+public String translateAcisIntervalToInternal ( String acisInterval ) {
     if ( acisInterval.equalsIgnoreCase("sub-hrly")) {
         return "Irregular";
     }
@@ -1225,7 +1217,7 @@ public String translateAcisIntervalToInternal ( String acisInterval )
         return "Day";
     }
     else if ( acisInterval.equalsIgnoreCase("weekly")) {
-        // TODO SAM 2011-01-08 Evaluate whether/how to implement weekly time series
+        // TODO SAM 2011-01-08 Evaluate whether/how to implement weekly time series.
         return "Irregular";
     }
     else if ( acisInterval.equalsIgnoreCase("monthly")) {

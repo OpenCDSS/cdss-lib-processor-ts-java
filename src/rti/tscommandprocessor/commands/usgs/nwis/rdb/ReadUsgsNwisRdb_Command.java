@@ -268,17 +268,6 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{
-	__InputStart = null;
-	__InputEnd   = null;
-	super.finalize();
-}
-
-/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
@@ -443,7 +432,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {

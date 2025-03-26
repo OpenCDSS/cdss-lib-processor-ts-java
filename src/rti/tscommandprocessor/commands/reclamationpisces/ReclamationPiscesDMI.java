@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -648,14 +648,14 @@ private void setTimeSeriesProperties ( TS ts, ReclamationPisces_SiteCatalogSerie
     ts.setProperty("description", tsm.getDescription() );
     ts.setProperty("state", tsm.getState() );
     ts.setProperty("agency_region", tsm.getAgencyRegion() );
-    ts.setProperty("latitude", DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude()) );
-    ts.setProperty("longitude", DMIUtil.isMissing(tsm.getLongitude()) ? null : new Double(tsm.getLongitude()) );
-    ts.setProperty("elevation", DMIUtil.isMissing(tsm.getElevation()) ? null : new Double(tsm.getElevation()) );
+    ts.setProperty("latitude", DMIUtil.isMissing(tsm.getLatitude()) ? null : Double.valueOf(tsm.getLatitude()) );
+    ts.setProperty("longitude", DMIUtil.isMissing(tsm.getLongitude()) ? null : Double.valueOf(tsm.getLongitude()) );
+    ts.setProperty("elevation", DMIUtil.isMissing(tsm.getElevation()) ? null : Double.valueOf(tsm.getElevation()) );
     ts.setProperty("timezone", tsm.getTimeZone() );
     ts.setProperty("install", tsm.getInstall() );
     ts.setProperty("horizontal_datum", tsm.getHorizontalDatum() );
     ts.setProperty("vertical_datum", tsm.getVerticalDatum() );
-    ts.setProperty("vertical_accuracy", DMIUtil.isMissing(tsm.getVerticalAccuracy()) ? null : new Double(tsm.getVerticalAccuracy()) );
+    ts.setProperty("vertical_accuracy", DMIUtil.isMissing(tsm.getVerticalAccuracy()) ? null : Double.valueOf(tsm.getVerticalAccuracy()) );
     ts.setProperty("elevation_method", tsm.getElevationMethod() );
     ts.setProperty("tz_offset", tsm.getTimeZoneOffset() );
     ts.setProperty("active_flag", tsm.getActiveFlag() );
@@ -663,10 +663,10 @@ private void setTimeSeriesProperties ( TS ts, ReclamationPisces_SiteCatalogSerie
     ts.setProperty("responsibility", tsm.getResponsibility() );
     
     // Series data (from "seriescatalog" table)...
-    ts.setProperty("id", DMIUtil.isMissing(tsm.getID()) ? null : new Integer(tsm.getID()) );
-    ts.setProperty("parentid", DMIUtil.isMissing(tsm.getParentID()) ? null : new Integer(tsm.getParentID()) );
-    ts.setProperty("isfolder", DMIUtil.isMissing(tsm.getIsFolder()) ? null : new Integer(tsm.getIsFolder()) );
-    ts.setProperty("sortorder", DMIUtil.isMissing(tsm.getSortOrder()) ? null : new Integer(tsm.getSortOrder()) );
+    ts.setProperty("id", DMIUtil.isMissing(tsm.getID()) ? null : Integer.valueOf(tsm.getID()) );
+    ts.setProperty("parentid", DMIUtil.isMissing(tsm.getParentID()) ? null : Integer.valueOf(tsm.getParentID()) );
+    ts.setProperty("isfolder", DMIUtil.isMissing(tsm.getIsFolder()) ? null : Integer.valueOf(tsm.getIsFolder()) );
+    ts.setProperty("sortorder", DMIUtil.isMissing(tsm.getSortOrder()) ? null : Integer.valueOf(tsm.getSortOrder()) );
     ts.setProperty("iconname", tsm.getIconName() );
     ts.setProperty("name", tsm.getName() );
     ts.setProperty("units", tsm.getUnits() );
@@ -677,7 +677,7 @@ private void setTimeSeriesProperties ( TS ts, ReclamationPisces_SiteCatalogSerie
     ts.setProperty("connectionstring", tsm.getConnectionString() );
     ts.setProperty("expression", tsm.getExpression() );
     ts.setProperty("notes", tsm.getNotes() );
-    ts.setProperty("enabled", DMIUtil.isMissing(tsm.getEnabled()) ? null : new Integer(tsm.getEnabled()) );
+    ts.setProperty("enabled", DMIUtil.isMissing(tsm.getEnabled()) ? null : Integer.valueOf(tsm.getEnabled()) );
     ts.setProperty("server", tsm.getServer() );
 }
 

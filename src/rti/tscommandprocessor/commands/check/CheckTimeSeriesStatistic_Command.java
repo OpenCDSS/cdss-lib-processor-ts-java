@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -529,17 +529,17 @@ CommandWarningException, CommandException
     String StatisticValue1 = parameters.getValue ( "StatisticValue1" );
     Double StatisticValue1_Double = null;
     if ( (StatisticValue1 != null) && !StatisticValue1.equals("") ) {
-        StatisticValue1_Double = new Double(StatisticValue1);
+        StatisticValue1_Double = Double.valueOf(StatisticValue1);
     }
     String StatisticValue2 = parameters.getValue ( "StatisticValue2" );
     Double StatisticValue2_Double = null;
     if ( (StatisticValue2 != null) && !StatisticValue2.equals("") ) {
-        StatisticValue2_Double = new Double(StatisticValue2);
+        StatisticValue2_Double = Double.valueOf(StatisticValue2);
     }
     String StatisticValue3 = parameters.getValue ( "StatisticValue3" );
     Double StatisticValue3_Double = null;
     if ( (StatisticValue3 != null) && !StatisticValue3.equals("") ) {
-        StatisticValue3_Double = new Double(StatisticValue3);
+        StatisticValue3_Double = Double.valueOf(StatisticValue3);
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -552,12 +552,12 @@ CommandWarningException, CommandException
     String CheckValue1 = parameters.getValue ( "CheckValue1" );
     Double CheckValue1_Double = null;
     if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
-        CheckValue1_Double = new Double(CheckValue1);
+        CheckValue1_Double = Double.valueOf(CheckValue1);
     }
     String CheckValue2 = parameters.getValue ( "CheckValue2" );
     Double CheckValue2_Double = null;
     if ( (CheckValue2 != null) && !CheckValue2.equals("") ) {
-        CheckValue2_Double = new Double(CheckValue2);
+        CheckValue2_Double = Double.valueOf(CheckValue2);
     }
     String IfCriteriaMet = parameters.getValue ( "IfCriteriaMet" );
     if ( (IfCriteriaMet == null) || IfCriteriaMet.equals("") ) {

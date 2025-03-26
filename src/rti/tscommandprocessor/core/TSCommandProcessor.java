@@ -162,21 +162,21 @@ Indicate whether output should be created.  If true, then output files will be c
 If false, commands will run but output files will not be created.
 The latter may be used during troubleshooting to increase performance.
 */
-private Boolean __CreateOutput_Boolean = new Boolean(true);
+private Boolean __CreateOutput_Boolean = Boolean.TRUE;
 
 /**
 Indicate whether commands should clear their log before running. Normally this is true.
 However, when using For() commands it is helpful to accumulate logging messages in commands within the For() loop.
 The command processor sets this value and each command must call getShouldCommandsClearLog() to check whether to clear.
 */
-private Boolean __commandsShouldClearRunStatus = new Boolean(true);
+private Boolean __commandsShouldClearRunStatus = Boolean.TRUE;
 
 /**
 Indicate whether StartLog commands should be enabled.
 If true, then new log files will be opened by this command (the default).
 If false, the main log file will be used throughout, useful for centralizing output for troubleshooting.
 */
-private Boolean __StartLogEnabled_Boolean = new Boolean(true);
+private Boolean __StartLogEnabled_Boolean = Boolean.TRUE;
 
 /**
 The list of StringMonthTS, currently only read by ReadPatternFile() and used with FillPattern().
@@ -1329,10 +1329,10 @@ public Object getPropContents ( String propName ) throws Exception {
 		return getPropContents_CreateOutput();
 	}
     else if ( propName.equalsIgnoreCase("DebugLevelLogFile") ) {
-        return new Integer(Message.getDebugLevel(Message.LOG_OUTPUT));
+        return Integer.valueOf(Message.getDebugLevel(Message.LOG_OUTPUT));
     }
     else if ( propName.equalsIgnoreCase("DebugLevelScreen") ) {
-        return new Integer(Message.getDebugLevel(Message.TERM_OUTPUT));
+        return Integer.valueOf(Message.getDebugLevel(Message.TERM_OUTPUT));
     }
     else if ( propName.equalsIgnoreCase("EnsembleResultsList") ) {
         return getPropContents_EnsembleResultsList();
@@ -1410,10 +1410,10 @@ public Object getPropContents ( String propName ) throws Exception {
 		return getPropContents_TSViewWindowListener();
 	}
     else if ( propName.equalsIgnoreCase("WarningLevelLogFile") ) {
-        return new Integer(Message.getWarningLevel(Message.LOG_OUTPUT));
+        return Integer.valueOf(Message.getWarningLevel(Message.LOG_OUTPUT));
     }
     else if ( propName.equalsIgnoreCase("WarningLevelScreen") ) {
-        return new Integer(Message.getWarningLevel(Message.TERM_OUTPUT));
+        return Integer.valueOf(Message.getWarningLevel(Message.TERM_OUTPUT));
     }
 	else if ( propName.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
@@ -1449,7 +1449,7 @@ Handle the AutoExtendPeriod property request.
 */
 private Boolean getPropContents_AutoExtendPeriod() {
 	boolean b = this.__tsengine.getAutoExtendPeriod();
-	return new Boolean ( b );
+	return Boolean.valueOf ( b );
 }
 
 /**
@@ -1498,7 +1498,7 @@ Handle the HaveOutputPeriod property request.
 */
 private Boolean getPropContents_HaveOutputPeriod() {
 	boolean b = this.__tsengine.haveOutputPeriod();
-	return new Boolean ( b );
+	return Boolean.valueOf ( b );
 }
 
 /**
@@ -1516,10 +1516,10 @@ Handle the HydroBaseDMIListSize property request.
 private Integer getPropContents_HydroBaseDMIListSize() {
     List<HydroBaseDMI> v = this.__tsengine.getHydroBaseDMIList();
     if ( v == null ) {
-        return new Integer(0);
+        return Integer.valueOf(0);
     }
     else {
-        return new Integer(v.size());
+        return Integer.valueOf(v.size());
     }
 }
 
@@ -1529,7 +1529,7 @@ Handle the IgnoreLEZero property request.
 */
 private Boolean getPropContents_IgnoreLEZero() {
     boolean b = this.__tsengine.getIgnoreLEZero();
-    return new Boolean ( b );
+    return Boolean.valueOf ( b );
 }
 
 /**
@@ -1538,7 +1538,7 @@ Handle the IncludeMissingTS property request.
 */
 private Boolean getPropContents_IncludeMissingTS() {
 	boolean b = this.__tsengine.getIncludeMissingTS();
-	return new Boolean ( b );
+	return Boolean.valueOf ( b );
 }
 
 /**
@@ -1678,7 +1678,7 @@ Handle the TSEnsembleResultsListSize property request.
 @return Size of the time series ensemble results list, as an Integer.
 */
 private Integer getPropContents_TSEnsembleResultsListSize() {
-    return new Integer( this.__TSEnsembleList.size());
+    return Integer.valueOf( this.__TSEnsembleList.size());
 }
 
 /**
@@ -1702,7 +1702,7 @@ Handle the TSResultsListSize property request.
 @return Size of the time series results list, as an Integer.
 */
 private Integer getPropContents_TSResultsListSize() {
-	return new Integer( this.__tsengine.getTimeSeriesList(null).size());
+	return Integer.valueOf( this.__tsengine.getTimeSeriesList(null).size());
 }
 
 /**
@@ -3281,7 +3281,7 @@ throws Exception {
 	int index = this.__tsengine.indexOf ( TSID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference.
-	results.setUsingObject("Index", new Integer(index));
+	results.setUsingObject("Index", Integer.valueOf(index));
 	return bean;
 }
 
@@ -3512,7 +3512,7 @@ throws Exception {
     }
     Object o_ReadData = request_params.getContents ( "ReadData" );
     if ( o_ReadData == null ) {
-           o_ReadData = new Boolean(true); // Default.
+           o_ReadData = Boolean.TRUE; // Default.
     }
     boolean readData = ((Boolean)o_ReadData).booleanValue();
     // If values have been specified for default time series,
@@ -4509,7 +4509,7 @@ throws Exception {
     catch ( NumberFormatException e ) {
     	programVersionNumber = -1.0;
     }
-    this.__propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
+    this.__propertyHashmap.put ( "ProgramVersionNumber", Double.valueOf(programVersionNumber) );
 
     // Set initial properties, such as from the command line:
     // - all are strings, so are immutable

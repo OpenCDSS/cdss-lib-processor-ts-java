@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1390,7 +1390,7 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 							// Expecting a Double but value is something else.
 							if ( value instanceof Integer ) {
 								// Simple conversion.
-								value = new Double(((Integer)value).doubleValue());
+								value = Double.valueOf((Integer)value).doubleValue();
 							}
 							else {
 								problems.add("Attempting to set double in column that is type " +
@@ -1402,7 +1402,7 @@ private void readTableData ( DataTable table, List<List<?>> objectList, String [
 						else if ( (tableFieldType == TableField.DATA_TYPE_INT) && !(value instanceof Integer) ) {
 							if ( value instanceof Double ) {
 								// Simple conversion.
-								value = new Integer(((Double)value).intValue());
+								value = Integer.valueOf(((Double)value).intValue());
 							}
 							else {
 								problems.add("Attempting to set integer in column that is type " +
@@ -1474,7 +1474,7 @@ CommandWarningException, CommandException {
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -1808,7 +1808,7 @@ CommandWarningException, CommandException {
             }
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "PropertyName", RowCountProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
             try {
                 processor.processRequest( "SetProperty", request_params);
             }

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -37,8 +37,6 @@ import RTi.Util.Message.Message;
 /**
  * Listener to handle CommandProcessorEvent events.  The listener queues the events that it
  * handles and generates output when finalizeOutput() is called.
- * @author sam
- *
  */
 public class CheckFileCommandProcessorEventListener implements CommandProcessorEventListener
 {
@@ -304,17 +302,17 @@ private void writeTableOfContents( HTMLWriter html )  throws Exception
         __spec_data.elementAt(i);
         CheckFile_DataModel dm_gen = ( CheckFile_DataModel )__gen_data.elementAt(i);
         // get the data needed for the TOC from the data models
-        //String data_size = new Integer( 
+        //String data_size = Integer.valueOf( 
         //      dm_gen.getDataSize() ).toString();
-        String data_size = new Integer ( dm_gen.getTotalNumberProblems()).toString();
-        String total_size = new Integer( dm_gen.getTotalChecked() ).toString();
+        String data_size = Integer.valueOf ( dm_gen.getTotalNumberProblems()).toString();
+        String total_size = Integer.valueOf( dm_gen.getTotalChecked() ).toString();
         String[] toc_values = { dm.getTitle(), "Zero or Missing",
             data_size, total_size };
         // write the first data section (row)
         // this section has the general data check info and links
         writeTocDataSection( html, toc_values, i );
-        data_size = new Integer( dm.getTotalNumberProblems()).toString();
-        total_size = new Integer( dm.getTotalChecked() ).toString();
+        data_size = Integer.valueOf( dm.getTotalNumberProblems()).toString();
+        total_size = Integer.valueOf( dm.getTotalChecked() ).toString();
         String[] toc_values2 = { dm.getTitle(), data_size, total_size };
         // write the second data section (row)
         // this section has the specific data check info and links

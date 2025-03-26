@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -742,10 +742,10 @@ private void writeTableToKml02 ( PrintWriter fout, DataTable table, String name,
                 if ( shape instanceof GRPoint ) {
                     //Message.printStatus(2, "", "Shape is POINT." );
                     GRPoint pt = (GRPoint)shape;
-                    longitudeO = new Double(pt.x);
-                    latitudeO = new Double(pt.y);
+                    longitudeO = Double.valueOf(pt.x);
+                    latitudeO = Double.valueOf(pt.y);
                     if ( shape instanceof GRPointZM ) {
-                        elevationO = new Double(((GRPointZM)pt).z);
+                        elevationO = Double.valueOf(((GRPointZM)pt).z);
                     }
                     fout.write(i3 + "<Point>\n");
                     if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
@@ -766,11 +766,11 @@ private void writeTableToKml02 ( PrintWriter fout, DataTable table, String name,
                     fout.write(i6 + "<coordinates>\n");
                     Object latitudeO0 = null, longitudeO0 = null, elevationO0 = null;
                     for ( int i = 0; i < p.npts; i++ ) {
-                        longitudeO = new Double(p.pts[i].x);
-                        latitudeO = new Double(p.pts[i].y);
+                        longitudeO = Double.valueOf(p.pts[i].x);
+                        latitudeO = Double.valueOf(p.pts[i].y);
                         elevationO = null;
                         //if ( shape instanceof GRPolygonZM ) {
-                        //    elevationO = new Double(((GRPointZM)p.pts[i]).z);
+                        //    elevationO = Double.valueOf(((GRPointZM)p.pts[i]).z);
                         //}
                         if ( i == 0 ) {
                             // Save first point and output at end if needed to close ring

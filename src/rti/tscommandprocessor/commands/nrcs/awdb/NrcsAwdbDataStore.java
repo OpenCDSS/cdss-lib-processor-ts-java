@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -1043,14 +1043,14 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     DataSource s = sel.getDataSource();
                     ts.setProperty("dataSource", (i == null) ? null : "" + s );
                     int i2 = sel.getOrdinal();
-                    ts.setProperty("ordinal", new Integer(i2) );
+                    ts.setProperty("ordinal", Integer.valueOf(i2) );
                     HeightDepth hd = sel.getHeightDepth();
                     if ( hd == null ) {
                         ts.setProperty("heightDepthValue", null );
                         ts.setProperty("heightDepthUnitCd", null );
                     }
                     else {
-                        ts.setProperty("heightDepthValue", (hd.getValue() == null) ? null : new Double(hd.getValue().doubleValue()));
+                        ts.setProperty("heightDepthValue", (hd.getValue() == null) ? null : Double.valueOf(hd.getValue().doubleValue()));
                         ts.setProperty("heightDepthUnitCd", (hd.getUnitCd() == null) ? "" : hd.getUnitCd() );
                     }
                     ts.setProperty("stationDataTimeZone", (stationDataTimeZone == null) ? null : stationDataTimeZone.doubleValue() );

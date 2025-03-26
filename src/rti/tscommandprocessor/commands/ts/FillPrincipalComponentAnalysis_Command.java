@@ -4,29 +4,23 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
 
-// ----------------------------------------------------------------------------
-// FillPrincipalComponentAnalysis_Command - Command class.
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
@@ -205,7 +199,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	// Make sure AnalysisStart preceeds AnalysisEnd
+	// Make sure AnalysisStart precedes AnalysisEnd
 	if ( AnalysisStartDate != null && AnalysisEndDate != null ) {
 		if ( ! AnalysisEndDate.greaterThanOrEqualTo(AnalysisStartDate) ) {
 			warning += "\n Analysis Start \""
@@ -264,7 +258,7 @@ throws InvalidCommandParameterException
             }
         }
 
-        // Make sure AnalysisStart preceeds FillStart
+        // Make sure AnalysisStart precedes FillStart
         if ( AnalysisStartDate != null && FillStartDate != null ) {
             if ( ! FillStartDate.greaterThanOrEqualTo( AnalysisStartDate ) ) {
                 warning += "\n Analysis Start \""
@@ -361,7 +355,7 @@ protected List<String> createFillCommands ()
     String MaxCombinations = parameters.getValue ( "MaxCombinations" );
     String RegressionEquationFill = parameters.getValue ( "RegressionEquationFill" );
     String AnalysisMonths = parameters.getValue("AnalysisMonths");
-    DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
+    //DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
 
     // dependent TS
     if ( DependentTSList != null && DependentTSList.length()>0) {
@@ -595,18 +589,6 @@ protected void fillDependents() throws InvalidCommandParameterException
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{
-	__TSPCA = null;
-	
-	super.finalize ();
-}
-
-
-/**
 Get the time series to process.
 @param processor CommandProcessor to handle data requests.
 @param TSList TSList command parameter.
@@ -636,7 +618,8 @@ private List<Object> getTimeSeriesToProcess ( CommandProcessor processor,
 		"\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( log_level, routine, message );
 	}
-	else {	tslist = (List<TS>)o_TSList;
+	else {
+		tslist = (List<TS>)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -789,7 +772,7 @@ throws InvalidCommandParameterException,
         // Get the time series object.
         try {
                 PropList request_params = new PropList ( "" );
-                request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+                request_params.setUsingObject ( "Index", Integer.valueOf(tspos[nTS]) );
                 CommandProcessorRequestResultsBean bean = null;
                 try { bean =
                     processor.processRequest( "GetTimeSeries", request_params);
@@ -844,7 +827,7 @@ throws InvalidCommandParameterException,
         // Get the time series object.
         try {
             PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+            request_params.setUsingObject ( "Index", Integer.valueOf(tspos[nTS]) );
             CommandProcessorRequestResultsBean bean = null;
             try { bean = processor.processRequest( "GetTimeSeries", request_params);
             }

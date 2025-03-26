@@ -1,17 +1,25 @@
-//------------------------------------------------------------------------------
-// fillHistYearAverage_Command - handle the fillHistYearAverage() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-18	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					fillHistMonthYearAverage().
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
+// FillHistYearAverage_Command - handle the FillHistYearAverage() command
+
+/* NoticeStart
+
+CDSS Time Series Processor Java Library
+CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
+
+CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+    along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
+
+NoticeEnd */
 
 package rti.tscommandprocessor.commands.ts;
 
@@ -477,7 +485,7 @@ CommandWarningException, CommandException
 	for ( int its = 0; its < nts; its++ ) {
 		ts = null;
 		request_params = new PropList ( "" );
-		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
+		request_params.setUsingObject ( "Index", Integer.valueOf(tspos[its]) );
 		bean = null;
 		try { bean =
 			processor.processRequest( "GetTimeSeries", request_params);

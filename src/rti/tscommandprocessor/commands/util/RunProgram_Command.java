@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -298,7 +298,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandProcessor processor = getCommandProcessor();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -527,7 +527,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (ExitCodeProperty != null) && !ExitCodeProperty.isEmpty() ) {
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "PropertyName", ExitCodeProperty );
-            request_params.setUsingObject ( "PropertyValue", new Integer(pm.getExitStatus()) );
+            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(pm.getExitStatus()) );
             try {
                 processor.processRequest( "SetProperty", request_params);
             }
@@ -835,7 +835,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( (OutputCheckWarningCountProperty != null) && !OutputCheckWarningCountProperty.isEmpty() ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", OutputCheckWarningCountProperty );
-                request_params.setUsingObject ( "PropertyValue", new Integer(outputWarningCount) );
+                request_params.setUsingObject ( "PropertyValue", Integer.valueOf(outputWarningCount) );
                 try {
                     processor.processRequest( "SetProperty", request_params);
                 }
@@ -852,7 +852,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( (OutputCheckFailureCountProperty != null) && !OutputCheckFailureCountProperty.isEmpty() ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", OutputCheckFailureCountProperty );
-                request_params.setUsingObject ( "PropertyValue", new Integer(outputFailureCount) );
+                request_params.setUsingObject ( "PropertyValue", Integer.valueOf(outputFailureCount) );
                 try {
                     processor.processRequest( "SetProperty", request_params);
                 }

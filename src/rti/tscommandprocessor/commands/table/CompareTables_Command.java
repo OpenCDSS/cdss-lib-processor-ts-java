@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -687,12 +687,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Precision = parameters.getValue ( "Precision" );
     Integer Precision_Integer = null;
     if ( (Precision != null) && !Precision.equals("") ) {
-        Precision_Integer = new Integer ( Precision );
+        Precision_Integer = Integer.valueOf ( Precision );
     }
     String Tolerance = parameters.getValue ( "Tolerance" );
     Double Tolerance_Double = null;
     if ( (Tolerance != null) && !Tolerance.equals("") ) {
-        Tolerance_Double = new Double ( Tolerance );
+        Tolerance_Double = Double.valueOf ( Tolerance );
     }
     String AllowedDiff = parameters.getValue ( "AllowedDiff" );
     int AllowedDiff_int = 0;
@@ -1146,7 +1146,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (DiffRowCountProperty != null) && !DiffRowCountProperty.isEmpty() ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", DiffRowCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(diffRowCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(diffRowCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
         }
@@ -1165,7 +1165,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (DiffCellCountProperty != null) && !DiffCellCountProperty.isEmpty() ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", DiffCellCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(diffCellCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(diffCellCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
         }
@@ -1184,7 +1184,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (SameRowCountProperty != null) && !SameRowCountProperty.isEmpty() ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", SameRowCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(sameRowCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(sameRowCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
         }
@@ -1203,7 +1203,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (SameCellCountProperty != null) && !SameCellCountProperty.isEmpty() ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", SameCellCountProperty );
-        request_params.setUsingObject ( "PropertyValue", new Integer(sameCellCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(sameCellCount) );
         try {
             processor.processRequest( "SetProperty", request_params);
         }

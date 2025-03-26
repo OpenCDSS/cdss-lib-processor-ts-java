@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -215,7 +215,7 @@ public static void appendToRegressionTestReport(CommandProcessor processor, bool
     	int col = -1;
     	try {
     		col = __regressionTestTable.getFieldIndex("Num");
-    		rec.setFieldValue(col, new Integer(__regressionTestLineCount));
+    		rec.setFieldValue(col, Integer.valueOf(__regressionTestLineCount));
     		col = __regressionTestTable.getFieldIndex("Enabled");
     		rec.setFieldValue(col, enabled.trim());
     		col = __regressionTestTable.getFieldIndex("Run Time (ms)");
@@ -508,7 +508,6 @@ public static String expandParameterDiscoveryValue( List<Prop> props, Command co
         }
         // Try to get the property from the processor.
         // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show the unexpanded property name in the result.
-        Object propval = null;
         String propvalString = "";
         boolean foundProp = false;
        	// Loop through the props to find a matching property name.
@@ -2888,7 +2887,7 @@ throws NumberFormatException {
 		return (Double)o;
 	}
 	else if ( o instanceof Float ) {
-		return new Double((Float)o);
+		return Double.valueOf((Float)o);
 	}
 	else {
 		// Integers, strings, etc. try to parse Double and throw exception if an error.
@@ -3168,7 +3167,7 @@ public static List<Object> getTagValues ( CommandProcessor processor, String tag
                 commandString.substring(pos)," \t", StringUtil.DELIM_SKIP_BLANKS);
             if ( parts.size() == 1 ) {
                 // No value to the tag so.
-                tagValues.add ( new Boolean(true) );
+                tagValues.add ( Boolean.TRUE );
             }
             else {
                 // Add as a string - note that this value may contain multiple values separated by

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -305,7 +305,7 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     PropList request_params2 = new PropList ( "" );
     request_params2.setUsingObject ( "Index", o_Index );
     // By here should be True or False.
-    Boolean FreeEnsembleIfEmpty_Boolean = new Boolean(FreeEnsembleIfEmpty);
+    Boolean FreeEnsembleIfEmpty_Boolean = Boolean.valueOf(FreeEnsembleIfEmpty);
     request_params2.setUsingObject ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty_Boolean );
     try {
         processor.processRequest( "RemoveTimeSeriesFromResultsList", request_params2 );
@@ -349,7 +349,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -519,7 +519,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         tsposArray[iposMax] = -1;
         try {
             notifyCommandProgressListeners ( its, nts, (float)-1.0, "Freeing time series [" + tspos + "]" );
-            int warning_count2 = removeTimeSeriesAtIndex ( processor, TSID, new Integer(tspos),
+            int warning_count2 = removeTimeSeriesAtIndex ( processor, TSID, Integer.valueOf(tspos),
                     FreeEnsembleIfEmpty, status, 0, warning_level, command_tag );
             warning_count += warning_count2;
             if ( warning_count2 == 0 ) {

@@ -5,7 +5,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -116,16 +116,6 @@ public void commandRemoved ( int index0, int index1 ) {
 		return;
 	}
 	fireIntervalRemoved ( this, index0, index1 );
-}
-
-/**
-Finalize the class before garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-	// Remove the listener from the processor.
-	this.__processor.removeCommandListListener ( this );
-	super.finalize();
 }
 
 /**

@@ -990,7 +990,7 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             			boolean found = false;
             			String funcSigString = b.toString();
             			for ( String func : funcList ) {
-            				if ( func.equals(b) ) {
+            				if ( func.equals(b.toString()) ) {
             					found = true;
             					break;
             				}
@@ -1173,7 +1173,7 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             			boolean found = false;
             			String procSigString = b.toString();
             			for ( String proc : procList ) {
-            				if ( proc.equals(b) ) {
+            				if ( proc.equals(b.toString()) ) {
             					found = true;
             					break;
             				}

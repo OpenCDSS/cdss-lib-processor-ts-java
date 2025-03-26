@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -335,7 +335,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -389,7 +389,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     Double ResetValue_Double = null;
     if ( ResetValue != null ) {
         if ( StringUtil.isDouble(ResetValue) ) {
-            ResetValue_Double = new Double(ResetValue);
+            ResetValue_Double = Double.valueOf(ResetValue);
             resetValueToDataValue = false;
         }
         else if ( ResetValue.equalsIgnoreCase(_DataValue) ) {
@@ -404,12 +404,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     Integer AllowMissingCount_Integer = null;
     if ( (AllowMissingCount != null) && StringUtil.isInteger(AllowMissingCount) ) {
-        AllowMissingCount_Integer = new Integer(AllowMissingCount);
+        AllowMissingCount_Integer = Integer.valueOf(AllowMissingCount);
     }
     String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     Integer MinimumSampleSize_Integer = null;
     if ( (MinimumSampleSize != null) && StringUtil.isInteger(MinimumSampleSize) ) {
-        MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
+        MinimumSampleSize_Integer = Integer.valueOf(MinimumSampleSize);
     }
 
 	// Get the time series to process.  Allow TSID to be a pattern or specific time series.
@@ -505,7 +505,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		request_params = new PropList ( "" );
-		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
+		request_params.setUsingObject ( "Index", Integer.valueOf(tspos[its]) );
 		bean = null;
 		try {
             bean = processor.processRequest( "GetTimeSeries", request_params);

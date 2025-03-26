@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -363,7 +363,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -572,7 +572,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
     String Precision = parameters.getValue ( "Precision" );
-    Integer precision = new Integer(4);
+    Integer precision = Integer.valueOf(4);
     if ( (Precision != null) && (Precision.length() > 0) ) {
         precision = Integer.parseInt(Precision);
     }
@@ -851,10 +851,10 @@ private void writeTimeSeriesList02 ( PrintWriter fout, List<TS> tslist,
             if ( shape != null ) {
                 if ( shape instanceof GRPoint ) {
                     GRPoint pt = (GRPoint)shape;
-                    longitude = new Double(pt.x);
-                    latitude = new Double(pt.y);
+                    longitude = Double.valueOf(pt.x);
+                    latitude = Double.valueOf(pt.y);
                     if ( shape instanceof GRPointZM ) {
-                        elevation = new Double(((GRPointZM)pt).z);
+                        elevation = Double.valueOf(((GRPointZM)pt).z);
                     }
                     fout.write(i3 + "<Point>\n");
                     if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
@@ -880,11 +880,11 @@ private void writeTimeSeriesList02 ( PrintWriter fout, List<TS> tslist,
                     Double longitudeD = null, latitudeD = null, elevationD = null;
                     Double longitudeD0 = null, latitudeD0 = null, elevationD0 = null;
                     for ( int i = 0; i < p.npts; i++ ) {
-                        longitudeD = new Double(p.pts[i].x);
-                        latitudeD = new Double(p.pts[i].y);
+                        longitudeD = Double.valueOf(p.pts[i].x);
+                        latitudeD = Double.valueOf(p.pts[i].y);
                         // TODO SAM 2014-02-23 Need to enable ZM
                         //if ( shape instanceof GRPolygonZM ) {
-                        //    elevationD = new Double(((GRPointZM)p.pts[i]).z);
+                        //    elevationD = Double.valueOf(((GRPointZM)p.pts[i]).z);
                         //}
                         if ( i == 0 ) {
                             // Save first point and output at end if needed to close ring

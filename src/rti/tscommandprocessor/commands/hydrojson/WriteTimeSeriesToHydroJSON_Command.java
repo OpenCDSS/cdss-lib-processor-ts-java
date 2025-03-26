@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -313,7 +313,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -350,7 +350,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     String MissingValue = parameters.getValue ( "MissingValue" );
 	String Precision = parameters.getValue ( "Precision" );
-	Integer precision = new Integer(4);
+	Integer precision = Integer.valueOf(4);
     if ( (Precision != null) && (Precision.length() > 0) ) {
         precision = Integer.parseInt(Precision);
     }
@@ -818,7 +818,7 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
 						processor, ts, tInterval, status, CommandPhaseType.RUN);
 				}
 				hts.setInterval(interval);
-				hts.setCount(new Integer(count));
+				hts.setCount(Integer.valueOf(count));
 				Double minValue = null;
 				Double maxValue = null;
 				if ( nonMissingCount > 0 ) {
@@ -826,10 +826,10 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
 					maxValue = ts.getDataLimits().getMaxValue();
 				}
 				if ( minValue != null ) {
-					hts.setMinValue(new Double(minValue));
+					hts.setMinValue(Double.valueOf(minValue));
 				}
 				if ( maxValue != null ) {
-					hts.setMaxValue(new Double(maxValue));
+					hts.setMaxValue(Double.valueOf(maxValue));
 				}
 				if ( outputStart == null ) {
 					if ( ts.getDate1() != null ) {

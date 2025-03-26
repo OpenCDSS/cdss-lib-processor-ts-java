@@ -147,7 +147,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warningCount = 0;
 	String message = null;
 
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {

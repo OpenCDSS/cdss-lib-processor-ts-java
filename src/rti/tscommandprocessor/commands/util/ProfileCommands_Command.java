@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -225,25 +225,25 @@ throws Exception
         deltaHeap = endHeap - startHeap;
         int col = 0;
         // Add rows to the table
-        table.setFieldValue(row,col++, new Integer(row + 1),true); // Command number (1+)
+        table.setFieldValue(row,col++, Integer.valueOf(row + 1),true); // Command number (1+)
         table.setFieldValue(row,col++, commandName,true);
         if ( okToProcess ) {
             table.setFieldValue(row,col++, startTime,true);
-            table.setFieldValue(row,col++, new Long(startTimeMs),true);
+            table.setFieldValue(row,col++, Long.valueOf(startTimeMs),true);
             table.setFieldValue(row,col++, endTime,true);
-            table.setFieldValue(row,col++, new Long(endTimeMs),true);
-            table.setFieldValue(row,col++, new Integer((int)runTime),true);
+            table.setFieldValue(row,col++, Long.valueOf(endTimeMs),true);
+            table.setFieldValue(row,col++, Integer.valueOf((int)runTime),true);
             if ( runTimeAll == 0 ) {
-                table.setFieldValue(row,col++, new Double(0.0), true );
+                table.setFieldValue(row,col++, Double.valueOf(0.0), true );
             }
             else {
-                table.setFieldValue(row,col++, new Double(100.0*((double)runTime/(double)runTimeAll)),true);
+                table.setFieldValue(row,col++, Double.valueOf(100.0*((double)runTime/(double)runTimeAll)),true);
             }
-            table.setFieldValue(row,col++, new Long(startHeap),true);
-            table.setFieldValue(row,col++, new Long(endHeap),true);
-            table.setFieldValue(row,col++, new Long(deltaHeap),true);
-            table.setFieldValue(row,col++, new Double(100.0*(double)deltaHeap/(double)endHeap),true);
-            table.setFieldValue(row,col++, new Integer((int)(logRecordCount)),true);
+            table.setFieldValue(row,col++, Long.valueOf(startHeap),true);
+            table.setFieldValue(row,col++, Long.valueOf(endHeap),true);
+            table.setFieldValue(row,col++, Long.valueOf(deltaHeap),true);
+            table.setFieldValue(row,col++, Double.valueOf(100.0*(double)deltaHeap/(double)endHeap),true);
+            table.setFieldValue(row,col++, Integer.valueOf((int)(logRecordCount)),true);
         }
         else {
             table.setFieldValue(row,col++, null,true); // startTime...
@@ -345,17 +345,17 @@ throws Exception
     for ( pos = 0; pos < runTimeTotal.length; ++pos ) {
         int col = 0;
         table.setFieldValue(pos,col++, commandNameList.get(pos),true);
-        table.setFieldValue(pos,col++, new Integer(count[pos]),true);
-        table.setFieldValue(pos,col++, new Long(runTimeTotal[pos]),true);
+        table.setFieldValue(pos,col++, Integer.valueOf(count[pos]),true);
+        table.setFieldValue(pos,col++, Long.valueOf(runTimeTotal[pos]),true);
         if ( runTotalTimeAll == 0 ) {
-            table.setFieldValue(pos,col++, new Double(0.0), true );
+            table.setFieldValue(pos,col++, Double.valueOf(0.0), true );
         }
         else {
-            table.setFieldValue(pos,col++, new Double(100.0*((double)runTimeTotal[pos]/(double)runTotalTimeAll)),true);
+            table.setFieldValue(pos,col++, Double.valueOf(100.0*((double)runTimeTotal[pos]/(double)runTotalTimeAll)),true);
         }
-        table.setFieldValue(pos,col++, new Long(runTimeMean[pos]),true);
-        table.setFieldValue(pos,col++, new Long(runTimeMax[pos]),true);
-        table.setFieldValue(pos,col++, new Long(runTimeMin[pos]),true);
+        table.setFieldValue(pos,col++, Long.valueOf(runTimeMean[pos]),true);
+        table.setFieldValue(pos,col++, Long.valueOf(runTimeMax[pos]),true);
+        table.setFieldValue(pos,col++, Long.valueOf(runTimeMin[pos]),true);
     }
     return table;
 }
@@ -401,7 +401,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {

@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -426,7 +426,7 @@ throws Exception
         int colCount = 1;
         for ( int month = 1; month <= 12; month++ ) {
             for ( int j = 0; j < percentileArray.length; j++ ) {
-                table.setFieldValue(i, colCount, new Double(tsPercentiles[i][month - 1][j]), true );
+                table.setFieldValue(i, colCount, Double.valueOf(tsPercentiles[i][month - 1][j]), true );
                 ++colCount;
             }
         }
@@ -444,15 +444,6 @@ public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
 	return ( new AnalyzePattern_JDialog ( parent, this ) ).ok();
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{
-	super.finalize ();
 }
 
 /**
@@ -708,7 +699,7 @@ throws CommandWarningException, CommandException
     			// Get the time series object.
     			analysisTS = null;
     			request_params = new PropList ( "" );
-    			request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+    			request_params.setUsingObject ( "Index", Integer.valueOf(tspos[nTS]) );
     			bean = null;
     			try {
     			    bean = processor.processRequest( "GetTimeSeries", request_params);

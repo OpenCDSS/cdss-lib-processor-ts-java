@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -460,7 +460,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -564,10 +564,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			propObject = DateTime.parse(stringProp);
     		}
     		else if ( propertyType.equalsIgnoreCase(_Double) ) {
-    			propObject = new Double(stringProp);
+    			propObject = Double.valueOf(stringProp);
     		}
     		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
-    			propObject = new Integer(stringProp);
+    			propObject = Integer.valueOf(stringProp);
     		}
     		else {
     			// Default.
@@ -597,10 +597,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			propertyObject = new DateTime(DateTime.DATE_CURRENT);
     		}
     		else if ( propertyType.equalsIgnoreCase(_Double) ) {
-    			propertyObject = new Double(1.0);
+    			propertyObject = Double.valueOf(1.0);
     		}
     		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
-    			propertyObject = new Integer(1);
+    			propertyObject = Integer.valueOf(1);
     		}
     		else {
     			propertyObject = "";

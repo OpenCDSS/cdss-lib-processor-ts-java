@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -1218,7 +1218,7 @@ protected DateTime getAverageStart() {
 Get whether commands should clear their run status before running, needed to handle For() commands.
 */
 private boolean getCommandsShouldClearRunStatus () {
-    Boolean clearStatus = new Boolean(true); // Default.
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = __ts_processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -1857,6 +1857,7 @@ protected DataStore lookupDataStore ( String dataStoreName ) {
     return null;
 }
 
+// TODO smalers 2025-03-21 evaluate why this is not called.  Should it be used for checking matching start and end?
 /**
 Lookup the command index for the EndFor() command with requested starting command index.
 @param commandList list of commands to check
@@ -2011,6 +2012,7 @@ private int lookupIfCommandIndex(List<Command> commandList, String ifName ) {
     return -1;
 }
 
+// TODO smalers 2025-03-21 evaluate why this is not called.  Should it be used for checking matching start and end?
 /**
 Lookup the command index for the EndFor() command with requested name.
 @param commandList list of commands to check, typically the full command list.
@@ -2125,11 +2127,11 @@ throws Exception {
 	if ( __processor_PropList != null ) {
 		String CreateOutput = appPropList.getValue ( "CreateOutput" );
 		if ( (CreateOutput != null) && CreateOutput.equalsIgnoreCase("False")){
-			__ts_processor.setCreateOutput ( new Boolean(false));
+			__ts_processor.setCreateOutput ( Boolean.TRUE);
 			CreateOutput_boolean = false;
 		}
 		else {
-			__ts_processor.setCreateOutput ( new Boolean(true));
+			__ts_processor.setCreateOutput ( Boolean.TRUE);
 		}
 	}
 	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput") +
@@ -2232,7 +2234,7 @@ throws Exception {
         }
     }
     // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate.
-    __ts_processor.setPropContents("CommandsShouldClearRunStatus",new Boolean(false));
+    __ts_processor.setPropContents("CommandsShouldClearRunStatus", Boolean.FALSE);
     // Create a list for output files.  This is now needed because with For() a command may generate multiple output files.
     List<File> outputFileList = new ArrayList<>();
     setOutputFileList ( outputFileList );
@@ -4312,7 +4314,7 @@ throws Exception {
 				tsident_string2 = (String)v.get(0);
 				ts.setIdentifier ( tsident_string2 );
 				// Set a property indicating that a default time series was initialized.
-				ts.setProperty("DefaultTimeSeriesRead",new Boolean(true));
+				ts.setProperty("DefaultTimeSeriesRead", Boolean.TRUE);
 				ts.addToGenesis("Created empty time series - not in data source and SetIncludeMissingTS(true) or similar is requested.");
 				Message.printStatus ( 2, routine, "Created empty time series for \"" +
 				tsident_string2 + "\" - not in DB and SetIncludeMissingTS(true) is specified." );
@@ -5474,7 +5476,7 @@ private void setProcessorCommandEndProperties ( int warningCount, int failureCou
     // Set the 'WarningCount' property.
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "PropertyName", "WarningCount" );
-    request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+    request_params.setUsingObject ( "PropertyValue", Integer.valueOf(warningCount) );
     try {
         this.__ts_processor.processRequest( "SetProperty", request_params);
     }
@@ -5486,7 +5488,7 @@ private void setProcessorCommandEndProperties ( int warningCount, int failureCou
     // Set the 'FailureCount' property.
     request_params = new PropList ( "" );
     request_params.setUsingObject ( "PropertyName", "FailureCount" );
-    request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+    request_params.setUsingObject ( "PropertyValue", Integer.valueOf(failureCount) );
     try {
         this.__ts_processor.processRequest( "SetProperty", request_params);
     }
@@ -5507,7 +5509,7 @@ private void setProcessorCommandEndProperties ( int warningCount, int failureCou
 private void setProcessorRunEndProperties ( StopWatch stopwatch, List<Command> commands, int iLastCommand ) {
 	String routine = getClass().getSimpleName() + ".setProcessorRunEndProperties";
 	// Set the commands run time.
-	__ts_processor.setProperty("RunTimeMs",new Long(stopwatch.getMilliseconds()));
+	__ts_processor.setProperty("RunTimeMs",Long.valueOf(stopwatch.getMilliseconds()));
 
 	// Set the built-in processor properties for warning and failure count for the commands that were run:
 	// - must loop over all the commands that were run, but may have ended before full list was processed
@@ -5532,7 +5534,7 @@ private void setProcessorRunEndProperties ( StopWatch stopwatch, List<Command> c
         // Set the 'WarningCount' property.
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", "WarningCount" );
-        request_params.setUsingObject ( "PropertyValue", new Integer(warningCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(warningCount) );
         try {
             this.__ts_processor.processRequest( "SetProperty", request_params);
         }
@@ -5544,7 +5546,7 @@ private void setProcessorRunEndProperties ( StopWatch stopwatch, List<Command> c
         // Set the 'FailureCount' property.
         request_params = new PropList ( "" );
         request_params.setUsingObject ( "PropertyName", "FailureCount" );
-        request_params.setUsingObject ( "PropertyValue", new Integer(failureCount) );
+        request_params.setUsingObject ( "PropertyValue", Integer.valueOf(failureCount) );
         try {
             this.__ts_processor.processRequest( "SetProperty", request_params);
         }

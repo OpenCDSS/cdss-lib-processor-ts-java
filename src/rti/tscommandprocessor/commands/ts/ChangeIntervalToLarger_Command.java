@@ -4,50 +4,23 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
 
-// ----------------------------------------------------------------------------
-// changeInterval_Command - editor ChangeInterval()
-//
-// TODO SAM 2005-02-12
-//		In the future may also support changeInterval() to operate on
-//		multiple time series.
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-02-16	Steven A. Malers, RTi	Initial version, initialized from
-//					normalize_JDialog().
-// 2005-02-18	SAM, RTi		Comment out AllowMissingPercent - it
-//					is causing problems in some of the
-//					computations so re-evaluate later.
-// 2005-03-14	SAM, RTi		Add OutputFillMethod and
-//					HandleMissingInputHow parameters.
-// 2005-05-24	Luiz Teixeira, RTi	Copied the original class 
-//					changeInterval_JDialog() from TSTool and
-//					started splitting the code into the new
-//					changeInterval_JDialog() and
-//					changeInterval_Command().
-// 2005-05-26	Luiz Teixeira, RTi	Cleanup and documentation.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.util.ArrayList;
@@ -380,7 +353,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify the allowed missing count as an interger."));
 	    }
 	    else {
-	        allowMissingCount = new Integer(AllowMissingCount);
+	        allowMissingCount = Integer.valueOf(AllowMissingCount);
 	    }
 	}
 	
@@ -395,7 +368,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify the allowed missing consecutive value as an interger."));
         }
         else {
-            allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+            allowMissingConsecutive = Integer.valueOf(AllowMissingConsecutive);
         }
     }
     
@@ -549,15 +522,6 @@ public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
 	return ( new ChangeIntervalToLarger_JDialog ( parent, this ) ).ok();
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	
-	super.finalize ();
 }
 
 /**
@@ -791,7 +755,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     CommandStatus status = getCommandStatus();
     TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-    Boolean clearStatus = new Boolean(true); // default
+    Boolean clearStatus = Boolean.TRUE; // Default.
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -869,7 +833,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
 	Integer allowMissingCount = null;
 	if ( StringUtil.isInteger(AllowMissingCount) ) {
-	    allowMissingCount = new Integer(AllowMissingCount);
+	    allowMissingCount = Integer.valueOf(AllowMissingCount);
 	}
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
@@ -877,7 +841,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String AllowMissingConsecutive = parameters.getValue("AllowMissingConsecutive" );
     Integer allowMissingConsecutive = null;
     if ( StringUtil.isInteger(AllowMissingConsecutive) ) {
-        allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+        allowMissingConsecutive = Integer.valueOf(AllowMissingConsecutive);
     }
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	TSUtil_ChangeInterval_OutputFillMethodType outputFillMethod = null;

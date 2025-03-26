@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -696,13 +696,13 @@ private void initializeSequenceIterator ( TSCommandProcessor processor ) {
 			sequenceStartI = Integer.parseInt(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartI;
 			// Default increment value, may be reset with property below.
-			this.iteratorSequenceIncrement = new Integer(1);
+			this.iteratorSequenceIncrement = Integer.valueOf(1);
 		}
 		else if ( StringUtil.isDouble(SequenceStart) ) {
 			sequenceStartD = Double.parseDouble(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartD;
 			// Default increment value, may be reset with property below.
-			this.iteratorSequenceIncrement = new Double(1.0);
+			this.iteratorSequenceIncrement = Double.valueOf(1.0);
 		}
 		this.iteratorIsSequence = true;
 	}
@@ -959,10 +959,10 @@ public boolean next () {
 	            	// Defaults:
 	            	// - TODO smalers 2020-11-02 should be set in runCommand()
 	            	if ( this.iteratorSequenceStart instanceof Integer ) {
-	            		this.iteratorSequenceIncrement = new Integer(1);
+	            		this.iteratorSequenceIncrement = Integer.valueOf(1);
 	            	}
 	            	else if ( this.iteratorSequenceStart instanceof Double ) {
-	            		this.iteratorSequenceIncrement = new Double(1.0);
+	            		this.iteratorSequenceIncrement = Double.valueOf(1.0);
 	            	}
 	            }
 	            this.forInitialized = true;
@@ -1787,13 +1787,13 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 			sequenceStartI = Integer.parseInt(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartI;
 			// Default increment value, may be reset with property below.
-			this.iteratorSequenceIncrement = new Integer(1);
+			this.iteratorSequenceIncrement = Integer.valueOf(1);
 		}
 		else if ( StringUtil.isDouble(SequenceStart) ) {
 			sequenceStartD = Double.parseDouble(SequenceStart);
 			this.iteratorSequenceStart = sequenceStartD;
 			// Default increment value, may be reset with property below.
-			this.iteratorSequenceIncrement = new Double(1.0);
+			this.iteratorSequenceIncrement = Double.valueOf(1.0);
 		}
 		this.iteratorIsSequence = true;
 	}

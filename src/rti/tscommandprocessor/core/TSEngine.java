@@ -45,8 +45,9 @@ import riverside.datastore.PluginDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.nrcs.awdb.NrcsAwdbDataStore;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
-import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
-import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
+// TODO smalers 2025-04-12 remove when tested out.
+//import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
+//import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
 import rti.tscommandprocessor.commands.reclamationpisces.ReclamationPiscesDMI;
 import rti.tscommandprocessor.commands.reclamationpisces.ReclamationPiscesDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisDailyDataStore;
@@ -4668,6 +4669,8 @@ throws Exception {
             ts = null;
         }
     }
+	// TODO smalers 2025-04-12 remove when tested out.
+	/*
 	else if ((dataStore != null) && (dataStore instanceof ReclamationHDBDataStore) ) {
         // New style:  TSID~dataStoreName
         // Check the connection in case the connection timed out.
@@ -4691,6 +4694,7 @@ throws Exception {
             }
         }
     }
+    */
 	else if ((dataStore != null) && (dataStore instanceof ReclamationPiscesDataStore) ) {
         // Check the connection in case the connection timed out.
     	ReclamationPiscesDataStore ds = (ReclamationPiscesDataStore)dataStore;

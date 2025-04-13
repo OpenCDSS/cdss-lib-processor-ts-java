@@ -454,7 +454,7 @@ private void initialize ( JFrame parent, ReadWaterOneFlow_Command command )
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
-	    // Add input filters for ReclamationHDB time series...
+	    // Add input filters for WaterOneFlow time series...
 		__inputFilter_JPanel = new RccAcis_TimeSeries_InputFilter_JPanel(
 		    getSelectedDataStore(), __command.getNumFilterGroups() );
 		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
@@ -619,7 +619,7 @@ private void populateVariableChoices ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadReclamationHDB_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String NetworkName = "";

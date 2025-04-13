@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -87,8 +87,8 @@ private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTabbedPane __tsInfo_JTabbedPane = null;
-			
-private JTextArea __command_JTextArea = null; // Command as JTextArea
+
+private JTextArea __command_JTextArea = null;
 private InputFilter_JPanel __inputFilter_JPanel =null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -99,8 +99,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadRccAcis_JDialog ( JFrame parent, ReadRccAcis_Command command )
-{	super(parent, true);
+public ReadRccAcis_JDialog ( JFrame parent, ReadRccAcis_Command command ) {
+	super(parent, true);
 
 	initialize ( parent, command );
 }
@@ -109,8 +109,8 @@ public ReadRccAcis_JDialog ( JFrame parent, ReadRccAcis_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -136,8 +136,8 @@ public void actionPerformed( ActionEvent event )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void changedUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void changedUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -145,8 +145,8 @@ public void changedUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void insertUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void insertUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
@@ -154,26 +154,25 @@ public void insertUpdate ( DocumentEvent e )
 Handle DocumentEvent events.
 @param e DocumentEvent to handle.
 */
-public void removeUpdate ( DocumentEvent e )
-{   checkGUIState();
+public void removeUpdate ( DocumentEvent e ) {
+    checkGUIState();
     refresh();
 }
 
-// ...End event handlers for DocumentListener
+// ...End event handlers for DocumentListener.
 
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{
+private void checkGUIState() {
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	__error_wait = false;
 	String DataStore = __DataStore_JComboBox.getSelected();
@@ -212,7 +211,7 @@ private void checkInput ()
         props.set ( "Alias", Alias );
     }
 	try {
-	    // This will warn the user...
+	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -222,11 +221,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String DataStore = __DataStore_JComboBox.getSelected();
+private void commitEdits () {
+	String DataStore = __DataStore_JComboBox.getSelected();
     String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
     String Interval = __Interval_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
@@ -254,8 +253,8 @@ private void commitEdits ()
 /**
 Get the selected data store.
 */
-private RccAcisDataStore getSelectedDataStore ()
-{   String routine = getClass().getName() + ".getSelectedDataStore";
+private RccAcisDataStore getSelectedDataStore () {
+    String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     RccAcisDataStore dataStore = (RccAcisDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
@@ -271,10 +270,9 @@ Return the "WhereN" parameter for the requested input filter.
 @return the "WhereN" parameter for the requested input filter.
 @param ifg the Input filter to process (zero index).
 */
-private String getWhere ( int ifg )
-{
-	// TODO SAM 2006-04-24 Need to enable other input filter panels
-	String delim = ";";	// To separate input filter parts
+private String getWhere ( int ifg ) {
+	// TODO SAM 2006-04-24 Need to enable other input filter panels.
+	String delim = ";";	// To separate input filter parts.
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	String where = filter_panel.toString(ifg,delim).trim();
 	return where;
@@ -285,8 +283,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadRccAcis_Command command )
-{	String routine = "ReadReclamationHDB_JDialog.initialize";
+private void initialize ( JFrame parent, ReadRccAcis_Command command ) {
+	String routine = getClass().getSimpleName() + ".initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
@@ -307,17 +305,17 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
         "It is recommended that the Where filters be used to limit queries when reading multiple time series.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Refer to the RCC ACIS Data Store documentation for more information." ), 
+        "Refer to the RCC ACIS Data Store documentation for more information." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
+
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	
-   	// List available data stores of the correct type
-   	
+
+   	// List available data stores of the correct type.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
@@ -332,11 +330,11 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Data types are particular to the data store...
-    
+
+    // Data types are particular to the data store.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataType_JComboBox = new SimpleJComboBox ( false );
@@ -344,11 +342,11 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     __DataType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data type for time series."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data type for time series."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    // Intervals are hard-coded
-    
+
+    // Intervals are hard-coded.
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data interval:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
@@ -356,9 +354,9 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     __tsInfo_JTabbedPane = new JTabbedPane ();
     __tsInfo_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -368,12 +366,12 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     JPanel singleTS_JPanel = new JPanel();
     singleTS_JPanel.setLayout(new GridBagLayout());
     __tsInfo_JTabbedPane.addTab ( "Match Single Time Series", singleTS_JPanel );
-    
+
     int ySingle = -1;
     JGUIUtil.addComponent(singleTS_JPanel,
-        new JLabel ("Specify a site ID when a specific time series is being processed."), 
+        new JLabel ("Specify a site ID when a specific time series is being processed."),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Site ID:"), 
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Site ID:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SiteID_JTextField = new JTextField (20);
     __SiteID_JTextField.addKeyListener (this);
@@ -382,24 +380,24 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     JGUIUtil.addComponent(singleTS_JPanel,
         new JLabel ("Required - site type (optional) and identifier (e.g., COOP:052454)."),
         3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JPanel multipleTS_JPanel = new JPanel();
     multipleTS_JPanel.setLayout(new GridBagLayout());
     __tsInfo_JTabbedPane.addTab ( "Match 1+ Time Series Using Filter", multipleTS_JPanel );
- 
+
     int yMultiple = -1;
-   	
+
    	// Input filters
-    // TODO SAM 2010-11-02 Need to use SetInputFilters() so the filters can change when a
-    // data store is selected.  For now it is OK because the input filters do not provide choices.
+    // TODO SAM 2010-11-02 Need to use SetInputFilters() so the filters can change when a data store is selected.
+    // For now it is OK because the input filters do not provide choices.
 
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
 	    JGUIUtil.addComponent(multipleTS_JPanel,
-            new JLabel ("Specify filters when multiple time series are being processed (a location constraint must be specified)."), 
+            new JLabel ("Specify filters when multiple time series are being processed (a location constraint must be specified)."),
             0, ++yMultiple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	    // Add input filters for ReclamationHDB time series...
+	    // Add input filters for RCC-ACIS time series.
 		__inputFilter_JPanel = new RccAcis_TimeSeries_InputFilter_JPanel(
 		    getSelectedDataStore(), __command.getNumFilterGroups() );
 		JGUIUtil.addComponent(multipleTS_JPanel, __inputFilter_JPanel,
@@ -414,7 +412,7 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
 		Message.printWarning ( 2, routine, e );
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.addKeyListener (this);
@@ -423,7 +421,7 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - YYYY-MM-DD, override the global input start."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"),
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.addKeyListener (this);
@@ -431,7 +429,7 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY-MM-DD, override the global input end."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -453,13 +451,13 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -475,8 +473,8 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
 
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
-	// Dialogs do not need to be resizable...
+	refresh();	// Sets the __path_JButton status.
+	// Dialogs do not need to be resizable.
 	setResizable ( false );
     super.setVisible( true );
 }
@@ -484,9 +482,8 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
 /**
 Handle ItemListener events.
 */
-public void itemStateChanged ( ItemEvent event )
-{
-    // If a new data store has been selected, update the data type, interval, list and the input filter
+public void itemStateChanged ( ItemEvent event ) {
+    // If a new data store has been selected, update the data type, interval, list and the input filter.
     if ( event.getSource() == __DataStore_JComboBox ) {
         setDataTypeChoices();
         setIntervalChoices();
@@ -498,34 +495,33 @@ public void itemStateChanged ( ItemEvent event )
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	refresh();
+public void keyPressed ( KeyEvent event ) {
+	refresh();
 }
 
 /**
 Need this to properly capture key events, especially deletes.
 */
-public void keyReleased ( KeyEvent event )
-{	refresh();	
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command string from the dialog contents.
 */
-private void refresh ()
-{	String routine = "ReadReclamationHDB_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String DataType = "";
@@ -538,7 +534,7 @@ private void refresh ()
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		props = __command.getCommandParameters();
 		DataStore = props.getValue ( "DataStore" );
 		DataType = props.getValue ( "DataType" );
@@ -552,28 +548,29 @@ private void refresh ()
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __DataStore_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // Data types as displayed are verbose:  "4 - Precipitation (daily)" but parameter uses only "4" to
-        // ensure uniqueness.  Therefore, select in the list based only on the first token
+        // Data types as displayed are verbose:
+        // "4 - Precipitation (daily)" but parameter uses only "4" to ensure uniqueness.
+        // Therefore, select in the list based only on the first token.
         int [] index = new int[1];
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, true ) ) {
             __DataType_JComboBox.select ( index[0] );
         }
         else {
             if ( (DataType == null) || DataType.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __DataType_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataType parameter \"" + DataType + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -583,11 +580,11 @@ private void refresh ()
         }
         else {
             if ( (Interval == null) || Interval.equals("") ) {
-                // New command...select the default...
+                // New command...select the default.
                 __Interval_JComboBox.select ( 0 );
             }
             else {
-                // Bad user command...
+                // Bad user command.
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
@@ -599,7 +596,7 @@ private void refresh ()
         for ( int ifg = 0; ifg < nfg; ifg ++ ) {
             where = props.getValue ( "Where" + (ifg + 1) );
             if ( (where != null) && (where.length() > 0) ) {
-                // Set the filter...
+                // Set the filter.
                 try {
                     filter_panel.setInputFilter (ifg, where, filter_delim );
                     ++numSet;
@@ -613,7 +610,7 @@ private void refresh ()
         if ( numSet > 0 ) {
             __tsInfo_JTabbedPane.setSelectedIndex(1);
         }
-        // Put this after filters because if SiteID is specified the tab should be shown
+        // Put this after filters because if SiteID is specified the tab should be shown.
         if ( SiteID != null ) {
             __SiteID_JTextField.setText ( SiteID );
             if ( !SiteID.equals("") ) {
@@ -630,12 +627,12 @@ private void refresh ()
             __Alias_JTextField.setText ( Alias );
         }
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	Alias = __Alias_JTextField.getText().trim();
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	props = new PropList ( __command.getCommandName() );
 	DataStore = __DataStore_JComboBox.getSelected().trim();
-	// Only save the major variable number because parentheses cause problems in properties
+	// Only save the major variable number because parentheses cause problems in properties.
 	DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
 	Interval = __Interval_JComboBox.getSelected().trim();
     props.add ( "DataStore=" + DataStore );
@@ -643,16 +640,16 @@ private void refresh ()
     props.add ( "Interval=" + Interval );
     SiteID = __SiteID_JTextField.getText().trim();
     props.add ( "SiteID=" + SiteID );
-	// Add the where clause(s)...
+	// Add the where clause(s).
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();
 	String where;
-	String delim = ";";	// To separate input filter parts
+	String delim = ";";	// To separate input filter parts.
 	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
 		where = filter_panel.toString(ifg,delim).trim();
-		// Make sure there is a field that is being checked in a where clause...
+		// Make sure there is a field that is being checked in a where clause.
 		if ( (where.length() > 0) && !where.startsWith(delim) ) {
-		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string.
 			//props.add ( "Where" + (ifg + 1) + "=" + where );
 			props.set ( "Where" + (ifg + 1), where );
 		}
@@ -671,20 +668,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -692,15 +688,15 @@ private void response ( boolean ok )
 /**
 Set the data type choices in response to a new data store being selected.
 */
-private void setDataTypeChoices ()
-{   String routine = getClass().getName() + ".setDataTypeChoices";
+private void setDataTypeChoices () {
+    String routine = getClass().getName() + ".setDataTypeChoices";
     RccAcisDataStore ds = getSelectedDataStore();
     List<String> dataTypes = new Vector<String>();
     try {
         dataTypes = ds.getDataTypeStrings ( true, true );
     }
     catch ( Exception e ) {
-        // Hopefully should not happen
+        // Hopefully should not happen.
         Message.printWarning(2, routine, "Unable to get data types for data store \"" +
             ds.getName() + "\" - web service unavailable?");
     }
@@ -711,16 +707,13 @@ private void setDataTypeChoices ()
 /**
 Set the input filters in response to a new data store being selected.
 */
-private void setInputFilters ()
-{
-
+private void setInputFilters () {
 }
 
 /**
 Set the data interval choices in response to a new data store being selected.
 */
-private void setIntervalChoices ()
-{
+private void setIntervalChoices () {
     __Interval_JComboBox.removeAll();
     __Interval_JComboBox.add ( "Day" );
     __Interval_JComboBox.select ( 0 );
@@ -730,15 +723,26 @@ private void setIntervalChoices ()
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
+
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
 
 }

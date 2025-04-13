@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -149,8 +149,9 @@ import rti.tscommandprocessor.commands.r.RunR_Command;
 import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
 
 // Reclamation HDB commands.
-import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
-import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
+// TODO smalers 2025-04-12 remove when tested out
+//import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
+//import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
 
 //Reclamation Pisces commands.
 import rti.tscommandprocessor.commands.reclamationpisces.ReadReclamationPisces_Command;
@@ -423,7 +424,7 @@ public TSCommandFactory ( List<Class> pluginCommandClassList ) {
     super();
     this.pluginCommandClassList = pluginCommandClassList;
 }
-	
+
 /**
 Return a new command, based on the command name.
 DO NOT create an UnknownCommand if the command is not recognized.
@@ -495,12 +496,12 @@ throws UnknownCommandException {
 	// - then comparisons below don't have to repeatedly use equalIgnoreCase on 'commandName'
 	// - this speeds performance
 	String commandNameUpper = commandName.toUpperCase();
-	
+
 	// The following checks for a match for specific command name and if so an appropriate command instance is created and returned.
 	// If nothing is matched and the command string is a TSID, a TSID command instance will be returned.
-	
+
 	// Comment commands.
-	
+
 	if ( commandString.startsWith("#") ) {
         return new Comment_Command ();
     }
@@ -800,7 +801,7 @@ throws UnknownCommandException {
     else if ( commandNameUpper.equals("JOINTABLES") ) { // "JoinTables"
         return new JoinTables_Command ();
     }
-	
+
 	// "L" commands.
 
 	else if ( commandNameUpper.equals("LAGK") ) { // "LagK"
@@ -812,9 +813,9 @@ throws UnknownCommandException {
     else if ( commandNameUpper.equals("LOOKUPTIMESERIESFROMTABLE") ) { // "LookupTimeSeriesFromTable"
         return new LookupTimeSeriesFromTable_Command ();
     }
-	
+
 	// "M" commands.
-	
+
     else if ( commandNameUpper.equals("MANIPULATETABLESTRING") ) { // "ManipulateTableString"
         return new ManipulateTableString_Command ();
     }
@@ -965,9 +966,12 @@ throws UnknownCommandException {
     else if ( commandNameUpper.equals("READRCCACIS") ) { // "ReadRccAcis"
         return new ReadRccAcis_Command ();
     }
+    // TODO smalers 2025-04-12 remove when tested out.
+	/*
     else if ( commandNameUpper.equals("READRECLAMATIONHDB") ) { // "ReadReclamationHDB"
         return new ReadReclamationHDB_Command ();
     }
+    */
     else if ( commandNameUpper.equals("READRECLAMATIONPISCES") ) { // "ReadReclamationPisces"
         return new ReadReclamationPisces_Command ();
     }
@@ -1244,7 +1248,7 @@ throws UnknownCommandException {
     else if ( commandNameUpper.equals("SUBTRACT") ) { // "Subtract"
         return new Subtract_Command ();
     }
-	
+
 	// "T" commands.
 
     else if ( commandNameUpper.equals("TABLEMATH") ) { // "TableMath"
@@ -1319,9 +1323,12 @@ throws UnknownCommandException {
 	else if ( commandNameUpper.equals("WRITEPROPERTY") ) { // "WriteProperty"
 		return new WriteProperty_Command ();
 	}
+    // TODO smalers 2025-04-12 remove when tested out.
+	/*
     else if ( commandNameUpper.equals("WRITERECLAMATIONHDB") ) { // "WriteReclamationHDB"
         return new WriteReclamationHDB_Command ();
     }
+    */
 	else if ( commandNameUpper.equals("WRITERIVERWARE") ) { // "WriteRiverWare"
 		return new WriteRiverWare_Command ();
 	}
@@ -1460,7 +1467,7 @@ throws UnknownCommandException {
 	}
 
 	// Check for blank line, which will result in Empty command.
-	
+
     if ( commandName.equalsIgnoreCase("") ) {
         return new Empty_Command ();
     }

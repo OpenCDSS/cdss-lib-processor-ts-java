@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetDataValue_JDialog ( JFrame parent, Command command ) {
+public SetDataValue_JDialog ( JFrame parent, SetDataValue_Command command ) {
 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -199,8 +199,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command ) {
-	__command = (SetDataValue_Command)command;
+private void initialize ( JFrame parent, SetDataValue_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -250,16 +250,22 @@ private void initialize ( JFrame parent, Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time to set value:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetDateTime_JTextField = new JTextField ( 10 );
+	__SetDateTime_JTextField.setToolTipText("Date/time for the value, can use ${Property}");
 	__SetDateTime_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetDateTime_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - date/time for the value."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New data value:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewValue_JTextField = new JTextField ( 10 );
+	__NewValue_JTextField.setToolTipText("New data value, can use ${Property}");
 	__NewValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - data value."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

@@ -143,7 +143,7 @@ throws InvalidCommandParameterException {
                 message, "Specify the minimum value or match flag." ) );
 	}
 	else {
-    	if ( !MinValue.equals("") && !StringUtil.isDouble(MinValue) ) {
+    	if ( !MinValue.equals("") && !MinValue.contains("${") && !StringUtil.isDouble(MinValue) ) {
             message = "The minimum value " + MinValue + " is not a number.";
     		warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -151,7 +151,7 @@ throws InvalidCommandParameterException {
                     message, "Specify the minimum value as a number." ) );
     	}
 	}
-    if ( !MaxValue.equals("") && !StringUtil.isDouble(MaxValue) ) {
+    if ( !MaxValue.equals("") && !MaxValue.contains("${") && !StringUtil.isDouble(MaxValue) ) {
         message = "The maximum value " + MaxValue + " is not a number.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -168,7 +168,7 @@ throws InvalidCommandParameterException {
         }
     }
     else {
-        if ( !NewValue.equals("") && !StringUtil.isDouble(NewValue) ) {
+        if ( !NewValue.equals("") && !NewValue.contains("${") && !StringUtil.isDouble(NewValue) ) {
             message = "The new value " + NewValue + " is not a number.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -194,7 +194,8 @@ throws InvalidCommandParameterException {
     }
 
 	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${") ) {
-		try {	DateTime.parse(SetStart);
+		try {
+			DateTime.parse(SetStart);
 		}
 		catch ( Exception e ) {
             message = "The set start date/time \"" + SetStart + "\" is not a valid date/time.";
@@ -205,7 +206,8 @@ throws InvalidCommandParameterException {
 		}
 	}
 	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${") ) {
-		try {	DateTime.parse( SetEnd);
+		try {
+			DateTime.parse( SetEnd);
 		}
 		catch ( Exception e ) {
             message = "The set end date/time \"" + SetEnd + "\" is not a valid date/time.";
@@ -389,7 +391,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    
+
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
     Boolean clearStatus = Boolean.TRUE; // Default.
@@ -515,17 +517,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Values.
 
 	String MinValue = parameters.getValue("MinValue");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		MinValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MinValue);
+	}
 	Double MinValue_double = null;
 	if ( StringUtil.isDouble(MinValue) ) {
 	    MinValue_double = Double.parseDouble ( MinValue );
 	}
     String MaxValue = parameters.getValue("MaxValue");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		MaxValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MaxValue);
+	}
     Double MaxValue_double = null;
     if ( StringUtil.isDouble(MaxValue) ) {
         MaxValue_double = Double.parseDouble ( MaxValue );
     }
     String MatchFlag = parameters.getValue("MatchFlag");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		MatchFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, MatchFlag);
+	}
     String NewValue = parameters.getValue("NewValue");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		NewValue = TSCommandProcessorUtil.expandParameterValue(processor, this, NewValue);
+	}
     Double NewValue_double = null;
     if ( StringUtil.isDouble(NewValue) ) {
         NewValue_double = Double.parseDouble ( NewValue );
@@ -560,7 +574,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
-    
+
     DateTime AnalysisWindowStart_DateTime = null;
     if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
         try {
@@ -593,8 +607,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	String SetFlag = parameters.getValue("SetFlag");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		SetFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, SetFlag);
+	}
 	String SetFlagDesc = parameters.getValue("SetFlagDesc");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		SetFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, SetFlagDesc);
+	}
 	String Description = parameters.getValue("Description");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		Description = TSCommandProcessorUtil.expandParameterValue(processor, this, Description);
+	}
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series).
@@ -692,7 +715,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

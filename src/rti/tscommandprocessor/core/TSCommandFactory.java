@@ -85,7 +85,7 @@ import rti.tscommandprocessor.commands.ensemble.NewEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.SetEnsembleProperty_Command;
-
+import rti.tscommandprocessor.commands.expression.EvaluateExpression_Command;
 // File handling commands.
 import rti.tscommandprocessor.commands.check.CheckFile_Command;
 
@@ -694,6 +694,9 @@ throws UnknownCommandException {
     else if ( commandNameUpper.equals("ENDIF") ) { // "EndIf"
         return new EndIf_Command ();
     }
+	else if ( commandNameUpper.equals("EVALUATEEXPRESSION") ) { // "EvaluateExpression"
+		return new EvaluateExpression_Command ();
+	}
 	else if ( commandStringUpper.startsWith("EXIT") ) {
 		return new Exit_Command ();
 	}

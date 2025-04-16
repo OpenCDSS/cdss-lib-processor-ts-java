@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -328,14 +328,14 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
-    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation.");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
 
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits.
-    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation.");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -344,6 +344,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("Minimum value to replace:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MinValue_JTextField = new JTextField ( 10 );
+	__MinValue_JTextField.setToolTipText("The minimum value to replace, can use ${Property}.");
 	__MinValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MinValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -353,6 +354,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Maximum value to replace:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MaxValue_JTextField = new JTextField ( 10 );
+	__MaxValue_JTextField.setToolTipText("The maximum value to replace, can use ${Property}.");
 	__MaxValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MaxValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -362,6 +364,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Flag to match for replace:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchFlag_JTextField = new JTextField ( 10 );
+	__MatchFlag_JTextField.setToolTipText("The flag to match to replace, can use ${Property}.");
     __MatchFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MatchFlag_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -371,6 +374,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value to replace with:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewValue_JTextField = new JTextField ( 10 );
+	__NewValue_JTextField.setToolTipText("The new value (if action is not specified), can use ${Property}.");
 	__NewValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __NewValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -397,7 +401,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement (set) start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField (20);
-    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
+    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation.");
     __SetStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -407,7 +411,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replacement (set) end:"),
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField (20);
-    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
+    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation.");
     __SetEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -440,7 +444,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlag_JTextField = new JTextField ( "", 10 );
-    __SetFlag_JTextField.setToolTipText("String flag for changed values.");
+    __SetFlag_JTextField.setToolTipText("String flag for changed values, can use ${Property}.");
     __SetFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -450,7 +454,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag description:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlagDesc_JTextField = new JTextField ( "", 20 );
-    __SetFlagDesc_JTextField.setToolTipText("Description for changed values (used in flag legend).");
+    __SetFlagDesc_JTextField.setToolTipText("Description for changed values (used in flag legend), can use ${Property}.");
     __SetFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetFlagDesc_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -460,7 +464,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command ) {
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Time series description:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Description_JTextField = new JTextField ( "", 50 );
-    __Description_JTextField.setToolTipText("Time series description, use ${ts:description} for existing description.");
+    __Description_JTextField.setToolTipText("Time series description, use ${ts:description} for existing description, can use ${Property}.");
     __Description_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

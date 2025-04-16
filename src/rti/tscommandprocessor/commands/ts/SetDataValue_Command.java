@@ -124,7 +124,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new value as a number." ) );
 	}
-	else if ( !StringUtil.isDouble(NewValue) ) {
+	else if ( !NewValue.contains("${") && !StringUtil.isDouble(NewValue) ) {
         message = "The new value " + NewValue + " is not a number.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -287,13 +287,9 @@ CommandWarningException, CommandException {
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
-		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
-	}
+	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
-		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
-	}
+	EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 
 	// Get the time series to process.
 
@@ -390,6 +386,7 @@ CommandWarningException, CommandException {
 	// Constant value.
 
 	String NewValue = parameters.getValue("NewValue");
+	NewValue = TSCommandProcessorUtil.expandParameterValue(processor, this, NewValue);
 	double NewValue_double = StringUtil.atod ( NewValue );
 
 	// Set date/time.
@@ -431,7 +428,8 @@ CommandWarningException, CommandException {
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetDateTime_DateTime = (DateTime)prop_contents;
+		else {
+			SetDateTime_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}

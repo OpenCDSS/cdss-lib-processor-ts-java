@@ -227,9 +227,9 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
-	// Don't trimp since spaces are allowed.
+	// Don't trim since spaces are allowed.
 	String SearchFor = __SearchFor_JTextField.getText();
-	// Don't trimp since spaces are allowed.
+	// Don't trim since spaces are allowed.
 	String ReplaceWith = __ReplaceWith_JTextField.getText();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
@@ -516,9 +516,9 @@ private void refresh () {
 	// Regardless, reset the command from the fields.
 	// This is only visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	// Don't trimp since spaces are allowed.
+	// Don't trim since spaces are allowed.
 	SearchFor = __SearchFor_JTextField.getText();
-	// Don't trimp since spaces are allowed.
+	// Don't trim since spaces are allowed.
 	ReplaceWith = __ReplaceWith_JTextField.getText();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();

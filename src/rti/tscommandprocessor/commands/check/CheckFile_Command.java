@@ -83,22 +83,21 @@ protected final String _PatternMatchLineCount = "PatternMatchLineCount";
 /**
 Constructor.
 */
-public CheckFile_Command ()
-{   super();
+public CheckFile_Command () {
+   super();
     setCommandName ( "CheckFile" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{   String InputFile = parameters.getValue ( "InputFile" );
+throws InvalidCommandParameterException {
+    String InputFile = parameters.getValue ( "InputFile" );
     String IfNotFound = parameters.getValue ( "IfNotFound" );
     String Statistic = parameters.getValue ( "Statistic" );
     String SearchPattern = parameters.getValue ( "SearchPattern" );
@@ -107,10 +106,10 @@ throws InvalidCommandParameterException
     String CheckValue2 = parameters.getValue ( "CheckValue2" );
     String warning = "";
     String message;
-    
+
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
+
 	if ( (InputFile == null) || InputFile.isEmpty() ) {
 		message = "The input file to check must be specified.";
 		warning += "\n" + message;
@@ -151,9 +150,9 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported statistic using the command editor." ) );
         }
-       
+
         // Additional checks that depend on the statistic.
-        
+
         if ( supported ) {
             if ( Statistic.equalsIgnoreCase(this._PatternMatchLineCount) ) {
                 if ( (SearchPattern == null) || SearchPattern.isEmpty() ) {
@@ -165,7 +164,7 @@ throws InvalidCommandParameterException
             }
         }
     }
-    
+
     if ( (CheckCriteria == null) || CheckCriteria.equals("") ) {
         message = "The check criteria must be specified.";
         warning += "\n" + message;
@@ -184,12 +183,12 @@ throws InvalidCommandParameterException
 
         // Additional checks that depend on the criteria:
         // - OK to use time series code since statistic checks are generic
-        
+
         int nRequiredValues = 0;
         if ( checkType != null ) {
             nRequiredValues = TSUtil_CheckTimeSeries.getRequiredNumberOfValuesForCheckCriteria ( checkType );
         }
-        
+
         if ( nRequiredValues >= 1 ) {
             if ( (CheckValue1 == null) || CheckValue1.equals("") ) {
                 message = "CheckValue1 must be specified for the criteria.";
@@ -204,7 +203,7 @@ throws InvalidCommandParameterException
                     message, "Specify CheckValue1 as a number." ) );
             }
         }
-        
+
         if ( nRequiredValues == 2 ) {
             if ( (CheckValue2 == null) || CheckValue2.equals("") ) {
                 message = "CheckValue2 must be specified for the criteria.";
@@ -240,14 +239,14 @@ throws InvalidCommandParameterException
     validList.add ( "TableStatisticColumn" );
     validList.add ( "TableStatisticValueColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
-    
+
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,warning_level),
         warning );
         throw new InvalidCommandParameterException ( warning );
     }
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
@@ -267,8 +266,7 @@ is 100 and the check criteria is for values > 90.
 public boolean checkStatistic ( Object statisticValue,
     CheckType checkCriteria, Integer checkValue1, Integer checkValue2,
     String ifCriteriaMet, String problemType,
-    List<String> problems )
-{
+    List<String> problems ) {
     if ( statisticValue == null ) {
         // Statistic was not computed so this is definitely an error.
         problems.add ( "Statistic was not computed - unable to check its value." );
@@ -331,8 +329,8 @@ Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   List<String> tableIDChoices =
+public boolean editCommand ( JFrame parent ) {
+    List<String> tableIDChoices =
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this, true);
     return (new CheckFile_JDialog ( parent, this, tableIDChoices )).ok();
@@ -341,8 +339,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Get the list of check types that can be performed.
 */
-public List<CheckType> getCheckCriteriaChoices()
-{
+public List<CheckType> getCheckCriteriaChoices() {
     List<CheckType> choices = new ArrayList<>();
     choices.add ( CheckType.IN_RANGE );
     choices.add ( CheckType.OUT_OF_RANGE );
@@ -360,8 +357,7 @@ public List<CheckType> getCheckCriteriaChoices()
 Get the list of statistics that can be performed.
 @return the statistic display names as strings.
 */
-public List<String> getCheckCriteriaChoicesAsStrings()
-{
+public List<String> getCheckCriteriaChoicesAsStrings() {
     List<CheckType> choices = getCheckCriteriaChoices();
     List<String> stringChoices = new ArrayList<>();
     for ( int i = 0; i < choices.size(); i++ ) {
@@ -372,21 +368,22 @@ public List<String> getCheckCriteriaChoicesAsStrings()
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __discoveryTable;
 }
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+@return a list of objects of the requested type
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{   DataTable table = getDiscoveryTable();
+public <T> List<T> getObjectList ( Class<T> c ) {
+    DataTable table = getDiscoveryTable();
     List<T> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList<T>();
+        v = new ArrayList<>();
         v.add ( (T)table );
     }
     return v;
@@ -394,6 +391,7 @@ public <T> List<T> getObjectList ( Class<T> c )
 
 /**
  * Get the statistics choices for use in the editor.
+ * @return the statistics choices for use in the editor
  */
 public List<String> getStatisticChoicesAsStrings() {
 	List<String> choices = new ArrayList<>();
@@ -413,8 +411,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -425,8 +422,7 @@ Run the command in discovery mode.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -438,13 +434,13 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   String message, routine = getClass().getSimpleName() + ".runCommand";
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+    String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
     int log_level = 3; // Level for non-user messages for log file.
-    
+
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
@@ -466,7 +462,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
-    
+
     // Get the input parameters.
 
 	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below.
@@ -530,7 +526,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     PropList request_params = new PropList ( "" );
     CommandProcessorRequestResultsBean bean = null;
-    
+
     DataTable table = null;
     if ( (TableID != null) && !TableID.equals("") ) {
         // Get the table to be updated.
@@ -565,9 +561,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
-    
+
     // Now process.
-    
+
     try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty table and set the ID.
@@ -599,7 +595,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                    	Message.printStatus( 2, routine, message + "  Ignoring.");
                	}
 	       	}
-    
+
         	boolean newTable = false;
     	   	if ( (table == null) && (TableID != null) && !TableID.isEmpty() &&
            		(TableFilenameColumn != null) && !TableFilenameColumn.equals("") &&
@@ -615,12 +611,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		   	table.addField(new TableField(TableField.DATA_TYPE_INT, TableStatisticValueColumn), null );
     		   	newTable = true;
     	   	}
-    	   	
+
     	   	// TODO smalers 2021-07-24 loop in case later want to allow more than one file to be processed.
     	   	int nfiles = 1;
            	for ( int ifile = 0; ifile < nfiles; ifile++ ) {
                	// The file to process, from the list that was returned above.
-               	
+
                	try {
                    	// Do the statistic calculation.
                    	notifyCommandProgressListeners ( ifile, nfiles, (float)-1.0, "Checking statistic for " + InputFile_full );
@@ -712,7 +708,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                	setFieldValue(statisticValueColumn, statisticInt));
                        	}
                    	}
-                   	
+
                    	// Do the check by comparing to the statistic.
               	   	List<String> problems = new ArrayList<>();
                	   	// This is similar to TSUtil_CheckTimeSeries but it only needs to check the one statistic
@@ -748,7 +744,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                        	}
 
                        	// Set the table in the processor.
-            
+
                        	if ( newTable ) {
                     	   	request_params = new PropList ( "" );
                     	   	request_params.setUsingObject ( "Table", table );
@@ -844,29 +840,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     catch ( Exception e ) {
         message = "Unexpected error checking file (" + e + ").";
-        Message.printWarning ( warning_level, 
+        Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Check log file for details." ) );
         throw new CommandException ( message );
     }
-    
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
         throw new CommandWarningException ( message );
     }
-    
+
     status.refreshPhaseSeverity(commandPhase, CommandStatusType.SUCCESS);
 }
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table table that is read in discovery mode
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __discoveryTable = table;
 }
 
@@ -876,7 +872,7 @@ Return the string representation of the command.
 @return the string representation of the command
 */
 public String toString ( PropList parameters ) {
-    String [] parameterOrder = { 
+    String [] parameterOrder = {
     	"InputFile",
     	"IfNotFound",
     	"Statistic",

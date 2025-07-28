@@ -203,8 +203,9 @@ throws InvalidCommandParameterException {
                     message, "Specify the parameter as " + _Name + " (default) or " + _Order + "."));
     }
 
+   	DataTableComparerAnalysisType analysisType = DataTableComparerAnalysisType.SIMPLE; // Default.
     if ( (AnalysisMethod != null) && !AnalysisMethod.isEmpty() ) {
-    	DataTableComparerAnalysisType analysisType = DataTableComparerAnalysisType.valueOfIgnoreCase(AnalysisMethod);
+    	analysisType = DataTableComparerAnalysisType.valueOfIgnoreCase(AnalysisMethod);
     	if ( analysisType == null ) {
     		message = "The AnalysisMethod parameter \"" + AnalysisMethod + "\" is not a valid value.";
     		warning += "\n" + message;
@@ -213,48 +214,49 @@ throws InvalidCommandParameterException {
 					message, "Specify the analysis method as " + DataTableComparerAnalysisType.ADVANCED + " or " +
 						DataTableComparerAnalysisType.SIMPLE + " (default)."));
     	}
-    	else if ( analysisType == DataTableComparerAnalysisType.SIMPLE ) {
-    		// Analysis method was not specified:
-    		// - NewTable2ID should not be specified
-    		// - DiffTableID should not be specified
-    		if ( (DiffTable2ID != null) && !DiffTable2ID.isEmpty() ) {
-    			message = "The DiffTable2ID parameter should not be specified with AnalysisMethod=" +
-    				DataTableComparerAnalysisType.SIMPLE + ".";
-    			warning += "\n" + message;
-    			status.addToLog(CommandPhaseType.INITIALIZATION,
-   					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Do not specify DiffTable2ID or change the analysis method to " +
-							DataTableComparerAnalysisType.ADVANCED + "." ));
-    		}
-    		if ( (DiffFile2 != null) && !DiffFile2.isEmpty() ) {
-    			message = "The DiffFile2 parameter should not be specified with AnalysisMethod=" +
-    				DataTableComparerAnalysisType.SIMPLE + ".";
-    			warning += "\n" + message;
-    			status.addToLog(CommandPhaseType.INITIALIZATION,
-   					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Do not specify DiffFile2 or change the analysis method to " +
-							DataTableComparerAnalysisType.ADVANCED + "." ));
-    		}
-    		if ( (DiffTableID != null) && !DiffTableID.isEmpty() ) {
-    			message = "The DiffTableID parameter should not be specified with AnalysisMethod=" +
-    				DataTableComparerAnalysisType.SIMPLE + ".";
-    			warning += "\n" + message;
-    			status.addToLog(CommandPhaseType.INITIALIZATION,
-   					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Do not specify DiffTableID or change the analysis method to " +
-							DataTableComparerAnalysisType.ADVANCED + "." ));
-    		}
-    		if ( (DiffFile != null) && !DiffFile.isEmpty() ) {
-    			message = "The DiffFile parameter should not be specified with AnalysisMethod=" +
-    				DataTableComparerAnalysisType.SIMPLE + ".";
-    			warning += "\n" + message;
-    			status.addToLog(CommandPhaseType.INITIALIZATION,
-   					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Do not specify DiffFile or change the analysis method to " +
-							DataTableComparerAnalysisType.ADVANCED + "." ));
-    		}
-    	}
     }
+
+    if ( analysisType == DataTableComparerAnalysisType.SIMPLE ) {
+   		// Analysis method was not specified:
+   		// - NewTable2ID should not be specified
+   		// - DiffTableID should not be specified
+   		if ( (DiffTable2ID != null) && !DiffTable2ID.isEmpty() ) {
+   			message = "The DiffTable2ID parameter should not be specified with AnalysisMethod=" +
+   				DataTableComparerAnalysisType.SIMPLE + ".";
+   			warning += "\n" + message;
+   			status.addToLog(CommandPhaseType.INITIALIZATION,
+  					new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Do not specify DiffTable2ID or change the analysis method to " +
+						DataTableComparerAnalysisType.ADVANCED + "." ));
+   		}
+   		if ( (DiffFile2 != null) && !DiffFile2.isEmpty() ) {
+   			message = "The DiffFile2 parameter should not be specified with AnalysisMethod=" +
+   				DataTableComparerAnalysisType.SIMPLE + ".";
+   			warning += "\n" + message;
+   			status.addToLog(CommandPhaseType.INITIALIZATION,
+  					new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Do not specify DiffFile2 or change the analysis method to " +
+						DataTableComparerAnalysisType.ADVANCED + "." ));
+   		}
+   		if ( (DiffTableID != null) && !DiffTableID.isEmpty() ) {
+   			message = "The DiffTableID parameter should not be specified with AnalysisMethod=" +
+   				DataTableComparerAnalysisType.SIMPLE + ".";
+   			warning += "\n" + message;
+   			status.addToLog(CommandPhaseType.INITIALIZATION,
+  					new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Do not specify DiffTableID or change the analysis method to " +
+						DataTableComparerAnalysisType.ADVANCED + "." ));
+   		}
+   		if ( (DiffFile != null) && !DiffFile.isEmpty() ) {
+   			message = "The DiffFile parameter should not be specified with AnalysisMethod=" +
+   				DataTableComparerAnalysisType.SIMPLE + ".";
+   			warning += "\n" + message;
+   			status.addToLog(CommandPhaseType.INITIALIZATION,
+  					new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Do not specify DiffFile or change the analysis method to " +
+						DataTableComparerAnalysisType.ADVANCED + "." ));
+   		}
+   	}
 
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
@@ -322,6 +324,7 @@ throws InvalidCommandParameterException {
                     message, "Software error - report problem to support." ) );
         }
     }
+
     if ( (DiffFile != null) && (DiffFile.length() > 0) && (DiffFile.indexOf("${") < 0) ) {
         try {
         	processor.getPropContents ( "WorkingDir" );
@@ -333,7 +336,18 @@ throws InvalidCommandParameterException {
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Software error - report problem to support." ) );
         }
+        
+        // The DiffTable must be specified because no default is created.
+
+   		if ( (DiffTableID == null) || DiffTableID.isEmpty() ) {
+   			message = "The DiffTableID must be specified if the difference file (DiffFile) parameter is specified.";
+   			warning += "\n" + message;
+   			status.addToLog(CommandPhaseType.INITIALIZATION,
+  					new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify DiffTableID or remove the difference file parameter." ));
+   		}
     }
+
     if ( (IfDifferent != null) && !IfDifferent.equals("") && !IfDifferent.equalsIgnoreCase(_Ignore) &&
         !IfDifferent.equalsIgnoreCase(_Warn) && !IfDifferent.equalsIgnoreCase(_Fail) ) {
         message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";

@@ -485,6 +485,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		// The following will return a string.
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
+		Message.printStatus(2,routine,"PropertyValue after expanding is: \"" + PropertyValue + "\".");
 	}
 	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );
 	if ( commandPhase == CommandPhaseType.RUN ) {

@@ -418,7 +418,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command,
     __TableID_JTextField.setToolTipText("Specify the table ID or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
@@ -542,7 +542,7 @@ private void initialize ( JFrame parent, ReadTableFromJSON_Command command,
     __RowCountProperty_JTextField.setToolTipText("Specify the property name for the table row count, can use ${Property} notation");
     __RowCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 

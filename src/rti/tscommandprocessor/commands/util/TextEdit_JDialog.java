@@ -70,12 +70,15 @@ private SimpleJButton __browseInput_JButton = null;
 private SimpleJButton __pathInput_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
+private SimpleJButton __browseReplaceWith_JButton = null;
+private SimpleJButton __pathReplaceWith_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __SearchFor_JTextField = null;
 private JTextField __ReplaceWith_JTextField = null;
+private JTextField __ReplaceWithFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __IfInputNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
@@ -135,7 +138,7 @@ public void actionPerformed( ActionEvent event ) {
 			}
 		}
 	}
-    if ( o == __browseOutput_JButton ) {
+	else if ( o == __browseOutput_JButton ) {
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
         JFileChooser fc = null;
         if ( last_directory_selected != null ) {
@@ -168,6 +171,39 @@ public void actionPerformed( ActionEvent event ) {
             }
         }
     }
+    else if ( o == __browseReplaceWith_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		}
+		fc.setDialogTitle( "Select Replace With File");
+
+		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__ReplaceWithFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"TextEdit_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory(directory);
+				refresh();
+			}
+		}
+	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -207,12 +243,28 @@ public void actionPerformed( ActionEvent event ) {
                         __OutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 1,"TextEdit_JDialog",
+                Message.printWarning ( 1, "TextEdit_JDialog",
                 "Error converting output file name to relative path." );
             }
         }
         refresh ();
     }
+	else if ( o == __pathReplaceWith_JButton ) {
+		if ( __pathReplaceWith_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__ReplaceWithFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__ReplaceWithFile_JTextField.getText() ) );
+		}
+		else if ( __pathReplaceWith_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+                __ReplaceWithFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+                        __ReplaceWithFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "TextEdit_JDialog",
+				"Error converting replace with file name to relative path." );
+			}
+		}
+		refresh ();
+	}
 	else {
 		// Choices.
 		refresh();
@@ -231,6 +283,7 @@ private void checkInput () {
 	String SearchFor = __SearchFor_JTextField.getText();
 	// Don't trim since spaces are allowed.
 	String ReplaceWith = __ReplaceWith_JTextField.getText();
+	String ReplaceWithFile = __ReplaceWithFile_JTextField.getText();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	__error_wait = false;
@@ -242,6 +295,9 @@ private void checkInput () {
     }
     if ( ReplaceWith.length() > 0 ) {
         props.set ( "ReplaceWith", ReplaceWith );
+    }
+    if ( ReplaceWithFile.length() > 0 ) {
+        props.set ( "ReplaceWithFile", ReplaceWithFile );
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
@@ -269,11 +325,13 @@ private void commitEdits () {
     String SearchFor = __SearchFor_JTextField.getText();
 	// Don't trim since spaces are allowed.
     String ReplaceWith = __ReplaceWith_JTextField.getText();
+    String ReplaceWithFile = __ReplaceWithFile_JTextField.getText();
     String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "SearchFor", SearchFor );
 	__command.setCommandParameter ( "ReplaceWith", ReplaceWith );
+	__command.setCommandParameter ( "ReplaceWithFile", ReplaceWithFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "IfInputNotFound", IfInputNotFound );
 }
@@ -362,8 +420,31 @@ private void initialize ( JFrame parent, TextEdit_Command command ) {
     JGUIUtil.addComponent(main_JPanel, __ReplaceWith_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - pattern to replace with."),
+        "Optional - text to replace with."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Replace with file:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReplaceWithFile_JTextField = new JTextField ( 50 );
+    __ReplaceWithFile_JTextField.setToolTipText("Specify the file containing replacement text, can use ${Property} notation.");
+    __ReplaceWithFile_JTextField.addKeyListener ( this );
+    // ReplaceWith file layout fights back with other rows so put in its own panel.
+	JPanel ReplaceWithFile_JPanel = new JPanel();
+	ReplaceWithFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(ReplaceWithFile_JPanel, __ReplaceWithFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browseReplaceWith_JButton = new SimpleJButton ( "...", this );
+	__browseReplaceWith_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(ReplaceWithFile_JPanel, __browseReplaceWith_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path.
+		__pathReplaceWith_JButton = new SimpleJButton( __RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(ReplaceWithFile_JPanel, __pathReplaceWith_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	}
+	JGUIUtil.addComponent(main_JPanel, ReplaceWithFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -473,6 +554,7 @@ private void refresh () {
 	String InputFile = "";
 	String SearchFor = "";
 	String ReplaceWith = "";
+	String ReplaceWithFile = "";
 	String OutputFile = "";
 	String IfInputNotFound = "";
     PropList parameters = null;
@@ -482,6 +564,7 @@ private void refresh () {
 		InputFile = parameters.getValue ( "InputFile" );
 		SearchFor = parameters.getValue ( "SearchFor" );
 		ReplaceWith = parameters.getValue ( "ReplaceWith" );
+		ReplaceWithFile = parameters.getValue ( "ReplaceWithFile" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 		IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 		if ( InputFile != null ) {
@@ -492,6 +575,9 @@ private void refresh () {
 		}
 		if ( ReplaceWith != null ) {
 			__ReplaceWith_JTextField.setText ( ReplaceWith );
+		}
+		if ( ReplaceWithFile != null ) {
+			__ReplaceWithFile_JTextField.setText ( ReplaceWithFile );
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
@@ -520,12 +606,14 @@ private void refresh () {
 	SearchFor = __SearchFor_JTextField.getText();
 	// Don't trim since spaces are allowed.
 	ReplaceWith = __ReplaceWith_JTextField.getText();
+	ReplaceWithFile = __ReplaceWithFile_JTextField.getText();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "SearchFor=" + SearchFor );
 	props.add ( "ReplaceWith=" + ReplaceWith );
+	props.add ( "ReplaceWitFileh=" + ReplaceWithFile );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "IfInputNotFound=" + IfInputNotFound );
 	__command_JTextArea.setText( __command.toString(props).trim() );
@@ -562,6 +650,23 @@ private void refresh () {
 		}
 		else {
 			__pathOutput_JButton.setEnabled(false);
+		}
+    }
+    if ( __pathReplaceWith_JButton != null ) {
+		if ( (ReplaceWithFile != null) && !ReplaceWithFile.isEmpty() ) {
+			__pathReplaceWith_JButton.setEnabled ( true );
+			File f = new File ( ReplaceWithFile );
+			if ( f.isAbsolute() ) {
+				__pathReplaceWith_JButton.setText ( __RemoveWorkingDirectory );
+				__pathReplaceWith_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathReplaceWith_JButton.setText ( __AddWorkingDirectory );
+            	__pathReplaceWith_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathReplaceWith_JButton.setEnabled(false);
 		}
     }
 }

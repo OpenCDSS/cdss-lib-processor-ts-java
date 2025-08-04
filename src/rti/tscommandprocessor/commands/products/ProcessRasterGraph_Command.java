@@ -58,19 +58,41 @@ public class ProcessRasterGraph_Command extends AbstractCommand implements FileG
 {
 
 /**
-Protected data members shared with the dialog and other related classes.
-*/
+ * Values for RunMode parameter.
+ */
 protected final String _BatchOnly = "BatchOnly";
 protected final String _GUIOnly = "GUIOnly";
 protected final String _GUIAndBatch = "GUIAndBatch";
 
+/**
+ * Values for the View parameter.
+ */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+ * Values to use with ImageMapDataArea parameter.
+ */
+protected final String _Cell = "Cell";
+protected final String _TimeSeries = "TimeSeries";
+
+/**
+ * Values to use with ImageMap*Target parameters.
+ */
+protected final String _Blank = "Blank";
+protected final String _Parent = "Parent";
+protected final String _Self = "Self";
+protected final String _Top = "Top";
 
 /**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
+
+/**
+Image map output file that is created by this command.
+*/
+private File __ImageMapFile_File = null;
 
 /**
 Constructor.
@@ -93,6 +115,15 @@ throws InvalidCommandParameterException {
 	String RunMode = parameters.getValue ( "RunMode" );
 	String View = parameters.getValue ( "View" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String ImageMapFile = parameters.getValue ( "ImageMapFile" );
+	String ImageMapUrl = parameters.getValue ( "ImageMapUrl" );
+	String ImageMapDataArea = parameters.getValue ( "ImageMapDataArea" );
+	String ImageMapDataHref = parameters.getValue ( "ImageMapDataHref" );
+	String ImageMapDataTarget = parameters.getValue ( "ImageMapDataTarget" );
+	String ImageMapDataTitle = parameters.getValue ( "ImageMapDataTitle" );
+	String ImageMapLegendHref = parameters.getValue ( "ImageMapLegendHref" );
+	String ImageMapLegendTarget = parameters.getValue ( "ImageMapLegendTarget" );
+	String ImageMapLegendTitle = parameters.getValue ( "ImageMapLegendTitle" );
 	String VisibleStart = parameters.getValue ( "VisibleStart" );
     String VisibleEnd = parameters.getValue ( "VisibleEnd" );
 	String warning = "";
@@ -179,7 +210,7 @@ throws InvalidCommandParameterException {
                         message,
                         "Specify an output file for the product." ) );
 	}
-	else if ( (OutputFile != null) && !OutputFile.equals("") && (OutputFile.indexOf("${") < 0) ) {
+	else if ( (OutputFile != null) && !OutputFile.isEmpty() && (OutputFile.indexOf("${") < 0) ) {
 		String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it.
@@ -247,8 +278,118 @@ throws InvalidCommandParameterException {
                         message, "Specify a valid Visible end date/time." ) );
         }
     }
+
+	if ( (ImageMapFile != null) && !ImageMapFile.isEmpty() ) {
+		if ( ImageMapFile.indexOf("${") < 0 ) {
+			String working_dir = null;
+			try {
+				Object o = processor.getPropContents ( "WorkingDir" );
+				// Working directory is available so use it.
+				if ( o != null ) {
+					working_dir = (String)o;
+				}
+			}
+			catch ( Exception e ) {
+				// Not fatal, but of use to developers.
+				message = "Error requesting WorkingDir from processor.";
+            	status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                            	message, "Software error - report problem to support." ) );
+			}
+
+			try {
+            	String adjusted_path = IOUtil.verifyPathForOS( IOUtil.adjustPath (working_dir, ImageMapFile) );
+				File f = new File ( adjusted_path );
+				File f2 = new File ( f.getParent() );
+				if ( !f2.exists() ) {
+                	message = "The image map file parent directory does not exist for: \"" + adjusted_path + "\".";
+  					warning += "\n" + message;
+                	status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        	new CommandLogRecord(CommandStatusType.FAILURE,
+                                	message, "Create the folder for the output file." ) );
+            	}
+			}
+			catch ( Exception e ) {
+            	message = "The image map file \"" + ImageMapFile + "\" cannot be adjusted by the working directory: \"" +
+            	working_dir + "\".";
+				warning += "\n" + message;
+            	status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    	new CommandLogRecord(CommandStatusType.FAILURE,
+                            	message, "Verify that the image map file path and working directory are compatible." ) );
+			}
+		}
+		
+		if ( (ImageMapUrl == null) || ImageMapUrl.isEmpty() ) {
+			message = "The image map URL must be specified when ImageMapFile=True.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message,
+                    "Specify an image map URL." ) );
+		}
+
+		if ( (ImageMapDataArea != null) && !ImageMapDataArea.isEmpty() &&
+			!ImageMapDataArea.equalsIgnoreCase(_Cell) &&
+			!ImageMapDataArea.equalsIgnoreCase(_TimeSeries)  ) {
+        	message = "The image map data area \"" + ImageMapDataArea + "\" is not valid.";
+			warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+               	new CommandLogRecord(CommandStatusType.FAILURE,
+                   	message,
+               		"Correct the image map data area to be " + _Cell + " or " + _TimeSeries + " (default)." ) );
+		}
+
+		if ( (ImageMapDataTarget != null) && !ImageMapDataTarget.isEmpty() &&
+			!ImageMapDataTarget.equalsIgnoreCase(_Blank) &&
+			!ImageMapDataTarget.equalsIgnoreCase(_Parent) &&
+			!ImageMapDataTarget.equalsIgnoreCase(_Self) &&
+			!ImageMapDataTarget.equalsIgnoreCase(_Top)  ) {
+        	message = "The image map data target \"" + ImageMapDataTarget + "\" is not valid.";
+			warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+               	new CommandLogRecord(CommandStatusType.FAILURE,
+                   	message,
+               		"Correct the image map data 'target' to be " + _Blank + ", " + _Parent + ", " + _Self + " (default), or " + _Top + ".") );
+		}
+
+		if ( (ImageMapLegendTarget != null) && !ImageMapLegendTarget.isEmpty() &&
+			!ImageMapLegendTarget.equalsIgnoreCase(_Blank) &&
+			!ImageMapLegendTarget.equalsIgnoreCase(_Parent) &&
+			!ImageMapLegendTarget.equalsIgnoreCase(_Self) &&
+			!ImageMapLegendTarget.equalsIgnoreCase(_Top)  ) {
+        	message = "The image map legend target \"" + ImageMapLegendTarget + "\" is not valid.";
+			warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+               	new CommandLogRecord(CommandStatusType.FAILURE,
+                   	message,
+               		"Correct the image map legend 'target' to be " + _Blank + ", " + _Parent + ", " + _Self + " (default), or " + _Top + ".") );
+		}
+
+		int elementCount = 0;
+		if ( (ImageMapDataHref != null) && !ImageMapDataHref.isEmpty() ) {
+			++elementCount;
+		}
+		if ( (ImageMapDataTitle != null) && !ImageMapDataTitle.isEmpty() ) {
+			++elementCount;
+		}
+		if ( (ImageMapLegendHref != null) && !ImageMapLegendHref.isEmpty() ) {
+			++elementCount;
+		}
+		if ( (ImageMapLegendTitle != null) && !ImageMapLegendTitle.isEmpty() ) {
+			++elementCount;
+		}
+		if ( elementCount == 0 ) {
+			message = "At least one data/legend 'href' or 'title' parameters must be specified when ImageMapFile=True.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message,
+                    "Specify at least one of ImageMapDataHref, ImageMapDataTitle, ImageMapLegendHref, or ImageMapLegendTitle." ) );
+		}
+	}
+
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(8);
+	List<String> validList = new ArrayList<>(18);
     validList.add ( "TSProductFile" );
     validList.add ( "RunMode" );
     validList.add ( "View" );
@@ -257,6 +398,16 @@ throws InvalidCommandParameterException {
     validList.add ( "VisibleEnd" );
     validList.add ( "CommandStatusProperty" );
     validList.add ( "DefaultSaveFile" );
+    validList.add ( "ImageMapFile" );
+    validList.add ( "ImageMapUrl" );
+    validList.add ( "ImageMapName" );
+    validList.add ( "ImageMapDataArea" );
+    validList.add ( "ImageMapDataHref" );
+    validList.add ( "ImageMapDataTarget" );
+    validList.add ( "ImageMapDataTitle" );
+    validList.add ( "ImageMapLegendHref" );
+    validList.add ( "ImageMapLegendTarget" );
+    validList.add ( "ImageMapLegendTitle" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -286,7 +437,18 @@ public List<File> getGeneratedFileList () {
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
+    if ( getImageMapFile() != null ) {
+        list.add ( getImageMapFile() );
+    }
     return list;
+}
+
+/**
+Return the image map output file generated by this command.  This method is used internally.
+@return the image map output file generated by this command
+*/
+private File getImageMapFile () {
+    return this.__ImageMapFile_File;
 }
 
 /**
@@ -330,7 +492,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		RunMode = _GUIAndBatch;
 	}
 	String View = parameters.getValue ( "View" );
-	if ( (View == null) || View.equals("") ) {
+	if ( (View == null) || View.isEmpty() ) {
 		View = _True;
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
@@ -342,7 +504,59 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
     	CommandStatusProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandStatusProperty);
     }
+    // TODO smalers 2025--07-28 Will this be used?
 	String DefaultSaveFile = parameters.getValue ( "DefaultSaveFile" );
+
+	String ImageMapFile = parameters.getValue ( "ImageMapFile" );
+	if ( (ImageMapFile != null) && !ImageMapFile.isEmpty() ) {
+		// ImageMapFile has been specified:
+		// - expand below
+	}
+	String ImageMapUrl = parameters.getValue ( "ImageMapUrl" );
+	if ( (ImageMapUrl != null) && ! ImageMapUrl.isEmpty() ) {
+    	ImageMapUrl = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapUrl);
+	}
+	String ImageMapName = parameters.getValue ( "ImageMapName" );
+	if ( (ImageMapName != null) && ! ImageMapName.isEmpty() ) {
+		// Expand here for processor properties and also expand in called code for time series properties.
+    	ImageMapName = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapName);
+	}
+	else {
+		// Default.
+		ImageMapName = "imagemap";
+	}
+	String ImageMapDataArea = parameters.getValue ( "ImageMapDataArea" );
+	if ( (ImageMapDataArea != null) && ! ImageMapDataArea.isEmpty() ) {
+    	ImageMapDataArea = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapDataArea);
+	}
+	String ImageMapDataHref = parameters.getValue ( "ImageMapDataHref" );
+	if ( (ImageMapDataHref != null) && ! ImageMapDataHref.isEmpty() ) {
+		// Expand here for processor properties and also expand in called code for time series properties.
+    	ImageMapDataHref = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapDataHref);
+	}
+	String ImageMapDataTarget = parameters.getValue ( "ImageMapDataTarget" );
+	if ( (ImageMapDataTarget != null) && ! ImageMapDataTarget.isEmpty() ) {
+    	ImageMapDataTarget = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapDataTarget);
+	}
+	String ImageMapDataTitle = parameters.getValue ( "ImageMapDataTitle" );
+	if ( (ImageMapDataTitle != null) && ! ImageMapDataTitle.isEmpty() ) {
+		// Expand here for processor properties and also expand in called code for time series properties.
+    	ImageMapDataTitle = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapDataTitle);
+	}
+	String ImageMapLegendHref = parameters.getValue ( "ImageMapLegendHref" );
+	if ( (ImageMapLegendHref != null) && ! ImageMapLegendHref.isEmpty() ) {
+		// Expand here for processor properties and also expand in called code for time series properties.
+    	ImageMapLegendHref = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapLegendHref);
+	}
+	String ImageMapLegendTarget = parameters.getValue ( "ImageMapLegendTarget" );
+	if ( (ImageMapLegendTarget != null) && ! ImageMapLegendTarget.isEmpty() ) {
+    	ImageMapLegendTarget = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapLegendTarget);
+	}
+	String ImageMapLegendTitle = parameters.getValue ( "ImageMapLegendTitle" );
+	if ( (ImageMapLegendTitle != null) && ! ImageMapLegendTitle.isEmpty() ) {
+		// Expand here for processor properties and also expand in called code for time series properties.
+    	ImageMapLegendTitle = TSCommandProcessorUtil.expandParameterValue(processor, this, ImageMapLegendTitle);
+	}
 
 	// Get from the processor.
 
@@ -396,18 +610,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String TSProductFile_full = TSProductFile;
     String OutputFile_full = OutputFile;
+    String ImageMapFile_full = ImageMapFile;
 	try {
     	// Determine whether the command file is a template.
     	// - although searches for ${Property} and <# Freemarker content> could be done, only search for @template
 		boolean isProductTemplate = false;
         PropList overrideProps = new PropList ("TSTool");
-		if ( (OutputFile != null) && !OutputFile.equals("") ) {
+		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
             OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 			overrideProps.set ( "OutputFile", OutputFile_full );
 		}
-		if ( (TSProductFile != null) && !TSProductFile.equals("") ) {
+
+		if ( (ImageMapFile != null) && !ImageMapFile.isEmpty() ) {
+            ImageMapFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                	TSCommandProcessorUtil.expandParameterValue(processor,this,ImageMapFile)) );
+			overrideProps.set ( "ImageMapFile", ImageMapFile_full );
+		}
+
+		if ( (TSProductFile != null) && !TSProductFile.isEmpty() ) {
             TSProductFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 	TSCommandProcessorUtil.expandParameterValue(processor,this,TSProductFile)) );
@@ -451,6 +674,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    overrideProps.set ( "DefaultSaveFile", DefaultSaveFile_full );
 			}
 		}
+		if ( (ImageMapFile != null) && !ImageMapFile.isEmpty() ) {
+			overrideProps.set ( "ImageMapFile", ImageMapFile_full );
+			if ( (ImageMapUrl != null) && !ImageMapUrl.isEmpty() ) {
+				overrideProps.set ( "ImageMapUrl", ImageMapUrl );
+			}
+			if ( (ImageMapName != null) && !ImageMapName.isEmpty() ) {
+				overrideProps.set ( "ImageMapName", ImageMapName );
+			}
+			if ( (ImageMapDataArea != null) && !ImageMapDataArea.isEmpty() ) {
+				overrideProps.set ( "ImageMapDataArea", ImageMapDataArea );
+			}
+			if ( (ImageMapDataHref != null) && !ImageMapDataHref.isEmpty() ) {
+				overrideProps.set ( "ImageMapDataHref", ImageMapDataHref );
+			}
+			if ( (ImageMapDataTarget != null) && !ImageMapDataTarget.isEmpty() ) {
+				overrideProps.set ( "ImageMapDataTarget", ImageMapDataTarget );
+			}
+			if ( (ImageMapDataTitle != null) && !ImageMapDataTitle.isEmpty() ) {
+				overrideProps.set ( "ImageMapDataTitle", ImageMapDataTitle );
+			}
+			if ( (ImageMapLegendHref != null) && !ImageMapLegendHref.isEmpty() ) {
+				overrideProps.set ( "ImageMapLegendHref", ImageMapLegendHref );
+			}
+			if ( (ImageMapLegendTarget != null) && !ImageMapLegendTarget.isEmpty() ) {
+				overrideProps.set ( "ImageMapLegendTarget", ImageMapLegendTarget );
+			}
+			if ( (ImageMapLegendTitle != null) && !ImageMapLegendTitle.isEmpty() ) {
+				overrideProps.set ( "ImageMapLegendTitle", ImageMapLegendTitle );
+			}
+		}
 		if ( (IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("Batch")))) ||
 			(!IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("GUIOnly")))) ) {
 			// Only run the command for the requested run mode.
@@ -487,11 +740,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					tsp.addTSProductAnnotationProvider(	ap, null);
 				}
 			}
-			// Now process the product.
+			// Now process the product and create the output.
 			p.processProduct ( tsp );
-            // Save the output file name...
+
+            // Save the output file name.
             if ( (OutputFile_full != null) && !OutputFile_full.equals("") ) {
                 setOutputFile ( new File(OutputFile_full));
+            }
+
+            // Save the image map output file name.
+            if ( (ImageMapFile_full != null) && !ImageMapFile_full.equals("") ) {
+                setImageMapFile ( new File(ImageMapFile_full));
             }
 		}
 
@@ -555,6 +814,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
+Set the image map output file that is created by this command.  This is only used internally.
+@param file image map output file created by this command
+*/
+private void setImageMapFile ( File file ) {
+    this.__ImageMapFile_File = file;
+}
+
+/**
 Set the output file that is created by this command.  This is only used internally.
 @param file output file created by this command
 */
@@ -569,14 +836,27 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// Input.
 		"TSProductFile",
 		"RunMode",
+		// Output.
 		"View",
 		"OutputFile",
     	"VisibleStart",
     	"VisibleEnd",
     	"CommandStatusProperty",
-		"DefaultSaveFile"
+		"DefaultSaveFile",
+		// Image map.
+		"ImageMapFile",
+		"ImageMapUrl",
+		"ImageMapName",
+		"ImageMapDataArea",
+		"ImageMapDataHref",
+		"ImageMapDataTarget",
+		"ImageMapDataTitle",
+		"ImageMapLegendHref",
+		"ImageMapLegendTarget",
+		"ImageMapLegendTitle"
 	};
 	return this.toString(parameters, parameterOrder);
 }

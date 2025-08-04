@@ -24,6 +24,9 @@ NoticeEnd */
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -87,6 +90,7 @@ throws InvalidCommandParameterException {
 	String InputFile = parameters.getValue ( "InputFile" );
     String SearchFor = parameters.getValue ( "SearchFor" );
     String ReplaceWith = parameters.getValue ( "ReplaceWith" );
+    String ReplaceWithFile = parameters.getValue ( "ReplaceWithFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 	String warning = "";
@@ -112,13 +116,30 @@ throws InvalidCommandParameterException {
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the pattern to search for."));
 	}
-	if ( ReplaceWith == null ) {
-		// Allow empty string.
-		message = "The pattern to replace with must be specified.";
+	// Must specify either ReplaceWith or ReplaceWithFile.
+	int replaceCount = 0;
+	if ( (ReplaceWith != null) && !ReplaceWith.isEmpty() ) {
+		// Do not allow empty string (EMPTY_STRING constant will be specified).
+		++replaceCount;
+	}
+	if ( (ReplaceWithFile != null) && !ReplaceWithFile.isEmpty() ) {
+		++replaceCount;
+	}
+	if ( replaceCount == 0 ) {
+		message = "The pattern to replace with is not specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Specify the pattern to replace with."));
+				message, "Specify the pattern to replace with using ReplaceWith or ReplaceWithFile."));
+		
+	}
+	else if ( replaceCount == 2 ) {
+		message = "The pattern to replace with is specified as text and a file.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the pattern to replace with using ReplaceWith or ReplaceWithFile."));
+		
 	}
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         message = "The output file must be specified.";
@@ -139,10 +160,11 @@ throws InvalidCommandParameterException {
 		}
 	}
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(5);
+	List<String> validList = new ArrayList<>(6);
 	validList.add ( "InputFile" );
 	validList.add ( "SearchFor" );
 	validList.add ( "ReplaceWith" );
+	validList.add ( "ReplaceWithFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IfInputNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -274,6 +296,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			replace("\\r", "\r").
 			replace("\\t", "\t");
 	}
+	String ReplaceWithFile = parameters.getValue ( "ReplaceWithFile" ); // Expand below.
 	// Replace known escaped strings with actual values.
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 	if ( (IfInputNotFound == null) || IfInputNotFound.equals("")) {
@@ -295,37 +318,76 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String OutputFile_full = IOUtil.verifyPathForOS(
 	    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+    String ReplaceWithFile_full = ReplaceWithFile;
+    if ( (ReplaceWithFile != null) && !ReplaceWithFile.isEmpty() ) {
+    	ReplaceWithFile_full = IOUtil.verifyPathForOS(
+    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    			TSCommandProcessorUtil.expandParameterValue(processor,this,ReplaceWithFile)));
+    }
 	try {
-	    File in = new File(InputFile_full);
-	    if ( in.exists() ) {
-	    	// Read the file into a StringBuilder.
-	    	//Message.printStatus(2,routine,"Reading file into StringBuilder.");
-    		StringBuilder sb = IOUtil.fileToStringBuilder(InputFile_full);
-	    	//Message.printStatus(2,routine,"Replacing string \"" + SearchFor + "\" with \"" + ReplaceWith + "\".");
-	    	replaceString ( sb, SearchFor, ReplaceWith );
-	    	// Write the output file.
-	    	//Message.printStatus(2,routine,"Writing StringBuilder to file.");
-	    	IOUtil.writeFile(OutputFile_full, sb.toString());
-	    	//Message.printStatus(2,routine,"Back from writing file.");
-	        // Save the output file name.
-	        setOutputFile ( new File(OutputFile_full));
-	    }
-	    else {
-	        // Input file does not exist so generate a warning.
-	        message = "Input file does not exist for InputFile=\"" + InputFile + "\"";
-	        if ( IfInputNotFound.equalsIgnoreCase(_Fail) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Verify that the input file exists at the time the command is run."));
-	        }
-	        else if ( IfInputNotFound.equalsIgnoreCase(_Warn) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-	                message, "Verify that the input file exists at the time the command is run."));
-	        }
-	    }
+		// Indicate whether an error getting the replacement text from a file.
+		boolean hasError = false;
+		if ( (ReplaceWithFile != null) && !ReplaceWithFile.isEmpty() ) {
+			// Get the replacement text from the file if a file was specified.
+			File replaceWithFile = new File(ReplaceWithFile_full);
+			if ( replaceWithFile.exists() ) {
+				// Open the file.
+				Path path = Paths.get(ReplaceWithFile_full);
+				ReplaceWith = Files.readString(path);
+				// Also expand properties.
+				ReplaceWith = TSCommandProcessorUtil.expandParameterValue(processor, this, ReplaceWith);
+			}
+			else {
+	        	message = "Replace with file does not exist ReplaceWithFile=\"" + ReplaceWithFile + "\"";
+				if ( IfInputNotFound.equalsIgnoreCase(_Fail) ) {
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+					status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that the replace with file exists at the time the command is run."));
+				}
+				else if ( IfInputNotFound.equalsIgnoreCase(_Warn) ) {
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+					status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+						message, "Verify that the replace with file exists at the time the command is run."));
+				}
+				// Indicate that there is an error.
+				hasError = true;
+			}
+		}
+		if ( !hasError ) {
+			// Can continue with the replacement.
+			File in = new File(InputFile_full);
+	    	if ( in.exists() ) {
+	    		// Read the file into a StringBuilder.
+	    		//Message.printStatus(2,routine,"Reading file into StringBuilder.");
+    			StringBuilder sb = IOUtil.fileToStringBuilder(InputFile_full);
+	    		//Message.printStatus(2,routine,"Replacing string \"" + SearchFor + "\" with \"" + ReplaceWith + "\".");
+	    		replaceString ( sb, SearchFor, ReplaceWith );
+	    		// Write the output file.
+	    		//Message.printStatus(2,routine,"Writing StringBuilder to file.");
+	    		IOUtil.writeFile(OutputFile_full, sb.toString());
+	    		//Message.printStatus(2,routine,"Back from writing file.");
+	        	// Save the output file name.
+	        	setOutputFile ( new File(OutputFile_full));
+	    	}
+	    	else {
+	        	// Input file does not exist so generate a warning.
+	        	message = "Input file does not exist for InputFile=\"" + InputFile + "\"";
+	        	if ( IfInputNotFound.equalsIgnoreCase(_Fail) ) {
+	            	Message.printWarning ( warning_level,
+	                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                	message, "Verify that the input file exists at the time the command is run."));
+	        	}
+	        	else if ( IfInputNotFound.equalsIgnoreCase(_Warn) ) {
+	            	Message.printWarning ( warning_level,
+	                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            	status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	                	message, "Verify that the input file exists at the time the command is run."));
+	        	}
+	    	}
+		}
 	}
     catch ( Exception e ) {
 		message = "Unexpected error editing text file \"" + InputFile_full + "\" to \"" +
@@ -368,6 +430,7 @@ public String toString ( PropList parameters ) {
 		"InputFile",
 		"SearchFor",
 		"ReplaceWith",
+		"ReplaceWithFile",
 		"OutputFile",
 		"IfInputNotFound"
 	};

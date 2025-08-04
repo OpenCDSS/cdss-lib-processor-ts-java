@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -76,21 +77,34 @@ private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
+private SimpleJButton __browseImageMap_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
+private SimpleJButton __pathImageMap_JButton = null;
 private ProcessRasterGraph_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea = null;
-private JTextField __TSProductFile_JTextField=null;
+private JTabbedPane __main_JTabbedPane = null;
+private JTextField __TSProductFile_JTextField = null;
 private SimpleJComboBox	__RunMode_JComboBox = null;
 private SimpleJComboBox	__View_JComboBox = null;
-private JTextField __OutputFile_JTextField=null;
+private JTextField __OutputFile_JTextField = null;
 private JTextField __VisibleStart_JTextField = null;
 private JTextField __VisibleEnd_JTextField = null;
 private JTextField __CommandStatusProperty_JTextField = null;
+private JTextField __ImageMapFile_JTextField = null;
+private JTextField __ImageMapUrl_JTextField = null;
+private JTextField __ImageMapName_JTextField = null;
+private SimpleJComboBox	__ImageMapDataArea_JComboBox = null;
+private JTextField __ImageMapDataHref_JTextField = null;
+private SimpleJComboBox	__ImageMapDataTarget_JComboBox = null;
+private JTextField __ImageMapDataTitle_JTextField = null;
+private JTextField __ImageMapLegendHref_JTextField = null;
+private SimpleJComboBox	__ImageMapLegendTarget_JComboBox = null;
+private JTextField __ImageMapLegendTitle_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -147,6 +161,41 @@ public void actionPerformed( ActionEvent event ) {
 			}
 		}
 	}
+	else if ( o == __browseImageMap_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		}
+		fc.setDialogTitle("Select ImageMap File");
+		SimpleFileFilter sff = new SimpleFileFilter("html", "HTML Image Map File");
+		fc.addChoosableFileFilter(sff);
+
+		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName();
+			String path = fc.getSelectedFile().getPath();
+
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__ImageMapFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ProcessRasterGraph_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory( directory);
+				refresh();
+			}
+		}
+	}
 	else if ( o == __browseOutput_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
@@ -175,7 +224,7 @@ public void actionPerformed( ActionEvent event ) {
 					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1,"ProcessTSProduct_JDialog", "Error converting file to relative path." );
+					Message.printWarning ( 1,"ProcessRasterGraph_JDialog", "Error converting file to relative path." );
 				}
 				JGUIUtil.setLastFileDialogDirectory( directory);
 				refresh();
@@ -224,7 +273,24 @@ public void actionPerformed( ActionEvent event ) {
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"processTSProduct_JDialog",	"Error converting output file to relative path." );
+				"ProcessRasterGraph_JDialog", "Error converting output file to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else if ( o == __pathImageMap_JButton ) {
+		if ( __pathImageMap_JButton.getText().equals( __AddWorkingDirectory) ) {
+			__ImageMapFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
+			__ImageMapFile_JTextField.getText() ) );
+		}
+		else if ( __pathImageMap_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+			try {
+				__ImageMapFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+					__ImageMapFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,
+				"ProcessRasterGraph_JDialog", "Error converting image map file to relative path." );
 			}
 		}
 		refresh ();
@@ -249,6 +315,16 @@ private void checkInput () {
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
     String CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	String ImageMapFile = __ImageMapFile_JTextField.getText().trim();
+	String ImageMapUrl = __ImageMapUrl_JTextField.getText().trim();
+	String ImageMapName = __ImageMapName_JTextField.getText().trim();
+	String ImageMapDataArea = __ImageMapDataArea_JComboBox.getSelected();
+	String ImageMapDataHref = __ImageMapDataHref_JTextField.getText().trim();
+	String ImageMapDataTarget = __ImageMapDataTarget_JComboBox.getSelected();
+	String ImageMapDataTitle = __ImageMapDataTitle_JTextField.getText().trim();
+	String ImageMapLegendHref = __ImageMapLegendHref_JTextField.getText().trim();
+	String ImageMapLegendTarget = __ImageMapLegendTarget_JComboBox.getSelected();
+	String ImageMapLegendTitle = __ImageMapLegendTitle_JTextField.getText().trim();
 	__error_wait = false;
 	if ( TSProductFile.length() > 0 ) {
 		props.set ( "TSProductFile", TSProductFile );
@@ -271,6 +347,36 @@ private void checkInput () {
     if ( CommandStatusProperty.length() > 0 ) {
         props.set ( "CommandStatusProperty", CommandStatusProperty );
     }
+	if ( ImageMapFile.length() > 0 ) {
+		props.set ( "ImageMapFile", ImageMapFile );
+	}
+	if ( ImageMapUrl.length() > 0 ) {
+		props.set ( "ImageMapUrl", ImageMapUrl );
+	}
+	if ( ImageMapUrl.length() > 0 ) {
+		props.set ( "ImageMapName", ImageMapName );
+	}
+	if ( ImageMapDataArea.length() > 0 ) {
+		props.set ( "ImageMapDataArea", ImageMapDataArea );
+	}
+	if ( ImageMapDataHref.length() > 0 ) {
+		props.set ( "ImageMapDataHref", ImageMapDataHref );
+	}
+	if ( ImageMapDataTarget.length() > 0 ) {
+		props.set ( "ImageMapDataTarget", ImageMapDataTarget );
+	}
+	if ( ImageMapDataTitle.length() > 0 ) {
+		props.set ( "ImageMapDataTitle", ImageMapDataTitle );
+	}
+	if ( ImageMapLegendHref.length() > 0 ) {
+		props.set ( "ImageMapLegendHref", ImageMapLegendHref );
+	}
+	if ( ImageMapLegendTarget.length() > 0 ) {
+		props.set ( "ImageMapLegendTarget", ImageMapLegendTarget );
+	}
+	if ( ImageMapLegendTitle.length() > 0 ) {
+		props.set ( "ImageMapLegendTitle", ImageMapLegendTitle );
+	}
 	try {
 	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
@@ -293,6 +399,16 @@ private void commitEdits () {
     String VisibleStart = __VisibleStart_JTextField.getText().trim();
     String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
     String CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	String ImageMapFile = __ImageMapFile_JTextField.getText().trim();
+	String ImageMapUrl = __ImageMapUrl_JTextField.getText().trim();
+	String ImageMapName = __ImageMapName_JTextField.getText().trim();
+	String ImageMapDataArea = __ImageMapDataArea_JComboBox.getSelected();
+	String ImageMapDataHref = __ImageMapDataHref_JTextField.getText().trim();
+	String ImageMapDataTarget = __ImageMapDataTarget_JComboBox.getSelected();
+	String ImageMapDataTitle = __ImageMapDataTitle_JTextField.getText().trim();
+	String ImageMapLegendHref = __ImageMapLegendHref_JTextField.getText().trim();
+	String ImageMapLegendTarget = __ImageMapLegendTarget_JComboBox.getSelected();
+	String ImageMapLegendTitle = __ImageMapLegendTitle_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSProductFile", TSProductFile );
 	__command.setCommandParameter ( "RunMode", RunMode );
 	__command.setCommandParameter ( "View", View );
@@ -300,6 +416,16 @@ private void commitEdits () {
     __command.setCommandParameter ( "VisibleStart", VisibleStart );
     __command.setCommandParameter ( "VisibleEnd", VisibleEnd );
     __command.setCommandParameter ( "CommandStatusProperty", CommandStatusProperty );
+	__command.setCommandParameter ( "ImageMapFile", ImageMapFile );
+	__command.setCommandParameter ( "ImageMapUrl", ImageMapUrl );
+	__command.setCommandParameter ( "ImageMapName", ImageMapName );
+	__command.setCommandParameter ( "ImageMapDataArea", ImageMapDataArea );
+	__command.setCommandParameter ( "ImageMapDataHref", ImageMapDataHref );
+	__command.setCommandParameter ( "ImageMapDataTarget", ImageMapDataTarget );
+	__command.setCommandParameter ( "ImageMapDataTitle", ImageMapDataTitle );
+	__command.setCommandParameter ( "ImageMapLegendHref", ImageMapLegendHref );
+	__command.setCommandParameter ( "ImageMapLegendTarget", ImageMapLegendTarget );
+	__command.setCommandParameter ( "ImageMapLegendTitle", ImageMapLegendTitle );
 }
 
 /**
@@ -344,8 +470,24 @@ private void initialize ( JFrame parent, ProcessRasterGraph_Command command ) {
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for input.
+    int yInput = -1;
+    JPanel input_JPanel = new JPanel();
+    input_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", input_JPanel );
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+		"If the TSP file contains a comment #@template, then the file will be expanded similar to ExpandTemplateFile() and then used."),
+		0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yInput, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "TS product file (TSP):" ),
+		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSProductFile_JTextField = new JTextField ( 50 );
 	__TSProductFile_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel.
@@ -363,38 +505,44 @@ private void initialize ( JFrame parent, ProcessRasterGraph_Command command ) {
 		JGUIUtil.addComponent(TSProductFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, TSProductFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(input_JPanel, TSProductFile_JPanel,
+		1, yInput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Run mode:" ),
+		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunMode_JComboBox = new SimpleJComboBox ( false );
 	__RunMode_JComboBox.add ( "" );
 	__RunMode_JComboBox.add ( __command._BatchOnly );
 	__RunMode_JComboBox.add ( __command._GUIOnly );
 	__RunMode_JComboBox.add ( __command._GUIAndBatch );
 	__RunMode_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+        JGUIUtil.addComponent(input_JPanel, __RunMode_JComboBox,
+		1, yInput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel,
 		new JLabel ( "Optional - when to process products (default=" + __command._GUIAndBatch + ")." ),
-		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		2, yInput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "View:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for output.
+    int yOutput = -1;
+    JPanel output_JPanel = new JPanel();
+    output_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", output_JPanel );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "View:" ),
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__View_JComboBox = new SimpleJComboBox ( false );
 	__View_JComboBox.add ( "" );
 	__View_JComboBox.add ( __command._False );
 	__View_JComboBox.add ( __command._True );
 	__View_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __View_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(output_JPanel, __View_JComboBox,
+		1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel,
 		new JLabel ( "Optional - display product in window (default=" + __command._True + ")." ),
-		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		2, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output file:"),
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (30);
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
@@ -413,38 +561,191 @@ private void initialize ( JFrame parent, ProcessRasterGraph_Command command ) {
 		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
-	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(output_JPanel, OutputFile_JPanel,
+		1, yOutput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Visible start:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Visible start:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleStart_JTextField = new JTextField (20);
     __VisibleStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __VisibleStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(output_JPanel, __VisibleStart_JTextField,
+        1, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
         "Optional - start of (initial) visible period (default=all data visible)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Visible end:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Visible end:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleEnd_JTextField = new JTextField (20);
     __VisibleEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __VisibleEnd_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(output_JPanel, __VisibleEnd_JTextField,
+        1, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
         "Optional - end of (initial) visible period (default=all data visible)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Command status property:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Command status property:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CommandStatusProperty_JTextField = new JTextField ( "", 20 );
     __CommandStatusProperty_JTextField.setToolTipText("Specify the property name for the command exit status, can use ${Property} notation");
     __CommandStatusProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __CommandStatusProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as the command status." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, __CommandStatusProperty_JTextField,
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as the command status." ),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for the image map..
+    int yImageMap = -1;
+    JPanel imageMap_JPanel = new JPanel();
+    imageMap_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Image Map", imageMap_JPanel );
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+		"The following parameters can be used to create an image map HTML snippet that can be inserted into an HTML page." ),
+		0, ++yImageMap, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+		"Links and/or tooltips can be enabled for the data area (heat map) and time series legend." ),
+		0, ++yImageMap, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+		"Tooltips and links can be enabled for the entire time series or heat map cell." ),
+		0, ++yImageMap, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(imageMap_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yImageMap, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map (output) file:"),
+		0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ImageMapFile_JTextField = new JTextField (30);
+	__ImageMapFile_JTextField.setToolTipText("Image map HTML snippet file created as output, can use ${Property}.");
+	__ImageMapFile_JTextField.addKeyListener ( this );
+	__ImageMapFile_JTextField.setEditable ( true );
+    // Layout fights back with other rows so put in its own panel.
+	JPanel ImageMapFile_JPanel = new JPanel();
+	ImageMapFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(ImageMapFile_JPanel, __ImageMapFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browseOutput_JButton = new SimpleJButton ( "...", this );
+	__browseOutput_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(ImageMapFile_JPanel, __browseOutput_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path.
+		__pathOutput_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(ImageMapFile_JPanel, __pathOutput_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(imageMap_JPanel, ImageMapFile_JPanel,
+		1, yImageMap, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map (image file) URL:"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapUrl_JTextField = new JTextField (60);
+    __ImageMapUrl_JTextField.setToolTipText("URL to use for the image, can use ${Property} and ${ts:Property}.");
+    __ImageMapUrl_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapUrl_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Required - URL for the image."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map 'name':"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapName_JTextField = new JTextField (60);
+    __ImageMapName_JTextField.setToolTipText("Image map 'name', used in the HTML to identify the image map.");
+    __ImageMapName_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapName_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+        "Optional - image map 'name' for HTML (default=imagemap)."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map data area:" ),
+		0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ImageMapDataArea_JComboBox = new SimpleJComboBox ( false );
+	__ImageMapDataArea_JComboBox.setToolTipText("Image map shape area extent.");
+	__ImageMapDataArea_JComboBox.add ( "" );
+	__ImageMapDataArea_JComboBox.add ( __command._Cell );
+	__ImageMapDataArea_JComboBox.add ( __command._TimeSeries );
+	__ImageMapDataArea_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(imageMap_JPanel, __ImageMapDataArea_JComboBox,
+		1, yImageMap, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel,
+		new JLabel ( "Optional - heatmap image map shape area (default=" + __command._TimeSeries + ")." ),
+		2, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map data 'href':"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapDataHref_JTextField = new JTextField (60);
+    __ImageMapDataHref_JTextField.setToolTipText("Image Map 'href' for data area shapes, can use ${Property} and ${ts:Property}.");
+    __ImageMapDataHref_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapDataHref_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+        "Optional - 'href' for each image map time series data shape."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map data link 'target':" ),
+		0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ImageMapDataTarget_JComboBox = new SimpleJComboBox ( false );
+	__ImageMapDataTarget_JComboBox.setToolTipText("Image map shape area extent.");
+	__ImageMapDataTarget_JComboBox.add ( "" );
+	__ImageMapDataTarget_JComboBox.add ( __command._Blank );
+	__ImageMapDataTarget_JComboBox.add ( __command._Parent );
+	__ImageMapDataTarget_JComboBox.add ( __command._Self );
+	__ImageMapDataTarget_JComboBox.add ( __command._Top );
+	__ImageMapDataTarget_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(imageMap_JPanel, __ImageMapDataTarget_JComboBox,
+		1, yImageMap, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel,
+		new JLabel ( "Optional - image map data link 'target' (default=browser default)." ),
+		2, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map data 'title':"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapDataTitle_JTextField = new JTextField (60);
+    __ImageMapDataTitle_JTextField.setToolTipText("Title to use for the image map data area shapes tooltip, can use ${Property} and ${ts:Property}.");
+    __ImageMapDataTitle_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapDataTitle_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+        "Optional - 'title' (tooltip) for each image map time series data shape."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map legend 'href':"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapLegendHref_JTextField = new JTextField (60);
+    __ImageMapLegendHref_JTextField.setToolTipText("URL to use for the image map legend area shapes, can use ${Property} and ${ts:Property}.");
+    __ImageMapLegendHref_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapLegendHref_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+        "Optional - 'href' for each image map legend shape."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+ 
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map legend 'target':" ),
+		0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ImageMapLegendTarget_JComboBox = new SimpleJComboBox ( false );
+	__ImageMapLegendTarget_JComboBox.setToolTipText("Image map link 'target'.");
+	__ImageMapLegendTarget_JComboBox.add ( "" );
+	__ImageMapLegendTarget_JComboBox.add ( __command._Blank );
+	__ImageMapLegendTarget_JComboBox.add ( __command._Parent );
+	__ImageMapLegendTarget_JComboBox.add ( __command._Self );
+	__ImageMapLegendTarget_JComboBox.add ( __command._Top );
+	__ImageMapLegendTarget_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(imageMap_JPanel, __ImageMapLegendTarget_JComboBox,
+		1, yImageMap, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel,
+		new JLabel ( "Optional - image map legend link 'target' (default=browser default)." ),
+		2, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel ( "Image map legend 'title':"),
+        0, ++yImageMap, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ImageMapLegendTitle_JTextField = new JTextField (60);
+    __ImageMapLegendTitle_JTextField.setToolTipText("Title to use for the image map legend area shapes tooltip, can use ${Property} and ${ts:Property}.");
+    __ImageMapLegendTitle_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(imageMap_JPanel, __ImageMapLegendTitle_JTextField,
+        1, yImageMap, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(imageMap_JPanel, new JLabel (
+        "Optional - 'title' (tooltip) for each image map legend shape."),
+        3, yImageMap, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -539,6 +840,16 @@ private void refresh () {
     String VisibleStart = "";
     String VisibleEnd = "";
     String CommandStatusProperty = "";
+	String ImageMapFile = "";
+	String ImageMapUrl = "";
+	String ImageMapName = "";
+	String ImageMapDataArea = "";
+	String ImageMapDataHref = "";
+	String ImageMapDataTarget = "";
+	String ImageMapDataTitle = "";
+	String ImageMapLegendHref = "";
+	String ImageMapLegendTarget = "";
+	String ImageMapLegendTitle = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -551,6 +862,16 @@ private void refresh () {
 		VisibleStart = props.getValue ( "VisibleStart" );
 		VisibleEnd = props.getValue ( "VisibleEnd" );
 		CommandStatusProperty = props.getValue ( "CommandStatusProperty" );
+		ImageMapFile = props.getValue("ImageMapFile");
+		ImageMapUrl = props.getValue("ImageMapUrl");
+		ImageMapName = props.getValue("ImageMapName");
+		ImageMapDataArea = props.getValue("ImageMapDataArea");
+		ImageMapDataHref = props.getValue("ImageMapDataHref");
+		ImageMapDataTarget = props.getValue("ImageMapDataTarget");
+		ImageMapDataTitle = props.getValue("ImageMapDataTitle");
+		ImageMapLegendHref = props.getValue("ImageMapLegendHref");
+		ImageMapLegendTarget = props.getValue("ImageMapLegendTarget");
+		ImageMapLegendTitle = props.getValue("ImageMapLegendTitle");
 		if ( TSProductFile != null ) {
 			__TSProductFile_JTextField.setText( TSProductFile );
 		}
@@ -601,6 +922,78 @@ private void refresh () {
         if ( CommandStatusProperty != null ) {
             __CommandStatusProperty_JTextField.setText (CommandStatusProperty);
         }
+	    if ( ImageMapFile != null ) {
+	         __ImageMapFile_JTextField.setText ( ImageMapFile );
+	    }
+	    if ( ImageMapUrl != null ) {
+	         __ImageMapUrl_JTextField.setText ( ImageMapUrl );
+	    }
+	    if ( ImageMapName != null ) {
+	         __ImageMapName_JTextField.setText ( ImageMapName );
+	    }
+		if ( (ImageMapDataArea == null) || (ImageMapDataArea.length() == 0) ) {
+			// Select default.
+			__ImageMapDataArea_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__ImageMapDataArea_JComboBox,
+				ImageMapDataArea, JGUIUtil.NONE, null, null ) ) {
+				__ImageMapDataArea_JComboBox.select ( ImageMapDataArea );
+			}
+			else {
+			    Message.printWarning ( 1,
+				"ProcessRasterGraph_JDialog.refresh", "Existing "+
+				"command references an invalid\n"+
+				"run mode flag \"" + ImageMapDataArea +
+				"\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+	    if ( ImageMapDataHref != null ) {
+	         __ImageMapDataHref_JTextField.setText ( ImageMapDataHref );
+	    }
+		if ( (ImageMapDataTarget == null) || (ImageMapDataTarget.length() == 0) ) {
+			// Select default.
+			__ImageMapDataTarget_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__ImageMapDataTarget_JComboBox,
+				ImageMapDataTarget, JGUIUtil.NONE, null, null ) ) {
+				__ImageMapDataTarget_JComboBox.select ( ImageMapDataTarget );
+			}
+			else {
+			    Message.printWarning ( 1,
+				"ProcessRasterGraph_JDialog.refresh", "Existing "+
+				"command references an invalid\n"+
+				"run mode flag \"" + ImageMapDataTarget +
+				"\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+	    if ( ImageMapDataTitle != null ) {
+	         __ImageMapDataTitle_JTextField.setText ( ImageMapDataTitle );
+	    }
+	    if ( ImageMapLegendHref != null ) {
+	         __ImageMapLegendHref_JTextField.setText ( ImageMapLegendHref );
+	    }
+		if ( (ImageMapLegendTarget == null) || (ImageMapLegendTarget.length() == 0) ) {
+			// Select default.
+			__ImageMapLegendTarget_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__ImageMapLegendTarget_JComboBox,
+				ImageMapLegendTarget, JGUIUtil.NONE, null, null ) ) {
+				__ImageMapLegendTarget_JComboBox.select ( ImageMapLegendTarget );
+			}
+			else {
+			    Message.printWarning ( 1,
+				"ProcessRasterGraph_JDialog.refresh", "Existing "+
+				"command references an invalid\n"+
+				"run mode flag \"" + ImageMapLegendTarget +
+				"\".  Select a\ndifferent value or Cancel." );
+			}
+		}
+	    if ( ImageMapLegendTitle != null ) {
+	         __ImageMapLegendTitle_JTextField.setText ( ImageMapLegendTitle );
+	    }
 	}
 	// Regardless, reset the command from the fields.
 	TSProductFile = __TSProductFile_JTextField.getText().trim();
@@ -610,6 +1003,16 @@ private void refresh () {
     VisibleStart = __VisibleStart_JTextField.getText().trim();
     VisibleEnd = __VisibleEnd_JTextField.getText().trim();
     CommandStatusProperty = __CommandStatusProperty_JTextField.getText().trim();
+	ImageMapFile = __ImageMapFile_JTextField.getText().trim();
+	ImageMapUrl = __ImageMapUrl_JTextField.getText().trim();
+	ImageMapName = __ImageMapName_JTextField.getText().trim();
+	ImageMapDataArea = __ImageMapDataArea_JComboBox.getSelected();
+	ImageMapDataHref = __ImageMapDataHref_JTextField.getText().trim();
+	ImageMapDataTarget = __ImageMapDataTarget_JComboBox.getSelected();
+	ImageMapDataTitle = __ImageMapDataTitle_JTextField.getText().trim();
+	ImageMapLegendHref = __ImageMapLegendHref_JTextField.getText().trim();
+	ImageMapLegendTarget = __ImageMapLegendTarget_JComboBox.getSelected();
+	ImageMapLegendTitle = __ImageMapLegendTitle_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSProductFile=" + TSProductFile );
 	props.add ( "RunMode=" + RunMode );
@@ -618,6 +1021,16 @@ private void refresh () {
 	props.add ( "VisibleStart=" + VisibleStart );
 	props.add ( "VisibleEnd=" + VisibleEnd );
 	props.add ( "CommandStatusProperty=" + CommandStatusProperty );
+	props.add ( "ImageMapFile=" + ImageMapFile );
+	props.add ( "ImageMapUrl=" + ImageMapUrl );
+	props.add ( "ImageMapName=" + ImageMapName );
+	props.add ( "ImageMapDataArea=" + ImageMapDataArea );
+	props.add ( "ImageMapDataHref=" + ImageMapDataHref );
+	props.add ( "ImageMapDataTarget=" + ImageMapDataTarget );
+	props.add ( "ImageMapDataTitle=" + ImageMapDataTitle );
+	props.add ( "ImageMapLegendHref=" + ImageMapLegendHref );
+	props.add ( "ImageMapLegendTarget=" + ImageMapLegendTarget );
+	props.add ( "ImageMapLegendTitle=" + ImageMapLegendTitle );
 	__command_JTextArea.setText(__command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __path_JButton != null ) {
@@ -653,6 +1066,24 @@ private void refresh () {
 		}
 		else {
 			__pathOutput_JButton.setEnabled(false);
+		}
+	}
+	// Check the path and determine what the label on the path button should be.
+	if ( __pathImageMap_JButton != null ) {
+		if ( (ImageMapFile != null) && !ImageMapFile.isEmpty() ) {
+			__pathImageMap_JButton.setEnabled ( true );
+			File f = new File ( ImageMapFile );
+			if ( f.isAbsolute() ) {
+				__pathImageMap_JButton.setText ( __RemoveWorkingDirectory );
+				__pathImageMap_JButton.setToolTipText("Change path to relative to command file");
+			}
+			else {
+            	__pathImageMap_JButton.setText ( __AddWorkingDirectory );
+            	__pathImageMap_JButton.setToolTipText("Change path to absolute");
+			}
+		}
+		else {
+			__pathImageMap_JButton.setEnabled(false);
 		}
 	}
 }

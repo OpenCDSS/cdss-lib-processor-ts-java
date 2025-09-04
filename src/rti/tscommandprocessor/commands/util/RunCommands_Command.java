@@ -114,6 +114,7 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
 	String InputFile = parameters.getValue ( "InputFile" );
+	String RunDiscovery = parameters.getValue ( "RunDiscovery" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
     //String ShareProperties = parameters.getValue ( "ShareProperties" );
     String ShareDataStores = parameters.getValue ( "ShareDataStores" );
@@ -173,6 +174,16 @@ throws InvalidCommandParameterException {
                             message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
+
+    if ( (RunDiscovery != null) && (RunDiscovery.length() == 0) &&
+        !RunDiscovery.equalsIgnoreCase(_False) &&
+        !RunDiscovery.equalsIgnoreCase(_True) ) {
+        message = "The RunDiscovery parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify RunDiscovery as " + _False + " (default) or " + _True + ".") );
+    }
 
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() == 0) &&
         !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
@@ -239,8 +250,9 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(7);
+    List<String> validList = new ArrayList<>(8);
 	validList.add ( "InputFile" );
+	validList.add ( "RunDiscovery" );
     validList.add ( "ExpectedStatus" );
     validList.add ( "ShareProperties" );
     validList.add ( "ShareDataStores" );
@@ -295,6 +307,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int log_level = 3; // Level for non-user messages for log file.
 
 	CommandProcessor processor = getCommandProcessor();
+	TSCommandProcessor tsprocessor = (TSCommandProcessor)getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = Boolean.TRUE; // Default.
     try {
@@ -313,10 +326,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String RunDiscovery = parameters.getValue ( "RunDiscovery" );
-	// TODO SAM 2013-02-17 Enable as a full property (what should be default?
-	boolean runDiscovery = true;
-	if ( (RunDiscovery != null) && RunDiscovery.equalsIgnoreCase("False") ) {
-	    runDiscovery = false;
+	// Default to false because RunCommands command file is not edited from the RunCommands command.
+	boolean runDiscovery = false; 
+	if ( (RunDiscovery != null) && RunDiscovery.equalsIgnoreCase("True") ) {
+	    runDiscovery = true;
 	}
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
     String ShareProperties = parameters.getValue ( "ShareProperties" );
@@ -325,7 +338,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ShareDataStores = parameters.getValue ( "ShareDataStores" );
     if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
-        ShareDataStores = _Share;
+        ShareDataStores = _Share; // Default is to share datastores.
     }
     // TODO smalers 2022-06-21 this is not enabled.  Need to implement for each major output.  See AppendOutputFiles.
 	String AppendResults = parameters.getValue ( "AppendResults" );
@@ -359,25 +372,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Create a runner for the commands, which will create a new command processor:
 		// - the initial application properties from the current processor are passed to the new processor
 		TSCommandFileRunner runner = new TSCommandFileRunner (
-			((TSCommandProcessor)processor).getInitialPropList(),
-			((TSCommandProcessor)processor).getPluginCommandClasses());
-        // This will set the initial working directory of the runner to that of the command file.
-		runner.readCommandFile(InputFile_full, runDiscovery );
+			tsprocessor.getInitialPropList(),
+			tsprocessor.getPluginCommandClasses());
 
 		// Must set the datastores regardless of whether enabled because they are used by "@enabledif".
         TSCommandProcessor runnerProcessor = runner.getProcessor();
         if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
-            // All datastores are transferred.
+            // All datastores are shared:
+        	// - but do not reopen them
             runnerProcessor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
-            runnerProcessor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+            runnerProcessor.setDataStores(tsprocessor.getDataStores(), false);
             // Also share the datastore substitution map.
-            runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
+            runnerProcessor.setDatastoreSubstituteList(tsprocessor.getDataStoreSubstituteList());
+            if ( Message.isDebugOn ) {
+            	Message.printDebug(1, routine, "Shared " + runnerProcessor.getDataStores().size() + " datastores from the main processor.");
+            }
         }
+
+        // Load the command file:
+        // - this will set the initial working directory of the runner to that of the command file
+        // - commands may also depend on datastores that are loaded above
+		runner.readCommandFile(InputFile_full, runDiscovery );
 
 		// If the command file is not enabled, don't need to initialize or process.
 		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case.
-		Message.printStatus ( 2, routine,
-			"  Checking whether the command file is enabled: " + InputFile_full );
+		Message.printStatus ( 2, routine, "  Checking whether the command file is enabled: " + InputFile_full );
 		boolean isEnabled = runner.isCommandFileEnabled();
 		Message.printStatus ( 2, routine, "  Command file is enabled? " + isEnabled);
         // Default expected status of running command file is success.
@@ -394,9 +413,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
                 // All datastores are transferred.
                 runnerProcessor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
-                runnerProcessor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+                runnerProcessor.setDataStores(tsprocessor.getDataStores(), false);
                 // Also share the datastore substitution map.
-                runnerProcessor.setDatastoreSubstituteList(((TSCommandProcessor)processor).getDataStoreSubstituteList());
+                runnerProcessor.setDatastoreSubstituteList((tsprocessor.getDataStoreSubstituteList());
             }
             */
 
@@ -603,6 +622,7 @@ Return the string representation of the command.
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
 		"InputFile",
+		"RunDiscovery",
     	"ExpectedStatus",
     	//"ShareProperties",
     	"ShareDataStores",

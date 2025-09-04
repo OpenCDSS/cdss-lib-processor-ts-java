@@ -80,6 +80,7 @@ private RunCommands_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private String __working_dir = null;
 private JTextField __InputFile_JTextField = null;
+private SimpleJComboBox __RunDiscovery_JComboBox = null;
 private SimpleJComboBox __ExpectedStatus_JComboBox = null;
 //private SimpleJComboBox __ShareProperties_JComboBox = null;
 private SimpleJComboBox __ShareDataStores_JComboBox = null;
@@ -187,6 +188,7 @@ private void checkInput () {
 	// Create a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String RunDiscovery = __RunDiscovery_JComboBox.getSelected();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
@@ -197,6 +199,9 @@ private void checkInput () {
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( RunDiscovery.length() > 0 ) {
+        props.set ( "RunDiscovery", RunDiscovery );
+    }
     if ( ExpectedStatus.length() > 0 ) {
         props.set ( "ExpectedStatus", ExpectedStatus );
     }
@@ -231,6 +236,7 @@ In this case the command parameters have already been checked and no errors were
 */
 private void commitEdits () {
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String RunDiscovery = __RunDiscovery_JComboBox.getSelected();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
@@ -238,6 +244,7 @@ private void commitEdits () {
 	String WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
 	String FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile", InputFile );
+	__command.setCommandParameter ( "RunDiscovery", RunDiscovery );
     __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
     //__command.setCommandParameter ( "ShareProperties", ShareProperties );
     __command.setCommandParameter ( "ShareDataStores", ShareDataStores );
@@ -270,25 +277,25 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read a command file and run the commands using a separate command processor." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Parent command processor datastores can be shared with the processor for the command file." ),
-        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Results are cleared before processing each command file." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The (success/warning/failure) status from the command file is used for the RunCommands() command status." ),
-        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to run:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -312,6 +319,23 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 	}
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run discovery?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RunDiscovery_JComboBox = new SimpleJComboBox ( false );
+    __RunDiscovery_JComboBox.setToolTipText("Should discovery mode be run when loading the commands in the command file?");
+    List<String> discoveryChoices = new ArrayList<>();
+    discoveryChoices.add ( "" ); // Default.
+    discoveryChoices.add ( __command._False );
+    discoveryChoices.add ( __command._True );
+    __RunDiscovery_JComboBox.setData(discoveryChoices);
+    __RunDiscovery_JComboBox.select ( 0 );
+    __RunDiscovery_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RunDiscovery_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - run discovery on loaded commands (default=" + __command._False + ")."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -409,7 +433,7 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -429,7 +453,7 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status.
 	// Dialogs do not need to be resizable.
-	setResizable ( false );
+	setResizable ( true );
     super.setVisible( true );
 }
 
@@ -470,6 +494,7 @@ Refresh the command from the other text field contents.
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
     String InputFile = "";
+    String RunDiscovery = "";
     String ExpectedStatus = "";
     //String ShareProperties = "";
     String ShareDataStores = "";
@@ -482,6 +507,7 @@ private void refresh () {
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
 		InputFile = props.getValue ( "InputFile" );
+		RunDiscovery = props.getValue ( "RunDiscovery" );
         ExpectedStatus = props.getValue ( "ExpectedStatus" );
         //ShareProperties = props.getValue ( "ShareProperties" );
         ShareDataStores = props.getValue ( "ShareDataStores" );
@@ -491,6 +517,21 @@ private void refresh () {
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__RunDiscovery_JComboBox, RunDiscovery,JGUIUtil.NONE, null, null ) ) {
+            __RunDiscovery_JComboBox.select ( RunDiscovery );
+        }
+        else {
+            if ( (RunDiscovery == null) || RunDiscovery.equals("") ) {
+                // New command...select the default.
+                __RunDiscovery_JComboBox.select ( 0 );
+            }
+            else {
+            	// Bad user command.
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid RunDiscovery parameter \"" +
+                RunDiscovery + "\".  Correct or Cancel." );
+            }
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem(__ExpectedStatus_JComboBox, ExpectedStatus,JGUIUtil.NONE, null, null ) ) {
             __ExpectedStatus_JComboBox.select ( ExpectedStatus );
         }
@@ -563,6 +604,7 @@ private void refresh () {
 	}
 	// Regardless, reset the command from the fields.
 	InputFile = __InputFile_JTextField.getText().trim();
+    RunDiscovery = __RunDiscovery_JComboBox.getSelected();
     ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //ShareProperties = __ShareProperties_JComboBox.getSelected();
     ShareDataStores = __ShareDataStores_JComboBox.getSelected();
@@ -571,6 +613,7 @@ private void refresh () {
     FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "RunDiscovery=" + RunDiscovery );
     props.add ( "ExpectedStatus=" + ExpectedStatus );
     //props.add ( "ShareProperties=" + ShareProperties );
     props.add ( "ShareDataStores=" + ShareDataStores );

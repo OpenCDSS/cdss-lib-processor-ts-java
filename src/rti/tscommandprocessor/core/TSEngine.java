@@ -1233,7 +1233,8 @@ private boolean getCommandsShouldClearRunStatus () {
 }
 
 /**
-Return the list of data stores known to the TSEngine.
+Return the list of datastores known to the TSEngine.
+@return the list of datastores known to the TSEngine
 */
 protected List<DataStore> getDataStoreList() {
     return this.__dataStoreList;
@@ -5234,7 +5235,7 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld ) {
     	Message.printDebug(1, routine, "Setting datastore \"" + dataStore.getName() + "\"" );
     }
     int i = -1; // Datastore position.
-    for ( DataStore ds : __dataStoreList ) {
+    for ( DataStore ds : this.__dataStoreList ) {
     	++i;
         if ( ds.getName().equalsIgnoreCase(dataStore.getName())){
             // The input name of the current instance matches that of the instance in the list.
@@ -5249,14 +5250,13 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld ) {
                         	dmi.close();
                         }
                         // Replace the datastore and return.
-                        __dataStoreList.set(i, dataStore);
+                        this.__dataStoreList.set(i, dataStore);
                         return;
                     }
                 }
                 catch ( Exception e ) {
                     // Probably can ignore.
-                    Message.printWarning (3,routine,"Error closing datastore \"" + dataStore.getName() +
-                        "\" before reopening:");
+                    Message.printWarning (3,routine,"Error closing datastore \"" + dataStore.getName() + "\" before reopening:");
                     Message.printWarning (3,routine, e);
                 }
             }
@@ -5264,22 +5264,22 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld ) {
     }
 
     // Add a new instance to the list, alphabetized (ignore case).
-    if ( __dataStoreList.size() == 0 ) {
-    	__dataStoreList.add ( dataStore );
+    if ( this.__dataStoreList.size() == 0 ) {
+    	this.__dataStoreList.add ( dataStore );
     }
     else {
         int insertPos = -1;
         boolean added = false;
-	    for ( DataStore ds : __dataStoreList ) {
+	    for ( DataStore ds : this.__dataStoreList ) {
 	    	++insertPos;
 	    	if ( dataStore.getName().toUpperCase().compareTo(ds.getName().toUpperCase()) < 0 ) {
-	    		__dataStoreList.add(insertPos,dataStore);
+	    		this.__dataStoreList.add(insertPos,dataStore);
 	    		added = true;
 	    		break;
 	    	}
 	    }
 	    if ( !added ) {
-	    	__dataStoreList.add ( dataStore );
+	    	this.__dataStoreList.add ( dataStore );
 	    }
 	}
 }

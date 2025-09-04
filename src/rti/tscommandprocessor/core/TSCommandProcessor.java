@@ -85,7 +85,6 @@ import RTi.TS.TSSupplier;
 import riverside.datastore.DataStore;
 import riverside.datastore.DataStoreSubstitute;
 import riverside.datastore.WebServiceDataStore;
-import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands.
 
@@ -132,6 +131,7 @@ List of plugin command classes, which allow third-party commands to be recognize
 These are created in the TSTool main program.
 There is no need to have data in TSEngine because by the time TSEngine is used, commands are already created.
 */
+@SuppressWarnings("rawtypes")
 private List<Class> pluginCommandClassList = new Vector<>(); // Use Vector for thread-safe.
 
 /**
@@ -866,7 +866,7 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
 	String routine = null;
 	if ( Message.isDebugOn ) {
 		routine = getClass().getSimpleName() + ".getDataStoreForName";
-		Message.printDebug(1,routine,"Trying to match datastore \"" + name + "\".");
+		Message.printDebug(1,routine,"Trying to match datastore \"" + name + "\" in " + getDataStores().size() + " available datastores.");
 	}
 	// First see if there is a substitute for the datastore:
 	// - the requested name could be a substitute name
@@ -888,6 +888,9 @@ public DataStore getDataStoreForName ( String name, Class<?> dataStoreClass, boo
 	// Search the datastores for the requested name.
    	//Message.printStatus(2,routine, "  Checking " + getDataStores().size() + " datastores." );
 	for ( DataStore dataStore : getDataStores() ) {
+   		if ( Message.isDebugOn ) {
+   			Message.printDebug(1, routine, "Comparing requested datastore name \"" + name + "\" with available datastore \"" + dataStore.getName() + "\".");
+   		}
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
         	// Have a matching datastore.  Perform other checks.
     		if ( Message.isDebugOn ) {
@@ -4222,8 +4225,7 @@ throws IOException, FileNotFoundException {
 
 /**
 Run discovery on the command.
-This will, for example, make available a list of time series to be requested with the
-ObjectListProvider.getObjectList() method.
+This will, for example, make available a list of time series to be requested with the ObjectListProvider.getObjectList() method.
 @param command command that needs to be run in discovery mode
 */
 private void readCommandFile_RunDiscoveryOnCommand ( Command command ) {

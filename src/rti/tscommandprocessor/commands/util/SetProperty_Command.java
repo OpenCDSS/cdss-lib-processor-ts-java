@@ -391,7 +391,7 @@ public boolean editCommand ( JFrame parent ) {
 Return the property defined in discovery phase.
 */
 private Prop getDiscoveryProp () {
-    return __discovery_Prop;
+    return this.__discovery_Prop;
 }
 
 /**

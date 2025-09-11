@@ -346,8 +346,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	Object o_TSList = null;
+	PropList bean_PropList = null;
+	if ( bean != null ) {
+		bean_PropList = bean.getResultsPropList();
+		o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	}
 	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -375,7 +379,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
-	Object o_Indices = bean_PropList.getContents ( "Indices" );
+	Object o_Indices = null;
+	if ( bean_PropList != null ) {
+		o_Indices = bean_PropList.getContents ( "Indices" );
+	}
+
 	int [] tspos = null;
 	if ( o_Indices == null ) {
 		message = "Unable to find indices for time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";

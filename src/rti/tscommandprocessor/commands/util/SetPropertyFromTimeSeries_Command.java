@@ -379,11 +379,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                new CommandLogRecord(CommandStatusType.FAILURE,
 	                        message, "Report the problem to software support." ) );
 		}
+    	PropList bean_PropList = null;
+	   	Object o_TSList = null;
 	    if ( bean == null ) {
 	        Message.printStatus ( 2, routine, "Bean is null.");
 	    }
-		PropList bean_PropList = bean.getResultsPropList();
-		Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	    else {
+	    	bean_PropList = bean.getResultsPropList();
+	    	o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	    }
 		if ( o_TSList == null ) {
 			message = "Null TSToProcessList returned for processor request GetTimeSeriesToProcess(TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\").";
@@ -420,7 +424,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 		}
 
-		nts = tslist.size();
+		if ( tslist != null ) {
+			nts = tslist.size();
+		}
 		if ( nts == 0 ) {
 			message = "Unable to find time series using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 			if ( EnsembleID != null ) {

@@ -2327,6 +2327,11 @@ throws Exception {
     		// Don't use routine in messages. keep log messages shorter.
     		if ( !inBlockComment && ifStackOkToRun ) {
     			Message.printStatus ( 2, "", "-> Start processing command " + (iCommand + 1) + " of " + size + ": \"" + commandString + "\"" );
+    			if ( commandString.contains("${") ) { // } to match brackets in editor
+    				// Also print the expanded command to help with troubleshooting.
+    				Message.printStatus ( 2, "", "                  Expanded: " + (iCommand + 1) + " of " + size + ": \"" +
+    					TSCommandProcessorUtil.expandParameterValue(this.__ts_processor, command, commandString) + "\"" );
+    			}
     		}
             stopWatch.clear();
             stopWatch.start();

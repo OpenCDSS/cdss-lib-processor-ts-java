@@ -198,43 +198,52 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor,this,Folder)));
 	try {
-	    File folder = new File(Folder_full);
-	    if ( folder.exists() ) {
-	        // Folder exists so generate a warning if requested.
-	        message = "Folder exists: \"" + Folder_full + "\"";
-	        if ( IfFolderExists.equalsIgnoreCase(_Fail) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Verify that the folder should not exist or ignore the error."));
-	        }
-	        else if ( IfFolderExists.equalsIgnoreCase(_Warn) ) {
-	            Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-	                message, "Verify that the folder should not exist or ignore the warning."));
-	        }
-	    }
-	    else {
-	    	// Create the folder.
-	    	File parent = folder.getParentFile();
-	    	if ( !parent.exists() ) {
-	    		if ( CreateParentFolders.equalsIgnoreCase(_True) ) {
-	    			folder.mkdirs();
-	    		}
-	    		else {
-	    			message = "Parent folder does not exist.  Cannot create folder.";
-	    			Message.printWarning ( warning_level,
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-	                    message, "Create the parent folder or use CreateParentFolders=True parameter."));
-	    		}
-	    	}
-	    	else {
-	    		// Create the folder.
-	    		folder.mkdir();
-	    	}
-	    }
+		if ( Folder_full.contains("${") ) {
+			message = "Folder name contains unexpanded ${Property}- cannot create.";
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the property is defined at run time."));
+		}
+		else {
+			File folder = new File(Folder_full);
+			if ( folder.exists() ) {
+				// Folder exists so generate a warning if requested.
+				message = "Folder exists: \"" + Folder_full + "\"";
+				if ( IfFolderExists.equalsIgnoreCase(_Fail) ) {
+		            Message.printWarning ( warning_level,
+		                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Verify that the folder should not exist or ignore the error."));
+		        }
+		        else if ( IfFolderExists.equalsIgnoreCase(_Warn) ) {
+		            Message.printWarning ( warning_level,
+		                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+		                message, "Verify that the folder should not exist or ignore the warning."));
+		        }
+		    }
+		    else {
+		    	// Create the folder.
+		    	File parent = folder.getParentFile();
+		    	if ( !parent.exists() ) {
+		    		if ( CreateParentFolders.equalsIgnoreCase(_True) ) {
+		    			folder.mkdirs();
+		    		}
+		    		else {
+		    			message = "Parent folder does not exist.  Cannot create folder.";
+		    			Message.printWarning ( warning_level,
+		                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+		                    message, "Create the parent folder or use CreateParentFolders=True parameter."));
+		    		}
+		    	}
+		    	else {
+		    		// Create the folder.
+		    		folder.mkdir();
+		    	}
+		    }
+		}
 	}
     catch ( Exception e ) {
 		message = "Unexpected error creating folder \"" + Folder_full + "\" (" + e + ").";

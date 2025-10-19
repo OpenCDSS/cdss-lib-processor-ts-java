@@ -495,7 +495,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            Message.printWarning ( warning_level,
 	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 	            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(statusType,
-	                message, "Verify that the file exists at the time the command is run."));
+	                message, "Verify that the file exists at the time the command is run.  May be OK if created dynamically."));
 	            /*
 	        }
 	        else {

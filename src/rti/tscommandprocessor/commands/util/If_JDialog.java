@@ -72,6 +72,8 @@ private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
 private SimpleJComboBox __CompareAsStrings_JComboBox = null;
 private SimpleJComboBox __CompareAsVersions_JComboBox = null;
+private JTextField __DataStoreIsOk_JTextField = null;
+private JTextField __DataStoreIsNotOk_JTextField = null;
 private JTextField __FileExists_JTextField = null;
 private JTextField __FileDoesNotExist_JTextField = null;
 private JTextField __ObjectExists_JTextField = null;
@@ -91,11 +93,12 @@ private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
 
 // Tab number (0+), to allow selecting tabs based on parameters.
-private int fileTabNum = 1;
-private int objectTabNum = 2;
-private int propertyTabNum = 3;
-private int tableTabNum = 4;
-private int tsTabNum = 5;
+private int dataStoreTabNum = 1;
+private int fileTabNum = 2;
+private int objectTabNum = 3;
+private int propertyTabNum = 4;
+private int tableTabNum = 5;
+private int tsTabNum = 6;
 
 /**
 Command dialog editor constructor.
@@ -140,6 +143,8 @@ private void checkInput () {
     String Condition = __Condition_JTextArea.getText().trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
+    String DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
+    String DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
@@ -164,6 +169,12 @@ private void checkInput () {
     }
     if ( CompareAsVersions.length() > 0 ) {
         props.set ( "CompareAsVersions", CompareAsVersions );
+    }
+    if ( DataStoreIsOk.length() > 0 ) {
+        props.set ( "DataStoreIsOk", DataStoreIsOk );
+    }
+    if ( DataStoreIsNotOk.length() > 0 ) {
+        props.set ( "DataStoreIsNotOk", DataStoreIsNotOk );
     }
     if ( FileExists.length() > 0 ) {
         props.set ( "FileExists", FileExists );
@@ -222,6 +233,8 @@ private void commitEdits () {
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
+    String DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
+    String DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
@@ -239,6 +252,8 @@ private void commitEdits () {
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
     __command.setCommandParameter ( "CompareAsVersions", CompareAsVersions );
+    __command.setCommandParameter ( "DataStoreIsOk", DataStoreIsOk );
+    __command.setCommandParameter ( "DataStoreIsNotOk", DataStoreIsNotOk );
     __command.setCommandParameter ( "FileExists", FileExists );
     __command.setCommandParameter ( "FileDoesNotExist", FileDoesNotExist );
     __command.setCommandParameter ( "ObjectExists", ObjectExists );
@@ -372,6 +387,43 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(cond_JPanel, new JLabel(
         "Optional - compare values as versions (default = " + __command._False + ")."),
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for whether datastore is OK.
+    int yDatastore = -1;
+    JPanel datastore_JPanel = new JPanel();
+    datastore_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Datastore OK?", datastore_JPanel );
+
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel (
+        "The DataStoreIsOk and DataStoreIsNotOk parameters, if specified, check whether a datastore is enabled and the configuration is OK."),
+        0, ++yDatastore, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel (
+        "A workflow that depends on a datastore should only be run if the datastore is OK."),
+        0, ++yDatastore, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(datastore_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yDatastore, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel ( "If datastore is OK:" ),
+        0, ++yDatastore, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreIsOk_JTextField = new JTextField ( 40 );
+    __DataStoreIsOk_JTextField.setToolTipText("Specify a datastore name, can use ${Property}.");
+    __DataStoreIsOk_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(datastore_JPanel, __DataStoreIsOk_JTextField,
+        1, yDatastore, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel(
+        "Optional - If() will be true if the specified datastore is OK."),
+        3, yDatastore, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel ( "If datastore is not OK:" ),
+        0, ++yDatastore, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreIsNotOk_JTextField = new JTextField ( 40 );
+    __DataStoreIsNotOk_JTextField.setToolTipText("Specify a datastore name, can use ${Property}.");
+    __DataStoreIsNotOk_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(datastore_JPanel, __DataStoreIsNotOk_JTextField,
+        1, yDatastore, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(datastore_JPanel, new JLabel(
+        "Optional - If() will be true if the specified datastore is not OK."),
+        3, yDatastore, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for whether file exists.
     int yFile = -1;
@@ -662,6 +714,8 @@ private void refresh () {
 	String Condition = "";
 	String CompareAsStrings = "";
 	String CompareAsVersions = "";
+	String DataStoreIsOk = "";
+	String DataStoreIsNotOk = "";
 	String FileExists = "";
 	String FileDoesNotExist = "";
 	String ObjectExists = "";
@@ -683,6 +737,9 @@ private void refresh () {
 		Condition = props.getValue( "Condition" );
 		CompareAsStrings = props.getValue( "CompareAsStrings" );
 		CompareAsVersions = props.getValue( "CompareAsVersions" );
+		DataStoreIsOk = props.getValue( "DataStoreIsOk" );
+		DataStoreIsNotOk = props.getValue( "DataStoreIsNotOk" );
+		FileExists = props.getValue( "FileExists" );
 		FileExists = props.getValue( "FileExists" );
 		FileDoesNotExist = props.getValue( "FileDoesNotExist" );
 		ObjectExists = props.getValue( "ObjectExists" );
@@ -733,6 +790,18 @@ private void refresh () {
                 "Existing command references an invalid\nCompareAsVersions value \"" + CompareAsVersions +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
+            }
+        }
+        if ( DataStoreIsOk != null ) {
+            __DataStoreIsOk_JTextField.setText( DataStoreIsOk );
+            if ( !DataStoreIsOk.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.dataStoreTabNum);
+            }
+        }
+        if ( DataStoreIsNotOk != null ) {
+            __DataStoreIsNotOk_JTextField.setText( DataStoreIsNotOk );
+            if ( !DataStoreIsNotOk.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.dataStoreTabNum);
             }
         }
         if ( FileExists != null ) {
@@ -819,6 +888,8 @@ private void refresh () {
 	Condition = __Condition_JTextArea.getText().trim();
 	CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
 	CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
+    DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
+    DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
     FileExists = __FileExists_JTextField.getText().trim();
     FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
 	PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
@@ -837,6 +908,8 @@ private void refresh () {
     props.set ( "Condition", Condition ); // May contain = so handle differently.
     props.add ( "CompareAsStrings=" + CompareAsStrings );
     props.add ( "CompareAsVersions=" + CompareAsVersions );
+    props.add ( "DataStoreIsOk=" + DataStoreIsOk );
+    props.add ( "DataStoreIsNotOk=" + DataStoreIsNotOk );
     props.add ( "FileExists=" + FileExists );
     props.add ( "FileDoesNotExist=" + FileDoesNotExist );
     props.add ( "ObjectExists=" + ObjectExists );

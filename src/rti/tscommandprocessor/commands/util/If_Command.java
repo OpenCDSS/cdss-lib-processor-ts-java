@@ -29,6 +29,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
@@ -48,6 +49,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import riverside.datastore.DataStore;
 
 /**
 This class initializes, checks, and runs the If() command.
@@ -89,6 +91,8 @@ throws InvalidCommandParameterException {
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
 	String CompareAsVersions = parameters.getValue ( "CompareAsVersions" );
+	String DataStoreIsOk = parameters.getValue ( "DataStoreIsOk" );
+	String DataStoreIsNotOk = parameters.getValue ( "DataStoreIsNotOk" );
 	String FileExists = parameters.getValue ( "FileExists" );
 	String FileDoesNotExist = parameters.getValue ( "FileDoesNotExist" );
 	String ObjectExists = parameters.getValue ( "ObjectExists" );
@@ -109,6 +113,7 @@ throws InvalidCommandParameterException {
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	boolean conditionProvided = false;
+	boolean dataStoreIsOkProvided = false;
 	boolean fileExistsProvided = false;
 	boolean objectExistsProvided = false;
 	// Any of the property checks.
@@ -119,6 +124,9 @@ throws InvalidCommandParameterException {
 
 	if ( (Condition != null) && !Condition.isEmpty() ) {
 		conditionProvided = true;
+	}
+	if ( ((DataStoreIsOk != null) && !DataStoreIsOk.isEmpty()) || ((DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty()) ) {
+		dataStoreIsOkProvided = true;
 	}
 	if ( ((FileExists != null) && !FileExists.isEmpty()) || ((FileDoesNotExist != null) && !FileDoesNotExist.isEmpty()) ) {
 		fileExistsProvided = true;
@@ -151,9 +159,9 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( !conditionProvided && !fileExistsProvided && !objectExistsProvided &&
+    if ( !conditionProvided && !dataStoreIsOkProvided && !fileExistsProvided && !objectExistsProvided &&
    		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided && !tsHasDataProvided ) {
-        message = "A condition or check of file, object, property, table, or time series must be specified";
+        message = "A condition or check of datastore, file, object, property, table, or time series must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
@@ -176,11 +184,13 @@ throws InvalidCommandParameterException {
 	}
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(17);
+    List<String> validList = new ArrayList<>(19);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
 	validList.add ( "CompareAsVersions" );
+	validList.add ( "DataStoreIsOk" );
+	validList.add ( "DataStoreIsNotOk" );
 	validList.add ( "FileExists" );
 	validList.add ( "FileDoesNotExist" );
 	validList.add ( "ObjectExists" );
@@ -278,6 +288,14 @@ throws CommandWarningException, CommandException {
 	boolean compareAsVersions = false; // Default.
 	if ( (CompareAsVersions != null) && CompareAsVersions.equalsIgnoreCase(_True) ) {
 		compareAsVersions = true;
+	}
+	String DataStoreIsOk = parameters.getValue ( "DataStoreIsOk" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DataStoreIsOk = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreIsOk);
+	}
+	String DataStoreIsNotOk = parameters.getValue ( "DataStoreIsNotOk" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DataStoreIsNotOk = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreIsNotOk);
 	}
 	String FileExists = parameters.getValue ( "FileExists" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -720,6 +738,71 @@ throws CommandWarningException, CommandException {
                 new CommandLogRecord(CommandStatusType.SUCCESS,
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
+	    }
+	    if ( (DataStoreIsOk != null) && !DataStoreIsOk.isEmpty() ) {
+	    	// Get the matching datastore.
+	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsOk, null );
+	    	if ( dataStore != null ) {
+	    		if ( dataStore.getStatus() != 0 ) {
+	    			// Does not matter what the Condition had - the final result is false.
+	    			conditionEval = false;
+	    		}
+	    		else {
+	    			if ( (Condition != null) && !Condition.equals("") ) {
+	    				conditionEval = conditionEval & true;
+	    			}
+	    			else {
+	    				conditionEval = true;
+	    			}
+	    		}
+	    	}
+            else {
+            	// Datastore does not exist:
+            	// - treat the condition as false
+            	// - do not set a warning status on the command since it will interfere with the condition
+            	// - do output a warning to the log file
+            	conditionEval = false;
+            	message = "Unable to find datastore \"" + DataStoreIsOk + "\"";
+            	Message.printWarning(3,
+                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                	routine, message );
+            }
+            setConditionEval(conditionEval);
+	    }
+	    if ( (DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty() ) {
+	        // Check whether a datastore is OK- this is ANDed to the condition..
+	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsOk, null );
+	    	if ( dataStore != null ) {
+	    		if ( dataStore.getStatus() == 0  ) {
+	    			// Does not matter what the Condition had - the final result is false.
+	    			conditionEval = false;
+	    		}
+	    		else {
+	    			if ( (Condition != null) && !Condition.equals("") ) {
+	    				conditionEval = conditionEval & true;
+	    			}
+	    			else {
+	    				conditionEval = true;
+	    			}
+	    		}
+	    	}
+            else {
+            	// Datastore does not exist:
+            	// - so treat the condition as true since it is not OK
+            	// - do not set a warning status on the command since it will interfere with the condition
+            	// - do output a warning to the log file
+    			if ( (Condition != null) && !Condition.equals("") ) {
+    				conditionEval = conditionEval & true;
+    			}
+    			else {
+    				conditionEval = true;
+    			}
+            	message = "Unable to find datastore \"" + DataStoreIsOk + "\"";
+            	Message.printWarning(3,
+                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                	routine, message );
+            }
+            setConditionEval(conditionEval);
 	    }
 	    if ( (FileExists != null) && !FileExists.isEmpty() ) {
 	        // Check whether a file exists - this is ANDed to the condition..
@@ -1239,6 +1322,8 @@ public String toString ( PropList parameters ) {
 		"Condition",
 		"CompareAsStrings",
 		"CompareAsVersions",
+		"DataStoreIsOk",
+		"DataStoreIsNotOk",
 		"FileExists",
 		"FileDoesNotExist",
 		"ObjectExists",

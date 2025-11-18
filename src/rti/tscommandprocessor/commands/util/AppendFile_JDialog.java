@@ -236,7 +236,7 @@ public void actionPerformed( ActionEvent event ) {
 				}
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"PDFMerge_JDialog", "Error converting input file name to relative path." );
+				Message.printWarning ( 1,"AppendFile_JDialog", "Error converting input file name to relative path." );
 			}
 		}
 		refresh ();

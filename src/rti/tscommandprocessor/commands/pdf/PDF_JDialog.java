@@ -1,4 +1,4 @@
-// PDFMerge_JDialog - editor for PDFMerge command
+// PDF_JDialog - editor for PDF command
 
 /* NoticeStart
 
@@ -44,9 +44,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -60,8 +63,8 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 @SuppressWarnings("serial")
-public class PDFMerge_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+public class PDF_JDialog extends JDialog
+implements ActionListener, ChangeListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectory = "Abs";
 private final String __RemoveWorkingDirectory = "Rel";
@@ -74,14 +77,16 @@ private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
-private JTextField __InputFiles_JTextField = null;
-private JTextField __OutputFile_JTextField = null;
+private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox __PDFCommand_JComboBox = null;
+private JTextField __MergeInputFiles_JTextField = null;
+private JTextField __MergeOutputFile_JTextField = null;
 private SimpleJComboBox __IfNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private PDFMerge_Command __command = null;
+private PDF_Command __command = null;
 private boolean __ok = false; // Whether the user has pressed OK to close the dialog.
 
 /**
@@ -89,7 +94,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public PDFMerge_JDialog ( JFrame parent, PDFMerge_Command command ) {
+public PDF_JDialog ( JFrame parent, PDF_Command command ) {
 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -101,7 +106,11 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event ) {
 	Object o = event.getSource();
 
-	if ( o == __browseInput_JButton ) {
+    if ( o == this.__PDFCommand_JComboBox ) {
+    	setTabForPDFCommand();
+    	refresh();
+    }
+    else if ( o == __browseInput_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
@@ -124,17 +133,17 @@ public void actionPerformed( ActionEvent event ) {
 			if (path != null) {
 				// Convert path to relative path by default.
 				try {
-					if ( __InputFiles_JTextField.getText().isEmpty() ) {
+					if ( __MergeInputFiles_JTextField.getText().isEmpty() ) {
 						// Set.
-						__InputFiles_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+						__MergeInputFiles_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 					}
 					else {
 						// Append.
-						__InputFiles_JTextField.setText(__InputFiles_JTextField.getText() + "," + IOUtil.toRelativePath(__working_dir, path));
+						__MergeInputFiles_JTextField.setText(__MergeInputFiles_JTextField.getText() + "," + IOUtil.toRelativePath(__working_dir, path));
 					}
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1, "PDFMerge", "Error converting file to relative path." );
+					Message.printWarning ( 1, "PDF", "Error converting file to relative path." );
 				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
@@ -164,10 +173,10 @@ public void actionPerformed( ActionEvent event ) {
             if (path != null) {
 				// Convert path to relative path by default.
 				try {
-					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+					__MergeOutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
 				}
 				catch ( Exception e ) {
-					Message.printWarning ( 1, "PDFMerge", "Error converting file to relative path." );
+					Message.printWarning ( 1, "PDF", "Error converting file to relative path." );
 				}
                 JGUIUtil.setLastFileDialogDirectory(directory);
                 refresh();
@@ -178,10 +187,10 @@ public void actionPerformed( ActionEvent event ) {
 		response ( false );
 	}
 	else if ( o == __clearInput_JButton ) {
-		__InputFiles_JTextField.setText("");
+		__MergeInputFiles_JTextField.setText("");
 	}
 	else if ( o == __help_JButton ) {
-		HelpViewer.getInstance().showHelp("command", "PDFMerge");
+		HelpViewer.getInstance().showHelp("command", "PDF");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -191,7 +200,7 @@ public void actionPerformed( ActionEvent event ) {
 		}
 	}
 	else if ( o == __pathInput_JButton ) {
-		String inputFiles = __InputFiles_JTextField.getText();
+		String inputFiles = __MergeInputFiles_JTextField.getText();
 		if ( __pathInput_JButton.getText().equals(__AddWorkingDirectory) ) {
 			if ( inputFiles.contains(",") ) {
 				// Split.
@@ -203,12 +212,12 @@ public void actionPerformed( ActionEvent event ) {
 					}
 					b.append (IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(__working_dir,part ), true) );
 				}
-				__InputFiles_JTextField.setText (b.toString());
+				__MergeInputFiles_JTextField.setText (b.toString());
 			}
 			else {
 				// Single file.
-				__InputFiles_JTextField.setText (IOUtil.verifyPathForOS(
-					IOUtil.toAbsolutePath(__working_dir,__InputFiles_JTextField.getText() ), true) );
+				__MergeInputFiles_JTextField.setText (IOUtil.verifyPathForOS(
+					IOUtil.toAbsolutePath(__working_dir,__MergeInputFiles_JTextField.getText() ), true) );
 			}
 		}
 		else if ( __pathInput_JButton.getText().equals(__RemoveWorkingDirectory) ) {
@@ -223,31 +232,31 @@ public void actionPerformed( ActionEvent event ) {
 						}
 						b.append (IOUtil.verifyPathForOS(IOUtil.toRelativePath(__working_dir,part ), true) );
 					}
-					__InputFiles_JTextField.setText (b.toString());
+					__MergeInputFiles_JTextField.setText (b.toString());
 				}
 				else {
 					// Single file.
-					__InputFiles_JTextField.setText ( IOUtil.verifyPathForOS(
-						IOUtil.toRelativePath ( __working_dir, __InputFiles_JTextField.getText() ), true) );
+					__MergeInputFiles_JTextField.setText ( IOUtil.verifyPathForOS(
+						IOUtil.toRelativePath ( __working_dir, __MergeInputFiles_JTextField.getText() ), true) );
 				}
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"PDFMerge_JDialog", "Error converting input file name to relative path." );
+				Message.printWarning ( 1,"PDF_JDialog", "Error converting input file name to relative path." );
 			}
 		}
 		refresh ();
 	}
     else if ( o == __pathOutput_JButton ) {
         if ( __pathOutput_JButton.getText().equals(__AddWorkingDirectory) ) {
-            __OutputFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__OutputFile_JTextField.getText() ) );
+            __MergeOutputFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__MergeOutputFile_JTextField.getText() ) );
         }
         else if ( __pathOutput_JButton.getText().equals(__RemoveWorkingDirectory) ) {
             try {
-                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
-                        __OutputFile_JTextField.getText() ) );
+                __MergeOutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+                        __MergeOutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 1,"PDFMerge_JDialog", "Error converting output file name to relative path." );
+                Message.printWarning ( 1,"PDF_JDialog", "Error converting output file name to relative path." );
             }
         }
         refresh ();
@@ -265,15 +274,19 @@ This should be called before response() is allowed to complete.
 private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
-	String InputFiles = __InputFiles_JTextField.getText().trim();
-	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String PDFCommand = __PDFCommand_JComboBox.getSelected();
+	String MergeInputFiles = __MergeInputFiles_JTextField.getText().trim();
+	String MergeOutputFile = __MergeOutputFile_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__error_wait = false;
-	if ( InputFiles.length() > 0 ) {
-		props.set ( "InputFiles", InputFiles );
+	if ( (PDFCommand != null) && !PDFCommand.isEmpty() ) {
+		props.set ( "PDFCommand", PDFCommand );
 	}
-    if ( OutputFile.length() > 0 ) {
-        props.set ( "OutputFile", OutputFile );
+	if ( MergeInputFiles.length() > 0 ) {
+		props.set ( "MergeInputFiles", MergeInputFiles );
+	}
+    if ( MergeOutputFile.length() > 0 ) {
+        props.set ( "MergeOutputFile", MergeOutputFile );
     }
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
@@ -292,11 +305,13 @@ private void checkInput () {
 Commit the edits to the command.  In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits () {
-	String InputFiles = __InputFiles_JTextField.getText().trim();
-    String OutputFile = __OutputFile_JTextField.getText().trim();
+	String PDFCommand = __PDFCommand_JComboBox.getSelected();
+	String MergeInputFiles = __MergeInputFiles_JTextField.getText().trim();
+    String MergeOutputFile = __MergeOutputFile_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
-	__command.setCommandParameter ( "InputFiles", InputFiles );
-	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "PDFCommand", PDFCommand );
+	__command.setCommandParameter ( "MergeInputFiles", MergeInputFiles );
+	__command.setCommandParameter ( "MergeOutputFile", MergeOutputFile );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
@@ -305,7 +320,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, PDFMerge_Command command ) {
+private void initialize ( JFrame parent, PDF_Command command ) {
 	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 
@@ -322,24 +337,21 @@ private void initialize ( JFrame parent, PDFMerge_Command command ) {
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
 
+	// Seems to be working with Java 11 TSTool and PDFBox 3.0.6 library.
+	/*
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"<html><b>This command is under development and may not be functional as documented.</b></html>"),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"<html><b>If the TSTool interface command editor does not work, try loading or editing a command other than PDFMerge, and then use PDFMerge command.</b></html>"),
+		"<html><b>If the TSTool interface command editor does not work, try loading or editing a command other than PDF, and then use PDF command.</b></html>"),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		*/
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Merge the contents of multiple PDF files into an output file." ),
+		"This command manipulates PDF files using the Apache Foundation's PDFBox software package." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command uses the Apache Foundation's PDFBox software." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The input file can be a single file, all files in a folder (*), all files matching an extension (*.pdf), or a list of file patterns separated by commas." ),
-        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
-    		"It is recommended that the file name is specified relative to the working directory, which is:"),
+    		"It is recommended that file names are specified relative to the working directory, which is:"),
     		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
     		"    " + __working_dir),
@@ -348,54 +360,93 @@ private void initialize ( JFrame parent, PDFMerge_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "PDF command:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__PDFCommand_JComboBox = new SimpleJComboBox ( false );
+	__PDFCommand_JComboBox.setToolTipText("PDF command to execute.");
+	List<String> commandChoices = PDFCommandType.getChoicesAsStrings(false);
+	__PDFCommand_JComboBox.setData(commandChoices);
+	__PDFCommand_JComboBox.select ( 0 );
+	__PDFCommand_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PDFCommand_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - PDF command to run (see tabs below)."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    __main_JTabbedPane = new JTabbedPane ();
+    __main_JTabbedPane.addChangeListener(this);
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for 'Merge' parameters.
+    int yMergeFiles = -1;
+    JPanel mergeFiles_JPanel = new JPanel();
+    mergeFiles_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Merge", mergeFiles_JPanel );
+
+    JGUIUtil.addComponent(mergeFiles_JPanel, new JLabel (
+		"Merge the contents of multiple PDF files into an output PDF file." ),
+		0, ++yMergeFiles, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mergeFiles_JPanel, new JLabel (
+        "The input file can be a single file, all files in a folder (*), all files matching an extension (*.pdf), or a list of file patterns separated by commas." ),
+        0, ++yMergeFiles, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mergeFiles_JPanel, new JLabel (
+        "Files that do not end in 'pdf' will be removed from the merge list."),
+        0, ++yMergeFiles, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mergeFiles_JPanel, new JLabel (
+        "The order of files will be as specified with 'MergeInputFiles', and wildcard results are sorted alphabetically."),
+        0, ++yMergeFiles, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mergeFiles_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+    	0, ++yMergeFiles, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file(s):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputFiles_JTextField = new JTextField ( 50 );
-	__InputFiles_JTextField.setToolTipText("Specify the input file(s) using a single file, *, or *.pdf pattern, can use ${Property} notation");
-	__InputFiles_JTextField.addKeyListener ( this );
+	__MergeInputFiles_JTextField = new JTextField ( 50 );
+	__MergeInputFiles_JTextField.setToolTipText("Specify the input file(s) using a single file, *, or *.pdf pattern, can use ${Property} notation");
+	__MergeInputFiles_JTextField.addKeyListener ( this );
     // Input file layout fights back with other rows so put in its own panel.
-	JPanel InputFiles_JPanel = new JPanel();
-	InputFiles_JPanel.setLayout(new GridBagLayout());
-    JGUIUtil.addComponent(InputFiles_JPanel, __InputFiles_JTextField,
+	JPanel MergeInputFiles_JPanel = new JPanel();
+	MergeInputFiles_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(MergeInputFiles_JPanel, __MergeInputFiles_JTextField,
 		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseInput_JButton = new SimpleJButton ( "...", this );
 	__browseInput_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(InputFiles_JPanel, __browseInput_JButton,
+    JGUIUtil.addComponent(MergeInputFiles_JPanel, __browseInput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path.
 		__pathInput_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
-		JGUIUtil.addComponent(InputFiles_JPanel, __pathInput_JButton,
+		JGUIUtil.addComponent(MergeInputFiles_JPanel, __pathInput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	__clearInput_JButton = new SimpleJButton ( "Clear", this );
 	__clearInput_JButton.setToolTipText("Clear input files");
-    JGUIUtil.addComponent(InputFiles_JPanel, __clearInput_JButton,
+    JGUIUtil.addComponent(MergeInputFiles_JPanel, __clearInput_JButton,
 		3, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	JGUIUtil.addComponent(main_JPanel, InputFiles_JPanel,
+	JGUIUtil.addComponent(main_JPanel, MergeInputFiles_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.setToolTipText("Specify the output file, can be the same as an input file, can use ${Property} notation");
-    __OutputFile_JTextField.addKeyListener ( this );
+    __MergeOutputFile_JTextField = new JTextField ( 50 );
+	__MergeOutputFile_JTextField.setToolTipText("Specify the output file, can be the same as an input file, can use ${Property} notation");
+    __MergeOutputFile_JTextField.addKeyListener ( this );
     // Output file layout fights back with other rows so put in its own panel.
-	JPanel OutputFile_JPanel = new JPanel();
-	OutputFile_JPanel.setLayout(new GridBagLayout());
-    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
+	JPanel MergeOutputFile_JPanel = new JPanel();
+	MergeOutputFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(MergeOutputFile_JPanel, __MergeOutputFile_JTextField,
 		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseOutput_JButton = new SimpleJButton ( "...", this );
 	__browseOutput_JButton.setToolTipText("Browse for file");
-    JGUIUtil.addComponent(OutputFile_JPanel, __browseOutput_JButton,
+    JGUIUtil.addComponent(MergeOutputFile_JPanel, __browseOutput_JButton,
 		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path.
 		__pathOutput_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
-		JGUIUtil.addComponent(OutputFile_JPanel, __pathOutput_JButton,
+		JGUIUtil.addComponent(MergeOutputFile_JPanel, __pathOutput_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
+	JGUIUtil.addComponent(main_JPanel, MergeOutputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
@@ -480,21 +531,39 @@ Refresh the command from the other text field contents.
 */
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
-	String InputFiles = "";
-	String OutputFile = "";
+	String PDFCommand = "";
+	String MergeInputFiles = "";
+	String MergeOutputFile = "";
 	String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
         parameters = __command.getCommandParameters();
-		InputFiles = parameters.getValue ( "InputFiles" );
-		OutputFile = parameters.getValue ( "OutputFile" );
+		PDFCommand = parameters.getValue ( "PDFCommand" );
+		MergeInputFiles = parameters.getValue ( "MergeInputFiles" );
+		MergeOutputFile = parameters.getValue ( "MergeOutputFile" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
-		if ( InputFiles != null ) {
-			__InputFiles_JTextField.setText ( InputFiles );
+		if ( JGUIUtil.isSimpleJComboBoxItem(__PDFCommand_JComboBox, PDFCommand,JGUIUtil.NONE, null, null ) ) {
+			__PDFCommand_JComboBox.select ( PDFCommand );
 		}
-        if ( OutputFile != null ) {
-            __OutputFile_JTextField.setText ( OutputFile );
+		else {
+            if ( (PDFCommand == null) || PDFCommand.equals("") ) {
+				// New command...select the default.
+				__PDFCommand_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"PDFCommand parameter \"" +	PDFCommand +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
+		if ( MergeInputFiles != null ) {
+			__MergeInputFiles_JTextField.setText ( MergeInputFiles );
+		}
+        if ( MergeOutputFile != null ) {
+            __MergeOutputFile_JTextField.setText ( MergeOutputFile );
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
 			__IfNotFound_JComboBox.select ( IfNotFound );
@@ -515,19 +584,21 @@ private void refresh () {
 	}
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
-	InputFiles = __InputFiles_JTextField.getText().trim();
-	OutputFile = __OutputFile_JTextField.getText().trim();
+	PDFCommand = __PDFCommand_JComboBox.getSelected();
+	MergeInputFiles = __MergeInputFiles_JTextField.getText().trim();
+	MergeOutputFile = __MergeOutputFile_JTextField.getText().trim();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
-	props.add ( "InputFiles=" + InputFiles );
-	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "PDFCommand=" + PDFCommand );
+	props.add ( "MergeInputFiles=" + MergeInputFiles );
+	props.add ( "MergeOutputFile=" + MergeOutputFile );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props).trim() );
 	// Check the path and determine what the label on the path button should be.
 	if ( __pathInput_JButton != null ) {
-		if ( (InputFiles != null) && !InputFiles.isEmpty() ) {
+		if ( (MergeInputFiles != null) && !MergeInputFiles.isEmpty() ) {
 			__pathInput_JButton.setEnabled ( true );
-			File f = new File ( InputFiles );
+			File f = new File ( MergeInputFiles );
 			if ( f.isAbsolute() ) {
 				__pathInput_JButton.setText ( __RemoveWorkingDirectory );
 				__pathInput_JButton.setToolTipText("Change path to relative to command file");
@@ -542,9 +613,9 @@ private void refresh () {
 		}
 	}
     if ( __pathOutput_JButton != null ) {
-		if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
+		if ( (MergeOutputFile != null) && !MergeOutputFile.isEmpty() ) {
 			__pathOutput_JButton.setEnabled ( true );
-			File f = new File ( OutputFile );
+			File f = new File ( MergeOutputFile );
 			if ( f.isAbsolute() ) {
 				__pathOutput_JButton.setText ( __RemoveWorkingDirectory );
 				__pathOutput_JButton.setToolTipText("Change path to relative to command file");
@@ -577,6 +648,24 @@ public void response ( boolean ok ) {
 	// Now close out.
 	setVisible( false );
 	dispose();
+}
+
+/**
+ * Set the parameter tab based on the selected command.
+ */
+private void setTabForPDFCommand() {
+	String command = __PDFCommand_JComboBox.getSelected();
+	if ( command.equalsIgnoreCase("" + PDFCommandType.MERGE_FILES) ) {
+		__main_JTabbedPane.setSelectedIndex(0);
+	}
+}
+
+/**
+ * Handle JTabbedPane changes.
+ */
+public void stateChanged ( ChangeEvent event ) {
+	//JTabbedPane sourceTabbedPane = (JTabbedPane)event.getSource();
+	//int index = sourceTabbedPane.getSelectedIndex();
 }
 
 /**

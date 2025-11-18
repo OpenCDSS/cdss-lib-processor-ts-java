@@ -1,4 +1,4 @@
-// PDFMerge_Command - This class initializes, checks, and runs the PDFMerge() command.
+// PDF_Command - This class initializes, checks, and runs the PDF() command.
 
 /* NoticeStart
 
@@ -27,11 +27,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JFrame;
 
-//import org.apache.pdfbox.multipdf.PDFMergerUtility;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -52,9 +53,9 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 
 /**
-This class initializes, checks, and runs the PDFMerge() command.
+This class initializes, checks, and runs the PDF() command.
 */
-public class PDFMerge_Command extends AbstractCommand
+public class PDF_Command extends AbstractCommand
 implements Command, FileGenerator
 {
 
@@ -68,14 +69,14 @@ protected final String _Fail = "Fail";
 /**
 Output file that is created by this command.
 */
-private File __OutputFile_File = null;
+private File __MergeOutputFile_File = null;
 
 /**
 Constructor.
 */
-public PDFMerge_Command () {
+public PDF_Command () {
 	super();
-	setCommandName ( "PDFMerge" );
+	setCommandName ( "PDF" );
 }
 
 /**
@@ -87,8 +88,9 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
-	String InputFiles = parameters.getValue ( "InputFiles" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
+	String PDFCommand = parameters.getValue ( "PDFCommand" );
+	String MergeInputFiles = parameters.getValue ( "MergeInputFiles" );
+    String MergeOutputFile = parameters.getValue ( "MergeOutputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
@@ -96,17 +98,36 @@ throws InvalidCommandParameterException {
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
+	PDFCommandType s3Command = null;
+	if ( (PDFCommand == null) || PDFCommand.isEmpty() ) {
+		message = "The PDF command must be specified.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the PDF command."));
+	}
+	else {
+		s3Command = PDFCommandType.valueOfIgnoreCase(PDFCommand);
+		if ( s3Command == null ) {
+			message = "The PDF command (" + PDFCommand + ") is invalid.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid PDF command."));
+		}
+	}
+
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
-	if ( (InputFiles == null) || InputFiles.isEmpty() ) {
+	if ( (MergeInputFiles == null) || MergeInputFiles.isEmpty() ) {
 		message = "The input file must be specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the input file."));
 	}
-    if ( (OutputFile == null) || OutputFile.isEmpty() ) {
+    if ( (MergeOutputFile == null) || MergeOutputFile.isEmpty() ) {
         message = "The output file must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -125,9 +146,10 @@ throws InvalidCommandParameterException {
 		}
 	}
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(3);
-	validList.add ( "InputFiles" );
-	validList.add ( "OutputFile" );
+	List<String> validList = new ArrayList<>(4);
+	validList.add ( "PDFCommand" );
+	validList.add ( "MergeInputFiles" );
+	validList.add ( "MergeOutputFile" );
 	validList.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -142,19 +164,18 @@ throws InvalidCommandParameterException {
 /**
  * Do the merge.
  */
-private int doMerge ( String OutputFile_full, String IfNotFound, List<File> fileList,
+private int doMerge ( String MergeOutputFile_full, String IfNotFound, List<File> fileList,
 	CommandStatus status, String commandTag, int warningLevel, int warningCount )
 	throws Exception {
-	//String routine = getClass().getSimpleName() + ".doMerge";
-	//String message;
+	String routine = getClass().getSimpleName() + ".doMerge";
+	String message;
 
-	/*
 	// Instantiate the PDFMergerUtility class.
 	PDFMergerUtility pdfMerger = new PDFMergerUtility();
-		
-	//Setting the destination file
-	pdfMerger.setDestinationFileName(OutputFile_full);
-		
+
+	// Set the destination file.
+	pdfMerger.setDestinationFileName(MergeOutputFile_full);
+
 	// Add the source files to merge.
 	for ( File file : fileList ) {
 		if ( file.exists() ) {
@@ -181,12 +202,11 @@ private int doMerge ( String OutputFile_full, String IfNotFound, List<File> file
 			}
 		}
 	}
-		
+
 	// Merge the added documents.
 	//MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
 	pdfMerger.mergeDocuments(null);
-	*/
-	
+
 	return warningCount;
 }
 
@@ -197,7 +217,7 @@ Edit the command.
 */
 public boolean editCommand ( JFrame parent ) {
 	// The command will be modified if changed.
-	return (new PDFMerge_JDialog ( parent, this )).ok();
+	return (new PDF_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -205,17 +225,18 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList () {
     List<File> list = new ArrayList<>(1);
-    if ( getOutputFile() != null ) {
-        list.add ( getOutputFile() );
+    if ( getMergeOutputFile() != null ) {
+        list.add ( getMergeOutputFile() );
     }
     return list;
 }
 
 /**
-Return the output file generated by this file.  This method is used internally.
+Return the output file generated by this command for the Merge.  This method is used internally.
+Return the output file generated by this command for the Merge.  This method is used internally.
 */
-private File getOutputFile () {
-    return __OutputFile_File;
+private File getMergeOutputFile () {
+    return __MergeOutputFile_File;
 }
 
 /**
@@ -251,10 +272,14 @@ CommandWarningException, CommandException {
 	}
 
     // Clear the output file.
-    setOutputFile ( null );
+    setMergeOutputFile ( null );
 
-	String InputFiles = parameters.getValue ( "InputFiles" );
-	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below.
+	String PDFCommand = parameters.getValue ( "PDFCommand" );
+	PDFCommandType pdfCommand = PDFCommandType.valueOfIgnoreCase(PDFCommand);
+
+	// Merge.
+	String MergeInputFiles = parameters.getValue ( "MergeInputFiles" );
+	String MergeOutputFile = parameters.getValue ( "MergeOutputFile" ); // Expanded below.
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default.
@@ -263,14 +288,14 @@ CommandWarningException, CommandException {
 	// Expand to a list of files.
 	// First handle list of file patterns separated by commas.
 	String [] parts = new String[0];
-	if ( InputFiles.contains(",") ) {
+	if ( MergeInputFiles.contains(",") ) {
 		// Matching a list of files or patterns in a folder.
-		parts = InputFiles.split(",");
+		parts = MergeInputFiles.split(",");
 	}
 	else {
 		// Single file pattern.
 		parts = new String[1];
-		parts[0] = InputFiles;
+		parts[0] = MergeInputFiles;
 	}
 
 	// Loop through the parts to create the final list of files.
@@ -281,7 +306,7 @@ CommandWarningException, CommandException {
 		String partFull = IOUtil.verifyPathForOS(
        		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
        			TSCommandProcessorUtil.expandParameterValue(processor,this,part) ) ).replace("\\", "/");
-		if ( !StringUtil.containsAny(partFull, "*{?[", false) ) {
+		if ( !StringUtil.containsAny(partFull, "*{?[", false) ) { // } to allow editor bracket matching
 	    	// Processing a single file so don't need to deal with glob wildcards.
 			Message.printStatus(2,routine,"Adding single file: " + partFull);
 	    	fileList.add(Paths.get(partFull).toFile());
@@ -292,7 +317,15 @@ CommandWarningException, CommandException {
 			Message.printStatus(2,routine,"Getting files for pattern: " + pattern);
 			try {
 				List<File> partFileList = IOUtil.getFilesMatchingPattern(pattern);
-				fileList.addAll(partFileList);
+				// Convert to strings to sort.
+				List<String> partFileStringList = new ArrayList<>();
+				for ( File partFile : partFileList ) {
+					partFileStringList.add(partFile.getAbsolutePath());
+				}
+				Collections.sort(partFileStringList, String.CASE_INSENSITIVE_ORDER);
+				for ( String partFileString : partFileStringList ) {
+					fileList.add(new File(partFileString));
+				}
 			}
 			catch ( IOException e ) {
 				message = "Error getting list of files for pattern: " + pattern;
@@ -312,9 +345,20 @@ CommandWarningException, CommandException {
 		}
 	}
 
+	// Remove files that are not PDF.
+	if ( fileList.size() > 0 ) {
+		for ( int i = fileList.size() - 1; i >= 0; i-- ) {
+			File file = fileList.get(i);
+			if ( ! file.getName().toUpperCase().endsWith("PDF") ) {
+				// File does not end in PDF so remove from the merge list to avoid errors.
+				fileList.remove(i);
+			}
+		}
+	}
+
 	if ( fileList.size() == 0 ) {
 		// No text and no files.
-	    message = "Unable to match any files using InputFiles=\"" + InputFiles + "\"";
+	    message = "Unable to match any PDF files using MergeInputFiles=\"" + MergeInputFiles + "\"";
 	    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
@@ -332,7 +376,7 @@ CommandWarningException, CommandException {
 	    message = "Matched " + fileList.size() + " files.";
 	    Message.printStatus(2, routine, message);
 	}
-	
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level,
@@ -342,47 +386,53 @@ CommandWarningException, CommandException {
 
 	// Process the files and append text.  Each input file is opened to scan the file.  The output file is opened once in append mode.
 
-	String OutputFile_full = OutputFile;
+	// Merge.
+	String MergeOutputFile_full = MergeOutputFile;
+
 	try {
-		OutputFile_full = IOUtil.verifyPathForOS(
-	    	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-	        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile) ) );
+		if ( pdfCommand == PDFCommandType.MERGE_FILES ) {
+			MergeOutputFile_full = IOUtil.verifyPathForOS(
+	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        		TSCommandProcessorUtil.expandParameterValue(processor,this,MergeOutputFile) ) );
 
-		// The PDFBox code might mess with Swing fonts, for example odd errors loading the command.
-		// ChatGPT suggested running in a thread but this does not seem to solve the problem.
-		// Leave in for now and deal with it later.
-		// It seems that loading a different command file first and then the PDFMerge command always works?
-		boolean doSeparateThread = false;
-		if ( doSeparateThread ) {
-			Thread pdfThread = new Thread (() -> {
+			// The PDFBox code might mess with Swing fonts, for example odd errors loading the command.
+			// ChatGPT suggested running in a thread but this does not seem to solve the problem.
+			// Leave in for now and deal with it later.
+			// It seems that loading a different command file first and then the PDF Merge command always works?
+			boolean doSeparateThread = false;
+			if ( doSeparateThread ) {
+				Thread pdfThread = new Thread (() -> {
+					try {
+						final String MergeOutputFile_full_final = IOUtil.verifyPathForOS(
+							IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+								TSCommandProcessorUtil.expandParameterValue(processor,this,MergeOutputFile) ) );
+						final String IfNotFound_final = "";
+						final int warning_count_final = 0;
+						doMerge ( MergeOutputFile_full_final, IfNotFound_final, fileList, status, command_tag, warning_level, warning_count_final );
+					}
+					catch ( Exception e ) {
+				}
+				});
+				pdfThread.start();
 				try {
-					final String OutputFile_full_final = IOUtil.verifyPathForOS(
-						IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-							TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile) ) );
-					final String IfNotFound_final = "";
-					final int warning_count_final = 0;
-					doMerge ( OutputFile_full_final, IfNotFound_final, fileList, status, command_tag, warning_level, warning_count_final );
+					pdfThread.join();
 				}
-				catch ( Exception e ) {
+				catch ( InterruptedException e ) {
 				}
-			});
-			pdfThread.start();
-			try {
-				pdfThread.join();
 			}
-			catch ( InterruptedException e ) {
+			else {
+				// Run in the same thread.
+				doMerge ( MergeOutputFile_full, IfNotFound, fileList, status, command_tag, warning_level, warning_count );
 			}
-		}
-		else {
-			// Run in the same thread.
-			doMerge ( OutputFile_full, IfNotFound, fileList, status, command_tag, warning_level, warning_count );
-		}
 
-    	// Save the output file name.
-    	setOutputFile ( new File(OutputFile_full));
+    		// Save the output file name.
+    		setMergeOutputFile ( new File(MergeOutputFile_full));
+		}
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error merging PDF file(s) as \"" + OutputFile_full + "\" (" + e + ").";
+		if ( pdfCommand == PDFCommandType.MERGE_FILES ) {
+			message = "Unexpected error merging PDF file(s) as \"" + MergeOutputFile_full + "\" (" + e + ").";
+		}
 		Message.printWarning ( warning_level,
   			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
@@ -407,9 +457,10 @@ CommandWarningException, CommandException {
 
 /**
 Set the output file that is created by this command.  This is only used internally.
+@param file PDF merge output file to create
 */
-private void setOutputFile ( File file ) {
-    __OutputFile_File = file;
+private void setMergeOutputFile ( File file ) {
+    __MergeOutputFile_File = file;
 }
 
 /**
@@ -419,8 +470,9 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
-		"InputFiles",
-		"OutputFile",
+		"PDFCommand",
+		"MergeInputFiles",
+		"MergeOutputFile",
 		"IfNotFound"
 	};
 	return this.toString(parameters, parameterOrder);

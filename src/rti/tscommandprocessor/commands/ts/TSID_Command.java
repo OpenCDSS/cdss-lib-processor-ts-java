@@ -430,6 +430,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Set the list of time series read in discovery phase.
+@param discoveryTSList the list of time series read in discovery mode
 */
 private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;

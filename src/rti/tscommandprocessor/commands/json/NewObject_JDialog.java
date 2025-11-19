@@ -30,9 +30,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -61,7 +64,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 @SuppressWarnings("serial")
 public class NewObject_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, ChangeListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton __browse_JButton = null;
@@ -71,6 +74,7 @@ private boolean __first_time = true; // Indicate first time display.
 private JTextArea __command_JTextArea=null;
 private JTextField __ObjectID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __JSONText_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -102,10 +106,12 @@ public void actionPerformed(ActionEvent event) {
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read.
 		JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle( "Select JSON File");
+        fc.setDialogTitle( "Select File to Read");
         SimpleFileFilter sff = new SimpleFileFilter("json","JSON File");
         fc.addChoosableFileFilter(sff);
         sff = new SimpleFileFilter("geojson","GeoJSON File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("xml","XML File");
         fc.addChoosableFileFilter(sff);
 
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -237,20 +243,21 @@ private void initialize ( JFrame parent, NewObject_Command command ) {
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
 
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"This command creates a new \"complex\" object from CSV, JSON, XML, or YAML text file (or JSON text)."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"The object can then be used by other commands, for example to convert to a table or properties."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"An object can contain hierarchical data including primitive objects (string, number, boolean), maps (dictionaries), and lists (arrays)."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"Using an input file to define the object is often more straightforward than specifying text in a parameter because "
+   		+ "handling quotes in the parameter can be complicated."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "<html><b>This command is under development.</b></html>"),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(paragraph, new JLabel (
-		"This command creates a new \"complex\" object from JSON text.  The object can then be used by other commands."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(paragraph, new JLabel (
-		"An object can contain hierarchical data such as a dictionary of dictionaries, as per JSON conventions."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(paragraph, new JLabel (
-		"Using an input file to define the object is more straightforward because handling quotes in the JSON text parameter is complicated."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "Any valid JSON text representation can be specified."),
+        "Any valid JSON or XML text representation can be specified."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -268,7 +275,7 @@ private void initialize ( JFrame parent, NewObject_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the object."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"JSON input file to read:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Input file to read:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -290,14 +297,82 @@ private void initialize ( JFrame parent, NewObject_Command command ) {
 	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
 		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("JSON text:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    __main_JTabbedPane.addChangeListener(this);
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for CSV parameters.
+    int yCsv = -1;
+    JPanel csv_JPanel = new JPanel();
+    csv_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "CSV", csv_JPanel );
+
+    JGUIUtil.addComponent(csv_JPanel, new JLabel (
+		"Read a CSV file into an object."),
+		0, ++yCsv, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(csv_JPanel, new JLabel (
+        "Specify an input file with 'csv' extension."),
+        0, ++yCsv, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(csv_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+    	0, ++yCsv, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for JSON parameters.
+    int yJson = -1;
+    JPanel json_JPanel = new JPanel();
+    json_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "JSON", json_JPanel );
+
+    JGUIUtil.addComponent(json_JPanel, new JLabel (
+		"Read a JSON file into an object."),
+		0, ++yJson, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(json_JPanel, new JLabel (
+        "Specify an input file or text."),
+        0, ++yJson, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(json_JPanel, new JLabel (
+        "JSON is the default file format."),
+        0, ++yJson, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(json_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+    	0, ++yJson, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(json_JPanel, new JLabel ("JSON text:"),
+        0, ++yJson, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JSONText_JTextArea = new JTextArea (4,40);
     __JSONText_JTextArea.setLineWrap ( true );
     __JSONText_JTextArea.setWrapStyleWord ( true );
     __JSONText_JTextArea.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__JSONText_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(json_JPanel, new JScrollPane(__JSONText_JTextArea),
+        1, yJson, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for XML parameters.
+    int yXml = -1;
+    JPanel xml_JPanel = new JPanel();
+    xml_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "XML", xml_JPanel );
+
+    JGUIUtil.addComponent(xml_JPanel, new JLabel (
+		"Read an XML file into an object."),
+		0, ++yXml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(xml_JPanel, new JLabel (
+        "Specify an input file with 'xml' extension."),
+        0, ++yXml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(xml_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+    	0, ++yXml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for YAML parameters.
+    int yYaml = -1;
+    JPanel yaml_JPanel = new JPanel();
+    yaml_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "YAML", yaml_JPanel );
+
+    JGUIUtil.addComponent(yaml_JPanel, new JLabel (
+		"Read a YAML file into an object."),
+		0, ++yYaml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(yaml_JPanel, new JLabel (
+        "Specify an input file with 'yml' or 'yaml' extension."),
+        0, ++yYaml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(yaml_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+    	0, ++yYaml, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -440,6 +515,14 @@ private void response ( boolean ok ) {
 	// Now close out.
 	setVisible( false );
 	dispose();
+}
+
+/**
+ * Handle JTabbedPane changes.
+ */
+public void stateChanged ( ChangeEvent event ) {
+	//JTabbedPane sourceTabbedPane = (JTabbedPane)event.getSource();
+	//int index = sourceTabbedPane.getSelectedIndex();
 }
 
 /**

@@ -25,13 +25,21 @@ package rti.tscommandprocessor.commands.json;
 
 import javax.swing.JFrame;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -298,13 +306,50 @@ private List<List<?>> getJsonArraysByName ( Map<?,?> map, String arrayName, bool
 
 // Use base class parseCommand().
 
+/**
+ * Print a map, for troubleshooting.
+ * @param obj object (map) to print
+ * @param indent indent for each level
+ */
+private void printMap(Object obj, int indent) {
+	String routine = getClass().getSimpleName() + ".printMap";
+    String indentStr = new String(new char[indent]).replace("\0", "  "); // spaces
+    
+    boolean doPrefix = false;
+    String mapPrefix = "";
+    String listPrefix = "";
+    String objectPrefix = "";
+    if ( doPrefix ) {
+    	mapPrefix = "MapItem: ";
+    	listPrefix = "ListItem: ";
+    	objectPrefix = "Object: ";
+    }
+
+    if (obj instanceof Map) {
+        Map<?, ?> map = (Map<?, ?>) obj;
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+        	Message.printStatus(2, routine, indentStr + mapPrefix + "\"" + entry.getKey() + "\" :" );
+            //System.out.println(indentStr + entry.getKey() + ":");
+            printMap(entry.getValue(), indent + 1);
+        }
+    } else if (obj instanceof List) {
+        List<?> list = (List<?>) obj;
+        for (int i = 0; i < list.size(); i++) {
+            Message.printStatus(2,routine,indentStr + listPrefix + "[" + i + "]:");
+            printMap(list.get(i), indent + 1);
+        }
+    } else {
+        Message.printStatus(2,routine, indentStr + objectPrefix + String.valueOf(obj));
+    }
+}
+
 // See the ReadTableFromJSON code, which was the original.
 /**
-Read a JSON file into an object.
+Read a JSON or XML file into an object.
 @param inputFile path to input file to read
 @param object existing object to populate
 */
-private int readJSONUsingJackson ( String inputFile, JSONObject object,
+private int readFileUsingJackson ( String inputFile, JSONObject object,
 	//String arrayName, boolean appendArrays,
 	//String [] excludeNames,
 	//String [] arrayColumns, String [] booleanColumns, String [] dateTimeColumns,
@@ -312,58 +357,138 @@ private int readJSONUsingJackson ( String inputFile, JSONObject object,
 	//int top,
 	CommandStatus status, int warningCount )
 throws FileNotFoundException, IOException {
-	String routine = getClass().getSimpleName() + ".readJSONUsingJackson";
+	String routine = getClass().getSimpleName() + ".readFileUsingJackson";
 
 	boolean useMapper = true;
+	boolean readCsv = false;
+	boolean readJson = false;
+	boolean readXml = false;
+	boolean readYaml = false;
+	String inputFileUpper = inputFile.toUpperCase();
+	if ( inputFileUpper.toUpperCase().endsWith(".CSV") ) {
+		// Reading an CSV file.
+		readCsv = true;
+	}
+	else if ( inputFileUpper.endsWith(".XML") ) {
+		// Reading an XML file.
+		readXml = true;
+	}
+	else if ( inputFileUpper.endsWith(".YML") || inputFileUpper.endsWith("YAML") ) {
+		// Reading an YAML file.
+		readYaml = true;
+	}
+	else {
+		// Assume JSON.
+		readJson = true;
+	}
 	if ( useMapper ) {
 		// Map the JSON string into an object hierarchy and then pull out what is needed:
 		// - may fail on very large input files by running out of memory
 
 		// First read the input file into a string.
-		StringBuilder responseJson = IOUtil.fileToStringBuilder(inputFile);
+		StringBuilder inputFileAsStringBuilder = IOUtil.fileToStringBuilder(inputFile);
 
 		// Parse the string into object hierarchy:
-		// - if the JSON string starts with '{', read into a map
+		// - if the JSON string starts with '{', read into a map  // } so editor can match brackets
 		// - if the JSON string starts with '[', read into an array and add to a map for further processing
-		ObjectMapper mapper = new ObjectMapper();
-		Map<?,?> map = null;
-		if ( responseJson.charAt(0) == '{' ) {
-			map = mapper.readValue(responseJson.toString(), Map.class);
-			object.setObjectMap ( map );
+		ObjectMapper mapper = null;
+		if ( readCsv ) {
+			boolean readMap = false;
+			boolean readList = true;
+	        CsvMapper csvMapper = new CsvMapper();
+	        CsvSchema schema = CsvSchema
+	        	.emptySchema()
+	        	.withHeader();  // Tells Jackson first row is header.
+
+	        if ( readMap ) {
+	        	// Reading a map does not work well because only one object will be in the map
+	        	Map<String, Object> csvMap = csvMapper
+                	.readerFor(Map.class)
+                	.with(schema)
+                	.readValue(new File(inputFile));	
+
+				object.setObjectMap(csvMap);
+	        }
+	        else if ( readList ) {
+	        	// Reading a map does not work well because only one object will be in the map
+	        	MappingIterator<Map<String, Object>> iterator = csvMapper
+                	.readerFor(Map.class)
+                	.with(schema)
+                	.readValues(new File(inputFile));	
+	        	
+	        	List<Map<String,Object>>csvList = iterator.readAll();
+
+				object.setObjectArray(csvList);
+	        }
+			//printMap ( map, 2 );
 		}
-		else if ( responseJson.charAt(0) == '[' ) {
-			// Create a top-level map with black name:
-			// - use a LinkedHashMap to preserve element order
-			//map = new LinkedHashMap<>();
-			boolean insertArrayName = false;
-			if ( insertArrayName ) {
-				if ( Message.isDebugOn ) {
-					Message.printStatus(2, routine,
-						"JSON top-level array detected.  Adding an object named 'toparray' object at top to facilitate parsing into a map.");
-				}
-				responseJson.insert(0, "{ \"toparray\" : ");
-				responseJson.append("}");
-				// Top level object will be a List of objects.
-				map = mapper.readValue(responseJson.toString(), Map.class);
+		else if ( readJson ) {
+			mapper = new ObjectMapper();
+			Map<?,?> map = null;
+			if ( inputFileAsStringBuilder.charAt(0) == '{' ) { // } so editor can match brackets
+				map = mapper.readValue(inputFileAsStringBuilder.toString(), Map.class);
 				object.setObjectMap ( map );
 			}
+			else if ( inputFileAsStringBuilder.charAt(0) == '[' ) {
+				// Create a top-level map with black name:
+				// - use a LinkedHashMap to preserve element order
+				//map = new LinkedHashMap<>();
+				boolean insertArrayName = false;
+				if ( insertArrayName ) {
+					if ( Message.isDebugOn ) {
+						Message.printStatus(2, routine,
+							"JSON top-level array detected.  Adding an object named 'toparray' object at top to facilitate parsing into a map.");
+					}
+					// The following matched brackets allow an editor to match.
+					inputFileAsStringBuilder.insert(0, "{ \"toparray\" : ");
+					inputFileAsStringBuilder.append("}");
+					// Top level object will be a List of objects.
+					map = mapper.readValue(inputFileAsStringBuilder.toString(), Map.class);
+					object.setObjectMap ( map );
+				}
+				else {
+					// Top level object will be a List of objects.
+					List<?> list = mapper.readValue(inputFileAsStringBuilder.toString(), List.class);
+					object.setObjectArray ( list );
+				}
+			}
 			else {
-				// Top level object will be a List of objects.
-				List<?> list = mapper.readValue(responseJson.toString(), List.class);
-				object.setObjectArray ( list );
+				String message = "JSON does not start with { or [ - cannot parse.";  // } to allow editor to match bracket.
+        		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            		message, "Verify that the JSON file content is valid JSON starting with { or [ ." ) ); // } to allow editor to match bracket.
+        		Message.printWarning(3, routine, message);
+        		// Cannot read any more data.
+        		++warningCount;
+        		return warningCount;
+			}
+			if ( Message.isDebugOn ) {
+				Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
 			}
 		}
-		else {
-			String message = "JSON does not start with { or [ - cannot parse.";
-        	status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            	message, "Verify that the JSON file content is valid JSON starting with { or [ ." ) );
-        	Message.printWarning(3, routine, message);
-        	// Cannot read any more data.
-        	++warningCount;
-        	return warningCount;
+		else if ( readXml ) {
+			ObjectMapper xmlMapper = new XmlMapper();
+			
+			//JsonNode root = mapper.readTree(inputFileAsStringBuilder.toString());
+			// Because the XML likely has a root element, read as a map.
+			//Map<?,?> map = xmlMapper.readValue(inputFileAsStringBuilder.toString(), Map.class);
+			JsonNode root = xmlMapper.readTree(inputFileAsStringBuilder.toString());
+			// Convert the JsonNode tree to a Map representation.
+			//ObjectMapper jsonMapper = new ObjectMapper();
+			// Convert JsonNode to a Map (preserves arrays/lists):
+			// - does not work, still loses duplicates.
+			//Map<String,Object> map = jsonMapper.convertValue(root, Map.class);
+			Map<String,JsonNode> map = new HashMap<>();
+			map.put("rootJsonNode", root);
+			object.setObjectMap(map);
+			//printMap ( map, 2 );
 		}
-		if ( Message.isDebugOn ) {
-			Message.printStatus(2, routine, "Map from JSON has " + map.size() + " top-level entries.");
+		else if ( readYaml ) {
+			ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+			
+			@SuppressWarnings("unchecked")
+			Map<String,Object> yamlMap = yamlMapper.readValue(new File(inputFile),Map.class);
+			object.setObjectMap(yamlMap);
+			//printMap ( map, 2 );
 		}
 
 		// Find the array of interest, which is actually a Java List:
@@ -543,7 +668,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		if ( useJackson ) {
    			  		// Use Jackson, preferred because it is used in more code elsewhere.
    			  		object = new JSONObject(ObjectID);
-   			  		warning_count = readJSONUsingJackson ( InputFile_full,
+   			  		warning_count = readFileUsingJackson ( InputFile_full,
    			  			object,
    				  		status, warning_count);
    		  		}

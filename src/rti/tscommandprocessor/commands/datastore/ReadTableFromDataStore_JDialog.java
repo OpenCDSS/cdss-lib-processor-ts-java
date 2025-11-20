@@ -240,14 +240,17 @@ public void actionPerformed(ActionEvent event) {
     else if ( event.getActionCommand().equalsIgnoreCase("EditFunctionParameters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String FunctionParameters = __FunctionParameters_JTextArea.getText().trim();
+        Message.printStatus(2, "", "FunctionParameters=\"" + FunctionParameters + "\"");
         List<String> notesList = new ArrayList<>();
         String functionName = __DataStoreFunction_JComboBox.getSelected();
         int nparams = 10; // Will be reset below.
         if ( (functionName == null) || functionName.isEmpty() ) {
-        	notesList.add("Function to run:  NOT SPECIFIED" );
+        	notesList.add("Function to run:");
+        	notesList.add("  NOT SPECIFIED");
         }
         else {
-        	notesList.add("Function to run:  " + functionName );
+        	notesList.add("Function to run (contains paramaters and return value):");
+        	notesList.add("  " + functionName );
         	// Parse the parameter names from the function name.
         	List<String> parameterNames = this.__command.parseFunctionParameterNames(functionName);
         	nparams = parameterNames.size();
@@ -1249,6 +1252,8 @@ private void populateDataStoreExpanded () {
 
 /**
 Populate the function list based on the selected database.
+The functions are of the format so as to handle overloaded functions:
+  function(param1 type1, param2 type2) -> return
 @param dmi DMI to use when selecting function list
 */
 private void populateDataStoreFunctionChoices ( DMI dmi ) {
@@ -1260,6 +1265,7 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
     List<String> funcList = new ArrayList<>();
     //List<String> notIncluded = new ArrayList<>(); // TODO SAM 2012-01-31 need to omit system procedures.
     ResultSet rs = null;
+    boolean debug = false; // Use for debugging the code during development.
     if ( dmi != null ) {
         try {
         	DatabaseMetaData metadata = dmi.getConnection().getMetaData();
@@ -1274,25 +1280,57 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
         	}
             // Iterate through the ResultSet and add procedures:
             // - see note below about how function specific name must be used to manage the data
-            StringBuilder funcBuilder = null;
+            StringBuilder functionBuilder = null;
             short columnType = 0;
             int pos = 0;
             String typeName = null;
             String specificName = null;
             String columnName = null;
-            String funcNamePrev = "";
-            boolean r2warning = false;
+            String functionNameFromMetaPrev = "";
+            // To control how many warnings are logged.
+            boolean didr2warning = false;
+           	if ( debug ) {
+           		if ( rs == null ) {
+           			Message.printStatus(2, routine, "The database contains 0 functions.");
+           		}
+           		else {
+           			Message.printStatus(2, routine, "Adding functions with parameters and return type.");
+           		}
+           	}
             while ( (rs != null) && rs.next()) {
-            	String funcName = rs.getString("FUNCTION_NAME");
-            	//Message.printStatus(2, routine, "Processing function: " + funcName );
-            	if ( funcName.equals(funcNamePrev) ) {
+            	// For SQL Server:
+            	// - does not allow overloading so will only every be 1 variation
+            	// - the FUNCTION_NAME may have be followed by ";1" (e.g., 'somefunc;1')
+            	// - the SPECIFIC_NAME may not exist or may be the FUNCTION_NAME without the ";1" (e.g., 'somefunc')
+            	// - because overloads are not supported, the SPECIFIC_NAME can be the user-facing name
+            	// For PostgreSQL and Oracle:
+            	// - the FUNCTION_NAME is the user-facing name (e.g., 'somefunc')
+            	// - the SPECIFIC_NAME reflects overloading (e.g., 'somefunc_int')
+            	// For Access and MySQL:
+            	// - does not support overloaded functions
+            	// - FUNCTION_NAME and SPECIFIC_NAME are the same
+            	// Want to ensure that the human-readable is a full signature to know what the function does.
+            	String functionNameFromMeta = rs.getString("FUNCTION_NAME");
+            	String specificNameFromMeta = null;
+            	try {
+            		rs.getString("SPECIFIC_NAME");
+            	}
+            	catch ( Exception e ) {
+            		// SQL Server does not have?
+            		// - use the function name
+            		specificNameFromMeta = functionNameFromMeta;
+            	}
+            	if ( debug ) {
+            		Message.printStatus(2, routine, "Processing function: " + functionNameFromMeta );
+            	}
+            	if ( functionNameFromMeta.equals(functionNameFromMetaPrev) ) {
             		// Same function name is being processed:
             		// - this will be the case for overloaded functions
             		// - skip because it will result in redundant processing
             		continue;
             	}
             	// Save the function name so is used in the next loop iteration.
-            	funcNamePrev = funcName;
+            	functionNameFromMetaPrev = functionNameFromMeta;
             	// Format the function signature as including the parameter names and type.
             	String returnString = "";
             	// Get the metadata for the function:
@@ -1301,20 +1339,27 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             	boolean supportsFunctions = true; // All databases have in metadata?
             	if ( supportsFunctions ) {
             		// If overloaded, duplicate entries can occur:
+            		// - can't just use the function name as a choice, must include parameters and return type
             		// - the following ResultSet is the total of columns for all overloaded functions
             		// - therefore, must group by the same "SPECIFIC_NAME"
             		// - use a HashMap with key being the specific name
-            		HashMap<String,StringBuilder> funcMap = new HashMap<>();
+            		HashMap<String,StringBuilder> functionMap = new HashMap<>();
+            		// Result set for the function parameters.
             		ResultSet rs2 = null;
             		try {
             			// May throw AbstractMethodError, which extends from Throwable rather than Exception.
-            			rs2 = metadata.getFunctionColumns(dmi.getConnection().getSchema(), null, funcName, null);
+            			String catalog = dmi.getConnection().getCatalog();
+            			String schemaPattern = dmi.getConnection().getSchema();
+            			String functionNamePattern = specificNameFromMeta;
+            			String columnNamePattern = null;
+            			rs2 = metadata.getFunctionColumns(catalog, schemaPattern, functionNamePattern, columnNamePattern);
             		}
             		catch ( Throwable e ) {
-            			if ( !r2warning ) {
-            				Message.printWarning(3, routine, "Exception getting database function columns (printing warning once).");
+            			if ( !didr2warning ) {
+            				Message.printWarning(3, routine, "Exception getting database function columns for '" +
+            					functionNameFromMeta + "' (printing warning once).");
             				Message.printWarning(3, routine, e);
-            				r2warning = true;
+            				didr2warning = true;
             			}
             		}
             		if ( rs2 != null ) {
@@ -1325,24 +1370,38 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             				columnType = rs2.getShort("COLUMN_TYPE");
             				pos = rs2.getShort("ORDINAL_POSITION");
             				typeName = rs2.getString("TYPE_NAME");
-            				specificName = rs2.getString("SPECIFIC_NAME");
+            				specificName = null;
+            				try {
+            					// This seems to be the specific name of the function (to allow lookups?).
+            					specificName = rs2.getString("SPECIFIC_NAME");
+            				}
+            				catch ( Exception e ) {
+            					// Sometimes not returned, such as for SQL Server:
+            					// - use the function name from metadata
+            					specificName = specificNameFromMeta;
+            				}
             				columnName = rs2.getString("COLUMN_NAME");
-            				//Message.printStatus(2, routine, "  Processing " + specificName + " " + funcName + " " + columnName + " " + columnType);
-            				funcBuilder = funcMap.get(specificName);
-            				if ( funcBuilder == null ) {
+            				if ( debug ) {
+            					Message.printStatus(2, routine, "  Processing SPECIFIC_NAME=" + specificName + " FUNCTION_NAME=" +
+            						functionNameFromMeta + " COLUMN_NAME=" + columnName + " COLUMN_TYPE=" + columnType);
+            				}
+            				functionBuilder = functionMap.get(specificName);
+            				if ( functionBuilder == null ) {
             					// Need to create a new StringBuilder:
             					// - save the StringBuilder so it can be used for matching records
-            					funcBuilder = new StringBuilder();
-            					funcMap.put(specificName, funcBuilder);
-            					//Message.printStatus(2, routine, "  Adding HashMap function for " + specificName + " " + funcName);
+            					functionBuilder = new StringBuilder();
+            					functionMap.put(specificName, functionBuilder);
+            					if ( debug ) {
+            						Message.printStatus(2, routine, "  Adding HashMap function for " + specificName + " " + functionNameFromMeta);
+            					}
             				}
             				else {
             					// Else, previously added the builder so use it.
             				}
-            				if ( funcBuilder.length() == 0 ) {
+            				if ( functionBuilder.length() == 0 ) {
             					// First time the function is encountered so add the function name at the beginning.
-            					funcBuilder.append( funcName );
-           						funcBuilder.append("(");
+            					functionBuilder.append( functionNameFromMeta );
+           						functionBuilder.append("(");
             				}
             				if ( (columnType == DatabaseMetaData.functionColumnResult) || (pos == 0) ) {
             					// Only want to show columns that need to be provided as parameters to the function:
@@ -1352,15 +1411,17 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             					continue;
             				}
             				// Added parameters.
-            				if ( funcBuilder.charAt(funcBuilder.length() - 1) != '(' ) {
+            				if ( functionBuilder.charAt(functionBuilder.length() - 1) != '(' ) {
             					// 2nd or greater parameter so need a comma to separate.
-            					funcBuilder.append(",");
+            					functionBuilder.append(",");
             				}
             				// Append the column name and type.
-            				funcBuilder.append(columnName);
-           					funcBuilder.append(" ");
-            				funcBuilder.append(typeName);
-           					//Message.printStatus(2, routine, "    Processing column name: " + columnName + " " + typeName + " " + columnType);
+            				functionBuilder.append(columnName);
+           					functionBuilder.append(" ");
+            				functionBuilder.append(typeName);
+           					if ( debug ) {
+           						Message.printStatus(2, routine, "    Processing column name: " + columnName + " " + typeName + " " + columnType);
+           					}
             			}
             			// Done with ResultSet of columns for the function.
             			DMI.closeResultSet(rs2);
@@ -1369,18 +1430,20 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             			// Just add the function name:
             			// - SQL Server has names like the following so remove after the semi-colon:
             			//      usp_CDSS_MeasType_Sel_Distinct;1
-            			int pos2 = funcName.indexOf(";");
+            			int pos2 = functionNameFromMeta.indexOf(";");
             			if ( pos2 < 0 ) {
-            				funcMap.put(funcName, new StringBuilder(funcName));
+            				// No semicolon so use the name as is.
+            				functionMap.put(functionNameFromMeta, new StringBuilder(functionNameFromMeta));
             			}
             			else {
-            				funcName = funcName.substring(0,pos2);
-            				funcMap.put(funcName, new StringBuilder(funcName));
+            				// Overloaded so use the name without the semi-colon.
+            				functionNameFromMeta = functionNameFromMeta.substring(0,pos2);
+            				functionMap.put(functionNameFromMeta, new StringBuilder(functionNameFromMeta));
             			}
             		}
             		// Add all of the functions in the HashMap if not already added.
             		StringBuilder b;
-            		for ( Map.Entry<String,StringBuilder> set : funcMap.entrySet() ) {
+            		for ( Map.Entry<String,StringBuilder> set : functionMap.entrySet() ) {
             			b = set.getValue();
             			if ( rs2 != null ) {
             				// Close the function parameter list and add return value string.
@@ -1398,7 +1461,9 @@ private void populateDataStoreFunctionChoices ( DMI dmi ) {
             			if ( !found ) {
             				// Have not already added the function, so add.
             				funcList.add(funcSigString);
-            				//Message.printStatus(2, routine, "  Adding final list function: " + funcSigString);
+           					if ( debug ) {
+           						Message.printStatus(2, routine, "  Adding final list function: " + funcSigString);
+           					}
             			}
             		}
             	}
@@ -1464,18 +1529,19 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             String typeName = null;
             String specificName = null;
             String columnName = null;
-            String procNamePrev = "";
-            boolean rs2warning = false;
+            String procedureNamePrev = "";
+            // To control how many times a warning is printed.
+            boolean didrs2warning = false;
             while ( (rs != null) && rs.next()) {
-            	String procName = rs.getString("PROCEDURE_NAME");
-            	if ( procName.equals(procNamePrev) ) {
+            	String procedureName = rs.getString("PROCEDURE_NAME");
+            	if ( procedureName.equals(procedureNamePrev) ) {
             		// Same procedure name is being processed:
             		// - this will be the case for overloaded procedures
             		// - skip because it will result in redundant processing
             		continue;
             	}
             	// Save the procedure name so is used in the next loop iteration.
-            	procNamePrev = procName;
+            	procedureNamePrev = procedureName;
             	// Format the procedure signature as including the parameter names and type.
             	String returnString = "";
             	// Get the metadata for the procedure:
@@ -1486,17 +1552,19 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             		// - the following ResultSet is the total of columns for all overloaded procedures
             		// - therefore, must group by the same "SPECIFIC_NAME"
             		// - use a HashMap with key being the specific name
-            		HashMap<String,StringBuilder> procMap = new HashMap<>();
+            		HashMap<String,StringBuilder> procedureMap = new HashMap<>();
+            		// Result set for the procedure parameters.
             		ResultSet rs2 = null;
             		try {
             			// May throw AbstractMethodError, which extends from Throwable rather than Exception.
-            			rs2 = metadata.getProcedureColumns(dmi.getConnection().getSchema(), null, procName, null);
+            			rs2 = metadata.getProcedureColumns(dmi.getConnection().getSchema(), null, procedureName, null);
             		}
             		catch ( Throwable e ) {
-            			if ( !rs2warning ) {
-            				Message.printWarning(3, routine, "Exception getting database procedure columns (showing warning once).");
+            			if ( !didrs2warning ) {
+            				Message.printWarning(3, routine, "Exception getting database procedure columns for '" +
+            					procedureName + "' (showing warning once).");
             				Message.printWarning(3, routine, e);
-            				rs2warning = true;
+            				didrs2warning = true;
             			}
             		}
             		if ( rs2 != null ) {
@@ -1509,19 +1577,19 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             				typeName = rs2.getString("TYPE_NAME");
             				specificName = rs2.getString("SPECIFIC_NAME");
             				columnName = rs2.getString("COLUMN_NAME");
-            				procBuilder = procMap.get(specificName);
+            				procBuilder = procedureMap.get(specificName);
             				if ( procBuilder == null ) {
             					// Need to create a new StringBuilder:
             					// - save the StringBuilder so it can be used for matching records
             					procBuilder = new StringBuilder();
-            					procMap.put(specificName, procBuilder);
+            					procedureMap.put(specificName, procBuilder);
             				}
             				else {
             					// Else, previously added the builder so use it.
             				}
             				if ( procBuilder.length() == 0 ) {
             					// First time the procedure is encountered so add the procedure name at the beginning.
-            					procBuilder.append( procName );
+            					procBuilder.append( procedureName );
            						procBuilder.append("(");
             				}
             				if ( (columnType == DatabaseMetaData.procedureColumnResult) || (pos == 0) ) {
@@ -1549,18 +1617,18 @@ private void populateDataStoreProcedureChoices ( DMI dmi ) {
             			// Just add the procedure name.
             			// - SQL Server has names like the following so remove after the semi-colon:
             			//      usp_CDSS_MeasType_Sel_Distinct;1)
-            			int pos2 = procName.indexOf(";");
+            			int pos2 = procedureName.indexOf(";");
             			if ( pos2 < 0 ) {
-            				procMap.put(procName, new StringBuilder(procName));
+            				procedureMap.put(procedureName, new StringBuilder(procedureName));
             			}
             			else {
-            				procName = procName.substring(0,pos2);
-            				procMap.put(procName, new StringBuilder(procName));
+            				procedureName = procedureName.substring(0,pos2);
+            				procedureMap.put(procedureName, new StringBuilder(procedureName));
             			}
             		}
             		// Add all of the procedures in the HashMap if not already added.
             		StringBuilder b;
-            		for ( Map.Entry<String,StringBuilder> set : procMap.entrySet() ) {
+            		for ( Map.Entry<String,StringBuilder> set : procedureMap.entrySet() ) {
             			b = set.getValue();
             			if ( rs2 != null ) {
             				// Close the procedure parameter list and add return value string.
@@ -1933,6 +2001,9 @@ try {
        					"DataStoreFunction parameter \"" + DataStoreFunction + "\".  Select a\ndifferent value or Cancel." );
         		}
             }
+        }
+        if ( FunctionParameters != null ) {
+        	__FunctionParameters_JTextArea.setText(FunctionParameters);
         }
         // First populate the procedure choices:
         // - lazy load since can be slow

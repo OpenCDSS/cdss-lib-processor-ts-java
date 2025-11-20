@@ -332,18 +332,27 @@ public <T> List<T> getObjectList ( Class<T> c ) {
  * Parse the parameter names from the full function or procedure signature:
  *   function(param1 type1, param2 type2) -> return
  * This will return 'param1', 'param2' in a list.
- * @param function or procedure signature string
+ * @param routineSignature function or procedure signature string
  * @return list of parameter names
  */
 protected List<String> parseFunctionParameterNames ( String routineSignature ) {
+	//String routine = getClass().getSimpleName() + ".parseFunctionParameterNames";
+	//Message.printStatus(2, routine, "Parsing function parameter names from signature \"" + routineSignature + "\"");
 	List<String> params = new ArrayList<>();
-	int pos1 = routineSignature.indexOf("(");
-	int pos2 = routineSignature.indexOf(")");
-	if ( routineSignature.length() > 0 ) {
-		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
-		for ( String part : parts ) {
-			pos1 = part.indexOf(" ");
-			params.add(part.substring(0,pos1).trim());
+	if ( (routineSignature.length() > 0) ) {
+		int pos1 = routineSignature.indexOf("(");
+		if ( pos1 > 0 ) {
+			int pos2 = routineSignature.indexOf(")");
+			if ( pos2 > pos1 ) {
+				// Have a function signature that can be parsed.
+				String [] parts = routineSignature.substring((pos1 + 1),pos2).split(",");
+				for ( String part : parts ) {
+					part = part.trim();
+					pos1 = part.indexOf(" ");
+					// First part is the parameter names.
+					params.add(part.substring(0,pos1).trim());
+				}
+			}
 		}
 	}
 	return params;
@@ -357,18 +366,29 @@ protected List<String> parseFunctionParameterNames ( String routineSignature ) {
  * @return LinkedHashMap with parameter name as key and type as value
  */
 protected HashMap<String,String> parseFunctionParameterTypes ( String routineSignature ) {
+	//String routine = getClass().getSimpleName() + ".parseFunctionParameterTypes";
+	//Message.printStatus(2, routine, "Parsing function parameter types from signature \"" + routineSignature + "\"");
 	HashMap<String,String> typeMap = new LinkedHashMap<>();
-	int pos1 = routineSignature.indexOf("(");
-	int pos2 = routineSignature.indexOf(")");
-	String name;
-	String value;
 	if ( routineSignature.length() > 0 ) {
-		List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
-		for ( String part : parts ) {
-			pos1 = part.indexOf(" ");
-			name = part.substring(0,pos1).trim();
-			value = part.substring((pos1+1)).trim();
-			typeMap.put(name, value);
+		int pos1 = routineSignature.indexOf("(");
+		if ( pos1 > 0 ) {
+			//Message.printStatus(2, routine, "Have '('");
+			int pos2 = routineSignature.indexOf(")");
+			if ( pos2 > pos1 ) {
+				//Message.printStatus(2, routine, "Have ')'");
+				String [] parts = routineSignature.substring((pos1 + 1),pos2).split(",");
+				String name;
+				String value;
+				for ( String part : parts ) {
+					//Message.printStatus(2, routine, "Have param=\"" + part + "\"" );
+					pos1 = part.trim().indexOf(" ");
+					name = part.substring(0,pos1).trim();
+					value = part.substring((pos1+1)).trim();
+					//Message.printStatus(2, routine, "Have name=\"" + name + "\"" );
+					//Message.printStatus(2, routine, "Have value=\"" + value + "\"" );
+					typeMap.put(name, value);
+				}
+			}
 		}
 	}
 	return typeMap;

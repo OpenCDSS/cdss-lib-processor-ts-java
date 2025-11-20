@@ -255,7 +255,7 @@ protected List<String> parseFunctionParameterNames ( String routineSignature ) {
 	int pos1 = routineSignature.indexOf("(");
 	if ( pos1 > 0 ) {
 		int pos2 = routineSignature.indexOf(")");
-		if ( routineSignature.length() > 0 ) {
+		if ( (routineSignature.length() > 0) && (pos2 > 0) ) {
 			List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
 			for ( String part : parts ) {
 				pos1 = part.indexOf(" ");
@@ -280,7 +280,7 @@ protected HashMap<String,String> parseFunctionParameterTypes ( String routineSig
 		int pos2 = routineSignature.indexOf(")");
 		String name;
 		String value;
-		if ( routineSignature.length() > 0 ) {
+		if ( (routineSignature.length() > 0) && (pos2 > 0) ) {
 			List<String> parts = StringUtil.breakStringList(routineSignature.substring((pos1 + 1),pos2), ",", 0);
 			for ( String part : parts ) {
 				pos1 = part.indexOf(" ");

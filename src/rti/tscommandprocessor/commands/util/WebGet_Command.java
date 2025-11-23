@@ -747,12 +747,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     					if ( doOutputProperty ) {
     						// Also set the content in memory to set property below.
     						if ( numCharsRead == byteArray.length ) {
-    							content.append(new String(byteArray));
+    							content.append(new String(byteArray, StandardCharsets.UTF_8));
     						}
     						else {
     							byte [] byteArray2 = new byte[numCharsRead];
     							System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
-    							content.append(new String(byteArray2));
+    							content.append(new String(byteArray2, StandardCharsets.UTF_8));
     						}
     					}
     					bytesRead += numCharsRead;

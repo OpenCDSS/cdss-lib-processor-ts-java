@@ -112,7 +112,7 @@ throws InvalidCommandParameterException {
 
 	try {
 		// A null logfile means that the current log file should be re-opened.
-		if ( (LogFile != null) && (working_dir != null) && (LogFile.indexOf("${") < 0) ) {
+		if ( (LogFile != null) && (working_dir != null) && !LogFile.contains("${") ) {
 			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath(working_dir, LogFile));
 			File f = new File(adjusted_path);
 			File f2 = new File(f.getParent());
@@ -120,11 +120,9 @@ throws InvalidCommandParameterException {
 				message = "The log file parent folder \"" + f.getParent() +
 				"\" does not exist for: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Verify that the log file parent folder exists." ) );
+				status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.WARNING,
+					message, "Verify that the log file parent folder exists.  May be OK if created at runtime." ) );
 			}
-			f = null;
-			f2 = null;
 		}
 	}
 	catch ( Exception e ) {
@@ -261,6 +259,11 @@ throws CommandWarningException, CommandException {
 		}
 		else {
 			// Open a new log file.  Append the suffix if it has been specified.
+			LogFile_full = IOUtil.verifyPathForOS(
+				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+					TSCommandProcessorUtil.expandParameterValue(processor,this,LogFile)));
+
+			// Handle the suffix after expanding the log file name.
 			if ( (Suffix == null) || (Suffix.length() == 0) ) {
 				// Make sure to do nothing below.
 				Suffix = "";
@@ -283,7 +286,7 @@ throws CommandWarningException, CommandException {
 					StringUtil.formatString(d.getMinute(),"%02d") +
 					StringUtil.formatString(d.getSecond(),"%02d");
 			}
-			if ( Suffix.length() > 0 ) {
+			if ( ! Suffix.isEmpty() ) {
 				String ext = IOUtil.getFileExtension (LogFile );
 				if ( ext == null ) {
 					// Just append.
@@ -294,9 +297,7 @@ throws CommandWarningException, CommandException {
 					LogFile = LogFile.substring(0,LogFile.length()-ext.length()-1)+ Suffix + "." + ext;
 				}
 			}
-			LogFile_full = IOUtil.verifyPathForOS(
-				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-					TSCommandProcessorUtil.expandParameterValue(processor,this,LogFile)));
+
 			// Write a message to the old log file.
 			Message.printStatus(2, routine, "Logfile full path for next log file to open is \"" + LogFile_full + "\"");
 			// Close the old log file.

@@ -66,6 +66,12 @@ public class NewTimeSeries_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
+	/**
+	 * Choices for NoData parameter.
+	 */
+	protected String _False = "False";
+	protected String _True = "True";
+
 /**
 List of time series read during discovery.
 These are TS objects but with mainly the metadata (TSIdent) filled in.
@@ -96,6 +102,7 @@ throws InvalidCommandParameterException {
 	String MissingValue = parameters.getValue ( "MissingValue" );
 	String InitialValue = parameters.getValue ( "InitialValue" );
 	String InitialFunction = parameters.getValue ( "InitialFunction" );
+	String NoData = parameters.getValue ( "NoData" );
 	String warning = "";
     String message;
 
@@ -152,25 +159,38 @@ throws InvalidCommandParameterException {
             "Specify the missing value as a number or NaN."));
     }
 
-	if ( (InitialValue != null) && !InitialValue.isEmpty() && !InitialValue.startsWith("${")) {
-		// If an initial value is specified, make sure it is a number.
-		if ( !StringUtil.isDouble(InitialValue) ) {
+    // Check NoDaa before parameters that provide data values.
+	boolean doNoData = false;
+    if ( (NoData != null) && !NoData.isEmpty() ) {
+    	if ( !NoData.equals(_False) && !NoData.equals(_True) ) {
+            message = "The NoData \"" + NoData + "\" parameter is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify as " + _False + " (dafault) or " + _True ) );
+    	}
+    	if ( !NoData.equals(_True) ) {
+    		doNoData = true;
+    	}
+    }
+
+    // Count how many parameters specify the initial value.
+    int initialValueCount = 0;
+	if ( (InitialValue != null) && !InitialValue.isEmpty() ) {
+		++initialValueCount;
+		if ( !InitialValue.contains("${") && !StringUtil.isDouble(InitialValue) ) {
+			// If an initial value is specified, make sure it is a number.
             message = "The initial value (" + InitialValue + ") is not a number.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the initial value as a number." ) );
 		}
-		if ( (InitialFunction != null) && !InitialFunction.isEmpty() ) {
-		    message = "The initial value and function cannot both be specified.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the initial value OR function." ) );
-		}
 	}
+
     if ( (InitialFunction != null) && !InitialFunction.isEmpty() ) {
         // Make sure that the statistic is known in general.
+		++initialValueCount;
         boolean supported = false;
         TSFunctionType functionType = null;
         try {
@@ -202,19 +222,34 @@ throws InvalidCommandParameterException {
             }
         }
     }
+
+    if ( !doNoData ) {
+    	// Can only specify data one way.
+    	if ( initialValueCount == 0 ) {
+    		// OK, will use the missing data value.
+    	}
+    	else if ( initialValueCount >= 2 ) {
+	    	message = "The initial value and function cannot both be specified.";
+            	warning += "\n" + message;
+            	status.addToLog ( CommandPhaseType.INITIALIZATION,
+                	new CommandLogRecord(CommandStatusType.FAILURE,
+                    	message, "Specify the initial value OR function." ) );
+    	}
+    }
+
     if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.startsWith("${") &&
     	!SetStart.equalsIgnoreCase("OutputStart") && !SetStart.equalsIgnoreCase("OutputEnd") ) {
-            try {
-                DateTime.parse(SetStart);
-            }
-            catch ( Exception e ) {
-                message = "The set start \"" + SetStart + "\" is not a valid date/time.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-            }
+        try {
+            DateTime.parse(SetStart);
         }
+        catch ( Exception e ) {
+            message = "The set start \"" + SetStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+        }
+    }
 	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.startsWith("${") &&
 		!SetEnd.equalsIgnoreCase("OutputStart") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {
@@ -230,7 +265,7 @@ throws InvalidCommandParameterException {
 	}
 
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(10);
+	List<String> validList = new ArrayList<>(11);
     validList.add ( "Alias" );
     validList.add ( "NewTSID" );
     validList.add ( "Description" );
@@ -241,6 +276,7 @@ throws InvalidCommandParameterException {
     validList.add ( "InitialValue" );
     validList.add ( "InitialFlag" );
     validList.add ( "InitialFunction" );
+    validList.add ( "NoData" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -502,6 +538,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( InitialFunction != null ) {
 	    initialFunction = TSFunctionType.valueOfIgnoreCase(InitialFunction);
 	}
+	String NoData = parameters.getValue ( "NoData" );
+	boolean doNoData = false;
+	if ( (NoData != null) && NoData.equalsIgnoreCase(_True) ) {
+		doNoData = true;
+	}
 
 	// Determine the dates to use for the Set.
 	DateTime SetStart_DateTime = null;
@@ -524,7 +565,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warningCount;
 		}
 		// Make sure that dates are not null.
-	    if ( SetStart_DateTime == null ) {
+	    if ( !doNoData && (SetStart_DateTime == null) ) {
 	        message = "SetStart is not set - cannot allocate time series data array.";
 	        Message.printWarning(logLevel,
 	            MessageUtil.formatMessageTag( command_tag, ++warningCount), routine, message );
@@ -532,7 +573,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                message, "Specify the SetStart parameter or use a SetOutputPeriod() command.") );
 	    }
-	    if ( SetEnd_DateTime == null ) {
+	    if ( !doNoData && (SetEnd_DateTime == null) ) {
 	        message = "SetEnd is not set - cannot allocate time series data array.";
 	        Message.printWarning(logLevel,
 	            MessageUtil.formatMessageTag( command_tag, ++warningCount), routine, message );
@@ -589,40 +630,47 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			ts.setDataUnits ( Units );
 			ts.setDataUnitsOriginal ( Units );
 		}
-		ts.setDate1 ( SetStart_DateTime );
-		ts.setDate1Original ( SetStart_DateTime );
-		ts.setDate2 ( SetEnd_DateTime );
-		ts.setDate2Original ( SetEnd_DateTime );
+		if ( SetStart_DateTime != null ) {
+			ts.setDate1 ( SetStart_DateTime );
+			ts.setDate1Original ( SetStart_DateTime );
+		}
+		if ( SetEnd_DateTime != null ) {
+			ts.setDate2 ( SetEnd_DateTime );
+			ts.setDate2Original ( SetEnd_DateTime );
+		}
         if ( missingValue != null ) {
             ts.setMissing(missingValue);
         }
 		if ( commandPhase == CommandPhaseType.RUN ) {
-    		if ( ts.allocateDataSpace() != 0 ) {
-    			message = "Unable to allocate memory for time series.";
-    			Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(
-    			command_tag,++warningCount),routine,message );
-                status.addToLog ( commandPhase,
+			if ( !doNoData ) {
+				// Need to initialize the time series with data.
+				if ( ts.allocateDataSpace() != 0 ) {
+					message = "Unable to allocate memory for time series.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(
+							command_tag,++warningCount),routine,message );
+					status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the period for the time series is not huge." ) );
-    		}
-    		if ( (InitialValue != null) && !InitialValue.isEmpty() ) {
-    		    // Assign values to the constant.
-    			TSUtil.setConstant ( ts, InitialValue_double );
-    		}
-    		else if ( initialFunction != null ) {
-    		    // Assign values using the function.
-    		    TSUtil_SetDataValuesUsingFunction tsu = new TSUtil_SetDataValuesUsingFunction ( ts, initialFunction );
-    		    tsu.setDataValuesUsingFunction ();
-    		}
-    		if ( (InitialFlag != null) && !InitialFlag.isEmpty() ) {
-    		    // Iterate through the data and set the flag.
-    		    TSIterator it = ts.iterator();
-    		    TSData tsdata = null;
-    		    while ( (tsdata = it.next()) != null ) {
-    		        // Reset the same values and additional the initial flag.
-    		        ts.setDataValue(it.getDate(), it.getDataValue(), InitialFlag, tsdata.getDuration() );
-    		    }
+				}
+				if ( (InitialValue != null) && !InitialValue.isEmpty() ) {
+					// Assign values to the constant.
+					TSUtil.setConstant ( ts, InitialValue_double );
+				}
+				else if ( initialFunction != null ) {
+					// Assign values using the function.
+					TSUtil_SetDataValuesUsingFunction tsu = new TSUtil_SetDataValuesUsingFunction ( ts, initialFunction );
+					tsu.setDataValuesUsingFunction ();
+				}
+				if ( (InitialFlag != null) && !InitialFlag.isEmpty() ) {
+					// Iterate through the data and set the flag.
+					TSIterator it = ts.iterator();
+					TSData tsdata = null;
+					while ( (tsdata = it.next()) != null ) {
+						// Reset the same values and additional the initial flag.
+						ts.setDataValue(it.getDate(), it.getDataValue(), InitialFlag, tsdata.getDuration() );
+					}
+				}
     		}
 		}
         if ( (Alias != null) && !Alias.isEmpty() ) {
@@ -703,7 +751,8 @@ public String toString ( PropList parameters, int majorVersion ) {
 		"MissingValue",
 		"InitialValue",
 		"InitialFlag",
-		"InitialFunction"
+		"InitialFunction",
+		"NoData"
 	};
 	return this.toString(parameters, parameterOrder);
 }

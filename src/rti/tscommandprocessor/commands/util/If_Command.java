@@ -345,7 +345,7 @@ throws CommandWarningException, CommandException {
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSHasData = TSCommandProcessorUtil.expandParameterValue(processor, this, TSHasData);
 	}
-	String TSHasNoData = parameters.getValue ( "TSDHasNoData" );
+	String TSHasNoData = parameters.getValue ( "TSHasNoData" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSHasNoData = TSCommandProcessorUtil.expandParameterValue(processor, this, TSHasNoData);
 	}
@@ -437,14 +437,14 @@ throws CommandWarningException, CommandException {
     	    if ( Message.isDebugOn ) {
     	    	Message.printStatus(2, routine, "Left side: " + arg1 );
     	    }
-    	    if ( arg1.contains("${") ) {
+    	    if ( arg1.contains("${") ) /* } so that editor will match  */ {
     	    	value1 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg1 );
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Left side after expansion: " + value1 );
     	    	}
-    	    	if ( value1.contains("${") ) {
+    	    	if ( value1.contains("${") ) /* } so that editor will match */ {
     	    		// Expansion did not match property.
-    	    		int p1 = value1.indexOf("${");
+    	    		int p1 = value1.indexOf("${"); // Editor will match the following line.
     	    		int p2 = value1.indexOf("}",p1);
     	    		String missingProp = value1.substring(p1,(p2+1));
 	                message = "Left side of condition contains property " + missingProp + " that could not be matched.";
@@ -463,14 +463,14 @@ throws CommandWarningException, CommandException {
     	    if ( Message.isDebugOn ) {
     	    	Message.printStatus(2, routine, "Right side:" + arg2 );
     	    }
-    	    if ( arg2.contains("${") ) {
+    	    if ( arg2.contains("${") ) /* } so that editor will match.*/ {
     	    	value2 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg2 );
     	    	if ( Message.isDebugOn ) {
     	    		Message.printStatus(2, routine, "Right side after expansion: " + value2 );
     	    	}
-    	    	if ( value2.contains("${") ) {
+    	    	if ( value2.contains("${") ) /* } so that editor will match. */ {
     	    		// Expansion did not match property.
-    	    		int p1 = value2.indexOf("${");
+    	    		int p1 = value2.indexOf("${"); // Editor will match the following line.
     	    		int p2 = value2.indexOf("}",p1);
     	    		String missingProp = value2.substring(p1,(p2+1));
 	                message = "Right side of condition contains property " + missingProp + " that could not be matched.";
@@ -698,8 +698,8 @@ throws CommandWarningException, CommandException {
             	if ( Message.isDebugOn ) {
             		Message.printStatus(2,routine,"Fall through comparison (not version, string, double, integer, or boolean.");
             	}
-            	if ( !value1.startsWith("${") && (processor.getProp(value1) != null) ) {
-            		message = "Left and right have different type (is Value1 missing ${ }?) - cannot evaluate condition \"" + Condition + "\"";
+            	if ( !value1.startsWith("${") && (processor.getProp(value1) != null) ) /* } so editor matches */ {
+            		message = "Left and right have different type (is Value1 missing ${ }?) - cannot evaluate condition \"" + Condition + "\""; // } so editor matches.
 	            	Message.printWarning(3,
 	                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                	routine, message );
@@ -707,8 +707,8 @@ throws CommandWarningException, CommandException {
 	                	new CommandLogRecord(CommandStatusType.FAILURE,
 	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
             	}
-            	else if ( !value2.startsWith("${") && (processor.getProp(value2) != null) ) {
-            		message = "Left and right have different type (is Value2 missing ${ }?) - cannot evaluate condition \"" + Condition + "\"";
+            	else if ( !value2.startsWith("${") && (processor.getProp(value2) != null) ) /* } so editor matches */ {
+            		message = "Left and right have different type (is Value2 missing ${ }?) - cannot evaluate condition \"" + Condition + "\""; // } so editor matches.
 	            	Message.printWarning(3,
 	                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                	routine, message );
@@ -727,17 +727,25 @@ throws CommandWarningException, CommandException {
 	                    	message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
             	}
             }
-    	    if ( Condition.contains("${") ) {
+    	    if ( Condition.contains("${") ) /* } so editor matches. */ {
     	        // Show the original.
     	        status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.SUCCESS,
-                        Condition + " (showing ${Property} notation) evaluates to " + conditionEval, "See also matching EndIf()" ) );
+                        Condition + " (showing ${Property} notation) evaluates to " + conditionEval, "See also matching EndIf()" ) ); // } so editor matches.
     	    }
     	    // Always also show the expanded.
     	    status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.SUCCESS,
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
+	    	if ( Message.isDebugOn ) {
+        		Message.printStatus(2,routine,"After evaluationg the condition, conditionEval=." + conditionEval);
+	    	}
+	    } // End evaluating the condition.
+	    else {
+	    	if ( Message.isDebugOn ) {
+        		Message.printStatus(2,routine,"No condition so initial conditionEval=" + conditionEval);
+	    	}
 	    }
 	    if ( (DataStoreIsOk != null) && !DataStoreIsOk.isEmpty() ) {
 	    	// Get the matching datastore.
@@ -768,6 +776,9 @@ throws CommandWarningException, CommandException {
                 	routine, message );
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating DataStoreIsOk, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty() ) {
 	        // Check whether a datastore is OK- this is ANDed to the condition..
@@ -803,6 +814,9 @@ throws CommandWarningException, CommandException {
                 	routine, message );
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating DataStoreIsNotOk, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (FileExists != null) && !FileExists.isEmpty() ) {
 	        // Check whether a file exists - this is ANDed to the condition..
@@ -823,6 +837,9 @@ throws CommandWarningException, CommandException {
                	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating FileExists, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (FileDoesNotExist != null) && !FileDoesNotExist.isEmpty() ) {
 	        // Check whether a file does not exist - this is ANDed to the condition.
@@ -843,6 +860,9 @@ throws CommandWarningException, CommandException {
                	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating FileDoesNotExist, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (ObjectExists != null) && !ObjectExists.isEmpty() ) {
 	        // Check whether a table exists - this is ANDed to the condition.
@@ -882,6 +902,9 @@ throws CommandWarningException, CommandException {
                	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating ObjectExists, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (ObjectDoesNotExist != null) && !ObjectDoesNotExist.isEmpty() ) {
 	        // Check whether a table exists - this is ANDed to the condition.
@@ -921,6 +944,9 @@ throws CommandWarningException, CommandException {
                	conditionEval = false;
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating ObjectDoesNotExist, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists.
@@ -954,6 +980,9 @@ throws CommandWarningException, CommandException {
 		    	}
 	    	}
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsNotDefinedOrIsEmpty, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
 	    	// Check to see whether the specified property exists.
@@ -980,6 +1009,9 @@ throws CommandWarningException, CommandException {
 		    	}
 	    	}
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefined, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (PropertyIsDefinedAndIsNotEmpty != null) && !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists and is not an empty string.
@@ -1012,6 +1044,9 @@ throws CommandWarningException, CommandException {
 		    	}
 	    	}
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefinedAndIsNotEmpty, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TableExists != null) && !TableExists.isEmpty() ) {
 	        // Check whether a table exists - this is ANDed to the condition.
@@ -1051,6 +1086,9 @@ throws CommandWarningException, CommandException {
                	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TableExists, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TableDoesNotExist != null) && !TableDoesNotExist.isEmpty() ) {
 	        // Check whether a table exists - this is ANDed to the condition.
@@ -1090,6 +1128,9 @@ throws CommandWarningException, CommandException {
                	conditionEval = false;
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TableDoesNotExist, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TSExists != null) && !TSExists.isEmpty() ) {
 	        // Check whether a time series exists - this is ANDed to the condition.
@@ -1132,6 +1173,9 @@ throws CommandWarningException, CommandException {
                	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSExists, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TSDoesNotExist != null) && !TSDoesNotExist.isEmpty() ) {
 	        // Check whether a time series does not exist - this is ANDed to the condition.
@@ -1171,6 +1215,9 @@ throws CommandWarningException, CommandException {
                	conditionEval = false;
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSDoesNotExist, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TSHasData != null) && !TSHasData.isEmpty() ) {
 	        // Check whether a time series has data - this is ANDed to the condition.
@@ -1226,6 +1273,9 @@ throws CommandWarningException, CommandException {
             	}
             }
        		setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSHasData, conditionEval=." + conditionEval);
+    	    }
 	    }
 	    if ( (TSHasNoData != null) && !TSHasNoData.isEmpty() ) {
 	        // Check whether a time series does not have data - this is ANDed to the condition.
@@ -1266,6 +1316,9 @@ throws CommandWarningException, CommandException {
             }
             else {
                	// Time series exists but may not have data.
+           		if ( Message.isDebugOn ) {
+           			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is not null, checking for data.");
+           		}
             	if ( !ts.hasData() ) {
             		// Time series does not have data.
             		if ( Message.isDebugOn ) {
@@ -1288,6 +1341,9 @@ throws CommandWarningException, CommandException {
             	}
             }
             setConditionEval(conditionEval);
+            if ( Message.isDebugOn ) {
+  		         Message.printStatus(2,routine,"After evaluating TSHasNoData, conditionEval=." + conditionEval);
+  	        }
 	    }
 	}
 	catch ( Exception e ) {

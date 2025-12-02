@@ -188,10 +188,19 @@ public void actionPerformed( ActionEvent event ) {
 		HelpViewer.getInstance().showHelp("command", "AppendFile");
 	}
 	else if ( o == __ok_JButton ) {
+		try {
+			Message.printStatus(2, "", "Calling refresh.");
 		refresh ();
+			Message.printStatus(2, "", "Back from refresh.");
+			Message.printStatus(2, "", "Calling checkInput.");
 		checkInput();
+			Message.printStatus(2, "", "Back from checkInput __error_wait=" + __error_wait);
 		if ( !__error_wait ) {
 			response ( true );
+		}
+		}
+		catch ( Exception e ) {
+			Message.printWarning(2,"",e);
 		}
 	}
 	else if ( o == __pathInput_JButton ) {
@@ -306,6 +315,7 @@ private void checkInput () {
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
 		__error_wait = true;
+		Message.printWarning(2, "", e);
 	}
 }
 
@@ -546,8 +556,8 @@ public void keyTyped ( KeyEvent event ) {
 /**
 Indicate if the user pressed OK (cancel otherwise).
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**

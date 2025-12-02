@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ private JTextField __MissingValue_JTextField = null;
 private JTextField __InitialValue_JTextField = null;
 private JTextField __InitialFlag_JTextField = null;
 private SimpleJComboBox __InitialFunction_JComboBox = null;
+private SimpleJComboBox __NoData_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -195,6 +196,7 @@ private void checkInput () {
 	String InitialValue = __InitialValue_JTextField.getText().trim();
 	String InitialFlag = __InitialFlag_JTextField.getText().trim();
 	String InitialFunction = __InitialFunction_JComboBox.getSelected();
+	String NoData = __NoData_JComboBox.getSelected();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -227,6 +229,9 @@ private void checkInput () {
     if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
         props.set ( "InitialFunction", InitialFunction );
     }
+    if ( (NoData != null) && (NoData.length() > 0) ) {
+        props.set ( "NoData", NoData );
+    }
 	try {
 	    // This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
@@ -252,6 +257,7 @@ private void commitEdits () {
 	String InitialValue = __InitialValue_JTextField.getText().trim();
 	String InitialFlag = __InitialFlag_JTextField.getText().trim();
 	String InitialFunction = __InitialFunction_JComboBox.getSelected();
+	String NoData = __NoData_JComboBox.getSelected();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Description", Description );
@@ -262,6 +268,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "InitialValue", InitialValue );
 	__command.setCommandParameter ( "InitialFlag", InitialFlag );
 	__command.setCommandParameter ( "InitialFunction", InitialFunction );
+	__command.setCommandParameter ( "NoData", NoData );
 }
 
 /**
@@ -418,6 +425,20 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - function to initialize data."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("No data ?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NoData_JComboBox = new SimpleJComboBox(false);
+    __NoData_JComboBox.setToolTipText("Set to " + __command._True + " to create the time series without initializing the data, used in testing.");
+    __NoData_JComboBox.add ( "" );
+    __NoData_JComboBox.add ( __command._False );
+    __NoData_JComboBox.add ( __command._True );
+    __NoData_JComboBox.select ( 0 );
+    __NoData_JComboBox.addActionListener (this);
+    JGUIUtil.addComponent(main_JPanel, __NoData_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - do not initialize data (default=" + __command._False + ")."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,60);
@@ -506,6 +527,7 @@ private void refresh () {
 	String InitialValue = "";
 	String InitialFlag = "";
 	String InitialFunction = "";
+	String NoData = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -519,6 +541,7 @@ private void refresh () {
 		InitialValue = props.getValue ( "InitialValue" );
 		InitialFlag = props.getValue ( "InitialFlag" );
 		InitialFunction = props.getValue ( "InitialFunction" );
+		NoData = props.getValue ( "NoData" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -556,8 +579,21 @@ private void refresh () {
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nInitialFunction value \"" +
-                InitialFunction + "\".  Select a different value or Cancel.");
+                "Existing command references an invalid\nInitialFunction value \"" + InitialFunction + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( NoData == null ) {
+            // Select default.
+            __NoData_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __NoData_JComboBox, NoData, JGUIUtil.NONE, null, null ) ) {
+                __NoData_JComboBox.select ( NoData );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nNoData value \"" + NoData + "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
         }
@@ -573,6 +609,7 @@ private void refresh () {
 	InitialValue = __InitialValue_JTextField.getText();
 	InitialFlag = __InitialFlag_JTextField.getText();
 	InitialFunction = __InitialFunction_JComboBox.getSelected();
+	NoData = __NoData_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewTSID=" + NewTSID );
@@ -584,6 +621,7 @@ private void refresh () {
 	props.add ( "InitialValue=" + InitialValue );
 	props.add ( "InitialFlag=" + InitialFlag );
 	props.add ( "InitialFunction=" + InitialFunction );
+	props.add ( "NoData=" + NoData );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }
 

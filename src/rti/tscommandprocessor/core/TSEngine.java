@@ -1118,11 +1118,29 @@ All conditions must be true for nested if statements to allow execution of comma
 @return true if all the If_Command evaluate to true, false otherwise.
 */
 private boolean evaluateIfStack ( List<If_Command> ifCommandStack ) {
+	String routine = null;
+	if ( Message.isDebugOn ) {
+		routine = getClass().getSimpleName() + ".evalauteIfStack";
+	}
+	int level = 0;
     for ( If_Command c : ifCommandStack ) {
+    	++level;
         if ( !c.getConditionEval() ) {
+        	// If condition stack evaluated as false.
+        	if ( Message.isDebugOn ) {
+        		PropList parameters = c.getCommandParameters();
+        		String ifName = parameters.getValue("Name");
+        		Message.printDebug(1, routine, "If level " + level + " (\"" + ifName + "\") evaluated to false." );
+        	}
             return false;
         }
+        else {
+        	if ( Message.isDebugOn ) {
+        		Message.printDebug(1, routine, "If level " + level + " evaluated to true." );
+        	}
+        }
     }
+    // All the nested If statements evaluated to true.
     return true;
 }
 

@@ -110,6 +110,7 @@ throws InvalidCommandParameterException {
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the input file."));
+		/* TODO smalers, 2025-12-02 will always cause an exception since InputFile is not specified - remove later.
 		if ( (AppendText != null) && !AppendText.isEmpty() ) {
 			// Do not allow InputFile to be a list since can only append text to one file.
 			if ( (InputFile.indexOf("*") >= 0) || (InputFile.indexOf(",") >= 0) ) {
@@ -120,6 +121,7 @@ throws InvalidCommandParameterException {
 						message, "Reconfigure the workflow to properly handle appending text."));
 			}
 		}
+		*/
 	}
     if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The output file must be specified.";
@@ -284,7 +286,7 @@ CommandWarningException, CommandException {
 		String part_full = IOUtil.verifyPathForOS(
        		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
        			TSCommandProcessorUtil.expandParameterValue(processor,this,part) ) ).replace("\\", "/");
-		if ( !StringUtil.containsAny(part_full, "*{?[", false) ) {
+		if ( !StringUtil.containsAny(part_full, "*{?[", false) ) /* } so editor matches */ {
 	    	// Processing a single file so don't need to deal with glob wildcards.
 	    	fileList.add(Paths.get(part_full).toFile());
 		}
@@ -307,7 +309,7 @@ CommandWarningException, CommandException {
 		}
 	}
 
-	if ( ((AppendText == null) || (AppendText.length() == 0)) && (fileList.size() == 0) ) {
+	if ( ((AppendText == null) || AppendText.isEmpty()) && (fileList.size() == 0) ) {
 		// No text and no files.
 	    message = "Unable to match any files using InputFile=\"" + InputFile + "\"";
 	    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
@@ -378,6 +380,8 @@ CommandWarningException, CommandException {
         	throw new CommandException ( message );
 		}
 
+		// Append the list of files to the output file:
+		// - if not append files were provided the text can still be appended
     	String line;
     	boolean includeLine;
     	int fileCount = 0;
@@ -385,52 +389,60 @@ CommandWarningException, CommandException {
 	    	BufferedReader in = null;
 	    	message = "Processing file \"" + file.getName() + "\"";
 	    	notifyCommandProgressListeners ( fileCount++, fileList.size(), (float)-1.0, message );
-	    	try {
-	        	in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
-	        	// Read lines and check against the pattern to match.  Default is regex syntax.
-	        	while( (line = in.readLine()) != null ) {
-	            	includeLine = true;
-	            	if ( doIncludeText ) {
-	            		// Evaluate the include pattern first.
-	                	if ( line.matches(includePattern) ) {
-	                    	// OK to append to output.
-	                    	includeLine = true;
-	                	}
-	                	else {
-	                    	includeLine = false;
-	                	}
-	            	}
-                	if ( doExcludeText ) {
-	            		// Reduce from the included lines above.
-                    	if ( line.matches(excludePattern) ) {
-                        	// Skip.
-                        	includeLine = false;
-                    	}
-                	}
-	            	if ( includeLine ) {
-	                	fout.write(line + nl);
-	            	}
-	        	}
+	   		try {
+	   			in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
+	   		}
+	   		catch ( Exception e ) {
+	   			// No file:
+	   			// - warnings for missing files are handled above so just skip to the next file
+	   			continue;
+	   		}
+   			try {
+				// Read lines and check against the pattern to match.  Default is regex syntax.
+   				while( (line = in.readLine()) != null ) {
+   					includeLine = true;
+   					if ( doIncludeText ) {
+   						// Evaluate the include pattern first.
+   						if ( line.matches(includePattern) ) {
+   							// OK to append to output.
+   							includeLine = true;
+   						}
+   						else {
+   							includeLine = false;
+   						}
+   					}
+   					if ( doExcludeText ) {
+   						// Reduce from the included lines above.
+   						if ( line.matches(excludePattern) ) {
+   							// Skip.
+   							includeLine = false;
+   						}
+   					}
+   					if ( includeLine ) {
+   						fout.write(line + nl);
+   					}
+		       	}
 	    	}
-        	catch ( Exception e ) {
-    			message = "Unexpected error appending file \"" + file.getPath() + "\" to \"" +
-    		    	OutputFile_full + "\" (" + e + ").";
-    			Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-    			Message.printWarning ( 3, routine, e );
-    			status.addToLog(CommandPhaseType.RUN,
+	       	catch ( Exception e ) {
+	   			message = "Unexpected error appending file \"" + file.getPath() + "\" to \"" + OutputFile_full + "\" (" + e + ").";
+	   			Message.printWarning ( warning_level,
+	   			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	   			Message.printWarning ( 3, routine, e );
+	   			status.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "See the log file for details."));
-    			throw new CommandException ( message );
-    		}
-        	finally {
-            	try {
-                	in.close();
-            	}
-            	catch ( Exception e ) {
-                	// Should not happen.
-            	}
-        	}
+	   			// Since multiple files can be in the list, try to do as much as possible.
+	   			continue;
+	   			//throw new CommandException ( message );
+	   		}
+	       	finally {
+	           	try {
+	               	in.close();
+	           	}
+	           	catch ( Exception e ) {
+	               	// Should not happen.
+	           	}
+	       	}
 		}
 
 		// Process text if given.
@@ -441,8 +453,10 @@ CommandWarningException, CommandException {
 		}
 
 		// Close the output file.
-		fout.close();
-		fout = null; // If not null will be closed in 'finally'.
+		if ( fout != null ) {
+			fout.close();
+			fout = null; // If not null will be closed in 'finally'.
+		}
 		// Rename the temporary output file to final output file name.
 		if ( temporaryFile != null ) {
 			Path source = Paths.get(temporaryFile);

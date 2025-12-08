@@ -355,9 +355,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	int rowCount0 = table.getNumberOfRecords();
 	try {
 		if ( commandPhase == CommandPhaseType.RUN ) {
+			// Rows before the delete.
+			int rowCount0 = table.getNumberOfRecords();
 			if ( deleteRowNumbers.length > 0 ) {
     	    	// Delete rows based on numbers.
 				if ( deleteAllRows ) {

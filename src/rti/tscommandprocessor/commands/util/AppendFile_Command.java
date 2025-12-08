@@ -466,7 +466,9 @@ CommandWarningException, CommandException {
 				Files.delete(target);
 			}
 			// Move the file.
-			Files.move(source, target);
+			if ( Files.exists(source) ) {
+				Files.move(source, target);
+			}
 		}
     	// Save the output file name.
     	setOutputFile ( new File(OutputFile_full));

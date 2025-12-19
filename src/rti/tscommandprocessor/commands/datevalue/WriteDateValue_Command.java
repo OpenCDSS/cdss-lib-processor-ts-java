@@ -83,8 +83,8 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public WriteDateValue_Command ()
-{	super();
+public WriteDateValue_Command () {
+	super();
 	setCommandName ( "WriteDateValue" );
 }
 
@@ -96,8 +96,8 @@ Check the command parameter for valid values, combination, etc.
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String OutputFile = parameters.getValue ( "OutputFile" );
+throws InvalidCommandParameterException {
+	String OutputFile = parameters.getValue ( "OutputFile" );
     String WriteSeparateFiles = parameters.getValue ( "WriteSeparateFiles" );
     String Delimiter = parameters.getValue("Delimiter" );
     String MissingValue = parameters.getValue("MissingValue" );
@@ -116,7 +116,7 @@ throws InvalidCommandParameterException
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
 	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
@@ -171,7 +171,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the whether to write separate files using " + _False + " (default) or " + _True + "." ) );
     }
-	
+
 	if ( (Delimiter != null) && !Delimiter.equals("") && !Delimiter.equals(",")) {
         message = "The delimiter \"" + Delimiter + "\" currently must be blank (to indicate space) or a comma.";
         warning += "\n" + message;
@@ -179,7 +179,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the delimiter as blank or a comma." ) );
 	}
-	
+
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
             message = "The precision \"" + Precision + "\" is not an integer.";
@@ -189,7 +189,7 @@ throws InvalidCommandParameterException
                             message, "Specify the precision as an integer." ) );
         }
     }
-    
+
     if ( (MissingValue != null) && !MissingValue.equals("") ) {
         if ( !StringUtil.isDouble(MissingValue) ) {
             message = "The missing value \"" + MissingValue + "\" is not a number.";
@@ -218,7 +218,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the whether to write data flags using " + _False + " or " + _True + " (default if flags are available)." ) );
     }
-    
+
     if ( (WriteDataFlagDescriptions != null) && !WriteDataFlagDescriptions.isEmpty() &&
     	!WriteDataFlagDescriptions.equalsIgnoreCase(_False) && !WriteDataFlagDescriptions.equalsIgnoreCase(_True) ) {
         message = "The WriteDataFlagDescriptions \"" + WriteDataFlagDescriptions + "\" parameter is invalid.";
@@ -229,7 +229,8 @@ throws InvalidCommandParameterException
     }
 
 	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
-		try {	DateTime datetime1 = DateTime.parse(OutputStart);
+		try {
+			DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -243,7 +244,8 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (OutputEnd != null) && !OutputEnd.isEmpty() && !OutputEnd.startsWith("${") ) {
-		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
+		try {
+			DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -270,7 +272,7 @@ throws InvalidCommandParameterException
                     "Specify a standard interval (e.g., 6Hour, Day, Month)."));
         }
     }
-    
+
     if ( (Version != null) && !Version.equals("1.4") && !Version.equals("1.5") && !Version.equals("1.6") ) {
         message = "The version \"" + Version + "\" is not recognized.";
         warning += "\n" + message;
@@ -311,16 +313,16 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed.
+public boolean editCommand ( JFrame parent ) {
+	// The command will be modified if changed.
 	return (new WriteDateValue_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the list of files that were created by this command.
+@return the list of files that were created by this command
 */
 public List<File> getGeneratedFileList () {
 	List<File> list = new ArrayList<>();
@@ -331,7 +333,8 @@ public List<File> getGeneratedFileList () {
 }
 
 /**
-Return the output file generated by this file.  This method is used internally.
+Return the output file generated by this command.  This method is used internally.
+@return the output file generated by this command.  This method is used internally.
 */
 private File getOutputFile () {
 	return __OutputFile_File;
@@ -340,14 +343,12 @@ private File getOutputFile () {
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "WriteDateValue_Command.parseCommand", message;
+throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+	String routine = "WriteDateValue_Command.parseCommand", message;
 	int warning_level = 2;
 	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
 		// New syntax, can be blank parameter list for new command.
@@ -357,8 +358,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// Parse the old command.
 		List<String> tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
-			message =
-			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
+			message = "Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -383,24 +383,23 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
 	// Clear the output file.
-	
+
 	setOutputFile ( null );
-	
+
 	// Check whether the processor wants output files to be created.
 
 	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
-			Message.printStatus ( 2, routine,
-			"Skipping \"" + toString() + "\" because output is not being created." );
+		Message.printStatus ( 2, routine, "Skipping \"" + toString() + "\" because output is not being created." );
 	}
-	
+
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     Boolean clearStatus = Boolean.TRUE; // Default.
@@ -595,7 +594,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (Version != null) && (Version.length() > 0) ) {
         props.set("Version=" + Version);
     }
-    
+
     // Get the standard comments to add to the top of the file:
     // - this includes the commands and the list of HydroBase datastores
 
@@ -646,11 +645,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
    			props.setUsingObject("OutputComments", OutputComments_List);
     	}
     }
-    
+
     if ( irregularInterval != null ) {
         props.setUsingObject("IrregularInterval",irregularInterval);
     }
-    
+
     // Write the time series file even if no time series are available.
     // This is useful for troubleshooting and testing (in cases where no time series are available.
     if ( writeSeparateFiles ) {
@@ -676,7 +675,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		catch ( Exception e ) {
     			message = "Unexpected error writing time series " +
     				ts.getIdentifier().toStringAliasAndTSID() + " to DateValue file \"" + OutputFile_full + "\" (" + e + ")";
-    			Message.printWarning ( warning_level, 
+    			Message.printWarning ( warning_level,
     				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
     			Message.printWarning ( 3, routine, e );
     			status.addToLog ( CommandPhaseType.RUN,
@@ -702,7 +701,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         catch ( Exception e ) {
             message = "Unexpected error writing time series to DateValue file \"" + OutputFile_full + "\" (" + e + ")";
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
@@ -711,12 +710,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             throw new CommandException ( message );
         }
     }
-	
+
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the output file that is created by this command.  This is only used internally.
+@param file the output file that is created
 */
 private void setOutputFile ( File file ) {
 	__OutputFile_File = file;

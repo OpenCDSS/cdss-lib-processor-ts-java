@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ private SimpleJComboBox __Operator_JComboBox = null;
 private SimpleJComboBox __InputColumn2_JComboBox = null;
 private JTextField __InputValue2_JTextField = null;
 private JTextField __InputValue3_JTextField = null;
+private SimpleJComboBox __UseEmptyStringForNullInput_JComboBox = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
@@ -159,6 +160,9 @@ private void checkGUIState () {
     	__InputColumn2_JComboBox.setToolTipText("Specify an input column that will be appended to InputColumn1... OR use InputValue2");
     	__InputValue2_JTextField.setToolTipText("Specify an input value that will be appended to InputColumn1... OR use InputColumn2");
     }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.COPY) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to copy to the output column");
+    }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.PREPEND) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column as the input - see also InputColumn2 and InputValue2");
     	__InputColumn2_JComboBox.setToolTipText("Specify an input column that will be prepended to InputColumn1... OR use InputValue2");
@@ -184,6 +188,9 @@ private void checkGUIState () {
     }
     // TODO SAM 2015-04-29 Need to enable boolean.
     //choices.add ( DataTableStringOperatorType.TO_BOOLEAN );
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_BOOLEAN) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to a boolean value");
+    }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_DATE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to date value");
     }
@@ -195,6 +202,9 @@ private void checkGUIState () {
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_INTEGER) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to integer value");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_LONG) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to a long integer value");
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_MIXEDCASE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to Mixedcase");
@@ -221,6 +231,7 @@ private void checkInput () {
     String InputValue2 = __InputValue2_JTextField.getText();
     String InputValue3 = __InputValue3_JTextField.getText();
     String Operator = __Operator_JComboBox.getSelected();
+    String UseEmptyStringForNullInput = __UseEmptyStringForNullInput_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
 
@@ -250,6 +261,9 @@ private void checkInput () {
     if ( Operator.length() > 0 ) {
         parameters.set ( "Operator", Operator );
     }
+    if ( UseEmptyStringForNullInput.length() > 0 ) {
+        parameters.set ( "UseEmptyStringForNullIInput", UseEmptyStringForNullInput );
+    }
     if ( OutputColumn.length() > 0 ) {
         parameters.set ( "OutputColumn", OutputColumn );
     }
@@ -277,6 +291,7 @@ private void commitEdits () {
     String InputValue2 = __InputValue2_JTextField.getText();
     String InputValue3 = __InputValue3_JTextField.getText();
     String Operator = __Operator_JComboBox.getSelected();
+    String UseEmptyStringForNullInput = __UseEmptyStringForNullInput_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
@@ -286,6 +301,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "InputValue2", InputValue2 );
     __command.setCommandParameter ( "InputValue3", InputValue3 );
     __command.setCommandParameter ( "Operator", Operator );
+    __command.setCommandParameter ( "UseEmptyStringForNullInput", UseEmptyStringForNullInput );
     __command.setCommandParameter ( "OutputColumn", OutputColumn );
 }
 
@@ -437,6 +453,22 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only used by some operators."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use empty string for null input?:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UseEmptyStringForNullInput_JComboBox = new SimpleJComboBox ( false ); // Do not allow edit.
+    __UseEmptyStringForNullInput_JComboBox.setToolTipText(
+    	"Indicate whether an empty string be used for null table input (default is null input results in null output)");
+    List<String> nullChoices = new ArrayList<>();
+    nullChoices.add("");
+    nullChoices.add(this.__command._False);
+    nullChoices.add(this.__command._True);
+    __UseEmptyStringForNullInput_JComboBox.setData ( nullChoices ); // TODO SAM 2010-09-13 Need to populate via discovery.
+    __UseEmptyStringForNullInput_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __UseEmptyStringForNullInput_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - use an empty string for null table input? (default=" + this.__command._False + ")."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit.
@@ -546,6 +578,7 @@ private void refresh () {
     String InputValue2 = "";
     String InputValue3 = "";
     String Operator = "";
+    String UseEmptyStringForNullInput = "";
     String OutputColumn = "";
 
 	PropList props = __command.getCommandParameters();
@@ -560,6 +593,7 @@ private void refresh () {
         InputValue2 = props.getValue ( "InputValue2" );
         InputValue3 = props.getValue ( "InputValue3" );
         Operator = props.getValue ( "Operator" );
+		UseEmptyStringForNullInput = props.getValue ( "UseEmptyStringForNullInput" );
 		OutputColumn = props.getValue ( "OutputColumn" );
         if ( TableID == null ) {
             // Select default...
@@ -629,6 +663,19 @@ private void refresh () {
         if ( InputValue3 != null ) {
             __InputValue3_JTextField.setText ( InputValue3 );
         }
+        if ( UseEmptyStringForNullInput == null ) {
+            // Select default.
+            __UseEmptyStringForNullInput_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __UseEmptyStringForNullInput_JComboBox,UseEmptyStringForNullInput, JGUIUtil.NONE, null, null ) ) {
+                __UseEmptyStringForNullInput_JComboBox.select ( UseEmptyStringForNullInput );
+            }
+            else {
+                // Just set the user-specified value.
+                __UseEmptyStringForNullInput_JComboBox.setText( UseEmptyStringForNullInput );
+            }
+        }
         if ( OutputColumn == null ) {
             // Select default.
             __OutputColumn_JComboBox.select ( 0 );
@@ -652,6 +699,7 @@ private void refresh () {
     InputColumn2 = __InputColumn2_JComboBox.getSelected();
     InputValue2 = __InputValue2_JTextField.getText();
     InputValue3 = __InputValue3_JTextField.getText();
+    UseEmptyStringForNullInput = __UseEmptyStringForNullInput_JComboBox.getSelected();
     OutputColumn = __OutputColumn_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -662,6 +710,7 @@ private void refresh () {
     props.add ( "InputColumn2=" + InputColumn2 );
     props.add ( "InputValue2=" + InputValue2 );
     props.add ( "InputValue3=" + InputValue3 );
+    props.add ( "UseEmptyStringForNullInput=" + UseEmptyStringForNullInput );
     props.add ( "OutputColumn=" + OutputColumn );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );
 }

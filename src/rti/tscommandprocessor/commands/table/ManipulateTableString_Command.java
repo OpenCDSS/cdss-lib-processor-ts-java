@@ -57,6 +57,12 @@ This class initializes, checks, and runs the ManipulateTableString() command.
 */
 public class ManipulateTableString_Command extends AbstractCommand implements Command
 {
+	
+	/**
+	 * Values for UseEmptyStringForNullInput.
+	 */
+	protected final String _False = "False";
+	protected final String _True = "True";
 
 /**
 Constructor.
@@ -81,6 +87,7 @@ throws InvalidCommandParameterException {
     String InputColumn2 = parameters.getValue ( "InputColumn2" );
     String InputValue2 = parameters.getValue ( "InputValue2" );
     String InputValue3 = parameters.getValue ( "InputValue3" );
+    String UseEmptyStringForNullInput = parameters.getValue ( "UseEmptyStringForNullInput" );
     String OutputColumn = parameters.getValue ( "OutputColumn" );
     String warning = "";
     String message;
@@ -209,8 +216,12 @@ throws InvalidCommandParameterException {
         }*/
     }
 
-    if ( (operatorType != null) && (operatorType != DataTableStringOperatorType.TO_DOUBLE) &&
+    if ( (operatorType != null) &&
+    	(operatorType != DataTableStringOperatorType.COPY) &&
+    	(operatorType != DataTableStringOperatorType.TO_BOOLEAN) &&
+    	(operatorType != DataTableStringOperatorType.TO_DOUBLE) &&
         (operatorType != DataTableStringOperatorType.TO_INTEGER) &&
+        (operatorType != DataTableStringOperatorType.TO_LONG) &&
         (operatorType != DataTableStringOperatorType.TO_DATE) &&
         (operatorType != DataTableStringOperatorType.TO_DATE_TIME) &&
         (operatorType != DataTableStringOperatorType.TO_LOWERCASE) &&
@@ -242,7 +253,7 @@ throws InvalidCommandParameterException {
         }
     }
 
-    if ( ((InputColumn2 != null) && !InputColumn2.equals("")) &&
+    if ( ((InputColumn2 != null) && !InputColumn2.isEmpty()) &&
         ((InputValue2 != null) && !InputValue2.equals(""))) {
         message = "Either InputColumn2 or InputValue2 MUST be specified (but not both).";
         warning += "\n" + message;
@@ -250,15 +261,18 @@ throws InvalidCommandParameterException {
             message, "Provide a column name or string constant as Input2." ) );
     }
 
-    if ( (OutputColumn == null) || OutputColumn.equals("") ) {
-        message = "The output column must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide a column name for output." ) );
+    if ( (UseEmptyStringForNullInput != null) && !UseEmptyStringForNullInput.isEmpty() ) {
+    	if ( !UseEmptyStringForNullInput.equalsIgnoreCase(this._False) &&
+    		!UseEmptyStringForNullInput.equalsIgnoreCase(this._True)  ) {
+    		message = "The value for UseEmptyStringForNullInput is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+    			message, "Specify as " + this._False + " (default) or " + this._True + ".") );
+    	}
     }
 
     // Check for invalid parameters.
-    List<String> validList = new ArrayList<>(9);
+    List<String> validList = new ArrayList<>(10);
     validList.add ( "TableID" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
@@ -267,6 +281,7 @@ throws InvalidCommandParameterException {
     validList.add ( "InputColumn2" );
     validList.add ( "InputValue2" );
     validList.add ( "InputValue3" );
+    validList.add ( "UseEmptyStringForNullInput" );
     validList.add ( "OutputColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -374,6 +389,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( commandPhase == CommandPhaseType.RUN ) {
     	InputValue3 = TSCommandProcessorUtil.expandParameterValue(processor, this, InputValue3);
     }
+    String UseEmptyStringForNullInput = parameters.getValue ( "UseEmptyStringForNullInput" );
+    boolean useEmptyStringForNullInput = false; // Default.
+    if ( (UseEmptyStringForNullInput != null) && UseEmptyStringForNullInput.equalsIgnoreCase(this._True) ) {
+    	useEmptyStringForNullInput = true;
+    }
     String OutputColumn = parameters.getValue ( "OutputColumn" );
     if ( commandPhase == CommandPhaseType.RUN ) {
     	OutputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputColumn);
@@ -426,7 +446,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     List<String> problems = new ArrayList<>();
     try {
         DataTableStringManipulator dtm = new DataTableStringManipulator ( table, columnIncludeFilters, columnExcludeFilters );
-        dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, OutputColumn, problems );
+        dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, useEmptyStringForNullInput, OutputColumn, problems );
     }
     catch ( Exception e ) {
         message = "Unexpected error performing table string manipulation (" + e + ").";
@@ -488,6 +508,7 @@ public String toString ( PropList parameters ) {
     	"InputColumn2",
     	"InputValue2",
     	"InputValue3",
+    	"UseEmptyStringForNullInput",
     	"OutputColumn"
 	};
 	return this.toString(parameters, parameterOrder);

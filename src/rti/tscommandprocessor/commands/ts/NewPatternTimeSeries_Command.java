@@ -110,6 +110,10 @@ throws InvalidCommandParameterException {
 	String PatternFlags = parameters.getValue ( "PatternFlags" );
 	String warning = "";
     String message;
+    
+    // The following checks occur at runtime:
+    // - check that the IrregularInterval precision matches the Start and End precision
+    //   (otherwise, irregular interval precision may not be handled properly)
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -136,7 +140,8 @@ throws InvalidCommandParameterException {
 		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}
 		try {
             tsident = TSIdent.parseIdentifier( NewTSID );
-			try { TimeInterval.parseInterval(tsident.getInterval());
+			try {
+				TimeInterval.parseInterval(tsident.getInterval());
 			}
 			catch ( Exception e2 ) {
                 message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
@@ -571,6 +576,56 @@ CommandWarningException, CommandException {
 	                message, "Specify the SetEnd parameter or use a SetOutputPeriod() command.") );
 	    }
     }
+    
+    // If IrregularInterval is specified, make sure that its precision matches the SetStart and SetEnd precision.
+    // - do this at runtime to make sure everything is expanded
+    
+    TimeInterval tsinterval = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	if ( (IrregularInterval != null) && !IrregularInterval.isEmpty() ) {
+	        try {
+	            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
+	        }
+	        catch ( Exception e ) {
+	            message = "Irregular time series interval is invalid.";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warningCount),routine,message );
+	            status.addToLog(commandPhase,
+	                new CommandLogRecord(
+	                CommandStatusType.FAILURE, message,
+	                "Verify that the irregular time series interval is valid (e.g., \"5Min\")."));
+	        }
+	        if ( tsinterval != null ) {
+	        	if ( SetStart_DateTime != null ) {
+	        		if ( tsinterval.getBase() != SetStart_DateTime.getPrecision() ) {
+			            message = "SetStart precision (" + TimeInterval.getName(SetStart_DateTime.getPrecision(),-1) +
+			            	") does not match IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ").";
+			            Message.printWarning ( warning_level,
+			            MessageUtil.formatMessageTag(
+			            command_tag,++warningCount),routine,message );
+			            status.addToLog(commandPhase,
+			                new CommandLogRecord(
+			                CommandStatusType.FAILURE, message,
+			                "Specify consistent precision."));
+	        		}
+	        	}
+	        	if ( SetEnd_DateTime != null ) {
+	        		if ( tsinterval.getBase() != SetEnd_DateTime.getPrecision() ) {
+			            message = "SetEnd precision (" + TimeInterval.getName(SetEnd_DateTime.getPrecision(),-1) +
+			            	") does not match IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ").";
+			            Message.printWarning ( warning_level,
+			            MessageUtil.formatMessageTag(
+			            command_tag,++warningCount),routine,message );
+			            status.addToLog(commandPhase,
+			                new CommandLogRecord(
+			                CommandStatusType.FAILURE, message,
+			                "Specify consistent precision."));
+	        		}
+	        	}
+	        }
+    	}
+    }
 
     if ( warningCount > 0 ) {
         // Input error.
@@ -641,20 +696,6 @@ CommandWarningException, CommandException {
     		    	// Use the period to iterate and define missing values.
     		    	// The following works for general "Irregular" interval and interval with precision (e.g., "IrregDay").
     		        DateTime end = new DateTime ( ts.getDate2() );
-    		        TimeInterval tsinterval = null;
-    		        try {
-    		            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
-    		        }
-    		        catch ( Exception e ) {
-    		            message = "Irregular time series interval is invalid.";
-    		            Message.printWarning ( warning_level,
-    		            MessageUtil.formatMessageTag(
-    		            command_tag,++warningCount),routine,message );
-    		            status.addToLog(commandPhase,
-    		                    new CommandLogRecord(
-    		                    CommandStatusType.FAILURE, message,
-    		                    "Verify that the irregular time series interval is valid (e.g., \"5Min\")."));
-    		        }
     		        double missing = ts.getMissing();
     		        int iPattern = 0; // Pattern to use.
     		        Message.printStatus(2, routine, "Initializing pattern time series to missing..." );
@@ -675,8 +716,7 @@ CommandWarningException, CommandException {
     		    }
     		    // Set the data.  This will reset the initial missing values in the time series.
     			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
-    			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime,
-    			    __PatternValues_double, __PatternFlags );
+    			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime, __PatternValues_double, __PatternFlags );
     		}
 		}
 
@@ -685,8 +725,7 @@ CommandWarningException, CommandException {
         if ( (Alias != null) && !Alias.isEmpty() ) {
             String alias = Alias;
             if ( commandPhase == CommandPhaseType.RUN ) {
-            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-            		processor, ts, Alias, status, commandPhase);
+            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, Alias, status, commandPhase);
             }
             ts.setAlias ( alias );
         }

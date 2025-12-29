@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -352,14 +352,27 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
     boolean includeIrregular = false;
     List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
+    // Add a few more choices:
+    // - may need to allow the base interval and multiplier to be specified because can't put all options in a choice
+    intervalChoices.add(0,"30Second");
+    intervalChoices.add(0,"20Second");
+    intervalChoices.add(0,"15Second");
+    intervalChoices.add(0,"10Second");
+    intervalChoices.add(0,"5Second");
+    intervalChoices.add(0,"Second");
+    intervalChoices.add(0,"500Millisecond");
+    intervalChoices.add(0,"250Millisecond");
+    intervalChoices.add(0,"200Millisecond");
+    intervalChoices.add(0,"100Millisecond");
+    //intervalChoices.add(0,"Microsecond");
+    //intervalChoices.add(0,"Nanosecond");
     // Add a blank.
     intervalChoices.add(0,"");
     __IrregularInterval_JComboBox.setData ( intervalChoices );
     __IrregularInterval_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required for irregular time series - used to initialize data."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required for irregular time series - used to initialize data."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/name:" ),
@@ -369,30 +382,27 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
 	JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__Description_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - description for time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for time series."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__SetStart_JTextField = new JTextField ( "", 20 );
+	__SetStart_JTextField = new JTextField ( "", 30 );
 	__SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
 	__SetStart_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "Optional - starting date/time for data (default=global start)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - starting date/time for data (default=global start)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__SetEnd_JTextField = new JTextField ( "", 20 );
+	__SetEnd_JTextField = new JTextField ( "", 30 );
 	__SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
 	__SetEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "Optional - ending date/time for data (default=global end)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - ending date/time for data (default=global end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ),
@@ -402,8 +412,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
 	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__Units_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - for example:  ACFT, CFS, IN."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - for example:  ACFT, CFS, IN."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
@@ -413,8 +422,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - missing data value (default=-999, recommended=NaN)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - missing data value (default=-999, recommended=NaN)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern values:"),
@@ -452,7 +460,7 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command ) 
     checkUIState();
 	refresh();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -615,8 +623,8 @@ private void refresh () {
 React to the user response.
 @param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok().
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();

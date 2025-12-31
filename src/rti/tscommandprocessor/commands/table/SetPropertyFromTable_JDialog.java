@@ -56,6 +56,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.EmbeddedPropertyFormatType;
 
 @SuppressWarnings("serial")
 public class SetPropertyFromTable_JDialog extends JDialog
@@ -67,6 +68,7 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTabbedPane __main_JTabbedPane = null;
+// Cell Property.
 private JTextField __Column_JTextField = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
@@ -74,6 +76,10 @@ private SimpleJComboBox __IgnoreCase_JComboBox = null;
 private JTextField __Row_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private JTextField __DefaultValue_JTextField = null;
+// Cell embedded properties
+private SimpleJComboBox __DecodeEmbeddedProperties_JComboBox = null;
+private SimpleJComboBox __EmbeddedPropertyFormat_JComboBox = null;
+// Table Property.
 private JTextField __RowCountProperty_JTextField = null;
 private JTextField __ColumnCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
@@ -180,6 +186,9 @@ private void checkInput () {
     String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
+    // Cell embedded properties.
+	String DecodeEmbeddedProperties = __DecodeEmbeddedProperties_JComboBox.getSelected();
+	String EmbeddedPropertyFormat = __EmbeddedPropertyFormat_JComboBox.getSelected();
     // Table.
 	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	String ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
@@ -208,6 +217,13 @@ private void checkInput () {
     }
     if ( !DefaultValue.isEmpty() ) {
         props.set ( "DefaultValue", DefaultValue );
+    }
+    // Cell embedded properties
+    if ( !DecodeEmbeddedProperties.isEmpty() ) {
+        props.set ( "DecodeEmbeddedProperties", DecodeEmbeddedProperties );
+    }
+    if ( !EmbeddedPropertyFormat.isEmpty() ) {
+        props.set ( "EmbeddedPropertyFormat", EmbeddedPropertyFormat );
     }
     // Table
     if ( !RowCountProperty.isEmpty() ) {
@@ -241,6 +257,9 @@ private void commitEdits () {
     String Row = __Row_JTextField.getText().trim();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String DefaultValue = __DefaultValue_JTextField.getText().trim();
+    // Cell embedded properties.
+	String DecodeEmbeddedProperties = __DecodeEmbeddedProperties_JComboBox.getSelected();
+	String EmbeddedPropertyFormat = __EmbeddedPropertyFormat_JComboBox.getSelected();
     // Table.
 	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	String ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
@@ -253,6 +272,9 @@ private void commitEdits () {
 	__command.setCommandParameter ( "Row", Row );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "DefaultValue", DefaultValue );
+    // Cell embedded properties.
+    __command.setCommandParameter ( "DecodeEmbeddedProperties", DecodeEmbeddedProperties );
+    __command.setCommandParameter ( "EmbeddedPropertyFormat", EmbeddedPropertyFormat );
     // Table.
     __command.setCommandParameter ( "RowCountProperty", RowCountProperty );
     __command.setCommandParameter ( "ColumnCountProperty", ColumnCountProperty );
@@ -415,6 +437,65 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(cell_JPanel, new JLabel ("Optional - Default value, ${property}, Blank, or Null (default=property not set)."),
         3, yCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    // Panel for 'Cell Embedded Properties' parameters.
+    int yEmbeddedCell = -1;
+    JPanel embeddedCell_JPanel = new JPanel();
+    embeddedCell_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Cell Embedded Properties", embeddedCell_JPanel );
+
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "Use the following parameters to set properties that are embedded in a cell's text."),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "Use the 'Cell Property' parameters to match a cell that is a string."),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "The string is then evaluated to decode and set properties that are correctly formatted.  The following is the '" +
+        	EmbeddedPropertyFormatType.DOUBLE_SLASH + "' format."),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "<html><pre>\n  Some text.  // PropertyName1=PropertyValue PropertyName2=\"Property value with spaces\"\n" +
+        "  Some text.  // PropertyName3=PropertyValue PropertyName4='Property value with spaces'\n</pre></html>"),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "This is useful when properties are embedded in text rather than being in separate columns."),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel (
+        "The cell's text without properties will be set as a property if 'PropertyName' is set."),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yEmbeddedCell, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel ( "Decode embedded properties?:" ),
+        0, ++yEmbeddedCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DecodeEmbeddedProperties_JComboBox = new SimpleJComboBox (); // Do not allow edit.
+    __DecodeEmbeddedProperties_JComboBox.setToolTipText("Decode embedded properties from table cell?");
+    List<String> decodeChoices = new ArrayList<>();
+    decodeChoices.add("");
+    decodeChoices.add(this.__command._False);
+    decodeChoices.add(this.__command._True);
+    __DecodeEmbeddedProperties_JComboBox.setData ( decodeChoices );
+    __DecodeEmbeddedProperties_JComboBox.select ( 0 );
+    __DecodeEmbeddedProperties_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(embeddedCell_JPanel, __DecodeEmbeddedProperties_JComboBox,
+        1, yEmbeddedCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel( "Optional - decode embedded properties (default=" + this.__command._False + ")?"),
+        3, yEmbeddedCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel ( "Embedded property format:" ),
+        0, ++yEmbeddedCell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EmbeddedPropertyFormat_JComboBox = new SimpleJComboBox (); // Do not allow edit.
+    __EmbeddedPropertyFormat_JComboBox.setToolTipText("The format for encoded properties.");
+    List<String> formatChoices = EmbeddedPropertyFormatType.getTypeChoicesAsStrings(false);
+    formatChoices.add(0,"");
+    __EmbeddedPropertyFormat_JComboBox.setData ( formatChoices );
+    __EmbeddedPropertyFormat_JComboBox.select ( 0 );
+    __EmbeddedPropertyFormat_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(embeddedCell_JPanel, __EmbeddedPropertyFormat_JComboBox,
+        1, yEmbeddedCell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(embeddedCell_JPanel, new JLabel( "Optional - embedded properties format (default=" + EmbeddedPropertyFormatType.DOUBLE_SLASH + ")?"),
+        3, yEmbeddedCell, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     // Panel for 'Table Property' parameters.
     int yTable = -1;
     JPanel table_JPanel = new JPanel();
@@ -423,6 +504,9 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "Use the following parameters to set a property value using a property associated with the table."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "The counts are determined based on the full table size (filters are not applied)."),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "This is useful when comparing the table size against the expected size."),
@@ -529,26 +613,42 @@ Refresh the command from the other text field contents.
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+    // Cell.
     String Column = "";
     String ColumnIncludeFilters = "";
     String ColumnExcludeFilters = "";
+    String IgnoreCase = "";
     String Row = "";
     String PropertyName = "";
     String DefaultValue = "";
+    // Cell embedded property.
+    String DecodeEmbeddedProperties = "";
+    String EmbeddedPropertyFormat = "";
+    // Table.
     String RowCountProperty = "";
     String ColumnCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
+        // Cell property.
         Column = props.getValue ( "Column" );
         ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
         ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
+        IgnoreCase = props.getValue ( "IgnoreCase" );
         Row = props.getValue ( "Row" );
         PropertyName = props.getValue ( "PropertyName" );
         DefaultValue = props.getValue ( "DefaultValue" );
+        // Cell encoded properties.
+        DecodeEmbeddedProperties = props.getValue ( "DecodeEmbeddedProperties" );
+        EmbeddedPropertyFormat = props.getValue ( "EmbeddedPropertyFormat" );
+        // Table property.
         RowCountProperty = props.getValue ( "RowCountProperty" );
         ColumnCountProperty = props.getValue ( "ColumnCountProperty" );
+
+        // Default to selecting the first tab (will be reset below if parameters are specified).
+	    this.__main_JTabbedPane.setSelectedIndex(0);
+
         if ( TableID == null ) {
             // Select default.
             __TableID_JComboBox.select ( 0 );
@@ -573,6 +673,22 @@ private void refresh () {
         if ( ColumnExcludeFilters != null ) {
             __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
+		if ( (IgnoreCase == null) || IgnoreCase.isEmpty() ) {
+			// Select default.
+			__IgnoreCase_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __IgnoreCase_JComboBox,
+				IgnoreCase, JGUIUtil.NONE, null, null ) ) {
+				__IgnoreCase_JComboBox.select ( IgnoreCase );
+			}
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid IgnoreCase value \"" +
+				IgnoreCase + "\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
         if ( Row != null ) {
             __Row_JTextField.setText ( Row );
         }
@@ -582,36 +698,85 @@ private void refresh () {
         if ( DefaultValue != null ) {
             __DefaultValue_JTextField.setText ( DefaultValue );
         }
-        if ( RowCountProperty != null ) {
+        // Cell embedded property.
+		if ( (DecodeEmbeddedProperties == null) || DecodeEmbeddedProperties.isEmpty() ) {
+			// Select default.
+			__DecodeEmbeddedProperties_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __DecodeEmbeddedProperties_JComboBox,
+				DecodeEmbeddedProperties, JGUIUtil.NONE, null, null ) ) {
+				__DecodeEmbeddedProperties_JComboBox.select ( DecodeEmbeddedProperties );
+				// Select the multiple tab.
+			    this.__main_JTabbedPane.setSelectedIndex(1);
+			}
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid DecodeEmbeddedProperties value \"" +
+				DecodeEmbeddedProperties + "\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
+		if ( (EmbeddedPropertyFormat == null) || EmbeddedPropertyFormat.isEmpty() ) {
+			// Select default.
+			__EmbeddedPropertyFormat_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __EmbeddedPropertyFormat_JComboBox,
+				EmbeddedPropertyFormat, JGUIUtil.NONE, null, null ) ) {
+				__EmbeddedPropertyFormat_JComboBox.select ( EmbeddedPropertyFormat );
+				// Select the multiple tab.
+			    this.__main_JTabbedPane.setSelectedIndex(1);
+			}
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid EmbeddedPropertyFormat value \"" +
+				EmbeddedPropertyFormat + "\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
+        // Table property.
+        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
             __RowCountProperty_JTextField.setText ( RowCountProperty );
             // Show the table properties tab at startup.
-            this.__main_JTabbedPane.setSelectedIndex(1);
-            
+		    this.__main_JTabbedPane.setSelectedIndex(2);
         }
-        if ( ColumnCountProperty != null ) {
+        if ( (ColumnCountProperty != null) && !ColumnCountProperty.isEmpty() ) {
             __ColumnCountProperty_JTextField.setText ( ColumnCountProperty );
             // Show the table properties tab at startup.
-            this.__main_JTabbedPane.setSelectedIndex(1);
+		    this.__main_JTabbedPane.setSelectedIndex(2);
         }
 	}
 	// Regardless, reset the command from the fields.
 	TableID = __TableID_JComboBox.getSelected();
+	// Cell property.
 	Column = __Column_JTextField.getText().trim();
 	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
+	IgnoreCase = __IgnoreCase_JComboBox.getSelected();
 	Row = __Row_JTextField.getText().trim();
     PropertyName = __PropertyName_JTextField.getText().trim();
     DefaultValue = __DefaultValue_JTextField.getText().trim();
+    // Cell embedded property.
+	DecodeEmbeddedProperties = __DecodeEmbeddedProperties_JComboBox.getSelected();
+	EmbeddedPropertyFormat = __EmbeddedPropertyFormat_JComboBox.getSelected();
+	// Table property.
 	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	ColumnCountProperty = __ColumnCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    // Cell property.
 	props.add ( "Column=" + Column );
 	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
+    props.add ( "IgnoreCase=" + IgnoreCase );
 	props.add ( "Row=" + Row );
     props.add ( "PropertyName=" + PropertyName );
     props.add ( "DefaultValue=" + DefaultValue );
+    // Cell embedded property.
+    props.add ( "DecodeEmbeddedProperties=" + DecodeEmbeddedProperties );
+    props.add ( "EmbeddedPropertyFormat=" + EmbeddedPropertyFormat );
+    // Table property.
 	props.add ( "RowCountProperty=" + RowCountProperty );
 	props.add ( "ColumnCountProperty=" + ColumnCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ).trim() );

@@ -50,6 +50,8 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.EmbeddedPropertiesString;
+import RTi.Util.String.EmbeddedPropertyFormatType;
 import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
@@ -90,9 +92,14 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
 	String TableID = parameters.getValue ( "TableID" );
-    String Row = parameters.getValue ( "Row" );
+	// Cell property..
     String IgnoreCase = parameters.getValue ( "IgnoreCase" );
+    String Row = parameters.getValue ( "Row" );
     String PropertyName = parameters.getValue ( "PropertyName" );
+    // Cell embedded properties.
+    String DecodeEmbeddedProperties = parameters.getValue ( "DecodeEmbeddedProperties" );
+    String EmbeddedPropertyFormat = parameters.getValue ( "EmbeddedPropertyFormat" );
+    // Table property.
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     String ColumnCountProperty = parameters.getValue ( "ColumnCountProperty" );
 	String warning = "";
@@ -129,6 +136,30 @@ throws InvalidCommandParameterException {
     }
 
     int propCount = 0;
+    if ( (DecodeEmbeddedProperties != null) && !DecodeEmbeddedProperties.isEmpty() &&
+    	!DecodeEmbeddedProperties.equalsIgnoreCase(this._False) && !DecodeEmbeddedProperties.equalsIgnoreCase(this._True) ) {
+        message = "The DecodeEmbeddedProperties value (" + DecodeEmbeddedProperties +") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + this._False + " or " + this._True + " (default)." ) );
+
+    	if ( DecodeEmbeddedProperties.equalsIgnoreCase(this._True) ) {
+    		++propCount;
+    	}
+    }
+
+    if ( (EmbeddedPropertyFormat != null) && !EmbeddedPropertyFormat.isEmpty() ) {
+    	if ( EmbeddedPropertyFormatType.valueOfIgnoreCase(EmbeddedPropertyFormat) == null ) {
+    		message = "The EmbeddedPropertyFormat value (" + EmbeddedPropertyFormat +") is invalid.";
+    		warning += "\n" + message;
+    		status.addToLog ( CommandPhaseType.INITIALIZATION,
+    			new CommandLogRecord(CommandStatusType.FAILURE,
+    				message, "Specify as " + EmbeddedPropertyFormatType.DOUBLE_SLASH + " (default) or " +
+    					EmbeddedPropertyFormatType.PROPERTY_VALUE + "." ) );
+    	}
+    }
+
     if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
     	++propCount;
     }
@@ -137,7 +168,7 @@ throws InvalidCommandParameterException {
     }
 
     if ( (propCount == 0) && ((PropertyName == null) || (PropertyName.length() == 0)) ) {
-        message = "The property name, RowCountProperty, or ColumnCountProperty must be specified.";
+        message = "The property name, DecodeEmbeddedProperties=True, RowCountProperty, or ColumnCountProperty must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -145,8 +176,9 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(11);
+	List<String> validList = new ArrayList<>(13);
     validList.add ( "TableID" );
+    // Cell property.
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
@@ -155,6 +187,10 @@ throws InvalidCommandParameterException {
     validList.add ( "IgnoreCase" );
     validList.add ( "PropertyName" );
     validList.add ( "DefaultValue" );
+    // Embedded property.
+    validList.add ( "DecodeEmbeddedProperties" );
+    validList.add ( "EmbeddedPropertyFormat" );
+    // Row property.
     validList.add ( "RowCountProperty" );
     validList.add ( "ColumnCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -702,7 +738,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Expand the filter information.
     /*
    	 * TODO smalers 2025-01-16 no need for the complexity since expanded above before conversion to map.
-    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) {
+    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) { // } to allow editor to match block.
         LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
@@ -759,7 +795,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     */
    	/*
    	 * TODO smalers 2025-01-16 no need for the complexity since expanded above before conversion to map.
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.indexOf("${") >= 0) ) {
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.indexOf("${") >= 0) ) { // } to allow editor to match block.
         LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
@@ -796,6 +832,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String DefaultValue = parameters.getValue ( "DefaultValue" );
     if ( commandPhase == CommandPhaseType.RUN ) {
     	DefaultValue = TSCommandProcessorUtil.expandParameterValue(processor, this, DefaultValue);
+    }
+    String DecodeEmbeddedProperties = parameters.getValue ( "DecodeEmbeddedProperties" );
+    boolean decodeEmbeddedProperties = false; // Default.
+    if ( (DecodeEmbeddedProperties != null) && DecodeEmbeddedProperties.equalsIgnoreCase(this._True)) {
+    	decodeEmbeddedProperties = true;
+    }
+    String EmbeddedPropertyFormat = parameters.getValue ( "EmbeddedPropertyFormat" );
+    EmbeddedPropertyFormatType embeddedPropertyFormatType = EmbeddedPropertyFormatType.DOUBLE_SLASH; // Default.
+    if ( (EmbeddedPropertyFormat != null) && !EmbeddedPropertyFormat.isEmpty() ) {
+    	embeddedPropertyFormatType = EmbeddedPropertyFormatType.valueOfIgnoreCase(EmbeddedPropertyFormat);
     }
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     if ( commandPhase == CommandPhaseType.RUN ) {
@@ -852,8 +898,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 	    Prop prop = null;
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-		    if ( (PropertyName != null) && !PropertyName.isEmpty() ) {
-		    	// Setting a property from a cell value.
+		    if ( ((PropertyName != null) && !PropertyName.isEmpty()) || decodeEmbeddedProperties ) {
+		    	// Setting a property from a cell value:
+		    	// - single property if 'PropertyName' is set
+		    	// - and/or one or more properties if 'DecodeEmbeddedProperties=True'
 		    	String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 
 		    	// Make sure that include filter columns exist in the table.
@@ -901,7 +949,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        	}
 	        	Message.printStatus(2, routine, "Found " + records.size() + " matching records.");
 	        	if ( records.size() <= 0 ) {
-	        		// Set to the default value if specified.
+	        		// Did not match any rows:
+	        		// - set to the default value if specified
 	        		String propValue = null;
 	        		if ( (DefaultValue == null) || DefaultValue.isEmpty() ) {
 	        			// Unset the property by setting to null.
@@ -936,7 +985,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                	prop = null;
 	        		}
 	        		else {
-	        			// Create an object with the column value.
+	        			// Create an object with the column value:
+	        			// - will be set and/or decoded below
 		        		Object o = records.get(0).getFieldValue(col);
 		        		Message.printStatus(2,routine,"Column \"" + Column + "\" col=" + col + " value="+ o);
 		        		if ( o == null ) {
@@ -948,32 +998,112 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        		}
 	        	}
 
-	    		// Set the property in the processor.
+	    		// Set the decoded properties in the processor.
 
-	    		PropList requestParams = new PropList ( "" );
-	    		requestParams.set ( "PropertyName", propertyName );
-	    		if ( prop == null ) {
-	    			requestParams.setUsingObject ( "PropertyValue", null );
-	    		}
-	    		else {
-	    			// Set using the property contents (not the String value).
-	    			requestParams.setUsingObject ( "PropertyValue", prop.getContents() );
-	    		}
-	    		try {
-	            	processor.processRequest( "SetProperty", requestParams);
-	    		}
-	    		catch ( Exception e ) {
-	    			message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
-	    			Message.printWarning(log_level,
-    					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    					routine, message );
-	            	status.addToLog ( CommandPhaseType.RUN,
-                    	new CommandLogRecord(CommandStatusType.FAILURE,
-                        	message, "Report the problem to software support." ) );
-	    		}
+	        	String stringProperty = null;
+	        	if ( decodeEmbeddedProperties ) {
+	        		// Decode the property string and set individual properties.
+	        		stringProperty = prop.getValue();
+	        		if ( (stringProperty != null)  && !stringProperty.isEmpty() ) {
+		        		EmbeddedPropertiesString embeddedProperties = new EmbeddedPropertiesString ( embeddedPropertyFormatType, stringProperty );
+		        		if ( embeddedPropertyFormatType == EmbeddedPropertyFormatType.DOUBLE_SLASH ) {
+		        			// Only process properties that are after the delimited.
+		        			Map<String,String> propertyMap = embeddedProperties.getPropertiesAfterDelimiterMap();
+		        			for ( Map.Entry<String,String> entry : propertyMap.entrySet() ) {
+		        				String key = entry.getKey();
+		        				String value = entry.getValue();
+			        			// Set the table cell as a property.
+			        			PropList requestParams = new PropList ( "" );
+			    				requestParams.set ( "PropertyName", key );
+			    		 		// Set using the property contents (not the String value).
+			    		 		requestParams.setUsingObject ( "PropertyValue", value );
+			    				try {
+			             			processor.processRequest( "SetProperty", requestParams);
+			    				}
+			    				catch ( Exception e ) {
+			    		 			message = "Error requesting SetProperty(Property=\"" + key + "\") from processor.";
+			    		 			Message.printWarning(log_level,
+		    				  			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		    				  			routine, message );
+			              			status.addToLog ( CommandPhaseType.RUN,
+		                   	  			new CommandLogRecord(CommandStatusType.FAILURE,
+		                       	  			message, "Report the problem to software support." ) );
+			    				}
+		        			}
+		        			// Reset the string property to the part without properties (before the delimiter).
+		        			stringProperty = embeddedProperties.getStringWithoutProperties();
+		        		}
+		        		else if ( embeddedPropertyFormatType == EmbeddedPropertyFormatType.PROPERTY_VALUE ) {
+		        			// Only process properties that are before the delimited (since no delimiter).
+		        			Map<String,String> propertyMap = embeddedProperties.getPropertiesBeforeDelimiterMap();
+		        			for ( Map.Entry<String,String> entry : propertyMap.entrySet() ) {
+		        				String key = entry.getKey();
+		        				String value = entry.getValue();
+			        			// Set the table cell as a property.
+			        			PropList requestParams = new PropList ( "" );
+			    				requestParams.set ( "PropertyName", key );
+			    		 		// Set using the property contents (not the String value).
+			    		 		requestParams.setUsingObject ( "PropertyValue", value );
+			    				try {
+			             			processor.processRequest( "SetProperty", requestParams);
+			    				}
+			    				catch ( Exception e ) {
+			    		 			message = "Error requesting SetProperty(Property=\"" + key + "\") from processor.";
+			    		 			Message.printWarning(log_level,
+		    				  			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		    				  			routine, message );
+			              			status.addToLog ( CommandPhaseType.RUN,
+		                   	  			new CommandLogRecord(CommandStatusType.FAILURE,
+		                       	  			message, "Report the problem to software support." ) );
+			    				}
+		        			}
+		        			// Reset the string property to original string without properties:
+		        			// - not currently supported because of potential for mixed up text and properties
+		        			stringProperty = "";
+		        		}
+
+		        		// Set the string property to the text without the embedded property:
+	        			// - this allows the property to be set below
+	        			stringProperty = embeddedProperties.getStringWithoutProperties();
+	        		}
+	        	}
+
+	        	// Set the cell property in the processor:
+	        	// - only do if at least one record was matched
+
+	        	if ( (records.size() > 0) && (PropertyName != null) && !PropertyName.isEmpty() ) {
+	        		// Set the table cell as a property:
+	        		// - if cell value embedded properties were decoded, the above code would have set the 'stringProperty'
+	        		PropList requestParams = new PropList ( "" );
+	    			requestParams.set ( "PropertyName", propertyName );
+	    			if ( prop == null ) {
+	    		 		requestParams.setUsingObject ( "PropertyValue", null );
+	    			}
+	    			else if ( stringProperty != null ) {
+	    		 		requestParams.setUsingObject ( "PropertyValue", stringProperty );
+	    			}
+	    			else {
+	    		 		// Set using the property contents:
+	    				// - object, not the String value
+	    		 		requestParams.setUsingObject ( "PropertyValue", prop.getContents() );
+	    			}
+	    			try {
+	             		processor.processRequest( "SetProperty", requestParams);
+	    			}
+	    			catch ( Exception e ) {
+	    		 		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
+	    		 		Message.printWarning(log_level,
+    				  		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				  		routine, message );
+	              		status.addToLog ( CommandPhaseType.RUN,
+                   	  		new CommandLogRecord(CommandStatusType.FAILURE,
+                       	  		message, "Report the problem to software support." ) );
+	    			}
+	        	}
 		    }
 
-	    	// Set the property indicating the number of rows in the table.
+	    	// Set the property indicating the number of rows in the table:
+		    // - this can be done with or without setting 'PropertyName' or embedded properies
         	if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
             	int rowCount = 0;
             	if ( table != null ) {
@@ -994,9 +1124,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     	new CommandLogRecord(CommandStatusType.FAILURE,
                         	message, "Report the problem to software support." ) );
             	}
-        	}
+        	} // End setting 'RowCountProperty'.
 
-	    	// Set the property indicating the number of columns in the table.
+	    	// Set the property indicating the number of columns in the table:
+		    // - this can be done with or without setting 'PropertyName' or embedded properies
         	if ( (ColumnCountProperty != null) && !ColumnCountProperty.equals("") ) {
             	int colCount = 0;
             	if ( table != null ) {
@@ -1017,7 +1148,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     	new CommandLogRecord(CommandStatusType.FAILURE,
                         	message, "Report the problem to software support." ) );
             	}
-        	}
+        	} // End setting 'ColumnCountPropety'.
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty property.
@@ -1062,6 +1193,7 @@ Return the string representation of the command.
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
     	"TableID",
+    	// Cell property.
 		"Column",
 		"ColumnIncludeFilters",
 		"ColumnExcludeFilters",
@@ -1069,6 +1201,10 @@ public String toString ( PropList parameters ) {
 		"Row",
     	"PropertyName",
     	"DefaultValue",
+    	// Embedded property.
+    	"DecodeEmbeddedProperties",
+    	"EmbeddedPropertyFormat",
+    	// Table property.
 		"RowCountProperty",
 		"ColumnCountProperty"
 	};

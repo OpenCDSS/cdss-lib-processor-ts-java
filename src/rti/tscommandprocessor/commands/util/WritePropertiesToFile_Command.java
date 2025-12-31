@@ -582,10 +582,10 @@ private List<String> writePropertyFile ( CommandProcessor processor, String outp
         for ( int i = 0; i < IncludePropertiesMatched.length; i++ ) {
         	if ( !IncludePropertiesMatched[i] ) {
         		if ( IncludeProperties[i].contains("${")) {
-        			problems.add ( "Unable to match property \"" + IncludeProperties[i] + "\" to write.  May need to remove ${ }.");
+        			problems.add ( "Unable to match property name \"" + IncludeProperties[i] + "\" to write.  May need to remove ${ }.");
         		}
         		else {
-        			problems.add ( "Unable to match property \"" + IncludeProperties[i] + "\" to write.");
+        			problems.add ( "Unable to match property name \"" + IncludeProperties[i] + "\" to write.");
         		}
         	}
         }

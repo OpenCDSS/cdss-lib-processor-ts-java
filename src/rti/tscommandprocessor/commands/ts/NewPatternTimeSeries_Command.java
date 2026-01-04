@@ -543,16 +543,14 @@ CommandWarningException, CommandException {
 	DateTime SetEnd_DateTime = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
-				status, warning_level, command_tag );
+			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor, status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above.
 			++warningCount;
 		}
 		try {
-			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
-				status, warning_level, command_tag );
+			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor, status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above.
@@ -598,29 +596,29 @@ CommandWarningException, CommandException {
 	        }
 	        if ( tsinterval != null ) {
 	        	if ( SetStart_DateTime != null ) {
-	        		if ( tsinterval.getBase() != SetStart_DateTime.getPrecision() ) {
+	        		if ( tsinterval.getBase() < SetStart_DateTime.getPrecision() ) {
 			            message = "SetStart precision (" + TimeInterval.getName(SetStart_DateTime.getPrecision(),-1) +
-			            	") does not match IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ").";
+			            	") is less than IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ") and will be ineffective.";
 			            Message.printWarning ( warning_level,
 			            MessageUtil.formatMessageTag(
 			            command_tag,++warningCount),routine,message );
 			            status.addToLog(commandPhase,
 			                new CommandLogRecord(
 			                CommandStatusType.FAILURE, message,
-			                "Specify consistent precision."));
+			                "Specify Irregularinterval with a precision >= the SetStart."));
 	        		}
 	        	}
 	        	if ( SetEnd_DateTime != null ) {
-	        		if ( tsinterval.getBase() != SetEnd_DateTime.getPrecision() ) {
+	        		if ( tsinterval.getBase() < SetEnd_DateTime.getPrecision() ) {
 			            message = "SetEnd precision (" + TimeInterval.getName(SetEnd_DateTime.getPrecision(),-1) +
-			            	") does not match IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ").";
+			            	") is less than IrregularInterval precision (" + TimeInterval.getName(tsinterval.getBase(),-1) + ") and will be ineffective.";
 			            Message.printWarning ( warning_level,
 			            MessageUtil.formatMessageTag(
 			            command_tag,++warningCount),routine,message );
 			            status.addToLog(commandPhase,
 			                new CommandLogRecord(
 			                CommandStatusType.FAILURE, message,
-			                "Specify consistent precision."));
+			                "Specify IrregularInterval with a precision >= the SetEnd."));
 	        		}
 	        	}
 	        }

@@ -4,40 +4,22 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2019 Colorado Department of Natural Resources
+Copyright (C) 1994-2025 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
-// ----------------------------------------------------------------------------
-// FillHistYearAverage_JDialog - editor for FillHistYearAverage()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-05-18	Steven A. Malers, RTi	Discard old version and re-initialize
-//					using fillHistMonthAverage_JDialog as a
-//					starting point.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-06-02	SAM, RTi		Fix bug where extra blank was being
-//					added to the TSID choice.
-// 2007-02-16	SAM, RTi				Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 
 package rti.tscommandprocessor.commands.ts;
 
@@ -53,8 +35,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -74,7 +56,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -86,26 +67,23 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private FillHistYearAverage_Command __command = null;
-						// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextArea
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__FillStart_JTextField, // Text fields for fill period.
+private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID.
+private JTextField __FillStart_JTextField, // Text fields for fill period.
 			__FillEnd_JTextField,
 			__FillFlag_JTextField;	// Flag to set for filled data.
-private boolean		__first_time = true;
-private boolean		__error_wait = false;
-private boolean		__ok = false;
+private boolean	__first_time = true;
+private boolean	__error_wait = false;
+private boolean	__ok = false;
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public FillHistYearAverage_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
+public FillHistYearAverage_JDialog ( JFrame parent, FillHistYearAverage_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -113,8 +91,8 @@ public FillHistYearAverage_JDialog ( JFrame parent, Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -138,27 +116,28 @@ public void actionPerformed( ActionEvent event )
 /**
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
-private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
-	// Otherwise, clear and disable...
+private void checkGUIState() {
+	// If "AllMatchingTSID", enable the list.
+	// Otherwise, clear and disable.
 	String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
             TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
             TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
 		__TSID_JComboBox.setEnabled(true);
 	}
-	else {	__TSID_JComboBox.setEnabled(false);
-		// Set the the first choice, which is blank...
+	else {
+		__TSID_JComboBox.setEnabled(false);
+		// Set the the first choice, which is blank.
 		__TSID_JComboBox.select ( 0 );
 	}
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Put together a list of parameters to check...
+private void checkInput () {
+	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -182,7 +161,8 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
-	try {	// This will warn the user...
+	try {
+		// This will warn the user.
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -192,11 +172,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+private void commitEdits () {
+	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
@@ -213,8 +193,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (FillHistYearAverage_Command)command;
+private void initialize ( JFrame parent, FillHistYearAverage_Command command ) {
+	__command = command;
 
 	addWindowListener( this );
 
@@ -249,7 +229,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> tslist_Vector = new Vector<String>();
+    List<String> tslist_Vector = new ArrayList<>();
 	tslist_Vector.add ( __command._AllTS );
 	tslist_Vector.add ( __command._AllMatchingTSID );
 	tslist_Vector.add ( __command._SelectedTS );
@@ -263,27 +243,27 @@ private void initialize ( JFrame parent, Command command )
 		"How to get the time series to fill."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Identifier (TSID) to match:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-	// Allow edits...
+	// Allow edits.
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 	
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	if ( tsids == null ) {
-		tsids = new Vector<String> ();
+		tsids = new ArrayList<> ();
 	}
 	int size = tsids.size();
-	// Blank for default
+	// Blank for default.
 	if ( size > 0 ) {
 		tsids.add ( 0, "" );
 	}
 	else {	tsids.add ( "" );
 	}
-	// Always allow a "*" to let all time series be filled (put at end)...
+	// Always allow a "*" to let all time series be filled (put at end).
 	tsids.add ( "*" );
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
@@ -315,7 +295,7 @@ private void initialize ( JFrame parent, Command command )
 	__FillFlag_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - string to flag filled values."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -328,10 +308,10 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
+	// Refresh the contents.
 	refresh ();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
@@ -355,16 +335,16 @@ private void initialize ( JFrame parent, Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+public void itemStateChanged ( ItemEvent e ) {
+	checkGUIState();
     refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -373,32 +353,32 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// One of the combo boxes...
+	else {
+		// One of the combo boxes.
 		refresh();
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
+public void keyTyped ( KeyEvent event ) {
 }
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = "fillHistYearAverage_JDialog.refresh";
+private void refresh () {
+	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
 	String TSID = "";
 	String FillStart = "";
@@ -407,22 +387,22 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		// Get the parameters from the command...
+		// Get the parameters from the command.
 		TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
 		if ( TSList == null ) {
-			// Select default...
+			// Select default.
 			__TSList_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
+		else {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox, TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
+			else {
+				Message.printWarning ( 1, routine,
 				"Existing command " +
 				"references an invalid\nTSList value \"" +
 				TSList +
@@ -430,27 +410,26 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+			// Automatically add to the list after the blank.
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
+				// Select.
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
+			else {
+				// Select the blank.
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
-		// Check the GUI state to make sure that components are
-		// enabled as expected (mainly enable/disable the TSID).  If
-		// disabled, the TSID will not be added as a parameter below.
+		// Check the GUI state to make sure that components are enabled as expected (mainly enable/disable the TSID).
+		// If disabled, the TSID will not be added as a parameter below.
 		checkGUIState();
 		if ( !__TSID_JComboBox.isEnabled() ) {
-			// Not needed because some other method of specifying
-			// the time series is being used...
+			// Not needed because some other method of specifying the time series is being used.
 			TSID = null;
 		}
 		if ( FillStart != null ) {
@@ -463,7 +442,7 @@ private void refresh ()
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
 	}
-	// Regardless, reset the command from the fields...
+	// Regardless, reset the command from the fields.
 	TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
 	FillStart = __FillStart_JTextField.getText().trim();
@@ -479,20 +458,19 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
-		// Commit the changes...
+		// Commit the changes.
 		commitEdits ();
 		if ( __error_wait ) {
-			// Not ready to close out!
+			// Not ready to close out!.
 			return;
 		}
 	}
-	// Now close out...
+	// Now close out.
 	setVisible( false );
 	dispose();
 }
@@ -501,15 +479,26 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
-public void windowActivated( WindowEvent evt ){;}
-public void windowClosed( WindowEvent evt ){;}
-public void windowDeactivated( WindowEvent evt ){;}
-public void windowDeiconified( WindowEvent evt ){;}
-public void windowIconified( WindowEvent evt ){;}
-public void windowOpened( WindowEvent evt ){;}
+public void windowActivated( WindowEvent evt ) {
+}
 
-} // end fillHistYearAverage_JDialog
+public void windowClosed( WindowEvent evt ) {
+}
+
+public void windowDeactivated( WindowEvent evt ) {
+}
+
+public void windowDeiconified( WindowEvent evt ) {
+}
+
+public void windowIconified( WindowEvent evt ) {
+}
+
+public void windowOpened( WindowEvent evt ) {
+}
+
+}

@@ -275,11 +275,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     Hashtable<String,String> columnFilters = new Hashtable<>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma.
-        List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
+        List<String> pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
         // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            columnFilters.put(parts[0].trim(), parts[1].trim() );
+            if ( parts.length == 2 ) {
+            	columnFilters.put(parts[0].trim(), parts[1].trim() );
+            }
+            else {
+                message = "ColumnFilters does not have Column=Pattern parts.";
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Verify that the input syntax is correct." ) );
+            }
         }
     }
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );

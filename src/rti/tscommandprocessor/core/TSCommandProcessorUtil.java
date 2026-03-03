@@ -3431,6 +3431,7 @@ and the list of discovery time series extracted from commands
 @param ensembleCandidateList list of ensembles to check for matching ensemble identifier
 @param TSList string value for TSList (should match TSListType enumeration) - if null or a blank string,
 TSListType.ALL_TS will be used by default
+@param TSID the time series identifier (or alias) to match, can contain * for glob-style wildcard
 @param TSPosition string value of TSPosition range notation
 @param EnsembleID ensemble identifier to match
 */

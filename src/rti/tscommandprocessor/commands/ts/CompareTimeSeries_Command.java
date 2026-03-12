@@ -34,6 +34,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSEnsemble;
@@ -212,6 +213,7 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
+	String CompareSelected2TS = parameters.getValue ( "CompareSelected2TS" );
 	String MatchLocation = parameters.getValue ( "MatchLocation" );
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
 	String MatchAlias = parameters.getValue ( "MatchAlias" );
@@ -233,6 +235,15 @@ throws InvalidCommandParameterException {
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
+	if ( (CompareSelected2TS != null) && !CompareSelected2TS.isEmpty() ) {
+		if ( !CompareSelected2TS.equals(_False) && !CompareSelected2TS.equals(_True) ) {
+            message = "The CompareSelected2TS parameter \"" + CompareSelected2TS + "\" if specified must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify False or True (or do not specify to use default of True)." ) );
+		}
+	}
 	if ( (MatchLocation != null) && !MatchLocation.isEmpty() ) {
 		if ( !MatchLocation.equals(_False) && !MatchLocation.equals(_True) ) {
             message = "The MatchLocation parameter \"" + MatchLocation + "\" if specified must be False or True.";
@@ -387,14 +398,14 @@ throws InvalidCommandParameterException {
 		++diffCount;
 	}
 	if ( (sameCount + diffCount) == 0 ) {
-        message = "At lease one of IfDifferent or IfSame must be " + _Warn + " or + " + _Fail + ".";
+        message = "At lease one of IfDifferent or IfSame must be " + _Warn + " or " + _Fail + ".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Check the values of IfDifferent and IfSame." ) );
 	}
 	if ( (sameCount + diffCount) > 1 ) {
-        message = "Only one of IfDifferent or IfSame can be " + _Warn + " or + " + _Fail + ".";
+        message = "Only one of IfDifferent or IfSame can be " + _Warn + " or " + _Fail + ".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -437,9 +448,10 @@ throws InvalidCommandParameterException {
 	*/
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(22);
+	List<String> validList = new ArrayList<>(23);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
+	validList.add ( "CompareSelected2TS" );
 	validList.add ( "EnsembleID1" );
 	validList.add ( "EnsembleID2" );
 	validList.add ( "MatchLocation" );
@@ -1187,6 +1199,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID2 = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID2);
 	}
+	String CompareSelected2TS = parameters.getValue ( "CompareSelected2TS" );
+	boolean compareSelected2TS = false; // Default.
+	if ( (CompareSelected2TS != null) && CompareSelected2TS.equalsIgnoreCase(this._True) ) {
+		compareSelected2TS = true;
+	}
 	String EnsembleID1 = parameters.getValue ( "EnsembleID1" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnsembleID1 = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID1);
@@ -1335,7 +1352,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
     }
 
-    // Get the table to process. If null will create below.
+    // Get the table to process. If null, create below.
 
     DataTable table = null;
     boolean doTable = false;
@@ -1433,7 +1450,59 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					TSCommandProcessorUtil.expandParameterValue(processor,this,SummaryFile)));
 		}
 
-		if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
+		if ( compareSelected2TS ) {
+			// Comparing 2 time series that are selected:
+			// - exactly 2 must be selected
+			do2Ts = true;
+			PropList request_params = new PropList ( "" );
+			request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSList", TSListType.SELECTED_TS.toString() );
+			CommandProcessorRequestResultsBean bean = null;
+			try {
+			    bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+				PropList bean_PropList = bean.getResultsPropList();
+				Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+				if ( o_TSList == null ) {
+			        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess.";
+			        Message.printWarning ( warning_level,
+			            MessageUtil.formatMessageTag(
+			            command_tag,++warning_count), routine, message );
+			        status.addToLog ( CommandPhaseType.RUN,
+			            new CommandLogRecord(CommandStatusType.FAILURE,
+			                message,
+			                "Verify that exactly two time series are selected." ) );
+				}
+				else {
+					@SuppressWarnings("unchecked")
+					List<TS> tslist0 = (List<TS>)o_TSList;
+					if ( tslist0.size() != 2 ) {
+			            message = "" + tslist.size() + " time series are available from processor GetTimeSeriesToProcess.";
+						Message.printWarning ( warning_level,
+							MessageUtil.formatMessageTag(
+								command_tag,++warning_count), routine, message );
+			            status.addToLog ( CommandPhaseType.RUN,
+			                new CommandLogRecord(CommandStatusType.WARNING,
+			                    message,
+			                	"Verify that exactly two time series are selected." ) );
+					}
+					else {
+						// Exactly two time series.
+						tslist = tslist0;
+					}
+				}
+			}
+			catch ( Exception e ) {
+				message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSListType.SELECTED_TS.toString() + "\") from processor.";
+				Message.printWarning(log_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+				Message.printWarning(log_level, routine, e );
+	               status.addToLog ( commandPhase,
+	                   new CommandLogRecord(CommandStatusType.FAILURE,
+	                       message, "Report the problem to software support." ) );
+			}
+		}
+		else if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
 			// Comparing 2 time series.
 			do2Ts = true;
 			TS ts = null;
@@ -2593,6 +2662,7 @@ public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
 		"TSID1",
 		"TSID2",
+		"CompareSelected2TS",
 		"EnsembleID1",
 		"EnsembleID2",
 		"MatchLocation",

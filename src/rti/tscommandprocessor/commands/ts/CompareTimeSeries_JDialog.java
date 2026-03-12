@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -86,6 +86,7 @@ private SimpleJButton __pathSummary_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox	__TSID1_JComboBox = null;
 private SimpleJComboBox	__TSID2_JComboBox = null;
+private SimpleJComboBox	__CompareSelected2TS_JComboBox = null;
 private SimpleJComboBox	__EnsembleID1_JComboBox = null;
 private SimpleJComboBox	__EnsembleID2_JComboBox = null;
 private SimpleJComboBox	__MatchLocation_JComboBox = null;
@@ -291,6 +292,7 @@ private void checkInput () {
 	PropList props = new PropList ( "" );
 	String TSID1 = __TSID1_JComboBox.getSelected();
 	String TSID2 = __TSID2_JComboBox.getSelected();
+	String CompareSelected2TS = __CompareSelected2TS_JComboBox.getSelected();
 	String EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
 	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
@@ -319,6 +321,9 @@ private void checkInput () {
 	}
 	if ( TSID2.length() > 0 ) {
 		props.set ( "TSID2", TSID2 );
+	}
+	if ( CompareSelected2TS.length() > 0 ) {
+		props.set ( "CompareSelected2TS", CompareSelected2TS );
 	}
 	if ( EnsembleID1.length() > 0 ) {
 		props.set ( "EnsembleID1", EnsembleID1 );
@@ -404,6 +409,7 @@ In this case the command parameters have already been checked and no errors were
 private void commitEdits () {
 	String TSID1 = __TSID1_JComboBox.getSelected();
 	String TSID2 = __TSID2_JComboBox.getSelected();
+	String CompareSelected2TS = __CompareSelected2TS_JComboBox.getSelected();
 	String EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
 	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
@@ -428,6 +434,7 @@ private void commitEdits () {
 	//String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSID1", TSID1 );
 	__command.setCommandParameter ( "TSID2", TSID2 );
+	__command.setCommandParameter ( "CompareSelected2TS", CompareSelected2TS );
 	__command.setCommandParameter ( "EnsembleID1", EnsembleID1 );
 	__command.setCommandParameter ( "EnsembleID2", EnsembleID2 );
 	__command.setCommandParameter ( "MatchLocation", MatchLocation );
@@ -494,8 +501,8 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		"Use these parameters to specify two time series to compare." ),
 		0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts2_JPanel, new JLabel (
-	    "For example, compare two time series to validate software or a procedure." ),
-	    0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Specify two time series identifiers (or aliases) or use a SelectTimeSeries() command before this command." ),
+		0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts2_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -526,6 +533,22 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
     __TSID2_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(ts2_JPanel, __TSID2_JComboBox,
         1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "Compare selected?:" ),
+		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CompareSelected2TS_JComboBox = new SimpleJComboBox ( false ); // Do not allow edit.
+    __CompareSelected2TS_JComboBox.setToolTipText("Compare selected 2 time series (use SelectTimeSeries() before this command).");
+    List<String> compare2List = new ArrayList<>();
+    compare2List.add("");
+    compare2List.add(this.__command._False);
+    compare2List.add(this.__command._True);
+    __CompareSelected2TS_JComboBox.setData ( compare2List );
+    __CompareSelected2TS_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(ts2_JPanel, __CompareSelected2TS_JComboBox,
+        1, yts2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel(
+		"Optional - match selected two time series (default=" + __command._False + ")."),
+		3, yts2, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel specifying two ensembles.
     int yEnsemble = -1;
@@ -587,6 +610,9 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command, List
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
 		"time series identifier location and/or data type and/or alias." ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"The intervals are required to be the same." ),
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
 		"The alias can be used to ensure unique identifiers, in which case the location and data type may be ignored." ),
@@ -994,6 +1020,7 @@ private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
 	String TSID1 = "";
 	String TSID2 = "";
+	String CompareSelected2TS = "";
 	String EnsembleID1 = "";
 	String EnsembleID2 = "";
 	String MatchLocation = "";
@@ -1021,6 +1048,7 @@ private void refresh () {
 		__first_time = false;
 		TSID1 = props.getValue ( "TSID1" );
 		TSID2 = props.getValue ( "TSID2" );
+		CompareSelected2TS = props.getValue ( "CompareSelected2TS" );
 		EnsembleID1 = props.getValue ( "EnsembleID1" );
 		EnsembleID2 = props.getValue ( "EnsembleID2" );
 		MatchLocation = props.getValue ( "MatchLocation" );
@@ -1085,6 +1113,27 @@ private void refresh () {
             }
         }
         if ( (TSID2 != null) && !TSID2.isEmpty() ) {
+          	__main_JTabbedPane.setSelectedIndex(0);
+        }
+        // Select the item in the list.  If not a match, print a warning.
+        if ( JGUIUtil.isSimpleJComboBoxItem( __CompareSelected2TS_JComboBox, CompareSelected2TS, JGUIUtil.NONE, null, null ) ) {
+            __CompareSelected2TS_JComboBox.select ( CompareSelected2TS );
+        }
+        else {
+            // Automatically add to the list.
+            if ( (CompareSelected2TS != null) && (CompareSelected2TS.length() > 0) ) {
+                __CompareSelected2TS_JComboBox.insertItemAt ( CompareSelected2TS, 0 );
+                // Select.
+                __CompareSelected2TS_JComboBox.select ( CompareSelected2TS );
+            }
+            else {
+                // Select the first choice.
+                if ( __CompareSelected2TS_JComboBox.getItemCount() > 0 ) {
+                    __CompareSelected2TS_JComboBox.select ( 0 );
+                }
+            }
+        }
+        if ( (CompareSelected2TS != null) && !CompareSelected2TS.isEmpty() ) {
           	__main_JTabbedPane.setSelectedIndex(0);
         }
         if ( EnsembleID1 == null ) {
@@ -1322,6 +1371,7 @@ private void refresh () {
 	// This is only visible information that has not been committed in the command.
 	TSID1 = __TSID1_JComboBox.getSelected();
 	TSID2 = __TSID2_JComboBox.getSelected();
+	CompareSelected2TS = __CompareSelected2TS_JComboBox.getSelected();
 	EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
 	EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	MatchLocation = __MatchLocation_JComboBox.getSelected();
@@ -1347,6 +1397,7 @@ private void refresh () {
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID1=" + TSID1 );
 	props.add ( "TSID2=" + TSID2 );
+	props.add ( "CompareSelected2TS=" + CompareSelected2TS );
 	props.add ( "EnsembleID1=" + EnsembleID1 );
 	props.add ( "EnsembleID2=" + EnsembleID2 );
 	props.add ( "MatchLocation=" + MatchLocation );

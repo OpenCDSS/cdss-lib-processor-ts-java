@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -770,7 +770,7 @@ throws CommandWarningException, CommandException {
             	// - do not set a warning status on the command since it will interfere with the condition
             	// - do output a warning to the log file
             	conditionEval = false;
-            	message = "Unable to find datastore \"" + DataStoreIsOk + "\"";
+            	message = "Unable to find datastore \"" + DataStoreIsOk + "\" for DataStareIsOk";
             	Message.printWarning(3,
                 	MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 	routine, message );
@@ -782,7 +782,7 @@ throws CommandWarningException, CommandException {
 	    }
 	    if ( (DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty() ) {
 	        // Check whether a datastore is OK- this is ANDed to the condition..
-	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsOk, null );
+	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsNotOk, null );
 	    	if ( dataStore != null ) {
 	    		if ( dataStore.getStatus() == 0  ) {
 	    			// Does not matter what the Condition had - the final result is false.
@@ -808,7 +808,7 @@ throws CommandWarningException, CommandException {
     			else {
     				conditionEval = true;
     			}
-            	message = "Unable to find datastore \"" + DataStoreIsOk + "\"";
+            	message = "Unable to find datastore \"" + DataStoreIsNotOk + "\" for DataStoreIsNotOk";
             	Message.printWarning(3,
                 	MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 	routine, message );

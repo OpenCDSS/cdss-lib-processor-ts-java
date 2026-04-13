@@ -307,7 +307,7 @@ CommandWarningException, CommandException {
         setDiscoveryTable ( null );
     }
 
-	String Folder = parameters.getValue ( "Folder" );
+	String Folder = parameters.getValue ( "Folder" ); // Is expanded elow.
 	String ListScope = parameters.getValue ( "ListScope" );
 	boolean listRecursive = false; // Default, based on historical command behavior.
 	if ( (ListScope != null) && !ListScope.equals("")) {
@@ -491,7 +491,9 @@ CommandWarningException, CommandException {
 
     	    boolean oldCode = false;
 
-    	    File folder = new File( IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(workingDir,Folder) ) );
+    	    File folder = new File(
+    	    	IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(workingDir,
+    	    		TSCommandProcessorUtil.expandParameterValue(processor, this, Folder)) ) );
     	    List<File> filePathList = new ArrayList<>();
     	    if ( oldCode ) {
     	    	File [] filePathArray = folder.listFiles();
@@ -502,7 +504,6 @@ CommandWarningException, CommandException {
     	    }
     	    else {
     	    	// New code that is more flexible.
-    	    	folder = new File( IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(workingDir,Folder)) );
     	    	filePathList = IOUtil.getFiles ( folder, listRecursive, listFiles, listFolders, includePatterns, excludePatterns );
     	    }
     	    // Whether duplicates are allowed in the table:

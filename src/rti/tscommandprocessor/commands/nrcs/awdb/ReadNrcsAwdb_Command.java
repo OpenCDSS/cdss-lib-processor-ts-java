@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,9 @@ NoticeEnd */
 
 package rti.tscommandprocessor.commands.nrcs.awdb;
 
+import gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.datastore.NrcsAwdbRestApiDataStore;
+import gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.Network;
+import gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.PeriodRefType;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
 
 import java.util.ArrayList;
@@ -55,6 +58,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 
 /**
 This class initializes, checks, and runs the ReadNrcsAwdb() command.
@@ -82,43 +86,52 @@ private List<TS> __discoveryTSList = null;
 /**
 Bounding box coordinate WestLon, SouthLat, EastLon, NorthLat
 */
-double [] __boundingBox = null; // Use null to indicate no bounding box specified
+double [] __boundingBox = null; // Use null to indicate no bounding box specified.
 
 /**
 Constructor.
 */
-public ReadNrcsAwdb_Command ()
-{	super();
+public ReadNrcsAwdb_Command () {
+	super();
 	setCommandName ( "ReadNrcsAwdb" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
-throws InvalidCommandParameterException
-{	String warning = "";
+throws InvalidCommandParameterException {
+	String warning = "";
     String message;
-    
+
     String DataStore = parameters.getValue ( "DataStore" );
     String Interval = parameters.getValue ( "Interval" );
     String Stations = parameters.getValue ( "Stations" );
+    String StationNames = parameters.getValue ( "StationNames" );
+    String StationTriplets = parameters.getValue ( "StationTriplets" );
     String States = parameters.getValue ( "States" );
     String Networks = parameters.getValue ( "Networks" );
     String HUCs = parameters.getValue ( "HUCs" );
     String BoundingBox = parameters.getValue ( "BoundingBox" );
     String Counties = parameters.getValue ( "Counties" );
+    // REST API.
+    String InsertOrUpdateBeginDate = parameters.getValue ( "InsertOrUpdateBeginDate" );
+    String PeriodRef = parameters.getValue ( "PeriodRef" );
+    String ActiveOnly = parameters.getValue ( "ActiveOnly" );
+    String ReturnOriginalValues = parameters.getValue ( "ReturnOriginalValues" );
+    String ReturnSuspectData = parameters.getValue ( "ReturnSuspectData" );
+    // General.
     String ReadForecast = parameters.getValue ( "ReadForecast" );
     String ForecastPeriod = parameters.getValue ( "ForecastPeriod" );
     String ElevationMin = parameters.getValue ( "ElevationMin" );
     String ElevationMax = parameters.getValue ( "ElevationMax" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
+    String OutputYearType = parameters.getValue ( "OutputYearType" );
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -130,7 +143,8 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    
+
+    TimeInterval interval = null;
     if ( Interval == null || (Interval.length() == 0) ) {
         message = "The data interval must be specified.";
         warning += "\n" + message;
@@ -140,10 +154,10 @@ throws InvalidCommandParameterException
     }
     else {
         try {
-            TimeInterval.parseInterval(Interval);
+            interval = TimeInterval.parseInterval(Interval);
         }
         catch ( Exception e ) {
-            // Should not happen because choices are valid
+            // Should not happen because choices are valid.
             message = "The data interval \"" + Interval + "\" is invalid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -154,7 +168,7 @@ throws InvalidCommandParameterException
 
     __boundingBox = null;
     if ( (BoundingBox != null) && !BoundingBox.equals("") ) {
-        // Make sure that 4 numbers are specified
+        // Make sure that 4 numbers are specified.
         String [] parts = BoundingBox.split(",");
         if ( parts == null ) {
             message = "The bounding box (" + BoundingBox + ") is invalid.";
@@ -211,22 +225,24 @@ throws InvalidCommandParameterException
         }
     }
 
-    // Make sure some filter is specified.  Otherwise all the data in the NRCS database will be read, which
-    // will be extremely slow
-    
+    // Make sure some filter is specified.
+    // Otherwise all the data in the NRCS database will be read, which will be extremely slow.
+
     if ( ((Stations == null) || Stations.equals("")) &&
+        ((StationNames == null) || StationNames.equals("")) &&
+        ((StationTriplets == null) || StationTriplets.equals("")) &&
         ((States == null) || States.equals("")) &&
         ((Networks == null) || Networks.equals("")) &&
         ((HUCs == null) || HUCs.equals("")) &&
         ((BoundingBox == null) || BoundingBox.equals("")) &&
         ((Counties == null) || Counties.equals("")) ) {
-        message = "At least one location constraint must be specified (otherwise query is very large and slow).";
+        message = "At least one station filter must be specified (otherwise the query is very large and slow).";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify at least one location constraint." ) );
+                message, "Specify at least one station filter." ) );
     }
-    
+
     if ( (ElevationMin != null) && !StringUtil.isDouble(ElevationMin) ) {
         message = "The elevation minimum (" + ElevationMin + ") is not a number.";
         warning += "\n" + message;
@@ -234,7 +250,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the elevation minimum as a number." ) );
     }
-    
+
     if ( (ElevationMax != null) && !StringUtil.isDouble(ElevationMax) ) {
         message = "The elevation maximum (" + ElevationMax + ") is not a number.";
         warning += "\n" + message;
@@ -242,7 +258,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the elevation maximum as a number." ) );
     }
-    
+
     if ( (ReadForecast != null) && ReadForecast.equalsIgnoreCase(_True) ) {
         // Must specify a ForecastPeriod
         if ( (ForecastPeriod == null) || ForecastPeriod.equalsIgnoreCase("") ) {
@@ -253,6 +269,51 @@ throws InvalidCommandParameterException
                     message, "Specify the forecast period." ) );
         }
     }
+
+    // REST API.
+
+	if ( (InsertOrUpdateBeginDate != null) && !InsertOrUpdateBeginDate.equals("") &&
+		!InsertOrUpdateBeginDate.equalsIgnoreCase("InsertOrUpdateBeginDate") && !InsertOrUpdateBeginDate.equalsIgnoreCase("InsertOrUpdateBeginDate") ) {
+		try {
+		    DateTime.parse(InsertOrUpdateBeginDate);
+		}
+		catch ( Exception e ) {
+            message = "The InsertOrUpdateBeginDate date/time \"" + InsertOrUpdateBeginDate + "\" is not a valid date/time.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a date/time YYYY-MM-DD hh:mm." ) );
+		}
+	}
+
+    if ( (ActiveOnly != null) && !ActiveOnly.isEmpty() &&
+    	!ActiveOnly.equalsIgnoreCase(_True) && !ActiveOnly.equalsIgnoreCase(_False) ) {
+        message = "The ActiveOnly parameter (" + ActiveOnly + ") parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + this._False + " or " + this._True + " (default).") );
+    }
+
+    if ( (ReturnOriginalValues != null) && !ReturnOriginalValues.isEmpty() &&
+    	!ReturnOriginalValues.equalsIgnoreCase(_True) && !ReturnOriginalValues.equalsIgnoreCase(_False) ) {
+        message = "The ReturnOriginalValues parameter (" + ReturnOriginalValues + ") parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + this._False + " (default) or " + this._True + ".") );
+    }
+
+    if ( (ReturnSuspectData != null) && !ReturnSuspectData.isEmpty() &&
+    	!ReturnSuspectData.equalsIgnoreCase(_True) && !ReturnSuspectData.equalsIgnoreCase(_False) ) {
+        message = "The ReturnSuspectData parameter (" + ReturnSuspectData + ") parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + this._False + " (default) or " + this._True + ".") );
+    }
+    
+    // General.
 
 	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") && !InputStart.equalsIgnoreCase("InputEnd") ) {
@@ -280,14 +341,50 @@ throws InvalidCommandParameterException
                     message, "Specify a date/time or InputEnd." ) );
 		}
 	}
+
+	YearType outputYearType = null;
+	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        try {
+            outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+        	outputYearType = null;
+        }
+        if ( outputYearType == null ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+	}
 	
-    // Check for invalid parameters...
-    List<String> validList = new ArrayList<>(21);
+	// OutputYearType should only be specified if Interval is year.
+    if ( (interval != null) && (interval.getBase() != TimeInterval.YEAR) && (outputYearType != null) ) {
+        message = "The OutputYearType should only be specified when the data interval is NOT year.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Do not set the output year type." ) );
+    }
+
+    // Check for invalid parameters.
+    List<String> validList = new ArrayList<>(28);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "Stations" );
     validList.add ( "Networks" );
     validList.add ( "States" );
+    validList.add ( "StationTriplets" );
+    validList.add ( "StationNames" );
     validList.add ( "HUCs" );
     validList.add ( "BoundingBox" );
     validList.add ( "Counties" );
@@ -297,11 +394,19 @@ throws InvalidCommandParameterException
     validList.add ( "ForecastPublicationDateStart" );
     validList.add ( "ForecastPublicationDateEnd" );
     validList.add ( "ForecastExceedanceProbabilities" );
+    // REST API.
+    validList.add ( "InsertOrUpdateBeginDate" );
+    validList.add ( "PeriodRef" );
+    validList.add ( "ActiveOnly" );
+    validList.add ( "ReturnOriginalValues" );
+    validList.add ( "ReturnSuspectData" );
+    // General.
     validList.add ( "Elements" );
     validList.add ( "ElevationMin" );
     validList.add ( "ElevationMax" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "OutputYearType" );
     validList.add ( "TimeZoneMap" );
     validList.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -311,48 +416,47 @@ throws InvalidCommandParameterException
 		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-    
+
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
-public boolean editCommand ( JFrame parent )
-{   // The command will be modified if changed...
+public boolean editCommand ( JFrame parent ) {
+    // The command will be modified if changed.
     return (new ReadNrcsAwdb_JDialog ( parent, this )).ok();
 }
 
 /**
 Return the table that is read by this class when run in discovery mode.
+@return the table that is read by this class when run in discovery mode
 */
-private DataTable getDiscoveryTable()
-{
+private DataTable getDiscoveryTable() {
     return __discoveryTable;
 }
 
 /**
 Return the list of time series read in discovery phase.
+#return the list of time series read in discovery phase
 */
-private List<TS> getDiscoveryTSList ()
-{
+private List<TS> getDiscoveryTSList () {
     return __discoveryTSList;
 }
 
 /**
 Return the list of data objects read by this object in discovery mode.
 The following classes can be requested:  DataTable, TS
+@return the list of data objects read by this command in discovery mode
 */
 @SuppressWarnings("unchecked")
-public <T> List<T> getObjectList ( Class<T> c )
-{
+public <T> List<T> getObjectList ( Class<T> c ) {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     DataTable table = getDiscoveryTable();
     if ( (table != null) && (c == table.getClass()) ) {
-        // Asking for tables
+        // Asking for tables.
         List<T> list = null;
         if ( table != null ) {
             list = new ArrayList<>();
@@ -363,9 +467,9 @@ public <T> List<T> getObjectList ( Class<T> c )
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS).
     TS datats = discoveryTSList.get(0);
-    // Also check the base class
+    // Also check the base class.
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return (List<T>)discoveryTSList;
     }
@@ -377,14 +481,11 @@ public <T> List<T> getObjectList ( Class<T> c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.RUN );
 }
 
@@ -396,8 +497,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
@@ -408,8 +508,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException {
+	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -425,24 +525,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     }
     catch ( Exception e ) {
-    	// Should not happen
+    	// Should not happen.
     }
     if ( clearStatus ) {
 		status.clearLog(commandPhase);
 	}
-    
+
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable(null);
         setDiscoveryTSList ( null );
         readData = false;
     }
-    
+
     String dataStoreName = parameters.getValue("DataStore");
     String Stations = parameters.getValue("Stations");
     List<String> stationList = new ArrayList<>();
     if ( (Stations != null) && !Stations.equals("") ) {
-        // Station list is allowed to use a processor property
+        // Station list is allowed to use a processor property.
         Stations = TSCommandProcessorUtil.expandParameterValue(processor,this,Stations);
         if ( Stations.indexOf(",") < 0 ) {
             stationList.add(Stations.trim());
@@ -457,7 +557,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String States = parameters.getValue("States");
     List<String> stateList = new ArrayList<>();
     if ( (States != null) && !States.equals("") ) {
-        // State list is allowed to use a processor property
+        // State list is allowed to use a processor property.
         States = TSCommandProcessorUtil.expandParameterValue(processor,this,States);
         if ( States.indexOf(",") < 0 ) {
             stateList.add(States.trim());
@@ -470,24 +570,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String Networks = parameters.getValue("Networks");
-    List<NrcsAwdbNetworkCode> networkList = new ArrayList<>();
+    List<NrcsAwdbNetworkCode> networkSoapList = new ArrayList<>();
+    List<Network> networkList = new ArrayList<>();
     if ( (Networks != null) && !Networks.equals("") ) {
-        // Network list is allowed to use a processor property
+        // Network list is allowed to use a processor property.
         Networks = TSCommandProcessorUtil.expandParameterValue(processor,this,Networks);
+        String [] networkArray = Networks.split(",");
         if ( Networks.indexOf(",") < 0 ) {
-            networkList.add(new NrcsAwdbNetworkCode(Networks, ""));
+            for ( int i = 0; i < networkArray.length; i++ ) {
+            	networkList.add(new Network(networkArray[i].trim()));
+            }
         }
         else {
-            String [] networkArray = Networks.split(",");
             for ( int i = 0; i < networkArray.length; i++ ) {
-                networkList.add(new NrcsAwdbNetworkCode(networkArray[i].trim(),""));
+                networkSoapList.add(new NrcsAwdbNetworkCode(networkArray[i].trim(),""));
             }
         }
     }
     String HUCs = parameters.getValue("HUCs");
     List<String> hucList = new ArrayList<>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
-        // HUC list is allowed to use a processor property
+        // HUC list is allowed to use a processor property.
         HUCs = TSCommandProcessorUtil.expandParameterValue(processor,this,HUCs);
         if ( HUCs.indexOf(",") < 0 ) {
             hucList.add(HUCs.trim());
@@ -502,7 +605,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String Counties = parameters.getValue("Counties");
     List<String> countyList = new ArrayList<>();
     if ( (Counties != null) && !Counties.equals("") ) {
-        // County list is allowed to use a processor property
+        // County list is allowed to use a processor property.
         Counties = TSCommandProcessorUtil.expandParameterValue(processor,this,Counties);
         if ( Counties.indexOf(",") < 0 ) {
             countyList.add(Counties.trim());
@@ -538,19 +641,72 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             forecastExceedanceProbabilities[i] = Integer.parseInt(parts[i].trim());
         }
     }
-   
+    
+    // REST API.
+
+    String InsertOrUpdateBeginDate = parameters.getValue("InsertOrUpdateBeginDate");
+    InsertOrUpdateBeginDate = TSCommandProcessorUtil.expandParameterValue(processor,this,InsertOrUpdateBeginDate);
+	DateTime InsertOrUpdateBeginDate_DateTime = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InsertOrUpdateBeginDate_DateTime = TSCommandProcessorUtil.getDateTime ( InsertOrUpdateBeginDate, "InsertOrUpdateBeginDate", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above.
+			++warning_count;
+		}
+	}
+
+    PeriodRefType periodRefType = null;
+    String PeriodRef = parameters.getValue("PeriodRef");
+    if ( (PeriodRef != null) && !PeriodRef.isEmpty() ) {
+        periodRefType = PeriodRefType.valueOfIgnoreCase(PeriodRef);
+    }
+
+    Boolean activeOnly = null;
+    String ActiveOnly = parameters.getValue("ActiveOnly");
+    if ( (ActiveOnly != null) && !ActiveOnly.isEmpty() ) {
+        activeOnly = Boolean.valueOf(ActiveOnly);
+    }
+
+    Boolean readOriginalValues = null;
+    String ReadOriginalValues = parameters.getValue("ReadOriginalValues");
+    if ( (ReadOriginalValues != null) && !ReadOriginalValues.isEmpty() ) {
+        readOriginalValues = Boolean.valueOf(ReadOriginalValues);
+    }
+
+    Boolean readSuspectData = null;
+    String ReadSuspectData = parameters.getValue("ReadSuspectData");
+    if ( (ReadSuspectData != null) && !ReadSuspectData.isEmpty() ) {
+        readSuspectData = Boolean.valueOf(ReadSuspectData);
+    }
+    
+    // General.
+
     String Elements = parameters.getValue("Elements");
-    List<Element> elementList = new ArrayList<>();
+    List<Element> elementSoapList = new ArrayList<>();
+    List<gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.Element> elementList = new ArrayList<>();
     Element el;
+   	gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.Element eNew;
     if ( (Elements != null) && !Elements.equals("") ) {
         if ( Elements.indexOf(",") < 0 ) {
+        	// New API.
+        	eNew = new gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.Element ();
+            eNew.setCode(Elements.trim());
+            elementList.add(eNew);
+        	// Old API.
             el = new Element();
             el.setElementCd(Elements.trim());
-            elementList.add(el);
+            elementSoapList.add(el);
         }
         else {
             String [] elementArray = Elements.split(",");
             for ( int i = 0; i < elementArray.length; i++ ) {
+            	// New API.
+            	eNew = new gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.dto.Element ();
+                eNew.setCode(elementArray[i].trim());
+            	// Old API.
                 el = new Element();
                 el.setElementCd(elementArray[i].trim());
             }
@@ -573,30 +729,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             interval = TimeInterval.parseInterval(Interval);
         }
         catch ( InvalidTimeIntervalException e ) {
-            // Should not happen since previously checked
+            // Should not happen since previously checked.
         }
     }
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
-		InputStart = "${InputStart}"; // Global default
+		InputStart = "${InputStart}"; // Global default.
 	}
 	String InputEnd = parameters.getValue("InputEnd");
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
-		InputEnd = "${InputEnd}"; // Global default
+		InputEnd = "${InputEnd}"; // Global default.
+	}
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
+	YearType outputYearType = null;
+	if ( (OutputYearType != null) && !OutputYearType.isEmpty() ) {
+		outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
 	}
     String TimeZoneMap = parameters.getValue ( "TimeZoneMap" );
     Hashtable<String,String> timeZoneMap = new Hashtable<String,String>();
     if ( (TimeZoneMap != null) && (TimeZoneMap.length() > 0) && (TimeZoneMap.indexOf(":") > 0) ) {
-        // First break map pairs by comma
+        // First break map pairs by comma.
         List<String>pairs = StringUtil.breakStringList(TimeZoneMap, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             timeZoneMap.put(parts[0].trim(), parts[1].trim() );
         }
     }
     String Alias = parameters.getValue("Alias");
-    
+
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -605,7 +766,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 		try {
@@ -613,28 +774,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
-			// Warning will have been added above...
+			// Warning will have been added above.
 			++warning_count;
 		}
 	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now try to read...
+	// Now try to read.
 
 	List<TS> tslist = new ArrayList<>();
 	try {
-		// Find the data store to use...
-		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-		    dataStoreName, NrcsAwdbDataStore.class );
+		// Find the data store to use:
+		// - try the new one first
+		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( dataStoreName, NrcsAwdbRestApiDataStore.class );
 		if ( dataStore == null ) {
-			message = "Could not get data store for name \"" + dataStoreName + "\" to query data.";
+			// Try the legacy datastore.
+			dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( dataStoreName, NrcsAwdbDataStore.class );
+		}
+		if ( dataStore == null ) {
+			message = "Could not get datastore for name \"" + dataStoreName + "\" to query data.";
 			Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -642,15 +807,47 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     dataStoreName + "\" and is available." ) );
 			throw new Exception ( message );
 		}
-		NrcsAwdbDataStore nrcsAwdbDataStore = (NrcsAwdbDataStore)dataStore;
 
 		if ( readForecast ) {
-		    // Reading the forecast table
+		    // Reading the forecast table.
 		    if ( commandPhase == CommandPhaseType.RUN ) {
-		        DataTable table = nrcsAwdbDataStore.readForecastTable( stationList, stateList,
-		                networkList, hucList, elementList, ForecastPeriod, ForecastPublicationDateStart,
-		                ForecastPublicationDateEnd, forecastExceedanceProbabilities, ForecastTableID );
-	            // Set the table in the processor...
+		        DataTable table = null;
+		    	if ( dataStore instanceof NrcsAwdbRestApiDataStore ) {
+		    		// Read using the REST API.
+		    		List<String> problems = new ArrayList<>();
+		    		table = ((NrcsAwdbRestApiDataStore)dataStore).readForecastTable (
+		    			stationList,
+		    			stateList,
+		                networkList,
+		                hucList,
+		                elementList,
+		                ForecastPeriod,
+		                ForecastPublicationDateStart,
+		                ForecastPublicationDateEnd,
+		                forecastExceedanceProbabilities,
+		                ForecastTableID,
+		                problems );
+		    		if ( !problems.isEmpty() ) {
+		    			for ( String problem : problems ) {
+		    				status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, problem, "Check the log file.") );
+		    			}
+		    		}
+		    	}
+		    	else if ( dataStore instanceof NrcsAwdbDataStore ) {
+		    		// Read using the SOAP API.
+		    		table = ((NrcsAwdbDataStore)dataStore).readForecastTable (
+		    			stationList,
+		    			stateList,
+		                networkSoapList,
+		                hucList,
+		                elementSoapList,
+		                ForecastPeriod,
+		                ForecastPublicationDateStart,
+		                ForecastPublicationDateEnd,
+		                forecastExceedanceProbabilities,
+		                ForecastTableID );
+		    	}
+	            // Set the table in the processor.
 		        PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "Table", table );
 	            try {
@@ -667,7 +864,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            }
 		    }
 		    else {
-		        // Create an empty table for discovery mode
+		        // Create an empty table for discovery mode.
 	            DataTable table = new DataTable();
 	            table.setTableID ( ForecastTableID );
 	            setDiscoveryTable ( table );
@@ -678,30 +875,126 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 				if ( stateList.indexOf("${") < 0 ) {
 					// OK to do discovery read.
-					tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
-						hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
-						InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
+					if ( dataStore instanceof NrcsAwdbRestApiDataStore ) {
+						// Read using the new REST API.
+						Double [] boundingBox = null;
+						if ( (this.__boundingBox != null) && (this.__boundingBox.length == 4) ) {
+							boundingBox = new Double[4];
+							boundingBox[0] = Double.valueOf(this.__boundingBox[0]);
+							boundingBox[1] = Double.valueOf(this.__boundingBox[1]);
+							boundingBox[2] = Double.valueOf(this.__boundingBox[2]);
+							boundingBox[3] = Double.valueOf(this.__boundingBox[3]);
+						}
+						tslist = ((NrcsAwdbRestApiDataStore)dataStore).readTimeSeriesList (
+							stationList,
+							stateList,
+							networkList,
+							hucList,
+							boundingBox,
+							countyList,
+							elementList,
+							elevationMin,
+							elevationMax,
+							interval,
+							InputStart_DateTime,
+							InputEnd_DateTime,
+							outputYearType,
+							timeZoneMap,
+							readData,
+							// Additional REST API parameters.
+							InsertOrUpdateBeginDate_DateTime,
+							periodRefType,
+							activeOnly,
+							readOriginalValues,
+							readSuspectData );
+					}
+					else {
+						// Read using the SOAP API.
+						tslist = ((NrcsAwdbDataStore)dataStore).readTimeSeriesList (
+							stationList,
+							stateList,
+							networkSoapList,
+							hucList,
+							__boundingBox,
+							countyList,
+							elementSoapList,
+							elevationMin,
+							elevationMax,
+							interval,
+							InputStart_DateTime,
+							InputEnd_DateTime,
+							timeZoneMap,
+							readData );
+					}
 				}
 			}
 			else {
 				// Full read.
-				tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
-					hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
-					InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
+				if ( dataStore instanceof NrcsAwdbRestApiDataStore ) {
+					// Read using the new REST API.
+					Double [] boundingBox = null;
+					if ( (this.__boundingBox != null) && (this.__boundingBox.length == 4) ) {
+						boundingBox = new Double[4];
+						boundingBox[0] = Double.valueOf(this.__boundingBox[0]);
+						boundingBox[1] = Double.valueOf(this.__boundingBox[1]);
+						boundingBox[2] = Double.valueOf(this.__boundingBox[2]);
+						boundingBox[3] = Double.valueOf(this.__boundingBox[3]);
+					}
+					tslist = ((NrcsAwdbRestApiDataStore)dataStore).readTimeSeriesList (
+						stationList,
+						stateList,
+						networkList,
+						hucList,
+						boundingBox,
+						countyList,
+						elementList,
+						elevationMin,
+						elevationMax,
+						interval,
+						InputStart_DateTime,
+						InputEnd_DateTime,
+						outputYearType,
+						timeZoneMap,
+						readData,
+						// Additional REST API parameters.
+						InsertOrUpdateBeginDate_DateTime,
+						periodRefType,
+						activeOnly,
+						readOriginalValues,
+						readSuspectData );
+				}
+				else if ( dataStore instanceof NrcsAwdbDataStore ) {
+					// Read using the SOAP API.
+					tslist = ((NrcsAwdbDataStore)dataStore).readTimeSeriesList (
+						stationList,
+						stateList,
+						networkSoapList,
+						hucList,
+						__boundingBox,
+						countyList,
+						elementSoapList,
+						elevationMin,
+						elevationMax,
+						interval,
+						InputStart_DateTime,
+						InputEnd_DateTime,
+						timeZoneMap,
+						readData );
+				}
 			}
-    		// Make sure that size is set...
+    		// Make sure that size is set.
     		int size = 0;
     		if ( tslist != null ) {
     			size = tslist.size();
     		}
-    	
+
        		if ( (tslist == null) || (size == 0) ) {
        			// Only warn if in run mode because may be using properties so no time series are read up front.
        			if ( commandPhase == CommandPhaseType.RUN ) {
        				Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
     	        	// Warn if nothing was retrieved (can be overridden to ignore).
                 	message = "No time series were read from the NRCS AWDB web service.";
-                	Message.printWarning ( warning_level, 
+                	Message.printWarning ( warning_level,
                     	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                 	status.addToLog ( commandPhase,
                     	new CommandLogRecord(CommandStatusType.WARNING,
@@ -710,38 +1003,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
        			}
        		}
        		else {
-    			// Else, further process each time series...
+    			// Else, further process each time series.
     			for ( TS ts: tslist ) {
-    			    // Set the alias to the desired string - this is impacted by the Location parameter
+    			    // Set the alias to the desired string - this is impacted by the Location parameter.
                     String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                         processor, ts, Alias, status, commandPhase);
                     ts.setAlias ( alias );
     			}
     		}
-        
+
             Message.printStatus ( 2, routine, "Read " + size + " NRCS AWDB time series." );
-    
+
             if ( commandPhase == CommandPhaseType.RUN ) {
                 if ( tslist != null ) {
-                    // Further process the time series...
-                    // This makes sure the period is at least as long as the output period...
-    
+                    // Further process the time series.
+                    // This makes sure the period is at least as long as the output period.
+
                     int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                     if ( wc > 0 ) {
                         message = "Error post-processing NRCS AWDB time series after read.";
-                        Message.printWarning ( warning_level, 
+                        Message.printWarning ( warning_level,
                             MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                         // Don't throw an exception - probably due to missing data.
                     }
-        
-                    // Now add the list in the processor...
-                    
+
+                    // Now add the list in the processor.
+
                     int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                     if ( wc2 > 0 ) {
                         message = "Error adding NRCS AWDB time series after read.";
-                        Message.printWarning ( warning_level, 
+                        Message.printWarning ( warning_level,
                             MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -752,7 +1045,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 // Warn if nothing was retrieved (can be overridden to ignore).
                 if ( (tslist == null) || (size == 0) ) {
                     message = "No time series were read from the NRCS AWDB value web service.";
-                    Message.printWarning ( warning_level, 
+                    Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -768,7 +1061,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message ="Unexpected error reading time series from NRCS AWDB web service (" + e + ").";
-		Message.printWarning ( warning_level, 
+		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
         status.addToLog ( commandPhase,
@@ -786,23 +1079,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
-    
+
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
 Set the table that is read by this class in discovery mode.
+@param table discovery table
 */
-private void setDiscoveryTable ( DataTable table )
-{
+private void setDiscoveryTable ( DataTable table ) {
     __discoveryTable = table;
 }
 
 /**
 Set the list of time series read in discovery phase.
+@param discoveryTSList discovery time series list
 */
-private void setDiscoveryTSList ( List<TS> discoveryTSList )
-{
+private void setDiscoveryTSList ( List<TS> discoveryTSList ) {
     __discoveryTSList = discoveryTSList;
 }
 
@@ -818,6 +1111,8 @@ public String toString ( PropList parameters ) {
 		"Stations",
 		"States",
 		"Networks",
+		"StationTriplets",
+		"StationNames",
 		"HUCs",
 		"BoundingBox",
 		"Counties",
@@ -827,11 +1122,19 @@ public String toString ( PropList parameters ) {
 		"ForecastPublicationDateStart",
 		"ForecastPublicationDateEnd",
 		"ForecastExceedanceProbabilities",
+		// REST API.
+		"InsertOrUpdateBeginDate",
+		"PeriodRef",
+		"ActiveOnly",
+		"ReturnOriginalValues",
+		"ReturnSuspectData",
+		// General.
 		"Elements",
     	"ElevationMin",
     	"ElevationMax",
     	"InputStart",
     	"InputEnd",
+    	"OutputYearType",
     	"TimeZoneMap",
     	"Alias"
 	};

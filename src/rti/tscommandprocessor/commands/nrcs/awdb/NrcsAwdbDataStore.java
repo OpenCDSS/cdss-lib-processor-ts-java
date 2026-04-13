@@ -77,7 +77,7 @@ public class NrcsAwdbDataStore extends AbstractWebServiceDataStore
 {
 
 /**
-ColoradoWaterSMS instance used as SOAP API.
+NRCS AWDB instance used as SOAP API.
 */
 private AwdbWebService __awdbWebService = null;
 
@@ -321,8 +321,7 @@ private Duration lookupDurationFromInterval ( TimeInterval interval )
 /**
 Lookup the TimeInterval from the AWDB duration.
 */
-private int lookupIntervalFromDuration ( Duration duration )
-{
+private int lookupIntervalFromDuration ( Duration duration ) {
     if ( duration == Duration.ANNUAL ) {
         return TimeInterval.YEAR;
     }
@@ -334,7 +333,7 @@ private int lookupIntervalFromDuration ( Duration duration )
     }
     else if ( // (duration == null) ||
         (duration == Duration.INSTANTANEOUS) ) {
-        // TODO SAM 2012-11-08 confirm whether null duration means instantaneous in getStationElements results
+        // TODO SAM 2012-11-08 confirm whether null duration means instantaneous in getStationElements results.
         return TimeInterval.IRREGULAR;
     }
     else {

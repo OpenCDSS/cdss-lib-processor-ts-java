@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -129,13 +129,24 @@ throws InvalidCommandParameterException {
                 DataTableJoinMethodType.JOIN_IF_IN_BOTH) );
     }
 
-    if ( (JoinColumns != null) && !JoinColumns.isEmpty() && (JoinColumns.indexOf(":") < 0) ) {
-    	// Probably specified only one column.
-        message = "The join column names must be specified for each table.";
+    if ( (JoinColumns == null) || JoinColumns.isEmpty() ) {
+        message = "The join columns must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the table column names for both tables, even if the same." ) );
+                message, "Specify the join columns." ) );
+
+    }
+    else {
+    	// JoinColumns is specified.
+    	if ( JoinColumns.indexOf(":") < 0 ) {
+    		// Probably specified only one column.
+        	message = "The join column names must be specified for each table.";
+        	warning += "\n" + message;
+        	status.addToLog ( CommandPhaseType.INITIALIZATION,
+            	new CommandLogRecord(CommandStatusType.FAILURE,
+                	message, "Specify the table column names for both tables, even if the same." ) );
+    	}
     }
 
     if ( (HandleMultipleJoinMatchesHow != null) && !HandleMultipleJoinMatchesHow.isEmpty() &&

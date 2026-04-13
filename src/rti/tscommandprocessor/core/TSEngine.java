@@ -125,6 +125,7 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 import RTi.Util.Time.YearType;
 import cdss.dmi.hydrobase.rest.ColoradoHydroBaseRestDataStore;
+import gov.usda.egov.sc.wcc.tstool.plugin.nrcsawdb.datastore.NrcsAwdbRestApiDataStore;
 
 public class TSEngine implements TSSupplier, WindowListener
 {
@@ -4618,17 +4619,32 @@ throws Exception {
 		}
 	}
     else if ((dataStore != null) && (dataStore instanceof NrcsAwdbDataStore) ) {
-        // New style: TSID~dataStoreName
-        NrcsAwdbDataStore ds = (NrcsAwdbDataStore)dataStore;
-        try {
-            ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
-        }
-        catch ( Exception te ) {
-            Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from NRCS AWCB daily value web service (" + te + ")." );
-            Message.printWarning ( 3, routine, te );
-            ts = null;
-        }
+    	// NRCS AWDB older SOAP API.
+    	// TSID~dataStoreName
+    	NrcsAwdbDataStore ds = (NrcsAwdbDataStore)dataStore;
+    	try {
+    		ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+    	}
+    	catch ( Exception te ) {
+    		Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+    			"\" from NRCS AWDB SOAP web service (" + te + ")." );
+    		Message.printWarning ( 3, routine, te );
+    		ts = null;
+    	}
+    }
+    else if ((dataStore != null) && (dataStore instanceof NrcsAwdbRestApiDataStore) ) {
+    	// NRCS AWDB newer REST API:
+    	// TSID~dataStoreName
+    	NrcsAwdbRestApiDataStore ds = (NrcsAwdbRestApiDataStore)dataStore;
+    	try {
+    		ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+    	}
+    	catch ( Exception te ) {
+    		Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+    			"\" from NRCS AWDB REST API web service (" + te + ")." );
+    		Message.printWarning ( 3, routine, te );
+    		ts = null;
+    	}
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("NWSCARD") ) {
 		// New style: TSID~input_type~input_name

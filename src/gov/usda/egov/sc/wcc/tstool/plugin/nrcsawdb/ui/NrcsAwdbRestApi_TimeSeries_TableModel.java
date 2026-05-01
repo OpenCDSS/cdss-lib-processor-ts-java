@@ -55,18 +55,18 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 	public final int COL_ELEMENT_DURATION_NAME = 9;
 	public final int COL_ELEMENT_BEGIN_DATE = 10;
 	public final int COL_ELEMENT_END_DATE = 11;
-	public final int COL_ELEMENT_DERIVED_DATA = 12;
-	public final int COL_ELEMENT_ORDINAL = 13;
-	public final int COL_ELEMENT_HEIGHT_DEPTH = 14;
-	public final int COL_ELEMENT_DATA_PRECISION = 15;
+	public final int COL_STATION_DATA_TIMEZONE = 12;
+	public final int COL_ELEMENT_DERIVED_DATA = 13;
+	public final int COL_ELEMENT_ORDINAL = 14;
+	public final int COL_ELEMENT_HEIGHT_DEPTH = 15;
+	public final int COL_ELEMENT_DATA_PRECISION = 16;
 	// Station data.
-	public final int COL_STATION_TRIPLET = 16;
-	public final int COL_STATION_SHEF_ID = 17;
-	public final int COL_STATION_OPERATOR = 18;
-	public final int COL_STATION_LONGITUDE = 19;
-	public final int COL_STATION_LATITUDE = 20;
-	public final int COL_STATION_ELEVATION = 21;
-	public final int COL_STATION_TIMEZONE = 22;
+	public final int COL_STATION_TRIPLET = 17;
+	public final int COL_STATION_SHEF_ID = 18;
+	public final int COL_STATION_OPERATOR = 19;
+	public final int COL_STATION_LONGITUDE = 20;
+	public final int COL_STATION_LATITUDE = 21;
+	public final int COL_STATION_ELEVATION = 22;
 	// Network data.
 	public final int COL_STATION_NETWORK_CODE = 23;
 	public final int COL_STATION_DCO_CODE = 24;
@@ -117,11 +117,10 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 	public Class getColumnClass (int columnIndex) {
 		switch (columnIndex) {
 			// List in the same order as top of the class.
-			case COL_STATION_ID: return Integer.class;
 			case COL_STATION_LATITUDE: return Double.class;
 			case COL_STATION_LONGITUDE: return Double.class;
 			case COL_STATION_ELEVATION: return Double.class;
-			case COL_STATION_TIMEZONE: return Integer.class;
+			case COL_STATION_DATA_TIMEZONE: return Integer.class;
 			case COL_ELEMENT_ORDINAL: return Integer.class;
 			case COL_ELEMENT_DERIVED_DATA: return Boolean.class;
 			case COL_STATION_IS_RESERVOIR: return Boolean.class;
@@ -160,6 +159,7 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 			case COL_ELEMENT_DURATION_NAME: return "Duration Name";
 			case COL_ELEMENT_BEGIN_DATE: return "Begin Date";
 			case COL_ELEMENT_END_DATE: return "End Date";
+			case COL_STATION_DATA_TIMEZONE: return "Time Zone";
 			case COL_ELEMENT_DERIVED_DATA: return "Derived";
 			case COL_ELEMENT_ORDINAL: return "Ordinal";
 			case COL_ELEMENT_HEIGHT_DEPTH: return "Height Depth";
@@ -171,7 +171,6 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 			case COL_STATION_LONGITUDE: return "Longitude";
 			case COL_STATION_LATITUDE: return "Latitude";
 			case COL_STATION_ELEVATION: return "Elevation";
-			case COL_STATION_TIMEZONE: return "Time Zone";
 			// Network data.
 			case COL_STATION_NETWORK_CODE: return "Network";
 			case COL_STATION_DCO_CODE: return "DCO";
@@ -194,6 +193,11 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 	*/
 	public String[] getColumnToolTips() {
 	    String[] toolTips = new String[this.COLUMNS];
+	    for ( int i = 0; i < toolTips.length; i++ ) {
+	    	// Set default in case miss below:
+	    	// - otherwise the mouse may spin on the header
+	    	toolTips[i] = "";
+	    }
 		// General.
 	    toolTips[COL_STATION_ID] = "Station identifier";
 	    toolTips[COL_STATION_NAME] = "Station name";
@@ -207,29 +211,29 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 		toolTips[COL_ELEMENT_DATA_UNITS] = "Data units";
 		toolTips[COL_ELEMENT_DATA_UNITS_ORIG] = "Data units (original)";
 		toolTips[COL_ELEMENT_DURATION_NAME] = "Duration name";
-		toolTips[COL_ELEMENT_BEGIN_DATE] = "Begin date for time series";
-		toolTips[COL_ELEMENT_END_DATE] = "End date for time series";
+		toolTips[COL_ELEMENT_BEGIN_DATE] = "Begin date for time series (station local time)";
+		toolTips[COL_ELEMENT_END_DATE] = "End date for time series (station local time)";
+		toolTips[COL_STATION_DATA_TIMEZONE] = "Station data time zone (standard time hour offset from GMT)";
 		toolTips[COL_ELEMENT_DERIVED_DATA] = "Are the data derived?";
-		toolTips[COL_ELEMENT_ORDINAL] = "Ordinal";
-		toolTips[COL_ELEMENT_HEIGHT_DEPTH] = "Height/Depth";
-		toolTips[COL_ELEMENT_DATA_PRECISION] = "Data Precision";
+		toolTips[COL_ELEMENT_ORDINAL] = "Ordinal, sequential number 1+ to uniquely identify time series if needed";
+		toolTips[COL_ELEMENT_HEIGHT_DEPTH] = "Height or depth of sensor if multiple sensors are used at a location";
+		toolTips[COL_ELEMENT_DATA_PRECISION] = "Data precision";
 		// Station data.
-		toolTips[COL_STATION_TRIPLET] = "Station Triplet";
+		toolTips[COL_STATION_TRIPLET] = "Station triplet";
 		toolTips[COL_STATION_SHEF_ID] = "SHEF ID";
 		toolTips[COL_STATION_OPERATOR] = "Operator";
 	    toolTips[COL_STATION_LONGITUDE] = "Station longitude, decimal degrees";
 	    toolTips[COL_STATION_LATITUDE] = "Station latitude, decimal degrees";
 	    toolTips[COL_STATION_ELEVATION] = "Station elevation";
-		toolTips[COL_STATION_TIMEZONE] = "Station time zone";
 		// Network data.
-		toolTips[COL_STATION_NETWORK_CODE] = "Network";
-		toolTips[COL_STATION_DCO_CODE] = "DCO";
+		toolTips[COL_STATION_NETWORK_CODE] = "Network code";
+		toolTips[COL_STATION_DCO_CODE] = "Data collection office (DCO)";
 		// Location data.
-		toolTips[COL_STATION_STATE_CODE] = "State";
-		toolTips[COL_STATION_COUNTY_NAME] = "County";
-		toolTips[COL_STATION_HUC] = "HUC";
+		toolTips[COL_STATION_STATE_CODE] = "State abbreviation";
+		toolTips[COL_STATION_COUNTY_NAME] = "County name";
+		toolTips[COL_STATION_HUC] = "Hydrologic unit code (HUC)";
 	    // General.
-		toolTips[COL_TSID] = "Time series identifier";
+		toolTips[COL_TSID] = "TSTool time series identifier (TSID)";
 		toolTips[COL_PROBLEMS] = "Problems";
 		toolTips[COL_DATASTORE] = "Datastore name";
 	    return toolTips;
@@ -241,6 +245,11 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 	*/
 	public int[] getColumnWidths() {
 		int[] widths = new int[this.COLUMNS];
+	    for ( int i = 0; i < widths.length; i++ ) {
+	    	// Set default in case miss below:
+	    	// - otherwise the mouse may spin on the header
+	    	widths[i] = 10;
+	    }
 		// General.
 	    widths[COL_STATION_ID] = 12;
 	    widths[COL_STATION_NAME] = 20;
@@ -256,18 +265,18 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 		widths[COL_ELEMENT_DURATION_NAME] = 10;
 		widths[COL_ELEMENT_BEGIN_DATE] = 10;
 		widths[COL_ELEMENT_END_DATE] = 10;
+		widths[COL_STATION_DATA_TIMEZONE] = 10;
 		widths[COL_ELEMENT_DERIVED_DATA] = 6;
 		widths[COL_ELEMENT_ORDINAL] = 6;
 		widths[COL_ELEMENT_HEIGHT_DEPTH] = 8;
 		widths[COL_ELEMENT_DATA_PRECISION] = 10;
 		// Station data.
-		widths[COL_STATION_TRIPLET] = 10;
+		widths[COL_STATION_TRIPLET] = 15;
 		widths[COL_STATION_SHEF_ID] = 6;
 		widths[COL_STATION_OPERATOR] = 8;
 	    widths[COL_STATION_LONGITUDE] = 7;
 	    widths[COL_STATION_LATITUDE] = 6;
 	    widths[COL_STATION_ELEVATION] = 6;
-		widths[COL_STATION_TIMEZONE] = 7;
 		// Network data.
 		widths[COL_STATION_NETWORK_CODE] = 6;
 		widths[COL_STATION_DCO_CODE] = 6;
@@ -333,6 +342,7 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 			case COL_ELEMENT_DURATION_NAME: return timeSeriesCatalog.getElementDurationName();
 			case COL_ELEMENT_BEGIN_DATE: return timeSeriesCatalog.getElementBeginDate();
 			case COL_ELEMENT_END_DATE: return timeSeriesCatalog.getElementEndDate();
+			case COL_STATION_DATA_TIMEZONE: return timeSeriesCatalog.getStationDataTimeZone();
 			case COL_ELEMENT_DERIVED_DATA: return timeSeriesCatalog.getElementDerivedData();
 			case COL_ELEMENT_ORDINAL: return timeSeriesCatalog.getElementOrdinal();
 			case COL_ELEMENT_HEIGHT_DEPTH: return timeSeriesCatalog.getElementHeightDepth();
@@ -344,7 +354,6 @@ public class NrcsAwdbRestApi_TimeSeries_TableModel extends JWorksheet_AbstractRo
 			case COL_STATION_LONGITUDE: return timeSeriesCatalog.getStationLongitude();
 			case COL_STATION_LATITUDE: return timeSeriesCatalog.getStationLatitude();
 			case COL_STATION_ELEVATION: return timeSeriesCatalog.getStationElevation();
-			case COL_STATION_TIMEZONE: return timeSeriesCatalog.getStationDataTimeZone();
 			// Network data.
 			case COL_STATION_NETWORK_CODE: return timeSeriesCatalog.getStationNetwork();
 			case COL_STATION_DCO_CODE: return timeSeriesCatalog.getStationDco();

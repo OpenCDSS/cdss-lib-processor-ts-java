@@ -145,25 +145,29 @@ throws InvalidCommandParameterException {
     }
 
     TimeInterval interval = null;
-    if ( Interval == null || (Interval.length() == 0) ) {
-        message = "The data interval must be specified.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message, "Specify a data interval."));
-    }
-    else {
-        try {
-            interval = TimeInterval.parseInterval(Interval);
-        }
-        catch ( Exception e ) {
-            // Should not happen because choices are valid.
-            message = "The data interval \"" + Interval + "\" is invalid.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message, "Specify a data interval using the command editor."));
-        }
+    if ( (ReadForecast == null) || ReadForecast.isEmpty() ) {
+    	// Data interval is not used when reading the forecast table.
+    	if ( (Interval == null) || Interval.isEmpty() ) {
+        	message = "The data interval must be specified when reading time series (ignored if reading forecasts).";
+        	warning += "\n" + message;
+        	status.addToLog(CommandPhaseType.INITIALIZATION,
+                	new CommandLogRecord(
+                	CommandStatusType.FAILURE, message, "Specify a data interval."));
+    	}
+    	else {
+    		// Verify that the specified interval is valid.
+        	try {
+            	interval = TimeInterval.parseInterval(Interval);
+        	}
+        	catch ( Exception e ) {
+            	// Should not happen because choices are valid.
+            	message = "The data interval \"" + Interval + "\" is invalid.";
+            	warning += "\n" + message;
+            	status.addToLog(CommandPhaseType.INITIALIZATION,
+                	new CommandLogRecord(
+                	CommandStatusType.FAILURE, message, "Specify a data interval using the command editor."));
+        	}
+    	}
     }
 
     __boundingBox = null;
@@ -285,6 +289,15 @@ throws InvalidCommandParameterException {
                     message, "Specify a date/time YYYY-MM-DD hh:mm." ) );
 		}
 	}
+
+    if ( (PeriodRef != null) && !PeriodRef.isEmpty() &&
+    	(PeriodRefType.valueOfIgnoreCase(PeriodRef) == null) ) {
+        message = "The PeriodRef parameter (" + PeriodRef + ") parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + PeriodRefType.START + " or " + PeriodRefType.END + " (default).") );
+    }
 
     if ( (ActiveOnly != null) && !ActiveOnly.isEmpty() &&
     	!ActiveOnly.equalsIgnoreCase(_True) && !ActiveOnly.equalsIgnoreCase(_False) ) {
@@ -873,7 +886,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {
 		    // Reading time series.
 			if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-				if ( stateList.indexOf("${") < 0 ) {
+				if ( ! stateList.contains("${") ) {
 					// OK to do discovery read.
 					if ( dataStore instanceof NrcsAwdbRestApiDataStore ) {
 						// Read using the new REST API.

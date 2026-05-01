@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -187,14 +187,29 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command ) {
 		"    Minute data:  MM/DD/YYYY HH:mm or YYYY-MM-DD HH:mm"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Second data:  MM/DD/YYYY HH:mm:ss or YYYY-MM-DD HH:mm:ss"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Special values are also recognized (for all precisions):"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToYear = the current date to year precision"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToMonth = the current date to month precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToDay = the current date to day precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToHour = the current date/time to hour precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute = the current date/time to minute precision"),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToSecond = the current date/time to second precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute - 7Day = current date/time minus 7 days"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -215,10 +230,14 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command ) {
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The values LastSunday, LastMonday, etc., can also be used ('Last' is inclusive of the current day)."),
-		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"The time zone is by default the computer time zone for hour or smaller interval and blank otherwise - if necessary, specify in date/time string or use .Timezone()."),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify one or both values to set the specified values."),
+    	0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify no values to clear the output period and output all available data (based on specific commands)."),
+    	0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See also the SetInputPeriod() command, which will constrain the period that is read."),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -231,8 +250,6 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command ) {
 	__OutputStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required"),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period end:" ),
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -240,8 +257,6 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command ) {
 	__OutputEnd_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required"),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

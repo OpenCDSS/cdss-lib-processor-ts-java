@@ -185,13 +185,28 @@ private void initialize ( JFrame parent, SetInputPeriod_Command command ) {
 		"    Minute data:  MM/DD/YYYY HH:mm or YYYY-MM-DD HH:mm"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Second data:  MM/DD/YYYY HH:mm:ss or YYYY-MM-DD HH:mm:ss"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The following special values are also recognized (for all precisions):"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToYear = the current date to year precision"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToMonth = the current date to month precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToDay = the current date to day precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToHour = the current date/time to hour precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute = the current date/time to minute precision"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToSecond = the current date/time to second precision"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute - 7Day = current date/time minus 7 days"),
@@ -201,25 +216,26 @@ private void initialize ( JFrame parent, SetInputPeriod_Command command ) {
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    The above Current* values can have modifiers as shown in the following examples (can chain multiple modifiers):"),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"            CurrentToMinute.Round(5Min).RoundDirection(>) - round to the next even 5min"),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"            CurrentToMinute.Round(6hour).TimeZone() - round to the previous even 6hour and set time zone to blank"),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    ${Property} = processor property as DateTime object or date/time string"),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The values LastSunday, LastMonday, etc., can also be used ('Last' is inclusive of the current day)."),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time zone is by default the computer time zone for hour or smaller interval and blank otherwise - if necessary, specify in date/time string or use .Timezone()."),
-		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Leave blank to read all available data (default if SetInputPeriod() command is not used)."),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify one or both values to set the specified values."),
+    	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify no values to clear the input period and read all available data (based on specific commands)."),
+    	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 

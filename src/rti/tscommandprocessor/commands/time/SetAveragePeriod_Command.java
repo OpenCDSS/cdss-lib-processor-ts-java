@@ -116,7 +116,7 @@ throws InvalidCommandParameterException {
 			Message.printWarning ( 3, "", e );
 		}
 	}
-	if ( (AverageStart_DateTime != null) && (AverageStart_DateTime != null) ) {
+	if ( (AverageStart_DateTime != null) && (AverageEnd_DateTime != null) ) {
 		if ( AverageStart_DateTime.greaterThan(AverageEnd_DateTime) ) {
 			message = "The start date/time is later than the end date/time.";
 			warning += "\n" + message;
@@ -273,8 +273,20 @@ throws CommandWarningException, CommandException {
 			command_tag,++warning_count), routine, message );
 			throw new InvalidCommandParameterException ( message );
 		}
-		processor.setPropContents ( "AverageStart", AverageStart_DateTime);
-		processor.setPropContents ( "AverageEnd", AverageEnd_DateTime );
+	   	if ( AverageStart_DateTime != null ) {
+	   		processor.setPropContents ( "AverageStart", AverageStart_DateTime);
+         	Message.printStatus(2, routine, "Average period start set to:  " + AverageStart_DateTime );
+	   	}
+	   	if ( AverageEnd_DateTime != null ) {
+	   		processor.setPropContents ( "AverageEnd", AverageEnd_DateTime );
+         	Message.printStatus(2, routine, "Average period end set to:  " + AverageEnd_DateTime );
+	   	}
+	  	if ( (AverageStart_DateTime == null) && (AverageEnd_DateTime == null) ) {
+	  		processor.setPropContents ( "AverageStart", null);
+       		Message.printStatus(2, routine, "Average period start cleared (set to null)." );
+	  		processor.setPropContents ( "AverageEnd", null );
+       		Message.printStatus(2, routine, "Average period end cleared (set to null)." );
+	   	}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting average period in processor (" + e + ").";

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -172,6 +172,10 @@ private void initialize ( JFrame parent, Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Enter dates as MM/YYYY or YYYY-MM (or YYYY for yearly).  Enter * to use all available data."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify one or both values to set the specified values."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify no values to clear the average period and use all available data (based on specific commands)."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -183,8 +187,7 @@ private void initialize ( JFrame parent, Command command ) {
         JGUIUtil.addComponent(main_JPanel, __AverageStart_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Average period end:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Average period end:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AverageEnd_JTextField = new JTextField ( 24 );
 	__AverageEnd_JTextField.addKeyListener ( this );

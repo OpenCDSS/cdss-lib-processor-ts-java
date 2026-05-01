@@ -116,7 +116,7 @@ throws InvalidCommandParameterException {
 			Message.printWarning ( 3, "", e );
 		}
 	}
-	if ( (OutputStart_DateTime != null) && (OutputStart_DateTime != null) ) {
+	if ( (OutputStart_DateTime != null) && (OutputEnd_DateTime != null) ) {
 		if ( OutputStart_DateTime.greaterThan(OutputEnd_DateTime) ) {
 			message = "The start date/time is later than the end date/time.";
 			warning += "\n" + message;
@@ -380,10 +380,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	      	// Set the period in the processor.
 	       	if ( OutputStart_DateTime != null ) {
 	       		processor.setPropContents ( "OutputStart", OutputStart_DateTime);
+           		Message.printStatus(2, routine, "Output period start set to:  " + OutputStart_DateTime );
 	       	}
 	       	if ( OutputEnd_DateTime != null ) {
 	       		processor.setPropContents ( "OutputEnd", OutputEnd_DateTime );
+           		Message.printStatus(2, routine, "Output period end set to:  " + OutputEnd_DateTime );
 	       	}
+	      	if ( (OutputStart_DateTime == null) && (OutputEnd_DateTime == null) ) {
+	      		processor.setPropContents ( "OutputStart", null);
+           		Message.printStatus(2, routine, "Output period start cleared (set to null)." );
+	      		processor.setPropContents ( "OutputEnd", null );
+           		Message.printStatus(2, routine, "Output period end cleared (set to null)." );
+	      	}
         }
 	}
 	catch ( Exception e ) {

@@ -79,7 +79,7 @@ throws InvalidCommandParameterException {
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	// When checking InputStart and InputEnd, all we care about is that the syntax is correct.
+	// When checking InputStart and InputEnd, only care that the syntax is correct.
 	// In runCommand() the parameter will be reparsed with runtime data.
 
 	PropList dateprops = new PropList ( "SetInputPeriod" );
@@ -362,7 +362,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		       	}
 	       	}
 
-	      	// Set the period in the processor.
+	      	// Set the period in the processor:
+		   	// - if only one is specified, set only the one that is specified
+		   	// - if neither is specified, set both to null
 	      	if ( InputStart_DateTime != null ) {
 	      		processor.setPropContents ( "InputStart", InputStart_DateTime);
            		Message.printStatus(2, routine, "Input period start set to:  " + InputStart_DateTime );
@@ -370,6 +372,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	      	if ( InputEnd_DateTime != null ) {
 	      		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
            		Message.printStatus(2, routine, "Input period end set to:  " + InputEnd_DateTime );
+	      	}
+	      	if ( (InputStart_DateTime == null) && (InputEnd_DateTime == null) ) {
+	      		processor.setPropContents ( "InputStart", null);
+           		Message.printStatus(2, routine, "Input period start cleared (set to null)." );
+	      		processor.setPropContents ( "InputEnd", null );
+           		Message.printStatus(2, routine, "Input period end cleared (set to null)." );
 	      	}
         }
 	}

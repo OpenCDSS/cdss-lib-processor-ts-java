@@ -29,6 +29,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -947,6 +949,33 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    String [] parts = stationTriplet.split(":");
 	    return parts[1];
 	}
+	
+	/**
+	 * Parse a DataValue date/time.
+	 * May use a string or integer parts.
+	 */
+	private DateTime parseDataValueDateTime ( int intervalBase, DataValue dataValue ) {
+		DateTime dt = null;
+		if ( intervalBase == TimeInterval.YEAR ) {
+			// Annual data:
+			// - use the 'year'
+			dt = new DateTime ( DateTime.PRECISION_YEAR );
+			dt.setYear ( dataValue.getYear() );
+		}
+		else if ( intervalBase == TimeInterval.MONTH ) {
+			// Monthly data:
+			// - use the 'year' and 'month'
+			dt = new DateTime ( DateTime.PRECISION_MONTH );
+			dt.setYear ( dataValue.getYear() );
+			dt.setMonth ( dataValue.getMonth() );
+		}
+		else {
+			// All other intervals.
+			String date = dataValue.getDate();
+			dt = DateTime.parse(date);
+		}
+		return dt;
+	}
 
 	/**
 	Parse an AWDB date/time string and return a DateTime instance.
@@ -1077,8 +1106,12 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 		// Add 'periodRef':
 		// - will be START or END
 		// - for example, if monthly data is computed from daily values, START will be 1 for January, or END will be 31
-		// - default is end
-		if ( periodRefType != null ) {
+		// - default is END, but specify because the API does not clearly indicate
+		// - NRCS support says that END should be the default
+		if ( periodRefType == null ) {
+			WebUtil.appendUrlQueryParameter(urlStringBuilder, "periodRef", "END" );
+		}
+		else {
 			WebUtil.appendUrlQueryParameter(urlStringBuilder, "periodRef", periodRefType.toString() );
 		}
 
@@ -1445,6 +1478,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    List<String> hucs,
 	    List<String> forecasters )
 		throws IOException {
+		String routine = getClass().getSimpleName() + ".readForecastPointStationList";
 		// List the query parameters for filters, alphabetical.
 		Double [] boundingBox = null;
 		List<String> countyNames = null;
@@ -1454,7 +1488,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 		Double elevationMin = null;
 		Double elevationMax = null;
 		List<String> stationNames = null;
-		List<String> stationTriplets = null;
+		List<String> stationTriplets = new ArrayList<>();
 		if ( (stationIds != null) && !stationIds.isEmpty() ) {
 			// Form the list of triplets.
 			stationTriplets = new ArrayList<>();
@@ -1474,11 +1508,13 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 				}
 			}
 		}
+		// For fast performance need to specify stations.
+		Message.printStatus(2, routine, "Reading list of forecast stations for " + stationTriplets.size() + " station triplets.");
 		// Indicate which data objects to include.
 		Boolean activeOnly = null;
-		Boolean returnForecastPointMetadata = null;
-		Boolean returnReservoirMetadata = null;
-		Boolean returnStationElements = null;
+		Boolean returnForecastPointMetadata = Boolean.valueOf(true);
+		Boolean returnReservoirMetadata = Boolean.valueOf(true);
+		Boolean returnStationElements = Boolean.valueOf(true);
 		return readStationList (
 			// List the query parameters for filters, alphabetical.
 			boundingBox,
@@ -1848,7 +1884,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    //List<ForecastPoint> forecastPoints = ws.getForecastPoints (
 	    List<Station> forecastPointStations = new ArrayList<>();
 	    try {
-	    	Message.printStatus(periodAverageCol, routine, "Reading foreaast point station list." );
+	    	Message.printStatus(2, routine, "Reading forecast point station list." );
 	    	forecastPointStations = readForecastPointStationList (
 	    		stationIds,
 	    		stateCds,
@@ -1856,6 +1892,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	       		forecastPointNames,
 	       		hucs,
 	       		forecasters );
+	    	Message.printStatus(2, routine, "Read " + forecastPointStations.size() + " forecast point stations." );
 	    }
 	    catch ( Exception e ) {
 	    	Message.printWarning(3, routine, "Exception reading forecast point stations (" + e + ")." );
@@ -1912,7 +1949,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	            		forecasts = readForecastList ( fp.getStationTriplet(), element.getCode(), forecastPeriod );
 	            	}
 	            	catch ( Exception e ) {
-	            		String message = "Excpeption reading forecasts (" + e + ").";
+	            		String message = "Exception reading forecasts (" + e + ").";
 	            		Message.printWarning ( 3, routine, message );
 	            		problems.add ( message );
 	            		Message.printWarning ( 3, routine, e );
@@ -1925,7 +1962,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	            		forecasts = readForecastListForPublicationDate ( fp.getStationTriplet(), element.getCode(), forecastPeriod, beginPublicationDate, endPublicationDate);
 	            	}
 	            	catch ( Exception e ) {
-	            		String message = "Excpeption reading forecasts (" + e + ").";
+	            		String message = "Exception reading forecasts (" + e + ").";
 	            		Message.printWarning ( 3, routine, message );
 	            		problems.add ( message );
 	            		Message.printWarning ( 3, routine, e );
@@ -1959,7 +1996,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 		                Message.printStatus(2, routine, "Have " + eprob.size() + " probabilities.");
 		                for ( int i = 0; i < eprob.size(); i++ ) {
 		                    if ( Message.isDebugOn ) {
-		                        Message.printDebug(1,routine,"Probability=" + eprob.get(i) + " value=" + eval.get(i) );
+		                        Message.printDebug(2,routine,"Probability=" + eprob.get(i) + " value=" + eval.get(i) );
 		                    }
 		                    // Skip the probability if not requested.
 		                    includeProb = true;
@@ -2675,31 +2712,10 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	            elementCodes.add ( element.getCode() );
 	        }
 	    }
-	    List<Integer> ordinals = new ArrayList<>();
-	    /** SOAP API.
-	     * List<HeightDepth> heightDepths = new ArrayList<>();
-	    boolean logicalAnd = true;
-	    List<Station> stations = readStations (
-	    	stationIds,
-	    	stateCds,
-	    	networkCds,
-	    	hucs,
-	    	countyNames,
-	        minLatitude,
-	    	maxLatitude,
-	    	minLongitude,
-	    	maxLongitude,
-	    	minElevation,
-	    	maxElevation,
-	        elementCds,
-	    	ordinals,
-	    	//heightDepths,
-	    	logicalAnd );
-	    	*/
 	    // Old code does not use the same choices.
 	    List<String> dcoCodes = null;
 	    List<String> durations = null;
-	    List<String> stationNames = null; // TODO check how IDs are used
+	    List<String> stationNames = null; // TODO check how IDs are used.
 	    List<String> stationTriplets = new ArrayList<>();
 	   	Boolean returnForecastPointMetadata = true; // Retrieve for time series properties.
 	   	Boolean returnReservoirMetadata = true; // Retrieve for time series properties.
@@ -2714,11 +2730,13 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    	String state = stateCds.get(0);
 	    	String network = networkCds.get(0);
 	    	for ( String stationId : stationIds ) {
-	    		stationTriplets.add(stationId + ":" + state + ":" + network);
+	    		String stationTriplet = stationId + ":" + state + ":" + network;
+	    		stationTriplets.add(stationTriplet);
+	    		Message.printStatus(2, routine, "Will read station triplet \"" + stationTriplet + "\".");
 	    	}
 	    }
 	    try {
-			Message.printStatus(2, routine, "Reading stations for the requested time series.");
+			Message.printStatus(2, routine, "Reading stations for the requested time series (" + stationTriplets.size() + " station triplets).");
 	    	stations = readStationList (
 	    		// List the query parameters for filters, alphabetical.
 	    		boundingBox,
@@ -2765,12 +2783,11 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    String stationID;
 	    String networkCode;
 	    String elementCode;
-	    int ordinal = 1;
+	    //int ordinal = 1;
 	    //HeightDepth heightDepth = null;
-	    Boolean alwaysReturnDailyFeb29 = false; // Want correct calendar to be used.
-	    boolean getFlags = true;
 	    // Duration is only used with the 'data' services.
 	    DurationType duration = lookupDurationFromInterval ( interval, outputYearType );
+	    int intervalBase = interval.getBase();
 	    String beginDateString = null; // Null means no requested period so read all.
 	    String endDateString = null;
 	    // Date to read data and also to allocate time series.
@@ -2842,40 +2859,36 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	            elementCode = stationElement.getElementCode();
 	            tsid = state + "-" + stationID + "." + networkCode + "." + elementCode + "." + interval;
 	            String tzString = "";
+                Integer stationDataTimeZone = null;
 	            ++tscount;
 	            try {
 	                ts = TSUtil.newTimeSeries(tsid,true);
 	                ts.setIdentifier(tsid);
-	                int intervalBase = ts.getDataIntervalBase();
-	                int intervalMult = ts.getDataIntervalMult();
 	                ts.setMissing(Double.NaN);
 	                ts.setDescription(station.getName());
-	                // Time zone is set to the stationDataTimeZone value
-	                // If the timeZoneMap is specified and has a key that matches stationDataTimeZone, use the value map value.
-	                Integer stationDataTimeZone = station.getDataTimeZone();
-	                String tzString0 = "";
+	                // Time zone is set to the stationDataTimeZone value.
+	                // If the timeZoneMap is specified and has a key that matches stationDataTimeZone (as a String), use the value map value.
+	                stationDataTimeZone = station.getDataTimeZone();
+	                Message.printStatus(2, routine, "    Time zone for station data is " + stationDataTimeZone + ".");
 	                if ( stationDataTimeZone != null ) {
-	                	tzString0 = tzString = "" + stationDataTimeZone; // Default, will be something like "-8" for PST
-	                	if ( tzString.startsWith("-") ) {
-	                		// GMT in front because something like -8.0 may mess up date/time parser
-	                		tzString = "GMT" + tzString;
-	                	}
-	                }
-	                // Always try the lookup because allowing blank key to reset to default value
-	                if ( timeZoneMap != null ) {
-	                	// Allow lookup on original -8.0 or modified GMT-8.0
-	                	String tzString2 = timeZoneMap.get(tzString0);
-	                	if ( tzString2 == null ) {
-	                		tzString2 = timeZoneMap.get(tzString);
-	                	}
-	                	if ( tzString2 != null ) {
-	                		// Use the requested time zone instead of internal
-	                		tzString = tzString2;
+	                	// Time zone for the station is specified so format for use with the start and end:
+	                	// - the sign takes up one character so specify 3 for the width
+	                	//tzString = String.format("GMT%+03d:00", stationDataTimeZone.intValue()); // Default, will be something like "-8" for PST so output "GMT-08:88".
+	                	Message.printStatus(2, routine, "    Time zone string after initial formatting is " + tzString);
+	                	// Always try the lookup because allowing blank key to reset to default value.
+	                	if ( timeZoneMap != null ) {
+	                		// Allow lookup on original value (e.g., -8) to convert to something like "GMT-08:00".
+	                		String tzString2 = timeZoneMap.get("" + stationDataTimeZone);
+	                		if ( tzString2 != null ) {
+	                			// Use the requested time zone instead of internal.
+	                			tzString = tzString2;
+	                		}
+	                		Message.printStatus(2, routine, "    Time zone string after map lookup is " + tzString);
 	                	}
 	                }
 	                ts.setDate1Original(parseDateTime(stationElement.getBeginDate())); // Sensor install date.
 	                ts.setDate1Original(ts.getDate1Original().setTimeZone(tzString));
-	                // Sensor end, or 2100-01-01 00:00 if active (switched to current because don't want 2100)
+	                // Sensor end, or 2100-01-01 00:00 if active (switched to current time because don't want 2100)
 	                ts.setDate2Original(parseDateTime(stationElement.getEndDate()));
 	                ts.setDate2Original(ts.getDate2Original().setTimeZone(tzString));
 	                // The following will be reset below if reading data but are OK for discovery mode.
@@ -2884,7 +2897,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                    ts.setDate1(ts.getDate1().setTimeZone(tzString));
 	                }
 	                else {
-	                    // Set the period to read from the data
+	                    // Set the period to read from the data.
 	                    ts.setDate1(ts.getDate1Original());
 	                    ts.setDate1(ts.getDate1().setTimeZone(tzString));
 	                }
@@ -2893,23 +2906,36 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                    ts.setDate2(ts.getDate2().setTimeZone(tzString));
 	                }
 	                else {
-	                    // Set the period to read from the data
+	                    // Set the period to read from the data.
 	                    ts.setDate2(ts.getDate2Original());
 	                    ts.setDate2(ts.getDate2().setTimeZone(tzString));
 	                }
-	                // Set the data units
+	                // Set the data units.
 	                ts.setDataUnits(stationElement.getStoredUnitCode());
 	                ts.setDataUnitsOriginal(stationElement.getOriginalUnitCode());
-	                // Set the flag descriptions
-	                ts.addDataFlagMetadata(new TSDataFlagMetadata("V", "Valid"));
-	                ts.addDataFlagMetadata(new TSDataFlagMetadata("S", "Suspect"));
-	                ts.addDataFlagMetadata(new TSDataFlagMetadata("E", "Edited"));
+	                // Set the flag descriptions:
+	                // - from the online report generator
+	                // QC flag.
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("V", "Valid", "Validated data"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("N", "No Profile", "No profile for automated validation"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("E", "Edit", "Edit, minor adjustment for sensor noise"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("K", "Estimate", "Estimate"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("C", "Correction", "A different equation has been applied to the original sensor voltage"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("B", "Best Estimate", "Regression-based estimate for homogenizing collocated Snow Course and Snow Pillow data sets"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("X", "External Estimate", "External estimate"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("S", "Suspect", "Suspect data"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("M", "Missing", "Value is missing"));
+	                // QA Flag.
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("U", "Unknown", "Unknown"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("R", "Raw", "No human review"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("P", "Provisional", "Preliminary human review"));
+	                ts.addDataFlagMetadata(new TSDataFlagMetadata("A", "Approved", "Processing and final review completed"));
 	                // Also set properties from the Station and StationElement objects.
 	                boolean setPropertiesFromMetadata = true;
 	                String text;
 	                Integer i;
 	                if ( setPropertiesFromMetadata ) {
-	                    // Set time series properties from the timeSeries elements
+	                    // Set time series properties from the timeSeries elements.
 	                    ts.setProperty("stationTriplet", (stationTriplet == null) ? "" : stationTriplet );
 	                    ts.setProperty("state", (state == null) ? "" : state );
 	                    ts.setProperty("stationId", (stationID == null) ? "" : stationID );
@@ -2971,15 +2997,24 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                        ts.setProperty("usableCapacity", (bd == null) ? null : bd.doubleValue() );
 	                    }
 	                    */
+	                    
+	                    // Save query properties:
+	                    // - helps with troubleshooting
+	                    ts.setProperty("request.periodRef", periodRefType);
+	                    ts.setProperty("request.outputYearType", outputYearType);
+	                    ts.setProperty("request.readOrigionalValues", readOriginalValues);
+	                    ts.setProperty("request.readSuspectData", readSuspectData);
+
+	                    // Save element and station properties.
 	                    text = station.getName();
 	                    ts.setProperty("name", (text == null) ? "" : text );
 	                    //text = meta.getActonId();
 	                    //ts.setProperty("actonId", (text == null) ? "" : text );
 	                    text = station.getShefId();
 	                    ts.setProperty("shefId", (text == null) ? "" : text );
-	                    text = station.getBeginDate(); // Date station installed
+	                    text = station.getBeginDate(); // Date station installed.
 	                    ts.setProperty("beginDate", (text == null) ? "" : text );
-	                    text = station.getEndDate(); // Date station discontinued
+	                    text = station.getEndDate(); // Date station discontinued.
 	                    ts.setProperty("endDate", (text == null) ? "" : text );
 	                    text = station.getCountyName();
 	                    ts.setProperty("countyName", (text == null) ? "" : text );
@@ -3032,25 +3067,41 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                continue;
 	            }
 	            if ( readData ) {
+                  	int localOffsetHours = 0;
+                    if ( stationDataTimeZone != null ) {
+                       	// Adjust the local current time zone to the station data time zone:
+                      	// - station data time zone is standard time zone offset from GMT (does not represent daylight saving)
+                       	// - for example if SNOTEL station is -8 for PST and computer uses local Colorado -7 for MST, need to subtract one hour to the time
+                       	ZoneOffset localOffset = OffsetDateTime.now().getOffset();
+                       	localOffsetHours = localOffset.getTotalSeconds()/3600;
+                    }
 	                // Reset the date to read based on the full period available from the StationElement.
 	                double missing = ts.getMissing();
 	                if ( readStartReq == null ) {
+	                	// No start was specified:
+	                	// - use the begin from the station, which will be in station time zone
 	                    beginDateString = stationElement.getBeginDate();
 	                }
 	                if ( readEndReq == null ) {
+	                	// No start was specified:
+	                	// - use the begin from the station, which will be in station time zone
 	                    endDateString = stationElement.getEndDate();
 	                    if ( endDateString.startsWith("2100-01-01") ) {
 	                        // Value of 2100-01-01 00:00:00 is returned for end date for some web service methods.
 	                        // Since this value does not make sense for historical data, replace with the current date.
-	                        DateTime d = new DateTime(DateTime.DATE_CURRENT); // Any issues with time zone here?
+	                    	// Make sure it is current for the station data time zone..
+	                        DateTime d = new DateTime(DateTime.DATE_CURRENT);
+	                        d.addHour(localOffsetHours);
+	                        // End date string does not include time zone but should be in station data time zone.
 	                        endDateString = d.toString(DateTime.FORMAT_YYYY_MM_DD) +
 	                            (endDateString.length() > 10 ? endDateString.substring(10) : "") ;
 	                    }
 	                }
+	                String zoneNote = " (times in local station time)";
 	                Message.printStatus(2, routine, "    Getting data values for triplet ("+ tscount + " of " +
 	                    stationTriplets.size() + ")=\"" + stationTriplet +
 	                    "\" elementCode=" + elementCode + " duration=" + duration + " beginDate=" + beginDateString +
-	                    " endDate=" + endDateString);
+	                    " endDate=" + endDateString + zoneNote);
 	                // Read the data records.
 	                CentralTendencyType centralTendencyType = CentralTendencyType.ALL;
 	                // Default for 'periodRef' is END, which is compatible with TSTool (including calendar and water year).
@@ -3058,7 +3109,6 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                	periodRefType = PeriodRefType.END;
 	                }
 	                Boolean returnFlags = Boolean.valueOf(true); // Want the flags returned, to add to the time series data flag.
-	                // Don't read the o
 	                Boolean returnOriginalValues = null; // Default is false, which returns processed values.
 	                Boolean returnSuspectData = null; // Default is false (only validated values are returned).
 	                // Element codes here are 'ElementCode:HeightDepth:Ordinal':
@@ -3096,20 +3146,29 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                		List<DataValue> dataValues = null;
 	                		for ( StationData stationData : stationDataList ) {
 	                			dataList = stationData.getData();
-	                			if ( dataList != null ) {
+	                			if ( (dataList != null) && !dataList.isEmpty() ) {
 	                				for ( Data data : dataList ) {
+	                					int errorCount = 0;
+	                					int errorCountMax = 10;
 	                					try {
 	                						dataValues = data.getValues();
 	                						if ( dataValues != null ) {
 	                							// Allocate the data space.
-	                							String readStartString = dataValues.get(0).getDate();
-	                							DateTime readStartFromData = DateTime.parse(readStartString);
-	                							String readEndString = dataValues.get(dataValues.size() - 1).getDate();
-	                							DateTime readEndFromData = DateTime.parse(readEndString);
-	                							ts.setDate1(readStartFromData);
-	                							ts.setDate1Original(readStartFromData);
-	                							ts.setDate2(readEndFromData);
-	                							ts.setDate2Original(readEndFromData);
+	                							DateTime readStartFromData = parseDataValueDateTime ( intervalBase, dataValues.get(0) );
+	                							if ( !tzString.isEmpty() ) {
+	                								readStartFromData.setTimeZone(tzString);
+	                							}
+	                							DateTime readEndFromData = parseDataValueDateTime ( intervalBase, dataValues.get(dataValues.size() - 1) );
+	                							if ( !tzString.isEmpty() ) {
+	                								readEndFromData.setTimeZone(tzString);
+	                							}
+	                							if ( readStartReq == null ) {
+	                								// Read period was not requested so use the data period.
+	                								ts.setDate1(readStartFromData);
+	                								ts.setDate2(readEndFromData);
+	                							}
+	                							//ts.setDate1Original(readStartFromData);
+	                							//ts.setDate2Original(readEndFromData);
 	                							ts.allocateDataSpace();
 	                							for ( DataValue dataValue : dataValues ) {
 	                								value = dataValue.getValue();
@@ -3125,23 +3184,34 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                								if ( qaFlag == null ) {
 	                									qaFlag = "";
 	                								}
+	                								// Format the flag depending on which part is known.
 	                								if ( qcFlag.isEmpty() && qaFlag.isEmpty() ) {
 	                									// No flags.
 	                									flag = null;
 	                								}
-	                								else {
-	                									// Have one or both flags.
+	                								else if ( !qcFlag.isEmpty() && !qaFlag.isEmpty() ) {
+	                									// Have both flags.
 	                									flag = qcFlag + "," + qaFlag;
 	                								}
-	                								date = dataValue.getDate();
-	                								dt = DateTime.parse(date);
+	                								else if ( !qcFlag.isEmpty() ) {
+	                									// Have qcFlag.
+	                									flag = qcFlag;
+	                								}
+	                								else if ( !qaFlag.isEmpty() ) {
+	                									// Have qaFlag.
+	                									flag = qaFlag;
+	                								}
+	                								// Determine the date/time based on the interval.
+	                								dt = parseDataValueDateTime ( intervalBase, dataValue );
 	                								if ( value == null ) {
 	                									// Might still have a flag.
 	                									if ( (flag != null) && !flag.isEmpty() ) {
 	                										// Have a flag so set.
 	                										ts.setDataValue(dt,missing,flag,0);
 	                									}
-	                									//Message.printStatus(2, routine, "Date " + dt + " value=" + value);
+	                									if ( Message.isDebugOn ) {
+	                										Message.printDebug(2, routine, "    Date " + dt + " value=" + value + " flag=" + flag);
+	                									}
 	                								}
 	                								else {
 	                									// Value is not missing but flag may be null.
@@ -3153,21 +3223,34 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	                										// Have a flag to set.
 	                										ts.setDataValue(dt, value.doubleValue(),flag,0);
 	                									}
-	                									//Message.printStatus(2, routine, "Date " + dt + " value=" + value);
+	                									if ( Message.isDebugOn ) {
+	                										Message.printDebug(2, routine, "    Date " + dt + " value=" + value + " flag=" + flag);
+	                									}
 	                								}
 	                							}
 	                						}
 	                					}
 	                					catch ( Exception e ) {
 	                						// Handle exceptions for the single data point.
+	                						++errorCount;
+	                						if ( errorCount <= errorCountMax ) {
+               									Message.printWarning(3, routine, "    Exception reading data (" + e + ").");
+               									Message.printWarning(3, routine, e );
+	                						}
+	                						else if ( errorCount == errorCountMax ) {
+               									Message.printWarning(3, routine, "    Stopping after printing " + errorCountMax + " errors.");
+	                						}
 	                					}
 	                            	}
+	                			}
+	                			else {
+	                				Message.printStatus(2, routine, "    No data values were read.");
 	                			}
 	                		}
 	                	}
 	                }
 	                catch ( Exception e ) {
-                        String message = "Error getting station data values (" + e + ").";
+                        String message = "    Error getting station data values (" + e + ").";
                         Message.printWarning(3, routine, message);
                         Message.printWarning(3, routine, e);
                         errorText.append("\n"+ message);
@@ -3289,8 +3372,10 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 		}
 
 		List<TimeSeriesCatalog> tscatalogList = new ArrayList<>();
-		// Set the current time string for the end date for active stations.
+		// Set the current time string for the end date for active stations:
+		// - remove the time zone since the begin date will not have
 		DateTime current = new DateTime ( DateTime.DATE_CURRENT | DateTime.PRECISION_MINUTE );
+		current.setTimeZone("");
 		String currentDateString = current.toString();
 		if ( (stations != null ) && !stations.isEmpty() ) {
 			Message.printStatus(2,routine,"Read " + stations.size() + " stations to check for time series catalog.");
@@ -3344,8 +3429,9 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 							String endDate = stationElement.getEndDate();
 							if ( (endDate != null) && endDate.startsWith("2100-01-01") ) {
 								// Placeholder for active data:
-								// - set to the current date
+								// - set to the current date (will be computer time rather than station time)
 								endDate = currentDateString;
+								tscatalog.setElementEndDate(endDate);
 							}
 							else {
 								// Actual date.
@@ -3376,7 +3462,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 					}
 				}
 				else {
-					Message.printStatus(2, routine, "Station " + station.getStationId() + " has null or empty 'stationElement'.");
+					Message.printStatus(2, routine, "Station " + station.getStationId() + " has null or empty 'stationElement' - not adding time series.");
 				}
 			}
 		}

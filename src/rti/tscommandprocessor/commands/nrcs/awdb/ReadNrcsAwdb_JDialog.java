@@ -535,7 +535,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command ) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series (or forecast data as a table) from the Natural Resources Conservation Service (NRCS) " +
-    	"Air and Water Database (AWDB) web service."),
+    	"Air and Water Database (AWDB) web service API."),
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"As of TSTool 15.3.0, the \"NrcsAwdb\" datastore uses the REST API and the \"NrcsAwdbSoap\" datastore uses the legacy SOAP web service API."),
@@ -563,17 +563,21 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command ) {
 
    	// Put the buttons in vertical slots that are less width than content below, to conserve space.
     __dataStoreDocumentation_JButton = new SimpleJButton ("NRCS AWDB Documentation",this);
+   	/* TODO evaluate whether to include the buttons since the datastore documentation includes links
     JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton,
         1, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __dataStoreDocumentation_JButton.setEnabled(false);
     __dataStoreDocumentation_JButton.setToolTipText("Show the NRCS AWDB web service documentation in a browser - " +
         "useful for explaining query parameters.");
+        */
     __dataStoreOnline_JButton = new SimpleJButton ("NRCS AWDB Online",this);
+    /*
     JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton,
         2, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __dataStoreOnline_JButton.setEnabled(false);
     __dataStoreOnline_JButton.setToolTipText("Show the NRCS AWDB web service web page in a browser - " +
         "useful for testing queries.");
+        */
 
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -609,18 +613,20 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command ) {
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
+    __Interval_JComboBox.add("");
     __Interval_JComboBox.add("Hour");
     __Interval_JComboBox.add("Day");
     __Interval_JComboBox.add("Month");
     __Interval_JComboBox.add("Year");
-    __Interval_JComboBox.add("Irregular");
-    __Interval_JComboBox.setToolTipText("Irregular = instantaneous, NRCS has indicated the method is deprecated so use Hour if possible.");
+    // Being phased out.
+    //__Interval_JComboBox.add("Irregular");
+    __Interval_JComboBox.setToolTipText("NRCS duration, see also the 'OutputYearType' and 'PeriodRef' parameters.");
     // Select a default...
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (for time series) - data interval."),
         3, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __main_JTabbedPane = new JTabbedPane ();

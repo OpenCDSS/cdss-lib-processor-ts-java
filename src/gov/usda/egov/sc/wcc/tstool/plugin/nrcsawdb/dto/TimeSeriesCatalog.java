@@ -201,49 +201,6 @@ public class TimeSeriesCatalog {
 	}
 
 	/**
-	 * Create an index list for TimeSeriesCatalog data list, using stationNumId as the index.
-	 * This is a list of lists, with outermost list being the stationNumId. 
-	 * It is assumed that the catalog is sorted by stationNumId, which should be the case
-	 * due to logic in the 'tscatalog' service.
-	 * @param tscatalogList list of TimeSeriesCatalog to create an index for.
-	 * @return the indexed TimeSeriesCatalog
-	 */
-	/*
-	public static List<IndexedDataList<Integer,TimeSeriesCatalog>> createIndex ( List<TimeSeriesCatalog> tscatalogList ) {
-		List<IndexedDataList<Integer,TimeSeriesCatalog>> indexList = new ArrayList<>();
-		// Loop through the TimeSeriesCatalog list.
-		Integer stationNumIdPrev = null;
-		boolean newStationNumId = false;
-		Integer stationNumId = null;
-		IndexedDataList<Integer,TimeSeriesCatalog> stationTimeSeriesCatalogList = null;
-		for ( TimeSeriesCatalog tscatalog : tscatalogList ) {
-			stationNumId = tscatalog.getStationNumId();
-			newStationNumId = false;
-			if ( stationNumIdPrev == null ) {
-				// First station.
-				newStationNumId = true;
-			}
-			else if ( ! stationNumId.equals(stationNumIdPrev) ) {
-				// Station does not match previous so need to add to index.
-				newStationNumId = true;
-			}
-			// Set the previous stationNumId for the next iteration.
-			stationNumIdPrev = stationNumId;
-			if ( newStationNumId ) {
-				// New station:
-				// - create a new list and add to the index list
-				// - use the statinNumId for primary identifier and stationId for secondary identifier
-				//stationTimeSeriesCatalogList = new IndexedDataList<>(stationNumId, tscatalog.getStationId());
-				indexList.add(stationTimeSeriesCatalogList);
-			}
-			// Add the station to the current list being processed.
-			stationTimeSeriesCatalogList.add(tscatalog);
-		}
-		return indexList;
-	}
-	*/
-
-	/**
 	 * Find a list of TimeSeriesCatalog given the time series identifier to match.
 	 * @param tsidentReq requested time series identifier to match
 	 * @return one or more matching time series identifiers
@@ -635,7 +592,6 @@ public class TimeSeriesCatalog {
 	 * @return the TSID string
 	 */
 	public String toString ( boolean includeDataStore ) {
-		//return "" + this.locId + ".." + this.dataType + "." + this.dataInterval;
-		return this.stationState + "-" + this.stationId + this.stationNetwork + "." + getDataType() + "." + this.dataInterval;
+		return this.stationState + "-" + this.stationId + "." + this.stationNetwork + "." + getDataType() + "." + this.dataInterval;
 	}
 }

@@ -915,7 +915,8 @@ Is the row a comment?
 @param comment if not null, character at start of row that indicates comment
 */
 public boolean isRowComment ( Sheet sheet, int iRow, String comment ) {
-    if ( (comment == null) || comment.length() == 0 ) {
+    if ( (comment == null) || comment.isEmpty() ) {
+    	// No comment indicator provided so the row is not a comment.
         return false;
     }
     Row dataRow = sheet.getRow(iRow);
@@ -925,10 +926,14 @@ public boolean isRowComment ( Sheet sheet, int iRow, String comment ) {
         	String cellValue = cell.getStringCellValue();
         	if ( (cellValue != null) && (cellValue.length() >= comment.length()) &&
             	cellValue.substring(0,comment.length()).equals(comment) ) {
+        		// The cell contains a string that is at least as long as the comment string
+        		// and the first part of the string matches the comment string.
+        		// This allows, for example, '#' to be specified as the comment indicator.
             	return true;
         	}
     	}
     }
+    // Comment indicator was not matched so not a comment.
     return false;
 }
 

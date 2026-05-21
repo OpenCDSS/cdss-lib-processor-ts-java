@@ -739,7 +739,7 @@ throws CommandWarningException, CommandException {
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
 	    	if ( Message.isDebugOn ) {
-        		Message.printStatus(2,routine,"After evaluationg the condition, conditionEval=." + conditionEval);
+        		Message.printStatus(2,routine,"After evaluating the condition, conditionEval=." + conditionEval);
 	    	}
 	    } // End evaluating the condition.
 	    else {
@@ -1152,8 +1152,11 @@ throws CommandWarningException, CommandException {
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
             }
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_TS = bean_PropList.getContents ( "TS");
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
@@ -1197,8 +1200,11 @@ throws CommandWarningException, CommandException {
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
             }
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_TS = bean_PropList.getContents ( "TS");
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
@@ -1239,8 +1245,11 @@ throws CommandWarningException, CommandException {
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
             }
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_TS = bean_PropList.getContents ( "TS");
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
@@ -1252,7 +1261,8 @@ throws CommandWarningException, CommandException {
                	}
             }
             else {
-           		// Time series exists.
+           		// Time series exists:
+            	// - check whether it has data
             	if ( ts.hasData() ) {
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" has data.");
@@ -1297,8 +1307,11 @@ throws CommandWarningException, CommandException {
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
             }
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_TS = bean_PropList.getContents ( "TS");
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
@@ -1308,7 +1321,7 @@ throws CommandWarningException, CommandException {
            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is null and therefore has no data.");
            		}
                	if ( (Condition != null) && !Condition.equals("") ) {
-                    	conditionEval = conditionEval & true;
+                   	conditionEval = conditionEval & true;
                	}
                	else {
                    	conditionEval = true;

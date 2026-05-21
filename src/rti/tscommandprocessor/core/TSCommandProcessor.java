@@ -4958,13 +4958,15 @@ public void setPropContents ( String propName, Object contents ) throws Exceptio
  * This will set a built-in property if found and otherwise will set a user-defined property.
  * This is similar to the processRequest_SetProperty() method,
  * but does not require creating a bean object to pass the request.
+ * @param propName property name
+ * @param contents the property value as an object, can be null or empty string
  */
 public void setProperty ( String propName, Object contents ) {
     // Try to set official property.
     Collection<String> internalProperties = getPropertyNameList(true,false);
     if ( internalProperties.contains(propName) ) {
 	    try {
-	    	// Null is OK here for o2.
+	    	// Null is OK here for contents.
 	        setPropContents(propName, contents);
 	    }
 	    catch ( Exception e ) {

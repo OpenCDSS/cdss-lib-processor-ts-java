@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -584,10 +584,13 @@ private void initializeListIterator ( TSCommandProcessor processor ) {
 		// Can specify with property.
 		List = TSCommandProcessorUtil.expandParameterValue(processor, this, List);
  	}
-	String [] parts = List.split(",");
+	// Use -1 limit to include empty strings.
+	String [] parts = List.split(",", -1);
 	this.list = new ArrayList<>();
 	for ( int i = 0; i < parts.length; i++ ) {
-		this.list.add(parts[i].trim());
+		// As of TSTool 15.3.3, don't trim.
+		//this.list.add(parts[i].trim());
+		this.list.add(parts[i]);
 	}
 
 	if ( this.showProgress ) {
@@ -856,7 +859,7 @@ public boolean next () {
   		// - if a list or table, set the object list index to 0
   		// - subsequent calls to 'next' will increment
   		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-  		
+
   		// Set important properties so don't need to retrieve repetitively.
   		PropList parameters = this.getCommandParameters();
   		String IteratorProperty = parameters.getValue ( "IteratorProperty" );
@@ -1696,14 +1699,17 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 
 	String List = parameters.getValue ( "List" );
 	if ( (List != null) && !List.isEmpty() ) {
-		if ( List.indexOf("${") >= 0 ) {
+		if ( List.contains("${") ) {
 			// Can specify with property.
 			List = TSCommandProcessorUtil.expandParameterValue(processor, this, List);
 		}
-		String [] parts = List.split(",");
+		// Use -1 for limit to include empty strings.
+		String [] parts = List.split(",", -1);
 		this.list = new ArrayList<>();
-		for ( int i = 0; i < parts.length; i++ ) {
-			this.list.add(parts[i].trim());
+		for ( String part : parts ) {
+			// As of TSTool 15.3.3, don't trim so that spaces can be used.
+			//this.list.add(parts[i].trim());
+			this.list.add(part);
 		}
 		this.iteratorIsList = true;
 	}
@@ -1910,6 +1916,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
         			Message.printDebug(1,routine,"For loop \"" + Name + "\" iterator=" + this.iteratorObject );
         		}
         	}
+        	// This allows setting a null and empty string.
             processor.processRequest( "SetProperty", request_params);
         }
         catch ( Exception e ) {

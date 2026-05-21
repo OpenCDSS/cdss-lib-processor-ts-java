@@ -84,6 +84,14 @@ private boolean __error_wait = false; // Is there an error to be cleared up or C
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
 
+// Tab nubers.
+private int setTab = 0;
+private int envTab = 1;
+private int javaTab = 2;
+private int specialTab = 3;
+private int removeTab = 4;
+private int mathTab = 5;
+
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
@@ -709,6 +717,9 @@ private void refresh () {
 		Subtract = props.getValue ( "Subtract" );
 		Multiply = props.getValue ( "Multiply" );
 		Divide = props.getValue ( "Divide" );
+		// Default selected tab:
+		// - the tab is selected based on the parameters that are specified
+		__main_JTabbedPane.setSelectedIndex(this.setTab);
 	    if ( PropertyName != null ) {
 	         __PropertyName_JTextField.setText ( PropertyName );
 	    }
@@ -732,12 +743,21 @@ private void refresh () {
 		}
 		if ( EnvironmentVariable != null ) {
 		    __EnvironmentVariable_JTextField.setText ( EnvironmentVariable );
+            if ( !EnvironmentVariable.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.envTab);
+            }
 		}
 		if ( JavaProperty != null ) {
 		    __JavaProperty_JTextField.setText (JavaProperty);
+            if ( !JavaProperty.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.javaTab);
+            }
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfJavaPropertyUndefined_JComboBox, IfJavaPropertyUndefined,JGUIUtil.NONE, null, null ) ) {
 			__IfJavaPropertyUndefined_JComboBox.select ( IfJavaPropertyUndefined );
+            if ( !IfJavaPropertyUndefined.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.javaTab);
+            }
 		}
 		else {
             if ( (IfJavaPropertyUndefined == null) || IfJavaPropertyUndefined.equals("") ) {
@@ -759,7 +779,9 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __SetEmpty_JComboBox,SetEmpty, JGUIUtil.NONE, null, null ) ) {
                 __SetEmpty_JComboBox.select ( SetEmpty );
-                __main_JTabbedPane.setSelectedIndex(1);
+                if ( !SetEmpty.isEmpty() ) {
+                	__main_JTabbedPane.setSelectedIndex(this.specialTab);
+                }
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -775,7 +797,9 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __SetNaN_JComboBox,SetNaN, JGUIUtil.NONE, null, null ) ) {
                 __SetNaN_JComboBox.select ( SetNaN );
-                __main_JTabbedPane.setSelectedIndex(1);
+                if ( !SetNaN.isEmpty() ) {
+                	__main_JTabbedPane.setSelectedIndex(specialTab);
+                }
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -791,7 +815,9 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __SetNull_JComboBox,SetNull, JGUIUtil.NONE, null, null ) ) {
                 __SetNull_JComboBox.select ( SetNull );
-                __main_JTabbedPane.setSelectedIndex(1);
+                if ( !SetNull.isEmpty() ) {
+                	__main_JTabbedPane.setSelectedIndex(specialTab);
+                }
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -807,7 +833,9 @@ private void refresh () {
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __RemoveProperty_JComboBox,RemoveProperty, JGUIUtil.NONE, null, null ) ) {
                 __RemoveProperty_JComboBox.select ( RemoveProperty );
-               	__main_JTabbedPane.setSelectedIndex(2);
+                if ( !RemoveProperty.isEmpty() ) {
+                	__main_JTabbedPane.setSelectedIndex(this.removeTab);
+                }
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -818,15 +846,27 @@ private void refresh () {
         }
 		if ( Add != null ) {
 		    __Add_JTextField.setText ( Add );
+		    if ( !Add.isEmpty() ) {
+		    	__main_JTabbedPane.setSelectedIndex(this.mathTab);
+		    }
 		}
 		if ( Subtract != null ) {
 		    __Subtract_JTextField.setText ( Subtract );
+		    if ( !Subtract.isEmpty() ) {
+		    	__main_JTabbedPane.setSelectedIndex(this.mathTab);
+		    }
 		}
 		if ( Multiply != null ) {
 		    __Multiply_JTextField.setText ( Multiply );
+		    if ( !Multiply.isEmpty() ) {
+		    	__main_JTabbedPane.setSelectedIndex(this.mathTab);
+		    }
 		}
 		if ( Divide != null ) {
 		    __Divide_JTextField.setText ( Divide );
+		    if ( !Divide.isEmpty() ) {
+		    	__main_JTabbedPane.setSelectedIndex(this.mathTab);
+		    }
 		}
 	}
 	// Regardless, reset the command from the fields.

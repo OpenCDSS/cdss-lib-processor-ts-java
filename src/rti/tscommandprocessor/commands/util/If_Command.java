@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.swing.JFrame;
 
 import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.config.ExpressionConfiguration;
 import com.ezylang.evalex.data.EvaluationValue;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -193,6 +194,17 @@ throws InvalidCommandParameterException {
                 message, "Specify CompareAsVersions as " + _False + " (default) or " + _True + "." ));
 	}
 
+	if ( (Expression != null) && !Expression.isEmpty() ) {
+		// Make sure double quotes are not used.
+		if ( Expression.contains("\"") ) {
+            message = "Double quotes are not allowed in expressions (use single quotes around strings).";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Use single quotes around string literal values." ));
+		}
+	}
+
 	// Check for invalid parameters.
     List<String> validList = new ArrayList<>(20);
 	validList.add ( "Name" );
@@ -311,8 +323,8 @@ throws CommandWarningException, CommandException {
 	String Expression = parameters.getValue ( "Expression" );
 	String expressionExpanded = Expression;
 	if ( commandPhase == CommandPhaseType.RUN ) {
-		// Expand the expression to fill in properties, using a double quote for strings.
-		String quote = "";
+		// Expand the expression to fill in properties, using a single quote for strings.
+		String quote = "'";
 		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
 	}
 	String FileExists = parameters.getValue ( "FileExists" );
@@ -903,10 +915,14 @@ throws CommandWarningException, CommandException {
 	    }
 	    if ( (expressionExpanded != null) && !expressionExpanded.isEmpty() ) {
 	    	Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
+    		// Enable single quotes to indicate strings.
+    		ExpressionConfiguration configuration = ExpressionConfiguration.builder()
+    			.singleQuoteStringLiteralsAllowed(true)
+    			.build();
 	    	Expression expression = null;
 	    	boolean hadProblem = false;
 	    	try {
-	    		expression = new Expression ( expressionExpanded );
+	    		expression = new Expression ( expressionExpanded, configuration );
 	    	}
 	    	catch ( Exception e ) {
 	    		hadProblem = true;

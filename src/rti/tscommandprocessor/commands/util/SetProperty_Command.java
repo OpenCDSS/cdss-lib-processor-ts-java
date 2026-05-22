@@ -26,6 +26,7 @@ package rti.tscommandprocessor.commands.util;
 import javax.swing.JFrame;
 
 import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.config.ExpressionConfiguration;
 import com.ezylang.evalex.data.EvaluationValue;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -257,6 +258,17 @@ throws InvalidCommandParameterException {
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the property value as an integer." ));
+		}
+	}
+
+	if ( (Expression != null) && !Expression.isEmpty() ) {
+		// Make sure double quotes are not used.
+		if ( Expression.contains("\"") ) {
+            message = "Double quotes are not allowed in expressions (use single quotes around strings).";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Use single quotes around string literal values." ));
 		}
 	}
 
@@ -518,8 +530,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Expression = parameters.getValue ( "Expression" );
 	String expressionExpanded = Expression;
 	if ( commandPhase == CommandPhaseType.RUN ) {
-		// Expand the expression to fill in properties, using a double quote for strings.
-		String quote = "";
+		// Expand the expression to fill in properties, using a single quote for strings.
+		String quote = "'";
 		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
 	}
 	String JavaProperty = parameters.getValue ( "JavaProperty" );
@@ -619,10 +631,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	}
 	    	else if ( (expressionExpanded != null) && !expressionExpanded.isEmpty() ) {
 	    		Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
+	    		// Enable single quotes to indicate strings.
+	    		ExpressionConfiguration configuration = ExpressionConfiguration.builder()
+	    			.singleQuoteStringLiteralsAllowed(true)
+	    			.build();
 	    		Expression expression = null;
 	    		boolean hadProblem = false;
 	    		try {
-	    			expression = new Expression ( expressionExpanded );
+	    			expression = new Expression ( expressionExpanded, configuration );
 	    		}
 	    		catch ( Exception e ) {
 	    			hadProblem = true;
@@ -714,7 +730,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    			else if ( PropertyType.equalsIgnoreCase(this._String) ) {
 	    				// Cast any object type to a string:
 	    				// - may have issues if floating point number is output in exponential notation
-	    				Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
+	    				Message.printStatus(2, routine, "Expanded result is a string: " + result.getValue());
 	    				Property_Object = "" + result.getValue();
 	    			}
 	    		}

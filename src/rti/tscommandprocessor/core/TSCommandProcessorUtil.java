@@ -600,7 +600,7 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
         return parameterValue;
     }
     boolean doQuote = false;
-    if ( (quote != null) && quote.isEmpty() ) {
+    if ( (quote != null) && !quote.isEmpty() ) {
     	doQuote = true;
     }
    	// End of property.
@@ -710,10 +710,13 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
        			propvalString = "" + propval;
        			if ( (propval instanceof String) && doQuote ) {
        				// TODO smalers 2026-05-22 this will cause a problem if nested.
-       				propval = quote + propval + quote;
+       				propvalString = quote + propvalString + quote;
+       				if ( Message.isDebugOn ) {
+       					Message.printDebug( 1, routine, "Added quotes around inner property: " + propvalString);
+       				}
        			}
        			if ( Message.isDebugOn ) {
-       				Message.printDebug( 1, routine, "Found inner property \"" + propname + "\"=\"" + propvalString + "\".");
+       				Message.printDebug( 1, routine, "Expanding inner property \"" + propname + "\"=\"" + propvalString + "\".");
        			}
        			parameterValue = parameterValue.replace(propertyString, propvalString);
        		}

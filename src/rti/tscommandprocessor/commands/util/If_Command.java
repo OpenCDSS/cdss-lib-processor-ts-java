@@ -25,9 +25,14 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
+
+import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.data.EvaluationValue;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -66,7 +71,7 @@ protected final String _True = "True";
 /**
 Result of evaluating the condition.
 */
-private boolean conditionEval = true;
+private boolean conditionEvalTotal = true;
 
 /**
 Constructor.
@@ -93,6 +98,7 @@ throws InvalidCommandParameterException {
 	String CompareAsVersions = parameters.getValue ( "CompareAsVersions" );
 	String DataStoreIsOk = parameters.getValue ( "DataStoreIsOk" );
 	String DataStoreIsNotOk = parameters.getValue ( "DataStoreIsNotOk" );
+	String Expression = parameters.getValue ( "Expression" );
 	String FileExists = parameters.getValue ( "FileExists" );
 	String FileDoesNotExist = parameters.getValue ( "FileDoesNotExist" );
 	String ObjectExists = parameters.getValue ( "ObjectExists" );
@@ -114,6 +120,7 @@ throws InvalidCommandParameterException {
 
 	boolean conditionProvided = false;
 	boolean dataStoreIsOkProvided = false;
+	boolean expressionProvided = false;
 	boolean fileExistsProvided = false;
 	boolean objectExistsProvided = false;
 	// Any of the property checks.
@@ -127,6 +134,9 @@ throws InvalidCommandParameterException {
 	}
 	if ( ((DataStoreIsOk != null) && !DataStoreIsOk.isEmpty()) || ((DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty()) ) {
 		dataStoreIsOkProvided = true;
+	}
+	if ( (Expression != null) && !Expression.isEmpty() ) {
+		expressionProvided = true;
 	}
 	if ( ((FileExists != null) && !FileExists.isEmpty()) || ((FileDoesNotExist != null) && !FileDoesNotExist.isEmpty()) ) {
 		fileExistsProvided = true;
@@ -159,9 +169,9 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( !conditionProvided && !dataStoreIsOkProvided && !fileExistsProvided && !objectExistsProvided &&
+    if ( !conditionProvided && !expressionProvided && !dataStoreIsOkProvided && !fileExistsProvided && !objectExistsProvided &&
    		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided && !tsHasDataProvided ) {
-        message = "A condition or check of datastore, file, object, property, table, or time series must be specified";
+        message = "A condition, expression, or check of datastore, file, object, property, table, or time series must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
@@ -184,13 +194,14 @@ throws InvalidCommandParameterException {
 	}
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(19);
+    List<String> validList = new ArrayList<>(20);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
 	validList.add ( "CompareAsVersions" );
 	validList.add ( "DataStoreIsOk" );
 	validList.add ( "DataStoreIsNotOk" );
+	validList.add ( "Expression" );
 	validList.add ( "FileExists" );
 	validList.add ( "FileDoesNotExist" );
 	validList.add ( "ObjectExists" );
@@ -231,7 +242,7 @@ Return the result of evaluating the condition, which is set when runCommand() is
 @return the result of evaluating the condition
 */
 public boolean getConditionEval () {
-    return this.conditionEval;
+    return this.conditionEvalTotal;
 }
 
 /**
@@ -297,6 +308,13 @@ throws CommandWarningException, CommandException {
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		DataStoreIsNotOk = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreIsNotOk);
 	}
+	String Expression = parameters.getValue ( "Expression" );
+	String expressionExpanded = Expression;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		// Expand the expression to fill in properties, using a double quote for strings.
+		String quote = "";
+		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
+	}
 	String FileExists = parameters.getValue ( "FileExists" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		FileExists = TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists);
@@ -351,12 +369,16 @@ throws CommandWarningException, CommandException {
 	}
 
 	try {
-		// Result from evaluating the condition:
-		// - default is false
-		// - set to true if the condition evaluates to true
-	    boolean conditionEval = false;
-	    setConditionEval ( conditionEval );
+		// A map of results is created:
+		// - if a parameter is not specified, there will be no result added
+		// - any value that is False at the end will cause an overall false
+		Map<String,Boolean> conditionEvalMap = new LinkedHashMap<>();
+
 	    if ( (Condition != null) && !Condition.isEmpty() ) {
+	    	// Result from evaluating the condition:
+		   	// - initialize to false
+		   	// - evaluate all possible cases and set below
+	       	boolean conditionEval = false;
     	    // TODO SAM 2013-12-07 Figure out if there is a more elegant way to do this.
     	    // Currently only Value1 Operator Value2 is allowed.  Brute force split by finding the operator.
     	    int pos, pos1 = -1, pos2 = -1;
@@ -533,12 +555,18 @@ throws CommandWarningException, CommandException {
             	}
  	    	    if ( op.equals("CONTAINS") ) {
  	    	    	if ( value1.contains(value2) ) {
- 	    	    	     conditionEval = true;
+ 	    	    	    conditionEval = true;
+ 	    	    	}
+ 	    	    	else {
+ 	    	    	    conditionEval = false;
  	    	    	}
  	    	    }
  	    	    else if ( op.equals("!CONTAINS") ) {
  	    	    	if ( !value1.contains(value2) ) {
- 	    	    	     conditionEval = true;
+ 	    	    	    conditionEval = true;
+ 	    	    	}
+ 	    	    	else {
+ 	    	    	    conditionEval = false;
  	    	    	}
  	    	    }
  	    	    else {
@@ -547,31 +575,49 @@ throws CommandWarningException, CommandException {
 	 	    	        if ( comp <= 0 ) {
 	 	    	            conditionEval = true;
 	 	    	        }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
 	 	    	    else if ( op.equals("<") ) {
 	 	                if ( comp < 0 ) {
 	 	                    conditionEval = true;
 	 	                }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
 	 	    	    else if ( op.equals(">=") ) {
 	 	                if ( comp >= 0 ) {
 	 	                    conditionEval = true;
 	 	                }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
 	 	    	    else if ( op.equals(">") ) {
 	 	                if ( comp > 0 ) {
 	 	                    conditionEval = true;
 	 	                }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
 	 	    	    else if ( op.equals("==") ) {
 	 	                if ( comp == 0 ) {
 	 	                    conditionEval = true;
 	 	                }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
 	 	    	    else if ( op.equals("!=") ) {
 	 	                if ( comp != 0 ) {
 	 	                    conditionEval = true;
 	 	                }
+	 	    	        else {
+	 	    	        	conditionEval = false;
+ 	    	    	    }
 	 	    	    }
  	    	    }
             }
@@ -586,31 +632,49 @@ throws CommandWarningException, CommandException {
 	    	        if ( ivalue1 <= ivalue2 ) {
 	    	            conditionEval = true;
 	    	        }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("<") ) {
 	                if ( ivalue1 < ivalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( ivalue1 >= ivalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">") ) {
 	                if ( ivalue1 > ivalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("==") ) {
 	                if ( ivalue1 == ivalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("!=") ) {
 	                if ( ivalue1 != ivalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
             }
             else if ( isValue1Double && isValue2Double ) {
@@ -624,31 +688,49 @@ throws CommandWarningException, CommandException {
 	    	        if ( dvalue1 <= dvalue2 ) {
 	    	            conditionEval = true;
 	    	        }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("<") ) {
 	                if ( dvalue1 < dvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( dvalue1 >= dvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">") ) {
 	                if ( dvalue1 > dvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("==") ) {
 	                if ( dvalue1 == dvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("!=") ) {
 	                if ( dvalue1 != dvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
             }
             else if ( isValue1Boolean && isValue2Boolean ) {
@@ -663,34 +745,52 @@ throws CommandWarningException, CommandException {
 	    	        	// false <= false or true.
 	    	            conditionEval = true;
 	    	        }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("<") ) {
 	                if ( !bvalue1 && bvalue2 ) {
 	                	// false < true.
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">=") ) {
 	                if ( bvalue1 ) {
 	                	// true >= false or true.
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals(">") ) {
 	                if ( bvalue1 && !bvalue2 ) {
 	                	// true > false.
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("==") ) {
 	                if ( bvalue1 == bvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
 	    	    else if ( op.equals("!=") ) {
 	                if ( bvalue1 != bvalue2 ) {
 	                    conditionEval = true;
 	                }
+ 	    	        else {
+	    	            conditionEval = false;
+    	    	    }
 	    	    }
             }
             else {
@@ -737,31 +837,22 @@ throws CommandWarningException, CommandException {
     	    status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.SUCCESS,
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
-    	    setConditionEval(conditionEval);
+   		    conditionEvalMap.put("Condition",Boolean.valueOf(conditionEval));
 	    	if ( Message.isDebugOn ) {
-        		Message.printStatus(2,routine,"After evaluating the condition, conditionEval=." + conditionEval);
+        		Message.printStatus(2,routine,"Result from evaluating Condition, result = " + conditionEval);
 	    	}
 	    } // End evaluating the condition.
-	    else {
-	    	if ( Message.isDebugOn ) {
-        		Message.printStatus(2,routine,"No condition so initial conditionEval=" + conditionEval);
-	    	}
-	    }
 	    if ( (DataStoreIsOk != null) && !DataStoreIsOk.isEmpty() ) {
 	    	// Get the matching datastore.
 	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsOk, null );
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean dsConditionEval = false;
 	    	if ( dataStore != null ) {
 	    		if ( dataStore.getStatus() != 0 ) {
-	    			// Does not matter what the Condition had - the final result is false.
-	    			conditionEval = false;
+	    			dsConditionEval = false;
 	    		}
 	    		else {
-	    			if ( (Condition != null) && !Condition.equals("") ) {
-	    				conditionEval = conditionEval & true;
-	    			}
-	    			else {
-	    				conditionEval = true;
-	    			}
+	    			dsConditionEval = true;
 	    		}
 	    	}
             else {
@@ -769,32 +860,29 @@ throws CommandWarningException, CommandException {
             	// - treat the condition as false
             	// - do not set a warning status on the command since it will interfere with the condition
             	// - do output a warning to the log file
-            	conditionEval = false;
+            	dsConditionEval = false;
             	message = "Unable to find datastore \"" + DataStoreIsOk + "\" for DataStareIsOk";
             	Message.printWarning(3,
                 	MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 	routine, message );
             }
-            setConditionEval(conditionEval);
-            if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating DataStoreIsOk, conditionEval=." + conditionEval);
-    	    }
+   		    conditionEvalMap.put("DataStoreIsOk",Boolean.valueOf(dsConditionEval));
+	    	if ( Message.isDebugOn ) {
+        		Message.printStatus(2,routine,"Result from evaluating DataStoreIsOk, result=" + dsConditionEval);
+	    	}
 	    }
 	    if ( (DataStoreIsNotOk != null) && !DataStoreIsNotOk.isEmpty() ) {
-	        // Check whether a datastore is OK- this is ANDed to the condition..
+	        // Check whether a datastore is OK- this is ANDed to the condition.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean dsConditionEval = false;
 	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsNotOk, null );
 	    	if ( dataStore != null ) {
 	    		if ( dataStore.getStatus() == 0  ) {
-	    			// Does not matter what the Condition had - the final result is false.
-	    			conditionEval = false;
+	    			// The datastore is OK, so the condition is false.
+	    			dsConditionEval = false;
 	    		}
 	    		else {
-	    			if ( (Condition != null) && !Condition.equals("") ) {
-	    				conditionEval = conditionEval & true;
-	    			}
-	    			else {
-	    				conditionEval = true;
-	    			}
+	    			dsConditionEval = true;
 	    		}
 	    	}
             else {
@@ -802,71 +890,114 @@ throws CommandWarningException, CommandException {
             	// - so treat the condition as true since it is not OK
             	// - do not set a warning status on the command since it will interfere with the condition
             	// - do output a warning to the log file
-    			if ( (Condition != null) && !Condition.equals("") ) {
-    				conditionEval = conditionEval & true;
-    			}
-    			else {
-    				conditionEval = true;
-    			}
+    			dsConditionEval = true;
             	message = "Unable to find datastore \"" + DataStoreIsNotOk + "\" for DataStoreIsNotOk";
             	Message.printWarning(3,
                 	MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 	routine, message );
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("DataStoreIsNotOk",Boolean.valueOf(dsConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating DataStoreIsNotOk, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating DataStoreIsNotOk, result=" + dsConditionEval);
     	    }
+	    }
+	    if ( (expressionExpanded != null) && !expressionExpanded.isEmpty() ) {
+	    	Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
+	    	Expression expression = null;
+	    	boolean hadProblem = false;
+	    	try {
+	    		expression = new Expression ( expressionExpanded );
+	    	}
+	    	catch ( Exception e ) {
+	    		hadProblem = true;
+           		message = "Error parsing the expression (" + e + ").";
+            	Message.printWarning(3,
+                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                	routine, message );
+            	Message.printWarning(3,routine,e);
+            	status.addToLog ( CommandPhaseType.RUN,
+                	new CommandLogRecord(CommandStatusType.FAILURE,
+                    	message, "Verify that the expression syntax is OK." ) );
+	    	}
+	    	EvaluationValue result = null;
+	    	try {
+	    		result = expression.evaluate();
+	    	}
+	    	catch ( Exception e ) {
+	    		hadProblem = true;
+           		message = "Error evaluating the expression (" + e + ").";
+            	Message.printWarning(3,
+                	MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                	routine, message );
+            	Message.printWarning(3,routine,e);
+            	status.addToLog ( CommandPhaseType.RUN,
+                	new CommandLogRecord(CommandStatusType.FAILURE,
+                    	message, "Verify that the expression syntax is OK." ) );
+	    	}
+	    	// All cases need to be evaluated below to properly set the result.
+	    	if ( !hadProblem ) {
+	    		boolean expressionEval = false;
+	    			if ( result.isBooleanValue() ) {
+	    				// Expression result is a boolean value so can interpret the result.
+	    				Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
+	    				expressionEval = result.getBooleanValue();
+	    			}
+	    			else {
+	    				// Expression result is not a boolean value so cannot interpret the result.
+            			message = "Expression result is not a boolean.  Cannot treat as a condition.";
+            			Message.printWarning(3,
+                			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                			routine, message );
+	    			}
+   		    		conditionEvalMap.put("Expression",Boolean.valueOf(expressionEval));
+            		if ( Message.isDebugOn ) {
+       		     		Message.printStatus(2,routine,"After evaluating Expression, result=" + expressionEval);
+    	    		}
+	    	}
 	    }
 	    if ( (FileExists != null) && !FileExists.isEmpty() ) {
 	        // Check whether a file exists - this is ANDed to the condition..
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean fileConditionEval = false;
 	    	String FileExists_full = IOUtil.verifyPathForOS(
 	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists) ) );
 	    	File f = new File(FileExists_full);
-            if ( !f.exists() ) {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+            if ( f.exists() ) {
+               	fileConditionEval = true;
             }
             else {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	fileConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("FileExists",Boolean.valueOf(fileConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating FileExists, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating FileExists, result=" + fileConditionEval);
     	    }
 	    }
 	    if ( (FileDoesNotExist != null) && !FileDoesNotExist.isEmpty() ) {
-	        // Check whether a file does not exist - this is ANDed to the condition.
+	        // Check whether a file does not exist.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean fileConditionEval = false;
 	    	String FileDoesNotExist_full = IOUtil.verifyPathForOS(
 	    		IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileDoesNotExist) ) );
 	    	File f = new File(FileDoesNotExist_full);
-            if ( f.exists() ) {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+            if ( !f.exists() ) {
+                fileConditionEval = true;
             }
             else {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	fileConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("FileDoesNotExist",Boolean.valueOf(fileConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating FileDoesNotExist, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating FileDoesNotExist, result=" + fileConditionEval);
     	    }
 	    }
 	    if ( (ObjectExists != null) && !ObjectExists.isEmpty() ) {
-	        // Check whether a table exists - this is ANDed to the condition.
-	        // Get the table to process.  The table is searched backwards until the first match.
+	        // Check whether an object exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean objectConditionEval = false;
+	        // Get the object to process.
 	        JSONObject object = null;
             PropList request_params = new PropList ( "" );
             request_params.set ( "CommandTag", command_tag );
@@ -889,25 +1020,21 @@ throws CommandWarningException, CommandException {
             if ( o_Object != null ) {
                 object = (JSONObject)o_Object;
             }
-            if ( object == null ) {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+            if ( object != null ) {
+                objectConditionEval = true;
             }
             else {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	objectConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("ObjectExists",Boolean.valueOf(objectConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating ObjectExists, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating ObjectExists, result=" + objectConditionEval);
     	    }
 	    }
 	    if ( (ObjectDoesNotExist != null) && !ObjectDoesNotExist.isEmpty() ) {
-	        // Check whether a table exists - this is ANDed to the condition.
+	        // Check whether a table exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean objectConditionEval = false;
 	        // Get the table to process.  The table is searched backwards until the first match.
 	        JSONObject object = null;
             PropList request_params = new PropList ( "" );
@@ -932,124 +1059,147 @@ throws CommandWarningException, CommandException {
                 object = (JSONObject)o_object;
             }
             if ( object == null ) {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	objectConditionEval = true;
             }
             else {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	objectConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("ObjectDoesNotExist",Boolean.valueOf(objectConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating ObjectDoesNotExist, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating ObjectDoesNotExist, result=" + objectConditionEval);
     	    }
 	    }
 	    if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean propConditionEval = false;
 	    	Object o = processor.getPropContents(PropertyIsNotDefinedOrIsEmpty);
-	    	conditionEval = false; // Assume property is defined and is not null.
 	    	if ( o == null ) {
 	    		// Property is null so condition evaluates to true.
-	    		conditionEval = true;
+	    		propConditionEval = true;
 	    	}
 	    	else {
 		    	if ( o instanceof String ) {
 		    		String s = (String)o;
 		    		if ( s.isEmpty() ) {
 		    			// Property is empty string so condition evaluates to true.
-		    			conditionEval = true;
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
 		    		}
 		    	}
 		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
 		    			// Property is Double NaN so condition evaluates to true.
-		    			conditionEval = true;
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to true.
-		    			conditionEval = true;
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
 		    		}
 		    	}
 	    	}
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("PropertyIsNotDefinedOrIsEmpty",Boolean.valueOf(propConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating PropertyIsNotDefinedOrIsEmpty, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsNotDefinedOrIsEmpty, result=" + propConditionEval);
     	    }
 	    }
 	    if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
 	    	// Check to see whether the specified property exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean propConditionEval = false;
 	    	Object o = processor.getPropContents(PropertyIsDefined);
-	    	conditionEval = true; // Assume property is defined and is not null.
 	    	if ( o == null ) {
 	    		// Property is null so condition evaluates to false.
-	    		conditionEval = false;
+	    		propConditionEval = false;
 	    	}
 	    	else {
 		    	if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
 		    			// Property is Double NaN so condition evaluates to false.
-		    			conditionEval = false;
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to false.
-		    			conditionEval = false;
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
 		    		}
 		    	}
 	    	}
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("PropertyIsDefined",Boolean.valueOf(propConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefined, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefined, result=" + propConditionEval);
     	    }
 	    }
 	    if ( (PropertyIsDefinedAndIsNotEmpty != null) && !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists and is not an empty string.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean propConditionEval = false;
 	    	Object o = processor.getPropContents(PropertyIsDefinedAndIsNotEmpty);
-	    	conditionEval = true; // Assume property is defined, is not null, and is not an empty string.
 	    	if ( o == null ) {
 	    		// Property is null so condition evaluates to false.
-	    		conditionEval = false;
+	    		propConditionEval = false;
 	    	}
 	    	else {
 		    	if ( o instanceof String ) {
 		    		String s = (String)o;
 		    		if ( s.isEmpty() ) {
-		    			conditionEval = false;
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
 		    			// Property is Double NaN so condition evaluates to false.
-		    			conditionEval = false;
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to false.
-		    			conditionEval = false;
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
 		    		}
 		    	}
 	    	}
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("PropertyIsDefinedAndIsNotEmpty",Boolean.valueOf(propConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefinedAndIsNotEmpty, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating PropertyIsDefinedAndIsNotEmpty, result=" + propConditionEval);
     	    }
 	    }
 	    if ( (TableExists != null) && !TableExists.isEmpty() ) {
-	        // Check whether a table exists - this is ANDed to the condition.
+	        // Check whether a table exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tableConditionEval = false;
 	        // Get the table to process.  The table is searched backwards until the first match.
 	        DataTable table = null;
             PropList request_params = new PropList ( "" );
@@ -1075,23 +1225,20 @@ throws CommandWarningException, CommandException {
             }
             if ( table == null ) {
                	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	tableConditionEval = false;
             }
             else {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+                tableConditionEval = true;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TableExists",Boolean.valueOf(tableConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating TableExists, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating TableExists, result=" + tableConditionEval);
     	    }
 	    }
 	    if ( (TableDoesNotExist != null) && !TableDoesNotExist.isEmpty() ) {
-	        // Check whether a table exists - this is ANDed to the condition.
+	        // Check whether a table exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tableConditionEval = false;
 	        // Get the table to process.  The table is searched backwards until the first match.
 	        DataTable table = null;
             PropList request_params = new PropList ( "" );
@@ -1116,24 +1263,20 @@ throws CommandWarningException, CommandException {
                 table = (DataTable)o_Table;
             }
             if ( table == null ) {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+                tableConditionEval = true;
             }
             else {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	tableConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TableDoesNotExist",Boolean.valueOf(tableConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating TableDoesNotExist, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating TableDoesNotExist, result=" + tableConditionEval);
     	    }
 	    }
 	    if ( (TSExists != null) && !TSExists.isEmpty() ) {
-	        // Check whether a time series exists - this is ANDed to the condition.
+	        // Check whether a time series exists.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tsConditionEval = false;
 	        // Get the time series to process.  The time series list is searched backwards until the first match.
 	        TS ts = null;
             PropList request_params = new PropList ( "" );
@@ -1162,26 +1305,23 @@ throws CommandWarningException, CommandException {
             }
             if ( ts == null ) {
                	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	tsConditionEval = false;
                	if ( Message.isDebugOn ) {
                		Message.printStatus(2, routine, "Time series \"" + TSExists + "\" is null and therefore does not exist.");
                	}
             }
             else {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                    	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	tsConditionEval = true;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TSExists",Boolean.valueOf(tsConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating TSExists, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating TSExists, result=" + tsConditionEval);
     	    }
 	    }
 	    if ( (TSDoesNotExist != null) && !TSDoesNotExist.isEmpty() ) {
-	        // Check whether a time series does not exist - this is ANDed to the condition.
+	        // Check whether a time series does not exist.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tsConditionEval = false;
 	        // Get the time series to process.  The time series list is searched backwards until the first match.
 	        TS ts = null;
             PropList request_params = new PropList ( "" );
@@ -1209,24 +1349,20 @@ throws CommandWarningException, CommandException {
                 ts = (TS)o_TS;
             }
             if ( ts == null ) {
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                    	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+                tsConditionEval = true;
             }
             else {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	tsConditionEval = false;
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TSDoesNotExist",Boolean.valueOf(tsConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating TSDoesNotExist, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating TSDoesNotExist, result=" + tsConditionEval);
     	    }
 	    }
 	    if ( (TSHasData != null) && !TSHasData.isEmpty() ) {
-	        // Check whether a time series has data - this is ANDed to the condition.
+	        // Check whether a time series has data.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tsConditionEval = false;
 	        // Get the time series to process.  The time series list is searched backwards until the first match.
 	        TS ts = null;
             PropList request_params = new PropList ( "" );
@@ -1254,8 +1390,7 @@ throws CommandWarningException, CommandException {
                 ts = (TS)o_TS;
             }
             if ( ts == null ) {
-               	// Does not matter what the Condition had - the final result is false.
-               	conditionEval = false;
+               	tsConditionEval = false;
                	if ( Message.isDebugOn ) {
                		Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" is null and therefore does not have data.");
                	}
@@ -1267,28 +1402,25 @@ throws CommandWarningException, CommandException {
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" has data.");
             		}
-            		if ( (Condition != null) && !Condition.equals("") ) {
-            			conditionEval = conditionEval & true;
-            		}
-            		else {
-            			conditionEval = true;
-            		}
+            		tsConditionEval = true;
             	}
             	else {
             		// Has no data so condition is false in this case.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" does not have data.");
             		}
-            		conditionEval = false;
+            		tsConditionEval = false;
             	}
             }
-       		setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TSHasData",Boolean.valueOf(tsConditionEval));
             if ( Message.isDebugOn ) {
-       		     Message.printStatus(2,routine,"After evaluating TSHasData, conditionEval=." + conditionEval);
+       		     Message.printStatus(2,routine,"After evaluating TSHasData, result=" + tsConditionEval);
     	    }
 	    }
 	    if ( (TSHasNoData != null) && !TSHasNoData.isEmpty() ) {
-	        // Check whether a time series does not have data - this is ANDed to the condition.
+	        // Check whether a time series does not have data.
+	    	// All cases need to be evaluated below to properly set the result.
+  			boolean tsConditionEval = false;
 	        // Get the time series to process.  The time series list is searched backwards until the first match.
 	        TS ts = null;
             PropList request_params = new PropList ( "" );
@@ -1320,12 +1452,7 @@ throws CommandWarningException, CommandException {
            		if ( Message.isDebugOn ) {
            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is null and therefore has no data.");
            		}
-               	if ( (Condition != null) && !Condition.equals("") ) {
-                   	conditionEval = conditionEval & true;
-               	}
-               	else {
-                   	conditionEval = true;
-               	}
+               	tsConditionEval = true;
             }
             else {
                	// Time series exists but may not have data.
@@ -1338,26 +1465,23 @@ throws CommandWarningException, CommandException {
             			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does not have data.");
             		}
             		// Has no data so the condition is true.
-            		if ( (Condition != null) && !Condition.equals("") ) {
-                    	conditionEval = conditionEval & true;
-            		}
-            		else {
-            			conditionEval = true;
-            		}
+            		tsConditionEval = true;
             	}
             	else {
             		// Has data so condition is false in this case.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does have data.");
             		}
-            		conditionEval = false;
+            		tsConditionEval = false;
             	}
             }
-            setConditionEval(conditionEval);
+   		    conditionEvalMap.put("TSHasNoData",Boolean.valueOf(tsConditionEval));
             if ( Message.isDebugOn ) {
-  		         Message.printStatus(2,routine,"After evaluating TSHasNoData, conditionEval=." + conditionEval);
+  		         Message.printStatus(2,routine,"After evaluating TSHasNoData, result=" + tsConditionEval);
   	        }
 	    }
+	    // The final result will be false if any parameter evaluated to false.
+	    setConditionEval ( conditionEvalMap );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error executing If (" + e + ").";
@@ -1374,10 +1498,31 @@ throws CommandWarningException, CommandException {
 
 /**
 Set the result of evaluating the condition.
-@param conditionEval result of evaluating the condition
+@param conditionEvalMap map of the results of evaluating each parameter
 */
-private void setConditionEval ( boolean conditionEval ) {
-    this.conditionEval = conditionEval;
+private void setConditionEval ( Map<String,Boolean> conditionEvalMap ) {
+	int trueCount = 0;
+	int falseCount = 0;
+	for ( Map.Entry<String, Boolean> entry : conditionEvalMap.entrySet() ) {
+		if ( entry.getValue() ) {
+			++trueCount;
+		}
+		else {
+			++falseCount;
+		}
+	}
+	if ( falseCount > 0 ) {
+		// Have at least one false so the result is false.
+		this.conditionEvalTotal = false;
+	}
+	else if ( trueCount == 0 ) {
+		// No true so must be alse.
+		this.conditionEvalTotal = false;
+	}
+	else {
+		// Have all true.
+		this.conditionEvalTotal = true;
+	}
 }
 
 /**
@@ -1393,6 +1538,7 @@ public String toString ( PropList parameters ) {
 		"CompareAsVersions",
 		"DataStoreIsOk",
 		"DataStoreIsNotOk",
+		"Expression",
 		"FileExists",
 		"FileDoesNotExist",
 		"ObjectExists",

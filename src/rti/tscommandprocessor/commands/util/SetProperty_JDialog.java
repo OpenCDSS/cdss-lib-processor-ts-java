@@ -70,6 +70,7 @@ private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private JTextField __EnvironmentVariable_JTextField = null;
+private JTextArea __Expression_JTextArea = null;
 private JTextField __JavaProperty_JTextField = null;
 private SimpleJComboBox	__IfJavaPropertyUndefined_JComboBox =null;
 private SimpleJComboBox	__SetNull_JComboBox = null;
@@ -87,10 +88,11 @@ private boolean __ok = false; // Indicates whether OK button has been pressed.
 // Tab nubers.
 private int setTab = 0;
 private int envTab = 1;
-private int javaTab = 2;
-private int specialTab = 3;
-private int removeTab = 4;
-private int mathTab = 5;
+private int expressionTab = 2;
+private int javaTab = 3;
+private int specialTab = 4;
+private int removeTab = 5;
+private int mathTab = 6;
 
 /**
 Command dialog constructor.
@@ -147,6 +149,7 @@ private void checkInput () {
     // Don't trim because value can include surrounding whitespace.
 	String PropertyValue = __PropertyValue_JTextField.getText();
 	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+    String Expression = __Expression_JTextArea.getText().trim();
 	String JavaProperty = __JavaProperty_JTextField.getText().trim();
 	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	String SetEmpty = __SetEmpty_JComboBox.getSelected();
@@ -172,6 +175,9 @@ private void checkInput () {
 	if ( EnvironmentVariable.length() > 0 ) {
 		parameters.set ( "EnvironmentVariable", EnvironmentVariable );
 	}
+    if ( Expression.length() > 0 ) {
+        parameters.set ( "Expression", Expression );
+    }
 	if ( JavaProperty.length() > 0 ) {
 		parameters.set ( "JavaProperty", JavaProperty );
 	}
@@ -223,6 +229,7 @@ private void commitEdits () {
     // Don't trim because value can include surrounding whitespace.
 	String PropertyValue = __PropertyValue_JTextField.getText();
 	String EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+    String Expression = __Expression_JTextArea.getText().trim();
 	String JavaProperty = __JavaProperty_JTextField.getText().trim();
 	String IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	String SetEmpty = __SetEmpty_JComboBox.getSelected();
@@ -237,6 +244,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "PropertyValue", PropertyValue );
 	__command.setCommandParameter ( "PropertyName", PropertyName );
 	__command.setCommandParameter ( "EnvironmentVariable", EnvironmentVariable );
+	__command.setCommandParameter ( "Expression", Expression );
 	__command.setCommandParameter ( "JavaProperty", JavaProperty);
 	__command.setCommandParameter ( "IfJavaPropertyUndefined", IfJavaPropertyUndefined);
 	__command.setCommandParameter ( "SetEmpty", SetEmpty );
@@ -275,13 +283,16 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 		"Refer to command documentation and command editors for information about support for ${Property} in command parameters." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be set using the \"Set\", \"Environment Variable\", \"Java Property\", or \"Special Values\" tabs." ),
+		"Properties can be set using the 'Set', 'Environment Variable', 'Expression', 'Java Property', or 'Special Values' tabs." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Properties can be removed (unset) using the \"Remove (Unset)\" tab." ),
+		"Properties can be removed (unset) using the 'Remove (Unset)' tab." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Existing properties can be modified using basic math.  Set the value using ${Property} (can reference itself) and modify using \"Math\" tab." ),
+		"Existing properties can be modified using simple math.  Set the value using ${Property} (can reference itself) and modify using 'Math' tab." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"<html><b>New:  Use the 'Expression' tab to set the value using an expression, which can include math operators, functions, and ${Property} values.</b></html>" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -390,6 +401,51 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
 		1, yEnv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(env_JPanel, new JLabel( "Optional - environment variable, can use ${Property}."),
 		3, yEnv, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for expression:
+    // - use the EvalEx library
+    int yEvalEx = -1;
+    JPanel evalEx_JPanel = new JPanel();
+    evalEx_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Expression", evalEx_JPanel );
+
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "Set the property to a value from an expression, using the EvalEx library."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "This parameter has more features than the 'Math' parameters."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "The expression can contain math operators, ${Property}, and functions."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "Use && for AND, || for OR, ! for NOT, == for EQUALS, != for NOT EQUAls, parentheses for clarity."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "The process is as follows."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "1. Any ${Property} instances are expanded to processor property values.  Strings are surrounded in double quotes.  Nested string properties are not handled."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "2. The expression is evaluated by EvalEx."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "3. The result of the evaluation is set as the property value."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel ( "Expression:" ),
+        0, ++yEvalEx, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Expression_JTextArea = new JTextArea (5,40);
+    __Expression_JTextArea.setLineWrap ( true );
+    __Expression_JTextArea.setWrapStyleWord ( true );
+    __Expression_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(evalEx_JPanel, new JScrollPane(__Expression_JTextArea),
+        1, yEvalEx, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel("Optional - expression to evaluate."),
+        3, yEvalEx, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for Java property.
     int yJava = -1;
@@ -541,6 +597,9 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
     __main_JTabbedPane.addTab ( "Math", math_JPanel );
 
     JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"<html><b>The 'Expression' parameter provides more functionality and may replace these parameters in the future.</b></html>" ),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
 		"Use the following parameters to perform basic math operations on the property." ),
 		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(math_JPanel, new JLabel (
@@ -689,6 +748,7 @@ private void refresh () {
     String PropertyType = "";
 	String PropertyValue = "";
 	String EnvironmentVariable = "";
+	String Expression = "";
 	String JavaProperty = "";
 	String IfJavaPropertyUndefined = "";
 	String SetEmpty = "";
@@ -707,6 +767,7 @@ private void refresh () {
         PropertyType = props.getValue ( "PropertyType" );
 		PropertyValue = props.getValue ( "PropertyValue" );
 		EnvironmentVariable = props.getValue ( "EnvironmentVariable" );
+		Expression = props.getValue ( "Expression" );
 		JavaProperty = props.getValue ( "JavaProperty" );
 		IfJavaPropertyUndefined = props.getValue ( "IfJavaPropertyUndefined" );
 		SetEmpty = props.getValue ( "SetEmpty" );
@@ -747,6 +808,12 @@ private void refresh () {
             	__main_JTabbedPane.setSelectedIndex(this.envTab);
             }
 		}
+        if ( Expression != null ) {
+            __Expression_JTextArea.setText( Expression );
+            if ( !Expression.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.expressionTab);
+            }
+        }
 		if ( JavaProperty != null ) {
 		    __JavaProperty_JTextField.setText (JavaProperty);
             if ( !JavaProperty.isEmpty() ) {
@@ -874,6 +941,7 @@ private void refresh () {
     PropertyType = __PropertyType_JComboBox.getSelected();
 	PropertyValue = __PropertyValue_JTextField.getText().trim();
 	EnvironmentVariable = __EnvironmentVariable_JTextField.getText().trim();
+	Expression = __Expression_JTextArea.getText().trim();
 	JavaProperty = __JavaProperty_JTextField.getText().trim();
 	IfJavaPropertyUndefined = __IfJavaPropertyUndefined_JComboBox.getSelected();
 	SetEmpty = __SetEmpty_JComboBox.getSelected();
@@ -889,6 +957,7 @@ private void refresh () {
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
 	props.add ( "EnvironmentVariable=" + EnvironmentVariable );
+	props.add ( "Expression=" + Expression );
 	props.add ( "JavaProperty=" + JavaProperty );
 	props.add ( "IfJavaPropertyUndefined=" + IfJavaPropertyUndefined );
 	props.add ( "SetEmpty=" + SetEmpty );

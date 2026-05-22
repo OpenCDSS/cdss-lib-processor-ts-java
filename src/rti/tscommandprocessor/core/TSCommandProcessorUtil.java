@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -572,6 +572,23 @@ Properties ${${property}-abc} are nested and will be expanded twice to get the v
 @return the expanded string or null if the input string was null
 */
 public static String expandParameterValue ( CommandProcessor processor, Command command, String parameterValue ) {
+	// Do not quote expanded strings.
+	return expandParameterValue ( processor, command, parameterValue, null );
+}
+
+/**
+Expand a command parameter string containing processor-level properties.  For example, a parameter value like
+"${WorkingDir}/morepath" will be expanded to include the working directory.
+The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
+Properties ${${property}-abc} are nested and will be expanded twice to get the value of the property from the inner expansion.
+@param processor the CommandProcessor that has a list of named properties.
+@param command the command that is being processed (may be used later for context sensitive values).
+@param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
+@param quote the character to use around expanded strings (null means no quote),
+currently only works for non-nested properties
+@return the expanded string or null if the input string was null
+*/
+public static String expandParameterValue ( CommandProcessor processor, Command command, String parameterValue, String quote ) {
     String routine = TSCommandProcessorUtil.class.getSimpleName() + ".expandParameterValue";
     // Normal property start delimiter.
    	String delimStart = "${";
@@ -581,6 +598,10 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
     	// - if no ${Property} notation can't expand
         // - just return the input
         return parameterValue;
+    }
+    boolean doQuote = false;
+    if ( (quote != null) && quote.isEmpty() ) {
+    	doQuote = true;
     }
    	// End of property.
    	String delimEnd = "}";
@@ -640,8 +661,8 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
    			}
        		if ( StringUtil.patternCount(propertyString, delimStart) > 1 ) {
        			// Nested property:
-   				// - could be '${${...}' or '${...${ ... }'. // } } to close
-       			// - advance the search position past the redundant ${ but don't try to replace // } to close
+   				// - could be '${${...}' or '${...${ ... }'. // } } comment to match bracket for editor
+       			// - advance the search position past the redundant ${ but don't try to replace // } comment to match bracket for editor
        			searchPos += 2;
        			// Indicate that nested properties were found so a second pass can occur.
        			doNested = true;
@@ -665,7 +686,7 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
    		}
    	}
 	if ( Message.isDebugOn ) {
-   		Message.printDebug( 1, routine, "Found " + propertyStrings.size() + " inner property strings.");
+   		Message.printDebug( 1, routine, "Found " + propertyStrings.size() + " inner property (not nested) strings.");
 	}
 
    	// Replace the pairs if have a matching property:
@@ -687,6 +708,10 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
        			// The following should work for all representations as long as the toString() does not truncate:
        			// - TODO smalers 2024-10-22 this may format badly if floating point and engineering notation results
        			propvalString = "" + propval;
+       			if ( (propval instanceof String) && doQuote ) {
+       				// TODO smalers 2026-05-22 this will cause a problem if nested.
+       				propval = quote + propval + quote;
+       			}
        			if ( Message.isDebugOn ) {
        				Message.printDebug( 1, routine, "Found inner property \"" + propname + "\"=\"" + propvalString + "\".");
        			}
@@ -793,7 +818,7 @@ public static String expandParameterValue ( CommandProcessor processor, Command 
    			Message.printDebug( 1, routine, "Not doing second pass since no nested parameter values.");
 		}
    	}
-   	
+
    	// Return the expanded property value.
     return parameterValue;
 }
@@ -1383,7 +1408,7 @@ public static String getAnnotationCommandParameter ( Command command, int index 
 		// Not in an annotation comment.
 		return null;
 	}
-	
+
 	// Initialize the annotation string to null.
 	String annotation = null;
 	// Advance to the space after the annotation name.
@@ -1407,7 +1432,7 @@ public static String getAnnotationCommandParameter ( Command command, int index 
 			annotation = params.get(index - 1);
 		}
 	}
-	
+
 	// Check for '# ..... #@abc' and '# ..... # @abc', which are normal comments.
 	if ( annotation != null ) {
 		// If there is a '#' before the annotation comment in the original string, then it is a true comment.
@@ -1429,7 +1454,7 @@ public static String getAnnotationCommandParameter ( Command command, int index 
 			}
 		}
 	}
-	
+
 	// Return the final result, may be null.
 	return annotation;
 }
@@ -3845,7 +3870,7 @@ public static boolean isAnnotationCommand ( Command command ) {
 		// Not in an annotation comment.
 		return false;
 	}
-	
+
 	// Try to parse the annotation:
 	// - do so as if requesting the annotation name
 	// - can't call getAnnotationCommandParameter because it is more granular and returns null in various situations
@@ -3863,7 +3888,7 @@ public static boolean isAnnotationCommand ( Command command ) {
 		// Have annotation name and parameters but want the parameter name.
 		annotationName = commandString.substring(pos1 + 1,pos2).trim();
 	}
-	
+
 	// Check for '# ..... #@abc' and '# ..... # @abc', which are normal comments.
 	if ( annotationName != null ) {
 		// If there is a '#' before the annotation comment in the original string, then it is a true comment.
@@ -3885,7 +3910,7 @@ public static boolean isAnnotationCommand ( Command command ) {
 			}
 		}
 	}
-	
+
 	// Return the final result, may be null.
 	if ( (annotationName == null) || annotationName.isEmpty() ) {
 		return false;

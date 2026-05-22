@@ -25,8 +25,12 @@ package rti.tscommandprocessor.commands.util;
 
 import javax.swing.JFrame;
 
+import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.data.EvaluationValue;
+
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,6 +110,7 @@ throws InvalidCommandParameterException {
     }
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String EnvironmentVariable = parameters.getValue ( "EnvironmentVariable" );
+	String Expression = parameters.getValue ( "Expression" );
 	String JavaProperty = parameters.getValue ( "JavaProperty" );
 	String IfJavaPropertyUndefined = parameters.getValue ( "IfJavaPropertyUndefined" );
 	String SetEmpty = parameters.getValue ( "SetEmpty" );
@@ -161,6 +166,10 @@ throws InvalidCommandParameterException {
 		++setCount;
 		method += " EnvironmentVariable";
 	}
+	if ( (Expression != null) && !Expression.isEmpty() ) {
+		++setCount;
+		method += " Expression";
+	}
 	if ( (JavaProperty != null) && !JavaProperty.isEmpty() ) {
 		++setCount;
 		method += " JavaProperty";
@@ -183,7 +192,7 @@ throws InvalidCommandParameterException {
 	}
 	if ( setCount == 0 ) {
 		message = "The property value must be set only one way: value, environment variable, "
-				+ "Java property, special value, or remove.";
+				+ "Java property, expression, special value, or remove.";
 	    warning += "\n" + message;
 	    status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -191,12 +200,26 @@ throws InvalidCommandParameterException {
 	}
 	else if ( setCount > 1 ) {
 		message = "The property value must be set only one way: value, environment variable, "
-				+ "Java property, special value, or remove (currently using: " + method + ").";
+				+ "expression, Java property, special value, or remove (currently using: " + method + ").";
 	    warning += "\n" + message;
 	    status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a property value using one of the available choices." ) );
 	}
+
+	// Make sure that Expression is not used with a math operation.
+	if ( ((Expression != null) && !Expression.isEmpty())
+		&& (((Add != null) && !Add.isEmpty()) ||
+			((Subtract != null) && !Subtract.isEmpty()) ||
+			((Multiply != null) && !Multiply.isEmpty()) ||
+			((Divide != null) && !Divide.isEmpty())) ) {
+		message = "The 'Expression' and a 'Math' operation cannot both be specified.";
+	    warning += "\n" + message;
+	    status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify 'Expression' or a math operation, but not both." ) );
+	}
+
 	if ( (PropertyValue != null) && !PropertyValue.isEmpty() && (PropertyValue.indexOf("${") < 0) ) {
 	    // Check the property value given the type.
 	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
@@ -350,11 +373,12 @@ throws InvalidCommandParameterException {
 	}
 
     // Check for invalid parameters.
-	List<String> validList = new ArrayList<>(14);
+	List<String> validList = new ArrayList<>(15);
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
     validList.add ( "EnvironmentVariable" );
+    validList.add ( "Expression" );
     validList.add ( "JavaProperty" );
     validList.add ( "IfJavaPropertyUndefined" );
     validList.add ( "SetEmpty" );
@@ -491,6 +515,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnvironmentVariable = TSCommandProcessorUtil.expandParameterValue(processor, this, EnvironmentVariable);
 	}
+	String Expression = parameters.getValue ( "Expression" );
+	String expressionExpanded = Expression;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		// Expand the expression to fill in properties, using a double quote for strings.
+		String quote = "";
+		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
+	}
 	String JavaProperty = parameters.getValue ( "JavaProperty" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		JavaProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, JavaProperty);
@@ -565,6 +596,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	// Not setting to null (removing) so expect to have one of:
 	    	// - property value
 	    	// - environment variable
+	    	// - expression result
 	    	// - Java property
 	    	// - special value
 	    	String propertyValue = null;
@@ -583,6 +615,108 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		            status.addToLog ( CommandPhaseType.RUN,
 	                    new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Check that environment variable \"" + EnvironmentVariable + "\" is set." ) );
+	    		}
+	    	}
+	    	else if ( (expressionExpanded != null) && !expressionExpanded.isEmpty() ) {
+	    		Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
+	    		Expression expression = null;
+	    		boolean hadProblem = false;
+	    		try {
+	    			expression = new Expression ( expressionExpanded );
+	    		}
+	    		catch ( Exception e ) {
+	    			hadProblem = true;
+           			message = "Error parsing the expression (" + e + ").";
+            		Message.printWarning(3,
+                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                		routine, message );
+            		Message.printWarning(3,routine,e);
+            		status.addToLog ( CommandPhaseType.RUN,
+                		new CommandLogRecord(CommandStatusType.FAILURE,
+                    		message, "Verify that the expression syntax is OK." ) );
+	    		}
+	    		EvaluationValue result = null;
+	    		try {
+	    			result = expression.evaluate();
+	    		}
+	    		catch ( Exception e ) {
+	    			hadProblem = true;
+           			message = "Error evaluating the expression (" + e + ").";
+            		Message.printWarning(3,
+                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                		routine, message );
+            		Message.printWarning(3,routine,e);
+            		status.addToLog ( CommandPhaseType.RUN,
+                		new CommandLogRecord(CommandStatusType.FAILURE,
+                    		message, "Verify that the expression syntax is OK." ) );
+	    		}
+	    		// All cases need to be evaluated below to properly set the result.
+	    		if ( !hadProblem ) {
+	    			if ( PropertyType.equalsIgnoreCase(this._Boolean) ) {
+	    				if ( result.isBooleanValue() ) {
+	    					// Expression result is a boolean value so can interpret the result.
+	    					Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
+	    					Property_Object = Boolean.valueOf (result.getBooleanValue());
+	    				}
+	    				else {
+	    					// Expression result is not a boolean value so cannot interpret the result.
+           					message = "Expression result is not a boolean.  Cannot set as the property value.";
+           					Message.printWarning(3,
+               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               					routine, message );
+	    				}
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(this._DateTime) ) {
+	    				if ( result.isDateTimeValue() ) {
+	    					// Expression result is a date/time value so can interpret the result.
+	    					Message.printStatus(2, routine, "Expanded result is a date/time: " + result.getDateTimeValue());
+	    					Instant instant = result.getDateTimeValue();
+	    					// Create a Date/time for the instant, using full precision and local time zone.
+	    					Property_Object = new DateTime(instant, 0, null);
+	    				}
+	    				else {
+	    					// Expression result is not a number value so cannot interpret the result.
+           					message = "Expression result is not a date/time.  Cannot set as the property date/time value.";
+           					Message.printWarning(3,
+               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               					routine, message );
+	    				}
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(this._Double) ) {
+	    				if ( result.isNumberValue() ) {
+	    					// Expression result is a number value so can interpret the result.
+	    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
+	    					Property_Object = Double.valueOf (result.getNumberValue().doubleValue());
+	    				}
+	    				else {
+	    					// Expression result is not a number value so cannot interpret the result.
+           					message = "Expression result is not a number.  Cannot set as the property double precision value.";
+           					Message.printWarning(3,
+               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               					routine, message );
+	    				}
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(this._Integer) ) {
+	    				if ( result.isNumberValue() ) {
+	    					// Expression result is a number value so can interpret the result.
+	    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
+	    					int integer = result.getNumberValue().intValue();
+	    					Property_Object = Integer.valueOf (integer);
+	    				}
+	    				else {
+	    					// Expression result is not a number value so cannot interpret the result.
+           					message = "Expression result is not a number.  Cannot set as the property integer value.";
+           					Message.printWarning(3,
+               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+               					routine, message );
+	    				}
+	    			}
+	    			else if ( PropertyType.equalsIgnoreCase(this._String) ) {
+	    				// Cast any object type to a string:
+	    				// - may have issues if floating point number is output in exponential notation
+	    				Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
+	    				Property_Object = "" + result.getValue();
+	    			}
 	    		}
 	    	}
 	    	else if ( (JavaProperty != null) && !JavaProperty.isEmpty() ) {
@@ -611,7 +745,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	if ( commandPhase == CommandPhaseType.RUN ) {
 			    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
 			    	if ( !setNull ) {
-			    		Property_Object = Boolean.valueOf(propertyValue);
+			    		if ( Property_Object == null ) {
+			    			// Create the object from the string value.
+			    			Property_Object = Boolean.valueOf(propertyValue);
+			    		}
 			    	}
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
@@ -619,7 +756,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			        // Have to specify a PropList to ensure the special syntax is handled.
 			    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties.
 			    	if ( !setNull ) {
-			    		Property_Object = DateTime.parse(propertyValue,(PropList)null);
+			    		if ( Property_Object == null ) {
+			    			// Create the object from the string value.
+			    			Property_Object = DateTime.parse(propertyValue,(PropList)null);
+			    		}
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			DateTime dt = (DateTime)Property_Object;
 			    			TimeInterval interval = TimeInterval.parseInterval(Add);
@@ -639,7 +779,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    	}
 			    	else if ( !setNull ) {
 			    		// Set a number value.
-			    		Property_Object = Double.valueOf(propertyValue);
+			    		if ( Property_Object == null ) {
+			    			// Create the object from the string value.
+			    			Property_Object = Double.valueOf(propertyValue);
+			    		}
 			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Double d = (Double)Property_Object;
@@ -667,7 +810,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    }
 			    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
 			    	if ( !setNull ) {
-			    		Property_Object = Integer.valueOf(propertyValue);
+			    		if ( Property_Object == null ) {
+			    			// Create the object from the string value.
+			    			Property_Object = Integer.valueOf(propertyValue);
+			    		}
 			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			Integer i = (Integer)Property_Object;
@@ -698,7 +844,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			    		Property_Object = "";
 			    	}
 			    	else if ( !setNull ) {
-			    		Property_Object = propertyValue;
+			    		if ( Property_Object == null ) {
+			    			// Create the object from the string value.
+			    			Property_Object = propertyValue;
+			    		}
 			    		// Do math operations if specified.
 			    		if ( (Add != null) && !Add.isEmpty() ) {
 			    			// Concatenate.
@@ -842,6 +991,7 @@ public String toString ( PropList parameters ) {
 		"PropertyType",
     	"PropertyValue",
     	"EnvironmentVariable",
+    	"Expression",
     	"JavaProperty",
     	"IfJavaPropertyUndefined",
     	"SetEmpty",

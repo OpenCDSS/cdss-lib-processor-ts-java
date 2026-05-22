@@ -74,6 +74,7 @@ private SimpleJComboBox __CompareAsStrings_JComboBox = null;
 private SimpleJComboBox __CompareAsVersions_JComboBox = null;
 private JTextField __DataStoreIsOk_JTextField = null;
 private JTextField __DataStoreIsNotOk_JTextField = null;
+private JTextArea __Expression_JTextArea = null;
 private JTextField __FileExists_JTextField = null;
 private JTextField __FileDoesNotExist_JTextField = null;
 private JTextField __ObjectExists_JTextField = null;
@@ -93,12 +94,14 @@ private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
 
 // Tab number (0+), to allow selecting tabs based on parameters.
+private int conditionTabNum = 0;
 private int dataStoreTabNum = 1;
-private int fileTabNum = 2;
-private int objectTabNum = 3;
-private int propertyTabNum = 4;
-private int tableTabNum = 5;
-private int tsTabNum = 6;
+private int expressionTabNum = 2;
+private int fileTabNum = 3;
+private int objectTabNum = 4;
+private int propertyTabNum = 5;
+private int tableTabNum = 6;
+private int tsTabNum = 7;
 
 /**
 Command dialog editor constructor.
@@ -145,6 +148,7 @@ private void checkInput () {
     String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     String DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
     String DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
+    String Expression = __Expression_JTextArea.getText().trim();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
@@ -175,6 +179,9 @@ private void checkInput () {
     }
     if ( DataStoreIsNotOk.length() > 0 ) {
         props.set ( "DataStoreIsNotOk", DataStoreIsNotOk );
+    }
+    if ( Expression.length() > 0 ) {
+        props.set ( "Expression", Expression );
     }
     if ( FileExists.length() > 0 ) {
         props.set ( "FileExists", FileExists );
@@ -235,6 +242,7 @@ private void commitEdits () {
     String CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     String DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
     String DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
+    String Expression = __Expression_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String FileExists = __FileExists_JTextField.getText().trim();
     String FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
     String ObjectExists = __ObjectExists_JTextField.getText().trim();
@@ -254,6 +262,7 @@ private void commitEdits () {
     __command.setCommandParameter ( "CompareAsVersions", CompareAsVersions );
     __command.setCommandParameter ( "DataStoreIsOk", DataStoreIsOk );
     __command.setCommandParameter ( "DataStoreIsNotOk", DataStoreIsNotOk );
+    __command.setCommandParameter ( "Expression", Expression );
     __command.setCommandParameter ( "FileExists", FileExists );
     __command.setCommandParameter ( "FileDoesNotExist", FileDoesNotExist );
     __command.setCommandParameter ( "ObjectExists", ObjectExists );
@@ -294,7 +303,7 @@ private void initialize ( JFrame parent, If_Command command ) {
         "the matching EndIf() command will be executed."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The evaluation can check an expression or whether property, table, and time series data exist."),
+        "The evaluation can check an expression and properties of datastore, file, object, property, table, and time series."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Conditions are AND'd together (all must be true for the If command to evaluate to true)."),
@@ -316,14 +325,17 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    // Panel for expression.
+    // Panel for condition.
     int yCond = -1;
     JPanel cond_JPanel = new JPanel();
     cond_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Condition", cond_JPanel );
 
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "The condition can consist of the following syntax:"),
+        "<html><b>See also the newer 'Expression' parameter, which has more functionality.</b></html>"),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "Evaluate a simple condition.  The condition can consist of the following syntax:"),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "   Value1 operator Value2"),
@@ -424,6 +436,51 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(datastore_JPanel, new JLabel(
         "Optional - If() will be true if the specified datastore is not OK."),
         3, yDatastore, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for expression:
+    // - use the EvalEx library
+    int yEvalEx = -1;
+    JPanel evalEx_JPanel = new JPanel();
+    evalEx_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Expression", evalEx_JPanel );
+
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "Evaluate an expression using the EvalEx library."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "This parameter has more features than the 'Condition' parameter."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "The expression can contain math operators, ${Property}, and functions."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "Use && for AND, || for OR, ! for NOT, == for EQUALS, != for NOT EQUAls, parentheses for clarity."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "The process is as follows."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "1. Any ${Property} instances are expanded to processor property values.  Strings are surrounded in double quotes.  Nested string properties are not handled."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "2. The expression is evaluated by EvalEx."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
+        "3. The result of the evaluation is set as the result of the If() command."),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel ( "Expression:" ),
+        0, ++yEvalEx, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Expression_JTextArea = new JTextArea (5,40);
+    __Expression_JTextArea.setLineWrap ( true );
+    __Expression_JTextArea.setWrapStyleWord ( true );
+    __Expression_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(evalEx_JPanel, new JScrollPane(__Expression_JTextArea),
+        1, yEvalEx, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(evalEx_JPanel, new JLabel("Optional - expression to evaluate."),
+        3, yEvalEx, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Panel for whether file exists.
     int yFile = -1;
@@ -716,6 +773,7 @@ private void refresh () {
 	String CompareAsVersions = "";
 	String DataStoreIsOk = "";
 	String DataStoreIsNotOk = "";
+	String Expression = "";
 	String FileExists = "";
 	String FileDoesNotExist = "";
 	String ObjectExists = "";
@@ -739,6 +797,7 @@ private void refresh () {
 		CompareAsVersions = props.getValue( "CompareAsVersions" );
 		DataStoreIsOk = props.getValue( "DataStoreIsOk" );
 		DataStoreIsNotOk = props.getValue( "DataStoreIsNotOk" );
+		Expression = props.getValue( "Expression" );
 		FileExists = props.getValue( "FileExists" );
 		FileExists = props.getValue( "FileExists" );
 		FileDoesNotExist = props.getValue( "FileDoesNotExist" );
@@ -759,7 +818,7 @@ private void refresh () {
         if ( Condition != null ) {
             __Condition_JTextArea.setText( Condition );
             if ( !Condition.isEmpty() ) {
-            	__main_JTabbedPane.setSelectedIndex(0);
+            	__main_JTabbedPane.setSelectedIndex(this.conditionTabNum);
             }
         }
         if ( CompareAsStrings == null ) {
@@ -802,6 +861,12 @@ private void refresh () {
             __DataStoreIsNotOk_JTextField.setText( DataStoreIsNotOk );
             if ( !DataStoreIsNotOk.isEmpty() ) {
             	__main_JTabbedPane.setSelectedIndex(this.dataStoreTabNum);
+            }
+        }
+        if ( Expression != null ) {
+            __Expression_JTextArea.setText( Expression );
+            if ( !Expression.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.expressionTabNum);
             }
         }
         if ( FileExists != null ) {
@@ -890,6 +955,7 @@ private void refresh () {
 	CompareAsVersions = __CompareAsVersions_JComboBox.getSelected();
     DataStoreIsOk = __DataStoreIsOk_JTextField.getText().trim();
     DataStoreIsNotOk = __DataStoreIsNotOk_JTextField.getText().trim();
+	Expression = __Expression_JTextArea.getText().trim();
     FileExists = __FileExists_JTextField.getText().trim();
     FileDoesNotExist = __FileDoesNotExist_JTextField.getText().trim();
 	PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
@@ -905,11 +971,12 @@ private void refresh () {
     TSHasNoData = __TSHasNoData_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
-    props.set ( "Condition", Condition ); // May contain = so handle differently.
+    props.set ( "Condition", Condition );
     props.add ( "CompareAsStrings=" + CompareAsStrings );
     props.add ( "CompareAsVersions=" + CompareAsVersions );
     props.add ( "DataStoreIsOk=" + DataStoreIsOk );
     props.add ( "DataStoreIsNotOk=" + DataStoreIsNotOk );
+    props.set ( "Expression", Expression );
     props.add ( "FileExists=" + FileExists );
     props.add ( "FileDoesNotExist=" + FileDoesNotExist );
     props.add ( "ObjectExists=" + ObjectExists );

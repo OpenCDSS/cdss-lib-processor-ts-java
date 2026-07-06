@@ -113,6 +113,10 @@ throws InvalidCommandParameterException {
 	String TSDoesNotExist = parameters.getValue ( "TSDoesNotExist" );
 	String TSHasData = parameters.getValue ( "TSHasData" );
 	String TSHasNoData = parameters.getValue ( "TSHasNoData" );
+	String TSID = parameters.getValue ( "TSID" );
+	String TSPropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "TSPropertyIsNotDefinedOrIsEmpty" );
+	String TSPropertyIsDefined = parameters.getValue ( "TSPropertyIsDefined" );
+	String TSPropertyIsDefinedAndIsNotEmpty = parameters.getValue ( "TSPropertyIsDefinedAndIsNotEmpty" );
 	String warning = "";
 	String message;
 
@@ -126,9 +130,12 @@ throws InvalidCommandParameterException {
 	boolean objectExistsProvided = false;
 	// Any of the property checks.
 	boolean propertyDefinedProvided = false;
+	//
 	boolean tableExistsProvided = false;
 	boolean tsExistsProvided = false;
 	boolean tsHasDataProvided = false;
+	//
+	boolean tsPropertyDefinedProvided = false;
 
 	if ( (Condition != null) && !Condition.isEmpty() ) {
 		conditionProvided = true;
@@ -163,6 +170,22 @@ throws InvalidCommandParameterException {
 	if ( ((TSHasData != null) && !TSHasData.isEmpty()) || ((TSHasNoData != null) && !TSHasNoData.isEmpty()) ) {
 		tsHasDataProvided = true;
 	}
+	if ( (TSPropertyIsNotDefinedOrIsEmpty != null) && !TSPropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+		tsPropertyDefinedProvided = true;
+	}
+	if ( (TSPropertyIsDefined != null) && !TSPropertyIsDefined.isEmpty() ) {
+		tsPropertyDefinedProvided = true;
+	}
+	if ( (TSPropertyIsDefinedAndIsNotEmpty != null) && !TSPropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
+		tsPropertyDefinedProvided = true;
+	}
+
+	if ( tsPropertyDefinedProvided && ((TSID == null) || TSID.isEmpty()) ) {
+        message = "The TSID must be specified if time series properties are checked";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the TSID." ) );
+	}
 
     if ( (Name == null) || Name.equals("") ) {
         message = "A name for the If() block must be specified";
@@ -171,7 +194,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
     if ( !conditionProvided && !expressionProvided && !dataStoreIsOkProvided && !fileExistsProvided && !objectExistsProvided &&
-   		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided && !tsHasDataProvided ) {
+   		!propertyDefinedProvided && !tableExistsProvided && !tsExistsProvided && !tsHasDataProvided && !tsPropertyDefinedProvided) {
         message = "A condition, expression, or check of datastore, file, object, property, table, or time series must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -206,7 +229,7 @@ throws InvalidCommandParameterException {
 	}
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(20);
+    List<String> validList = new ArrayList<>(24);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
@@ -227,6 +250,10 @@ throws InvalidCommandParameterException {
 	validList.add ( "TSDoesNotExist" );
 	validList.add ( "TSHasData" );
 	validList.add ( "TSHasNoData" );
+	validList.add ( "TSID" );
+	validList.add ( "TSPropertyIsNotDefinedOrIsEmpty" );
+	validList.add ( "TSPropertyIsDefined" );
+	validList.add ( "TSPropertyIsDefinedAndIsNotEmpty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -323,9 +350,9 @@ throws CommandWarningException, CommandException {
 	String Expression = parameters.getValue ( "Expression" );
 	String expressionExpanded = Expression;
 	if ( commandPhase == CommandPhaseType.RUN ) {
-		// Expand the expression to fill in properties, using a single quote for strings.
-		String quote = "'";
-		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
+		// Expand the expression to fill in properties:
+		// - if quotes are required, they need to be in the expression
+		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression );
 	}
 	String FileExists = parameters.getValue ( "FileExists" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -378,6 +405,22 @@ throws CommandWarningException, CommandException {
 	String TSHasNoData = parameters.getValue ( "TSHasNoData" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSHasNoData = TSCommandProcessorUtil.expandParameterValue(processor, this, TSHasNoData);
+	}
+	String TSID = parameters.getValue ( "TSID" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
+	String TSPropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "TSPropertyIsNotDefinedOrIsEmpty" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSPropertyIsNotDefinedOrIsEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, TSPropertyIsNotDefinedOrIsEmpty);
+	}
+	String TSPropertyIsDefined = parameters.getValue ( "TSPropertyIsDefined" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSPropertyIsDefined = TSCommandProcessorUtil.expandParameterValue(processor, this, TSPropertyIsDefined);
+	}
+	String TSPropertyIsDefinedAndIsNotEmpty = parameters.getValue ( "TSPropertyIsDefinedAndIsNotEmpty" );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		TSPropertyIsDefinedAndIsNotEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, TSPropertyIsDefinedAndIsNotEmpty);
 	}
 
 	try {
@@ -1496,6 +1539,213 @@ throws CommandWarningException, CommandException {
   		         Message.printStatus(2,routine,"After evaluating TSHasNoData, result=" + tsConditionEval);
   	        }
 	    }
+	    if ( (TSPropertyIsNotDefinedOrIsEmpty != null) && !TSPropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+	    	// Check to see whether the specified time series property exists.
+	    	// All cases need to be evaluated below to properly set the result.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSID );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
+	        TS ts = null;
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
+  			boolean propConditionEval = false;
+	    	if ( ts == null ) {
+	    		// Property is null so condition evaluates to true.
+	    		propConditionEval = true;
+	    	}
+	    	else {
+	    		Object o = ts.getProperty(TSPropertyIsNotDefinedOrIsEmpty);
+		    	if ( o instanceof String ) {
+		    		String s = (String)o;
+		    		if ( s.isEmpty() ) {
+		    			// Time series property is empty string so condition evaluates to true.
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
+		    		}
+		    	}
+		    	else if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to true.
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to true.
+		    			propConditionEval = true;
+		    		}
+		    		else {
+		    			propConditionEval = false;
+		    		}
+		    	}
+	    	}
+   		    conditionEvalMap.put("TSPropertyIsNotDefinedOrIsEmpty",Boolean.valueOf(propConditionEval));
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSPropertyIsNotDefinedOrIsEmpty, result=" + propConditionEval);
+    	    }
+	    }
+	    if ( (TSPropertyIsDefined != null) && !TSPropertyIsDefined.isEmpty() ) {
+	    	// Check to see whether the specified property exists.
+	    	// All cases need to be evaluated below to properly set the result.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSID );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
+	        TS ts = null;
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
+  			boolean propConditionEval = false;
+	    	if ( ts == null ) {
+	    		// Property is null so condition evaluates to false.
+	    		propConditionEval = false;
+	    	}
+	    	else {
+	    		Object o = ts.getProperty(TSPropertyIsDefined);
+		    	if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to false.
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to false.
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
+		    		}
+		    	}
+	    	}
+   		    conditionEvalMap.put("TSPropertyIsDefined",Boolean.valueOf(propConditionEval));
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSPropertyIsDefined, result=" + propConditionEval);
+    	    }
+	    }
+	    if ( (TSPropertyIsDefinedAndIsNotEmpty != null) && !TSPropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
+            Message.printStatus(2, routine, "Evaluating TSPropertyIsDefinedAndIsNotNull=" + TSPropertyIsDefinedAndIsNotEmpty);
+	    	// Check to see whether the specified property exists and is not an empty string.
+	    	// All cases need to be evaluated below to properly set the result.
+	        // Get the time series to process.  The time series list is searched backwards until the first match.
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "CommandTag", command_tag );
+            request_params.set ( "TSID", TSID );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+            Object o_TS = null;
+            if ( bean != null ) {
+            	PropList bean_PropList = bean.getResultsPropList();
+            	o_TS = bean_PropList.getContents ( "TS");
+            }
+	        TS ts = null;
+            if ( o_TS != null ) {
+                ts = (TS)o_TS;
+            }
+  			boolean propConditionEval = false;
+	    	if ( ts == null ) {
+	    		// Property is null so condition evaluates to false.
+	    		propConditionEval = false;
+	    	}
+	    	else {
+	    		Object o = ts.getProperty(TSPropertyIsDefinedAndIsNotEmpty);
+		    	if ( o instanceof String ) {
+		    		String s = (String)o;
+		    		if ( s.isEmpty() ) {
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
+		    		}
+		    	}
+		    	else if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to false.
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to false.
+		    			propConditionEval = false;
+		    		}
+		    		else {
+		    			propConditionEval = true;
+		    		}
+		    	}
+	    	}
+   		    conditionEvalMap.put("TSPropertyIsDefinedAndIsNotEmpty",Boolean.valueOf(propConditionEval));
+            if ( Message.isDebugOn ) {
+       		     Message.printStatus(2,routine,"After evaluating TSPropertyIsDefinedAndIsNotEmpty, result=" + propConditionEval);
+    	    }
+            Message.printStatus(2, routine, "Value for propConditionEval=" + propConditionEval);
+	    }
 	    // The final result will be false if any parameter evaluated to false.
 	    setConditionEval ( conditionEvalMap );
 	}
@@ -1567,7 +1817,11 @@ public String toString ( PropList parameters ) {
 		"TSExists",
 		"TSDoesNotExist",
 		"TSHasData",
-		"TSHasNoData" };
+		"TSHasNoData",
+		"TSID",
+		"TSPropertyIsNotDefinedOrIsEmpty",
+		"TSPropertyIsDefined",
+		"TSPropertyIsDefinedAndIsNotEmpty" };
 	return super.toString(parameters,parameterOrder);
 }
 

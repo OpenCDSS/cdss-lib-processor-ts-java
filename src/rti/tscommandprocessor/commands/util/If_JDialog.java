@@ -88,6 +88,10 @@ private JTextField __TSExists_JTextField = null;
 private JTextField __TSDoesNotExist_JTextField = null;
 private JTextField __TSHasData_JTextField = null;
 private JTextField __TSHasNoData_JTextField = null;
+private JTextField __TSID_JTextField = null;
+private JTextField __TSPropertyIsNotDefinedOrIsEmpty_JTextField = null;
+private JTextField __TSPropertyIsDefined_JTextField = null;
+private JTextField __TSPropertyIsDefinedAndIsNotEmpty_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -162,6 +166,10 @@ private void checkInput () {
     String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     String TSHasData = __TSHasData_JTextField.getText().trim();
     String TSHasNoData = __TSHasNoData_JTextField.getText().trim();
+    String TSID = __TSID_JTextField.getText().trim();
+    String TSPropertyIsNotDefinedOrIsEmpty = __TSPropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
+    String TSPropertyIsDefined = __TSPropertyIsDefined_JTextField.getText().trim();
+    String TSPropertyIsDefinedAndIsNotEmpty = __TSPropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
@@ -222,6 +230,18 @@ private void checkInput () {
     if ( TSHasNoData.length() > 0 ) {
         props.set ( "TSHasNoData", TSHasNoData );
     }
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( TSPropertyIsNotDefinedOrIsEmpty.length() > 0 ) {
+        props.set ( "TSPropertyIsNotDefinedOrIsEmpty", TSPropertyIsNotDefinedOrIsEmpty );
+    }
+    if ( TSPropertyIsDefined.length() > 0 ) {
+        props.set ( "TSPropertyIsDefined", TSPropertyIsDefined );
+    }
+    if ( TSPropertyIsDefinedAndIsNotEmpty.length() > 0 ) {
+        props.set ( "TSPropertyIsDefinedAndIsNotEmpty", TSPropertyIsDefinedAndIsNotEmpty );
+    }
     try {
         // This will warn the user.
         __command.checkCommandParameters ( props, null, 1 );
@@ -256,6 +276,10 @@ private void commitEdits () {
     String TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     String TSHasData = __TSHasData_JTextField.getText().trim();
     String TSHasNoData = __TSHasNoData_JTextField.getText().trim();
+    String TSID = __TSID_JTextField.getText().trim();
+    String TSPropertyIsNotDefinedOrIsEmpty = __TSPropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
+    String TSPropertyIsDefined = __TSPropertyIsDefined_JTextField.getText().trim();
+    String TSPropertyIsDefinedAndIsNotEmpty = __TSPropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
@@ -276,6 +300,10 @@ private void commitEdits () {
     __command.setCommandParameter ( "TSDoesNotExist", TSDoesNotExist );
     __command.setCommandParameter ( "TSHasData", TSHasData );
     __command.setCommandParameter ( "TSHasNoData", TSHasNoData );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "TSPropertyIsNotDefinedOrIsEmpty", TSPropertyIsNotDefinedOrIsEmpty );
+    __command.setCommandParameter ( "TSPropertyIsDefined", TSPropertyIsDefined );
+    __command.setCommandParameter ( "TSPropertyIsDefinedAndIsNotEmpty", TSPropertyIsDefinedAndIsNotEmpty );
 }
 
 /**
@@ -460,7 +488,7 @@ private void initialize ( JFrame parent, If_Command command ) {
         "The process is as follows."),
         0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
-        "1. Any ${Property} instances are expanded to processor property values.  Strings are surrounded in double quotes.  Nested string properties are not handled."),
+        "1. Any ${Property} instances are expanded to processor property values.  Use single quotes around strings."),
         0, ++yEvalEx, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
         "2. The expression is evaluated by EvalEx."),
@@ -691,6 +719,50 @@ private void initialize ( JFrame parent, If_Command command ) {
         "Optional - If() will be true if the specified TSID does not have data."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "TSID (for the following checks):" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JTextField = new JTextField ( 40 );
+    __TSID_JTextField.setToolTipText("Specify a time series identifier or alias to match.");
+    __TSID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSID_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - TSID or alias for the following checks."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If time series property is not defined or is empty:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSPropertyIsNotDefinedOrIsEmpty_JTextField = new JTextField ( 40 );
+    __TSPropertyIsNotDefinedOrIsEmpty_JTextField.setToolTipText("Specify a time series property name to check.");
+    __TSPropertyIsNotDefinedOrIsEmpty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSPropertyIsNotDefinedOrIsEmpty_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified time series property is not defined or is empty."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If time series property is defined:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSPropertyIsDefined_JTextField = new JTextField ( 40 );
+    __TSPropertyIsDefined_JTextField.setToolTipText("Specify a time series property name to check.");
+    __TSPropertyIsDefined_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSPropertyIsDefined_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified time series property is defined (not null)."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If time series property is defined and is not empty:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSPropertyIsDefinedAndIsNotEmpty_JTextField = new JTextField ( 40 );
+    __TSPropertyIsDefinedAndIsNotEmpty_JTextField.setToolTipText("Specify a time series property name to check.");
+    __TSPropertyIsDefinedAndIsNotEmpty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSPropertyIsDefinedAndIsNotEmpty_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Optional - If() will be true if the specified time series property is defined (not null) and is not empty."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __command_JTextArea = new JTextArea ( 4, 60 );
@@ -787,6 +859,10 @@ private void refresh () {
 	String TSDoesNotExist = "";
 	String TSHasData = "";
 	String TSHasNoData = "";
+	String TSID = "";
+	String TSPropertyIsNotDefinedOrIsEmpty = "";
+	String TSPropertyIsDefined = "";
+	String TSPropertyIsDefinedAndIsNotEmpty = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -812,6 +888,10 @@ private void refresh () {
 		TSDoesNotExist = props.getValue( "TSDoesNotExist" );
 		TSHasData = props.getValue( "TSHasData" );
 		TSHasNoData = props.getValue( "TSHasNoData" );
+		TSID = props.getValue( "TSID" );
+		TSPropertyIsNotDefinedOrIsEmpty = props.getValue( "TSPropertyIsNotDefinedOrIsEmpty" );
+		TSPropertyIsDefined = props.getValue( "TSPropertyIsDefined" );
+		TSPropertyIsDefinedAndIsNotEmpty = props.getValue( "TSPropertyIsDefinedAndIsNotEmpty" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
@@ -947,6 +1027,30 @@ private void refresh () {
             	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
             }
         }
+        if ( TSID != null ) {
+            __TSID_JTextField.setText( TSID );
+            if ( !TSID.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
+        if ( TSPropertyIsNotDefinedOrIsEmpty != null ) {
+            __TSPropertyIsNotDefinedOrIsEmpty_JTextField.setText( TSPropertyIsNotDefinedOrIsEmpty );
+            if ( !TSPropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
+        if ( TSPropertyIsDefined != null ) {
+            __TSPropertyIsDefined_JTextField.setText( TSPropertyIsDefined );
+            if ( !TSPropertyIsDefined.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
+        if ( TSPropertyIsDefinedAndIsNotEmpty != null ) {
+            __TSPropertyIsDefinedAndIsNotEmpty_JTextField.setText( TSPropertyIsDefinedAndIsNotEmpty );
+            if ( !TSPropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(this.tsTabNum);
+            }
+        }
 	}
 	// Regardless, reset the command from the fields.
 	Name = __Name_JTextField.getText().trim();
@@ -969,6 +1073,10 @@ private void refresh () {
     TSDoesNotExist = __TSDoesNotExist_JTextField.getText().trim();
     TSHasData = __TSHasData_JTextField.getText().trim();
     TSHasNoData = __TSHasNoData_JTextField.getText().trim();
+	TSID = __TSID_JTextField.getText().trim();
+	TSPropertyIsNotDefinedOrIsEmpty = __TSPropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
+	TSPropertyIsDefined = __TSPropertyIsDefined_JTextField.getText().trim();
+	TSPropertyIsDefinedAndIsNotEmpty = __TSPropertyIsDefinedAndIsNotEmpty_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.set ( "Condition", Condition );
@@ -990,6 +1098,10 @@ private void refresh () {
     props.add ( "TSDoesNotExist=" + TSDoesNotExist );
     props.add ( "TSHasData=" + TSHasData );
     props.add ( "TSHasNoData=" + TSHasNoData );
+    props.add ( "TSID=" + TSID );
+    props.add ( "TSPropertyIsNotDefinedOrIsEmpty=" + TSPropertyIsNotDefinedOrIsEmpty );
+    props.add ( "TSPropertyIsDefined=" + TSPropertyIsDefined );
+    props.add ( "TSPropertyIsDefinedAndIsNotEmpty=" + TSPropertyIsDefinedAndIsNotEmpty );
     __command_JTextArea.setText( __command.toString(props).trim() );
 }
 

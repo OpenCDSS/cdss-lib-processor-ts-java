@@ -313,7 +313,7 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     __main_JTabbedPane.addTab ( "Property", prop_JPanel );
 
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
-		"The property name can be set using ${Property}, % specifiere, and ${ts:Property} syntax to use property names specific to a time series."),
+		"The property name can be set using ${Property}, % specifier, and ${ts:Property} syntax to use property names specific to a time series."),
 		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
 		"The property value can include a combination of:"),
@@ -364,7 +364,7 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 		"Properties can be set based on the time series data value and flag for a date/time."),
 		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-		"The property name can be set using ${Property}, % specifiere, and ${ts:Property} syntax to use property names specific to a time series."),
+		"The property name can be set using ${Property}, % specifier, and ${ts:Property} syntax to use property names specific to a time series."),
 		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -250,15 +251,20 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(8);
+    List<String> validList = new ArrayList<>(9);
+    // Input.
 	validList.add ( "InputFile" );
-	validList.add ( "RunDiscovery" );
-    validList.add ( "ExpectedStatus" );
-    validList.add ( "ShareProperties" );
-    validList.add ( "ShareDataStores" );
+	// Output.
     validList.add ( "AppendOutputFiles" );
     validList.add ( "WarningCountProperty" );
     validList.add ( "FailureCountProperty" );
+	// Shared Data.
+    validList.add ( "ShareDataStores" );
+	validList.add ( "IncludeProperties" );
+	validList.add ( "ExcludeProperties" );
+	// Test.
+	validList.add ( "RunDiscovery" );
+    validList.add ( "ExpectedStatus" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -327,7 +333,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputFile = parameters.getValue ( "InputFile" );
 	String RunDiscovery = parameters.getValue ( "RunDiscovery" );
 	// Default to false because RunCommands command file is not edited from the RunCommands command.
-	boolean runDiscovery = false; 
+	boolean runDiscovery = false;
 	if ( (RunDiscovery != null) && RunDiscovery.equalsIgnoreCase("True") ) {
 	    runDiscovery = true;
 	}
@@ -340,6 +346,75 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
         ShareDataStores = _Share; // Default is to share datastores.
     }
+    
+    // Determine the properties to pass to the command runner:
+    // - since this method is only executed in run mode, expand the properties to handle nested properties, if any exist
+    boolean doProperties = false;
+    String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+    IncludeProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeProperties);
+    String ExcludeProperties = parameters.getValue ( "ExcludeProperties" );
+    ExcludeProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeProperties);
+    // Get the processor property names.
+    boolean includeBuiltInProperties = true;
+    boolean includeDynamicProperties = true;
+    Collection<String> propNames = tsprocessor.getPropertyNameList ( includeBuiltInProperties, includeDynamicProperties );
+    List<String> includePropNames = new ArrayList<>();
+    if ( (IncludeProperties != null) && !IncludeProperties.isEmpty() ) {
+    	// Split and trim the include properties.
+    	String [] includeProperties0 = IncludeProperties.split(",");
+    	String [] includeProperties = new String[includeProperties0.length];
+    	for ( int i = 0; i < includeProperties0.length; i++ ) {
+    		includeProperties[i] = includeProperties0[i].trim();
+    	}
+    	if ( includeProperties.length > 0 ) {
+    		doProperties = true;
+    	}
+    	String [] excludeProperties = null;
+    	if ( (ExcludeProperties != null) && !ExcludeProperties.isEmpty() ) {
+    		String [] excludeProperties0 = ExcludeProperties.split(",");
+    		excludeProperties = new String[includeProperties0.length];
+    		for ( int i = 0; i < excludeProperties0.length; i++ ) {
+    			excludeProperties[i] = excludeProperties0[i].trim();
+    		}
+    	}
+    	// Loop through requested include properties.
+    	for ( String includeProperty : includeProperties ) {
+    		String includePattern = null;
+    		if ( includeProperty.contains("*") ) {
+    			includePattern = includeProperty.replace("*",".*");
+    		}
+    		// Loop through the available processor properties.
+    		for ( String propName : propNames ) {
+    			if ( propName.equals(includeProperty) || ((includePattern != null) && propName.matches(includePattern))) {
+    				// The property name matches one that should be included:
+    				// - don't include if it is in the exclude list
+    				boolean doInclude = true;
+    				if ( excludeProperties != null ) {
+    					for ( String excludeProperty : excludeProperties ) {
+    						String excludePattern = null;
+    						if ( excludeProperty.contains("*") ) {
+    							excludePattern = excludeProperty.replace("*",".*");
+    						}
+    						if ( propName.equals(excludeProperty) || ((excludePattern != null) && propName.matches(excludePattern))) {
+    							// Exclude the property.
+    							doInclude = false;
+    							break;
+    						}
+    					}
+    					// If here check whether included.
+    					if ( !doInclude ) {
+    						// Skip the include below.
+    						continue;
+    					}
+    				}
+    				// If here the property should be included:
+    				// - the property value will be determined below when initializing the TSCommandFileRunner.
+    				includePropNames.add(propName);
+    			}
+    		}
+    	}
+    }
+
     // TODO smalers 2022-06-21 this is not enabled.  Need to implement for each major output.  See AppendOutputFiles.
 	String AppendResults = parameters.getValue ( "AppendResults" );
 	String AppendOutputFiles = parameters.getValue ( "AppendOutputFiles" );
@@ -370,10 +445,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 
 		// Create a runner for the commands, which will create a new command processor:
-		// - the initial application properties from the current processor are passed to the new processor
-		TSCommandFileRunner runner = new TSCommandFileRunner (
-			tsprocessor.getInitialPropList(),
-			tsprocessor.getPluginCommandClasses());
+		// - the initial application properties from the current processor (from the command line) are always passed to the new processor
+		// - additionally, if any parent processor properties are to be included, add to the initial properties
+
+		TSCommandFileRunner runner = null;
+		
+		if ( doProperties ) {
+			// Combine the properties of interest with the initial properties.
+			PropList allPropList = new PropList ( tsprocessor.getInitialPropList(), true);
+			// Add properties to be included.
+			for ( String propName : includePropNames ) {
+				Prop prop = tsprocessor.getProp(propName);
+				if ( prop != null ) {
+					allPropList.set(prop);
+				}
+			}
+			runner = new TSCommandFileRunner (
+				allPropList,
+				tsprocessor.getPluginCommandClasses());
+		}
+		else {
+			// Just use the initial 
+			runner = new TSCommandFileRunner (
+				tsprocessor.getInitialPropList(),
+				tsprocessor.getPluginCommandClasses());
+		}
 
 		// Must set the datastores regardless of whether enabled because they are used by "@enabledif".
         TSCommandProcessor runnerProcessor = runner.getProcessor();
@@ -621,14 +717,19 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// Input.
 		"InputFile",
-		"RunDiscovery",
-    	"ExpectedStatus",
-    	//"ShareProperties",
-    	"ShareDataStores",
+		// Output.
     	"AppendOutputFiles",
     	"WarningCountProperty",
-    	"FailureCountProperty"
+    	"FailureCountProperty",
+    	// Shared data.
+    	"ShareDataStores",
+    	"IncludeProperties",
+    	"ExcludeProperties",
+    	// Test.
+		"RunDiscovery",
+    	"ExpectedStatus"
 	};
 	return this.toString(parameters, parameterOrder);
 }

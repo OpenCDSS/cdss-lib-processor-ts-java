@@ -425,7 +425,7 @@ private void initialize ( JFrame parent, SetProperty_Command command ) {
         "The process is as follows."),
         0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
-        "1. Any ${Property} instances are expanded to processor property values.  Strings are surrounded in double quotes.  Nested string properties are not handled."),
+        "1. Any ${Property} instances are expanded to processor property values.  Use single quotes around strings."),
         0, ++yEvalEx, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(evalEx_JPanel, new JLabel (
         "2. The expression is evaluated by EvalEx."),

@@ -365,34 +365,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
             }
+		    // Set the property indicating the number of rows in the table:
+		    // - this should happen even if no rows were copied
+	        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
+	            int rowCount = 0;
+	            if ( newTable != null ) {
+	                rowCount = newTable.getNumberOfRecords();
+	            }
+	            request_params = new PropList ( "" );
+	            request_params.setUsingObject ( "PropertyName", RowCountProperty );
+	            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
+	            try {
+	                processor.processRequest( "SetProperty", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+	                Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
+	            }
+	        }
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty table and set the ID.
             newTable = new DataTable();
             newTable.setTableID ( NewTableID );
             setDiscoveryTable ( newTable );
-        }
-	    // Set the property indicating the number of rows in the table.
-        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
-            int rowCount = 0;
-            if ( newTable != null ) {
-                rowCount = newTable.getNumberOfRecords();
-            }
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "PropertyName", RowCountProperty );
-            request_params.setUsingObject ( "PropertyValue", Integer.valueOf(rowCount) );
-            try {
-                processor.processRequest( "SetProperty", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-            }
         }
 	}
 	catch ( Exception e ) {

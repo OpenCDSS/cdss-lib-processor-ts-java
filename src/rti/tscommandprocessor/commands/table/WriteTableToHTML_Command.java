@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -58,6 +59,12 @@ public class WriteTableToHTML_Command extends AbstractCommand implements Command
 {
 
 /**
+Data values for boolean parameters.
+*/
+protected String _False = "False";
+protected String _True = "True";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -79,8 +86,9 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
-	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
+	String IncludeDocument = parameters.getValue ( "IncludeDocument" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -143,10 +151,21 @@ throws InvalidCommandParameterException {
 		}
 	}
 
+	if ( (IncludeDocument != null) && !IncludeDocument.isEmpty() ) {
+		if ( !IncludeDocument.equalsIgnoreCase(_True) && !IncludeDocument.equalsIgnoreCase(_False) ) {
+            message = "Invalid IncludeDocument parameter \"" + IncludeDocument + "\"";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify " + _False + " or " + _True + " (default)." ) );
+		}
+	}
+
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(2);
-	validList.add ( "OutputFile" );
+	List<String> validList = new ArrayList<>(3);
 	validList.add ( "TableID" );
+	validList.add ( "OutputFile" );
+	validList.add ( "IncludeDocument" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -230,12 +249,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
     // Get the table information.
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
+
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile_full = OutputFile;
+
+    String IncludeDocument = parameters.getValue ( "IncludeDocument" );
+    if ( commandPhase == CommandPhaseType.RUN ) {
+   		IncludeDocument = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeDocument);
+    }
+    boolean includeDocument = true;
+    if ( (IncludeDocument != null) && IncludeDocument.equalsIgnoreCase(this._False) ) {
+    	includeDocument = false;
+    }
+    
+    // Get the table to output.
+    
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
     CommandProcessorRequestResultsBean bean = null;
@@ -281,7 +313,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 		Message.printStatus ( 2, routine, "Writing HTML file \"" + OutputFile_full + "\"" );
-		warning_count = writeTable ( table, OutputFile_full, warning_level, command_tag, warning_count );
+		warning_count = writeTable (
+			table,
+			OutputFile_full,
+			includeDocument,
+			warning_level, command_tag, warning_count );
 		// Save the output file name.
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -314,7 +350,8 @@ Return the string representation of the command.
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
 		"TableID",
-		"OutputFile"
+		"OutputFile",
+		"IncludeDocument"
 	};
 	return this.toString(parameters, parameterOrder);
 }
@@ -322,10 +359,11 @@ public String toString ( PropList parameters ) {
 /**
 Write a table to an HTML file.
 @param table Table to write.
+@param includeDocument if true, write the surrounding document (if false just output the <table> and encluded elements)
 @param OutputFile name of file to write.
 @exception IOException if there is an error writing the file.
 */
-private int writeTable ( DataTable table, String OutputFile, int warning_level, String command_tag, int warning_count )
+private int writeTable ( DataTable table, String OutputFile, boolean includeDocument, int warning_level, String command_tag, int warning_count )
 throws IOException {
 	String routine = getClass().getSimpleName() + ".writeTable";
 	String message;
@@ -342,13 +380,13 @@ throws IOException {
 
     // Get the comments to add to the top of the file.
 
-    List<String> OutputComments_Vector = null;
+    List<String> OutputCommentsList = null;
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them.
         if ( o != null ) {
             @SuppressWarnings("unchecked")
 			List<String> outputCommentsList = (List<String>)o;
-            OutputComments_Vector = outputCommentsList;
+            OutputCommentsList = outputCommentsList;
         }
     }
     catch ( Exception e ) {
@@ -359,8 +397,18 @@ throws IOException {
 
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
-		DataTableHtmlWriter tableWriter = new DataTableHtmlWriter(table);
-		tableWriter.writeHtmlFile(OutputFile, true, OutputComments_Vector, null, (HashMap<Integer,String>)null, null );
+		DataTableHtmlWriter tableWriter = new DataTableHtmlWriter ( table );
+		boolean writeTableHeader = true;
+		int [][] styleMaskArray = null;
+		HashMap<Integer,String> stylesMap = null;
+		String customStyleText = null;
+		Map<String,Object> propertyMap = new HashMap<>();
+		propertyMap.put("IncludeDocument", Boolean.valueOf(Boolean.FALSE));
+		tableWriter.writeHtmlFile (
+			OutputFile, writeTableHeader,
+			OutputCommentsList,
+			styleMaskArray, stylesMap, customStyleText,
+			propertyMap );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";

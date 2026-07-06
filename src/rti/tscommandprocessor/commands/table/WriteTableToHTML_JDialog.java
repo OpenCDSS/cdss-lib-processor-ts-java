@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2024 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -79,6 +80,7 @@ private SimpleJButton __path_JButton = null;
 private WriteTableToHTML_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private SimpleJComboBox __IncludeDocument_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private String __working_dir = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -175,16 +177,20 @@ This should be called before response() is allowed to complete.
 private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
-	String OutputFile = __OutputFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String IncludeDocument = __IncludeDocument_JComboBox.getSelected();
 
 	__error_wait = false;
 
+    if ( (TableID != null) && TableID.length() > 0 ) {
+        parameters.set ( "TableID", TableID );
+    }
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-    if ( (TableID != null) && TableID.length() > 0 ) {
-        parameters.set ( "TableID", TableID );
+    if ( (IncludeDocument != null) && !IncludeDocument.isEmpty() ) {
+        parameters.set ( "IncludeDocument", IncludeDocument );
     }
 	try {
 	    // This will warn the user.
@@ -203,8 +209,10 @@ Commit the edits to the command.  In this case the command parameters have alrea
 private void commitEdits () {
     String TableID = __TableID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String IncludeDocument = __IncludeDocument_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "IncludeDocument", IncludeDocument );
 }
 
 /**
@@ -230,6 +238,9 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command ) {
 		"Write a table to an HTML file, which can be specified using a full or " +
 		"relative path (relative to the working directory)."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The output can be a full file (default) or only the enclosing <table> elements."),
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ),
@@ -237,29 +248,6 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command ) {
 	 }
      JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	 __OutputFile_JTextField = new JTextField ( 50 );
-	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
-	 __OutputFile_JTextField.addKeyListener ( this );
-	    // Output file layout fights back with other rows so put in its own panel.
-		JPanel OutputFile_JPanel = new JPanel();
-		OutputFile_JPanel.setLayout(new GridBagLayout());
-	    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
-			0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-		__browse_JButton = new SimpleJButton ( "...", this );
-		__browse_JButton.setToolTipText("Browse for file");
-	    JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
-			1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		if ( __working_dir != null ) {
-			// Add the button to allow conversion to/from relative path.
-			__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
-			JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
-				2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		}
-		JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
-			1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -275,6 +263,46 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command ) {
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
     	 3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	 __OutputFile_JTextField = new JTextField ( 50 );
+	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	 __OutputFile_JTextField.addKeyListener ( this );
+    // Output file layout fights back with other rows so put in its own panel.
+	JPanel OutputFile_JPanel = new JPanel();
+	OutputFile_JPanel.setLayout(new GridBagLayout());
+    JGUIUtil.addComponent(OutputFile_JPanel, __OutputFile_JTextField,
+		0, 0, 1, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(OutputFile_JPanel, __browse_JButton,
+		1, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path.
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
+		JGUIUtil.addComponent(OutputFile_JPanel, __path_JButton,
+			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
+	JGUIUtil.addComponent(main_JPanel, OutputFile_JPanel,
+		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include document?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> Doc_List = new ArrayList<>( 3 );
+	Doc_List.add ( "" );
+	Doc_List.add ( __command._False );
+	Doc_List.add ( __command._True );
+	__IncludeDocument_JComboBox = new SimpleJComboBox ( false );
+	__IncludeDocument_JComboBox.setToolTipText("Output the HTML document elements.");
+	__IncludeDocument_JComboBox.setData ( Doc_List);
+	__IncludeDocument_JComboBox.select ( 0 );
+	__IncludeDocument_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeDocument_JComboBox,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - include HTML document elements (default=" + __command._True + ")."),
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -353,19 +381,19 @@ Refresh the command from the other text field contents.
 */
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
-	String OutputFile = "";
     String TableID = "";
+	String OutputFile = "";
+	String IncludeDocument = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command.
 		parameters = __command.getCommandParameters();
-		OutputFile = parameters.getValue ( "OutputFile" );
         TableID = parameters.getValue ( "TableID" );
-		if ( OutputFile != null ) {
-			__OutputFile_JTextField.setText (OutputFile);
-		}
+		OutputFile = parameters.getValue ( "OutputFile" );
+		IncludeDocument = parameters.getValue ( "IncludeDocument" );
+		// Populate the editor data from the command parameters.
         if ( TableID == null ) {
             // Select default.
             if ( __TableID_JComboBox.getItemCount() > 0 ) {
@@ -383,14 +411,38 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+		if ( OutputFile != null ) {
+			__OutputFile_JTextField.setText (OutputFile);
+		}
+        if ( IncludeDocument == null ) {
+            // Select default.
+            if ( __IncludeDocument_JComboBox.getItemCount() > 0 ) {
+                __IncludeDocument_JComboBox.select ( 0 );
+            }
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IncludeDocument_JComboBox,IncludeDocument, JGUIUtil.NONE, null, null ) ) {
+                __IncludeDocument_JComboBox.select ( IncludeDocument );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIncludeDocument value \"" + IncludeDocument +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields.
-	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
+	OutputFile = __OutputFile_JTextField.getText().trim();
+    IncludeDocument = __IncludeDocument_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
-	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
 	    parameters.add ( "TableID=" + TableID );
+	}
+	parameters.add ( "OutputFile=" + OutputFile );
+	if ( IncludeDocument != null ) {
+	    parameters.add ( "IncludeDocument=" + IncludeDocument );
 	}
 	__command_JTextArea.setText( __command.toString ( parameters ).trim() );
 	// Check the path and determine what the label on the path button should be.

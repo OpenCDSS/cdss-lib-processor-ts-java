@@ -434,7 +434,7 @@ private void checkInput () {
     if ( DataStoreSchema.length() > 0 ) {
         props.set ( "DataStoreSchema", DataStoreSchema );
     }
-	if ( DataStoreTable.length() > 0 ) {
+	if ( (DataStoreTable != null) && !DataStoreTable.isEmpty() ) {
 		props.set ( "DataStoreTable", DataStoreTable );
 	}
     if ( DataStoreColumns.length() > 0 ) {

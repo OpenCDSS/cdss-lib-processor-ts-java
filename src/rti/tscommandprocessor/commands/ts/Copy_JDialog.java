@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2022 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -88,8 +88,8 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Copy_JDialog ( JFrame parent, Copy_Command command )
-{	super(parent, true);
+public Copy_JDialog ( JFrame parent, Copy_Command command ) {
+	super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -97,8 +97,8 @@ public Copy_JDialog ( JFrame parent, Copy_Command command )
 Responds to ActionEvents.
 @param event ActionEvent object
 */
-public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+public void actionPerformed( ActionEvent event ) {
+	Object o = event.getSource();
 	String routine = "Copy_JDialog.actionPerformed";
 
 	if ( o == __cancel_JButton ) {
@@ -126,8 +126,7 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" + NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -143,7 +142,7 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
-//Start event handlers for DocumentListener...
+// Start event handlers for DocumentListener...
 
 /**
 Handle DocumentEvent events.
@@ -172,11 +171,11 @@ public void removeUpdate ( DocumentEvent e ) {
 // ...End event handlers for DocumentListener
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the input.  If errors exist, warn the user and set the __error_wait flag to true.
+This should be called before response() is allowed to complete.
 */
-private void checkInput ()
-{	// Check parameter values.
+private void checkInput () {
+	// Check parameter values.
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
@@ -211,11 +210,11 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command parameters have
-already been checked and no errors were detected.
+Commit the edits to the command.
+In this case the command parameters have already been checked and no errors were detected.
 */
-private void commitEdits ()
-{	String Alias = __Alias_JTextField.getText().trim();
+private void commitEdits () {
+	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
     String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
@@ -233,8 +232,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Copy_Command command )
-{	__parent_JFrame = parent;
+private void initialize ( JFrame parent, Copy_Command command ) {
+	__parent_JFrame = parent;
 	__command = command;
 
 	addWindowListener( this );
@@ -341,7 +340,7 @@ private void initialize ( JFrame parent, Copy_Command command )
 	// Refresh the contents.
 	refresh();
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -366,15 +365,15 @@ private void initialize ( JFrame parent, Copy_Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged ( ItemEvent e )
-{	refresh();
+public void itemStateChanged ( ItemEvent e ) {
+	refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
-public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+public void keyPressed ( KeyEvent event ) {
+	int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh();
@@ -385,25 +384,26 @@ public void keyPressed ( KeyEvent event )
 	}
 }
 
-public void keyReleased ( KeyEvent event )
-{	refresh();
+public void keyReleased ( KeyEvent event ) {
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event ) {;}
+public void keyTyped ( KeyEvent event ) {
+}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user canceled.
 */
-public boolean ok ()
-{	return __ok;
+public boolean ok () {
+	return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+private void refresh () {
+	String routine = getClass().getName() + ".refresh";
     String Alias = "";
 	String TSID = "";
 	String NewTSID = "";
@@ -490,11 +490,10 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
-private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
+private void response ( boolean ok ) {
+	__ok = ok;	// Save to be returned by ok().
 	if ( ok ) {
 		// Commit the changes.
 		commitEdits ();
@@ -512,8 +511,8 @@ private void response ( boolean ok )
 Responds to WindowEvents.
 @param event WindowEvent object
 */
-public void windowClosing( WindowEvent event )
-{	response ( false );
+public void windowClosing( WindowEvent event ) {
+	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ) {

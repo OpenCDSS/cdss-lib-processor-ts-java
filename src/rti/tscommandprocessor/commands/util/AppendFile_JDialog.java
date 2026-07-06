@@ -280,7 +280,8 @@ private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
-    String AppendText = __AppendText_JTextArea.getText().trim();
+	// Don't trim the input text.
+    String AppendText = __AppendText_JTextArea.getText();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeText = __IncludeText_JTextField.getText().trim();
 	String ExcludeText = __ExcludeText_JTextField.getText().trim();
@@ -324,7 +325,8 @@ Commit the edits to the command.  In this case the command parameters have alrea
 */
 private void commitEdits () {
 	String InputFile = __InputFile_JTextField.getText().trim();
-    String AppendText = __AppendText_JTextArea.getText().trim().replace("\n", "\\n").replace("\t", " ");
+	// Don't trim the text.
+    String AppendText = __AppendText_JTextArea.getText().replace("\n", "\\n").replace("\t", " ");
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
     String ExcludeText = __ExcludeText_JTextField.getText().trim();
@@ -626,7 +628,8 @@ private void refresh () {
 	// Regardless, reset the command from the fields.
 	// This is only  visible information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	AppendText = __AppendText_JTextArea.getText().trim();
+	// Do not trim the text.
+	AppendText = __AppendText_JTextArea.getText();
     if ( AppendText != null ) {
     	// Replace internal newline with escaped string for command text.
 		Message.printStatus(2,routine,"Replacing actual newline with escaped newline in AppendText parameter value.");

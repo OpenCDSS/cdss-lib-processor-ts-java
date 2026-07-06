@@ -41,6 +41,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -76,17 +77,19 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
 private RunCommands_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private String __working_dir = null;
 private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __RunDiscovery_JComboBox = null;
-private SimpleJComboBox __ExpectedStatus_JComboBox = null;
-//private SimpleJComboBox __ShareProperties_JComboBox = null;
 private SimpleJComboBox __ShareDataStores_JComboBox = null;
+private JTextField __IncludeProperties_JTextField = null;
+private JTextField __ExcludeProperties_JTextField = null;
 private SimpleJComboBox __AppendOutputFiles_JComboBox = null;
 private JTextField __WarningCountProperty_JTextField = null;
 private JTextField __FailureCountProperty_JTextField = null;
+private SimpleJComboBox __ExpectedStatus_JComboBox = null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up.
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -192,6 +195,8 @@ private void checkInput () {
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
     //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     String AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
 	String WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
 	String FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
@@ -210,6 +215,12 @@ private void checkInput () {
     //}
     if ( ShareDataStores.length() > 0 ) {
         props.set ( "ShareDataStores", ShareDataStores );
+    }
+    if ( IncludeProperties.length() > 0 ) {
+        props.set ( "IncludeProperties", IncludeProperties );
+    }
+    if ( ExcludeProperties.length() > 0 ) {
+        props.set ( "ExcludeProperties", ExcludeProperties );
     }
     if ( AppendOutputFiles.length() > 0 ) {
         props.set ( "AppendOutputFiles", AppendOutputFiles );
@@ -238,16 +249,18 @@ private void commitEdits () {
 	String InputFile = __InputFile_JTextField.getText().trim();
     String RunDiscovery = __RunDiscovery_JComboBox.getSelected();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
-    //String ShareProperties = __ShareProperties_JComboBox.getSelected();
     String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     String AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
 	String WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
 	String FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "RunDiscovery", RunDiscovery );
     __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
-    //__command.setCommandParameter ( "ShareProperties", ShareProperties );
     __command.setCommandParameter ( "ShareDataStores", ShareDataStores );
+    __command.setCommandParameter ( "IncludeProperties", IncludeProperties );
+    __command.setCommandParameter ( "ExcludeProperties", ExcludeProperties );
     __command.setCommandParameter ( "AppendOutputFiles", AppendOutputFiles );
     __command.setCommandParameter ( "WarningCountProperty", WarningCountProperty );
     __command.setCommandParameter ( "FailureCountProperty", FailureCountProperty );
@@ -276,29 +289,44 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a command file and run the commands using a separate command processor." ),
+		"Read a command file and run the commands using a separate command processor, which is useful for:" ),
 		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Parent command processor datastores can be shared with the processor for the command file." ),
-        0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Results are cleared before processing each command file." ),
+		"   1) Running shared commands from multiple steps in a workflow." ),
 		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The (success/warning/failure) status from the command file is used for the RunCommands() command status." ),
-        0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		"   2) Running a large workflow by running a sequence of command files." ),
+		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working directory)." ),
+		"   3) Automated testing." ),
 		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ),
-		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to run:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for input.
+    int yInput = -1;
+    JPanel input_JPanel = new JPanel();
+    input_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", input_JPanel );
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+        "Specify the input file for the command as a full or relative path (relative to working directory)." ),
+		0, ++yInput, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	if ( __working_dir != null ) {
+        JGUIUtil.addComponent(input_JPanel, new JLabel ( "The working directory is:" ),
+		0, ++yInput, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(input_JPanel, new JLabel ( "   " + __working_dir ),
+		0, ++yInput, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	}
+    JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Command file to run:" ),
+		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText("Specify the file to remove or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
@@ -317,28 +345,138 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 		JGUIUtil.addComponent(InputFile_JPanel, __path_JButton,
 			2, 0, 1, 1, 0.0, 0.0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(main_JPanel, InputFile_JPanel,
-		1, y, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(input_JPanel, InputFile_JPanel,
+		1, yInput, 6, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run discovery?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __RunDiscovery_JComboBox = new SimpleJComboBox ( false );
-    __RunDiscovery_JComboBox.setToolTipText("Should discovery mode be run when loading the commands in the command file?");
-    List<String> discoveryChoices = new ArrayList<>();
-    discoveryChoices.add ( "" ); // Default.
-    discoveryChoices.add ( __command._False );
-    discoveryChoices.add ( __command._True );
-    __RunDiscovery_JComboBox.setData(discoveryChoices);
-    __RunDiscovery_JComboBox.select ( 0 );
-    __RunDiscovery_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RunDiscovery_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - run discovery on loaded commands (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // Panel for output.
+    int yOutput = -1;
+    JPanel output_JPanel = new JPanel();
+    output_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", output_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "These parameters specify the output for the command."),
+        0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"Results in the 'RunCommands' processor are cleared before processing each command file." ),
+		0, ++yOutput, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "The (success/warning/failure) status from processing the command file is used for the RunCommands() command status." ),
+        0, ++yOutput, 8, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Append output files?:"),
+            0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AppendOutputFiles_JComboBox = new SimpleJComboBox ( false );
+    __AppendOutputFiles_JComboBox.setToolTipText("Should output files from the command file be added to the full output file list?");
+    List<String> appendFilesChoices = new ArrayList<>();
+    appendFilesChoices.add ( "" ); // Default.
+    appendFilesChoices.add ( __command._False );
+    appendFilesChoices.add ( __command._True );
+    __AppendOutputFiles_JComboBox.setData(appendFilesChoices);
+    __AppendOutputFiles_JComboBox.select ( 0 );
+    __AppendOutputFiles_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __AppendOutputFiles_JComboBox,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel(
+        "Optional - append output files (default=" + __command._False + ")."),
+        3, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Warning count property:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WarningCountProperty_JTextField = new JTextField ( "", 30 );
+    __WarningCountProperty_JTextField.setToolTipText("Specify the property name for warning count, can use ${Property} notation");
+    __WarningCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __WarningCountProperty_JTextField,
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as warning count." ),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Failure count property:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FailureCountProperty_JTextField = new JTextField ( "", 30 );
+    __FailureCountProperty_JTextField.setToolTipText("Specify the property name for failure count, can use ${Property} notation");
+    __FailureCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __FailureCountProperty_JTextField,
+        1, yOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Optional - processor property to set as failure count." ),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for shared data.
+    int yParent = -1;
+    JPanel parent_JPanel = new JPanel();
+    parent_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Shared Data", parent_JPanel );
+
+    JGUIUtil.addComponent(parent_JPanel, new JLabel (
+        "Parent command processor datastores can be shared with the processor for the command file." ),
+        0, ++yParent, 7, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JLabel (
+        "Application command line parameters are automatically shared as properties." ),
+        0, ++yParent, 7, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JLabel (
+        "The parent processor properties can optionally be shared." ),
+        0, ++yParent, 7, 1, 1.0, 0.0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yParent, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(parent_JPanel, new JLabel ( "Share parent datastores?:"),
+            0, ++yParent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
+    List<String> shareChoices = new ArrayList<>();
+    shareChoices.add ( "" ); // Default.
+    //shareChoices.add ( __command._Copy ); // Too difficult?
+    shareChoices.add ( __command._DoNotShare );
+    shareChoices.add ( __command._Share );
+    __ShareDataStores_JComboBox.setData(shareChoices);
+    __ShareDataStores_JComboBox.select ( 0 );
+    __ShareDataStores_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(parent_JPanel, __ShareDataStores_JComboBox,
+        1, yParent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JLabel(
+        "Optional - share datastores (default=" + __command._Share + ")."),
+        3, yParent, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(parent_JPanel, new JLabel ( "Processor properties to include:" ),
+        0, ++yParent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeProperties_JTextField = new JTextField ( 40 );
+    __IncludeProperties_JTextField.setToolTipText("Comma-separated list of properties to include, can use *");
+    __IncludeProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(parent_JPanel, __IncludeProperties_JTextField,
+        1, yParent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JLabel(
+        "Optional - names of properties to include (default=none)."),
+        3, yParent, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(parent_JPanel, new JLabel ( "Processor properties to exclude:" ),
+        0, ++yParent, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeProperties_JTextField = new JTextField ( 40 );
+    __ExcludeProperties_JTextField.setToolTipText("Comma-separated list of processor properties to exclude, can use *");
+    __ExcludeProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(parent_JPanel, __ExcludeProperties_JTextField,
+        1, yParent, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(parent_JPanel, new JLabel(
+        "Optional - names of properties to exclude (default=exclude none)."),
+        3, yParent, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for testing.
+    int yTest = -1;
+    JPanel test_JPanel = new JPanel();
+    test_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Test", test_JPanel );
+
+    JGUIUtil.addComponent(test_JPanel, new JLabel (
+        "These parameters are used for software testing."),
+        0, ++yTest, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(test_JPanel, new JLabel (
+        "Discovery mode is generally not needed because the commands are run in batch mode without interactive editing."),
+        0, ++yTest, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(test_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTest, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(test_JPanel, new JLabel ( "Expected status:"),
+            0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExpectedStatus_JComboBox = new SimpleJComboBox ( false );
     List<String> statusChoices = new ArrayList<>();
     statusChoices.add ( "" );   // Default.
@@ -349,82 +487,28 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
     __ExpectedStatus_JComboBox.setData(statusChoices);
     __ExpectedStatus_JComboBox.select ( 0 );
     __ExpectedStatus_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ExpectedStatus_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(test_JPanel, __ExpectedStatus_JComboBox,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(test_JPanel, new JLabel(
         "Optional - use for testing (default=" + __command._Success + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent workflow properties?:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ShareProperties_JComboBox = new SimpleJComboBox ( false );
-    __ShareProperties_JComboBox.addItem ( "" );   // Default
-    __ShareProperties_JComboBox.addItem ( __command._Copy );
-    __ShareProperties_JComboBox.addItem ( __command._DoNotShare );
-    __ShareProperties_JComboBox.addItem ( __command._Share );
-    __ShareProperties_JComboBox.select ( 0 );
-    __ShareProperties_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ShareProperties_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - share properties (default=" + __command._DoNotShare + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent datastores?:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
-    List<String> shareChoices = new ArrayList<>();
-    shareChoices.add ( "" ); // Default.
-    //shareChoices.add ( __command._Copy ); // Too difficult?
-    shareChoices.add ( __command._DoNotShare );
-    shareChoices.add ( __command._Share );
-    __ShareDataStores_JComboBox.setData(shareChoices);
-    __ShareDataStores_JComboBox.select ( 0 );
-    __ShareDataStores_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ShareDataStores_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - share datastores (default=" + __command._Share + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append output files?:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AppendOutputFiles_JComboBox = new SimpleJComboBox ( false );
-    __AppendOutputFiles_JComboBox.setToolTipText("Should output files from the command file be added to the full output file list?");
-    List<String> appendFilesChoices = new ArrayList<>();
-    appendFilesChoices.add ( "" ); // Default.
-    appendFilesChoices.add ( __command._False );
-    appendFilesChoices.add ( __command._True );
-    __AppendOutputFiles_JComboBox.setData(appendFilesChoices);
-    __AppendOutputFiles_JComboBox.select ( 0 );
-    __AppendOutputFiles_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AppendOutputFiles_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - append output files (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Warning count property:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __WarningCountProperty_JTextField = new JTextField ( "", 20 );
-    __WarningCountProperty_JTextField.setToolTipText("Specify the property name for warning count, can use ${Property} notation");
-    __WarningCountProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WarningCountProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as warning count." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Failure count property:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FailureCountProperty_JTextField = new JTextField ( "", 20 );
-    __FailureCountProperty_JTextField.setToolTipText("Specify the property name for failure count, can use ${Property} notation");
-    __FailureCountProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __FailureCountProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as failure count." ),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(test_JPanel, new JLabel ( "Run discovery?:"),
+        0, ++yTest, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RunDiscovery_JComboBox = new SimpleJComboBox ( false );
+    __RunDiscovery_JComboBox.setToolTipText("Should discovery mode be run when loading the commands in the command file?");
+    List<String> discoveryChoices = new ArrayList<>();
+    discoveryChoices.add ( "" ); // Default.
+    discoveryChoices.add ( __command._False );
+    discoveryChoices.add ( __command._True );
+    __RunDiscovery_JComboBox.setData(discoveryChoices);
+    __RunDiscovery_JComboBox.select ( 0 );
+    __RunDiscovery_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(test_JPanel, __RunDiscovery_JComboBox,
+        1, yTest, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(test_JPanel, new JLabel(
+        "Optional - run discovery on loaded commands (default=" + __command._False + ")."),
+        3, yTest, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -435,7 +519,7 @@ private void initialize ( JFrame parent, RunCommands_Command command ) {
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// South Panel: North
+	// Panel for buttons.
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
@@ -496,8 +580,9 @@ private void refresh () {
     String InputFile = "";
     String RunDiscovery = "";
     String ExpectedStatus = "";
-    //String ShareProperties = "";
     String ShareDataStores = "";
+    String IncludeProperties = "";
+    String ExcludeProperties = "";
     String AppendOutputFiles = "";
     String WarningCountProperty = "";
     String FailureCountProperty = "";
@@ -509,8 +594,9 @@ private void refresh () {
 		InputFile = props.getValue ( "InputFile" );
 		RunDiscovery = props.getValue ( "RunDiscovery" );
         ExpectedStatus = props.getValue ( "ExpectedStatus" );
-        //ShareProperties = props.getValue ( "ShareProperties" );
         ShareDataStores = props.getValue ( "ShareDataStores" );
+        IncludeProperties = props.getValue ( "IncludeProperties" );
+        ExcludeProperties = props.getValue ( "ExcludeProperties" );
         AppendOutputFiles = props.getValue ( "AppendOutputFiles" );
         WarningCountProperty = props.getValue ( "WarningCountProperty" );
         FailureCountProperty = props.getValue ( "FailureCountProperty" );
@@ -580,6 +666,12 @@ private void refresh () {
                 ShareDataStores + "\".  Correct or Cancel." );
             }
         }
+        if ( IncludeProperties != null ) {
+            __IncludeProperties_JTextField.setText ( IncludeProperties );
+        }
+        if ( ExcludeProperties != null ) {
+            __ExcludeProperties_JTextField.setText ( ExcludeProperties );
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem(__AppendOutputFiles_JComboBox, AppendOutputFiles,JGUIUtil.NONE, null, null ) ) {
             __AppendOutputFiles_JComboBox.select ( AppendOutputFiles );
         }
@@ -606,8 +698,9 @@ private void refresh () {
 	InputFile = __InputFile_JTextField.getText().trim();
     RunDiscovery = __RunDiscovery_JComboBox.getSelected();
     ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
-    //ShareProperties = __ShareProperties_JComboBox.getSelected();
     ShareDataStores = __ShareDataStores_JComboBox.getSelected();
+    IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    ExcludeProperties = __ExcludeProperties_JTextField.getText().trim();
     AppendOutputFiles = __AppendOutputFiles_JComboBox.getSelected();
     WarningCountProperty = __WarningCountProperty_JTextField.getText().trim();
     FailureCountProperty = __FailureCountProperty_JTextField.getText().trim();
@@ -615,8 +708,9 @@ private void refresh () {
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "RunDiscovery=" + RunDiscovery );
     props.add ( "ExpectedStatus=" + ExpectedStatus );
-    //props.add ( "ShareProperties=" + ShareProperties );
     props.add ( "ShareDataStores=" + ShareDataStores );
+    props.add ( "IncludeProperties=" + IncludeProperties );
+    props.add ( "ExcludeProperties=" + ExcludeProperties );
     props.add ( "AppendOutputFiles=" + AppendOutputFiles );
     props.add ( "WarningCountProperty=" + WarningCountProperty );
     props.add ( "FailureCountProperty=" + FailureCountProperty );

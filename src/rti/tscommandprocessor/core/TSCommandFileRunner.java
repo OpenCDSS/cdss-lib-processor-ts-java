@@ -58,11 +58,14 @@ private TSCommandProcessor __processor = null;
  * The initial properties should typically be passed throughout nested runners to ensure that
  * processors have initial environment properties.
  * @param initProps initial properties for runner, from application command line properties
+ * and parent command processor
  */
 @SuppressWarnings("rawtypes")
 public TSCommandFileRunner ( PropList initProps, List<Class> pluginCommandClassList ) {
 	// Create a new processor that is used to run the commands.
-	this.__processor = new TSCommandProcessor(initProps);
+	PropList allProps = new PropList(initProps, true);
+	// Create a processor with all of the properties.
+	this.__processor = new TSCommandProcessor(allProps);
 	this.__processor.setPluginCommandClasses(pluginCommandClassList, false);
 }
 

@@ -530,9 +530,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Expression = parameters.getValue ( "Expression" );
 	String expressionExpanded = Expression;
 	if ( commandPhase == CommandPhaseType.RUN ) {
-		// Expand the expression to fill in properties, using a single quote for strings.
-		String quote = "'";
-		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression, quote );
+		// Expand the expression to fill in properties:
+		// - if quotes are required, they must be in the original expression
+		expressionExpanded = TSCommandProcessorUtil.expandParameterValue(processor, this, Expression );
 	}
 	String JavaProperty = parameters.getValue ( "JavaProperty" );
 	if ( commandPhase == CommandPhaseType.RUN ) {
@@ -630,109 +630,111 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    		}
 	    	}
 	    	else if ( (expressionExpanded != null) && !expressionExpanded.isEmpty() ) {
-	    		Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
-	    		// Enable single quotes to indicate strings.
-	    		ExpressionConfiguration configuration = ExpressionConfiguration.builder()
-	    			.singleQuoteStringLiteralsAllowed(true)
-	    			.build();
-	    		Expression expression = null;
-	    		boolean hadProblem = false;
-	    		try {
-	    			expression = new Expression ( expressionExpanded, configuration );
-	    		}
-	    		catch ( Exception e ) {
-	    			hadProblem = true;
-           			message = "Error parsing the expression (" + e + ").";
-            		Message.printWarning(3,
-                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                		routine, message );
-            		Message.printWarning(3,routine,e);
-            		status.addToLog ( CommandPhaseType.RUN,
-                		new CommandLogRecord(CommandStatusType.FAILURE,
-                    		message, "Verify that the expression syntax is OK." ) );
-	    		}
-	    		EvaluationValue result = null;
-	    		try {
-	    			result = expression.evaluate();
-	    		}
-	    		catch ( Exception e ) {
-	    			hadProblem = true;
-           			message = "Error evaluating the expression (" + e + ").";
-            		Message.printWarning(3,
-                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                		routine, message );
-            		Message.printWarning(3,routine,e);
-            		status.addToLog ( CommandPhaseType.RUN,
-                		new CommandLogRecord(CommandStatusType.FAILURE,
-                    		message, "Verify that the expression syntax is OK." ) );
-	    		}
-	    		// All cases need to be evaluated below to properly set the result.
-	    		if ( !hadProblem ) {
-	    			if ( PropertyType.equalsIgnoreCase(this._Boolean) ) {
-	    				if ( result.isBooleanValue() ) {
-	    					// Expression result is a boolean value so can interpret the result.
-	    					Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
-	    					Property_Object = Boolean.valueOf (result.getBooleanValue());
-	    				}
-	    				else {
-	    					// Expression result is not a boolean value so cannot interpret the result.
-           					message = "Expression result is not a boolean.  Cannot set as the property value.";
-           					Message.printWarning(3,
-               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               					routine, message );
-	    				}
-	    			}
-	    			else if ( PropertyType.equalsIgnoreCase(this._DateTime) ) {
-	    				if ( result.isDateTimeValue() ) {
-	    					// Expression result is a date/time value so can interpret the result.
-	    					Message.printStatus(2, routine, "Expanded result is a date/time: " + result.getDateTimeValue());
-	    					Instant instant = result.getDateTimeValue();
-	    					// Create a Date/time for the instant, using full precision and local time zone.
-	    					Property_Object = new DateTime(instant, 0, null);
-	    				}
-	    				else {
-	    					// Expression result is not a number value so cannot interpret the result.
-           					message = "Expression result is not a date/time.  Cannot set as the property date/time value.";
-           					Message.printWarning(3,
-               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               					routine, message );
-	    				}
-	    			}
-	    			else if ( PropertyType.equalsIgnoreCase(this._Double) ) {
-	    				if ( result.isNumberValue() ) {
-	    					// Expression result is a number value so can interpret the result.
-	    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
-	    					Property_Object = Double.valueOf (result.getNumberValue().doubleValue());
-	    				}
-	    				else {
-	    					// Expression result is not a number value so cannot interpret the result.
-           					message = "Expression result is not a number.  Cannot set as the property double precision value.";
-           					Message.printWarning(3,
-               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               					routine, message );
-	    				}
-	    			}
-	    			else if ( PropertyType.equalsIgnoreCase(this._Integer) ) {
-	    				if ( result.isNumberValue() ) {
-	    					// Expression result is a number value so can interpret the result.
-	    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
-	    					int integer = result.getNumberValue().intValue();
-	    					Property_Object = Integer.valueOf (integer);
-	    				}
-	    				else {
-	    					// Expression result is not a number value so cannot interpret the result.
-           					message = "Expression result is not a number.  Cannot set as the property integer value.";
-           					Message.printWarning(3,
-               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-               					routine, message );
-	    				}
-	    			}
-	    			else if ( PropertyType.equalsIgnoreCase(this._String) ) {
-	    				// Cast any object type to a string:
-	    				// - may have issues if floating point number is output in exponential notation
-	    				Message.printStatus(2, routine, "Expanded result is a string: " + result.getValue());
-	    				Property_Object = "" + result.getValue();
-	    			}
+	    		if ( commandPhase == CommandPhaseType.RUN ) {
+		    		Message.printStatus(2, routine, "Expanded expression: " + expressionExpanded);
+		    		// Enable single quotes to indicate strings.
+		    		ExpressionConfiguration configuration = ExpressionConfiguration.builder()
+		    			.singleQuoteStringLiteralsAllowed(true)
+		    			.build();
+		    		Expression expression = null;
+		    		boolean hadProblem = false;
+		    		try {
+		    			expression = new Expression ( expressionExpanded, configuration );
+		    		}
+		    		catch ( Exception e ) {
+		    			hadProblem = true;
+	           			message = "Error parsing the expression (" + e + ").";
+	            		Message.printWarning(3,
+	                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                		routine, message );
+	            		Message.printWarning(3,routine,e);
+	            		status.addToLog ( CommandPhaseType.RUN,
+	                		new CommandLogRecord(CommandStatusType.FAILURE,
+	                    		message, "Verify that the expression syntax is OK." ) );
+		    		}
+		    		EvaluationValue result = null;
+		    		try {
+		    			result = expression.evaluate();
+		    		}
+		    		catch ( Exception e ) {
+		    			hadProblem = true;
+	           			message = "Error evaluating the expression (" + e + ").";
+	            		Message.printWarning(3,
+	                		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                		routine, message );
+	            		Message.printWarning(3,routine,e);
+	            		status.addToLog ( CommandPhaseType.RUN,
+	                		new CommandLogRecord(CommandStatusType.FAILURE,
+	                    		message, "Verify that the expression syntax is OK." ) );
+		    		}
+		    		// All cases need to be evaluated below to properly set the result.
+		    		if ( !hadProblem ) {
+		    			if ( PropertyType.equalsIgnoreCase(this._Boolean) ) {
+		    				if ( result.isBooleanValue() ) {
+		    					// Expression result is a boolean value so can interpret the result.
+		    					Message.printStatus(2, routine, "Expanded result is a boolean: " + result.getBooleanValue());
+		    					Property_Object = Boolean.valueOf (result.getBooleanValue());
+		    				}
+		    				else {
+		    					// Expression result is not a boolean value so cannot interpret the result.
+	           					message = "Expression result is not a boolean.  Cannot set as the property value.";
+	           					Message.printWarning(3,
+	               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	               					routine, message );
+		    				}
+		    			}
+		    			else if ( PropertyType.equalsIgnoreCase(this._DateTime) ) {
+		    				if ( result.isDateTimeValue() ) {
+		    					// Expression result is a date/time value so can interpret the result.
+		    					Message.printStatus(2, routine, "Expanded result is a date/time: " + result.getDateTimeValue());
+		    					Instant instant = result.getDateTimeValue();
+		    					// Create a Date/time for the instant, using full precision and local time zone.
+		    					Property_Object = new DateTime(instant, 0, null);
+		    				}
+		    				else {
+		    					// Expression result is not a number value so cannot interpret the result.
+	           					message = "Expression result is not a date/time.  Cannot set as the property date/time value.";
+	           					Message.printWarning(3,
+	               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	               					routine, message );
+		    				}
+		    			}
+		    			else if ( PropertyType.equalsIgnoreCase(this._Double) ) {
+		    				if ( result.isNumberValue() ) {
+		    					// Expression result is a number value so can interpret the result.
+		    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
+		    					Property_Object = Double.valueOf (result.getNumberValue().doubleValue());
+		    				}
+		    				else {
+		    					// Expression result is not a number value so cannot interpret the result.
+	           					message = "Expression result is not a number.  Cannot set as the property double precision value.";
+	           					Message.printWarning(3,
+	               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	               					routine, message );
+		    				}
+		    			}
+		    			else if ( PropertyType.equalsIgnoreCase(this._Integer) ) {
+		    				if ( result.isNumberValue() ) {
+		    					// Expression result is a number value so can interpret the result.
+		    					Message.printStatus(2, routine, "Expanded result is a number: " + result.getNumberValue());
+		    					int integer = result.getNumberValue().intValue();
+		    					Property_Object = Integer.valueOf (integer);
+		    				}
+		    				else {
+		    					// Expression result is not a number value so cannot interpret the result.
+	           					message = "Expression result is not a number.  Cannot set as the property integer value.";
+	           					Message.printWarning(3,
+	               					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	               					routine, message );
+		    				}
+		    			}
+		    			else if ( PropertyType.equalsIgnoreCase(this._String) ) {
+		    				// Cast any object type to a string:
+		    				// - may have issues if floating point number is output in exponential notation
+		    				Message.printStatus(2, routine, "Expanded result is a string: " + result.getValue());
+		    				Property_Object = "" + result.getValue();
+		    			}
+		    		}
 	    		}
 	    	}
 	    	else if ( (JavaProperty != null) && !JavaProperty.isEmpty() ) {

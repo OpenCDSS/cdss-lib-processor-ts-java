@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ throws InvalidCommandParameterException {
 	}
 
     if ( (MaxSize != null) && !MaxSize.isEmpty() && !StringUtil.isInteger(MaxSize) ) {
-        message = "The screen warning level \"" + MaxSize + "\" is not an integer.";
+        message = "The maximum size \"" + MaxSize + "\" is not an integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -248,9 +248,9 @@ throws CommandWarningException, CommandException {
 	try {
 		String LogFile = parameters.getValue ( "LogFile" ); // Expanded below.
 		String MaxSize = parameters.getValue ( "MaxSize" );
-		int maxSize = -1;
+		long maxSize = -1;
 		if ( (MaxSize != null) && !MaxSize.isEmpty() ) {
-			maxSize = Integer.parseInt(MaxSize);
+			maxSize = Long.valueOf(MaxSize);
 		}
 		String Suffix = parameters.getValue ( "Suffix" );
 		if ( (LogFile == null) || (LogFile.length() == 0) ) {

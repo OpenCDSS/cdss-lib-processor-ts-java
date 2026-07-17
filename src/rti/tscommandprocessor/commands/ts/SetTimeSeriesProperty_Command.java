@@ -64,6 +64,7 @@ protected final String _True = "True";
 /**
 Possible value for PropertyType.
 */
+protected final String _Boolean = "Boolean";
 protected final String _DateTime = "DateTime";
 protected final String _Double = "Double";
 protected final String _Integer = "Integer";
@@ -144,6 +145,18 @@ throws InvalidCommandParameterException {
             // Set to blank to be able to do checks below.
             PropertyType = "";
         }
+        else {
+        	// Make sure the property type is recognized.
+        	if ( !PropertyType.equals(this._Boolean) && !PropertyType.equals(this._DateTime) && !PropertyType.equals(this._Double) &&
+        		!PropertyType.equals(this._Integer) && !PropertyType.equals(this._String) ) {
+        		message = "The property type (" + PropertyType + ") is not recognized.";
+        		warning += "\n" + message;
+        		status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid property type." ) );
+        		
+        	}
+        }
         if ( (PropertyValue == null) || PropertyValue.equals("") ) {
             message = "The property value must be specified.";
             warning += "\n" + message;
@@ -155,6 +168,13 @@ throws InvalidCommandParameterException {
             // Check the value given the type.
             if ( (PropertyValue.indexOf("%") >= 0) || (PropertyValue.indexOf("${") >= 0) ) { // } to match bracket.
                 // Let it pass because a property will be expanded at run-time.
+            }
+            else if ( PropertyType.equalsIgnoreCase(_Boolean) && !StringUtil.isBoolean(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not a boolean";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the property value as a boolean." ));
             }
             else if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
                 message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
@@ -409,7 +429,11 @@ CommandWarningException, CommandException {
                 PropertyValue = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, PropertyValue, status, CommandPhaseType.RUN);
                 //Message.printStatus(2,routine,"Expanded property value=\"" + PropertyValue + "\"");
-                if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+                if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+                    Property_Object = Boolean.valueOf(PropertyValue);
+                    ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to " + PropertyValue );
+                }
+                else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
                     Property_Object = DateTime.parse(PropertyValue);
                     ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to \"" + PropertyValue + "\"");
                 }

@@ -664,7 +664,7 @@ private void initialize ( JFrame parent, If_Command command ) {
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Time Series Exists?", ts_JPanel );
+    __main_JTabbedPane.addTab ( "Time Series Conditions", ts_JPanel );
 
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
@@ -718,6 +718,12 @@ private void initialize ( JFrame parent, If_Command command ) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel(
         "Optional - If() will be true if the specified TSID does not have data."),
         3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "The following check whether a time series property is defined (or not).  The TSID for the time series must be specified."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "TSID (for the following checks):" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

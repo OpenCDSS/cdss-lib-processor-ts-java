@@ -369,10 +369,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	if ( includeProperties.length > 0 ) {
     		doProperties = true;
     	}
+    	// Properties that are to be excluded:
+    	// - cannot remove from include properties because need to evaluate wildcards below
     	String [] excludeProperties = null;
     	if ( (ExcludeProperties != null) && !ExcludeProperties.isEmpty() ) {
     		String [] excludeProperties0 = ExcludeProperties.split(",");
-    		excludeProperties = new String[includeProperties0.length];
+    		excludeProperties = new String[excludeProperties0.length];
     		for ( int i = 0; i < excludeProperties0.length; i++ ) {
     			excludeProperties[i] = excludeProperties0[i].trim();
     		}

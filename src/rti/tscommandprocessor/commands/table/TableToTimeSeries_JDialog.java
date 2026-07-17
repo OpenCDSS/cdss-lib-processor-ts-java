@@ -86,6 +86,7 @@ private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTabbedPane __location_JTabbedPane = null;
 private JTextField __ValueColumn_JTextField = null;
 private JTextField __FlagColumn_JTextField = null;
+private JTextField __DescriptionColumn_JTextField = null;
 //private JTextField __SkipRows_JTextField = null;
 private JTextField __LocationType_JTextField = null;
 private JTextField __LocationID_JTextField = null;
@@ -227,6 +228,7 @@ private void checkInput () {
 	// Data.
 	String ValueColumn = __ValueColumn_JTextField.getText().trim();
 	String FlagColumn = __FlagColumn_JTextField.getText().trim();
+	String DescriptionColumn = __DescriptionColumn_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -319,6 +321,9 @@ private void checkInput () {
     if (FlagColumn.length() > 0) {
         props.set("FlagColumn", FlagColumn);
     }
+    if (DescriptionColumn.length() > 0) {
+        props.set("DescriptionColumn", DescriptionColumn);
+    }
     if (Units.length() > 0) {
         props.set("Units", Units);
     }
@@ -396,6 +401,7 @@ private void commitEdits() {
     // Data.
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
+    String DescriptionColumn = __DescriptionColumn_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -439,6 +445,7 @@ private void commitEdits() {
     // Data.
 	__command.setCommandParameter("ValueColumn", ValueColumn);
 	__command.setCommandParameter("FlagColumn", FlagColumn);
+	__command.setCommandParameter("DescriptionColumn", DescriptionColumn);
 	__command.setCommandParameter("Precision", Precision);
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("HandleDuplicatesHow", HandleDuplicatesHow);
@@ -606,9 +613,9 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "Example table input (first row shown is column headings):" ),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
-        "<html><pre>| Date     | LocationTypes | LocationIDs | Value | Data Sources | Data Types | Scenarios | Data Units |<br>" +
-                   "| 2012-01  |          Gage |    Station1 |  1.23 |         USGS | Streamflow |    Filled |        cfs |<br>" +
-                   "| 2012-01  |          Gage |    Station2 |  4.56 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ),
+        "<html><pre>| Date     | LocationType | LocationID | Value | Data Source |  Data Type | Scenario | Data Units |<br>" +
+                   "| 2012-01  |         Gage |   Station1 |  1.23 |        USGS | Streamflow |   Filled |        cfs |<br>" +
+                   "| 2012-01  |         Gage |   Station2 |  4.56 |        USGS | Streamflow |   Filled |        cfs |</pre></html>" ),
         0, ++ySingle, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -850,7 +857,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, __ValueColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "Required - specify column names for time series values, comma-separated (can use \"TC[N:N]\")."),
+        "Required - specify column name(s) for time series values, comma-separated (can use \"TC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Flag column(s):"),
@@ -860,7 +867,17 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(data_JPanel, __FlagColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "Optional - specify column names for time series flags, comma-separated (can use \"TC[N:N]\")."),
+        "Optional - specify column name(s) for time series flags, comma-separated (can use \"TC[N:N]\")."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Description column(s):"),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DescriptionColumn_JTextField = new JTextField (20);
+    __DescriptionColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(data_JPanel, __DescriptionColumn_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Optional - specify column name(s) for time series description, comma-separated (can use \"TC[N:N]\")."),
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(data_JPanel, new JLabel("Units of data:"),
@@ -1130,6 +1147,7 @@ private void refresh() {
     // Data.
     String ValueColumn = "";
     String FlagColumn = "";
+    String DescriptionColumn = "";
     String Units = "";
     String Precision = "";
     String MissingValue = "";
@@ -1179,6 +1197,7 @@ private void refresh() {
         // Data.
 	    ValueColumn = props.getValue("ValueColumn");
 	    FlagColumn = props.getValue("FlagColumn");
+	    DescriptionColumn = props.getValue("DescriptionColumn");
 	    Units = props.getValue("Units");
 	    Precision = props.getValue("Precision");
 	    MissingValue = props.getValue("MissingValue");
@@ -1330,6 +1349,9 @@ private void refresh() {
         if (FlagColumn != null) {
             __FlagColumn_JTextField.setText(FlagColumn);
         }
+        if (DescriptionColumn != null) {
+            __DescriptionColumn_JTextField.setText(DescriptionColumn);
+        }
         if (Units != null) {
             __Units_JTextField.setText(Units);
         }
@@ -1455,6 +1477,7 @@ private void refresh() {
     // Data.
     ValueColumn = __ValueColumn_JTextField.getText().trim();
     FlagColumn = __FlagColumn_JTextField.getText().trim();
+    DescriptionColumn = __DescriptionColumn_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
     Precision = __Precision_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
@@ -1498,6 +1521,7 @@ private void refresh() {
     // Data.
     props.add("ValueColumn=" + ValueColumn );
     props.add("FlagColumn=" + FlagColumn );
+    props.add("DescriptionColumn=" + DescriptionColumn );
     props.add("Units=" + Units );
     props.add("Precision=" + Precision );
     props.add("MissingValue=" + MissingValue );

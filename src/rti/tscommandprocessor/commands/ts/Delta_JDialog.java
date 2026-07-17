@@ -4,19 +4,19 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2023 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
+CDSS Time Series Processor Java Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public License
     along with CDSS Time Series Processor Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
@@ -55,6 +55,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
+import RTi.TS.DeltaValueType;
 import RTi.TS.ResetType;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TrendType;
@@ -75,13 +76,16 @@ private SimpleJButton __help_JButton = null;
 private Delta_Command __command = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea=null;
+
+// Top.
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 
 // General
-private SimpleJComboBox __EnsembleID_JComboBox = null;
+private SimpleJComboBox __DeltaValue_JComboBox = null;
 private SimpleJComboBox __ExpectedTrend_JComboBox = null;
 private SimpleJComboBox __ResetType_JComboBox = null;
 private JTextField __AnalysisStart_JTextField = null;
@@ -230,12 +234,14 @@ This should be called before response() is allowed to complete.
 private void checkInput () {
 	// Put together a list of parameters to check.
 	PropList parameters = new PropList ( "" );
+	// Top.
     String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     // General.
-    String ResetType = __ResetType_JComboBox.getSelected();
+    String DeltaValue = __DeltaValue_JComboBox.getSelected();
     String ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
+    String ResetType = __ResetType_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String Flag = __Flag_JTextField.getText().trim();
@@ -277,6 +283,7 @@ private void checkInput () {
     String ProblemCountTimeSeriesProperty = __ProblemCountTimeSeriesProperty_JTextField.getText().trim();
 	__error_wait = false;
 
+	// Top.
     if ( TSList.length() > 0 ) {
         parameters.set ( "TSList", TSList );
     }
@@ -287,11 +294,14 @@ private void checkInput () {
         parameters.set ( "EnsembleID", EnsembleID );
     }
     // General.
-    if ( ResetType.length() > 0 ) {
-        parameters.set ( "ResetType", ResetType );
+    if ( DeltaValue.length() > 0 ) {
+        parameters.set ( "DeltaValue", DeltaValue );
     }
     if ( ExpectedTrend.length() > 0 ) {
         parameters.set ( "ExpectedTrend", ExpectedTrend );
+    }
+    if ( ResetType.length() > 0 ) {
+        parameters.set ( "ResetType", ResetType );
     }
 	if ( AnalysisStart.length() > 0 ) {
 		parameters.set ( "AnalysisStart", AnalysisStart );
@@ -415,10 +425,12 @@ Commit the edits to the command.
 In this case the command parameters have already been checked and no errors were detected.
 */
 private void commitEdits () {
+	// Top.
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     // General.
+    String DeltaValue = __DeltaValue_JComboBox.getSelected();
     String ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
     String ResetType = __ResetType_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -461,10 +473,13 @@ private void commitEdits () {
     String ProblemCountProperty = __ProblemCountProperty_JTextField.getText().trim();
     String ProblemCountTimeSeriesProperty = __ProblemCountTimeSeriesProperty_JTextField.getText().trim();
 
-    // General.
+    // Top.
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
+
+    // General.
+    __command.setCommandParameter ( "DeltaValue", DeltaValue );
     __command.setCommandParameter ( "ExpectedTrend", ExpectedTrend );
 	__command.setCommandParameter ( "ResetType", ResetType );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
@@ -551,6 +566,8 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
+   	// Top.
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -594,6 +611,25 @@ private void initialize ( JFrame parent, Delta_Command command, List<String> tab
         0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(general_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yGeneral, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Delta value:" ),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DeltaValue_JComboBox = new SimpleJComboBox ();
+    List<String> valueChoices = new ArrayList<>();
+    valueChoices.add ( "" );
+    valueChoices.add ( "" + DeltaValueType.DATA_VALUE);
+    valueChoices.add ( "" + DeltaValueType.TIME_SECONDS);
+    valueChoices.add ( "" + DeltaValueType.TIME_MINUTES);
+    valueChoices.add ( "" + DeltaValueType.TIME_HOURS);
+    valueChoices.add ( "" + DeltaValueType.TIME_DAYS);
+    valueChoices.add ( "" + DeltaValueType.TIME_MONTHS);
+    __DeltaValue_JComboBox.setData(valueChoices);
+    __DeltaValue_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(general_JPanel, __DeltaValue_JComboBox,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Optional - data value for the delta (default=" +
+        DeltaValueType.DATA_VALUE + ")."),
+        3, yGeneral, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(general_JPanel, new JLabel ( "Expected trend:" ),
         0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1177,10 +1213,12 @@ Refresh the command from the other text field contents.
 */
 private void refresh () {
 	String routine = getClass().getSimpleName() + ".refresh";
+	// Top.
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
     // General.
+    String DeltaValue = "";
     String ExpectedTrend = "";
 	String ResetType = "";
 	String AnalysisStart = "";
@@ -1226,10 +1264,12 @@ private void refresh () {
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command.
+		// Top.
         TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         // General.
+        DeltaValue = props.getValue ( "DeltaValue" );
         ExpectedTrend = props.getValue ( "ExpectedTrend" );
 		ResetType = props.getValue ( "ResetType" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
@@ -1271,6 +1311,7 @@ private void refresh () {
         // Output properties.
 		ProblemCountProperty = props.getValue ( "ProblemCountProperty" );
 		ProblemCountTimeSeriesProperty = props.getValue ( "ProblemCountTimeSeriesProperty" );
+		// Top.
         if ( TSList == null ) {
             // Select default.
             __TSList_JComboBox.select ( 0 );
@@ -1317,6 +1358,22 @@ private void refresh () {
             }
         }
         // General.
+		if ( JGUIUtil.isSimpleJComboBoxItem(__DeltaValue_JComboBox, DeltaValue,JGUIUtil.NONE, null, null ) ) {
+			__DeltaValue_JComboBox.select ( DeltaValue );
+		}
+		else {
+            if ( (DeltaValue == null) ||	DeltaValue.equals("") ) {
+				// New command...select the default.
+				__DeltaValue_JComboBox.select ( 0 );
+			}
+			else {
+				// Bad user command.
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\n"+
+				"DeltaValue parameter \"" +	DeltaValue +
+				"\".  Select a\n value or Cancel." );
+			}
+		}
 		if ( JGUIUtil.isSimpleJComboBoxItem(__ExpectedTrend_JComboBox, ExpectedTrend,JGUIUtil.NONE, null, null ) ) {
 			__ExpectedTrend_JComboBox.select ( ExpectedTrend );
 		}
@@ -1511,10 +1568,12 @@ private void refresh () {
         }
 	}
 	// Regardless, reset the command from the fields.
+	// Top.
     TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     // General.
+    DeltaValue = __DeltaValue_JComboBox.getSelected();
     ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
     ResetType = __ResetType_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -1558,10 +1617,12 @@ private void refresh () {
 	ProblemCountTimeSeriesProperty = __ProblemCountTimeSeriesProperty_JTextField.getText().trim();
 
 	props = new PropList ( __command.getCommandName() );
+	// Top.
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     // General.
+    props.add ( "DeltaValue=" + DeltaValue );
     props.add ( "ExpectedTrend=" + ExpectedTrend );
     props.add ( "ResetType=" + ResetType );
 	props.add ( "AnalysisStart=" + AnalysisStart );

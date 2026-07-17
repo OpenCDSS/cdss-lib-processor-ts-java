@@ -32,6 +32,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.ArrayList;
 import java.util.List;
 
+import RTi.TS.DeltaValueType;
 import RTi.TS.ResetType;
 import RTi.TS.TS;
 import RTi.TS.TSUtil_Delta;
@@ -62,6 +63,18 @@ This class initializes, checks, and runs the Delta() command.
 public class Delta_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider {
 
 	/**
+	Possible values for Action parameter.
+	*/
+	protected final String _Keep = "Keep";
+	protected final String _SetMissing = "SetMissing";
+
+	/**
+	Possible values for CopyDataFlags parameter.
+	*/
+	protected final String _False = "False";
+	protected final String _True = "True";
+
+	/**
 	 * Possible values for ResetType.
 	 */
 	protected final String _Auto = "" + ResetType.AUTO;
@@ -70,17 +83,6 @@ public class Delta_Command extends AbstractCommand implements CommandDiscoverabl
 	protected final String _ResetValue = "" + ResetType.ROLLOVER;
 	// TODO smalers 2023-03-21 could add date/time such as every day.
 
-	/**
-	Values for Action parameter.
-	*/
-	protected final String _Keep = "Keep";
-	protected final String _SetMissing = "SetMissing";
-
-	/**
-	Values for CopyDataFlags parameter.
-	*/
-	protected final String _False = "False";
-	protected final String _True = "True";
 
 	/**
 	The table that is created for discovery mode.
@@ -111,6 +113,7 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException {
 	// General.
+    String DeltaValue = parameters.getValue ( "DeltaValue" );
     String ExpectedTrend = parameters.getValue ( "ExpectedTrend" );
     String ResetType = parameters.getValue ( "ResetType" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -150,13 +153,25 @@ throws InvalidCommandParameterException {
 	}
     */
 
+    // Verify that the DeltaValue is a value that can be handled.
+    if ( (DeltaValue != null) && !DeltaValue.isEmpty() ) {
+   		DeltaValueType deltaValueType = DeltaValueType.valueOfIgnoreCase(DeltaValue);
+   		if ( deltaValueType == null ) {
+   			message = "The DeltaValue (" + DeltaValue + ") is invalid.";
+   			warning += "\n" + message;
+   			status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+   				message, "Specify the delta value as blank, " + DeltaValueType.DATA_VALUE + " (default), " + DeltaValueType.TIME_SECONDS + ", " +
+   					DeltaValueType.TIME_MINUTES + ", " + DeltaValueType.TIME_HOURS + ", " + DeltaValueType.TIME_DAYS + ", or " + DeltaValueType.TIME_MONTHS) );
+   		}
+    }
+
     // Verify that the ExpectedTrend is a value that can be handled.
     if ( (ExpectedTrend != null) && !ExpectedTrend.isEmpty() && !ExpectedTrend.equalsIgnoreCase("" + TrendType.DECREASING) &&
         !ExpectedTrend.equalsIgnoreCase("" + TrendType.INCREASING) ) {
         message = "The ExpectedTrend (" + ExpectedTrend + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the trend as blank, " + TrendType.DECREASING + ", or " + TrendType.INCREASING + "." ) );
+            message, "Specify the expected trend as blank, " + TrendType.DECREASING + ", or " + TrendType.INCREASING + "." ) );
     }
 
     if ( (DeltaLimit != null) && !DeltaLimit.isEmpty() ) {
@@ -210,7 +225,7 @@ throws InvalidCommandParameterException {
             message, "Specify the reset type as blank, " + RTi.TS.ResetType.AUTO + ", "
             + RTi.TS.ResetType.ROLLOVER + ", or " + RTi.TS.ResetType.UNKNOWN + " (default)." ) );
     }
-    
+
     // If the reset type is AUTO the trend direction must be known.
     if ( (ResetType != null) && (ResetType.equalsIgnoreCase("" + RTi.TS.ResetType.AUTO)) ) {
     	if ( ExpectedTrend == null ) {
@@ -283,7 +298,7 @@ throws InvalidCommandParameterException {
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify ExpectedTrend when ResetMax and ResetMin are specified." ) );
     }
-    
+
     // Make sure that if ResetMin or ResetMax are set that ResetType=Rollover.
     if ( resetCount > 0 ) {
     	if ( (ResetType == null) || ResetType.isEmpty() ) {
@@ -374,6 +389,7 @@ throws InvalidCommandParameterException {
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     // General.
+    validList.add ( "DeltaValue" );
     validList.add ( "ExpectedTrend" );
     validList.add ( "ResetMax" );
     validList.add ( "AnalysisStart" );
@@ -549,19 +565,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
-	
+
 	// General.
+    String DeltaValue = parameters.getValue ( "DeltaValue" );
+    DeltaValueType deltaValueType = null;
+    if ( (DeltaValue != null) && !DeltaValue.isEmpty() ) {
+        deltaValueType = DeltaValueType.valueOfIgnoreCase(DeltaValue);
+    }
     String ExpectedTrend = parameters.getValue ( "ExpectedTrend" );
-    TrendType trendType = null;
+    TrendType expectedTrendType = null;
     if ( (ExpectedTrend != null) && !ExpectedTrend.isEmpty() ) {
-        trendType = TrendType.valueOfIgnoreCase(ExpectedTrend);
+        expectedTrendType = TrendType.valueOfIgnoreCase(ExpectedTrend);
     }
     String ResetType = parameters.getValue ( "ResetType" );
     ResetType resetType = null;
@@ -723,11 +744,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (TableProblemColumn == null) || TableProblemColumn.isEmpty() ) {
 		TableProblemColumn = "Problem";
 	}
-    
+
     // Output properties.
     String ProblemCountProperty = parameters.getValue ( "ProblemCountProperty" );
     String ProblemCountTimeSeriesProperty = parameters.getValue ( "ProblemCountTimeSeriesProperty" );
-    
+
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
@@ -886,7 +907,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	// Just want time series headers initialized, but not actually do the processing.
         	createData = false;
-	
+
        		if ( doTable ) {
 	        	if ( table == null ) {
 	            	// Did not find table so is being created in this command.
@@ -904,7 +925,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                table = new DataTable( /*columnList*/ );
 	                table.setTableID ( TableID );
 	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-	                
+
 	                // Set the table in the processor.
 	                PropList request_params = null;
 	                request_params = new PropList ( "" );
@@ -945,7 +966,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
 			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, copyDataFlags,
-			    trendType, resetType,
+				deltaValueType,
+			    expectedTrendType, resetType,
 			    AutoResetDatum, AutoResetFlag,
 			    resetMin, resetMax, rolloverDeltaLimit, RolloverFlag, ManualResetFlag,
 			    resetProximityLimit, resetProximityLimitInterval, ResetProximityLimitFlag,
@@ -973,7 +995,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
 
             // Add the table and time series to the processor.
- 
+
             if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 discoverTSList.add ( newts );
             }
@@ -1063,10 +1085,12 @@ Return the string representation of the command.
 */
 public String toString ( PropList parameters ) {
 	String [] parameterOrder = {
+		// Top.
     	"TSList",
 		"TSID",
     	"EnsembleID",
     	// General.
+    	"DeltaValue",
     	"ExpectedTrend",
     	"ResetType",
 		"AnalysisStart",

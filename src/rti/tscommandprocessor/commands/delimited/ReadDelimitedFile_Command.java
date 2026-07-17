@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1404,11 +1404,11 @@ throws IOException {
                     ts.setInputName ( inputFileFull );
                     if ( inputStartReq != null ) {
                         ts.setDate1(inputStartReq);
-                        ts.setDate1Original(inputStartReq); // Will get reset.
+                        ts.setDate1Original(inputStartReq); // Will get reset to the file contents.
                     }
                     if ( inputEndReq != null ) {
                         ts.setDate2(inputEndReq);
-                        ts.setDate2Original(inputEndReq); // Will get reset.
+                        ts.setDate2Original(inputEndReq); // Will get reset to the file contents.
                     }
                     if ( (inputStartReq != null) && (inputEndReq != null) ) {
                         periodRequested = true;
@@ -1460,12 +1460,13 @@ throws IOException {
             }
             rowIsComment = false;
             sTrimmed = s.trim();
-            // Skip in the range of rows being skipped - this basically throws out rows without evaluating
-            // Don't even know if it is a comment.
+            // Skip in the range of rows being skipped:
+            // - this basically throws out rows without evaluating
+            // - don't even know if it is a comment
             if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
                 continue;
             }
-            if ( (sTrimmed.length() == 0) || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
+            if ( sTrimmed.isEmpty() || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
                 rowIsComment = true;
             }
             // Skip rows first, in particular user-specified skips before evaluating for the first non-comment row.
@@ -1569,6 +1570,7 @@ throws IOException {
                      (!doReadColumnNamesFromFile && dataRowCount == 1) ) {
                     // The first date will be set from the first row of data.
                     if ( latest == null ) {
+                    	// This is the first data line.
                         // Determine the last date by reading the end of the file - only need to do for first time series.
                         DateTime lastFileDateTime = determineEndDateTimeFromFile (
                             inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag, dateTimeParser );
@@ -1579,10 +1581,12 @@ throws IOException {
                             Message.printDebug(dl,routine,"Latest date/time in file is " + lastFileDateTime );
                         }
                         if ( dateTime.greaterThan(lastFileDateTime)) {
+                        	// Reverse time order.
                             earliest = lastFileDateTime;
                             latest = dateTime;
                         }
                         else {
+                        	// Chronological order.
                             earliest = dateTime;
                             latest = lastFileDateTime;
                         }
@@ -1620,8 +1624,11 @@ throws IOException {
                     flag.replace("\"", "");
                 }
                 if ( valueString.equals("") || (StringUtil.indexOfIgnoreCase(missing, valueString) >= 0) ) {
-                    // Missing so just let it remain missing in the time series, unless flag needs to be set.
-                    if ( (flag != null) && !flag.equals("") ) {
+                    // Data value is missing:
+                	// - for regular interval let it remain missing in the time series, unless flag needs to be set
+                	// - for irregular interval, need to set so that the missing value is in the data list
+                	if ( ts.isIrregularInterval() ||
+                		((flag != null) && !flag.equals("")) ) {
                         value = ts.getMissing();
                         ts.setDataValue ( dateTime, value, flag, 0 );
                     }

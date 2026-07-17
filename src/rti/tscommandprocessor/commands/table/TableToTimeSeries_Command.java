@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -194,6 +194,11 @@ Column names for data flags, for each time series being processed, expanded for 
 private List<String> __flagColumnsRuntime = new ArrayList<>();
 
 /**
+Column names for descriptions, for each time series being processed, expanded for runtime.
+*/
+private List<String> __descriptionColumnsRuntime = new ArrayList<>();
+
+/**
 Constructor.
 */
 public TableToTimeSeries_Command () {
@@ -228,6 +233,7 @@ throws InvalidCommandParameterException {
     String TimeColumn = parameters.getValue("TimeColumn" );
     String ValueColumn = parameters.getValue("ValueColumn" );
     String FlagColumn = parameters.getValue("FlagColumn" );
+    String DescriptionColumn = parameters.getValue("DescriptionColumn" );
     //String SkipRows = parameters.getValue("SkipRows" );
     String LocationType = parameters.getValue("LocationType" );
     String LocationID = parameters.getValue("LocationID" );
@@ -539,6 +545,54 @@ throws InvalidCommandParameterException {
             */
         //}
     }
+
+    List<String> descriptionColumns = new ArrayList<>();
+    List<String> descriptionColumnsRuntime = new ArrayList<>();
+    setDescriptionColumnsRuntime ( descriptionColumnsRuntime );
+    if ( (DescriptionColumn != null) && (DescriptionColumn.length() != 0) ) {
+        descriptionColumns = StringUtil.breakStringList(DescriptionColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
+        if ( StringUtil.indexOfIgnoreCase(DescriptionColumn,_TC, 0) >= 0 ) {
+            // Original string used slice notation for column name.
+            try {
+                //descriptionColumnsRuntime = readColumnNamesFromFile(InputFile_full, descriptionColumns,
+                //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
+                //    getSkipRowsAfterComments() );
+            }
+            catch ( Exception e ) {
+                message = "Error getting the description column name(s) to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the description column name(s) are specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime.
+            descriptionColumnsRuntime = descriptionColumns;
+        }
+        if ( singleColumn && (descriptionColumns.size() != 1) ) {
+            message = "Expecting 1 description column but have " + descriptionColumns.size() + " (" + DescriptionColumn + ").";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that 1 description column name is specified." ) );
+        }
+        setDescriptionColumnsRuntime ( descriptionColumnsRuntime );
+        // Now check for valid column names.
+        //for ( String descriptionColumnRuntime : descriptionColumnsRuntime ) {
+            /* TODO SAM 2012-11-12 Need to enable something
+            if ( getColumnNumberFromName(descriptionColumnRuntime, getDescriptionColumnsRuntime()) < 0 ) {
+                message = "The DescriptionColumn (" + descriptionColumnRuntime + ") is not a recognized column name.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify description column(s) matching ColumnNames, separated by commas." ) );
+            }
+            */
+        //}
+    }
+
     if ( (valueColumnsRuntime.size() > 0) && (flagColumnsRuntime.size() > 0) &&
         (valueColumnsRuntime.size() != flagColumnsRuntime.size()) ) {
         message = "The number of flag column names (" + flagColumnsRuntime.size() +
@@ -1004,7 +1058,7 @@ throws InvalidCommandParameterException {
     }
 
 	// Check for invalid parameters.
-    List<String> validList = new ArrayList<>(28);
+    List<String> validList = new ArrayList<>(34);
     validList.add ( "TableID" );
     //validList.add ( "SkipRows" );
     validList.add ( "DateTimeColumn" );
@@ -1022,6 +1076,7 @@ throws InvalidCommandParameterException {
     validList.add ( "LocationID" );
     validList.add ( "ValueColumn" );
     validList.add ( "FlagColumn" );
+    validList.add ( "DescriptionColumn" );
     validList.add ( "DataSource" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
@@ -2371,6 +2426,7 @@ Read a list of time series from a single column data table.
 @param timeColumn the time column name
 @param valueColumn the data value column name
 @param flagColumn column that contains flags (corresponding to valueColumn)
+@param descriptionColumn column that contains descriptions
 @param skipRows ranges of rows (1+ each) that are to be skipped
 @param locationTypeColumn the column to use for location type, if single column data table
 @param locationColumn the column to use for locations, if single column data table
@@ -2393,15 +2449,40 @@ Read a list of time series from a single column data table.
 @param readData True to read data, false to only read the header information.
 @param errorMessages Error message strings to be propagated back to calling code.
 */
-private List<TS> readTimeSeriesListSingle ( DataTable table,
-    String dateTimeColumn, String dateTimeFormat,
-    String dateColumn, String timeColumn, String valueColumn, String flagColumn,
-    int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
-    String dataTypeColumn, String scenarioColumn, String sequenceIDColumn, String unitsColumn, String locationType,
-    String dataSource, String dataType, TimeInterval interval, TimeInterval irregularIntervalPrecision,
-    String scenario, String sequenceID, String units, String precision, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
-    DateTime inputStartReq, DateTime inputEndReq,
-    boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
+private List<TS> readTimeSeriesListSingle (
+	DataTable table,
+    String dateTimeColumn,
+    String dateTimeFormat,
+    String dateColumn,
+    String timeColumn,
+    String valueColumn,
+    String flagColumn,
+    String descriptionColumn,
+    int[][] skipRows,
+    String locationTypeColumn,
+    String locationColumn,
+    String dataSourceColumn,
+    String dataTypeColumn,
+    String scenarioColumn,
+    String sequenceIDColumn,
+    String unitsColumn,
+    String locationType,
+    String dataSource,
+    String dataType,
+    TimeInterval interval,
+    TimeInterval irregularIntervalPrecision,
+    String scenario,
+    String sequenceID,
+    String units,
+    String precision,
+    List<String>
+    missing,
+    HandleDuplicatesHowType handleDuplicatesHow,
+    DateTime inputStartReq,
+    DateTime inputEndReq,
+    boolean readData,
+    CommandPhaseType commandPhase,
+    List<String> errorMessages )
 throws IOException {
     String routine = getClass().getSimpleName() + ".readTimeSeriesListSingle";
     // Allocate the list.
@@ -2479,6 +2560,17 @@ throws IOException {
         catch ( Exception e ) {
             if ( commandPhase == CommandPhaseType.RUN ) {
                 errorMessages.add("Cannot determine column number for flag column \"" + flagColumn + "\"" );
+            }
+        }
+    }
+    int descriptionPos = -1;
+    if ( (descriptionColumn != null) && !descriptionColumn.isEmpty() ) {
+        try {
+            descriptionPos = table.getFieldIndex(descriptionColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for description column \"" + descriptionColumn + "\"" );
             }
         }
     }
@@ -2617,10 +2709,9 @@ throws IOException {
             continue;
         }
     }
-    Message.printStatus(2,routine,"Min date/time from table = " + dtMinFromTable +
-        ", max date/time from table = " + dtMaxFromTable );
-    Message.printStatus(2, routine,
-        "Number of time series identifiers from single-column data table = " + tsidsFromTable.size() );
+
+    Message.printStatus(2,routine,"Min date/time from table = " + dtMinFromTable + ", max date/time from table = " + dtMaxFromTable );
+    Message.printStatus(2, routine, "Number of time series identifiers from single-column data table = " + tsidsFromTable.size() );
     // Create the time series.
     TSIdent tsident = null;
     TS ts = null;
@@ -2632,7 +2723,7 @@ throws IOException {
         Message.printStatus(2, routine, "Creating time series for TSID=\"" + tsidentstr + "\", units=\"" +
             unitsFromTableList.get(its) + "\"" );
         try {
-            tsident = new TSIdent( tsidentstr );
+            tsident = new TSIdent ( tsidentstr );
         }
         catch ( Exception e ) {
             tsident = null;
@@ -2644,6 +2735,9 @@ throws IOException {
                 ts = TSUtil.newTimeSeries( tsident.toString(), true );
                 // Set all the information.
                 ts.setIdentifier ( tsident );
+                // Set the description:
+                // - set the default value
+                // - may be reset if 'DescriptionColumn' parameter is provided in data
                 ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
                 ts.setDataUnits ( unitsFromTableList.get(its) );
                 ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
@@ -2718,6 +2812,8 @@ throws IOException {
     Double value = null;
     String sValue;
     String flag;
+    String description;
+    String descriptionPrev;
     for ( int iRec = 0; iRec < nRecords; iRec++ ) {
         try {
             rec = table.getRecord(iRec);
@@ -2781,7 +2877,7 @@ throws IOException {
                 }
             }
             tsidFromTablePrev = tsidFromTable;
-            // Get the the data flag.
+            // Get the data flag.
             flag = null;
             if ( flagPos >= 0 ) {
                 o = rec.getFieldValue(flagPos);
@@ -2853,6 +2949,19 @@ throws IOException {
                             ts.setDataValue(dt, (oldValue + value));
                         }
                     }
+                }
+            }
+            // Set the description.
+            if ( descriptionPos >= 0 ) {
+                o = rec.getFieldValue(descriptionPos);
+                if ( o != null ) {
+                    description = "" + o;
+                    // Only set the description if not already set in the time series:
+                    // - actually, need to set each time because the initial value will have been set
+                    //descriptionPrev = ts.getDescription();
+                    //if ( (descriptionPrev == null) || descriptionPrev.isEmpty() ) {
+                	    ts.setDescription(description);
+                    //}
                 }
             }
         }
@@ -3019,6 +3128,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		FlagColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, FlagColumn);
 	}
+	String DescriptionColumn = parameters.getValue("DescriptionColumn");
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		DescriptionColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DescriptionColumn);
+	}
 	String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow");
 	HandleDuplicatesHowType handleDuplicatesHow = HandleDuplicatesHowType.valueOfIgnoreCase(HandleDuplicatesHow);
 
@@ -3130,6 +3243,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     List<String> cols = getColumnNamesFromNotation ( table, FlagColumn );
                     setFlagColumnsRuntime(cols);
                 }
+                if ( (DescriptionColumn != null) && !DescriptionColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(DescriptionColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, DescriptionColumn );
+                    setDescriptionColumnsRuntime(cols);
+                }
             }
         }
     }
@@ -3207,10 +3325,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		if ( (dataType != null) && (dataType.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
         			dataType = TSCommandProcessorUtil.expandParameterValue(processor, this, dataType);
         		}
-	            tslist = readTimeSeriesListSingle ( table, getDateTimeColumnRuntime(),
-	                DateTimeFormat, getDateColumnRuntime(),
-	                getTimeColumnRuntime(), ValueColumn, FlagColumn, getSkipRows(),
-	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, SequenceIDColumn, UnitsColumn,
+	            tslist = readTimeSeriesListSingle (
+	            	table,
+	            	getDateTimeColumnRuntime(),
+	                DateTimeFormat,
+	                getDateColumnRuntime(),
+	                getTimeColumnRuntime(),
+	                ValueColumn,
+	                FlagColumn,
+	                DescriptionColumn,
+	                getSkipRows(),
+	                LocationTypeColumn,
+	                LocationColumn,
+	                DataSourceColumn,
+	                DataTypeColumn,
+	                ScenarioColumn,
+	                SequenceIDColumn,
+	                UnitsColumn,
 	                (getLocationType().size() == 1 ? getLocationType().get(0) : null),
 	                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
 	                dataType, getInterval(), irregularIntervalPrecision,
@@ -3218,8 +3349,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                (getSequenceID().size() == 1 ? getSequenceID().get(0) : null),
 	                (getUnits().size() == 1 ? getUnits().get(0) : null),
 	                (getPrecision().size() == 1 ? getPrecision().get(0) : null),
-	                getMissingValue(), handleDuplicatesHow,
-	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
+	                getMissingValue(),
+	                handleDuplicatesHow,
+	                InputStart_DateTime,
+	                InputEnd_DateTime,
+	                readData,
+	                commandPhase,
+	                errorMessages );
 	        }
 	        else {
 	        	List<String> dataType = getDataType();
@@ -3368,6 +3504,14 @@ private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime ) {
 }
 
 /**
+Set the description column names for each time series, expanded for runtime.
+@param descriptionColumnsRuntime description columns at run time
+*/
+private void setDescriptionColumnsRuntime ( List<String> descriptionColumnsRuntime ) {
+    __descriptionColumnsRuntime = descriptionColumnsRuntime;
+}
+
+/**
 Set the list of time series read in discovery phase.
 @param discovery_TS_List discovery time series list
 */
@@ -3508,6 +3652,7 @@ public String toString ( PropList parameters ) {
     	// Data.
     	"ValueColumn",
     	"FlagColumn",
+    	"DescriptionColumn",
     	"Units",
     	"Precision",
     	"MissingValue",

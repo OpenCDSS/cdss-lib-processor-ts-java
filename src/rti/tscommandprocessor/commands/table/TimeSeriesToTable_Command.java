@@ -4,7 +4,7 @@
 
 CDSS Time Series Processor Java Library
 CDSS Time Series Processor Java Library is a part of Colorado's Decision Support Systems (CDSS)
-Copyright (C) 1994-2025 Colorado Department of Natural Resources
+Copyright (C) 1994-2026 Colorado Department of Natural Resources
 
 CDSS Time Series Processor Java Library is free software:  you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil_TimeSeriesToTable;
@@ -260,7 +259,7 @@ throws InvalidCommandParameterException {
 	}
 
 	// Check for invalid parameters.
-	List<String> validList = new ArrayList<>(18);
+	List<String> validList = new ArrayList<>(19);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -305,7 +304,7 @@ Create a blank table to contain the time series.
 private DataTable createTable ( List<TS> tslist, String tableID, String dateTimeColumn,
     String tableTSIDColumn, List<String> valueColumns, int outputPrecision, List<String> flagColumns ) {
     // Create the table.
-    List<TableField> tableFields = new Vector<TableField>(3);
+    List<TableField> tableFields = new ArrayList<>(3);
     // TODO SAM 2013-05-12 evaluate whether to use DATA_TYPE_DATETIME.
     // DateTime column (always).
     tableFields.add ( new TableField ( TableField.DATA_TYPE_DATE, dateTimeColumn, 12 ) );
@@ -320,10 +319,10 @@ private DataTable createTable ( List<TS> tslist, String tableID, String dateTime
         int width = 12; // TODO SAM 2012-08-24 Figure out width from data type or data?
         // TODO SAM 2012-08-24 Figure out precision from data type?
         tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, valueColumn, width, outputPrecision ) );
-        // If flags are to be written, then create a column only if the flag column corresponding to data is not an empty string.
+        // If flag column(s) are included, then create a column only if the flag column corresponding to data is not an empty string.
         if ( flagColumns.size() > i ) {
             String flagColumn = flagColumns.get(i);
-            if ( !flagColumn.equals("") ) {
+            if ( !flagColumn.isEmpty() ) {
                 tableFields.add ( new TableField ( TableField.DATA_TYPE_STRING, flagColumn, -1, -1 ) );
             }
         }
@@ -341,7 +340,7 @@ Determine the time series data table column names.
 if a literal, use for single column output and append sequential number for multi-column output;
 if contains format strings, use the format with the time series to determine the column name
 */
-private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String tableColumn ) {
+private List<String> determineDataTableColumnNames ( List<TS> tslist, String tableTSIDColumn, String tableColumn ) {
     List<String> tableColumnNames = new ArrayList<>();
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         // Single column output.
@@ -499,7 +498,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     boolean createTable = false;
     int DateTimeColumn_int = -1;
     int [] ValueColumn_int = null; // Determined below.  Columns 0+ for each time series data.
-    int [] FlagColumn_int = null; // Determined below.  Columns 0+ for each time series data.
+    int [] FlagColumn_int = null; // Determined below.  Columns 0+ for each time series flag.
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     if ( commandPhase == CommandPhaseType.RUN ) {
     	TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
@@ -757,11 +756,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (FlagColumn != null) && !FlagColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FlagColumn.indexOf("${") >= 0 ) {
         	FlagColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, FlagColumn);
         }
-        // Determine the column names for values and flags.
-        List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
+        // Determine the column names for values, flags, and descriptions.
+        List<String> valueColumnNames = determineDataTableColumnNames(tslist, TableTSIDColumn, ValueColumn);
         List<String> flagColumnNames = new ArrayList<>();
-        if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
-            flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
+        if ( (FlagColumn != null) && !FlagColumn.isEmpty() ) {
+            flagColumnNames = determineDataTableColumnNames(tslist, TableTSIDColumn, FlagColumn);
         }
         // Make sure that the column names are unique.
         List<String> columnNamesCheck = new ArrayList<>();
@@ -786,7 +785,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         if ( createTable ) {
             // No existing table was found and a new table should be created with columns for data values and flags.
-            table = createTable(tslist, TableID, DateTimeColumn, TableTSIDColumn,
+            table = createTable ( tslist, TableID, DateTimeColumn, TableTSIDColumn,
                 valueColumnNames, outputPrecision, flagColumnNames );
             table.setTableID(TableID);
         }
@@ -848,6 +847,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Number of flag columns must be zero or the same as number of value columns.
         FlagColumn_int = new int[flagColumnNames.size()];
         // Initialize.
+        // FlagColumn.
         for ( int i = 0; i < flagColumnNames.size(); i++ ) {
             FlagColumn_int[i] = -1;
         }
@@ -858,7 +858,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 FlagColumn_int[i] = table.getFieldIndex(flagColumnName);
             }
             catch ( Exception e ) {
-                // Should not happen but flag column may be blank indicating not wanting to write
+                // Should not happen but flag column may be blank indicating not wanting to write.
                 FlagColumn_int[i] = -1;
             }
         }
@@ -899,9 +899,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             DateTimeWindow outputWindow = new DateTimeWindow ( OutputWindowStart_DateTime, OutputWindowEnd_DateTime );
     		Message.printStatus ( 2, routine, "Copying " + tslist.size() + " time series to table \"" +
     		    TableID + "\"." );
-    		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
-    		    TableTSIDColumn_int, TableTSIDFormat, IncludeMissingValues_boolean,
-    		    ValueColumn_int, FlagColumn_int, OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
+    		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable (
+    			table,
+    			tslist,
+    			DateTimeColumn_int,
+    		    TableTSIDColumn_int,
+    			TableTSIDFormat,
+    			IncludeMissingValues_boolean,
+    		    ValueColumn_int,
+    			FlagColumn_int,
+    			OutputStart_DateTime,
+    			OutputEnd_DateTime,
+    			outputWindow,
+    			true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {

@@ -1869,6 +1869,7 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 	    int stateCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "State", -1, -1), null);
 	    int stationIDCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "StationID", -1, -1), null);
 	    int networkCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Network", -1, -1), null);
+	    int stationNameCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "StationName", -1, -1), null);
 	    int elementCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Element", -1, -1), null);
 	    int forecastPeriodCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "ForecastPeriod", -1, -1), null);
 	    int publicationDateCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "PublicationDate", -1, -1), null);
@@ -2040,6 +2041,13 @@ public class NrcsAwdbRestApiDataStore extends AbstractWebServiceDataStore implem
 		                    }
 		                    catch ( Exception e ) {
 		                        Message.printWarning(3, routine, "Error setting network for row " + row );
+		                        ++errorCount;
+		                    }
+		                    try {
+		                        table.setFieldValue(row, stationNameCol, fp.getName(), true);
+		                    }
+		                    catch ( Exception e ) {
+		                        Message.printWarning(3, routine, "Error setting station name for row " + row );
 		                        ++errorCount;
 		                    }
 		                    try {

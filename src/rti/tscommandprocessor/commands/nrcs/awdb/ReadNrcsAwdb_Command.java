@@ -325,7 +325,7 @@ throws InvalidCommandParameterException {
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the parameter as " + this._False + " (default) or " + this._True + ".") );
     }
-    
+
     // General.
 
 	if ( (InputStart != null) && !InputStart.equals("") &&
@@ -379,7 +379,7 @@ throws InvalidCommandParameterException {
                 CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
         }
 	}
-	
+
 	// OutputYearType should only be specified if Interval is year.
     if ( (interval != null) && (interval.getBase() != TimeInterval.YEAR) && (outputYearType != null) ) {
         message = "The OutputYearType should only be specified when the data interval is NOT year.";
@@ -637,7 +637,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ForecastTableID = parameters.getValue("ForecastTableID");
     if ( (ForecastTableID == null) || ForecastTableID.equals("") ) {
-        ForecastTableID = "NRCS_Forecasts"; // Default
+        ForecastTableID = "NRCS_Forecasts"; // Default.
     }
     String ForecastPeriod = parameters.getValue("ForecastPeriod");
     ForecastPeriod = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPeriod);
@@ -654,7 +654,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             forecastExceedanceProbabilities[i] = Integer.parseInt(parts[i].trim());
         }
     }
-    
+
     // REST API.
 
     String InsertOrUpdateBeginDate = parameters.getValue("InsertOrUpdateBeginDate");
@@ -694,7 +694,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ReadSuspectData != null) && !ReadSuspectData.isEmpty() ) {
         readSuspectData = Boolean.valueOf(ReadSuspectData);
     }
-    
+
     // General.
 
     String Elements = parameters.getValue("Elements");

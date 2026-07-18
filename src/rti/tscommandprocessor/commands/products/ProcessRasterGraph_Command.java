@@ -248,7 +248,7 @@ throws InvalidCommandParameterException {
 		}
 	}
 
-    if ( (VisibleStart != null) && !VisibleStart.equals("")) {
+    if ( (VisibleStart != null) && !VisibleStart.equals("") && !VisibleStart.contains("${") ) {
         try {
             DateTime datetime1 = DateTime.parse(VisibleStart);
             if ( datetime1 == null ) {
@@ -260,10 +260,10 @@ throws InvalidCommandParameterException {
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid Visible start date/time." ) );
+                    message, "Specify a valid Visible start date/time or a ${Property}." ) );
         }
     }
-    if ( (VisibleEnd != null) && !VisibleEnd.equals("")) {
+    if ( (VisibleEnd != null) && !VisibleEnd.equals("") && !VisibleEnd.contains("${") ) {
         try {
             DateTime datetime2 = DateTime.parse(VisibleEnd);
             if ( datetime2 == null ) {
@@ -275,7 +275,7 @@ throws InvalidCommandParameterException {
             warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid Visible end date/time." ) );
+                        message, "Specify a valid Visible end date/time or a ${Property}." ) );
         }
     }
 

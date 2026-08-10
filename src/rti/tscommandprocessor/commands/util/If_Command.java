@@ -901,12 +901,15 @@ throws CommandWarningException, CommandException {
 	    	// Get the matching datastore.
 	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsOk, null );
 	    	// All cases need to be evaluated below to properly set the result.
+	    	// Default evaluation is false until proven OK.
   			boolean dsConditionEval = false;
 	    	if ( dataStore != null ) {
 	    		if ( dataStore.getStatus() != 0 ) {
+	    			// Non-zero status so NOT OK.
 	    			dsConditionEval = false;
 	    		}
 	    		else {
+	    			// Zero (0) status so OK.
 	    			dsConditionEval = true;
 	    		}
 	    	}
@@ -933,10 +936,11 @@ throws CommandWarningException, CommandException {
 	    	DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStoreIsNotOk, null );
 	    	if ( dataStore != null ) {
 	    		if ( dataStore.getStatus() == 0  ) {
-	    			// The datastore is OK, so the condition is false.
+	    			// The datastore status is zero (0), so OK, so the condition is false.
 	    			dsConditionEval = false;
 	    		}
 	    		else {
+	    			// The status is non-zero, so not OK, so the condition is true.
 	    			dsConditionEval = true;
 	    		}
 	    	}
@@ -1023,9 +1027,11 @@ throws CommandWarningException, CommandException {
 	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileExists) ) );
 	    	File f = new File(FileExists_full);
             if ( f.exists() ) {
+            	// File exists so evaluate to true.
                	fileConditionEval = true;
             }
             else {
+            	// File does not exist so evaluate to false.
                	fileConditionEval = false;
             }
    		    conditionEvalMap.put("FileExists",Boolean.valueOf(fileConditionEval));
@@ -1042,9 +1048,11 @@ throws CommandWarningException, CommandException {
 	    			TSCommandProcessorUtil.expandParameterValue(processor, this, FileDoesNotExist) ) );
 	    	File f = new File(FileDoesNotExist_full);
             if ( !f.exists() ) {
+            	// File does not exist so evaluate to true.
                 fileConditionEval = true;
             }
             else {
+            	// File exists so evaluate to false.
                	fileConditionEval = false;
             }
    		    conditionEvalMap.put("FileDoesNotExist",Boolean.valueOf(fileConditionEval));
@@ -1080,9 +1088,11 @@ throws CommandWarningException, CommandException {
                 object = (JSONObject)o_Object;
             }
             if ( object != null ) {
+            	// Object is not null so evaluate to true.
                 objectConditionEval = true;
             }
             else {
+            	// Object is null so evaluate to false.
                	objectConditionEval = false;
             }
    		    conditionEvalMap.put("ObjectExists",Boolean.valueOf(objectConditionEval));
@@ -1118,9 +1128,11 @@ throws CommandWarningException, CommandException {
                 object = (JSONObject)o_object;
             }
             if ( object == null ) {
+            	// Object does not exist so evaluate to true.
                	objectConditionEval = true;
             }
             else {
+            	// Object exists so evaluate to false.
                	objectConditionEval = false;
             }
    		    conditionEvalMap.put("ObjectDoesNotExist",Boolean.valueOf(objectConditionEval));
@@ -1144,9 +1156,6 @@ throws CommandWarningException, CommandException {
 		    			// Property is empty string so condition evaluates to true.
 		    			propConditionEval = true;
 		    		}
-		    		else {
-		    			propConditionEval = false;
-		    		}
 		    	}
 		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
@@ -1154,18 +1163,12 @@ throws CommandWarningException, CommandException {
 		    			// Property is Double NaN so condition evaluates to true.
 		    			propConditionEval = true;
 		    		}
-		    		else {
-		    			propConditionEval = false;
-		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to true.
 		    			propConditionEval = true;
-		    		}
-		    		else {
-		    			propConditionEval = false;
 		    		}
 		    	}
 	    	}
@@ -1177,7 +1180,8 @@ throws CommandWarningException, CommandException {
 	    if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
 	    	// Check to see whether the specified property exists.
 	    	// All cases need to be evaluated below to properly set the result.
-  			boolean propConditionEval = false;
+            // Start by setting to true and then set to false for specific cases.
+  			boolean propConditionEval = true;
 	    	Object o = processor.getPropContents(PropertyIsDefined);
 	    	if ( o == null ) {
 	    		// Property is null so condition evaluates to false.
@@ -1190,18 +1194,12 @@ throws CommandWarningException, CommandException {
 		    			// Property is Double NaN so condition evaluates to false.
 		    			propConditionEval = false;
 		    		}
-		    		else {
-		    			propConditionEval = true;
-		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to false.
 		    			propConditionEval = false;
-		    		}
-		    		else {
-		    			propConditionEval = true;
 		    		}
 		    	}
 	    	}
@@ -1213,40 +1211,46 @@ throws CommandWarningException, CommandException {
 	    if ( (PropertyIsDefinedAndIsNotEmpty != null) && !PropertyIsDefinedAndIsNotEmpty.isEmpty() ) {
 	    	// Check to see whether the specified property exists and is not an empty string.
 	    	// All cases need to be evaluated below to properly set the result.
-  			boolean propConditionEval = false;
+            // Start by setting to true and then set to false for specific cases.
+  			boolean propConditionEval = true;
 	    	Object o = processor.getPropContents(PropertyIsDefinedAndIsNotEmpty);
 	    	if ( o == null ) {
 	    		// Property is null so condition evaluates to false.
+	    		if ( Message.isDebugOn ) {
+	    			Message.printStatus(2, routine, "Property " + PropertyIsDefinedAndIsNotEmpty + " is null so evalutes to false.");
+	    		}
 	    		propConditionEval = false;
 	    	}
 	    	else {
+	    		// Check other specific values for other types.
 		    	if ( o instanceof String ) {
 		    		String s = (String)o;
 		    		if ( s.isEmpty() ) {
+		    			// Empty string so evaluates as false.
 		    			propConditionEval = false;
-		    		}
-		    		else {
-		    			propConditionEval = true;
+		    			if ( Message.isDebugOn ) {
+	    					Message.printStatus(2, routine, "Property " + PropertyIsDefinedAndIsNotEmpty + " is an empty string so evalutes to false.");
+	    				}
 		    		}
 		    	}
 		    	else if ( o instanceof Double ) {
 		    		Double d = (Double)o;
 		    		if ( d.isNaN() ) {
 		    			// Property is Double NaN so condition evaluates to false.
+		    			if ( Message.isDebugOn ) {
+	    					Message.printStatus(2, routine, "Property " + PropertyIsDefinedAndIsNotEmpty + " is NaN double so evalutes to false.");
+	    				}
 		    			propConditionEval = false;
-		    		}
-		    		else {
-		    			propConditionEval = true;
 		    		}
 		    	}
 		    	else if ( o instanceof Float ) {
 		    		Float f = (Float)o;
 		    		if ( f.isNaN() ) {
 		    			// Property is Float NaN so condition evaluates to false.
+		    			if ( Message.isDebugOn ) {
+	    					Message.printStatus(2, routine, "Property " + PropertyIsDefinedAndIsNotEmpty + " is NaN float so evalutes to false.");
+	    				}
 		    			propConditionEval = false;
-		    		}
-		    		else {
-		    			propConditionEval = true;
 		    		}
 		    	}
 	    	}
@@ -1287,6 +1291,7 @@ throws CommandWarningException, CommandException {
                	tableConditionEval = false;
             }
             else {
+            	// Table exists so evaluate as true.
                 tableConditionEval = true;
             }
    		    conditionEvalMap.put("TableExists",Boolean.valueOf(tableConditionEval));
@@ -1322,9 +1327,11 @@ throws CommandWarningException, CommandException {
                 table = (DataTable)o_Table;
             }
             if ( table == null ) {
+            	// Table does not exist so evaluate as true.
                 tableConditionEval = true;
             }
             else {
+            	// Table exists so evaluate as false.
                	tableConditionEval = false;
             }
    		    conditionEvalMap.put("TableDoesNotExist",Boolean.valueOf(tableConditionEval));
@@ -1370,6 +1377,7 @@ throws CommandWarningException, CommandException {
                	}
             }
             else {
+            	// Time series exists so evaluate as true.
                	tsConditionEval = true;
             }
    		    conditionEvalMap.put("TSExists",Boolean.valueOf(tsConditionEval));
@@ -1408,9 +1416,11 @@ throws CommandWarningException, CommandException {
                 ts = (TS)o_TS;
             }
             if ( ts == null ) {
+            	// Time series does not exist so evaluate as true.
                 tsConditionEval = true;
             }
             else {
+            	// Time series does exist so evaluate as false.
                	tsConditionEval = false;
             }
    		    conditionEvalMap.put("TSDoesNotExist",Boolean.valueOf(tsConditionEval));
@@ -1449,6 +1459,7 @@ throws CommandWarningException, CommandException {
                 ts = (TS)o_TS;
             }
             if ( ts == null ) {
+            	// Time series does not exist so has no data so evaluate as true.
                	tsConditionEval = false;
                	if ( Message.isDebugOn ) {
                		Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" is null and therefore does not have data.");
@@ -1458,6 +1469,7 @@ throws CommandWarningException, CommandException {
            		// Time series exists:
             	// - check whether it has data
             	if ( ts.hasData() ) {
+            		// Time series has data so evaluate as true.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" has data.");
             		}
@@ -1465,6 +1477,7 @@ throws CommandWarningException, CommandException {
             	}
             	else {
             		// Has no data so condition is false in this case.
+            		// Time series has no data so evaluate as false.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasData + "\" does not have data.");
             		}
@@ -1507,7 +1520,7 @@ throws CommandWarningException, CommandException {
                 ts = (TS)o_TS;
             }
             if ( ts == null ) {
-            	// No time series so it has no data.
+            	// No time series so it has no data so evaluates to true.
            		if ( Message.isDebugOn ) {
            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is null and therefore has no data.");
            		}
@@ -1519,15 +1532,14 @@ throws CommandWarningException, CommandException {
            			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" is not null, checking for data.");
            		}
             	if ( !ts.hasData() ) {
-            		// Time series does not have data.
+            		// Time series does not have data so evaluates to true.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does not have data.");
             		}
-            		// Has no data so the condition is true.
             		tsConditionEval = true;
             	}
             	else {
-            		// Has data so condition is false in this case.
+            		// Has data so condition is false.
             		if ( Message.isDebugOn ) {
             			Message.printStatus(2, routine, "Time series \"" + TSHasNoData + "\" does have data.");
             		}
@@ -1570,7 +1582,7 @@ throws CommandWarningException, CommandException {
             }
   			boolean propConditionEval = false;
 	    	if ( ts == null ) {
-	    		// Property is null so condition evaluates to true.
+	    		// Time series is null so condition evaluates to true.
 	    		propConditionEval = true;
 	    	}
 	    	else {
@@ -1604,6 +1616,10 @@ throws CommandWarningException, CommandException {
 		    		else {
 		    			propConditionEval = false;
 		    		}
+		    	}
+		    	else {
+		    		// Non-null other object evaluates to false
+	    			propConditionEval = false;
 		    	}
 	    	}
    		    conditionEvalMap.put("TSPropertyIsNotDefinedOrIsEmpty",Boolean.valueOf(propConditionEval));
@@ -1640,7 +1656,8 @@ throws CommandWarningException, CommandException {
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
-  			boolean propConditionEval = false;
+            // Start by setting to true and then set to false for specific cases.
+  			boolean propConditionEval = true;
 	    	if ( ts == null ) {
 	    		// Property is null so condition evaluates to false.
 	    		propConditionEval = false;
@@ -1703,7 +1720,8 @@ throws CommandWarningException, CommandException {
             if ( o_TS != null ) {
                 ts = (TS)o_TS;
             }
-  			boolean propConditionEval = false;
+            // Start by setting to true and then set to false for specific cases.
+  			boolean propConditionEval = true;
 	    	if ( ts == null ) {
 	    		// Property is null so condition evaluates to false.
 	    		propConditionEval = false;

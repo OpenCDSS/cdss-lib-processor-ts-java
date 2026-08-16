@@ -57,7 +57,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.Help.HelpViewer;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -96,7 +95,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public DeselectTimeSeries_JDialog ( JFrame parent, Command command ) {
+public DeselectTimeSeries_JDialog ( JFrame parent, DeselectTimeSeries_Command command ) {
 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -236,8 +235,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command ) {
-	__command = (DeselectTimeSeries_Command)command;
+private void initialize ( JFrame parent, DeselectTimeSeries_Command command ) {
+	this.__command = command;
 
 	addWindowListener( this );
 

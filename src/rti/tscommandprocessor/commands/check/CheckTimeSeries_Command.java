@@ -63,6 +63,13 @@ public class CheckTimeSeries_Command extends AbstractCommand implements CommandD
 {
 
 /**
+Values for ActionStatus parameter.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Fail = "Fail";
+protected final String _Warn = "Warn";
+
+/**
 Analysis window year, since users do not supply this information.
 This allows for leap year in case the analysis window start or end is on February 29.
 */
@@ -106,6 +113,7 @@ throws InvalidCommandParameterException {
     String Value2 = parameters.getValue ( "Value2" );
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
     String Action = parameters.getValue ( "Action" );
+    String ActionStatus = parameters.getValue ( "ActionStatus" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
@@ -185,6 +193,16 @@ throws InvalidCommandParameterException {
                 message, "Specify the action as " + _Remove + " or " + _SetMissing + ".") );
     }
 
+    if ( (ActionStatus != null) && !ActionStatus.equals("") && !ActionStatus.equalsIgnoreCase(_Ignore) &&
+        !ActionStatus.equalsIgnoreCase(_Fail) && !ActionStatus.equalsIgnoreCase(_Warn) ) {
+        message = "Invalid ActionStatus flag \"" + ActionStatus + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the ActionStatus as " + _Ignore + ", " +
+                _Warn + " (default), or " + _Fail + "." ) );
+    }
+
     if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") &&
         !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
         try {
@@ -262,7 +280,7 @@ throws InvalidCommandParameterException {
     }
 
     // Check for invalid parameters.
-    List<String> validList = new ArrayList<>(26);
+    List<String> validList = new ArrayList<>(27);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -274,6 +292,7 @@ throws InvalidCommandParameterException {
     validList.add ( "Flag" );
     validList.add ( "FlagDesc" );
     validList.add ( "Action" );
+    validList.add ( "ActionStatus" );
     validList.add ( "AnalysisStart" );
     validList.add ( "AnalysisEnd" );
     validList.add ( "AnalysisWindowStart" );
@@ -432,6 +451,20 @@ CommandWarningException, CommandException {
     String Flag = parameters.getValue ( "Flag" );
     String FlagDesc = parameters.getValue ( "FlagDesc" );
     String Action = parameters.getValue ( "Action" );
+
+    String ActionStatus = parameters.getValue ( "ActionStatus" );
+    CommandStatusType actionStatus = CommandStatusType.WARNING; // Default.
+    if ( (ActionStatus != null) && !ActionStatus.isEmpty() ) {
+    	if ( ActionStatus.equalsIgnoreCase(this._Ignore) ) {
+    		// Ignore output:
+    		// - null will be checked below when setting the command log messages
+    		actionStatus = null;
+    	}
+    	else {
+    		// Use the requested status.
+    		actionStatus = CommandStatusType.parse(ActionStatus);
+    	}
+    }
 
     String TableID = parameters.getValue ( "TableID" );
 	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
@@ -675,8 +708,8 @@ CommandWarningException, CommandException {
 	                ts.getIdentifier().toStringAliasAndTSID() );
 
 	            try {
-	                // Do the check.
-	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
+	                // Do the checks.
+	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries ( ts, checkCriteria,
 	                    AnalysisStart_DateTime, AnalysisEnd_DateTime,
 	                    AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
 	                    Value1_Double, Value2_Double, ProblemType,
@@ -684,31 +717,37 @@ CommandWarningException, CommandException {
 	                    table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
 	                    TableValueColumn, tableValuePrecision, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
 	                check.checkTimeSeries();
-	                List<String> problems = check.getProblems();
-	                int problemsSize = problems.size();
-	                int problemsSizeOutput = problemsSize;
-	                if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
+	                List<String> checkNotes = check.getCheckNotes();
+	                int checkNotesSize = checkNotes.size();
+	                int checkNotesSizeOutput = checkNotesSize;
+	                if ( (MaxWarnings_int > 0) && (checkNotesSize > MaxWarnings_int) ) {
 	                    // Limit the warnings to the maximum.
-	                    problemsSizeOutput = MaxWarnings_int;
+	                    checkNotesSizeOutput = MaxWarnings_int;
 	                }
-	                if ( problemsSizeOutput < problemsSize ) {
-	                    message = "Time series had " + problemsSize + " check warnings - only " + problemsSizeOutput + " are listed.";
+	                if ( checkNotesSizeOutput < checkNotesSize ) {
+	                    message = "Time series had " + checkNotesSize + " check matches - only " + checkNotesSizeOutput + " are listed in command log messages.";
 	                    Message.printWarning ( warning_level,
 	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
 	                    // No recommendation since it is a user-defined check.
 	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.INFO , ProblemType, message, "" ) );
 	                }
-	                for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
-	                    message = problems.get(iprob);
-	                    Message.printWarning ( warning_level,
-	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	                    // No recommendation since it is a user-defined check.
-	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	                if ( (checkNotesSize > 0) && (actionStatus != null) ) {
+	                	// There were notes from checks:
+	                	// - the ActionStatus is set or defaulted above
+	                	// - determine what command status should be used
+	                	for ( int iprob = 0; iprob < checkNotesSizeOutput; iprob++ ) {
+	                    	message = checkNotes.get(iprob);
+	                    	Message.printWarning ( warning_level,
+	                        	MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	                    	// No recommendation since it is a user-defined check.
+	                    	// FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	                    	status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(actionStatus, ProblemType, message, "" ) );
+	                	}
 	                }
 	                int checkCriteriaMetCount = check.getCheckCriteriaMetCount();
 	                if ( (CheckCountProperty != null) && !CheckCountProperty.isEmpty() ) {
+	                	// Want to set the check match count as a property.
 	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountProperty, status, commandPhase);
 	                	PropList request_params = new PropList ( "" );
 	                    request_params.setUsingObject ( "PropertyName", propName );
@@ -787,6 +826,7 @@ public String toString ( PropList parameters ) {
     	"Flag",
     	"FlagDesc",
     	"Action",
+    	"ActionStatus",
     	"AnalysisStart",
     	"AnalysisEnd",
     	"AnalysisWindowStart",

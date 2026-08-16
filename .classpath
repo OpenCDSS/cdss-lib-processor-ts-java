@@ -73,6 +73,6 @@
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/oraclepki.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/osdt_cert.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/osdt_core.jar"/>
-	<classpathentry kind="lib" path="lib/EvalEx/EvalEx-3.6.1.jar"/>
+	<classpathentry kind="lib" path="/cdss-lib-common-java/lib/EvalEx/EvalEx-3.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -91,6 +91,7 @@ private JTextField __MaxWarnings_JTextField = null;
 private JTextField __Flag_JTextField = null;
 private JTextField __FlagDesc_JTextField;
 private SimpleJComboBox __Action_JComboBox = null;
+private SimpleJComboBox __ActionStatus_JComboBox = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
@@ -233,6 +234,7 @@ private void checkInput () {
     String Flag = __Flag_JTextField.getText().trim();
     String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+    String ActionStatus = __ActionStatus_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
@@ -280,6 +282,9 @@ private void checkInput () {
     }
     if ( Action.length() > 0 ) {
         parameters.set ( "Action", Action );
+    }
+    if ( ActionStatus.length() > 0 ) {
+        parameters.set ( "ActionStatus", ActionStatus );
     }
 	if ( AnalysisStart.length() > 0 ) {
 		parameters.set ( "AnalysisStart", AnalysisStart );
@@ -356,6 +361,7 @@ private void commitEdits () {
 	String Flag = __Flag_JTextField.getText().trim();
 	String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+    String ActionStatus = __ActionStatus_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
@@ -380,6 +386,7 @@ private void commitEdits () {
 	__command.setCommandParameter ( "Flag", Flag );
 	__command.setCommandParameter ( "FlagDesc", FlagDesc );
 	__command.setCommandParameter ( "Action", Action );
+	__command.setCommandParameter ( "ActionStatus", ActionStatus );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
     if ( __AnalysisWindow_JCheckBox.isSelected() ){
@@ -423,7 +430,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
 		"Check time series data values for critical values (see also the CheckTimeSeriesStatistic() command)." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Check results can be saved to a table for output for further processing." ),
+        "Check results can be saved to a table for output and further processing." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Or, use the WriteCheckFile() command to save the results of all checks from command status messages." ),
@@ -569,6 +576,23 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(check_JPanel,new JLabel("Action status:"),
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ActionStatus_JComboBox = new SimpleJComboBox ( false );
+    List<String> statusChoices = new ArrayList<>();
+    statusChoices.add ( "" );
+    statusChoices.add ( __command._Ignore );
+    statusChoices.add ( __command._Warn );
+    statusChoices.add ( __command._Fail );
+    __ActionStatus_JComboBox.setData(statusChoices);
+    __ActionStatus_JComboBox.select ( 0 );
+    __ActionStatus_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __ActionStatus_JComboBox,
+        1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+        "Optional - command status if criteria are met (default=" + __command._Warn + ")."),
+        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     // Panel for analysis period and window table.
     int yTime = -1;
@@ -862,6 +886,7 @@ private void refresh () {
 	String Flag = "";
 	String FlagDesc = "";
 	String Action = "";
+	String ActionStatus = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
     String AnalysisWindowStart = "";
@@ -892,6 +917,7 @@ private void refresh () {
 		Flag = props.getValue ( "Flag" );
 		FlagDesc = props.getValue ( "FlagDesc" );
 		Action = props.getValue ( "Action" );
+		ActionStatus = props.getValue ( "ActionStatus" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
         AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
@@ -999,6 +1025,21 @@ private void refresh () {
                 __error_wait = true;
             }
         }
+        if ( ActionStatus == null ) {
+            // Select default.
+            __ActionStatus_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ActionStatus_JComboBox,ActionStatus, JGUIUtil.NONE, null, null ) ) {
+                __ActionStatus_JComboBox.select ( ActionStatus );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nActionStatus value \"" + ActionStatus +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );
 		}
@@ -1098,6 +1139,7 @@ private void refresh () {
 	Flag = __Flag_JTextField.getText().trim();
 	FlagDesc = __FlagDesc_JTextField.getText().trim();
 	Action = __Action_JComboBox.getSelected();
+	ActionStatus = __ActionStatus_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
@@ -1124,6 +1166,7 @@ private void refresh () {
 	props.add ( "Flag=" + Flag );
 	props.add ( "FlagDesc=" + FlagDesc );
 	props.add ( "Action=" + Action );
+	props.add ( "ActionStatus=" + ActionStatus );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
     if ( __AnalysisWindow_JCheckBox.isSelected() ) {
